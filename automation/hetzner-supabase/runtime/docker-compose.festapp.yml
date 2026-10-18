@@ -119,6 +119,8 @@ services:
       QR_RATE_SALT: ${QR_RATE_SALT:?configure QR_RATE_SALT before starting Edge Functions}
       AWS_SNS_TOPIC_ARN: ${AWS_SNS_TOPIC_ARN:?configure the exact AWS SNS topic ARN}
       NOTIFY_WEBHOOK_TOKEN: ${NOTIFY_WEBHOOK_TOKEN:?configure the notification webhook token}
+      TICKET_FONT_SERVICE_SECRET: ${TICKET_FONT_SERVICE_SECRET:?configure the dedicated Worker font capability}
+      ASSET_CLEANUP_SERVICE_SECRET: ${ASSET_CLEANUP_SERVICE_SECRET:?configure the dedicated account asset cleanup capability}
     logging: *logging
   db:
     image: supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a

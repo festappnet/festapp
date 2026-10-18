@@ -8,6 +8,7 @@ import {
 } from './project-registry';
 import { errorResponse } from './responses';
 import { isPrivateKey } from './private-key';
+import { assetKey } from './asset-key';
 
 /**
  * Serve private files from R2 with JWT authentication and editor permission check.
@@ -65,7 +66,7 @@ export async function handlePrivate(
   }
 
   if (!isPrivateKey(key)) return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Invalid private key');
-  const object = await project.privateBucket.get(key);
+  const object = await project.privateBucket.get(assetKey(project, key));
   if (!object) {
     return new Response('Not found', { status: 404 });
   }

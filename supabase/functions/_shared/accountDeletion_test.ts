@@ -1,6 +1,5 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
-  deleteAccountStorageObjects,
   deleteOneSignalUser,
   maskEmail,
   sha256,
@@ -30,31 +29,4 @@ Deno.test("OneSignal deletion does not retry permanent failures", async () => {
     fetch: async () => new Response("", { status: 401 }),
     wait: async () => { throw new Error("must not wait"); },
   }), Error, "onesignal_permanent");
-});
-
-Deno.test("account deletion removes owned storage in bucket batches", async () => {
-  const batches: unknown[] = [
-    [
-      { bucketId: "private", name: "a.pdf" },
-      { bucketId: "images", name: "avatar.png" },
-      { bucketId: "private", name: "b.pdf" },
-    ],
-    [],
-  ];
-  const removals: Array<[string, string[]]> = [];
-  await deleteAccountStorageObjects("request", {
-    getBatch: async () => batches.shift(),
-    remove: async (bucketId, names) => { removals.push([bucketId, names]); },
-  });
-  assertEquals(removals, [
-    ["private", ["a.pdf", "b.pdf"]],
-    ["images", ["avatar.png"]],
-  ]);
-});
-
-Deno.test("account deletion rejects malformed storage inventory", async () => {
-  await assertRejects(() => deleteAccountStorageObjects("request", {
-    getBatch: async () => [{ bucketId: "private" }],
-    remove: async () => {},
-  }), Error, "storage_inventory");
 });

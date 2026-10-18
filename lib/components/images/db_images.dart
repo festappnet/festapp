@@ -10,7 +10,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DbImages {
   static final _supabase = Supabase.instance.client;
   static final _httpClient = http.Client();
-  static const _bucketName = 'public-files';
 
   /// Detect image format from magic bytes and return extension.
   static String _detectExtension(Uint8List data) => ImageFileFormat.detect(data).extension;
@@ -53,36 +52,22 @@ class DbImages {
     final uri = Uri.tryParse(value);
     return uri?.scheme == 'https' &&
         (uri?.host == 'img.festapp.net' || uri?.host == 'a.img.festapp.net') &&
-        uri!.path.startsWith('/images/');
+        (uri!.path.startsWith('/images/') || uri.path.startsWith('/assets/'));
   }
 
   static Future<void> removeImage(String imageUrl) async {
-    if (_isR2Url(imageUrl)) {
-      final token = _supabase.auth.currentSession!.accessToken;
-      await ImageControlClient(
-              endpoint: AppConfig.imageApiUrl,
-              projectId: AppConfig.imageProjectId,
-              httpClient: _httpClient)
-          .deleteLinks([imageUrl], token);
-    } else {
-      // Supabase Storage: existing path extraction
-      final uri = Uri.parse(imageUrl);
-      final segments = uri.pathSegments;
-      final bucketIndex = segments.indexOf(_bucketName);
-      if (bucketIndex == -1 || bucketIndex + 1 >= segments.length) {
-        throw Exception('Invalid image URL');
-      }
-      final filePath = segments.sublist(bucketIndex + 1).join('/');
-      await _supabase.storage.from(_bucketName).remove([filePath]);
-      await _supabase.rpc('remove_image_records', params: {
-        'p_links': [imageUrl]
-      });
-    }
+    if (!_isR2Url(imageUrl)) throw ArgumentError('Invalid canonical asset URL');
+    final token = _supabase.auth.currentSession!.accessToken;
+    await ImageControlClient(
+            endpoint: AppConfig.imageApiUrl,
+            projectId: AppConfig.imageProjectId,
+            httpClient: _httpClient)
+        .deleteLinks([imageUrl], token);
   }
 
   static Future<String> createCopyOfImage(
       String imageUrl, int? occasion, int? unit) async {
-    // Historical public URLs remain readable; all new objects have one writer.
+    // Copies and uploads share the canonical Worker writer.
     final bytes = await ImageControlClient(
             endpoint: AppConfig.imageApiUrl,
             projectId: AppConfig.imageProjectId,
@@ -99,5 +84,6 @@ class DbImages {
       : query.eq(Tb.images.unit, unit!));
     return response.isNotEmpty;
   }
+
 
 }

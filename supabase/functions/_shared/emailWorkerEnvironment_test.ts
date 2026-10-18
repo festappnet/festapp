@@ -39,3 +39,21 @@ Deno.test("only the queue worker receives SES credentials; producers and feedbac
 Deno.test("router Monitoring credentials never reach application workers", () => {
   assertEquals(emailWorkerEnvironment("process-email-queue", { FESTAPP_MONITORING_TOKEN: "private", FESTAPP_MONITORING_URL: "https://monitor.invalid", DEFAULT_EMAIL: "sender" }), [["DEFAULT_EMAIL", "sender"]]);
 });
+
+Deno.test('only the font rendering owners receive the dedicated font capability', () => {
+  const environment = { TICKET_FONT_SERVICE_SECRET: 'font-fixture', DEFAULT_EMAIL: 'sender' };
+  for (const service of ['download-ticket','preview-ticket-layout','process-email-queue']) {
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)), environment);
+  }
+  for (const service of ['confirm-account-deletion','send-tickets','fetch-http-data','unknown']) {
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service,environment)), {DEFAULT_EMAIL:'sender'});
+  }
+});
+
+Deno.test('only account confirmation receives the dedicated asset deletion capability', () => {
+  const environment = { ASSET_CLEANUP_SERVICE_SECRET: 'delete-fixture', DEFAULT_EMAIL: 'sender' };
+  assertEquals(Object.fromEntries(emailWorkerEnvironment('confirm-account-deletion', environment)), environment);
+  for (const service of ['request-account-deletion','process-email-queue','download-ticket','fetch-http-data','unknown']) {
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service, environment)), { DEFAULT_EMAIL: 'sender' });
+  }
+});

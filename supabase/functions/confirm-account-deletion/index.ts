@@ -1,7 +1,6 @@
 import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import {
   accountDeletionCors,
-  deleteAccountStorageObjects,
   deleteOneSignalUser,
   jsonResponse,
   sha256,
@@ -10,6 +9,7 @@ import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { parseOrganizationBranding } from "../_shared/organizationBranding.ts";
 import { loadOrganizationNotificationConfig } from "../_shared/organizationNotificationConfig.ts";
 import { sendCompletionNotification } from "./completionNotification.ts";
+import { deleteAccountAssets } from "../_shared/accountAssets.ts";
 
 async function inspect(token: string) {
   if (token.length < 40 || token.length > 200) return { status: "invalid" };
@@ -103,10 +103,11 @@ Deno.serve(async (request) => {
   }
 
   try {
-    await deleteAccountStorageObjects(requestId, {
+    await deleteAccountAssets(requestId, {
+      secret: () => Deno.env.get('ASSET_CLEANUP_SERVICE_SECRET'),
       getBatch: async (id, limit) => {
         const { data, error } = await supabaseAdmin.rpc(
-          "get_account_deletion_storage_batch",
+          "get_account_deletion_asset_batch",
           {
             p_request_id: id,
             p_limit: limit,
@@ -115,17 +116,17 @@ Deno.serve(async (request) => {
         if (error) throw error;
         return data;
       },
-      remove: async (bucketId, names) => {
-        const { error } = await supabaseAdmin.storage.from(bucketId).remove(
-          names,
-        );
+      acknowledge: async (id, asset) => {
+        const { error } = await supabaseAdmin.rpc('ack_account_deletion_asset', {
+          p_request_id: id, p_asset_id: asset.assetId, p_sha256: asset.sha256,
+        });
         if (error) throw error;
       },
     });
   } catch {
     await supabaseAdmin.rpc("update_account_deletion_job", {
       p_request_id: requestId,
-      p_error_class: "storage_delete",
+      p_error_class: "asset_delete",
     });
     return jsonResponse({ status: "processing" }, 503);
   }

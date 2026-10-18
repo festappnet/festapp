@@ -4,6 +4,7 @@ import { extractBearerToken, checkImageProjectAccess } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
+import { assetKey } from './asset-key';
 
 const DEFAULT_EXPIRES_IN = 3600; // 1 hour
 const MAX_EXPIRES_IN = 604800; // 7 days
@@ -82,7 +83,7 @@ export async function handlePresign(
 
   // Construct R2 S3-compatible URL
   const r2Url = new URL(
-    `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com/${project.privateBucketName}/${key}`
+    `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com/${project.privateBucketName}/${assetKey(project, key)}`
   );
   r2Url.searchParams.set('X-Amz-Expires', String(expiresIn));
 

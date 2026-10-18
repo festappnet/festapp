@@ -1,6 +1,7 @@
 import type { Env } from './types';
 import { resolveProjectByHostname } from './project-registry';
 import { IMAGE_TRANSFORM_CONTRACT } from './transform-contract';
+import { assetKey } from './asset-key';
 
 /** Public cache hits are independent of SQL and of the miss limiter. */
 export async function handlePublicServe(
@@ -14,6 +15,10 @@ export async function handlePublicServe(
     return new Response("Method not allowed", { status: 405 });
   }
   const project = resolveProjectByHostname(env, new URL(request.url).hostname);
+  const logicalKey = new URL(request.url).pathname.slice(1);
+  if (!project.publicKeyPrefixes.some(prefix => logicalKey.startsWith(prefix))) {
+    return new Response('Not found', { status: 404 });
+  }
   if (project.authContract !== "festapp") {
     return servePublicObject(request, env);
   }
@@ -116,13 +121,15 @@ async function servePublicObject(
   env: Env
 ): Promise<Response> {
   const url = new URL(request.url);
-  const key = url.pathname.slice(1); // Remove leading /
+  const logicalKey = url.pathname.slice(1);
 
-  if (!key) {
+  if (!logicalKey || logicalKey.startsWith('private/') || logicalKey.startsWith('ticket-fonts/')) {
     return new Response('Not found', { status: 404 });
   }
 
-  const bucket = resolveProjectByHostname(env, url.hostname).publicBucket;
+  const project = resolveProjectByHostname(env, url.hostname);
+  const bucket = project.publicBucket;
+  const key = assetKey(project, logicalKey);
 
   // HEAD request — metadata only
   if (request.method === 'HEAD') {
@@ -159,7 +166,7 @@ async function servePublicObject(
   const qParam = url.searchParams.get('q');
   const wantTransform = !!(wParam || fParam || qParam);
 
-  if (wantTransform && env.IMAGES) {
+  if (wantTransform && env.IMAGES && object.httpMetadata?.contentType?.startsWith('image/')) {
     try {
       const width = wParam ? parseInt(wParam, 10) : undefined;
       const quality = qParam ? parseInt(qParam, 10) : undefined;

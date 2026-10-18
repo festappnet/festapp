@@ -33,40 +33,6 @@ export type DeleteOneSignalDependencies = {
   wait(milliseconds: number): Promise<void>;
 };
 
-export type AccountDeletionStorageObject = {
-  bucketId: string;
-  name: string;
-};
-
-export type DeleteAccountStorageDependencies = {
-  getBatch(requestId: string, limit: number): Promise<unknown>;
-  remove(bucketId: string, names: string[]): Promise<void>;
-};
-
-export async function deleteAccountStorageObjects(
-  requestId: string,
-  dependencies: DeleteAccountStorageDependencies,
-  batchLimit = 100,
-) {
-  if (batchLimit < 1 || batchLimit > 1000) throw new Error("storage_batch_limit");
-  for (let batchNumber = 0; batchNumber < 10_000; batchNumber++) {
-    const value = await dependencies.getBatch(requestId, batchLimit);
-    if (!Array.isArray(value)) throw new Error("storage_inventory");
-    if (value.length === 0) return;
-    const grouped = new Map<string, string[]>();
-    for (const item of value) {
-      if (!item || typeof item !== "object") throw new Error("storage_inventory");
-      const { bucketId, name } = item as Partial<AccountDeletionStorageObject>;
-      if (typeof bucketId !== "string" || !bucketId || typeof name !== "string" || !name) {
-        throw new Error("storage_inventory");
-      }
-      grouped.set(bucketId, [...(grouped.get(bucketId) || []), name]);
-    }
-    for (const [bucketId, names] of grouped) await dependencies.remove(bucketId, names);
-  }
-  throw new Error("storage_inventory_limit");
-}
-
 export async function deleteOneSignalUser(
   appId: string,
   apiKey: string,

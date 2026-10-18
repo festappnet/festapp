@@ -11,6 +11,7 @@ import { assertControlHost, ProjectResolutionError, resolveControlProject } from
 import { purgeSourceUrl } from './purge';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
+import { assetKey } from './asset-key';
 
 const MAX_DELETE_LINKS = 50;
 
@@ -59,7 +60,7 @@ export async function handleDelete(request: Request, env: Env): Promise<Response
       return errorResponse(400, 'INVALID_PRIVATE_KEY', 'Only canonical private keys may be deleted by key');
     }
     if (!await checkImageProjectAccess(jwt, auth, project.id)) return errorResponse(403, 'FORBIDDEN', 'Forbidden');
-    await project.privateBucket.delete(body.key);
+    await project.privateBucket.delete(assetKey(project, body.key));
     return jsonResponse({ deleted: true, key: body.key, projectId: project.id });
   }
 
@@ -100,7 +101,7 @@ export async function handleDelete(request: Request, env: Env): Promise<Response
     const link = uniqueLinks[index];
     const key = parsed[index]!;
     try {
-      await project.publicBucket.delete(key);
+      await project.publicBucket.delete(assetKey(project, key));
       await purgeSourceUrl(env, link);
       readyForRecordRemoval.push(link);
       results.push({ link, deleted: true });

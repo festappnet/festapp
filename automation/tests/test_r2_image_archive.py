@@ -9,6 +9,34 @@ spec3=importlib.util.spec_from_file_location('r2_dump_verify',Path(__file__).res
 d=importlib.util.module_from_spec(spec3);spec3.loader.exec_module(d)
 
 class R2ArchiveTest(unittest.TestCase):
+ def test_new_asset_format_covers_colliding_a_keys_and_service_fonts(self):
+  inventories={bucket:[] for bucket in m.ASSET_BUCKETS}
+  for key in ['images/same.png','imports/a/images/same.png']:
+   inventories['festapp-images'].append({'Path':key,'Size':3,'MimeType':'image/png'})
+  font='ticket-fonts/sha256/'+'a'*64+'.ttf'
+  inventories['festapp-images-private']=[{'Path':font,'Size':3,'MimeType':'application/octet-stream'}]
+  def fetch(bucket,key):
+   value=b'old' if key.startswith('imports/a/') else b'new'
+   return subprocess.Popen(['python3','-c','import sys;sys.stdout.buffer.write('+repr(value)+')'],stdout=subprocess.PIPE)
+  stream=io.BytesIO();result=m.write_archive(inventories,fetch,stream,asset_format=True)
+  self.assertEqual(result['archive_version'],2)
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'fixture.tar';path.write_bytes(stream.getvalue())
+   receipt=v.verify_archive(path,['https://img.festapp.net/images/same.png','https://a.img.festapp.net/images/same.png',{'bucket':'festapp-images-private','key':font}])
+   self.assertTrue(receipt['consistent']);self.assertEqual(receipt['objects'],3)
+   with tarfile.open(path) as archive:
+    self.assertEqual(archive.extractfile('festapp-images/images/same.png').read(),b'new')
+    self.assertEqual(archive.extractfile('festapp-images/imports/a/images/same.png').read(),b'old')
+
+ def test_old_format_remains_an_explicit_historical_reader(self):
+  inventories={bucket:[] for bucket in m.BUCKETS}
+  inventories['festapp-images-a']=[{'Path':'images/old.png','Size':3}]
+  def fetch(bucket,key):return subprocess.Popen(['python3','-c',"import sys;sys.stdout.buffer.write(b'old')"],stdout=subprocess.PIPE)
+  stream=io.BytesIO();m.write_archive(inventories,fetch,stream)
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'fixture.tar';path.write_bytes(stream.getvalue())
+   self.assertTrue(v.verify_archive(path,['https://a.img.festapp.net/images/old.png'])['consistent'])
+
  def test_worker_path_contract_preserves_percent_escapes_and_private_bucket(self):
   inventories={bucket:[] for bucket in m.BUCKETS}
   inventories['festapp-images']=[{'Path':'images/space%20file.jpg','Size':3}]

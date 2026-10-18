@@ -19,20 +19,12 @@ binding = "IMAGES_BUCKET"
 bucket_name = "festapp-images"
 
 [[r2_buckets]]
-binding = "IMAGES_BUCKET_A"
-bucket_name = "festapp-images-a"
-
-[[r2_buckets]]
 binding = "IMAGES_BUCKET_AKHWEB"
 bucket_name = "festapp-images-akhweb"
 
 [[r2_buckets]]
 binding = "IMAGES_PRIVATE_BUCKET"
 bucket_name = "festapp-images-private"
-
-[[r2_buckets]]
-binding = "IMAGES_PRIVATE_BUCKET_A"
-bucket_name = "festapp-images-a-private"
 
 # Images binding for compression (requires Images subscription)
 [images]
@@ -51,6 +43,8 @@ binding = "IMAGES"
 # R2_SECRET_ACCESS_KEY
 # CF_ACCOUNT_ID
 # CF_CACHE_PURGE_TOKEN
+# TICKET_FONT_SERVICE_SECRET - dedicated font read/create capability, also in
+# the protected Edge function environment; never a Supabase/user credential.
 
 [vars]
 CF_ZONE_ID = "02fd6ca8f4652d62e9b05f24a5e9d84f"
