@@ -15,7 +15,13 @@ archive. Its service smoke starts no Storage or imgproxy. Package
 `backup_manifest.py`, `current_asset_fields.sql`, `r2_archive.py`, the canonical
 `automation/image-migration/storage_references.py` parser and
 `automation/hetzner-supabase/merge/source-registry.json` at their repository-relative
-locations with the recovery sources. The private downloader also requires
+locations with the recovery sources. The current-field selector admits URL/decoder punctuation before structural
+parsing, including escaped JSON slashes and HTML entity URLs. A literal
+host/path SQL filter would miss such references and cannot establish a zero
+result. Queued mutable emails remain current; immutable audit/replay and
+completed delivery records remain the explicit historical boundary.
+
+The private downloader also requires
 `backup_manifest.py` beside it. Preserve the original independent kit and its
 identity when preparing a new source version.
 
