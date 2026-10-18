@@ -1,5 +1,8 @@
 {
   "OrganizationVerification": {
+    "verifiedDescription": "Your organization’s legal details are approved and appear below your forms.",
+    "pendingDescription": "Your request to verify the legal details is awaiting administrator approval.",
+    "verifiedOn": "Verified on",
     "sourceRequiredLabel": "Verification source (required to approve)",
     "sourceHelp": "Describe how you checked both the legal entity and the applicant’s authority to represent it. For example, compare details against a public register and check the applicant’s authorization. An ARES lookup alone is not enough.",
     "sourceRequired": "To approve, describe the checks of the organization and the applicant’s authority.",

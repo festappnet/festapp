@@ -1,5 +1,8 @@
 {
   "OrganizationVerification": {
+    "verifiedDescription": "Dane prawne organizacji zostały zatwierdzone i są widoczne pod Twoimi formularzami.",
+    "pendingDescription": "Wniosek o weryfikację danych prawnych oczekuje na zatwierdzenie przez administratora.",
+    "verifiedOn": "Zweryfikowano",
     "sourceRequiredLabel": "Źródło weryfikacji (wymagane do zatwierdzenia)",
     "sourceHelp": "Opisz, jak sprawdzono podmiot prawny i uprawnienia wnioskodawcy do jego reprezentowania. Np. porównanie danych z publicznym rejestrem i sprawdzenie pełnomocnictwa. Samo pobranie danych z ARES nie wystarczy.",
     "sourceRequired": "Aby zatwierdzić, opisz sprawdzenie organizacji i uprawnień wnioskodawcy.",

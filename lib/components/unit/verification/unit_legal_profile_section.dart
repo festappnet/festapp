@@ -27,7 +27,8 @@ class UnitLegalProfileSection extends StatefulWidget {
       _UnitLegalProfileSectionState();
 }
 
-class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
+class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection>
+    with WidgetsBindingObserver {
   final _form = GlobalKey<FormState>();
   final _controllers = {
     for (final key in [
@@ -68,8 +69,22 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
     ConnectivityService.isOfflineNotifier.addListener(_connectionChanged);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        mounted &&
+        !_dirty &&
+        !_busy &&
+        !_lookingUp &&
+        !_loading &&
+        !ConnectivityService.isOfflineNotifier.value) {
+      _reload();
+    }
   }
 
   void _connectionChanged() {
@@ -78,6 +93,7 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     ConnectivityService.isOfflineNotifier.removeListener(_connectionChanged);
     for (final c in _controllers.values) c.dispose();
     super.dispose();
@@ -402,6 +418,74 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
         child: Text(t(key), style: Theme.of(context).textTheme.titleMedium),
       );
 
+  Widget _verificationStatus(UnitLegalProfile profile) {
+    final colors = Theme.of(context).colorScheme;
+    final verified = profile.status == 'verified';
+    final verifiedAt = DateTime.tryParse(profile.verifiedAt ?? '')?.toLocal();
+    final icon = switch (profile.status) {
+      'verified' => Icons.verified_outlined,
+      'pending' => Icons.schedule,
+      'rejected' || 'revoked' => Icons.warning_amber_rounded,
+      _ => Icons.info_outline,
+    };
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        key: const ValueKey('legal-profile-verification-status'),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: verified
+              ? colors.primaryContainer
+              : colors.surfaceContainerHighest,
+          border: Border.all(
+              color: verified ? colors.primary : colors.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon,
+                size: 28,
+                color: verified ? colors.primary : colors.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(t(profile.status),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(t(verified
+                      ? 'verifiedDescription'
+                      : profile.status == 'pending'
+                          ? 'pendingDescription'
+                          : 'publicNotice')),
+                  if (verified && verifiedAt != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                        '${t('verifiedOn')}: ${MaterialLocalizations.of(context).formatMediumDate(verifiedAt)}'),
+                  ],
+                ])),
+          ]),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _busy ||
+                    _lookingUp ||
+                    _loading ||
+                    ConnectivityService.isOfflineNotifier.value
+                ? null
+                : _reload,
+            icon: const Icon(Icons.refresh),
+            label: Text(t('reload')),
+          ),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _profile;
@@ -431,7 +515,7 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
           key: _form,
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(t('publicNotice')),
+            if (p == null) Text(t('publicNotice')),
             if (offline)
               Padding(
                   padding: const EdgeInsets.only(top: 12),
@@ -449,7 +533,7 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
               TextButton(onPressed: _reload, child: Text(t('retry'))),
             if (p != null) ...[
               const SizedBox(height: 16),
-              Text(t(p.status), style: Theme.of(context).textTheme.titleSmall),
+              _verificationStatus(p),
               if (p.feedback?.isNotEmpty == true)
                 Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -535,9 +619,6 @@ class _UnitLegalProfileSectionState extends State<UnitLegalProfileSection> {
                 TextButton(
                     onPressed: () => showOrganizationDetails(context, _draft),
                     child: Text(t('preview'))),
-                TextButton(
-                    onPressed: blocked || offline ? null : _reload,
-                    child: Text(t('reload'))),
               ]),
             ],
           ]),

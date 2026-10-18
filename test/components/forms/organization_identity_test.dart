@@ -58,6 +58,9 @@ void main() {
         'countryOther',
         'publicNotice',
         'verified',
+        'verifiedDescription',
+        'pendingDescription',
+        'verifiedOn',
         'showDetails',
         'close',
         'explanation',
@@ -228,6 +231,112 @@ void main() {
     expect(calls.where((v) => v == 'save_unit_legal_profile'), hasLength(1));
     expect(calls, isNot(contains('submit_unit_verification')));
   });
+  for (final status in ['pending', 'verified']) {
+    testWidgets(
+        '$status legal profile shows a prominent status on mobile in dark mode',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final db = DbUnitVerification(
+          rpc: (_, __) async => {
+                'code': 200,
+                'profile': {
+                  ...identity,
+                  'status': status,
+                  if (status == 'verified') 'verifiedAt': '2026-10-18T12:00:00Z'
+                },
+              });
+      await WidgetEnvironmentFixture(
+              locale: const Locale('en'), translations: translations)
+          .pumpWidget(
+        tester,
+        MaterialApp(
+            theme: ThemeData.dark(),
+            home: Scaffold(
+                body: SingleChildScrollView(
+              child: UnitLegalProfileSection(
+                  unitId: 1, canEdit: true, service: db),
+            ))),
+      );
+      await tester.pumpAndSettle();
+      final banner =
+          find.byKey(const ValueKey('legal-profile-verification-status'));
+      expect(banner.hitTestable(), findsOneWidget);
+      expect(find.descendant(of: banner, matching: find.text(status)),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: banner, matching: find.text('${status}Description')),
+          findsOneWidget);
+      expect(
+          find
+              .descendant(of: banner, matching: find.text('reload'))
+              .hitTestable(),
+          findsOneWidget);
+      expect(
+          find.byIcon(
+              status == 'verified' ? Icons.verified_outlined : Icons.schedule),
+          findsOneWidget);
+      if (status == 'verified') {
+        expect(find.textContaining('verifiedOn:'), findsOneWidget);
+        expect(find.text('publicNotice'), findsNothing);
+        expect(find.text('pending'), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final dirty in [false, true]) {
+    testWidgets(
+        'returning to legal profile refreshes approval while preserving unsaved drafts ($dirty)',
+        (tester) async {
+      var status = 'pending';
+      var reads = 0;
+      final db = DbUnitVerification(rpc: (_, __) async {
+        reads++;
+        return {
+          'code': 200,
+          'profile': {...identity, 'status': status}
+        };
+      });
+      await WidgetEnvironmentFixture(
+              locale: const Locale('en'), translations: translations)
+          .pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+          child: UnitLegalProfileSection(unitId: 1, canEdit: true, service: db),
+        ))),
+      );
+      await tester.pumpAndSettle();
+      if (dirty) {
+        final name = find.byKey(const ValueKey('legal-profile-legalName'));
+        await tester.ensureVisible(name);
+        await tester.enterText(name, 'Unsaved organizer');
+        await tester.pump();
+      }
+      status = 'verified';
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(reads, dirty ? 1 : 2);
+      if (dirty) {
+        expect(
+            tester
+                .widget<TextFormField>(
+                    find.byKey(const ValueKey('legal-profile-legalName')))
+                .controller!
+                .text,
+            'Unsaved organizer');
+      } else {
+        expect(find.text('verifiedDescription'), findsOneWidget);
+        expect(find.text('pending'), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   Finder field(String name) => find.byKey(ValueKey('legal-profile-$name'));
   String value(WidgetTester tester, String name) =>
       tester.widget<TextFormField>(field(name)).controller!.text;
