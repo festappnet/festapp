@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "aksmcz",
-  "baseMainSha": "ba080c122098d9186426ce8d072607d3e9610f36",
+  "baseMainSha": "11fa8259b679853b4b32b2768791cfe8915d2b6b",
   "release": {
     "version": "0.20.259+743",
     "note": "Dependency updates and production occasion setup wizard"
