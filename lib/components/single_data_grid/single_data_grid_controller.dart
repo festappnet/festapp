@@ -111,6 +111,10 @@ class SingleDataGridController<T extends ITrinaRowModel> {
   final T Function()? getNewObject;
   final T Function(T)? copyObject;
   final BuildContext context;
+
+  /// Confirms a deletion batch and returns its executor; null cancels the save.
+  final Future<Future<void> Function(T)?> Function(BuildContext, List<T>)?
+      prepareDeletion;
   final DataGridActionsController? actionsExtended;
   final List<DataGridAction>? headerChildren;
   final ExportOptions? exportOptions;
@@ -196,6 +200,7 @@ class SingleDataGridController<T extends ITrinaRowModel> {
     this.refreshOnTabActivation = true,
     this.headerChildren,
     this.actionsExtended,
+    this.prepareDeletion,
     this.getNewObject,
     this.copyObject,
     this.exportOptions,

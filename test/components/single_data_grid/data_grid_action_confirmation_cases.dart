@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/views/order_delete_dialog.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,5 +140,57 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Zaplatit'));
     await tester.pumpAndSettle();
     expect(result, isTrue);
+  });
+  testWidgets(
+      'Fakturoid deletion is opt-in and cancellation discards the choice',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    bool? result;
+    var hasFakturoid = true;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => ElevatedButton(
+                      onPressed: () async {
+                        result = await showOrderDeleteDialog(context,
+                            orders: [OrderModel(id: 1, orderSymbol: 'ORDER1')],
+                            hasFakturoid: hasFakturoid);
+                      },
+                      child: const Text('Open'),
+                    )))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        isFalse);
+    await tester.tap(find.widgetWithText(ElevatedButton, CommonStrings.delete));
+    await tester.pumpAndSettle();
+    expect(result, isFalse);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(OrdersStrings.deleteFakturoidInvoice));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
+    await tester.pumpAndSettle();
+    expect(result, isNull);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        isFalse);
+    await tester.tap(find.text(OrdersStrings.deleteFakturoidInvoice));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, CommonStrings.delete));
+    await tester.pumpAndSettle();
+    expect(result, isTrue);
+    hasFakturoid = false;
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNothing);
+    await tester.tap(find.widgetWithText(ElevatedButton, CommonStrings.delete));
+    await tester.pumpAndSettle();
+    expect(result, isFalse);
+    expect(tester.takeException(), isNull);
   });
 }

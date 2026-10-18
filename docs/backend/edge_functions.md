@@ -50,6 +50,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `send-tickets` | Enqueues PDF ticket email through the canonical global queue. |
 | `report-exchange-rates` | Verified-user, fixed CNB endpoint proxy; one-hour cache, dated indicative CZK rates, no event data or service-role path. |
 | `preview-ticket-layout` | Unit-editor JWT for editor resources and synthetic PDF; saved-only resolve also accepts existing occasion editor/viewer permissions (including tenant-scoped demos), rejects all layout/artwork overrides, and performs no writes. |
+| `delete-order` | Unit manager/editor or organization admin deletion with optional Fakturoid invoice removal before the canonical order command. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON. Customer access requires the order capability and an issued ticket in that journey; editor/system access retains its existing authorization. Responses are not cached. |
 | `fetch-transactions` | Occasion-editor adapter that requests a pull from BankSync; no direct bank access. |
 | `instance-install` | Operator-only bootstrap SQL tool; explicitly excluded from canonical production. |
@@ -211,3 +212,26 @@ revocation recovery minting, with database leases and UUID checks. Google MFA
 uses an encrypted proof session and real GoTrue challenge, never OTP-derived AAL2.
 See [the operation guide](../operations/auth/google-sign-in.md) for configuration,
 rollout, cleanup, native links and rollback.
+
+## Order deletion with Fakturoid
+
+The Orders grid offers an unchecked invoice-deletion option only when the unit
+has Fakturoid configured. Without it, existing order deletion remains unchanged.
+`delete-order` requires a user JWT and an explicit `deleteFakturoidInvoice: true`.
+`get_order_deletion_context_v1` checks unit manager/editor or organization admin rights, demo protection
+and waitlist restrictions before privileged credentials are read. Requests with a
+command ID charge the shared order mutation burst budget before provider work;
+metadata reads and completed receipt replays do not charge it. Invoice lookup
+uses the checkout command UUID; historical orders without it use a bounded
+fulltext VS search, fetch invoice details and reject ambiguous/mismatched results.
+The gateway calls the documented Fakturoid v3 DELETE endpoint. Provider refusal
+or uncertain transport failure preserves the local order. A missing invoice is
+idempotent success. It never recursively deletes related accounting documents.
+
+The final user-scoped deletion RPC rechecks rights and constraints and publishes
+the usual client sync replacements. These two systems cannot share a transaction:
+if SQL fails after invoice deletion, the local order remains and retry finishes it.
+A persisted client command ID and authorized receipt lookup recover a lost success
+response without another provider mutation. Configure/release the SQL migration,
+Function bundle and client together; local tests stub Fakturoid and never delete
+real invoices.

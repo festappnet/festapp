@@ -120,6 +120,11 @@
       "anon": false,
       "authenticated": false,
       "service_role": false
+    },
+    "public.get_order_deletion_context_v1(bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {

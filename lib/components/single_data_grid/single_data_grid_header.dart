@@ -260,7 +260,12 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
       toDelete.map((x) => controller.fromPlutoJson(x.toJson())),
     );
 
-    if (deleteList.isNotEmpty) {
+    Future<void> Function(T) deleteItem = (item) => item.deleteMethod(context);
+    if (deleteList.isNotEmpty && controller.prepareDeletion != null) {
+      final executor = await controller.prepareDeletion!(context, deleteList);
+      if (executor == null) return;
+      deleteItem = executor;
+    } else if (deleteList.isNotEmpty) {
       var result = await DataGridActionConfirmation.show(
         context: context,
         title: CommonStrings.confirmRemoval,
@@ -290,7 +295,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
 
     for (var element in deleteList) {
       actions.add(() async {
-        await element.deleteMethod(context);
+        await deleteItem(element);
         if (!mounted) return;
         ToastHelper.Show(
             context, "${CommonStrings.deleted}: ${element.toBasicString()}");

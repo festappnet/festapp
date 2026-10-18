@@ -191,7 +191,60 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     return result;
   }
 
-  return { preparePayment, getEmailAttachment };
+  async function deleteInvoice({ config, commandId, variableSymbol: expected }: {
+    config: FakturoidConfig;
+    commandId?: string | null;
+    variableSymbol: string | number;
+  }): Promise<void> {
+    const { headers } = await access(config);
+    let invoice: Invoice | undefined;
+    if (commandId) {
+      invoice = await findInvoice(config, commandId, headers);
+    } else {
+      // Historical invoices predate checkout UUIDs. Never guess among matches.
+      if (!/^\d{1,10}$/.test(String(expected))) {
+        throw new Error("FAKTUROID_VARIABLE_SYMBOL_INVALID");
+      }
+      const url = new URL(
+        `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/search.json`,
+      );
+      url.searchParams.set("query", String(expected));
+      const response = await request(url, { headers });
+      if (!response.ok) throw new Error(`Fakturoid lookup failed ${response.status}`);
+      const invoices = await response.json();
+      if (!Array.isArray(invoices) || invoices.length > 1 ||
+        response.headers.get("Link")?.includes('rel="next"')) {
+        throw new Error("FAKTUROID_INVOICE_LOOKUP_AMBIGUOUS");
+      }
+      if (invoices[0]) {
+        const id = invoices[0].id;
+        if (!Number.isSafeInteger(id) || id <= 0) throw new Error("FAKTUROID_INVOICE_ID_INVALID");
+        const detail = await request(
+          `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${id}.json`,
+          { headers },
+        );
+        // It may have been removed independently after the search returned it.
+        if (detail.status === 404) return;
+        if (!detail.ok) throw new Error(`Fakturoid lookup failed ${detail.status}`);
+        invoice = await detail.json();
+      }
+    }
+    // Also completes retries after the invoice was removed but SQL failed.
+    if (!invoice) return;
+    assertFakturoidVariableSymbol(invoice, expected);
+    if (!Number.isSafeInteger(invoice.id) || invoice.id <= 0) {
+      throw new Error("FAKTUROID_INVOICE_ID_INVALID");
+    }
+    const response = await request(
+      `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
+      { method: "DELETE", headers },
+    );
+    if (response.status !== 204 && response.status !== 404) {
+      throw new Error(`Fakturoid delete failed ${response.status}`);
+    }
+  }
+
+  return { preparePayment, getEmailAttachment, deleteInvoice };
 }
 
 export const fakturoidGateway = createFakturoidGateway();
