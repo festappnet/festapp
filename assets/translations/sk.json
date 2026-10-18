@@ -1,5 +1,14 @@
 {
   "OrganizationVerification": {
+    "sourceRequiredLabel": "Zdroj overenia (povinné na schválenie)",
+    "sourceHelp": "Opíšte, ako ste overili právny subjekt aj oprávnenie žiadateľa zastupovať ho. Napr. porovnanie údajov s verejným registrom a kontrola poverenia žiadateľa. Samotné načítanie z ARES nestačí.",
+    "sourceRequired": "Na schválenie opíšte overenie organizácie a oprávnenia žiadateľa.",
+    "feedbackRequiredLabel": "Spätná väzba (povinné pri zamietnutí alebo odobratí)",
+    "feedbackHelp": "Vysvetlite organizátorovi dôvod zamietnutia alebo odobratia overenia a čo má napraviť.",
+    "feedbackRequired": "Uveďte organizátorovi dôvod zamietnutia alebo odobratia overenia.",
+    "noteOptionalLabel": "Interná poznámka (voliteľné)",
+    "sourceTooLong": "Zdroj overenia môže mať najviac 2 000 znakov.",
+    "reviewTextTooLong": "Text môže mať najviac 4 000 znakov.",
     "countryLabel": "Krajina",
     "countryCzechia": "Česko",
     "countrySlovakia": "Slovensko",

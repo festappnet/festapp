@@ -1,5 +1,14 @@
 {
   "OrganizationVerification": {
+    "sourceRequiredLabel": "Verification source (required to approve)",
+    "sourceHelp": "Describe how you checked both the legal entity and the applicant’s authority to represent it. For example, compare details against a public register and check the applicant’s authorization. An ARES lookup alone is not enough.",
+    "sourceRequired": "To approve, describe the checks of the organization and the applicant’s authority.",
+    "feedbackRequiredLabel": "Feedback (required to reject or revoke)",
+    "feedbackHelp": "Explain to the organizer why verification is being rejected or revoked and what needs to be corrected.",
+    "feedbackRequired": "Give the organizer a reason for rejecting or revoking verification.",
+    "noteOptionalLabel": "Internal note (optional)",
+    "sourceTooLong": "The verification source must not exceed 2,000 characters.",
+    "reviewTextTooLong": "The text must not exceed 4,000 characters.",
     "countryLabel": "Country",
     "countryCzechia": "Czechia",
     "countrySlovakia": "Slovakia",

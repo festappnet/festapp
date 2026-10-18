@@ -1,5 +1,14 @@
 {
   "OrganizationVerification": {
+    "sourceRequiredLabel": "Prüfquelle (für Genehmigung erforderlich)",
+    "sourceHelp": "Beschreiben Sie, wie Sie die juristische Person und die Vertretungsberechtigung des Antragstellers geprüft haben. Zum Beispiel: Daten mit einem öffentlichen Register abgleichen und die Vollmacht prüfen. Eine ARES-Abfrage allein genügt nicht.",
+    "sourceRequired": "Beschreiben Sie für die Genehmigung die Prüfung der Organisation und der Vertretungsberechtigung.",
+    "feedbackRequiredLabel": "Rückmeldung (bei Ablehnung oder Entzug erforderlich)",
+    "feedbackHelp": "Erklären Sie dem Veranstalter den Grund für die Ablehnung oder den Entzug und was zu korrigieren ist.",
+    "feedbackRequired": "Nennen Sie dem Veranstalter den Grund für die Ablehnung oder den Entzug.",
+    "noteOptionalLabel": "Interne Notiz (optional)",
+    "sourceTooLong": "Die Prüfquelle darf höchstens 2.000 Zeichen enthalten.",
+    "reviewTextTooLong": "Der Text darf höchstens 4.000 Zeichen enthalten.",
     "countryLabel": "Land",
     "countryCzechia": "Tschechien",
     "countrySlovakia": "Slowakei",
