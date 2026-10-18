@@ -466,3 +466,43 @@ Cadence/retention validation passed the complete normal automation lane, the
 six retention cases (including mixed exact v1/v2 sets, unknown-format custody
 and changed-size rejection), and the monitor's 18-hour threshold boundary.
 These checks do not constitute production timer installation.
+
+
+## Actual new backup, PITR and first complete v2 recovery attempt
+
+Backup `20261018T163914Z` completed in approximately 29m55s and passed off-host
+verification. It contains exactly four encrypted v2 artifacts, no Storage
+archive and no plaintext artifacts. Selected manifest SHA-256:
+`c76db6511c266c230a4e8135984290f658a44f017f55fc62c164eb829656a2ff`.
+Independent acquisition from the retained iCloud key/reader verified every
+artifact again. The matching public Edge source cache contains all 34 entrypoints
+and prepared in 32.96s before any private data/key entered the recovery VM.
+Both IPv4/IPv6 guest egress guards preceded private transfer.
+
+Actual PITR using full `20261018-031955F` paused at
+`2026-10-18T16:44:59.063008Z` for the selected 16:45 UTC target; catalog and
+isolated REST reads passed in 25.15s. The initial attempt exhausted the local
+24 GB VM disk. Its receipt is preserved; only the local disk increased to
+32 GB, keeping two CPUs, 4 GB RAM and no mounts. Production was untouched.
+Acquisition duration was not captured and is not invented. This selected older
+PITR copy does not establish a current wall-clock recovery point.
+
+The first complete v2 application drill failed at Caddy startup after 86.58s:
+its fixture port 8081 collided with postgres-meta's actual admin listener at
+`PG_META_PORT+1`. The pinned image source confirms that listener. The next
+source change uses isolated public proxy port 18081 and makes Studio's image
+health check probe its actual fixture port 3001, leaving the original port
+3000 assigned to PostgREST. This changes no production service or request path.
+Failure evidence is retained; no success, orphan/font proof or source retirement
+is claimed from that attempt.
+
+Cadence PR #489 merged as `868e89d4531140556dbd441ef03d0d95ed929581`; its
+four exact backup/monitor files are installed and verified. The persistent
+timer's catch-up attempt stopped on the held deployment backup lock before
+creating any new artifact. Its journal was preserved and only the failed status
+was reset, without retrying a backup. Normal monitoring then passed; the timer
+is enabled with both daily points and unchanged 14-day/four-week retention.
+
+The fixture port/health correction passed 15 targeted archive/Edge/service
+isolation cases and the complete normal automation lane. Its actual complete
+v2 retry remains the decisive validation before production retirement.

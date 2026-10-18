@@ -71,6 +71,11 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
    assert kind=='edgeRuntime' and re.fullmatch(r'festapp-recovery-edge-cache-[a-f0-9]{12}',cache_volume)
    args+=['--mount','type=volume,src='+cache_volume+',dst=/root/.cache/deno']
   if kind=='caddy':args+=['--cap-add=NET_BIND_SERVICE']
+  if kind=='studio':
+   # The shared isolated namespace uses 3000 for PostgREST. The image's
+   # production-default health probe would target that service instead of Studio.
+   args+=['--health-cmd', "node -e \"fetch('http://127.0.0.1:3001/api/platform/profile').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+          '--health-interval','3s','--health-timeout','3s','--health-retries','10','--health-start-period','5s']
   if limits:args+=['--memory',str(limits['mem_limit']),'--cpus',limits['cpus'],'--pids-limit',str(limits['pids_limit'])]
   for key,value in environment.items():args+=['-e',key+'='+value]
   if prepare:args+=['--entrypoint','sh']
