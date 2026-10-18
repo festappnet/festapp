@@ -20,6 +20,23 @@ Deno Edge Functions, and Integration tests.
 ./automation/test_all.sh
 ```
 
+Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
+and every web release build. Install its pinned runner with
+`npm install -g agent-browser@0.33.1 && agent-browser install`.
+`npm --prefix web_client run test:form-access-browser` exercises the real HTML,
+Main startup, form routing, mobile login/Google handoff and editor/visitor access
+for open and closed forms. Backend transport and the final provider/admin
+handoffs are simulated; element visibility is checked in the browser.
+
+The Google broker also runs against actual SQL in the seat-checkout CI job.
+To reproduce it against a bootstrapped disposable local database, run:
+
+```bash
+GOOGLE_AUTH_DATABASE_URL="$DATABASE_URL" deno test --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
+```
+
+This mode rejects remote/unmarked databases and rolls back admission counters.
+
 ### B. Running Only Database Tests
 
 Use when modifying SQL functions or migrations.

@@ -22,6 +22,8 @@ on:
       - 'web_client/package*.json'
       - 'web_client/src/**'
       - 'web_client/scripts/test_seat_checkout_browser.mjs'
+      - 'web_client/scripts/test_form_access_browser.mjs'
+      - 'web_client/tests/fixtures/form_access/**'
       - 'web_client/tests/fixtures/seat_checkout/**'
       - '.github/workflows/seat-checkout-regressions.yml'
   pull_request:
@@ -51,6 +53,13 @@ jobs:
         working-directory: web_client
       - run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: '2.9.0'
+      - name: Google broker admission against real SQL
+        env:
+          GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
       - name: Database contract and anonymous checkout
         run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test
       - name: Click a seat and complete checkout in a real browser

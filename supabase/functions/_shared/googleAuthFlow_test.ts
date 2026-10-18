@@ -7,6 +7,20 @@ Deno.test("broker bootstraps a host-only cookie, validates signed OIDC and excha
   const env = { SUPABASE_URL: "https://broker-fixture.invalid", SUPABASE_ANON_KEY: "anon", SUPABASE_SERVICE_ROLE_KEY: "service", GOOGLE_OIDC_CLIENT_ID: "client-fixture", GOOGLE_OIDC_CLIENT_SECRET: "secret-fixture", GOOGLE_OIDC_CALLBACK_URL: "https://api.fixture.invalid/functions/v1/google-auth-callback", GOOGLE_AUTH_ENCRYPTION_KEY: "ab".repeat(32), GOOGLE_AUTH_MAILBOX_HMAC_KEY: "cd".repeat(32) };
   const previous = Object.fromEntries(Object.keys(env).map(k=>[k,Deno.env.get(k)]));
   for(const [k,v] of Object.entries(env)) Deno.env.set(k,v);
+  const databaseUrl = Deno.env.get("GOOGLE_AUTH_DATABASE_URL");
+  async function sql(statement: string) {
+    const result = await new Deno.Command("psql", {
+      args: [databaseUrl!, "-XAtq", "-v", "ON_ERROR_STOP=1", "-c", statement],
+      stdout: "piped", stderr: "piped",
+    }).output();
+    if (!result.success) throw new Error(new TextDecoder().decode(result.stderr));
+    return new TextDecoder().decode(result.stdout).trim();
+  }
+  if (databaseUrl) {
+    assert(["localhost", "127.0.0.1", "[::1]"].includes(new URL(databaseUrl).hostname), "require a loopback test database");
+    assertEquals(await sql("SELECT count(*) FROM festapp_test_support.disposable_environment WHERE singleton"), "1");
+    console.log("Google admission uses the real SQL contract in a disposable database");
+  }
   const originalFetch=globalThis.fetch;
   const client={client_id:"1:web:https://app.fixture.invalid",organization:1,origin:"https://app.fixture.invalid",redirect_uri:"https://app.fixture.invalid/google-auth",enabled:true};
   let attempt: Record<string,unknown> = {};
@@ -28,6 +42,15 @@ Deno.test("broker bootstraps a host-only cookie, validates signed OIDC and excha
     const body=JSON.parse(String(init?.body??'{}'));
     if(url.pathname.endsWith('/consume_auth_abuse_v1')) {
       // Match the canonical SQL admission contract, including digest encoding.
+      if (databaseUrl) {
+        const quote = (value: string) => "'" + value.replaceAll("'", "''") + "'";
+        // Roll back each admission: no fixtures or counters survive this test.
+        const accepted = await sql(`BEGIN;
+          SET LOCAL request.jwt.claims='{"role":"service_role"}';
+          SELECT public.consume_auth_abuse_v1(${quote(body.p_family)}, ${quote(body.p_key_hash)});
+          ROLLBACK;`);
+        return json(accepted === "t");
+      }
       return json(/^[0-9a-f]{64}$/.test(body.p_key_hash));
     }
     if(url.pathname.endsWith('/google_auth_transition_v1')){
