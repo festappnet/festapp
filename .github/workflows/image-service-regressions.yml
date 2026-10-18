@@ -35,3 +35,4 @@ jobs:
           node --check automation/image-migration/copy-assets.mjs
           node automation/generate_storage_asset_migration.mjs --check
           node --test automation/image-migration/tests/verified-copy.test.js
+          node --test automation/image-migration/tests/remote-r2.test.js
