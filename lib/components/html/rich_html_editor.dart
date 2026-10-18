@@ -372,6 +372,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         if (widget.toolbarActions != null) widget.toolbarActions!,
         HtmlView(
             html: controller.html,
+            embeddedBlock: controller.embeddedBlock,
             imageBytesResolver: controller.media.previewBytes),
       ]);
     return OverlayPortal(
@@ -737,6 +738,35 @@ class _PreservedBuilder implements ComponentBuilder {
       SingleColumnLayoutComponentViewModel model) {
     final node = controller.editor.document.getNodeById(model.nodeId);
     if (node is! PreservedHtmlNode) return null;
+    final block = controller.embeddedBlock;
+    if (block != null && block.matches(node.html)) {
+      return BoxComponent(
+        key: context.componentKey,
+        child: AnimatedBuilder(
+            animation: controller,
+            builder: (buildContext, _) {
+              return Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  IconButton(
+                    tooltip: HtmlStrings.moveUp,
+                    onPressed: controller.canMoveBlock(node.id, -1)
+                        ? () => controller.moveBlock(node.id, -1)
+                        : null,
+                    icon: const Icon(Icons.arrow_upward),
+                  ),
+                  IconButton(
+                    tooltip: HtmlStrings.moveDown,
+                    onPressed: controller.canMoveBlock(node.id, 1)
+                        ? () => controller.moveBlock(node.id, 1)
+                        : null,
+                    icon: const Icon(Icons.arrow_downward),
+                  ),
+                ]),
+                block.builder(buildContext),
+              ]);
+            }),
+      );
+    }
     return BoxComponent(
         key: context.componentKey,
         child: HtmlView(

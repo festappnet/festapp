@@ -35,7 +35,12 @@ class HtmlEditorDocument {
         if (child is dom.Element) {
           final tag = child.localName!;
           if (tag == 'head' || tag == 'style' || tag == 'title') continue;
-          if (tag == 'img') {
+          if (tag == 'div' && child.classes.contains('html-editor-block')) {
+            add(
+                [child],
+                PreservedHtmlNode(
+                    id: Editor.createNodeId(), html: child.outerHtml));
+          } else if (tag == 'img') {
             add(
                 [child],
                 ImageNode(
@@ -123,6 +128,34 @@ class HtmlEditorDocument {
   void adoptFragment(HtmlEditorDocument fragment) {
     _envelopes.addAll(fragment._envelopes);
     _baseline.addAll(fragment._baseline);
+  }
+
+  /// Retained table cells and other HTML envelopes are layout boundaries.
+  bool canMoveNode(String nodeId, int newIndex) {
+    final index = document.getNodeIndexById(nodeId);
+    if (index < 0 || newIndex < 0 || newIndex >= document.length) return false;
+    final containers = <String, dom.Node>{};
+    void visit(dom.Node node) {
+      if (node is dom.Comment && (node.data ?? '').startsWith('html-editor:')) {
+        containers[node.data!.substring(12)] = node.parentNode!;
+      }
+      for (final child in node.nodes) {
+        visit(child);
+      }
+    }
+
+    visit(_template);
+    dom.Node containerAt(int position) {
+      // Newly inserted nodes inherit the preceding retained slot's container,
+      // matching encode()'s insertion rule.
+      for (var i = position; i >= 0; i--) {
+        final container = containers[document.getNodeAt(i)!.id];
+        if (container != null) return container;
+      }
+      return _body(_template);
+    }
+
+    return identical(containerAt(index), containerAt(newIndex));
   }
 
   bool get isUnchanged =>

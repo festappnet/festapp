@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/html/html_strings.dart';
+import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
+import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
 
 import 'package:image/image.dart' as test_image;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -38,6 +40,47 @@ void insert(RichHtmlEditorController controller, String text) {
 void _ignoreHtml(String _) {}
 
 void main() {
+  testWidgets(
+      'countdown renders live inside the editor and moves with controls',
+      (tester) async {
+    final target = DateTime.now().add(const Duration(days: 2));
+    final controller = RichHtmlEditorController(
+      initialHtml: '<p>Before</p>$countdownBlockHtml<p>After</p>',
+      owner: const HtmlMediaOwner.none(),
+      embeddedBlock: countdownBlock(target, () {}),
+    );
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+      body:
+          SingleChildScrollView(child: RichHtmlEditor(controller: controller)),
+    )));
+    await tester.pump();
+    expect(find.byType(CountdownWidget), findsOneWidget);
+    await tester.tap(find.byTooltip(HtmlStrings.moveUp));
+    await tester.pump();
+    expect(controller.html, startsWith(countdownBlockHtml));
+    await tester.tap(find.byTooltip(HtmlStrings.moveDown));
+    await tester.pump();
+    expect(controller.html, '<p>Before</p>$countdownBlockHtml<p>After</p>');
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: CountdownContent(
+      targetTime: target,
+      onFinished: () {},
+      html: controller.html,
+    ))));
+    await tester.pump();
+    expect(find.byType(CountdownWidget), findsOneWidget);
+    expect(find.text('Before', findRichText: true), findsOneWidget);
+    expect(find.text('After', findRichText: true), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Before', findRichText: true)).dy,
+        lessThan(tester.getTopLeft(find.byType(CountdownWidget)).dy));
+    expect(tester.getTopLeft(find.text('After', findRichText: true)).dy,
+        greaterThan(tester.getBottomLeft(find.byType(CountdownWidget)).dy));
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);

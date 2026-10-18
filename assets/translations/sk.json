@@ -694,6 +694,8 @@
     "noResults": "Žiadne výsledky."
   },
   "HtmlEditor": {
+    "moveUp": "Posunúť hore",
+    "moveDown": "Posunúť dole",
     "bold": "Tučné",
     "italic": "Kurzíva",
     "underline": "Podčiarknuté",

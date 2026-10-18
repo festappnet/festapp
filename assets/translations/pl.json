@@ -695,6 +695,8 @@
     "noResults": "Brak wyników."
   },
   "HtmlEditor": {
+    "moveUp": "Przesuń w górę",
+    "moveDown": "Przesuń w dół",
     "bold": "Pogrubienie",
     "italic": "Kursywa",
     "underline": "Podkreślenie",

@@ -28,6 +28,14 @@ export class CountdownWidget {
             </div>
         `;
         
+        const titleElement = widget.querySelector('.countdown-title');
+        const timerRow = widget.querySelector('.countdown-timer-row');
+        const slots = titleElement.querySelectorAll('div.html-editor-block.form-countdown');
+        if (slots.length) {
+            slots[0].replaceWith(timerRow);
+            // One schedule owns one timer even if pasted HTML duplicated its slot.
+            for (const slot of [...slots].slice(1)) slot.remove();
+        }
         container.appendChild(widget);
 
         // Update Function
