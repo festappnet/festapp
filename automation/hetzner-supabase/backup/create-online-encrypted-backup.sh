@@ -9,6 +9,7 @@ readonly EVIDENCE_ROOT="${FESTAPP_BACKUP_EVIDENCE_ROOT:-/var/lib/festapp-rehears
 readonly RETENTION_DAYS="${FESTAPP_BACKUP_RETENTION_DAYS:-14}"
 readonly WEEKLY_COPIES="${FESTAPP_BACKUP_WEEKLY_COPIES:-4}"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ASSET_FORMAT_FILE="/etc/festapp-backup/asset-format"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ "$(id -u)" == "0" && "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] ||
@@ -55,20 +56,44 @@ EOF
 readonly DATABASE="$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' "$COMPOSE_DIR/.env")"
 [[ "$DATABASE" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || fail "runtime database is invalid"
 cd "$COMPOSE_DIR"
+asset_format=1
+if [[ -e "$ASSET_FORMAT_FILE" ]]; then
+  [[ "$(stat -c '%U:%G:%a' "$ASSET_FORMAT_FILE")" == "root:root:600" &&
+     "$(cat "$ASSET_FORMAT_FILE")" == "2" ]] || fail "invalid canonical asset backup activation"
+  [[ -f /etc/festapp-backup/images.env ]] || fail "canonical asset reader is required"
+  [[ "$(stat -c '%U:%G:%a' /etc/festapp-assets/orphan-custody.json)" == "root:root:600" ]] || fail "private orphan provenance is required"
+  inventory_sha="$(docker compose exec -T db psql -X -U postgres -d "$DATABASE" -Atqv ON_ERROR_STOP=1 \
+    -c 'BEGIN READ ONLY; SELECT inventory_sha256 FROM public.canonical_asset_cutover WHERE singleton; COMMIT;')"
+  # Reference preparation is committed atomically with this seal. Account
+  # cleanup stays fenced until the new backup and isolated restore succeed.
+  [[ "$inventory_sha" =~ ^[a-f0-9]{64}$ ]] || fail "canonical references are not prepared"
+  jq -e --arg sha "$inventory_sha" '.version==1 and .source_manifest_sha256==$sha and (.objects|type)=="array"' \
+    /etc/festapp-assets/orphan-custody.json >/dev/null || fail "orphan provenance belongs to another cutover"
+  asset_format=2
+fi
+database_capture_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 docker compose exec -T db pg_dump -U postgres -d "$DATABASE" -Fc |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/postgres.dump.age"
+database_capture_completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 docker compose exec -T db pg_dumpall -U postgres --globals-only |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/globals.sql.age"
-COPYFILE_DISABLE=1 tar --format=pax --xattrs --xattrs-include='user.supabase.*' -C volumes/storage -cf - . |
-  age -r "$AGE_RECIPIENT" -o "$RUN_DIR/storage.tar.age"
+if [[ "$asset_format" == "1" ]]; then
+  COPYFILE_DISABLE=1 tar --format=pax --xattrs --xattrs-include='user.supabase.*' -C volumes/storage -cf - . |
+    age -r "$AGE_RECIPIENT" -o "$RUN_DIR/storage.tar.age"
+fi
 if [[ -f /etc/festapp-backup/images.env ]]; then
-  python3 "$SCRIPT_DIR/create-r2-image-archive.py" --output "$RUN_DIR/r2-images.tar.age"
+  asset_capture_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  image_options=()
+  [[ "$asset_format" == "1" ]] || image_options+=(--asset-format)
+  python3 "$SCRIPT_DIR/create-r2-image-archive.py" --output "$RUN_DIR/r2-images.tar.age" "${image_options[@]}"
+  asset_capture_completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 fi
 bash "$SCRIPT_DIR/archive-runtime.sh" |
   age -r "$AGE_RECIPIENT" -o "$RUN_DIR/runtime.tar.age"
 
 artifacts='{}'
-artifact_files=(postgres.dump.age globals.sql.age storage.tar.age runtime.tar.age)
+artifact_files=(postgres.dump.age globals.sql.age runtime.tar.age)
+[[ "$asset_format" != "1" ]] || artifact_files+=(storage.tar.age)
 [[ ! -f "$RUN_DIR/r2-images.tar.age" ]] || artifact_files+=(r2-images.tar.age)
 for file in "${artifact_files[@]}"; do
   [[ -s "$RUN_DIR/$file" ]] || fail "empty encrypted artifact: $file"
@@ -79,9 +104,12 @@ jq -n --arg run_id "$RUN_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg source_host "$EXPECTED_HOSTNAME" --arg source_database "$DATABASE" \
   --arg bucket "$R2_BUCKET" --arg prefix "backups/$EXPECTED_HOSTNAME/$RUN_ID" \
   --argjson retention_days "$RETENTION_DAYS" --argjson artifacts "$artifacts" \
-  --argjson weekly_copies "$WEEKLY_COPIES" \
-  '{version:1,run_id:$run_id,created_at:$created_at,source_host:$source_host,
-    source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,storage_extended_attributes:true,
+  --argjson weekly_copies "$WEEKLY_COPIES" --argjson asset_format "$asset_format" \
+  --arg db_started "$database_capture_started_at" --arg db_completed "$database_capture_completed_at" \
+  --arg assets_started "${asset_capture_started_at:-}" --arg assets_completed "${asset_capture_completed_at:-}" \
+  '{version:$asset_format,format:(if $asset_format==2 then "festapp-assets" else "legacy-storage" end),run_id:$run_id,created_at:$created_at,source_host:$source_host,
+    source_database:$source_database,encrypted:true,plaintext_artifacts_written:false,storage_extended_attributes:($asset_format==1),
+    capture_points:{database:{started_at:$db_started,completed_at:$db_completed},assets:{started_at:$assets_started,completed_at:$assets_completed},atomic:false},
     consistency:"online-operational-backup-not-promotion-rpo0",destination:{provider:"cloudflare-r2",
     bucket:$bucket,prefix:$prefix,independent_failure_domain:true},retention_days:$retention_days,
     weekly_copies:$weekly_copies,artifacts:$artifacts}' >"$RUN_DIR/manifest.json"

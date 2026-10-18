@@ -286,6 +286,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
     python3 -m unittest discover -s "$SCRIPT_DIR/image-migration/tests" -p 'test_*.py'
     node "$SCRIPT_DIR/generate_storage_asset_migration.mjs" --check
     python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_r2_image_archive.py'
+    python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_backup_asset_manifest.py'
     node --test "$SCRIPT_DIR/image-migration/tests/verified-copy.test.js"
     node --test "$SCRIPT_DIR/image-migration/tests/remote-r2.test.js"
     node "$SCRIPT_DIR/tests/font_config.test.mjs"

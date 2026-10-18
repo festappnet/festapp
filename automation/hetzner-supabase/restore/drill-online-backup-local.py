@@ -3,21 +3,20 @@
 No SSH, DB URL, host data mount, integration service or production target accepted.
 Actual production backup acquisition/key recovery remains an operational gate.
 """
-import argparse,datetime,hashlib,json,os,re,shutil,subprocess,tempfile,time,tarfile,traceback
+import argparse,datetime,hashlib,json,os,re,shutil,subprocess,sys,tempfile,time,tarfile,traceback
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from backup_manifest import validate_artifacts
 
 def run(args,**kw):
  return subprocess.run(args,check=True,**kw)
 
 def validate_manifest(folder):
  m=json.loads((folder/'manifest.json').read_text())
- assert m['version']==1 and m['encrypted'] is True
- assert m['consistency']=='online-operational-backup-not-promotion-rpo0'
+ validate_artifacts(m)
  assert re.fullmatch(r'\d{8}T\d{6}Z',m['run_id'])
  assert m['source_host']=='festapp-supabase-rehearsal-01'
  assert m['source_database']=='festapp_rehearsal_20260909220601'
- required={'postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age'}
- assert required<=set(m['artifacts'])<=required|{'r2-images.tar.age'}
  for name in m['artifacts']:
   path=folder/name;a=m['artifacts'][name]
   with path.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
@@ -54,6 +53,8 @@ def main():
  p.add_argument('--rebuild-storage-metadata',action='store_true')
  p.add_argument('--consume-downloaded-artifacts',action='store_true',help='Delete each local encrypted input only after successful decryption; retain manifest and off-host backups')
  a=p.parse_args();m=validate_manifest(a.backup_dir)
+ canonical_assets=m['version']==2
+ assert not canonical_assets or not (a.storage_consistency or a.rebuild_storage_metadata),'canonical recovery never restores Storage'
  assert not a.edge_cache_volume or a.gateway_smoke,'edge recovery requires gateway smoke'
  assert not a.gateway_smoke or a.service_smoke,'gateway drill requires service smoke'
  assert not a.admin_resources or a.service_smoke,'admin resource drill requires service smoke'
@@ -69,7 +70,8 @@ def main():
  # No production secrets/SQL in terminal output. Full logs stay in a protected local tempdir.
  with tempfile.TemporaryDirectory(prefix='festapp-local-restore-') as tmp:
   work=Path(tmp);os.chmod(work,0o700)
-  filenames=['postgres.dump','globals.sql','storage.tar','runtime.tar']
+  filenames=['postgres.dump','globals.sql','runtime.tar']
+  if not canonical_assets:filenames.append('storage.tar')
   if 'r2-images.tar.age' in m['artifacts']:filenames.append('r2-images.tar')
   # Avoid exhausting the workstation disk and causing Docker WAL fsync failures.
   # Consumption is opt-in and only happens after the complete set passed hashes.
@@ -82,7 +84,7 @@ def main():
    if a.consume_downloaded_artifacts:source.unlink()
   # Inspect archive members without extracting or executing runtime config.
   counts={};storage_files={}
-  for filename in ('storage.tar','runtime.tar'):
+  for filename in (('runtime.tar',) if canonical_assets else ('storage.tar','runtime.tar')):
    with tarfile.open(work/filename) as archive:
     members=archive.getmembers()
     assert all(not Path(x.name).is_absolute() and '..' not in Path(x.name).parts and not x.issym() and not x.islnk() and (x.isfile() or x.isdir()) for x in members),'unsafe archive member'
@@ -135,7 +137,7 @@ def main():
     smoke="BEGIN READ ONLY; SELECT count(*) FROM public.organizations; SELECT count(*) FROM auth.users; SELECT count(*) FROM storage.objects; COMMIT;"
     run(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atqc',smoke],stdout=log,stderr=log)
     consistency=None
-    if a.storage_consistency or a.service_smoke:
+    if not canonical_assets and (a.storage_consistency or a.service_smoke):
      query="BEGIN READ ONLY; SELECT coalesce(json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'size',metadata->>'size')),'[]'::json) FROM storage.objects; COMMIT;"
      # Object names remain in memory only, never stdout/evidence/logs.
      rows=subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log)
@@ -145,17 +147,38 @@ def main():
      from r2_archive import verify_archive
      query="BEGIN READ ONLY; SELECT coalesce(json_agg(link),'[]'::json) FROM public.images WHERE link LIKE 'https://img.festapp.net/%' OR link LIKE 'https://a.img.festapp.net/%'; COMMIT;"
      references=json.loads(subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log))
+     if canonical_assets:
+      query="BEGIN READ ONLY; SELECT coalesce(json_agg(json_build_object('bucket',bucket,'key',object_key,'sha256',sha256,'bytes',bytes,'content_type',content_type)),'[]'::json) FROM public.canonical_assets WHERE deleted_at IS NULL; COMMIT;"
+      references+=json.loads(subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-v','ON_ERROR_STOP=1','-Atq','-c',query],stderr=log))
+      inventory_sha=subprocess.check_output(['docker','exec',name,'psql','-X','-U','postgres','-d','isolated_restore','-Atqv','ON_ERROR_STOP=1','-c',
+       "BEGIN READ ONLY; SELECT inventory_sha256 FROM public.canonical_asset_cutover WHERE singleton; COMMIT;"],stderr=log).decode().strip()
+      with tarfile.open(work/'runtime.tar') as archive:
+       member=archive.getmember('etc/festapp-assets/orphan-custody.json')
+       assert member.isfile() and member.size<=16*1024*1024
+       custody=json.load(archive.extractfile(member))
+      assert custody['version']==1 and custody['source_manifest_sha256']==inventory_sha,'orphan provenance/cutover mismatch'
+      for obj in custody['objects']:
+       assert obj['source_storage_record'] is None and obj['visibility']=='private' and obj['destination']['bucket']=='festapp-images-private'
+       assert obj['custody']['application_write_grant'] is False
+       references.append({'bucket':obj['destination']['bucket'],'key':obj['destination']['key'],'sha256':obj['source']['sha256'],
+        'bytes':obj['source']['size'],'content_type':obj['metadata']['mimetype']})
+      here=Path(__file__).resolve().parent
+      registry=json.loads((here.parent/'merge/source-registry.json').read_text())
+      hosts={'api.festapp.net'}|{source['project_ref']+'.supabase.co' for source in registry['sources']}
+      rows=subprocess.check_output(['docker','exec','-i',name,'psql','-X','-U','postgres','-d','isolated_restore','-qAtv','ON_ERROR_STOP=1'],input=(here/'current_asset_fields.sql').read_bytes(),stderr=log)
+      from r2_archive import application_references
+      for row in rows.splitlines():references+=application_references(json.loads(row),hosts)
      r2_consistency=verify_archive(work/'r2-images.tar',references)
     application=None
     if a.service_smoke:
-     assert consistency['consistent'],'inconsistent Storage prevents application recovery proof'
+     assert canonical_assets or consistency['consistent'],'inconsistent Storage prevents application recovery proof'
      from service_smoke import application_reads
-     application=application_reads(name,pins,work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata,gateway_archive=work/'runtime.tar' if a.gateway_smoke else None,edge_cache_volume=a.edge_cache_volume)
+     application=application_reads(name,pins,None if canonical_assets else work/'storage.tar',log,admin_resources=a.admin_resources,rebuild_metadata=a.rebuild_storage_metadata,gateway_archive=work/'runtime.tar' if a.gateway_smoke else None,edge_cache_volume=a.edge_cache_volume)
     result={'version':1,'status':'pass' if r2_consistency is None or r2_consistency['consistent'] else 'inconsistent-r2-references','backup_run_id':m['run_id'],'backup_manifest_sha256':hashlib.sha256((a.backup_dir/'manifest.json').read_bytes()).hexdigest(),
      'source_backup_consistency':m['consistency'],'isolated':True,'network':'none','ports':False,'host_mounts':False,
      'application_services_started':bool(application),'application_reads':application,'runtime_executed':bool(a.gateway_smoke),'runtime_execution_scope':'public proxy configuration and backed-up Edge sources' if a.edge_cache_volume else ('public proxy entrypoint/config only' if a.gateway_smoke else 'none'),'runtime_env_or_integration_credentials_loaded':False,'local_encrypted_downloads_consumed':a.consume_downloaded_artifacts,'archive_inventory':counts,'storage_consistency':consistency,'r2_consistency':r2_consistency,
      'database_read_smoke':True,'globals_errors_checked':True,'rto_seconds':round(time.monotonic()-started,2),
-     'rpo_seconds':None,'pitr_proven':False,'note':'Online DB, Storage and R2 are not one coordinated recovery point; key-loss recovery and cross-store consistency require separate evidence.'}
+     'rpo_seconds':None,'pitr_proven':False,'selected_capture_points':m.get('capture_points'),'note':'Online DB and files are not one coordinated recovery point; PITR, key-loss recovery and cross-store consistency require separate evidence.'}
    except Exception as error:
     # Preserve protected diagnostics only, not decrypted data or role passwords.
     # Errors from pg_restore can contain row values, so never print these logs.

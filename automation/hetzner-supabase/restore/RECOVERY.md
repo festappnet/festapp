@@ -1,5 +1,33 @@
 # Independent recovery bootstrap
 
+New canonical asset sets use manifest version 2 (`format=festapp-assets`). They
+contain DB, globals, runtime and the complete public/private R2 asset archive;
+they reject a Storage archive. Version 1 remains an explicit reader for retained
+historical sets. Do not relabel old sets or infer atomic DB/file capture: inspect
+the separate `capture_points` intervals and compare references against the
+selected asset snapshot. Daily logical backups do not establish the 15-minute
+database objective; healthy archived WAL and an independently verified PITR
+restore establish that boundary.
+
+The version 2 drill checks all current application fields, canonical registry
+hashes, sizes and MIME, plus private orphan provenance from the encrypted runtime
+archive. Its service smoke starts no Storage or imgproxy. Package
+`backup_manifest.py`, `current_asset_fields.sql`, `r2_archive.py`, the canonical
+`automation/image-migration/storage_references.py` parser and
+`automation/hetzner-supabase/merge/source-registry.json` at their repository-relative
+locations with the recovery sources. The private downloader also requires
+`backup_manifest.py` beside it. Preserve the original independent kit and its
+identity when preparing a new source version.
+
+Production activation requires the committed reference inventory seal and a
+matching root-owned mode-0600 `/etc/festapp-assets/orphan-custody.json`, then the
+root-owned mode-0600 `/etc/festapp-backup/asset-format` containing `2`. The marker
+selects two canonical asset buckets without changing encryption, destination,
+retention or timers. It does not activate destructive account cleanup. Before
+retiring any source, acquire a fresh version 2 off-host set with independent key
+custody and complete the actual isolated application restore. Source support and
+fixture results alone are not evidence of production activation or recovery.
+
 The user explicitly authorized an iCloud recovery copy on 2026-10-16. The
 private ZIP contains the existing age identity, encrypted pgBackRest escrow,
 a separately scoped Object Read only backup-bucket credential, pinned recovery

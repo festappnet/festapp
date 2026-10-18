@@ -1,0 +1,16 @@
+\set ON_ERROR_STOP on
+BEGIN READ ONLY;
+-- Read every nongenerated application field, excluding the same named history
+-- boundary as the migration inventory. Results stay inside the private drill.
+SELECT format('SELECT v.value FROM %I.%I t CROSS JOIN LATERAL jsonb_each(to_jsonb(t)) v WHERE v.key=ANY(%L::text[]) AND v.value::text ~ %L;',
+ n.nspname,c.relname,
+ (SELECT array_agg(a.attname::text) FROM pg_attribute a WHERE a.attrelid=c.oid
+  AND a.attnum>0 AND NOT a.attisdropped AND a.attgenerated=''),
+ 'storage/v1|img[.]festapp[.]net|image-api[.]festapp[.]net')
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname IN ('public','eshop') AND c.relkind IN ('r','p') AND NOT c.relispartition
+ AND c.relname NOT LIKE 'log\_%' ESCAPE '\'
+ AND c.relname NOT IN ('email_messages','email_delivery_attempts','email_provider_events')
+ORDER BY n.nspname,c.relname
+\gexec
+COMMIT;

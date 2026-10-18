@@ -20,7 +20,7 @@ def configuration_files(runtime_archive):
    files[path]=archive.extractfile(matches[0]).read()
  return files
 
-def gateway_reads(database_container,runtime_archive,start,run,capture,http,wait,service,anon):
+def gateway_reads(database_container,runtime_archive,start,run,capture,http,wait,service,anon,retired_storage=False):
  files=configuration_files(runtime_archive)
  # Same namespace as the network-none DB: names become private loopback only.
  cds='docker/volumes/api/envoy/cds.yaml'
@@ -47,10 +47,15 @@ def gateway_reads(database_container,runtime_archive,start,run,capture,http,wait
  for port in [8000,8081]:
   assert json.loads(api(port,'/rest/v1/organizations?select=id&id=eq.1'))==[{'id':1}]
   api(port,'/auth/v1/health')
-  api(port,'/storage/v1/status')
+  if not retired_storage:
+   api(port,'/storage/v1/status')
+  else:
+   status=capture(['docker','exec',database_container,'curl','--silent','--max-time','5','-o','/dev/null','-w','%{http_code}',
+    '-H','apikey: '+service,'-H','Authorization: Bearer '+service,'http://127.0.0.1:'+str(port)+'/storage/v1/status'])
+   assert status in (b'404',b'410',b'502',b'503'),'retired Storage must not serve requests'
  counters={}
  for kind,name in [('envoy',envoy),('caddy',caddy)]:
   state=json.loads(capture(['docker','inspect',name]))[0]
   assert state['State']['Running'] and not state['State']['OOMKilled'] and state['RestartCount']==0
   counters[kind]={'running':True,'oom':False,'restarts':0}
- return {'backed_up_configuration_used':True,'public_configuration_files':len(CONFIGS),'runtime_env_or_credentials_loaded':False,'only_upstream_dns_replaced_with_private_loopback':True,'envoy_auth_storage_and_rest_reads':True,'unauthenticated_auth_request_denied':True,'caddy_to_envoy_to_restored_database_read':True,'caddy_auth_and_storage_reads':True,'provider_tls_or_external_access_tested':False,'caddy_only_additional_capability':'NET_BIND_SERVICE','services':counters}
+ return {'backed_up_configuration_used':True,'public_configuration_files':len(CONFIGS),'runtime_env_or_credentials_loaded':False,'only_upstream_dns_replaced_with_private_loopback':True,'envoy_auth_and_rest_reads':True,'storage_reads':not retired_storage,'retired_storage_unavailable':retired_storage,'unauthenticated_auth_request_denied':True,'caddy_to_envoy_to_restored_database_read':True,'provider_tls_or_external_access_tested':False,'caddy_only_additional_capability':'NET_BIND_SERVICE','services':counters}

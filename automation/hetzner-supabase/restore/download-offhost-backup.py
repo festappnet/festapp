@@ -2,6 +2,7 @@
 """Read-only off-server recovery. Requires Python 3, age and rclone."""
 import argparse,json,os,subprocess,re,hashlib
 from pathlib import Path
+from backup_manifest import validate_artifacts
 p=argparse.ArgumentParser();p.add_argument('--run');p.add_argument('--output',type=Path);p.add_argument('--pgbackrest',action='store_true');a=p.parse_args()
 os.umask(0o077);kit=Path(__file__).resolve().parent
 c=json.loads(subprocess.check_output(['age','-d','-i',str(kit/'age-identity.txt'),str(kit/'backup-reader.json.age')]))
@@ -20,10 +21,7 @@ else:
  a.output.mkdir(mode=0o700);source=prefix+'backups/festapp-supabase-rehearsal-01/'+a.run+'/'
  call('copyto',source+'manifest.json',str(a.output/'manifest.json'))
  m=json.loads((a.output/'manifest.json').read_text());assert m['run_id']==a.run and m['encrypted'] is True
- allowed={'postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age','r2-images.tar.age'}
- required={'postgres.dump.age','globals.sql.age','storage.tar.age','runtime.tar.age'}
- assert required<=set(m['artifacts'])<=allowed
- assert m['version']==1 and m['source_host']=='festapp-supabase-rehearsal-01' and m['source_database']=='festapp_rehearsal_20260909220601'
+ validate_artifacts(m)
  for name,meta in m['artifacts'].items():
   target=a.output/name;call('copyto',source+name,str(target))
   with target.open('rb') as f:assert hashlib.file_digest(f,'sha256').hexdigest()==meta['sha256']
