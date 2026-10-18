@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "15fbda4f1601075dd9a43ccc9dc2b21713c6cc72",
+  "release": {
+    "version": "0.20.258+742",
+    "note": "Dependency updates and canonical write-boundary rollout"
+  }
+}
