@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 
 register('../css_loader.mjs', import.meta.url);
 
-const dom = new JSDOM('<div id="app"></div><div id="form-page-container"></div>', {
+const dom = new JSDOM('<div id="app"></div><div id="form-page-container" style="display:none"></div>', {
     url: 'https://vstupenky.online/form/test?fbclid=facebook',
 });
 global.window = dom.window;
@@ -36,6 +36,7 @@ test('form loading never leaves an empty page while the request is pending', asy
         const loading = RouterService.handleInitialLoad().then(() => { handled = true; });
         await requestStarted;
         assert.equal(handled, false, 'startup must not report ready before rendering the form');
+        assert.equal(document.getElementById('form-page-container').style.display, 'block', 'the page host must be visible while loading');
         assert.equal(document.getElementById('form-page-container').textContent, '');
         assert.ok(document.querySelector('#form-page-container .sp-loader[role="status"][aria-label]'));
         finish(null);

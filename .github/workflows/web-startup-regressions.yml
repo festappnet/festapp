@@ -20,6 +20,8 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: web_client/package-lock.json
+      - name: Install isolated Chromium test runner
+        run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - name: Install web test dependencies
         working-directory: web_client
         run: npm ci --no-audit --no-fund

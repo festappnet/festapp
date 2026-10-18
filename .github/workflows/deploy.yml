@@ -112,6 +112,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install isolated Chromium test runner
+        run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - id: flutter-version
         name: Read canonical Flutter version
         run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"

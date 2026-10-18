@@ -19,4 +19,9 @@ node --test \
   tests/components/user_header_admin_navigation.test.js \
   tests/components/blueprint_viewport.test.js \
   tests/core/gesture_controller.test.js \
-  tests/forms/form_loading.test.js
+  tests/forms/form_loading.test.js \
+  tests/forms/order_editor_button_lifecycle.test.js \
+  tests/core/google_auth_service.test.js
+
+# Real Chromium must see the form and account actions, including hidden ancestors.
+node scripts/test_form_access_browser.mjs

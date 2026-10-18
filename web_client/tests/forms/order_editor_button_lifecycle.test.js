@@ -6,8 +6,9 @@ import { JSDOM } from 'jsdom';
 register('../css_loader.mjs', import.meta.url);
 
 for (const role of ['occasion editor', 'unit editor', 'visitor']) {
-  test(`${role}: edit button follows permissions through order completion`, async (t) => {
-    const dom = new JSDOM('<div id="form-page-container"></div>', {
+ for (const closed of [false, true]) {
+  test(`${role} (${closed ? "closed" : "open"}): account header and editor access remain visible`, async (t) => {
+    const dom = new JSDOM('<div id="app" style="display:none"><div id="universal-header" class="header-hidden">Account</div></div><div id="form-page-container"></div>', {
       url: 'https://example.test/form/test',
     });
     global.window = dom.window;
@@ -37,7 +38,7 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
     t.mock.method(DbForms, 'getFormByLink', async () => model);
     t.mock.method(RightsService, 'updateAppData', async () => true);
     t.mock.method(FormAvailabilityService, 'getStatus', () => ({}));
-    t.mock.method(FormAvailabilityService, 'renderStatus', () => false);
+    t.mock.method(FormAvailabilityService, 'renderStatus', () => closed);
     t.mock.method(FormNetwork, 'submitOrder', async () => ({ success: true, data: { code: 200 } }));
     t.mock.method(RouterService, 'pushOverlayState', () => {});
     const navigate = t.mock.method(RouterService, 'navigateToFlutterRoute', async () => {});
@@ -49,9 +50,13 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
       page.currentSession = { payload: { form: 'test' } };
     });
     await page.init('test');
+    const header = document.getElementById('universal-header');
+    assert.equal(header.parentElement, document.body, 'account controls must be outside the hidden catalogue');
+    assert.equal(header.classList.contains('header-hidden'), false);
     const editor = role !== 'visitor';
     assert.equal(!!document.querySelector('.fab-edit'), editor);
 
+    if (closed) { page.cleanup(); return; }
     page.submitOrder(page.host.querySelector('form'), model);
     await new Promise(resolve => setImmediate(resolve));
     const overlay = document.querySelector('.fullscreen-result-overlay');
@@ -75,6 +80,7 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
     assert.equal(document.querySelector('.fab-edit'), null,
       'leaving the form must still remove the edit button');
   });
+ }
 }
 
 test('countdown completion refetches the same link and leaving cancels its timer', async (t) => {
