@@ -11,12 +11,15 @@ import { handlePrivate } from './serve-private';
 import { handlePresign } from './presigned';
 import { handleDelete } from './delete';
 import { errorResponse } from './responses';
+import { handleTicketFonts } from './ticket-fonts';
+import { handleAccountAssets } from './account-assets';
 
 export default {
   async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const isControlHost = url.hostname === 'image-api.festapp.net';
     const isControlPath = url.pathname === '/upload'
+      || url.pathname.startsWith('/service/')
       || url.pathname.startsWith('/private/')
       || url.pathname === '/delete'
       || url.pathname.startsWith('/presign/');
@@ -31,7 +34,13 @@ export default {
       // Route by path prefix
       let response: Response;
 
-      if (url.pathname === '/upload') {
+      if (url.pathname === '/service/account-assets') {
+        response = await handleAccountAssets(request, env);
+      } else if (url.pathname.startsWith('/service/ticket-fonts/')) {
+        response = await handleTicketFonts(request, env);
+      } else if (url.pathname.startsWith('/service/')) {
+        response = new Response(null, { status: 404 });
+      } else if (url.pathname === '/upload') {
         response = await handleUpload(request, env);
       } else if (url.pathname.startsWith('/private/')) {
         response = await handlePrivate(request, env);

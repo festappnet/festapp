@@ -1,0 +1,92 @@
+{
+  "observed_at": "2026-10-17T22:32:14.474853+00:00",
+  "verification": "read-only",
+  "repository": "akh-cr/akhweb",
+  "repository_path": "/Users/miakh/source/akhweb",
+  "main_sha": "e5f6cdfc89c30eabb4c5f5919e830437d485b21a",
+  "repository_clean": true,
+  "canonical_akh_upload_delete": {
+    "api": "https://image-api.festapp.net",
+    "project_id": "akhweb",
+    "public_host": "akh.img.festapp.net",
+    "bucket": "festapp-images-akhweb",
+    "private_objects_supported": false,
+    "auth_contract": "AKH get_can_manage_images RPC through own Supabase Auth"
+  },
+  "source_evidence": [
+    "lib/actions/upload-image.ts",
+    "lib/storage-server.ts",
+    "next.config.ts",
+    "docs/storage-upload.md"
+  ],
+  "deployed_worker": {
+    "name": "festapp-image-worker",
+    "version_id": "4dfdbb33-29c1-427a-a9f5-5cc149e537ac",
+    "r2_bindings": [
+      {
+        "bucket_name": "festapp-images",
+        "name": "IMAGES_BUCKET",
+        "type": "r2_bucket"
+      },
+      {
+        "bucket_name": "festapp-images-a",
+        "name": "IMAGES_BUCKET_A",
+        "type": "r2_bucket"
+      },
+      {
+        "bucket_name": "festapp-images-akhweb",
+        "name": "IMAGES_BUCKET_AKHWEB",
+        "type": "r2_bucket"
+      },
+      {
+        "bucket_name": "festapp-images-private",
+        "name": "IMAGES_PRIVATE_BUCKET",
+        "type": "r2_bucket"
+      },
+      {
+        "bucket_name": "festapp-images-a-private",
+        "name": "IMAGES_PRIVATE_BUCKET_A",
+        "type": "r2_bucket"
+      }
+    ]
+  },
+  "public_readback": {
+    "rendered_r2_img_elements": 18,
+    "unique_rendered_r2_images": 18,
+    "public_image_samples": [
+      {
+        "status": 200,
+        "host": "akh.img.festapp.net"
+      },
+      {
+        "status": 200,
+        "host": "akh.img.festapp.net"
+      },
+      {
+        "status": 200,
+        "host": "akh.img.festapp.net"
+      }
+    ]
+  },
+  "public_site_hosts_200": [
+    "akhcr.cz",
+    "akhweb.netlify.app"
+  ],
+  "storage_url_occurrences_in_checked_public_homepage_html": 0,
+  "scope_limit": "Inspected published homepages and current main consumers, not every AKH database row or every page. No production login/upload/delete performed.",
+  "other_storage": {
+    "database_auth": "Separate AKH Supabase project iinvsjtnbyxfrdygsfpo in current repository configuration",
+    "praha_static_site": "sites/praha with repository-local images; deployed by GitHub Pages workflow"
+  },
+  "planned_bucket_retirement_impact": {
+    "akh_bucket_is_one_of_three_candidates": false,
+    "candidate_buckets": [
+      "festapp-images-temp",
+      "festapp-images-a-private",
+      "festapp-images-a"
+    ],
+    "preserve_shared_control_plane": true,
+    "akh_bucket_in_existing_eight_and_target_five": true
+  },
+  "mutations": false
+}

@@ -584,6 +584,14 @@
     "1ea71966c286876d6315586911c1c70b85514e584f1ad7af30c17ab3d0b3528d": {
       "signature": "public.get_order_deletion_context_v1(bigint,uuid)",
       "source": "database/functions/eshop_orders/get_order_deletion_context_v1.sql"
+    },
+    "5bf74d46351799fc4ca8137f0b1c945863856490c481c371b5ad84da03b2ef89": {
+      "signature": "public.get_account_deletion_asset_batch(uuid,integer)",
+      "source": "database/functions/account_deletion/asset_cleanup.sql"
+    },
+    "f465b899efd535f513f88f537910f797e7e418196ad5e9d4e108ae8d6e297805": {
+      "signature": "public.ack_account_deletion_asset(uuid,uuid,text)",
+      "source": "database/functions/account_deletion/asset_cleanup.sql"
     }
   }
 }

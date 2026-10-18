@@ -283,6 +283,10 @@ if [ "$RUN_AUTOMATION" = true ]; then
     python3 automation/assemble-integration-contract-reconciliation.py --check
     node automation/client-sync/generate_source_contract.mjs --check
     python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_client_contract_test.py'
+    python3 -m unittest discover -s "$SCRIPT_DIR/image-migration/tests" -p 'test_*.py'
+    node "$SCRIPT_DIR/generate_storage_asset_migration.mjs" --check
+    python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_r2_image_archive.py'
+    node --test "$SCRIPT_DIR/image-migration/tests/verified-copy.test.js"
     node "$SCRIPT_DIR/tests/font_config.test.mjs"
 
     echo "Running canonical PWA storage and recovery contract tests..."

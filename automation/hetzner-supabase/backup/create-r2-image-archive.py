@@ -5,17 +5,20 @@ Uses standard rclone, never changes a source object or writes plaintext files.
 import argparse,hashlib,io,json,os,shlex,subprocess,tarfile,time
 from pathlib import Path
 BUCKETS=('festapp-images','festapp-images-a','festapp-images-private','festapp-images-a-private')
+ASSET_BUCKETS=('festapp-images','festapp-images-private')
 CONFIG=Path('/etc/festapp-backup/images.env')
 
 def archive_path(bucket,key):
  assert bucket in BUCKETS and key and not key.startswith('/') and '..' not in key.split('/') and '\\' not in key
  return bucket+'/'+key
 
-def write_archive(inventories,fetch,stream):
+def write_archive(inventories,fetch,stream,*,asset_format=False):
  """All object paths/hashes stay inside the encrypted archive, not logs."""
  count=0;total=0;index=[]
  with tarfile.open(fileobj=stream,mode='w|',format=tarfile.PAX_FORMAT) as archive:
-  for bucket in BUCKETS:
+  selected=ASSET_BUCKETS if asset_format else BUCKETS
+  assert set(inventories)==set(selected),'archive inventory must cover exactly the selected topology'
+  for bucket in selected:
    seen=set()
    for obj in inventories[bucket]:
     key=obj['Path'];name=archive_path(bucket,key);assert name not in seen;seen.add(name)
@@ -36,10 +39,11 @@ def write_archive(inventories,fetch,stream):
      if source.poll() is None:source.terminate();source.wait()
     index.append({'bucket':bucket,'key':key,'size':size,'sha256':reader.digest.hexdigest(),'source_metadata':obj})
     count+=1;total+=size
-  body=json.dumps({'version':1,'objects':index},separators=(',',':')).encode()
+  manifest={'version':2,'format':'festapp-assets','buckets':list(ASSET_BUCKETS),'objects':index} if asset_format else {'version':1,'objects':index}
+  body=json.dumps(manifest,separators=(',',':')).encode()
   member=tarfile.TarInfo('.r2-objects.json');member.size=len(body);member.mode=0o600
   archive.addfile(member,io.BytesIO(body))
- return {'objects':count,'bytes':total,'buckets':list(BUCKETS)}
+ return {'objects':count,'bytes':total,'buckets':list(selected),'archive_version':2 if asset_format else 1}
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);a=p.parse_args()

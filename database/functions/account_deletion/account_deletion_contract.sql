@@ -186,38 +186,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_account_deletion_storage_batch(
-  p_request_id uuid,
-  p_limit integer DEFAULT 100
-) RETURNS jsonb
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE v_user uuid; v_result jsonb;
-BEGIN
-  PERFORM public.require_service_role();
-  IF p_limit < 1 OR p_limit > 1000 THEN
-    RAISE EXCEPTION 'account_deletion_invalid_storage_batch_limit' USING ERRCODE = '22023';
-  END IF;
-  SELECT user_id INTO v_user
-  FROM public.account_deletion_requests
-  WHERE id=p_request_id AND status IN ('deletion_pending','failed');
-  IF v_user IS NULL THEN
-    RAISE EXCEPTION 'account_deletion_request_state_conflict' USING ERRCODE = '55000';
-  END IF;
-  SELECT COALESCE(jsonb_agg(jsonb_build_object(
-    'bucketId', item.bucket_id, 'name', item.name
-  ) ORDER BY item.bucket_id,item.name),'[]'::jsonb)
-  INTO v_result
-  FROM (
-    SELECT bucket_id,name FROM storage.objects
-    WHERE owner_id=v_user::text
-    ORDER BY bucket_id,name LIMIT p_limit
-  ) item;
-  RETURN v_result;
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION public.update_account_deletion_job(
   p_request_id uuid,
   p_auth_deleted boolean DEFAULT NULL,
@@ -227,23 +195,28 @@ CREATE OR REPLACE FUNCTION public.update_account_deletion_job(
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
-DECLARE v_request public.account_deletion_requests%ROWTYPE;
+DECLARE v_request public.account_deletion_requests%ROWTYPE; v_assets_done boolean;
 BEGIN
   PERFORM public.require_service_role();
+  SELECT * INTO v_request FROM public.account_deletion_requests WHERE id=p_request_id FOR UPDATE;
+  v_assets_done := COALESCE(v_request.assets_prepared AND
+    (SELECT active FROM public.canonical_asset_cutover WHERE singleton) AND
+    NOT EXISTS(SELECT 1 FROM public.account_deletion_assets WHERE request_id=p_request_id AND deleted_at IS NULL) AND
+    NOT EXISTS(SELECT 1 FROM public.canonical_assets WHERE owner_id=v_request.user_id::text AND deleted_at IS NULL),false);
   UPDATE public.account_deletion_requests SET
     auth_deleted=coalesce(p_auth_deleted,auth_deleted),
     onesignal_deleted=coalesce(p_onesignal_deleted,onesignal_deleted),
     error_class=p_error_class,
     status=CASE
-      WHEN public_deleted AND coalesce(p_auth_deleted,auth_deleted)
+      WHEN v_assets_done AND public_deleted AND coalesce(p_auth_deleted,auth_deleted)
         AND coalesce(p_onesignal_deleted,onesignal_deleted) THEN 'completed'
       WHEN p_error_class IS NOT NULL THEN 'failed' ELSE 'deletion_pending' END,
     completed_at=CASE
-      WHEN public_deleted AND coalesce(p_auth_deleted,auth_deleted)
+      WHEN v_assets_done AND public_deleted AND coalesce(p_auth_deleted,auth_deleted)
         AND coalesce(p_onesignal_deleted,onesignal_deleted) THEN clock_timestamp()
       ELSE completed_at END,
     user_id=CASE
-      WHEN public_deleted AND coalesce(p_auth_deleted,auth_deleted)
+      WHEN v_assets_done AND public_deleted AND coalesce(p_auth_deleted,auth_deleted)
         AND coalesce(p_onesignal_deleted,onesignal_deleted) THEN NULL ELSE user_id END,
     updated_at=clock_timestamp()
   WHERE id=p_request_id AND status IN ('deletion_pending','failed')
@@ -257,13 +230,11 @@ REVOKE ALL ON FUNCTION public.create_account_deletion_request(uuid,bigint,text,t
 REVOKE ALL ON FUNCTION public.set_account_deletion_email_state(uuid,boolean) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.claim_account_deletion(text) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.cleanup_account_deletion_domain(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_account_deletion_storage_batch(uuid,integer) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.update_account_deletion_job(uuid,boolean,boolean,text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_account_deletion_request(uuid,bigint,text,timestamptz,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.set_account_deletion_email_state(uuid,boolean) TO service_role;
 GRANT EXECUTE ON FUNCTION public.claim_account_deletion(text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cleanup_account_deletion_domain(uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_account_deletion_storage_batch(uuid,integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.update_account_deletion_job(uuid,boolean,boolean,text) TO service_role;
 REVOKE ALL ON FUNCTION public.inspect_account_deletion_token(text) FROM PUBLIC, authenticated;
 GRANT EXECUTE ON FUNCTION public.inspect_account_deletion_token(text) TO anon, service_role;
