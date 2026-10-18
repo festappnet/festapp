@@ -1,3 +1,4 @@
+import 'order_delete_dialog.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'order_state_column_width.dart';
@@ -369,6 +370,7 @@ class _OrdersContentState extends State<OrdersContent> {
     );
 
     final newController = SingleDataGridController<OrderModel>(
+      prepareDeletion: prepareOrderDeletion,
       columnHelp: {
         EshopColumnIds.PAYMENT_INFO_RETURNED: OrdersStrings.gridReturnedHelp
       },

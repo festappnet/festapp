@@ -411,6 +411,10 @@
     "surname": "Priezvisko"
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "Objednávka bude natrvalo vymazaná a zákazník ju už neuvidí. Ak chcete záznam zachovať, zvoľte storno.",
+    "deleteFakturoidInvoice": "Vymazať aj faktúru vo Fakturoidu",
+    "deleteFakturoidInvoiceHelp": "Platí pre objednávky s pripojeným Fakturoidom. Ak vymazanie dokladu zlyhá, objednávka zostane zachovaná.",
+    "deleteFakturoidInvoiceFailed": "Vymazanie objednávky a faktúry sa nepodarilo dokončiť. Obnovte zoznam a skúste to znova. Ak Fakturoid doklad blokuje, zrušte zaškrtnutie a vyriešte faktúru vo Fakturoidu.",
     "waveSeatProductTitle": "Product assigned to blueprint seats",
     "waveSeatProductHint": "Product availability cannot be changed because it is assigned to blueprint seats.",
     "waveAvailabilityUnknownTitle": "Availability changes are unavailable",

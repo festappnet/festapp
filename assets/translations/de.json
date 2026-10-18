@@ -411,6 +411,10 @@
     "surname": "Nachname"
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "Die Bestellung wird dauerhaft gelöscht und ist für den Kunden nicht mehr sichtbar. Um den Eintrag zu behalten, stornieren Sie die Bestellung.",
+    "deleteFakturoidInvoice": "Auch die Rechnung in Fakturoid löschen",
+    "deleteFakturoidInvoiceHelp": "Gilt für Bestellungen mit Fakturoid-Anbindung. Schlägt das Löschen der Rechnung fehl, bleibt die Bestellung erhalten.",
+    "deleteFakturoidInvoiceFailed": "Bestellung und Rechnung konnten nicht vollständig gelöscht werden. Aktualisieren Sie die Liste und versuchen Sie es erneut. Wenn Fakturoid die Rechnung sperrt, deaktivieren Sie die Option und klären Sie die Rechnung in Fakturoid.",
     "waveSeatProductTitle": "Product assigned to blueprint seats",
     "waveSeatProductHint": "Product availability cannot be changed because it is assigned to blueprint seats.",
     "waveAvailabilityUnknownTitle": "Availability changes are unavailable",

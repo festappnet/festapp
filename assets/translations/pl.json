@@ -411,6 +411,10 @@
     "surname": "Nazwisko"
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "Zamówienie zostanie trwale usunięte i klient nie będzie go już widzieć. Aby zachować zapis, anuluj zamówienie.",
+    "deleteFakturoidInvoice": "Usuń także fakturę w Fakturoid",
+    "deleteFakturoidInvoiceHelp": "Dotyczy zamówień połączonych z Fakturoid. Jeśli usunięcie faktury się nie powiedzie, zamówienie zostanie zachowane.",
+    "deleteFakturoidInvoiceFailed": "Nie udało się zakończyć usuwania zamówienia i faktury. Odśwież listę i spróbuj ponownie. Jeśli Fakturoid blokuje dokument, odznacz opcję i rozwiąż problem w Fakturoid.",
     "waveSeatProductTitle": "Product assigned to blueprint seats",
     "waveSeatProductHint": "Product availability cannot be changed because it is assigned to blueprint seats.",
     "waveAvailabilityUnknownTitle": "Availability changes are unavailable",

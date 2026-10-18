@@ -152,3 +152,60 @@ Deno.test("ambiguous invoice lookup cannot select the first document or create a
   const client=gateway(url=>url.endsWith("/oauth/token")?Response.json({access_token:"token"}):Response.json([{id:1},{id:2}]));
   await assertRejects(()=>client.preparePayment({config,order:order("CZK","42"),unitName:"Test",commandId:"same"}),Error,"FAKTUROID_INVOICE_LOOKUP_AMBIGUOUS");
 });
+
+Deno.test("invoice deletion uses checkout identity and DELETE, never POST invoice creation", async () => {
+  const calls: string[] = [];
+  const client = gateway((url, method) => {
+    if (url.endsWith('/oauth/token')) return Response.json({ access_token: 'token' });
+    calls.push(`${method} ${url}`);
+    return method === 'DELETE' ? new Response(null, { status: 204 })
+      : Response.json([{ id: 55, variable_symbol: '123' }]);
+  });
+  await client.deleteInvoice({ config, commandId: 'checkout', variableSymbol: '123' });
+  assertEquals(calls, [
+    'GET https://app.fakturoid.cz/api/v3/accounts/test/invoices.json?custom_id=checkout',
+    'DELETE https://app.fakturoid.cz/api/v3/accounts/test/invoices/55.json',
+  ]);
+});
+
+for (const status of [403, 422, 429, 500]) {
+  Deno.test(`invoice deletion rejects provider status ${status}`, async () => {
+    const client = gateway((url, method) => url.endsWith('/oauth/token')
+      ? Response.json({ access_token: 'token' })
+      : method === 'DELETE' ? new Response(null, { status })
+      : Response.json([{ id: 55, variable_symbol: '123' }]));
+    await assertRejects(() => client.deleteInvoice({ config, commandId: 'checkout', variableSymbol: '123' }), Error, `Fakturoid delete failed ${status}`);
+  });
+}
+
+Deno.test('invoice deletion is idempotent when the invoice is already absent', async () => {
+  const client = gateway((url) => url.endsWith('/oauth/token')
+    ? Response.json({ access_token: 'token' }) : Response.json([]));
+  await client.deleteInvoice({ config, commandId: 'checkout', variableSymbol: '123' });
+});
+
+Deno.test('legacy deletion uses fulltext search and verifies the detailed VS', async () => {
+  const calls: string[] = [];
+  const client = gateway((url, method) => {
+    calls.push(`${method} ${url}`);
+    if (url.endsWith('/oauth/token')) return Response.json({ access_token: 'token' });
+    if (url.includes('/search.json?query=123')) return Response.json([{ id: 55 }]);
+    if (method === 'DELETE') return new Response(null, { status: 204 });
+    return Response.json({ id: 55, variable_symbol: '123' });
+  });
+  await client.deleteInvoice({ config, variableSymbol: '123' });
+  assertEquals(calls.at(-1), 'DELETE https://app.fakturoid.cz/api/v3/accounts/test/invoices/55.json');
+  assertEquals(calls.length, 4);
+});
+
+Deno.test('invoice deletion rejects ambiguous lookup and a mismatched VS', async () => {
+  for (const invoices of [[{ id: 1 }, { id: 2 }], [{ id: 1, variable_symbol: '999' }]]) {
+    let deleted = false;
+    const client = gateway((url, method) => {
+      if (method === 'DELETE') deleted = true;
+      return url.endsWith('/oauth/token') ? Response.json({ access_token: 'token' }) : Response.json(invoices);
+    });
+    await assertRejects(() => client.deleteInvoice({ config, commandId: 'checkout', variableSymbol: '123' }));
+    assertEquals(deleted, false);
+  }
+});

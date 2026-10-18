@@ -553,6 +553,10 @@
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "Objednávka bude trvale smazána a zákazník ji už neuvidí. Pokud chcete záznam zachovat, zvolte storno.",
+    "deleteFakturoidInvoice": "Smazat také fakturu ve Fakturoidu",
+    "deleteFakturoidInvoiceHelp": "Platí pro objednávky s napojeným Fakturoidem. Pokud smazání dokladu selže, objednávka zůstane zachovaná.",
+    "deleteFakturoidInvoiceFailed": "Smazání objednávky s fakturou se nepodařilo dokončit. Obnovte seznam a zkuste to znovu. Pokud Fakturoid doklad blokuje, zrušte zaškrtnutí a vyřešte fakturu přímo ve Fakturoidu.",
     "searchUnpairedTransactions": "Vyhledat nespárované transakce",
     "cancel": "Stornovat",
     "synchronizePayments": "Synchronizovat platby",

@@ -553,6 +553,10 @@
     "setDefaultProduct": "Click to make this product the default option for customers."
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "The order will be permanently deleted and the customer will no longer see it. To keep the record, cancel the order instead.",
+    "deleteFakturoidInvoice": "Also delete the invoice in Fakturoid",
+    "deleteFakturoidInvoiceHelp": "Applies to orders connected to Fakturoid. If invoice deletion fails, the order is kept.",
+    "deleteFakturoidInvoiceFailed": "Could not complete deletion of the order and invoice. Refresh the list and retry. If Fakturoid blocks the invoice, uncheck the option and resolve the invoice in Fakturoid.",
     "searchUnpairedTransactions": "Search unpaired transactions",
     "cancel": "Cancel",
     "synchronizePayments": "Synchronize Payments",

@@ -1,6 +1,18 @@
 {
   "version": 1,
   "production": {
+    "delete-order": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/delete-order/delete_test.ts",
+        "supabase/functions/send-ticket-order/fakturoid_test.ts"
+      ],
+      "abusePolicy": [
+        "order.mutation"
+      ]
+    },
     "preview-ticket-layout": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"

@@ -511,6 +511,10 @@
     "title": "Розклад"
   },
   "FeatureOrders": {
+    "deleteOrderNotice": "Замовлення буде видалено назавжди, і клієнт більше його не бачитиме. Щоб зберегти запис, скасуйте замовлення.",
+    "deleteFakturoidInvoice": "Також видалити рахунок у Fakturoid",
+    "deleteFakturoidInvoiceHelp": "Стосується замовлень із підключеним Fakturoid. Якщо видалення рахунку не вдасться, замовлення буде збережено.",
+    "deleteFakturoidInvoiceFailed": "Не вдалося завершити видалення замовлення та рахунку. Оновіть список і повторіть спробу. Якщо Fakturoid блокує документ, зніміть прапорець і вирішіть питання у Fakturoid.",
     "waveSeatProductTitle": "Product assigned to blueprint seats",
     "waveSeatProductHint": "Product availability cannot be changed because it is assigned to blueprint seats.",
     "waveAvailabilityUnknownTitle": "Availability changes are unavailable",
