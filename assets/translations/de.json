@@ -1,5 +1,8 @@
 {
   "OrganizationVerification": {
+    "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",
+    "pendingDescription": "Ihr Antrag auf Prüfung der rechtlichen Angaben wartet auf die Freigabe durch einen Administrator.",
+    "verifiedOn": "Bestätigt am",
     "sourceRequiredLabel": "Prüfquelle (für Genehmigung erforderlich)",
     "sourceHelp": "Beschreiben Sie, wie Sie die juristische Person und die Vertretungsberechtigung des Antragstellers geprüft haben. Zum Beispiel: Daten mit einem öffentlichen Register abgleichen und die Vollmacht prüfen. Eine ARES-Abfrage allein genügt nicht.",
     "sourceRequired": "Beschreiben Sie für die Genehmigung die Prüfung der Organisation und der Vertretungsberechtigung.",

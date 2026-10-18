@@ -1,5 +1,8 @@
 {
   "OrganizationVerification": {
+    "verifiedDescription": "Právní údaje organizace jsou schválené a zobrazují se u vašich formulářů.",
+    "pendingDescription": "Žádost o ověření právních údajů čeká na schválení administrátorem.",
+    "verifiedOn": "Ověřeno",
     "sourceRequiredLabel": "Zdroj ověření (povinné pro schválení)",
     "sourceHelp": "Popište, jak jste ověřili právní subjekt i oprávnění žadatele jej zastupovat. Např. porovnání údajů s veřejným rejstříkem a kontrola pověření žadatele. Samotné načtení z ARES nestačí.",
     "sourceRequired": "Pro schválení popište ověření organizace a oprávnění žadatele.",
