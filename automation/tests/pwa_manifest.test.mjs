@@ -174,12 +174,15 @@ test('lazy web modules and their styles install with the shell before a deployme
  const dir=await mkdtemp(path.join(tmpdir(),'festapp-web-modules-'));
  try {
   await mkdir(path.join(dir,'web-assets'),{recursive:true});
+  await mkdir(path.join(dir,'assets','translations'),{recursive:true});
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.js'),'export {};');
   await writeFile(path.join(dir,'web-assets','blueprint-hash1234.css'),'body {}');
+  await writeFile(path.join(dir,'assets','translations','cs.json'),'{}');
   await writeFile(path.join(dir,'flutter'),'flutter');
   await writeFile(path.join(dir,'webclient'),'webclient');
   const manifest=await collectPwaShellManifest(dir);
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.js'));
   assert.ok(manifest.coreResources.includes('/web-assets/blueprint-hash1234.css'));
+  assert.ok(manifest.coreResources.includes('/assets/translations/cs.json'));
  } finally {await rm(dir,{recursive:true,force:true});}
 });

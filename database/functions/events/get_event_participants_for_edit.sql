@@ -33,7 +33,9 @@ BEGIN
       jsonb_build_object(
         'id', ui.id,
         'name', ui.name,
-        'surname', ui.surname
+        'surname', ui.surname,
+        'companion_parent', (SELECT uc."user" FROM public.user_companions uc WHERE uc.occasion=v_occasion AND uc.companion=ui.id
+          AND EXISTS(SELECT 1 FROM public.event_users parent WHERE parent.event=p_event AND parent."user"=uc."user") LIMIT 1)
       )
       ORDER BY ui.surname, ui.name, ui.id
     ),

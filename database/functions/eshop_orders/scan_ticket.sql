@@ -86,10 +86,11 @@ BEGIN
     -----------------------------------------------------
     -- 3. Retrieve the occasion ID from the order
     -----------------------------------------------------
-    SELECT o.occasion, occ.link = 'r48vetrkovice2026'
+    SELECT o.occasion, NOT coalesce((ss.config#>>'{sensitive,price}')::boolean,true)
       INTO occasion_id, hide_price
     FROM eshop.orders o
     JOIN public.occasions occ ON occ.id = o.occasion
+    LEFT JOIN public.scanner_settings ss ON ss.occasion_id=occ.id
     WHERE o.id = order_id
     LIMIT 1;
 

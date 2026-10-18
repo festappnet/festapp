@@ -25,6 +25,21 @@ export class SupabaseService {
 
     static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
 
+    // A prepared scanner can open its local shell without waiting for an Auth
+    // refresh. Online RPCs still pass through initialize() before use.
+    static initializeScannerOffline() {
+        const activation = new BackendActivationService({ storage: browserStorage });
+        const marker = browserStorage.getItem(
+            BackendActivationService.markerPrefix + AppConfig.backendActivationTenantId,
+        );
+        SupabaseService._backend = activation.enabled &&
+                marker === BackendActivationService.canonicalMarker
+            ? activation.canonical
+            : activation.legacy;
+        AppConfig.organization = SupabaseService._backend.organizationId;
+        return SupabaseService._backend;
+    }
+
     static getClient() {
         if (!SupabaseService._client) {
             if (!SupabaseService._backend) {
@@ -46,7 +61,10 @@ export class SupabaseService {
     /// any rights or business query runs.
     static initialize() {
         if (!SupabaseService._initialization) {
-            SupabaseService._initialization = SupabaseService._initialize();
+            SupabaseService._initialization = SupabaseService._initialize().catch(error => {
+                SupabaseService._initialization = null;
+                throw error;
+            });
         }
         return SupabaseService._initialization;
     }
