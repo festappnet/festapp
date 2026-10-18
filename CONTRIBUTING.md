@@ -24,7 +24,7 @@ Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
 `npm install -g agent-browser@0.33.1 && agent-browser install`.
 `npm --prefix web_client run test:form-access-browser` exercises the real HTML,
-Main startup, form routing, mobile login/Google handoff and editor/visitor access
+Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin
 handoffs are simulated; element visibility is checked in the browser.
 
