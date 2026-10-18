@@ -26,7 +26,8 @@ import 'package:easy_localization/easy_localization.dart';
 import '../form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import '../widgets_editor/form_fields_generator.dart';
-import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
+import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
+import 'package:fstapp/components/html/html_embedded_block.dart';
 
 const double kHiddenOpacity = 0.5;
 
@@ -400,7 +401,9 @@ class _FormEditorContentState extends State<FormEditorContent>
                         children: [
                           _buildHtmlFieldPreview(
                             FormStrings.labelCountdownMessage,
-                            form.definition.countdownTitle,
+                            countdownContent(form.definition.countdownTitle),
+                            embeddedBlock: countdownBlock(
+                                form.definition.startTime!, () {}),
                             (val) => setState(() => form.definition =
                                 form.definition.withCountdownTitle(val)),
                             defaultText: FormStrings.registrationStart,
@@ -408,15 +411,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                             minimal: true,
                             fontSize: 20,
                             enabled: _canEdit,
-                          ),
-                          Transform.scale(
-                            scale: 0.8,
-                            child: CountdownWidget(
-                              targetTime: form.definition.startTime!,
-                              onFinished: () {},
-                              title: null,
-                              compact: true,
-                            ),
                           ),
                         ],
                       ),
@@ -596,7 +590,8 @@ class _FormEditorContentState extends State<FormEditorContent>
 
   Widget _buildHtmlFieldPreview(
       String label, String? content, ValueChanged<String> onChanged,
-      {String? defaultText,
+      {HtmlEmbeddedBlock? embeddedBlock,
+      String? defaultText,
       String? helpText,
       bool showLabel = true,
       bool minimal = false,
@@ -642,6 +637,7 @@ class _FormEditorContentState extends State<FormEditorContent>
             padding: EdgeInsets.all(minimal ? 4 : 12),
             child: EditableHtmlField(
               html: content ?? '',
+              embeddedBlock: embeddedBlock,
               placeholder: defaultText ?? FormStrings.notSet,
               enabled: enabled && !_prototype,
               fontSize: fontSize ?? 13,

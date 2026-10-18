@@ -13,7 +13,7 @@ import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
-import 'package:fstapp/components/forms/widgets_view/countdown_widget.dart';
+import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
 
 import 'package:auto_route/auto_route.dart';
@@ -794,10 +794,9 @@ class _FormPageState extends State<FormPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CountdownWidget(
+              CountdownContent(
                 targetTime: form!.definition.startTime!,
-                title: form!.definition.countdownTitle ??
-                    FormStrings.registrationStart,
+                html: form!.definition.countdownTitle,
                 onFinished: loadData,
               ),
               if (form!.definition.showBeforeStartMessage &&

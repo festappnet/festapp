@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 
 /// Localized strings for the HTML editor.
 class HtmlStrings {
+  static String get moveUp => 'HtmlEditor.moveUp'.tr();
+  static String get moveDown => 'HtmlEditor.moveDown'.tr();
   static String get bold => 'HtmlEditor.bold'.tr();
   static String get italic => 'HtmlEditor.italic'.tr();
   static String get underline => 'HtmlEditor.underline'.tr();

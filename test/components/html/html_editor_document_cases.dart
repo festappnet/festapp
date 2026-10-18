@@ -12,6 +12,52 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  test('moving live blocks respects retained HTML table boundaries', () {
+    const html = '<table><tr><td><p>Cell</p></td></tr></table>'
+        '<div class="html-editor-block form-countdown"></div><p>After</p>';
+    final controller = RichHtmlEditorController(
+        initialHtml: html, owner: const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    final block =
+        controller.editor.document.whereType<PreservedHtmlNode>().single;
+    expect(controller.canMoveBlock(block.id, -1), isFalse);
+    controller.moveBlock(block.id, -1);
+    expect(controller.html, html);
+    expect(controller.canMoveBlock(block.id, 1), isTrue);
+    controller.moveBlock(block.id, 1);
+    expect(
+        controller.html, contains('<p>After</p><div class="html-editor-block'));
+  });
+
+  test('live block moves between text and survives editing, save and undo', () {
+    const slot = '<div class="html-editor-block form-countdown"></div>';
+    const html = '<p>Before</p>$slot<p>After</p>';
+    final controller = RichHtmlEditorController(
+        initialHtml: html, owner: const HtmlMediaOwner.none());
+    addTearDown(controller.dispose);
+    final block =
+        controller.editor.document.whereType<PreservedHtmlNode>().single;
+    controller.editor.execute([MoveNodeRequest(nodeId: block.id, newIndex: 2)]);
+    expect(controller.html, '<p>Before</p><p>After</p>$slot');
+    controller.undo();
+    expect(controller.html, html);
+    final after = controller.editor.document.last as TextNode;
+    controller.editor.execute([
+      InsertTextRequest(
+        documentPosition: DocumentPosition(
+            nodeId: after.id,
+            nodePosition: TextNodePosition(offset: after.text.length)),
+        textToInsert: ' edited',
+        attributions: {},
+      )
+    ]);
+    final saved = controller.html;
+    expect(saved, '<p>Before</p>$slot<p>After edited</p>');
+    final reloaded = HtmlEditorDocument(saved);
+    expect(reloaded.document.whereType<PreservedHtmlNode>(), hasLength(1));
+    expect(reloaded.encode(), saved);
+  });
+
   for (final name in [
     'app_content',
     'song_content',

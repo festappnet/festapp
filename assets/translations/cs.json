@@ -2232,6 +2232,8 @@
     "noResults": "Žádné výsledky."
   },
   "HtmlEditor": {
+    "moveUp": "Posunout nahoru",
+    "moveDown": "Posunout dolů",
     "bold": "Tučně",
     "italic": "Kurzíva",
     "underline": "Podtržení",

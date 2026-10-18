@@ -106,3 +106,23 @@ test('expired countdown calls reload once and stops its timer', () => {
         assert.equal(document.querySelector('.countdown-title b').textContent, 'Start');
     } finally { CountdownWidget.stop(); dom.window.close(); }
 });
+
+test('countdown keeps text and images on both sides of its movable slot', () => {
+    const dom = new JSDOM('<main></main>');
+    globalThis.document = dom.window.document;
+    try {
+        const host = document.querySelector('main');
+        CountdownWidget.render(host, {
+            startTime: new Date('2099-01-01'),
+            countdownTitle: '<p>Before</p><div class="html-editor-block form-countdown"></div><p>After</p><img src="https://example.test/plan.png"><div class="html-editor-block form-countdown"></div>',
+        });
+        const title = host.querySelector('.countdown-title');
+        const timer = title.querySelector('.countdown-timer-row');
+        assert.equal(timer.previousElementSibling.textContent, 'Before');
+        assert.equal(timer.nextElementSibling.textContent, 'After');
+        assert.equal(title.querySelector('img').src, 'https://example.test/plan.png');
+        assert.equal(host.querySelectorAll('.countdown-timer-row').length, 1);
+        assert.equal(host.querySelector('.form-countdown'), null);
+        assert.ok(Number(timer.querySelector('#cd-days').textContent) > 0);
+    } finally { CountdownWidget.stop(); dom.window.close(); }
+});

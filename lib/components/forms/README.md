@@ -21,6 +21,13 @@ If a product isn't showing, check `is_product_dynamically_available` in SQL, not
 
 ## Before registration opens
 
+The countdown message can contain an atomic `div.html-editor-block.form-countdown`
+slot. The editor shows a live timer with up/down controls between editable text
+blocks; both public clients render the timer in that saved position. Titles
+without a slot retain their historical text-then-timer layout. The slot carries
+no date: the schedule remains the only source of the opening time.
+
+
 The schedule's optional `show_before_start_message` and `before_start_message`
 add rich information below an enabled countdown. Existing forms keep countdown-only
 behavior. The message uses the normal HTML editor and media-save coordinator, so
