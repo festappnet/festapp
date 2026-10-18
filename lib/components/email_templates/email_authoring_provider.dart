@@ -62,8 +62,6 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
     return TemplateAuthoringEntry(
         code: code,
         label: _label(sub),
-        description: sub.description,
-        rich: rich,
         example:
             rich ? sampleLabel : scenario?.values[code] ?? sub.defaultValue,
         block: !singleLine && sub.kind == EmailValueKind.richBlock,

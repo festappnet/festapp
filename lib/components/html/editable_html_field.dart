@@ -213,32 +213,26 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     super.dispose();
   }
 
-  Widget _editingActions() => widget.authoring != null
-      ? IconButton(
-          tooltip: HtmlStrings.expand,
-          onPressed: _saving ? null : _expand,
-          icon: const Icon(Icons.open_in_full))
-      : Wrap(
-          alignment: WrapAlignment.end,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 12,
-          children: [
-            TextButton(
-              onPressed: _saving ? null : _requestCancel,
-              child: Text(CommonStrings.storno),
-            ),
-            FilledButton(
-              onPressed:
-                  _saving || !_controller!.hasUserChanges ? null : _apply,
-              child: Text(CommonStrings.save),
-            ),
-            IconButton(
-              tooltip: HtmlStrings.expand,
-              onPressed: _saving ? null : _expand,
-              icon: const Icon(Icons.open_in_full),
-            ),
-          ],
-        );
+  Widget _editingActions() => Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        children: [
+          TextButton(
+            onPressed: _saving ? null : _requestCancel,
+            child: Text(CommonStrings.storno),
+          ),
+          FilledButton(
+            onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
+            child: Text(CommonStrings.save),
+          ),
+          IconButton(
+            tooltip: HtmlStrings.expand,
+            onPressed: _saving ? null : _expand,
+            icon: const Icon(Icons.open_in_full),
+          ),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -273,12 +267,11 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     }
     return CallbackShortcuts(
       bindings: {
-        if (widget.authoring == null)
-          const SingleActivator(LogicalKeyboardKey.escape): () {
-            if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
-              _requestCancel();
-            }
-          },
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
+            _requestCancel();
+          }
+        },
       },
       child: Focus(
         autofocus: true,
@@ -291,7 +284,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
               RichHtmlEditor(
                 controller: _controller!,
                 textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
-                onCancel: widget.authoring == null ? _requestCancel : null,
+                onCancel: _requestCancel,
                 toolbarActions: _editingActions(),
                 enabled: !_saving && widget.enabled,
               ),

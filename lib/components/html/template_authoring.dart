@@ -18,15 +18,11 @@ class TemplateAuthoringEntry {
       {required this.code,
       required this.label,
       this.example = '',
-      this.description = '',
-      this.rich = false,
       this.block = false,
       this.url = false});
   final String code;
   final String label;
   final String example;
-  final String description;
-  final bool rich;
   final bool block;
   final bool url;
 }
