@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // One policy owner. Run only after every HTML/version transformation.
 import { createHash } from 'node:crypto';
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from '../web_client/node_modules/parse5/dist/index.js';
@@ -21,7 +21,14 @@ export function inlineHashes(html) {
   return [...hashes].sort();
 }
 export async function generateManifest(dir, target = 'cloudflare') {
-  const entries = { webclient: target === 'cloudflare' ? 'webclient' : 'index.html', flutter: target === 'cloudflare' ? 'flutter' : 'flutter.html', auth_bridge: target === 'cloudflare' ? 'auth_bridge' : 'auth_bridge.html', organizers: 'organizers-page' };
+  const entries = { webclient: target === 'cloudflare' ? 'webclient' : 'index.html', flutter: target === 'cloudflare' ? 'flutter' : 'flutter.html', auth_bridge: target === 'cloudflare' ? 'auth_bridge' : 'auth_bridge.html' };
+  // The renderer removes this optional document for other tenants. Every
+  // document that actually ships still receives its own bound CSP profile.
+  try {
+    if ((await stat(path.join(dir, 'organizers-page'))).isFile()) entries.organizers = 'organizers-page';
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   const documents = {};
   const profiles = {};
   async function add(file, profile) {

@@ -87,6 +87,8 @@ const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'
   .trim()
   .replace(/^(['"])(.*)\1$/, '$2');
 const configuredDomain = configValue('DOMAIN');
+assert.equal(Boolean(cspManifest.documents['organizers-page']), configuredDomain === 'vstupenky.online',
+  'organizer document must match the configured tenant');
 const configuredAppName = configValue('APP_NAME');
 const legalPages = [
   ['PRIVACY_URL', '/privacy/', 'privacy/index.html'],

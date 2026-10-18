@@ -38,3 +38,16 @@ test('source header copies use the same canonical owner and retain hosting rules
  const expected = template.replace('/*\n',`/*\n  Content-Security-Policy: ${BASE_POLICY}\n`);
  for (const file of ['../../web/_headers','../../web_client/public/_headers']) assert.equal(await readFile(new URL(file,import.meta.url),'utf8'),expected);
 });
+
+test('tenants without the optional organizer document retain CSP for every shipped shell', async t => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'festapp-csp-no-organizers-'));
+  t.after(() => rm(dir, {recursive:true, force:true}));
+  for (const file of ['webclient','flutter','auth_bridge']) await writeFile(path.join(dir,file), '<html><script>boot()</script></html>');
+  const manifest=await generateManifest(dir);
+  assert.deepEqual(Object.keys(manifest.documents).sort(), ['auth_bridge','flutter','webclient']);
+  assert.equal(manifest.profiles.organizers, undefined);
+  await writeFile(path.join(dir,'csp-manifest.json'),JSON.stringify(manifest));
+  await verifyManifest(dir);
+  await rm(path.join(dir,'auth_bridge'));
+  await assert.rejects(generateManifest(dir), {code:'ENOENT'});
+});
