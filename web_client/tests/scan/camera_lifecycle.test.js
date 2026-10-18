@@ -157,3 +157,18 @@ test('camera appends new tickets while lookups and confirmations are pending wit
         page.disposeControllers();clearTimeout(page.advanceTimer);
     }finally{dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
 });
+
+test('editor display settings are a direct menu action and the back arrow targets the ticket list',()=>{
+ const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});
+ const previous=globalThis.document;globalThis.document=dom.window.document;
+ try {
+  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
+  page.route={page:'scan'};page.returnPath='/PlesAKH2025-copy-ad8a55ba/reservations/tickets';
+  page.row={session:{title:'Fixture',capabilities:{settings:true},settings:{fields:[]}}};
+  page.host.innerHTML=page.shell('');
+  assert.equal(page.host.querySelector('.scan-home').getAttribute('href'),page.returnPath);
+  assert.ok(page.host.querySelector('.scan-menu nav a[href="/scan/settings"]'));
+  page.row.session.capabilities.settings=false;page.host.innerHTML=page.shell('');
+  assert.equal(page.host.querySelector('a[href="/scan/settings"]'),null);
+ }finally {globalThis.document=previous;dom.window.close();}
+});
