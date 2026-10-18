@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "ddad660166ae07400c302ed30d92fb693448d097",
+  "release": {
+    "version": "0.20.262+746",
+    "note": "Countdown, organizer verification and staged storage cleanup"
+  }
+}
