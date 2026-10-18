@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "6ce3e8ef33232c0be52dfdac0926aaca46fd59ac",
+  "release": {
+    "version": "0.20.263+747",
+    "note": "Organization administration routing fix"
+  }
+}
