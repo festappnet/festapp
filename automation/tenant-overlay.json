@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "2f8945e1596245cb4227ef25a19b8413325edfb6",
+  "release": {
+    "version": "0.20.265+749",
+    "note": "Add organizer legal profile lookup and details"
+  }
+}
