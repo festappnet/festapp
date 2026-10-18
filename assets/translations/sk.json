@@ -971,7 +971,6 @@
       "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia."
     },
     "authoring": {
-      "whenSent": "Kedy sa e-mail odosiela",
       "authoringHint": "Napíšte @ a vyberte údaj, ktorý sa doplní pri odoslaní.",
       "insertVariable": "Vložiť údaj",
       "noVariable": "Žiadny zodpovedajúci údaj",
@@ -980,7 +979,7 @@
       "variable": "Premenný údaj",
       "previewUnavailable": "Ukážku nemožno načítať. Skúste to znova.",
       "preview": "Náhľad obsahu e-mailu",
-      "previewScope": "Ukážka s aktuálnym obalom e-mailu. Údaje zákazníka a platby sú modelové. Odkazy nie sú aktívne.",
+      "previewScope": "Ukážkové údaje bez bannera. Odkazy nie sú aktívne.",
       "scenario": "Ukážka",
       "suggestTitle": "Použiť premenný názov akcie namiesto „{}“?",
       "replaceVariable": "Nahradiť údajom",
@@ -1012,10 +1011,7 @@
       "previewFrom": "Od",
       "previewTo": "Komu",
       "previewReceivedMessage": "Prijatá správa",
-      "uniqueAlreadyUsed": "Táto sekcia je už vložená. V jednom e-maile môže byť iba raz.",
-      "authoringContextUnavailable": "Vzhľad e-mailu a odosielateľa sa nepodarilo načítať. Skúste to znova.",
-      "previewSenderUnavailable": "Odosielateľ nie je dostupný",
-      "previewShort": "Náhľad"
+      "uniqueAlreadyUsed": "Táto sekcia je už vložená. V jednom e-maile môže byť iba raz."
     },
     "subject": "Predmet",
     "emailTemplateContent": "Obsah e-mailu"

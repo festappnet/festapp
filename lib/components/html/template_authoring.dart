@@ -36,7 +36,6 @@ class TemplateAuthoringEntry {
 abstract class TemplateAuthoringProvider {
   Set<String> get codes;
   bool get singleLine => false;
-  TextStyle? get textStyle => null;
   String get helper;
   String get insertLabel;
   String get emptyLabel;
@@ -55,8 +54,7 @@ abstract class TemplateAuthoringProvider {
       {bool inLink = false, bool inCode = false, bool composing = false});
   bool canInsert(String text, int offset,
       {bool inLink = false, bool inCode = false, bool composing = false});
-  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) => null;
-  Widget? header(BuildContext context) => null;
+  Widget? preview(BuildContext context, String code) => null;
   Widget? footer(BuildContext context) => null;
   void selectionChanged() {}
 }

@@ -1033,7 +1033,6 @@
     "subjectRequired": "Předmět je povinný",
     "template": "Šablona",
     "authoring": {
-      "whenSent": "Kdy se e-mail odesílá",
       "authoringHint": "Napište @ a vyberte údaj, který se doplní při odeslání.",
       "insertVariable": "Vložit údaj",
       "noVariable": "Žádný odpovídající údaj",
@@ -1042,7 +1041,7 @@
       "variable": "Proměnný údaj",
       "previewUnavailable": "Ukázku nelze načíst. Zkuste to znovu.",
       "preview": "Náhled obsahu e-mailu",
-      "previewScope": "Ukázka s aktuálním obalem e-mailu. Údaje zákazníka a platby jsou modelové. Odkazy nejsou aktivní.",
+      "previewScope": "Ukázková data bez banneru. Odkazy nejsou aktivní.",
       "scenario": "Ukázka",
       "suggestTitle": "Použít proměnný název akce místo „{}“?",
       "replaceVariable": "Nahradit údajem",
@@ -1074,10 +1073,7 @@
       "previewFrom": "Od",
       "previewTo": "Komu",
       "previewReceivedMessage": "Přijatá zpráva",
-      "uniqueAlreadyUsed": "Tato sekce je již vložena. V jednom e-mailu může být jen jednou.",
-      "authoringContextUnavailable": "Vzhled e-mailu a odesílatele se nepodařilo načíst. Zkuste to znovu.",
-      "previewSenderUnavailable": "Odesílatel není dostupný",
-      "previewShort": "Náhled"
+      "uniqueAlreadyUsed": "Tato sekce je již vložena. V jednom e-mailu může být jen jednou."
     }
   },
   "Inventory": {
