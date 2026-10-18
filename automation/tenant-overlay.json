@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festivalslunovrat",
+  "baseMainSha": "a7720c63362aa7622a29a43fe010fe428434523c",
+  "release": {
+    "version": "0.20.260+744",
+    "note": "Restore OpenStreetMap tile origin identification"
+  }
+}
