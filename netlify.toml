@@ -3,19 +3,36 @@
   publish = "build/web"
   command = "./automation/ci_build.sh"
 
+# The Netlify hostname remains only as a compatibility boundary. Preserve the
+# old worker endpoints long enough to retire cached shells and any historical
+# origin-bound push worker, then redirect every application URL to the
+# canonical Festapp hostname with its path and query intact. Jubilee itself
+# does not own a OneSignal application.
+[[redirects]]
+  from = "https://jubileum2025.netlify.app/festapp_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://jubileum2025.netlify.app/flutter_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://jubileum2025.netlify.app/push/*"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://jubileum2025.netlify.app/*"
+  to = "https://jubileum2025.festapp.net/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Edge Functions are auto-discovered from netlify/edge-functions
-# but we can explicitly register if needed, or just rely on the export config in the file.
-# The JS file exports config = { path: "/form/*" } so explicit toml entry is optional but good for visibility.
-
-[[edge_functions]]
-  path = "/form/*"
-  function = "inject-og"
-
-[[edge_functions]]
-  path = "/sitemap.xml"
-  function = "sitemap"

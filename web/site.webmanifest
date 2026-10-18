@@ -1,9 +1,9 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "Jubileum mládeže 2025",
+  "short_name": "Jubileum 2025",
+  "description": "Program a informace Jubilea mládeže 2025.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/jm2025/event",
   "scope": "/",
   "orientation": "portrait-primary",
   "icons": [
