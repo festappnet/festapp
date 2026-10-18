@@ -2584,6 +2584,11 @@
     "includingCancelled": "Včetně stornovaných"
   },
   "OccasionSetup": {
+    "draft": "Koncept",
+    "cancelDraft": "Zrušit koncept",
+    "cancellingDraft": "Ruším koncept…",
+    "cancelDraftConfirm": "Opravdu zrušit koncept „{title}“? Rozpracované nastavení bude trvale smazáno.",
+    "progress": "Dokončeno {value} %",
     "createStepByStep": "Vytvořit krok za krokem",
     "drafts": "Rozpracované koncepty",
     "untitled": "Nová událost",
