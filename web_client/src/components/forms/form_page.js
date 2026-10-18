@@ -137,6 +137,7 @@ export class FormPage extends Component {
         this.renderLoading();
         // Containment for fixed children (Embedding Support)
         this.pageHost.style.transform = 'translate(0)';
+        this.pageHost.style.display = 'block';
         this.host.style.display = 'block';
 
         // Hide the main application container to prevent layout shifts
