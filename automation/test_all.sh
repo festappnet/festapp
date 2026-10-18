@@ -291,6 +291,7 @@ if [ "$RUN_AUTOMATION" = true ]; then
     python3 -m unittest discover -s "$SCRIPT_DIR/tests" -p 'test_asset_runtime.py'
     node --test "$SCRIPT_DIR/image-migration/tests/verified-copy.test.js"
     node --test "$SCRIPT_DIR/image-migration/tests/remote-r2.test.js"
+    node --test "$PROJECT_ROOT/workers/storage-retirement/test.mjs"
     node "$SCRIPT_DIR/tests/font_config.test.mjs"
 
     echo "Running canonical PWA storage and recovery contract tests..."
