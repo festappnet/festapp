@@ -1,3 +1,4 @@
+import { unitVerificationEmail } from "./unitVerificationEmail.ts";
 import { orderEmailOverviewUrl, overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
@@ -37,6 +38,9 @@ export async function renderQueuedEmail(
   }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
     return { prepared: firstLoginEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
+  }
+  if (row.message_kind === "custom" && row.code === "UNIT_VERIFICATION_REQUEST") {
+    return { prepared: unitVerificationEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
   }
   if (row.message_kind === "order_tickets") {
     const result = await emailRpc("get_order_details_for_email", {
