@@ -48,6 +48,7 @@ const IS_APP_SUPPORTED = ${JSON.stringify(isAppSupported)};
 ${isPublicOccasionAppPath.toString()}
 ${unsupportedOccasionAppRedirect.toString()}
 ${resolveScannerRoute.toString()}
+const FORCED_OCCASION_PATH = ${JSON.stringify(isAppSupported && forcedOccasionLink ? `/${forcedOccasionLink}/event` : null)};
 const STANDALONE_DOCUMENT_PATHS = new Set(${JSON.stringify(standaloneDocuments, null, 2)});
 const PRECACHE_PATHS = new Set(PRECACHE_URLS.map((url) =>
   new URL(url, self.location.origin).pathname));
