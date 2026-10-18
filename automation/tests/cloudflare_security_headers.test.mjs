@@ -73,11 +73,17 @@ test('organization administration deep links serve Flutter without an occasion l
       ? new Response('Flutter shell', {headers: {'content-type': 'text/html'}})
       : new Response('Missing', {status: 404})},
   };
-  for (const path of ['/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/?tab=verification']) {
-    const response = await worker.fetch(new Request(origin + path), production);
-    assert.equal(response.status, 200, path);
-    assert.equal(await response.text(), 'Flutter shell', path);
-    assertPolicy(response);
+  const ticketingSource = source
+    .replace('const IS_APP_SUPPORTED = true;', 'const IS_APP_SUPPORTED = false;')
+    .replace('// PUBLIC_OCCASION_ROUTE_POLICY', readFileSync(new URL('../../web_client/src/services/public_occasion_routes.js', import.meta.url), 'utf8').replaceAll('export function ', 'function '));
+  const {default: ticketingWorker} = await import('data:text/javascript;base64,' + Buffer.from(ticketingSource).toString('base64'));
+  for (const currentWorker of [worker, ticketingWorker]) {
+    for (const path of ['/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/?tab=verification']) {
+      const response = await currentWorker.fetch(new Request(origin + path), production);
+      assert.equal(response.status, 200, path);
+      assert.equal(await response.text(), 'Flutter shell', path);
+      assertPolicy(response);
+    }
   }
   assert.equal(lookups, 0, 'platform administration is not an occasion slug');
 });
