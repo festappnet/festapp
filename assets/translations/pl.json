@@ -952,6 +952,11 @@
     "withinDeadline": "W terminie płatności"
   },
   "OccasionSetup": {
+    "draft": "Szkic",
+    "cancelDraft": "Usuń szkic",
+    "cancellingDraft": "Usuwanie szkicu…",
+    "cancelDraftConfirm": "Usunąć szkic „{title}”? Niedokończone ustawienia zostaną trwale usunięte.",
+    "progress": "Ukończono {value} %",
     "createStepByStep": "Utwórz krok po kroku",
     "createEvent": "Utwórz wydarzenie",
     "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."

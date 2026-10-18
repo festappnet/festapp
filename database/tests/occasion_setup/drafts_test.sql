@@ -62,4 +62,7 @@ BEGIN
   PERFORM public.delete_occasion_setup_draft(id,target,4);
   PERFORM assert_false(EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_occasion_setup_drafts(target)) x WHERE x->>'id'=id::text),'Deleted draft disappears');
   EXECUTE 'RESET ROLE';
+  PERFORM assert_eq((SELECT count(*) FROM public.occasions),initial_count,'Discarding a draft does not delete existing occasions');
+  PERFORM assert_eq((SELECT count(*) FROM public.forms),initial_forms,'Discarding a draft does not delete existing forms');
+  PERFORM assert_eq((SELECT count(*) FROM eshop.products),initial_products,'Discarding a draft does not delete existing products');
 END $$;

@@ -686,6 +686,13 @@
       "sources": [
         "test/data_services/client_command_identity_test.dart"
       ]
+    },
+    "test/components/occasion/occasion_setup_draft_card_test.dart": {
+      "kind": "widget",
+      "reason": "Actual draft card confirmation, pending deletion, resume interaction and responsive Flutter layout.",
+      "sources": [
+        "test/components/occasion/occasion_setup_draft_card_test.dart"
+      ]
     }
   }
 }

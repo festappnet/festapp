@@ -1,3 +1,4 @@
+import 'occasion_setup_draft_card.dart';
 import 'package:fstapp/components/occasion/past_occasion_years.dart';
 import 'package:fstapp/components/unit/app_landing.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
@@ -77,6 +78,20 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   Future<void> _resumeDraft(OccasionSetupDraft draft) async {
     await OccasionSetupPage.open(context, draft);
     if (mounted) await _loadDrafts();
+  }
+
+  Future<void> _deleteDraft(OccasionSetupDraft draft) async {
+    if (!_canEditDrafts || widget.unit.id != draft.unit) return;
+    try {
+      await OccasionSetupDrafts(Supabase.instance.client).delete(draft);
+    } on PostgrestException {
+      // A stale revision needs fresh data, never a silent destructive retry.
+      if (mounted) await _loadDrafts();
+      rethrow;
+    }
+    if (mounted && widget.unit.id == draft.unit) {
+      setState(() => _drafts.removeWhere((item) => item.id == draft.id));
+    }
   }
 
   AppLanding? _landing;
@@ -292,23 +307,31 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                               onPressed: _loadDrafts,
                               child: Text(
                                   '${_draftError!} - ${OccasionSetupStrings.retry}'))),
-                    if (_canEditDrafts && _drafts.isNotEmpty) ...[
+                    if (_canEditDrafts && _filteredDrafts.isNotEmpty) ...[
                       _buildSectionHeader(context, OccasionSetupStrings.drafts),
                       SliverToBoxAdapter(
-                          child: Column(children: [
-                        for (final draft in _filteredDrafts)
-                          ListTile(
-                              leading: const Icon(Icons.edit_note),
-                              title: Text(draft.title.isEmpty
-                                  ? OccasionSetupStrings.untitled
-                                  : draft.title),
-                              subtitle: Text(
-                                  '${OccasionSetupStrings.drafts} · ${draft.progress} %'),
-                              trailing: TextButton(
-                                  onPressed: () => _resumeDraft(draft),
-                                  child: Text(OccasionSetupStrings.resume)),
-                              onTap: () => _resumeDraft(draft)),
-                      ])),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            final columns = (constraints.maxWidth / 420)
+                                .ceil()
+                                .clamp(1, 100);
+                            final width =
+                                (constraints.maxWidth - 16 * (columns - 1)) /
+                                    columns;
+                            return Wrap(spacing: 16, runSpacing: 16, children: [
+                              for (final draft in _filteredDrafts)
+                                SizedBox(
+                                    width: width,
+                                    child: OccasionSetupDraftCard(
+                                        key: ValueKey(draft.id),
+                                        draft: draft,
+                                        onResume: () => _resumeDraft(draft),
+                                        onDelete: () => _deleteDraft(draft))),
+                            ]);
+                          }),
+                        ),
+                      ),
                     ],
                     if (_filteredOccasions.isEmpty &&
                         _filteredDrafts.isEmpty &&
