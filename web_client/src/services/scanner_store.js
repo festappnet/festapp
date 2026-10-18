@@ -1,4 +1,4 @@
-const STORES = ['sessions', 'snapshots', 'tickets', 'outbox', 'receipts', 'preferences', 'sync_leases'];
+const STORES = ['sessions', 'snapshots', 'tickets', 'outbox', 'receipts', 'preferences', 'sync_leases', 'crypto_keys'];
 const TERMINAL = new Set(['accepted', 'conflict', 'rejected']);
 export const isTerminal = state => TERMINAL.has(state);
 export class ScannerStore {
@@ -8,13 +8,14 @@ export class ScannerStore {
     async open() {
         if (!this.idb) throw new Error('storage_unavailable');
         this.db = await new Promise((resolve, reject) => {
-            const r = this.idb.open(this.name, 1);
-            r.onupgradeneeded = () => { for (const name of STORES) if (!r.result.objectStoreNames.contains(name)) r.result.createObjectStore(name, { keyPath: 'key' }); };
+            const r = this.idb.open(this.name, 2);
+            r.onupgradeneeded = () => { for (const name of STORES) if (!r.result.objectStoreNames.contains(name)) r.result.createObjectStore(name, { keyPath: 'key' }); const tickets=r.transaction.objectStore('tickets');if(!tickets.indexNames.contains('partition_symbol'))tickets.createIndex('partition_symbol',['partition','symbol_digest']); };
             r.onsuccess = () => resolve(r.result);
             r.onerror = () => reject(new Error('storage_unavailable'));
             r.onblocked = () => reject(new Error('storage_upgrade_blocked'));
         });
         this.db.onversionchange = () => { this.close(); };
+        await this.protectLegacyTickets();
         await this.put('preferences', { key: 'write-probe', at: this.now() });
         await this.transaction(['snapshots','tickets','preferences'],'readwrite',s=>{
             s.snapshots.getAll().onsuccess=e=>{
@@ -37,9 +38,66 @@ export class ScannerStore {
             tx.onerror = tx.onabort = () => reject(tx.error || new Error('storage_write_failed'));
         });
     }
-    async get(name, key) { let row; await this.transaction([name], 'readonly', s => { s[name].get(key).onsuccess = e => { row = e.target.result; }; }); return row; }
-    put(name, row) { return this.transaction([name], 'readwrite', s => s[name].put(row)); }
-    async list(name, partition) { let rows = []; await this.transaction([name], 'readonly', s => { s[name].getAll().onsuccess = e => { rows = e.target.result.filter(r => !partition || r.partition === partition); }; }); return rows; }
+    async get(name, key) { let row; await this.transaction([name], 'readonly', s => { s[name].get(key).onsuccess = e => { row = e.target.result; }; }); return name==='tickets'?this.openTicket(row):row; }
+    async put(name, row) { if(name==='tickets')row=await this.sealTicket(row);return this.transaction([name], 'readwrite', s => s[name].put(row)); }
+    async list(name, partition) { let rows = []; await this.transaction([name], 'readonly', s => { s[name].getAll().onsuccess = e => { rows = e.target.result.filter(r => !partition || r.partition === partition); }; }); return name==='tickets'?Promise.all(rows.map(row=>this.openTicket(row))):rows; }
+    async cacheKey() {
+        if (!globalThis.crypto?.subtle) throw new Error('offline_storage_unavailable');
+        if (!this.keyPromise) this.keyPromise = (async () => {
+            const existing = await this.get('crypto_keys', 'offline-tickets');
+            if (existing) return existing.value;
+            const candidate = await crypto.subtle.generateKey({name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
+            let key;
+            await this.transaction(['crypto_keys'], 'readwrite', stores => {
+                stores.crypto_keys.get('offline-tickets').onsuccess = event => {
+                    key = event.target.result?.value || candidate;
+                    if (!event.target.result) stores.crypto_keys.put({key:'offline-tickets',value:key});
+                };
+            });
+            return key;
+        })().catch(error => {this.keyPromise=null;throw error;});
+        return this.keyPromise;
+    }
+    ticketContext(row) {
+        return new TextEncoder().encode(JSON.stringify([this.name,row.key,row.partition,row.snapshot_id,row.symbol_digest]));
+    }
+    async symbolDigest(symbol) { return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(symbol)))].map(byte=>byte.toString(16).padStart(2,'0')).join(''); }
+    async sealTicket(row) {
+        const key = await this.cacheKey();
+        const symbol_digest=await this.symbolDigest(row.ticket.symbol);
+        row={...row,symbol_digest};
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:this.ticketContext(row)}, key, new TextEncoder().encode(JSON.stringify(row.ticket)));
+        const {ticket, ...metadata} = row;
+        return {...metadata,encrypted:1,iv,ciphertext};
+    }
+    async openTicket(row) {
+        if (!row) return row;
+        if (!row.encrypted) throw new Error('offline_storage_unavailable');
+        try {
+            const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:row.iv,additionalData:this.ticketContext(row)}, await this.cacheKey(), row.ciphertext);
+            const {encrypted,iv,ciphertext,...metadata}=row;
+            return {...metadata,ticket:JSON.parse(new TextDecoder().decode(plain))};
+        } catch { throw new Error('offline_storage_unavailable'); }
+    }
+    async protectLegacyTickets() {
+        let legacy=[];
+        await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.getAll().onsuccess=event=>{legacy=event.target.result.filter(row=>!row.encrypted);};});
+        // Old plaintext guest caches can be downloaded again. Durable admissions
+        // and receipts are never removed, even when encryption is unavailable.
+        for (let offset=0;offset<legacy.length;offset+=100) {
+            const batch=await Promise.all(legacy.slice(offset,offset+100).map(async row=>{try{return {row,protectedRow:await this.sealTicket(row)};}catch{return {row};}}));
+            await this.transaction(['tickets','snapshots','preferences'],'readwrite',stores=>{
+                for(const {row,protectedRow} of batch) stores.tickets.get(row.key).onsuccess=event=>{
+                    const current=event.target.result;
+                    if (!current || current.encrypted || current.snapshot_id!==row.snapshot_id) return;
+                    if (protectedRow) stores.tickets.put(protectedRow);
+                    else {stores.tickets.delete(row.key);stores.snapshots.delete(row.snapshot_id);stores.preferences.delete(`${row.partition}:active-snapshot`);}
+                };
+            });
+        }
+    }
+
     async saveSession(session, backend) {
         const partition = JSON.stringify([backend.generation, backend.origin, backend.organization, session.occasion_id, session.session_id]);
         const row = { key: partition, partition, backend, session, savedAt: this.now(), serverAt: Date.parse(session.server_time), wallAt: this.now(), locked: false };
@@ -93,11 +151,13 @@ export class ScannerStore {
             bytes += raw.byteLength; tickets.push(...JSON.parse(page.payload_text));
         }
         if (tickets.length !== manifest.ticket_count || bytes !== manifest.byte_count || new Set(tickets.map(t => t.ticket_id)).size !== tickets.length) throw new Error('snapshot_incomplete');
+        const protectedTickets=[];
+        for(let offset=0;offset<tickets.length;offset+=100) protectedTickets.push(...await Promise.all(tickets.slice(offset,offset+100).map(ticket=>this.sealTicket({key:`${partition}:${ticket.ticket_id}`,partition,ticket,snapshot_id:manifest.snapshot_id}))));
         await this.transaction(['snapshots', 'tickets', 'preferences'], 'readwrite', s => {
             // No deletion until every page/digest is verified. Pointer and ticket set commit atomically.
             s.tickets.getAll().onsuccess = e => {
                 for (const r of e.target.result) if (r.partition === partition) s.tickets.delete(r.key);
-                for (const ticket of tickets) s.tickets.put({ key: `${partition}:${ticket.ticket_id}`, partition, ticket, snapshot_id: manifest.snapshot_id });
+                for (const ticket of protectedTickets) s.tickets.put(ticket);
                 s.snapshots.put({ key: manifest.snapshot_id, partition, manifest });
                 s.preferences.put({ key: `${partition}:active-snapshot`, partition, snapshot_id: manifest.snapshot_id });
             };
@@ -110,8 +170,10 @@ export class ScannerStore {
     async lookup(partition, symbol) {
         const snapshot = await this.snapshot(partition);
         if (!snapshot || Date.parse(snapshot.expires_at) <= this.now()) throw new Error('offline_grant_expired');
-        const row = (await this.list('tickets', partition)).find(r => r.ticket.symbol === symbol);
-        if (!row) throw new Error('offline_not_found');
+        const digest=await this.symbolDigest(symbol);let encrypted;
+        await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.index('partition_symbol').get([partition,digest]).onsuccess=event=>{encrypted=event.target.result;};});
+        const row=await this.openTicket(encrypted);
+        if (!row || row.snapshot_id!==snapshot.snapshot_id || row.ticket.symbol!==symbol) throw new Error('offline_not_found');
         // Only a receipt for this exact snapshot generation can provide a used
         // overlay. A newer snapshot after admin unused has a different fingerprint.
         const accepted=(await this.list('outbox',partition)).find(op=>op.payload.ticket_id===row.ticket.ticket_id
@@ -127,7 +189,7 @@ export class ScannerStore {
             s.tickets.getAll().onsuccess = e => { for (const r of e.target.result) if (r.partition === partition) s.tickets.delete(r.key); };
         });
     }
-    close() { this.db?.close(); this.db = null; }
+    close() { this.db?.close(); this.db = null; this.keyPromise=null; }
 }
 export function offlineGrantValid(row, now = Date.now(), elapsed = 0) {
     if (!row || row.locked || !Number.isFinite(row.serverAt) || now < row.wallAt - 1000) return false;

@@ -64,7 +64,7 @@ CREATE OR REPLACE FUNCTION public.preview_scanner_ticket(p_occasion bigint,p_con
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
 BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_occasion);
+ PERFORM public.scanner_require_settings_editor_internal(p_occasion);
  PERFORM public.scanner_validate_settings_internal(p_occasion,p_config);
  SELECT dto INTO result FROM public.scanner_ticket_projection_internal(p_occasion,p_config,(SELECT id FROM eshop.tickets WHERE occasion=p_occasion AND ticket_symbol=p_symbol LIMIT 1)) WHERE dto->>'symbol'=p_symbol;
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'reason',CASE WHEN result IS NULL THEN 'not_found' END,'data',result,'server_time',now());

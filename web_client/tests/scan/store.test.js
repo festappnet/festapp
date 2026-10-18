@@ -18,3 +18,26 @@ test('C07 matching receipt blocks old snapshot reuse, but never overlays a newer
  const s=await make();const partition='p';const activate=async(id,fingerprint,time)=>{const raw=JSON.stringify([{ticket_id:1,symbol:'A',state:'sent',admission_allowed:true,eligibility_fingerprint:fingerprint}]),digest=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))).toString('hex');return s.activateSnapshot(partition,{schema_version:1,snapshot_id:id,server_time:time,expires_at:new Date(Date.now()+3600000).toISOString(),ticket_count:1,byte_count:new TextEncoder().encode(raw).length,pages:[{index:0,digest}]},[{page_index:0,payload_text:raw,digest}]);};
  await activate('old','f','2026-10-18T10:00:00Z');await s.put('outbox',{key:'op',partition,state:'accepted',payload:{ticket_id:1},receipt:{eligibility_fingerprint:'f',committed_at:'2026-10-18T11:00:00Z'}});assert.equal((await s.lookup(partition,'A')).state,'used');await activate('new','g','2026-10-18T12:00:00Z');assert.equal((await s.lookup(partition,'A')).state,'sent');assert.equal((await s.lookup(partition,'A')).admission_allowed,true);s.close();
 });
+
+test('offline guest data is encrypted at rest, survives restart, and rejects tampering',async()=>{
+ const store=await make();
+ const ticket={ticket_id:55,symbol:'PRIVATE-QR',purchaser_name:'Private purchaser',note:'Private note',state:'sent'};
+ const raw=JSON.stringify([ticket]),digest=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))).toString('hex');
+ const manifest={schema_version:1,snapshot_id:'encrypted',ticket_count:1,byte_count:new TextEncoder().encode(raw).length,expires_at:new Date(Date.now()+3600000).toISOString(),pages:[{index:0,digest}]};
+ await store.activateSnapshot('p',manifest,[{page_index:0,payload_text:raw,digest}]);
+ let encrypted;await store.transaction(['tickets'],'readonly',s=>{s.tickets.getAll().onsuccess=e=>{encrypted=e.target.result[0];};});
+ assert.equal(encrypted.ticket,undefined);assert.ok(encrypted.ciphertext instanceof ArrayBuffer);assert.equal((await store.cacheKey()).extractable,false);
+ const name=store.name;store.close();const reopened=await new ScannerStore({indexedDB,name}).open();assert.equal((await reopened.lookup('p','PRIVATE-QR')).purchaser_name,'Private purchaser');
+ new Uint8Array(encrypted.ciphertext)[0]^=1;
+ await reopened.transaction(['tickets'],'readwrite',s=>s.tickets.put(encrypted));
+ await assert.rejects(reopened.lookup('p','PRIVATE-QR'),/offline_storage_unavailable/);reopened.close();
+});
+
+test('legacy plaintext cache upgrades without removing pending admissions',async()=>{
+ const name=crypto.randomUUID();
+ const old=await new Promise((resolve,reject)=>{const request=indexedDB.open(name,1);request.onupgradeneeded=()=>{for(const key of ['sessions','snapshots','tickets','outbox','receipts','preferences','sync_leases'])request.result.createObjectStore(key,{keyPath:'key'});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
+ await new Promise((resolve,reject)=>{const tx=old.transaction(['tickets','outbox'],'readwrite');tx.objectStore('tickets').put({key:'legacy:1',partition:'legacy',snapshot_id:'old',ticket:{ticket_id:1,symbol:'LEGACY',purchaser_name:'Old private name'}});tx.objectStore('outbox').put({key:'pending',partition:'legacy',state:'pending',payload:{ticket_id:1}});tx.oncomplete=resolve;tx.onerror=reject;});old.close();
+ const store=await new ScannerStore({indexedDB,name}).open();let raw;
+ await store.transaction(['tickets'],'readonly',s=>{s.tickets.get('legacy:1').onsuccess=e=>{raw=e.target.result;};});
+ assert.equal(raw.ticket,undefined);assert.equal(raw.encrypted,1);assert.equal((await store.get('tickets','legacy:1')).ticket.purchaser_name,'Old private name');assert.equal((await store.get('outbox','pending')).state,'pending');store.close();
+});

@@ -72,13 +72,13 @@ export class ScanPage extends Component {
         }
         this.sync = this.store ? new ScannerSync({ store: this.store, api: this.api, partition: row.partition, onChange: async ({auth,latency}) => {
             if(Number.isFinite(latency))this.lastSyncLatency=latency;
-            if (auth) {this.authBlocked = true;row.locked=true;await this.store.put('sessions',row);}
+            if (auth) {this.authBlocked = true;row.locked=true;await this.store.lockSession(row.partition);}
             this.history = await this.store.list('outbox', row.partition);
             for(const c of this.controllers())await c.refreshOperation(); this.render();
         } }) : null;
-        this.preferences=(await this.store?.get('preferences',`${row.partition}:display`))?.data || {};
         this.controller = this.createController();
         this.render(); await this.recover();
+        if (this.store && row.session.capabilities.offline) navigator.serviceWorker?.ready?.then(()=>{if(!this.disposed&&this.row===row&&!this.snapshot){this.lastSnapshotAttempt=0;this.recover();}}).catch(()=>{});
         if (this.route.page === 'settings') await this.showSettings();
     }
     controllers() { return this.batch?.map(item=>item.controller) || (this.controller?[this.controller]:[]); }
@@ -127,25 +127,27 @@ export class ScanPage extends Component {
         if(this.mode==='camera'){if(this.input.stream)this.updateCameraState();else if(!auto||this.cameraWasStarted)this.startCamera();}else this.host.querySelector('[name=symbol]')?.focus();
     }
     resultHtml(c,inGroup=false) {
-        return scanResult({...c,inGroup,ticket:c.ticket?{...c.ticket,fields:c.ticket.fields?.map(f=>({...f,default_visible:this.preferences[f.key]??f.default_visible}))}:null},this.storageAvailable && !this.authBlocked && !this.row.locked && !this.batchConfirming);
+        return scanResult({...c,inGroup},this.storageAvailable && !this.authBlocked && !this.row.locked && !this.batchConfirming);
     }
     batchHtml() {
         if(!this.batch)return '';
         const eligible=this.batch.filter(({controller:c})=>c.state==='result' && c.ticket?.admission_allowed && !c.ticket.requires_unpaid_confirmation).length;
         const busy=this.batchConfirming || this.batch.some(({controller:c})=>['ready','looking_up','persisting','awaiting_server'].includes(c.state));
-        const card=({symbol,controller:c,index:i})=>{
+        const card=({symbol,controller:c,index:i,sharedOrder=false})=>{
             const used=(c.state==='result'&&c.ticket?.state==='used')||(['conflict','rejected'].includes(c.state)&&c.operation?.receipt?.reason==='already_used');
             const good=c.state==='accepted',pending=['pending','sending','persisting','awaiting_server'].includes(c.state),unpaid=c.state==='result'&&c.ticket?.requires_unpaid_confirmation,valid=c.state==='result'&&c.ticket?.admission_allowed&&!unpaid;
             const label=good?tr('accepted'):pending?tr(c.state):c.error?reasonText(c.error):c.state==='ready'||c.state==='looking_up'?tr('looking_up'):c.state==='result'?tr(c.ticket?.state==='used'?'already_used':c.ticket?.requires_unpaid_confirmation?'unpaid':valid?'valid':'not_allowed'):c.operation?.receipt?reasonText(c.operation.receipt.reason):tr(c.state);
             const expanded=this.groupDetailController===c;
             const named=c.ticket?.holder_name && c.ticket.holder_name!==symbol;
-            const heading=named?c.ticket.holder_name:c.error?tr('unknown_ticket'):c.ticket?.spot?`${tr('spot')} ${c.ticket.spot}`:c.ticket?tr('ticket_label'):symbol;
+            const purchaser=c.ticket?.purchaser_name;
+            const seatHeading=c.ticket?.spot?`${tr('spot')} ${c.ticket.spot}`:null;
+            const heading=named?c.ticket.holder_name:c.error?tr('unknown_ticket'):!sharedOrder&&purchaser?purchaser:seatHeading|| (c.ticket?tr('ticket_label'):symbol);
             const products=(c.ticket?.products||[]).filter(product=>!(c.ticket.spot && product.type==='spot' && scannerProductTitle(product).trim().toLocaleLowerCase()===product.type_title?.trim().toLocaleLowerCase()));
-            const extras=`${named&&c.ticket?.spot?`<span class="scan-group-seat">${tr('spot')} ${e(c.ticket.spot)}</span>`:''}${products.length?`<span class="scan-group-products">${products.sort((a,b)=>Number(b.type==='food')-Number(a.type==='food')).map(product=>`<span class="${product.type==='food'?'scan-product-food':''}">${e(scannerProductCaption(product))}</span>`).join('')}</span>`:''}`;
+            const extras=`${!sharedOrder&&purchaser&&purchaser!==heading?`<span class="scan-group-purchaser">${tr('purchaser')}: ${e(purchaser)}</span>`:''}${c.ticket?.spot&&heading!==seatHeading?`<span class="scan-group-seat">${tr('spot')} ${e(c.ticket.spot)}</span>`:''}${products.length?`<span class="scan-group-products">${products.sort((a,b)=>Number(b.type==='food')-Number(a.type==='food')).map(product=>`<span class="${product.type==='food'?'scan-product-food':''}">${e(scannerProductCaption(product))}</span>`).join('')}</span>`:''}`;
             return `<div class="scan-group-item"><button id="scan-group-ticket-${i}" data-group-ticket="${i}" aria-expanded="${expanded}" aria-controls="scan-group-detail-${i}" class="${good?'complete':pending?'pending':unpaid?'unpaid':used?'already-used':valid?'allowed':'blocked'}"><span class="scan-group-number">${i+1}</span><span class="scan-group-body"><span class="scan-group-title"><strong>${e(heading)}</strong><span class="scan-ticket-status" aria-label="${e(label)}">${icon(good||valid?'ticket_check':pending?'clock':used?'ticket':'alert')}${e(valid?tr('valid_short'):label)}</span></span>${extras}${scannerNotes(c.ticket,{order:!this.batch.some(item=>item!==this.batch[i]&&item.controller.ticket?.order_id!=null&&item.controller.ticket.order_id===c.ticket?.order_id)})}${!c.ticket?`<small>${e(symbol)}</small>`:''}</span></button><section id="scan-group-detail-${i}" class="scan-group-detail" aria-labelledby="scan-group-ticket-${i}" ${expanded?'':'hidden'}>${expanded?this.resultHtml(c,true):''}</section></div>`;
 
         };
-        const groups=groupScannerTickets(this.batch).map(group=>group.sharedOrder?`<section class="scan-order-group"><header class="scan-order-header"><h3>${group.items[0].controller.ticket?.purchaser_name?e(group.items[0].controller.ticket.purchaser_name):tr('shared_order')}</h3>${group.table?`<p>${/^\d+$/.test(group.table)?tr('table')+' ':''}${e(group.table)}</p>`:''}</header>${scannerNotes(group.items[0].controller.ticket,{individual:false})}${group.items.map(card).join('')}</section>`:group.items.map(card).join('')).join('');
+        const groups=groupScannerTickets(this.batch).map(group=>group.sharedOrder?`<section class="scan-order-group"><header class="scan-order-header"><h3>${group.items[0].controller.ticket?.purchaser_name?e(group.items[0].controller.ticket.purchaser_name):tr('shared_order')}</h3>${group.table?`<p>${/^\d+$/.test(group.table)?tr('table')+' ':''}${e(group.table)}</p>`:''}</header>${scannerNotes(group.items[0].controller.ticket,{individual:false})}${group.items.map(item=>card({...item,sharedOrder:true})).join('')}</section>`:group.items.map(card).join('')).join('');
         return `<section class="scan-group" aria-label="${tr('ticket_group')}"><h2>${tr('ticket_group')} (${this.batch.length})</h2><div class="scan-group-list">${groups}</div>${eligible?`<button class="scan-primary" data-group-confirm ${this.batchConfirming||!this.storageAvailable||this.authBlocked||this.row.locked?'disabled':''}>${icon('check')}${tr('confirm_valid')} (${eligible})</button>`:''}<button data-group-next ${busy?'disabled':''}>${tr('next_group')}${icon('arrow')}</button></section>`;
     }
     async recover() {
@@ -153,17 +155,18 @@ export class ScanPage extends Component {
         try {
             await this.sync?.run();
             if (Date.now() - this.summaryAt >= 15000) { this.summaryAt=Date.now(); this.summary = await this.api.summary(); this.transportOffline=false; this.summaryAt = Date.now(); if (this.store) await this.store.put('preferences', { key: `${this.row.partition}:summary`, data: this.summary }); }
-            if (this.snapshot && Date.now()-Date.parse(this.snapshot.server_time)>60000 && !this.refreshingSnapshot && !this.authBlocked && Date.now()-(this.lastSnapshotAttempt||0)>=60000) {
+            if (this.store && this.row.session.capabilities.offline && this.row.session.settings?.offline?.enabled && (!this.snapshot || Date.now()-Date.parse(this.snapshot.server_time)>60000) && !this.refreshingSnapshot && !this.authBlocked && Date.now()-(this.lastSnapshotAttempt||0)>=60000) {
                 this.refreshingSnapshot = true;this.lastSnapshotAttempt=Date.now();
-                try { this.snapshot = await this.api.prepare(this.store,this.row.partition); } finally { this.refreshingSnapshot = false; }
+                this.backgroundPreparation=this.prepare({automatic:true}).catch(()=>{}).finally(()=>{this.refreshingSnapshot=false;});
             }
-        } catch (err) { if ([401,403].includes(err.code)) {this.authBlocked = true;this.row.locked=true;await this.store?.put('sessions',this.row);} }
+        } catch (err) { if ([401,403].includes(err.code)) {this.authBlocked = true;this.row.locked=true;await this.store?.lockSession(this.row.partition);} }
         if (!this.summary && this.store) this.summary = (await this.store.get('preferences', `${this.row.partition}:summary`))?.data;
         this.render();
     }
-    async prepare() {
-        if (!this.store || !this.row) return;
-        this.preparing = true; this.error = null; this.render();
+    async prepare({automatic=false}={}) {
+        if (!this.store || !this.row || this.preparing) return;
+        const preparingRow=this.row;
+        this.preparing = true; if(!automatic)this.error = null; this.render();
         try {
             await import('jsqr'); // Cache the local decoder chunk together with the existing PWA shell.
             const registration = await navigator.serviceWorker?.getRegistration();
@@ -174,9 +177,9 @@ export class ScanPage extends Component {
                 registration.active.postMessage({type:'FESTAPP_SCANNER_SHELL_STATUS'},[channel.port2]);
             });
             if(!health.ready || health.version!==AppConfig.version)throw new Error('offline_shell_unavailable');
-            await navigator.storage?.persist?.();
-            this.snapshot = await this.api.prepare(this.store, this.row.partition);
-        } catch (err) { this.error = err.message; }
+            if(!automatic)await navigator.storage?.persist?.();
+            const snapshot=await this.api.prepare(this.store,preparingRow.partition);if(this.row===preparingRow)this.snapshot=snapshot;
+        } catch (err) { if(!automatic)this.error = err.message;this.offlinePreparationError=err.message; }
         this.preparing = false; this.render();
     }
     shell(content) {
@@ -205,11 +208,11 @@ export class ScanPage extends Component {
         let content;
         if (!this.row) content = `<section class="scan-settings"><h2>${tr('open')}</h2><form data-open><label>${tr('scan_code')}<input name="code" autocomplete="off" required maxlength="100"></label><label>${tr('device')}<input name="device" required maxlength="80" value="${tr('device')}"></label><button class="scan-primary">${tr('open')}</button></form>
         <h3>${tr('saved_sessions')}</h3>${this.rows.map((r,i)=>`<button data-session="${i}">${e(r.session.title)} · ${e(r.session.device_name)}${r.locked ? ' ('+tr('blocked_auth')+')' : ''}</button>`).join('')}</section>`;
-        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${tr('this_device')}</h2>${this.row.session.capabilities.settings?`<button data-event-history>${tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${tr('search_more')}</button>`:''}</section>`;
+        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${tr('search_more')}</button>`:''}</section>`;
         else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${tr('offline')}</h2><p>${tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
         ${this.snapshot ? `<p>${tr('prepared')}: ${this.snapshot.ticket_count} ${tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
         <button data-prepare ${this.preparing || !this.store || !navigator.onLine ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
-        <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}<details><summary>${tr('local_display')}</summary>${(this.row.session.settings.fields||[]).map(f=>`<label><input type="checkbox" data-local-field="${e(f.key)}" ${(this.preferences[f.key]??f.default_visible)!==false?'checked':''}>${e(f.label||f.key)}</label>`).join('')}</details></section>`;
+        <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && c?.state==='ready'?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.batch?'is-group':''} ${this.mode==='camera' && !this.batch && c?.state==='ready'?'camera-ready':''} ${this.batch || c && c.state !== 'ready' ? 'has-result' : ''}"><section class="scan-input">
         ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="scan-camera-hint">${tr('camera_aim')}</p><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p><button data-same>${tr('same_code')}</button></div></details></div>` : `<form data-code><label>${tr('symbol')}<input name="symbol" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="200" ${c?.state!=='ready' ? 'disabled' : ''}></label><button ${c?.state!=='ready' ? 'disabled' : ''}>${icon('scan')}${tr('lookup')}</button></form><button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>${!this.cameraUnavailable?`<p class="scan-manual-note">${tr('manual_once')}</p>`:''}`}
         ${this.mode==='manual' && (this.row.session.capabilities.search_tickets || this.row.session.capabilities.search_users) ? `<form data-search novalidate>${this.row.session.capabilities.search_tickets && this.row.session.capabilities.search_users ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr('search')}<input name="query" minlength="2" maxlength="100" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p><button>${tr('search')}</button></form><ul class="scan-list">${(this.searchResults||[]).map(t=>`<li><button data-ticket="${e(t.symbol)}">${e(t.holder_name)} · ${e(t.symbol)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}` : ''}</section>
@@ -233,7 +236,6 @@ export class ScanPage extends Component {
         const one = (s,f) => { const el=this.host.querySelector(s); if(el) el.onclick=f; };
         const eventHistory=async before=>{try{this.eventHistory=(await this.api.call('get_scanner_event_history',{p_occasion:this.row.session.occasion_id,...(before?{p_before:before}:{})},false)).data;this.render();}catch(err){this.error=err.message;this.render();}};
         one('[data-event-history]',()=>eventHistory());one('[data-event-more]',()=>eventHistory(this.eventHistory.at(-1)?.receipt.committed_at));
-        this.host.querySelectorAll('[data-local-field]').forEach(b=>b.onchange=async()=>{this.preferences[b.dataset.localField]=b.checked;await this.store.put('preferences',{key:`${this.row.partition}:display`,partition:this.row.partition,data:this.preferences});});
         one('[data-theme]',()=>ThemeService.toggle());
         one('[data-sound]',async()=>{if(this.sound.ready){this.sound.enabled=false;}else{this.sound.enabled=true;await this.sound.unlock();this.sound.play('good');}this.updateSoundControl();});
         const open=this.host.querySelector('[data-open]'); if(open) open.onsubmit=ev=>{ev.preventDefault();this.open({p_scan_code:open.elements.code.value,p_device_name:open.elements.device.value});};
@@ -311,7 +313,7 @@ export class ScanPage extends Component {
     }
     async showSettings() {
         const { ScannerSettingsPage }=await import('./scanner_settings_page.js');
-        this.settingsPage=new ScannerSettingsPage(this.host,{api:this.api,session:this.row.session,onBack:()=>location.assign('/scan')}); await this.settingsPage.init();
+        this.settingsPage=new ScannerSettingsPage(this.host,{api:this.api,session:this.row.session,returnPath:this.returnPath,onBack:()=>location.assign('/scan')}); await this.settingsPage.init();
     }
     clear() {
         this.disposed=true;clearTimeout(this.advanceTimer);this.sound.dispose();this.host.removeEventListener('pointerdown',this.onGesture,true);this.host.removeEventListener('keydown',this.onGesture,true);clearInterval(this.interval);this.input?.dispose();this.disposeControllers();this.sync?.stop();this.settingsPage?.clear();
