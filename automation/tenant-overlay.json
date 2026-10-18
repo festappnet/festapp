@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "f420be1edc30fa0f4c11a0aa9902a84b8d0fbbd5",
+  "release": {
+    "version": "0.20.264+748",
+    "note": "Preserve organization administration routes for ticketing tenants"
+  }
+}
