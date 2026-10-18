@@ -9,6 +9,12 @@ selected asset snapshot. Daily logical backups do not establish the 15-minute
 database objective; healthy archived WAL and an independently verified PITR
 restore establish that boundary.
 
+PITR target input must include a timezone. The helper normalizes ISO UTC `Z`
+and other explicit offsets to a PostgreSQL-compatible UTC timestamp before
+calling pgBackRest. PostgreSQL 17 rejects a literal `Z` recovery GUC value even
+though Python accepts that ISO input; failed startup is never a successful
+recovery proof. Both the requested and normalized target are recorded.
+
 The version 2 drill checks all current application fields, canonical registry
 hashes, sizes and MIME, plus private orphan provenance from the encrypted runtime
 archive. Its service smoke starts no Storage or imgproxy. Package

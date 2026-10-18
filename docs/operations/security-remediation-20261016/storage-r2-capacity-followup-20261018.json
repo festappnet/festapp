@@ -1,0 +1,70 @@
+{
+  "captured_at": "2026-10-18T18:01:44.583579+00:00",
+  "production_mutations": false,
+  "source_revision": "b9475b4edf0709a7839a6dea45d1b5f24e7fc0ac",
+  "historical_evidence_sha256": "882c2660c8605e69eef44e0243d888baa2b8357a29bfad1da2ccc885a2d98bf6",
+  "host_memory_bytes": 3981275136,
+  "retired_working_set_screen_bytes": 348114944,
+  "remaining_non_admin_working_set_maxima_sum_bytes": 2202681344,
+  "current_admin_enforced_bytes": 1207959552,
+  "os_reserve_target_bytes": 536870912,
+  "concurrent_backup_reserve_target_bytes": 805306368,
+  "required_conservative_screen_bytes": 4752818176,
+  "shortfall_before_safety_margin_bytes": 771543040,
+  "critical_service_caps_justified": false,
+  "whole_host_enforced_budget_complete": false,
+  "bounds_not_claimed": "Historical nonsimultaneous sampled working sets are a screening input, not critical caps or a worst-case guarantee. Backup memory includes reclaimable file cache; no lower reserve enforced from one sample.",
+  "edge_pool_limit": {
+    "pinned_version": "v1.74.0",
+    "official_source": "https://github.com/supabase/edge-runtime/blob/v1.74.0/crates/base/src/worker/pool.rs",
+    "source_sha256": "5d61e5622dfb12c147eed3e71f7497b99ebac30670d6cec77a2d9bb2b229bca2",
+    "scope": "Semaphore allocated per service_path; max_parallelism is not a global worker bound."
+  },
+  "specific_remaining_tradeoff": "Retain4GB/always-onStudio. Validate smaller admin and backup envelopes and a real global Edge admission bound; otherwise measured735.8MiB screen deficit remains. Do not buy RAM or set database/Edge hard limits from these samples.",
+  "isolated_admin_candidate": {
+    "studio_memory_bytes": 402653184,
+    "meta_memory_bytes": 268435456,
+    "requests_per_service": 80,
+    "normal_burst_passed": true,
+    "forced_isolated_meta_oom_and_manual_recovery_passed": true,
+    "production_caps_changed": false,
+    "candidate_receipt_sha256": "d6fc9cf69db3f5d4adc8f8b69610670d01609835ac5195d1f5ec21f35fdf470f",
+    "oom_receipt_sha256": "8600f939d828557d6c008101083a51d6bdf2984ebc7d783d4fc56983234f77f8",
+    "does_not_prove_representative_studio_editor_load": true,
+    "meta_burst_peak_bytes": 262873088,
+    "meta_candidate_headroom_bytes": 5562368
+  },
+  "candidate_admin_only_screen": {
+    "not_deployed": true,
+    "candidate_cap_sum_bytes": 671088640,
+    "shortfall_before_safety_margin_bytes": 234672128,
+    "keeps_os_and_backup_reserves_unchanged": true,
+    "note": "Even accepting both candidate admin limits, screen remains deficient. Meta candidate has only~5.3MiB observed headroom in one burst; do not silently deploy as a complete always-on Studio budget."
+  },
+  "status": "remaining-capacity-decision",
+  "actual_enforced_admin_limits": {
+    "studio": {
+      "memory_bytes": 805306368,
+      "cpu_cores": 1,
+      "pids": 256
+    },
+    "meta": {
+      "memory_bytes": 402653184,
+      "cpu_cores": 0.5,
+      "pids": 128
+    }
+  },
+  "other_limits": {
+    "host_cpu_cores": 2,
+    "critical_service_memory_cpu_and_pid_envelopes": "not justified or enforced by this increment",
+    "backup_memory_reserve_bytes": 805306368,
+    "backup_memory_limit_enforced": false,
+    "backup_pid_limit_enforced": false,
+    "backup_scheduling": "existing systemd Nice10, best-effort IOpriority7; one backup lock",
+    "observed_backup_pids_peak": 21,
+    "sampled_live_edge_workers_max": 6,
+    "sampled_database_connections_max": 46,
+    "sampled_database_active_connections_max": 7
+  },
+  "concrete_remaining_work": "Keep4GB andalways-onStudio. Validate a complete global Edge isolate/admission envelope and concurrent backup limit; test representative Studio editing, then stage limits through existing Compose/systemd owners. Lowering only admin limits leaves223.8MiB deficit with unchanged reserves; 256MiB Meta had only5.3MiB observed burst headroom. No untested critical cap or resize is authorized by this evidence."
+}

@@ -1,5 +1,5 @@
 """Exact real-PG17 data/sync rollback contract, sharing the existing test owner."""
-import json,os,unittest
+import importlib.util,json,os,subprocess,unittest
 from pathlib import Path
 import test_cutover_pg17 as base
 ROOT=base.ROOT
@@ -46,6 +46,21 @@ class Disposition(unittest.TestCase):
   self.assertIn('https://img.festapp.net/queued-current',refs)
   self.assertNotIn('https://img.festapp.net/history-only',refs)
   self.assertNotIn('https://img.festapp.net/delivered-history',refs)
+
+ def test_iso_utc_target_is_normalized_for_actual_postgres_recovery_guc(self):
+  spec=importlib.util.spec_from_file_location('pitr',ROOT/'automation/hetzner-supabase/restore/drill-pgbackrest-local.py')
+  pitr=importlib.util.module_from_spec(spec);spec.loader.exec_module(pitr)
+  expected='2026-10-18 18:06:00+00:00'
+  for value in ['2026-10-18T18:06:00Z','2026-10-18T18:06:00+00:00','2026-10-18T20:06:00+02:00']:
+   self.assertEqual(pitr.postgres_recovery_target(value),expected)
+  with self.assertRaisesRegex(ValueError,'timezone'):pitr.postgres_recovery_target('2026-10-18T18:06:00')
+  def check(value):
+   return subprocess.run(['docker','exec','-u','postgres',self.name,'postgres','-D','/etc/postgresql','-C','recovery_target_time','-c','recovery_target_time='+value],capture_output=True,text=True)
+  rejected=check('2026-10-18T18:06:00Z')
+  self.assertNotEqual(rejected.returncode,0)
+  accepted=check(pitr.postgres_recovery_target('2026-10-18T18:06:00Z'))
+  self.assertEqual(accepted.returncode,0,accepted.stderr)
+  self.assertEqual(accepted.stdout.strip(),expected)
 
  def test_exact_fields_and_three_real_canonical_sync_commits(self):
   result=self.apply();self.assertEqual(result.returncode,0,result.stderr)
