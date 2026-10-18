@@ -89,6 +89,7 @@ class RetainedDraftGuard extends AutoRouteGuard {
       'FormDetailRoute' => 'FormsNavigationRoute',
       'InventoryPoolDetailRoute' => 'InventoryPoolsNavigationRoute',
       'BankAccountDetailRoute' => 'UnitBankAccountsNavigationRoute',
+      'UnitLegalProfileRoute' => 'UnitSettingsRoute',
       _ => null,
     };
     if (objectNavigation == null || names.contains(objectNavigation))
@@ -173,6 +174,7 @@ class _NavigationDraftBoundaryState extends State<NavigationDraftBoundary> {
           'InventoryPoolDetailRoute',
           'BankAccountDetailRoute',
           'BankAccountConnectionSettingsRoute',
+          'UnitLegalProfileRoute',
           'AdminRoute',
           'ReservationsRoute',
           'UnitAdminRoute'

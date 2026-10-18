@@ -1,6 +1,6 @@
 # Ruční ověřování pořadatelů
 
-Právní profil patří Unit. Manager jej spravuje jako podsekci nastavení pořadatele; tenant Organization určuje schvalovací autoritu. Profil se ukládá online samostatně, mimo běžný save Unit a offline sync. Veřejný formulář zobrazuje pouze schválenou aktuální identitu. Ověření není garancí kvality akce ani dodání vstupenek.
+Právní profil patří Unit. Manager jej spravuje na samostatné stránce z nastavení pořadatele; tenant Organization určuje schvalovací autoritu. Profil se ukládá online samostatně, mimo běžný save Unit a offline sync. Veřejný formulář zobrazuje pouze schválenou aktuální identitu. Ověření není garancí kvality akce ani dodání vstupenek.
 
 ## Ověřovací standard první verze
 
@@ -19,3 +19,15 @@ Po konfliktu se zastaralé rozhodnutí neopakuje. Načtěte aktuální profil a 
 Přesun celé Unit mezi tenanty není součást této funkce. Privilegovaná migrace musí ještě před přesunem v téže transakci zrušit ověření, zvýšit revizi a zaznamenat audit; samotná změna FK není podporovaný workflow. Kontrola aktuálního tenanta veřejnou projekci při nesouladu skryje, ale nenahrazuje tuto podmínku (zejména při přesunu zpět).
 
 Kanonické SQL: `database/functions/organization_verification/`. Migraci sestavuje `python3 automation/assemble-organization-verification-migration.py`; zachycuje i příslušné autorizované čtecí projekce. Produkční migrace a klientské nasazení vyžadují samostatné zadání pro jeden tenant podle AGENTS.md.
+
+## Úprava údajů a ARES
+
+V nastavení pořadatele otevřete položku **Právní údaje a ověření**. Detail má
+vlastní adresu `/unit/:id/edit/settings/legal-profile`; návrat do nastavení
+chrání rozepsané změny. Údaje jsou seskupené na organizaci, sídlo a kontakt.
+
+Pro české subjekty lze výslovně načíst veřejné údaje podle IČO z
+[oficiálního ARES](https://ares.gov.cz/swagger-ui/). Načtení doplní pouze název,
+IČO, DIČ a sídlo do upravitelného konceptu. Kontakty nepřepisuje; existující
+právní údaje nahradí až po potvrzení. Neprovádí uložení, odeslání žádosti ani
+schválení. Při chybě nebo nedostupnosti ARES lze údaje vyplnit ručně.

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:fstapp/components/unit/verification/ares_lookup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/forms.dart';
@@ -9,6 +11,13 @@ import 'package:fstapp/components/unit/verification/db_unit_verification.dart';
 import 'package:fstapp/components/unit/verification/unit_legal_profile.dart';
 import 'package:fstapp/components/unit/verification/unit_legal_profile_section.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
+
+class _AresLookup extends AresLookupService {
+  _AresLookup(this.callback);
+  final Future<AresCompany> Function(String) callback;
+  @override
+  Future<AresCompany> lookup(String ico) => callback(ico);
+}
 
 const identity = <String, dynamic>{
   'unitId': 1,
@@ -25,6 +34,28 @@ void main() {
     'OrganizationVerification': {
       for (final k in [
         'title',
+        'organizationDetails',
+        'contactDetails',
+        'countryHelp',
+        'aresLookup',
+        'aresLoading',
+        'aresHelp',
+        'aresLoaded',
+        'aresReplaceTitle',
+        'aresReplaceDescription',
+        'aresReplace',
+        'aresInvalidIco',
+        'aresNotFound',
+        'aresUnavailable',
+        'aresInvalidResponse',
+        'discardTitle',
+        'discardDescription',
+        'discard',
+        'cancel',
+        'countryLabel',
+        'countryCzechia',
+        'countrySlovakia',
+        'countryOther',
         'publicNotice',
         'verified',
         'showDetails',
@@ -186,7 +217,9 @@ void main() {
                     child: UnitLegalProfileSection(
                         unitId: 1, canEdit: true, service: db)))));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'Local draft');
+    await tester.enterText(
+        find.byKey(const ValueKey('legal-profile-legalName')), 'Local draft');
+    await tester.pump();
     await tester.ensureVisible(find.text('save'));
     await tester.tap(find.text('save'));
     await tester.pumpAndSettle();
@@ -195,4 +228,186 @@ void main() {
     expect(calls.where((v) => v == 'save_unit_legal_profile'), hasLength(1));
     expect(calls, isNot(contains('submit_unit_verification')));
   });
+  Finder field(String name) => find.byKey(ValueKey('legal-profile-$name'));
+  String value(WidgetTester tester, String name) =>
+      tester.widget<TextFormField>(field(name)).controller!.text;
+
+  testWidgets(
+      'ARES fills an editable draft and preserves contacts changed during lookup',
+      (tester) async {
+    final calls = <String>[];
+    final reply = Completer<AresCompany>();
+    final db = DbUnitVerification(rpc: (name, params) async {
+      calls.add(name);
+      return {
+        'code': 200,
+        'profile': {
+          ...identity,
+          'revision': 0,
+          'status': 'unverified',
+          'legalName': '',
+          'countryCode': '',
+          'registrationNumber': '',
+          'address': {'street': '', 'city': '', 'postalCode': ''},
+        }
+      };
+    });
+    await env().pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+          child: UnitLegalProfileSection(
+              unitId: 1,
+              canEdit: true,
+              service: db,
+              aresService: _AresLookup((ico) {
+                expect(ico, '00006947');
+                return reply.future;
+              })),
+        ))));
+    await tester.pumpAndSettle();
+    expect(find.text('aresLookup'), findsOneWidget,
+        reason: 'new Czech profiles expose lookup immediately');
+    expect(find.textContaining('revision'), findsNothing);
+    await tester.enterText(field('registrationNumber'), '00006947');
+    await tester.tap(find.text('aresLookup'));
+    await tester.pump();
+    expect(tester.widget<TextFormField>(field('legalName')).enabled, false);
+    expect(tester.widget<TextFormField>(field('contactEmail')).enabled, true);
+    await tester.enterText(field('contactEmail'), 'changed@example.test');
+    reply.complete(const AresCompany(
+        legalName: 'Ministerstvo financí',
+        countryCode: 'CZ',
+        registrationNumber: '00006947',
+        vatId: 'CZ00006947',
+        street: 'Letenská 525/15',
+        city: 'Praha',
+        postalCode: '11800'));
+    await tester.pumpAndSettle();
+    expect(value(tester, 'legalName'), 'Ministerstvo financí');
+    expect(value(tester, 'street'), 'Letenská 525/15');
+    expect(value(tester, 'contactEmail'), 'changed@example.test');
+    expect(find.text('aresLoaded'), findsOneWidget);
+    expect(calls, ['get_unit_legal_profile'],
+        reason: 'registry facts are never saved or verified automatically');
+    expect(find.text('unverified'), findsOneWidget);
+  });
+
+  testWidgets(
+      'ARES replacement requires consent and reload protects the local draft',
+      (tester) async {
+    var loads = 0;
+    final db = DbUnitVerification(rpc: (name, params) async {
+      expect(name, 'get_unit_legal_profile');
+      loads++;
+      return {
+        'code': 200,
+        'profile': {...identity, 'status': 'unverified'}
+      };
+    });
+    await env().pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+          child: UnitLegalProfileSection(
+              unitId: 1,
+              canEdit: true,
+              service: db,
+              aresService: _AresLookup((_) async => const AresCompany(
+                  legalName: 'Registry name',
+                  countryCode: 'CZ',
+                  registrationNumber: '00006947',
+                  street: 'Street 1',
+                  city: 'Praha',
+                  postalCode: '11000'))),
+        ))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('aresLookup'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('aresReplaceTitle'), findsOneWidget);
+    await tester.tap(find.text('cancel'));
+    await tester.pumpAndSettle();
+    expect(value(tester, 'legalName'), 'Kulturní spolek');
+    await tester.enterText(field('legalName'), 'Local draft');
+    await tester.ensureVisible(find.text('reload'));
+    await tester.tap(find.text('reload'));
+    await tester.pumpAndSettle();
+    expect(find.text('discardTitle'), findsOneWidget);
+    await tester.tap(find.text('cancel'));
+    await tester.pumpAndSettle();
+    expect(value(tester, 'legalName'), 'Local draft');
+    expect(loads, 1);
+  });
+
+  testWidgets('back protects a draft until discard is confirmed',
+      (tester) async {
+    final navigator = GlobalKey<NavigatorState>();
+    final db = DbUnitVerification(
+        rpc: (_, __) async => {
+              'code': 200,
+              'profile': {...identity, 'status': 'unverified'}
+            });
+    await env().pumpWidget(tester,
+        MaterialApp(navigatorKey: navigator, home: const Text('Settings')));
+    unawaited(navigator.currentState!.push(MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+            body: SingleChildScrollView(
+                child: UnitLegalProfileSection(
+                    unitId: 1, canEdit: true, service: db))))));
+    await tester.pumpAndSettle();
+    await tester.enterText(field('legalName'), 'Local draft');
+    await tester.pump();
+    await navigator.currentState!.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.text('discardTitle'), findsOneWidget);
+    await tester.tap(find.text('cancel'));
+    await tester.pumpAndSettle();
+    expect(value(tester, 'legalName'), 'Local draft');
+    await navigator.currentState!.maybePop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('discard'));
+    await tester.pumpAndSettle();
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.byType(UnitLegalProfileSection), findsNothing);
+  });
+
+  for (final width in [320.0, 1000.0]) {
+    testWidgets('legal profile fits $width pixels with enlarged dark text',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final db = DbUnitVerification(
+          rpc: (_, __) async => {
+                'code': 200,
+                'profile': {...identity, 'status': 'unverified'}
+              });
+      await env().pumpWidget(
+          tester,
+          MaterialApp(
+              theme: ThemeData(brightness: Brightness.dark),
+              builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: const TextScaler.linear(1.5)),
+                  child: child!),
+              home: Scaffold(
+                  body: Center(
+                      child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: UnitLegalProfileSection(
+                                  unitId: 1, canEdit: true, service: db)))))));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.getRect(field('registrationNumber')).right,
+          lessThanOrEqualTo(width));
+      expect(
+          tester.getRect(field('legalName')).right, lessThanOrEqualTo(width));
+    });
+  }
 }
