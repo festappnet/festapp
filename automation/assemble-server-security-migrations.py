@@ -49,13 +49,6 @@ COMMIT;
  manifest['phases'].append({'version':version,'file':'supabase/migrations/'+name,'sha256':digest,'database_user':account,'driver':str(target.relative_to(root))})
 manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [
  root/'automation/hetzner-supabase/runtime/Caddyfile',
- root/'automation/hetzner-supabase/runtime/prepare-asset-runtime.py',
- root/'automation/hetzner-supabase/runtime/pins.json',
- root/'automation/hetzner-supabase/runtime/bootstrap-host.sh',
- root/'automation/hetzner-supabase/runtime/deploy-rehearsal.sh',
- root/'automation/hetzner-supabase/runtime/promote-production-runtime.sh',
- root/'automation/hetzner-supabase/runtime/switch-rehearsal-runtime-database.sh',
- root/'automation/hetzner-supabase/runtime/finalize-canonical-database-operations.sh',
  root/'automation/hetzner-supabase/runtime/apply-security-config.sh',
  root/'automation/hetzner-supabase/runtime/audit-security-state.sql',
  root/'automation/hetzner-supabase/runtime/collect-resource-budget.sh',
@@ -76,10 +69,6 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/restore/edge_smoke.py',
  root/'automation/hetzner-supabase/restore/export-public-edge-sources.py',
  root/'automation/hetzner-supabase/restore/r2_archive.py',
- root/'automation/hetzner-supabase/restore/backup_manifest.py',
- root/'automation/hetzner-supabase/restore/current_asset_fields.sql',
- root/'automation/image-migration/storage_references.py',
- root/'automation/hetzner-supabase/merge/source-registry.json',
  root/'automation/hetzner-supabase/restore/verify-r2-dump-local.py',
  root/'automation/hetzner-supabase/restore/download-offhost-backup.py',
  root/'automation/hetzner-supabase/runtime/docker-compose.resource-budget.yml',
@@ -87,9 +76,7 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/backup/create-online-encrypted-backup.sh',
  root/'automation/hetzner-supabase/backup/create-r2-image-archive.py',
  root/'automation/hetzner-supabase/backup/archive-runtime.sh',
- root/'automation/hetzner-supabase/backup/install-online-backup.sh',
- root/'automation/hetzner-supabase/backup/prune-online-backups.py',
- root/'automation/hetzner-supabase/backup/festapp-supabase-backup.timer']}
+ root/'automation/hetzner-supabase/backup/install-online-backup.sh']}
 # Immutable 2026-10-16 receipt. Subsequent contracts are sealed by the data-security assembler.
 manifest['contract_files']={'database/functions/security/server_security_acl_manifest.json': 'e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb', 'database/functions/security/definer_contracts.json': '0a5448ecaf1a7deb6a715093df7de8210abe1a76a08eb8fd734bbc3748e6fa35'}
 manifest_file=root/'automation/hetzner-supabase/runtime/server-security-release.json' 
