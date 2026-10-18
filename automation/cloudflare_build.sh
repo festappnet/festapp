@@ -44,6 +44,67 @@ cat > build/web/_worker.js <<'WORKER'
 // response body and query string).
 // =============================================================================
 
+// Replaced with the manifest computed from the final deployed documents.
+const CSP_MANIFEST = { profiles: {}, documents: {} };
+const CSP_BASE = CSP_MANIFEST.basePolicy || "base-uri 'self'; object-src 'none'";
+function cspHeaders(headers, profile = 'none') {
+  const policy = CSP_MANIFEST.profiles[profile]?.policy || `${CSP_BASE}; script-src 'self'; script-src-attr 'none'; report-uri /_security/csp-report?profile=none; report-to csp-none`;
+  headers.set('content-security-policy', CSP_MANIFEST.mode === 'enforce' ? policy : CSP_BASE);
+  headers.delete('content-security-policy-report-only');
+  if (CSP_MANIFEST.mode !== 'enforce') headers.set('content-security-policy-report-only', policy);
+  headers.set('reporting-endpoints', `csp-${profile}="/_security/csp-report?profile=${profile}"`);
+  headers.set('x-content-type-options', 'nosniff');
+}
+// A per-isolate bounded diagnostic budget avoids unbounded attacker-controlled
+// logs. Reports never authorize actions and no request headers/body are logged.
+let cspLogWindow = 0;
+let cspLogCount = 0;
+function sourceOrigin(value) {
+  if (['inline', 'eval', 'wasm-eval', 'self', 'none'].includes(value)) return value;
+  try {
+    const url = new URL(value);
+    return ['https:', 'http:'].includes(url.protocol) && url.origin.length <= 160 ? url.origin : 'other';
+  } catch { return 'other'; }
+}
+async function cspReport(request) {
+  const reply = status => new Response(null, { status, headers: { 'cache-control': 'no-store', 'allow': 'POST' } });
+  if (request.method !== 'POST') return reply(405);
+  const mime = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (!['application/csp-report', 'application/reports+json', 'application/json'].includes(mime)) return reply(415);
+  if (Number(request.headers.get('content-length')) > 32768) return reply(413);
+  const reader = request.body?.getReader();
+  if (!reader) return reply(400);
+  let size = 0;
+  const chunks = [];
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 32768) { await reader.cancel(); return reply(413); }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    const json = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const batch = Array.isArray(json) ? json : [{ type: 'csp-violation', body: json['csp-report'] }];
+    if (!batch.length || batch.length > 10 || batch.some(r => r?.type !== 'csp-violation' || !r.body || typeof r.body !== 'object' || Array.isArray(r.body))) return reply(400);
+    const profileParam = new URL(request.url).searchParams.get('profile');
+    const profile = Object.hasOwn(CSP_MANIFEST.profiles, profileParam) ? profileParam : 'none';
+    const records = batch.map(({ body }) => {
+      const directive = body.effectiveDirective || body['effective-directive'] || body['violated-directive'];
+      if (typeof directive !== 'string' || !/^[a-z-]{1,50}$/.test(directive)) throw new Error('invalid directive');
+      return { directive, disposition: body.disposition === 'enforce' ? 'enforce' : 'report', profile,
+        source: sourceOrigin(body.blockedURL || body['blocked-uri']) };
+    });
+    const minute = Math.floor(Date.now() / 60000);
+    if (cspLogWindow !== minute) { cspLogWindow = minute; cspLogCount = 0; }
+    for (const record of records) if (cspLogCount++ < 20) console.info('csp-violation', record);
+    return reply(204);
+  } catch { return reply(400); }
+}
+
 const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
@@ -74,11 +135,12 @@ const INTERNAL_ASSET_PATHS = new Set(["/flutter", "/webclient", "/organizers-pag
 // revalidated on every load so a client never mixes assets from two builds.
 const MUTABLE_RUNTIME_ASSET = /(?:^|\/)(?:backend-activation\.json|client-sync-config\.json|festapp-version\.json|main\.dart\.js(?:_\d+\.part\.js)?|main\.dart\.mjs|flutter_bootstrap\.js|flutter\.js|flutter_service_worker\.js|festapp_service_worker\.js|festapp_update_prompt\.js|(?:canvaskit|skwasm)[\w.]*\.(?:js|mjs|wasm))$/;
 
-function htmlResponse(body, originHeaders, status = 200) {
+function htmlResponse(body, originHeaders, status = 200, profile = "webclient") {
   const headers = new Headers(originHeaders || {});
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-cache, must-revalidate");
   headers.set("x-festapp-runtime", "cloudflare-pages");
+  cspHeaders(headers, profile);
   headers.delete("location");
   headers.delete("content-length");
   headers.delete("content-range");
@@ -171,7 +233,7 @@ async function handleHome(request, env) {
 }
 
 function notFound() {
-  return htmlResponse('<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stránka nenalezena</title></head><body><main><h1>Stránka nenalezena</h1><p><a href="/">Zpět na hlavní stránku</a></p></main></body></html>', null, 404);
+  return htmlResponse('<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stránka nenalezena</title></head><body><main><h1>Stránka nenalezena</h1><p><a href="/">Zpět na hlavní stránku</a></p></main></body></html>', null, 404, "none");
 }
 
 function activationCorsHeaders(originHeaders) {
@@ -324,6 +386,7 @@ async function handleForm(request, env, path) {
 async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
+    if (path === "/_security/csp-report") return cspReport(request);
 
     const appRedirect = !IS_APP_SUPPORTED ? unsupportedOccasionAppRedirect(path) : null;
     if (appRedirect) {
@@ -341,7 +404,7 @@ async function routeRequest(request, env) {
       if (!ORGANIZERS_ENABLED) return notFound();
       if (path.endsWith("/")) return Response.redirect(new URL("/pro-poradatele" + url.search, url).href, 308);
       const res = await serveAsset(env, request, "/organizers-page");
-      return res.ok ? htmlResponse(res.body, res.headers) : notFound();
+      return res.ok ? htmlResponse(res.body, res.headers, 200, "organizers") : notFound();
     }
 
     if (path === "/sitemap.xml") return handleSitemap(request, env);
@@ -353,7 +416,7 @@ async function routeRequest(request, env) {
     if (INTERNAL_ASSET_PATHS.has(path)) {
       if (url.searchParams.get("pwa-cache") === "1") {
         const res = await serveAsset(env, request, path);
-        return htmlResponse(res.body, res.headers);
+        return htmlResponse(res.body, res.headers, 200, path === "/flutter" ? "flutter" : path === "/organizers-page" ? "organizers" : "webclient");
       }
       return Response.redirect(new URL("/", url).toString(), 301);
     }
@@ -380,7 +443,7 @@ async function routeRequest(request, env) {
     if (path === "/google-auth" || path === "/app/google-auth") {
       const entry = path === "/google-auth" ? WEB_CLIENT_INDEX : FLUTTER_ENTRY;
       const res = await serveAsset(env, request, entry);
-      const response = htmlResponse(res.body, res.headers);
+      const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
       response.headers.set("referrer-policy", "no-referrer");
       return response;
@@ -399,12 +462,12 @@ async function routeRequest(request, env) {
 
     if (AUTH_BRIDGE_PATHS.has(path)) {
       const res = await serveAsset(env, request, AUTH_BRIDGE);
-      return htmlResponse(res.body, res.headers);
+      return htmlResponse(res.body, res.headers, 200, "auth_bridge");
     }
 
     if (FLUTTER_PREFIXES.some(p => path === p || path.startsWith(p + "/"))) {
       const res = await serveAsset(env, request, FLUTTER_ENTRY);
-      return htmlResponse(res.body, res.headers);
+      return htmlResponse(res.body, res.headers, 200, "flutter");
     }
 
     // Real static asset (favicon, web-assets/*, canvaskit/*, main.dart.js, ...).
@@ -433,6 +496,11 @@ async function routeRequest(request, env) {
           headers,
         });
       }
+      if ((assetRes.headers.get('content-type') || '').includes('text/html')) {
+        const file = path.slice(1);
+        const doc = CSP_MANIFEST.documents[file] || CSP_MANIFEST.documents[file + 'index.html'] || CSP_MANIFEST.documents[file + '/index.html'];
+        return htmlResponse(assetRes.body, assetRes.headers, assetRes.status, doc?.profile || 'none');
+      }
       return assetRes;
     }
 
@@ -453,7 +521,7 @@ async function routeRequest(request, env) {
       } catch { /* Keep the established Flutter fallback during an outage. */ }
     }
     const fallback = await serveAsset(env, request, FLUTTER_ENTRY);
-    return htmlResponse(fallback.body, fallback.headers);
+    return htmlResponse(fallback.body, fallback.headers, 200, "flutter");
 }
 
 export default {
@@ -474,7 +542,7 @@ export default {
       }
     }
     const headers = new Headers(response.headers);
-    headers.set("content-security-policy", "base-uri 'self'; object-src 'none'");
+    if (!headers.has("content-security-policy")) headers.set("content-security-policy", CSP_BASE);
     headers.set("x-content-type-options", "nosniff");
     if (production && url.protocol === "https:") headers.set("strict-transport-security", "max-age=300");
     return new Response(request.method === "HEAD" ? null : response.body, { status: response.status, statusText: response.statusText, headers });
@@ -482,6 +550,13 @@ export default {
 };
 WORKER
 
+node --input-type=module - <<'CSP'
+import {readFile, writeFile} from 'node:fs/promises';
+const file = 'build/web/_worker.js';
+const manifest = JSON.parse(await readFile('build/web/csp-manifest.json', 'utf8'));
+const source = await readFile(file, 'utf8');
+await writeFile(file, source.replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => 'const CSP_MANIFEST = ' + JSON.stringify(manifest) + ';'));
+CSP
 python3 - build/web/_worker.js automation/project.conf <<'PY'
 import json
 import pathlib

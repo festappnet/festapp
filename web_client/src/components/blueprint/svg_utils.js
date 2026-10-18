@@ -1,3 +1,5 @@
+import { sanitizeSvg } from '../../utils/html.js';
+
 
 export class SvgUtils {
     /**
@@ -9,16 +11,22 @@ export class SvgUtils {
      * @returns {Object} { svg: string, isSvg: boolean }
      */
     static prepareBackgroundSvg(source) {
-        if (!source || !source.trim().startsWith('<svg')) {
-            return { svg: source, isSvg: false };
+        if (typeof source !== 'string') return { svg: '', isSvg: false };
+        if (!source.trim().startsWith('<')) {
+            try {
+                const url = new URL(source);
+                if (['https:', 'http:'].includes(url.protocol)) return { svg: url.href, isSvg: false };
+            } catch { /* Invalid image URL. */ }
+            return { svg: '', isSvg: false };
         }
 
-        let svgString = source;
+        let svgString = sanitizeSvg(source).toString();
+        if (!svgString) return { svg: '', isSvg: true };
         let nativeW = 0;
         let nativeH = 0;
 
         try {
-            const parser = new DOMParser();
+            const parser = new document.defaultView.DOMParser();
             const doc = parser.parseFromString(svgString, "image/svg+xml");
             const svgEl = doc.documentElement;
             
@@ -49,13 +57,13 @@ export class SvgUtils {
                      svgEl.setAttribute('viewBox', `0 0 ${nativeW} ${nativeH}`);
                  }
                  
-                 return { svg: new XMLSerializer().serializeToString(svgEl), isSvg: true };
+                 return { svg: new document.defaultView.XMLSerializer().serializeToString(svgEl), isSvg: true };
             }
         } catch(e) {
             console.warn("SVG Parsing/Serialization error", e);
         }
 
-        // Fallback: return original if parsing failed but it looked like SVG
-        return { svg: source, isSvg: true };
+        // Rejected input must never reach the renderer as trusted markup.
+        return { svg: '', isSvg: true };
     }
 }

@@ -1,4 +1,5 @@
 import createDOMPurify from 'dompurify';
+import * as cssTree from 'css-tree';
 
 /**
  * Lightweight HTML Tagged Template Literal Helper
@@ -109,4 +110,82 @@ function sanitize(val) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// A separate DOMPurify instance keeps SVG hooks out of the rich HTML contract.
+const svgPurifiers = new WeakMap();
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const LOCAL_REFERENCE = /^#[a-zA-Z_][\w:.-]*$/;
+const GRAPHIC_PROPERTIES = new Set([
+    'fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-width', 'stroke-opacity',
+    'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray', 'stroke-dashoffset',
+    'stroke-miterlimit', 'opacity', 'color', 'stop-color', 'stop-opacity',
+    'font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor',
+    'dominant-baseline', 'letter-spacing', 'word-spacing', 'display', 'visibility',
+    'clip-path', 'clip-rule', 'mask', 'filter', 'paint-order', 'vector-effect',
+]);
+
+function safeGraphicValue(ast) {
+    let safe = true;
+    cssTree.walk(ast, node => {
+        if (node.type === 'Raw' || (node.type === 'Url' && !LOCAL_REFERENCE.test(node.value)) ||
+            (node.type === 'Function' && ['expression', 'var', 'env'].includes(node.name.toLowerCase()))) safe = false;
+    });
+    return safe;
+}
+
+function sanitizeGraphicCss(source, context) {
+    try {
+        const ast = cssTree.parse(source, { context });
+        cssTree.walk(ast, {
+            enter(node, item, list) {
+                if (node.type === 'Atrule' || node.type === 'Raw' ||
+                    (node.type === 'Declaration' && (!GRAPHIC_PROPERTIES.has(node.property.toLowerCase()) || !safeGraphicValue(node.value)))) {
+                    if (list) list.remove(item);
+                    return cssTree.walk.skip;
+                }
+            },
+        });
+        return cssTree.generate(ast);
+    } catch { return ''; }
+}
+
+/** Static SVG only. Parse XML first so malformed input fails closed. */
+export function sanitizeSvg(source) {
+    const win = globalThis.document?.defaultView ?? globalThis.window;
+    if (!source || !win) return new SafeHtml('');
+    const doc = new win.DOMParser().parseFromString(String(source), 'image/svg+xml');
+    if (doc.querySelector('parsererror') || doc.documentElement.localName !== 'svg' ||
+        (doc.documentElement.namespaceURI && doc.documentElement.namespaceURI !== SVG_NS) || doc.doctype) return new SafeHtml('');
+    doc.documentElement.setAttribute('xmlns', SVG_NS);
+    let purifier = svgPurifiers.get(win);
+    if (!purifier) {
+        purifier = createDOMPurify(win);
+        if (!purifier.isSupported) throw new Error('SVG sanitization requires a supported browser DOM');
+        purifier.addHook('uponSanitizeAttribute', (node, data) => {
+            const name = data.attrName.toLowerCase();
+            if (name === 'style') data.attrValue = sanitizeGraphicCss(data.attrValue, 'declarationList');
+            else if (name === 'href' || name === 'xlink:href') {
+                const value = data.attrValue.trim();
+                // Local <use> and gradients are safe; external references are
+                // limited to image elements, which are non-navigable resources.
+                const imageUrl = node.localName === 'image' && /^https?:\/\//i.test(value);
+                if (!LOCAL_REFERENCE.test(value) && !imageUrl) data.keepAttr = false;
+            } else if (['fill', 'stroke', 'clip-path', 'mask', 'filter', 'cursor'].includes(name)) {
+                try {
+                    if (!safeGraphicValue(cssTree.parse(data.attrValue, { context: 'value' }))) data.keepAttr = false;
+                } catch { data.keepAttr = false; }
+            }
+        });
+        purifier.addHook('afterSanitizeElements', node => {
+            if (node.localName === 'style') node.textContent = sanitizeGraphicCss(node.textContent, 'stylesheet');
+        });
+        svgPurifiers.set(win, purifier);
+    }
+    return new SafeHtml(purifier.sanitize(new win.XMLSerializer().serializeToString(doc.documentElement), {
+        USE_PROFILES: { svg: true, svgFilters: true },
+        NAMESPACE: SVG_NS, ADD_TAGS: ['use'], ADD_ATTR: ['href', 'xlink:href'],
+        FORBID_TAGS: ['script', 'foreignObject', 'a', 'animate', 'animateMotion', 'animateTransform', 'set', 'discard'],
+        FORBID_ATTR: ['xml:base'], ALLOW_DATA_ATTR: false,
+    }));
 }

@@ -18,6 +18,12 @@ DECLARE
     v_max_attempts INT := 1;
     v_safety_counter INT := 0; -- Safety break for the sequential loop
 BEGIN
+    IF public.payment_reference_scope_enabled_internal(p_form_id) THEN
+      RAISE EXCEPTION 'PAYMENT_REFERENCE_RESERVATION_REQUIRED'; END IF;
+    IF EXISTS(SELECT 1 FROM eshop.payment_reference_namespaces n
+      WHERE n.canonical_account=public.try_payment_reference_account_internal((SELECT account_number FROM eshop.bank_accounts WHERE id=p_bank_account_id))
+      AND (n.allocation_enabled OR EXISTS(SELECT 1 FROM eshop.payment_reference_reservations r WHERE r.namespace_id=n.id))) THEN
+      RAISE EXCEPTION 'PAYMENT_REFERENCE_SHARED_ACCOUNT_REQUIRES_ENROLLMENT'; END IF;
     -- 1. Fetch the configuration data for the given form
     SELECT data INTO v_form_data FROM public.forms WHERE id = p_form_id;
 
@@ -117,3 +123,4 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+REVOKE ALL ON FUNCTION public.generate_payment_variable_symbol(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

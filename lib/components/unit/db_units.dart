@@ -4,8 +4,6 @@ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
-import '../occasion/occasion_model.dart';
-
 class DbUnits {
   static final _supabase = Supabase.instance.client;
   static UnitCommands get _commands => SupabaseUnitCommands(_supabase);
@@ -72,25 +70,6 @@ class DbUnits {
     );
   }
 
-  static Future<UnitEditDataBundle> getUnitEditData(int unitId) async {
-    final isV1 = ClientSyncRuntime.isV1Selected;
-    final response = await _supabase.rpc(
-      isV1 ? 'get_unit_edit_data_v1' : 'get_unit_edit_data',
-      params: isV1 ? {'p_unit': unitId} : {'p_unit_id': unitId},
-    );
-
-    if (response == null) {
-      throw Exception("Failed to load unit edit data.");
-    }
-
-    final unit = UnitModel.fromJson(response['unit']);
-    final occasions = (response['occasions'] as List)
-        .map((x) => OccasionModel.fromJson(x))
-        .toList();
-
-    return UnitEditDataBundle(unit: unit, occasions: occasions);
-  }
-
   static Future<int> createUnitAndAssignManager(String title) async {
     final response = await _supabase
         .rpc("create_unit_and_assign_manager", params: {'title': title});
@@ -104,11 +83,4 @@ class DbUnits {
   static Future<void> deleteUnit(int unitId) async {
     await _supabase.rpc("delete_unit", params: {'p_unit_id': unitId});
   }
-}
-
-class UnitEditDataBundle {
-  final UnitModel unit;
-  final List<OccasionModel> occasions;
-
-  UnitEditDataBundle({required this.unit, required this.occasions});
 }

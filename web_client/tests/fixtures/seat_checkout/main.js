@@ -16,7 +16,9 @@ async function request(name, args) {
     window.__seatCheckoutRpcResults.set(name, result);
     return result;
 }
+SupabaseService._backend = { supabaseUrl: location.origin };
 SupabaseService.getClient = () => ({
+    auth: { getSession: async () => ({ data: { session: null }, error: null }) },
     rpc(name, args) {
         const result = request(name, args);
         result.abortSignal = () => result;

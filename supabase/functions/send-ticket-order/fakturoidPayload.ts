@@ -24,10 +24,7 @@ export function buildFakturoidInvoicePayload(
       vat_rate: 0,
     }],
   };
-  // EUR uses the order's RF reference; CZK uses the VS assigned by Fakturoid.
-  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
-    body.variable_symbol = String(order.payment_info.variable_symbol);
-  }
+  body.variable_symbol = String(order.payment_info.variable_symbol);
   if (note) body.note = note;
   return body;
 }

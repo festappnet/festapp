@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:fstapp/services/storage_helper.dart';
 import 'package:uuid/uuid.dart';
+import 'package:sembast/sembast.dart';
 
 class ClientCommandIdentity {
   static const _storageKey = 'client_command_client_id';
@@ -15,18 +16,31 @@ class ClientCommandIdentity {
 
   static Future<String> claimIntent(
     String namespace,
-    Object? payload,
-  ) async {
+    Object? payload, {
+    String? principalBinding,
+  }) async {
     final fingerprint = sha256
         .convert(utf8.encode(jsonEncode(_canonicalize(payload))))
         .toString();
     final key = 'client_command_pending:$namespace:$fingerprint';
-    var commandId = await StorageHelper.get(key);
-    if (commandId == null || commandId.isEmpty) {
-      commandId = newCommandId();
-      await StorageHelper.set(key, commandId);
-    }
-    return commandId;
+    final db = await StorageHelper.openDatabase();
+    return db.transaction((transaction) async {
+      final store = StoreRef.main();
+      var commandId = await store.record(key).get(transaction) as String?;
+      if (principalBinding != null) {
+        final previousBinding =
+            await store.record('$key:principal').get(transaction);
+        if (commandId != null && previousBinding != principalBinding) {
+          throw StateError('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
+        }
+        await store.record('$key:principal').put(transaction, principalBinding);
+      }
+      if (commandId == null || commandId.isEmpty) {
+        commandId = newCommandId();
+        await store.record(key).put(transaction, commandId);
+      }
+      return commandId;
+    });
   }
 
   static Future<void> completeIntent(
@@ -36,19 +50,22 @@ class ClientCommandIdentity {
     final fingerprint = sha256
         .convert(utf8.encode(jsonEncode(_canonicalize(payload))))
         .toString();
-    await StorageHelper.remove(
-      'client_command_pending:$namespace:$fingerprint',
-    );
+    await StorageHelper.setAllAtomic({
+      'client_command_pending:$namespace:$fingerprint': null,
+      'client_command_pending:$namespace:$fingerprint:principal': null,
+    });
   }
 
   static Future<String> clientId() async {
-    var id = await StorageHelper.get(_storageKey);
-    id ??= await StorageHelper.get(_legacyFeedbackKey);
-    if (id == null || id.isEmpty) {
-      id = const Uuid().v4();
-    }
-    await StorageHelper.set(_storageKey, id);
-    return id;
+    final db = await StorageHelper.openDatabase();
+    return db.transaction((transaction) async {
+      final store = StoreRef.main();
+      var id = await store.record(_storageKey).get(transaction) as String?;
+      id ??= await store.record(_legacyFeedbackKey).get(transaction) as String?;
+      if (id == null || id.isEmpty) id = const Uuid().v4();
+      await store.record(_storageKey).put(transaction, id);
+      return id;
+    });
   }
 
   static Object? _canonicalize(Object? value) {

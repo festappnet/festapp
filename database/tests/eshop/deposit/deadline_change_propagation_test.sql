@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Test: deadline change propagation
 -- Goal: When admin changes deposit_deadline_days on the occasion feature,
 --       re-running queue_payment_reminders must update existing reminders' target_time

@@ -94,15 +94,8 @@ BEGIN
   IF v_queue_id IS NULL THEN
     RAISE check_violation USING MESSAGE='Fakturoid order confirmation claim missing';
   END IF;
-  IF v_currency='CZK' THEN
-    UPDATE eshop.payment_info SET variable_symbol=p_variable_symbol
-    WHERE id=v_payment_id;
-  ELSIF v_currency='EUR' THEN
-    IF v_existing_vs IS DISTINCT FROM p_variable_symbol THEN
-      RAISE check_violation USING MESSAGE='Fakturoid EUR symbol differs from RF base';
-    END IF;
-  ELSE
-    RAISE check_violation USING MESSAGE='unsupported Fakturoid order currency';
+  IF v_currency NOT IN ('CZK','EUR') OR v_existing_vs IS DISTINCT FROM p_variable_symbol THEN
+    RAISE check_violation USING MESSAGE='Fakturoid symbol differs from application payment reference';
   END IF;
   UPDATE eshop.waitlist_acceptance_attempts SET state='completed',updated_at=clock_timestamp()
    WHERE target_order_id=p_order_id AND command_id=p_command_id AND state='preparing';

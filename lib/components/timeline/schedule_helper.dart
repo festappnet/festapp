@@ -546,9 +546,4 @@ class TimeBlockHelper {
     ];
   }
 
-  static bool? getTimetableItemTypeAsCanSignIn(TimeBlockType type) {
-    if (type == TimeBlockType.canSave) return true;
-    if (type == TimeBlockType.saved) return false;
-    return null;
-  }
 }

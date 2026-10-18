@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Transaction-local fixtures. All email envelopes are sealed test doubles; no provider is invoked.
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);

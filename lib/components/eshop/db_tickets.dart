@@ -46,9 +46,6 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
-  static Future<TicketCancellationOutcome> stornoTicket(int ticketId) =>
-      stornoTickets([ticketId]);
-
   /// One canonical mutation for the complete selection, including email outcomes.
   static Future<TicketCancellationOutcome> stornoTickets(
       List<int> ticketIds) async {

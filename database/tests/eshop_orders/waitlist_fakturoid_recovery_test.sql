@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Transaction-local fixtures. All email envelopes are sealed test doubles; no provider is invoked.
 BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
@@ -106,8 +107,9 @@ BEGIN
   command:=gen_random_uuid(); r:=pg_temp.accept(x,w,ARRAY[person],command);
   PERFORM assert_eq(r#>>'{data,code}','200'::text,'retry prepare'); target:=(r#>>'{data,order,id}')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
-  result_vs:=public.complete_fakturoid_ticket_order_v1(target,command,123456789);
-  PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,123456789),result_vs,'complete replay');
+  result_vs:=(r#>>'{data,order,payment_info,variable_symbol}')::bigint;
+  PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'invoice preserves application VS');
+  PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'complete replay');
   PERFORM assert_eq((SELECT state FROM eshop.waitlist_acceptance_attempts WHERE command_id=command),'completed'::text,'journal completed');
   PERFORM assert_jsonb_contains(public.get_form_capacity_snapshot_internal(f),'{"occupiedPeople":1,"offeredPlaces":0}','complete capacity once');
  END LOOP;

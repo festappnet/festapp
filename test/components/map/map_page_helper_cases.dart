@@ -18,6 +18,25 @@ import 'package:latlong2/latlong.dart';
 /// The place-type filter bar shown at the bottom of the map: one chip per
 /// visible place type plus a trailing "Other" chip, single-select.
 void main() {
+  test('private group map points require matching identity and occasion', () {
+    final public = PlaceModel(id: 1, title: 'Public', isHidden: false);
+    final stale =
+        PlaceModel(id: 2, title: 'Stale group', type: 'group', isHidden: false);
+    final own =
+        PlaceModel(id: 3, title: 'Own group', type: 'group', isHidden: true);
+    List<PlaceModel> project(String? user, int? occasion) =>
+        MapPageHelper.visiblePlacesForContext([public, stale, own],
+            ownGroupPlaces: [own],
+            profileUserId: 'member',
+            currentUserId: user,
+            profileOccasionId: 7,
+            currentOccasionId: occasion);
+    expect(project('member', 7).map((p) => p.id), [1, 3]);
+    expect(project('other', 7).map((p) => p.id), [1]);
+    expect(project('member', 8).map((p) => p.id), [1]);
+    expect(project(null, 7).map((p) => p.id), [1]);
+  });
+
   // This suite intentionally uses untranslated key fallback (no catalog).
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);

@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Test: Mixed cart integration test with report verification
 -- Goal: Validate deposit + full-price products in one order, financial report deposit/remaining split
 -- Plan: 04-02, Task 1

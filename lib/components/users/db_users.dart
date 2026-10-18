@@ -1,6 +1,5 @@
 import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
-import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
@@ -179,12 +178,13 @@ class DbUsers {
     final fieldsByForm = groupBy(formFields.values, (field) => field.form);
     for (final entry in forms.entries.toList()) {
       final added = fieldsByForm[entry.key];
-      if (added != null)
+      if (added != null) {
         forms[entry.key] = entry.value.withDefinition(entry.value.definition
             .copyWith(relatedFields: [
           ...entry.value.definition.relatedFields,
           ...added
         ]));
+      }
     }
     final formMapByKey = {for (var f in forms.values) f.definition.key: f};
     final optsByTicketId =
@@ -351,37 +351,6 @@ class DbUsers {
     return [];
   }
 
-  static Future<void> updateUserInfo(OccasionUserModel oum) async {
-    final response = await _supabase.rpc("update_user", params: {
-      "input_data": {
-        "occasion": oum.occasion!,
-        "user": oum.user,
-        "data": oum.data
-      }
-    });
-
-    var code = response['code'];
-    if (code != 200 && code != 201) {
-      throw Exception(response['message']);
-    }
-  }
-
-  static Future<String?> unsafeCreateUser(
-      int occasion, String email, String pw, dynamic data) async {
-    var newId = await _supabase.rpc("create_user_in_organization_with_data_ws",
-        params: {
-          "org": AppConfig.organization,
-          "email": email,
-          "password": pw,
-          "data": data
-        });
-    if (newId == null) {
-      throw Exception("Creating of user has failed.");
-    }
-    await addUserToOccasion(newId, occasion);
-    return newId;
-  }
-
   static Future<UnitModel?> getCurrentUnit(int unit) async {
     var result =
         await _supabase.rpc("get_unit_for_edit", params: {"unit_id": unit});
@@ -519,21 +488,6 @@ class DbUsers {
     }
   }
 
-  static Future<String?> getUserByEmail(String email) async {
-    var data = await _supabase.rpc("get_user_id_by_email",
-        params: {"email": email.toLowerCase()}).maybeSingle();
-    if (data == null) {
-      return null;
-    }
-    return data["id"];
-  }
-
-  static Future<String?> getLastTimeSignIn(String id) async {
-    var data =
-        await _supabase.rpc("get_last_sign_in_at", params: {"user_id": id});
-    return data;
-  }
-
   static Future<OccasionUserModel> getOccasionUser(String id) async {
     var data = await _supabase
         .from(Tb.occasion_users.table)
@@ -545,14 +499,8 @@ class DbUsers {
     return OccasionUserModel.fromJson(data);
   }
 
-  static Future<OccasionModel> getOccasion(int id) async {
-    var data = await _supabase
-        .from(Tb.occasions.table)
-        .select()
-        .eq(Tb.occasions.id, id)
-        .single();
-    return OccasionModel.fromJson(data);
-  }
+  static Future<OccasionModel> getOccasion(int id) =>
+      DbOccasions.getOccasion(id);
 
   static Future<dynamic> importUsersFromTickets(int occasionId) async {
     if (ClientSyncRuntime.isV1Selected) {

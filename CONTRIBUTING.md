@@ -41,6 +41,13 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 **Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
 during a test is undone automatically.
 
+The payment-reference concurrency/restore test uses a separate disposable
+PostgreSQL template via `PAYMENT_REFERENCE_DATABASE_URL`. The template must
+contain the current schema and bootstrap disposable marker, use a dedicated
+`festapp_*_template` database name, and have no active clients while it is cloned.
+Its local admin connection must be able to fence fixture extension workers. It is separate
+from `DATABASE_URL`, so concurrent web tests cannot block its database copy.
+
 ### C. Client tests
 
 ```bash

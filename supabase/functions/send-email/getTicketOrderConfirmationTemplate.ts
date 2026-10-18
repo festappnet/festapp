@@ -97,9 +97,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-    if (String(paymentInfo.currency_code).toUpperCase() === "CZK") {
-      paymentInfo.variable_symbol = invoice.variableSymbol;
-    }
+
   } else if (paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount

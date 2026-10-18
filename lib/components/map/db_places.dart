@@ -81,15 +81,6 @@ class DbPlaces {
     return List<IconModel>.from(data.map((x) => IconModel.fromJson(x)));
   }
 
-  static Future<PlaceModel> getPlace(int id) async {
-    var data = await _supabase
-        .from(Tb.places.table)
-        .select()
-        .eq(Tb.places.id, id)
-        .single();
-    return PlaceModel.fromJson(data);
-  }
-
   static Future<void> deletePlace(PlaceModel placeModel) async {
     await deletePlaceWithCommands(
       commands: _commands,
@@ -115,14 +106,6 @@ class DbPlaces {
     if (result.status == MapCommandStatus.rejected) {
       throw StateError('Place delete was rejected');
     }
-  }
-
-  static Future<PlaceModel> updatePlace(PlaceModel placeModel) async {
-    return updatePlaceWithCommands(
-      commands: _commands,
-      occasionId: RightsService.currentOccasionId()!,
-      place: placeModel,
-    );
   }
 
   static Future<PlaceModel> updatePlaceWithCommands({

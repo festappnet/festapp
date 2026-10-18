@@ -36,6 +36,32 @@ class MapPlaceProgram {
 }
 
 class MapPageHelper {
+  /// Group points come from the active identity's private profile, never the
+  /// public catalog or a cache retained from another identity/occasion.
+  static List<PlaceModel> visiblePlacesForContext(
+    Iterable<PlaceModel> catalog, {
+    required Iterable<PlaceModel> ownGroupPlaces,
+    required String? profileUserId,
+    required String? currentUserId,
+    required int? profileOccasionId,
+    required int? currentOccasionId,
+  }) {
+    final places = <int?, PlaceModel>{
+      for (final place in catalog)
+        if (!place.isHidden && place.type != PlaceModel.groupType)
+          place.id: place,
+    };
+    if (currentUserId != null &&
+        currentUserId == profileUserId &&
+        currentOccasionId != null &&
+        currentOccasionId == profileOccasionId) {
+      for (final place in ownGroupPlaces) {
+        places[place.id] = place;
+      }
+    }
+    return places.values.toList();
+  }
+
   static bool hasMeaningfulPlaceDescription(String? description) =>
       !HtmlHelper.isHtmlEmptyOrNull(description);
 
@@ -56,9 +82,10 @@ class MapPageHelper {
       counselingEntriesByDay.putIfAbsent(_eventDay(entry), () => entry);
     }
     for (final place in places) {
-      if (place.id != null)
+      if (place.id != null) {
         eventsByPlace[place.id!] = List.unmodifiable(
             visibleEvents.where((event) => event.place?.id == place.id));
+      }
       final placeId = place.id;
       if (placeId == null) continue;
       final slots = publicEvents.where(

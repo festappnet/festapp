@@ -23,6 +23,8 @@ export class SupabaseService {
         return data;
     }
 
+    static get endpoint() { return SupabaseService._backend?.supabaseUrl ?? null; }
+
     static getClient() {
         if (!SupabaseService._client) {
             if (!SupabaseService._backend) {
@@ -91,31 +93,6 @@ export class SupabaseService {
     // --- Data ---
     // --- Data ---
     // Moved to DbOccasions
-
-    // --- Auth ---
-    static getLocalUser() {
-        const localSessionStr = browserStorage.getItem(SupabaseService.tokenKey);
-        if (localSessionStr) {
-            try {
-                const sessionData = JSON.parse(localSessionStr);
-                return sessionData.user;
-            } catch (e) {
-                console.error("Error parsing local session", e);
-            }
-        }
-        return null;
-    }
-
-    static async validateSession() {
-        // Background check
-        const { data, error } = await SupabaseService.getClient().auth.getSession();
-        if (error || !data.session) {
-            // Invalid, clear local
-            browserStorage.removeItem(SupabaseService.tokenKey);
-            return null;
-        }
-        return data.session.user;
-    }
 
     static async signOut() {
         await SupabaseService.getClient().auth.signOut();

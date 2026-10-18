@@ -80,21 +80,6 @@ class DbForms {
     );
   }
 
-  /// Fetches all forms for a given occasion, including their nested form fields.
-  static Future<List<FormBundle>> getAllFormsWithFieldsViaOccasionLink(
-      String occasionLink) async {
-    final response = await _supabase
-        .rpc('get_all_forms_with_fields', // Calling the new function
-            params: {'occasion_link': occasionLink});
-
-    if (response["code"] == 200) {
-      // The FormBundle.fromJson factory is expected to handle the 'fields' array
-      return List<FormBundle>.from(
-          response["data"].map((f) => FormBundle.fromJson(f)));
-    }
-    return [];
-  }
-
   static Future<void> createNewForm({
     required String title,
     required String link,

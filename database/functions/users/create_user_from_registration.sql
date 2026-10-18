@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.create_user_from_registration(
-    org bigint, 
-    email text, 
-    password text, 
+    org bigint,
+    email text,
+    password text,
     data jsonb,
     unit_title text DEFAULT 'Moje akce'
 )
@@ -21,16 +21,8 @@ BEGIN
     FROM organizations
     WHERE id = org;
 
-    -- CHECK: If registration is enabled OR if the caller is a manager/editor
-    IF is_registration_enabled IS DISTINCT FROM true AND NOT (
-           get_is_manager_on_any_occasion()
-           OR EXISTS (
-               SELECT 1
-               FROM occasions o
-               WHERE o.organization = org
-               AND get_is_editor_on_unit(o.unit)
-           )
-       ) THEN
+    -- Public registration policy is independent of any caller's manager roles.
+    IF is_registration_enabled IS DISTINCT FROM true THEN
         RETURN jsonb_build_object('code', 403, 'error', 'Registration is disabled for this organization');
     END IF;
 
@@ -42,3 +34,6 @@ BEGIN
     RETURN jsonb_build_object('code', 200, 'id', new_user_id);
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.create_user_from_registration(bigint,text,text,jsonb,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.create_user_from_registration(bigint,text,text,jsonb,text) TO service_role;

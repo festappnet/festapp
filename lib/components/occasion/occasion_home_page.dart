@@ -492,10 +492,6 @@ class OccasionTab {
     return const ScheduleBasicRoute();
   }
 
-  static List<PageRouteInfo<dynamic>> getTabRoutes(List<String> tabKeys) {
-    return tabKeys.map((key) => getAvailableTabs()[key]!.route).toList();
-  }
-
   Widget buildIcon(BuildContext context, int messageCount,
       String Function() messageCountString) {
     if (key == news) {

@@ -512,6 +512,74 @@
     "0d872c0cd081653ffc55aa22929c4fcf4a47ef9ac1ec2e2ac8c3965285c3f11f": {
       "signature": "public.update_spot_assignments(jsonb)",
       "source": "database/functions/inventory/update_spots_assignments.sql"
+    },
+    "71fe6048c49d57129c5a784c9964cb9fef1ba82e3d0afd93c004025fac1eaf2d": {
+      "signature": "public.get_occasion_for_context_v1(bigint)",
+      "source": "database/functions/others/get_occasion_for_context.sql"
+    },
+    "18987b91a94a7d797f893c7f4f7fb6fc67a10e93a153edaf46a00a50eeffbf54": {
+      "signature": "public.get_news_read_state_v1(bigint)",
+      "source": "database/functions/others/get_news_read_state.sql"
+    },
+    "44ed5eb9a36a4c94f631ad4f1ec6577b3d6288093daa04be2663b1301b580098": {
+      "signature": "public.get_news_for_context_v1(bigint)",
+      "source": "database/functions/others/get_news_read_state.sql"
+    },
+    "0da7ee5db6f4a3d112c314f2293b78744e68d2d5fce002545f1b997347b6dee1": {
+      "signature": "public.can_read_group_data_security_v1(bigint)",
+      "source": "database/functions/security/data_security_reads.sql"
+    },
+    "cfd27bbd8acf111816e21d261c71c7ef0e4ec43c1903a7f6ae7542de56666ce3": {
+      "signature": "public.mark_news_read_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/security/news_read_marker.sql"
+    },
+    "ce879d21be08d13d7581e658989c631aa1f64e35b10dab62c65695d24352e9d2": {
+      "signature": "public.get_public_client_sync_component_core_v1(text,text,bigint)",
+      "source": "database/functions/security/public_map_projection.sql"
+    },
+    "fc42c0c8345b61b626464172aa9bf8c0d919f936177ed4eaa571653da12cf2ed": {
+      "signature": "public.create_user_from_registration(bigint,text,text,jsonb,text)",
+      "source": "database/functions/users/create_user_from_registration.sql"
+    },
+    "3888c67c6531bcc86a78bc07599c5888053b7663a6048b469c08b7ea03dc6206": {
+      "signature": "public.can_read_news_data_security_v1(bigint)",
+      "source": "database/functions/security/data_security_reads.sql"
+    },
+    "ca3ae86744eb5ca6447d8a4f5c9ac78a2f05f56b9dedd8568475d5ca1229d2c8": {
+      "signature": "public.confirm_blueprint_order_change_client_sync_v1(bigint[],jsonb,uuid)",
+      "source": "database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql"
+    },
+    "20672b773cc84e3232fff2ae622c23c25027f7e198531f09ec8ffef5a50b4845": {
+      "signature": "public.replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)",
+      "source": "database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql"
+    },
+    "05d54ab333c97827a50ad129b21571514c2959a28e758e700d8e83ffbb2d8de5": {
+      "signature": "public.reserve_draft_payment_reference(bigint,bigint,uuid)",
+      "source": "database/functions/eshop_payment_references/manual.sql"
+    },
+    "918be5911b36685ce08997732964154538a3d17d3c0b8528f5f2f38b7d669a04": {
+      "signature": "public.import_payment_reference(bigint,text,bigint,text,bigint,bigint)",
+      "source": "database/functions/eshop_payment_references/operations.sql"
+    },
+    "92cc16a6e6f198c3087db315c0b1d256dfcb1644f9f73c962bf4d09bf4c861a9": {
+      "signature": "public.activate_payment_reference_scope(bigint,text,boolean)",
+      "source": "database/functions/eshop_payment_references/operations.sql"
+    },
+    "ac433fbcae7e388129d3b16b243b97e722f1fcc319ab27453a3beb873dd25e36": {
+      "signature": "public.enroll_payment_reference_account(bigint)",
+      "source": "database/functions/eshop_payment_references/identity.sql"
+    },
+    "fcef0be0238c33fb493fabf41e5cbbe16576dceb219955a642b9c59f015dddba": {
+      "signature": "public.create_ticket_order(jsonb)",
+      "source": "database/functions/eshop_payment_references/legacy_boundaries.sql"
+    },
+    "e982bf50f91b5fce82d10a99219e6f2bab89965feeb00381245202738ee0be60": {
+      "signature": "public.confirm_blueprint_order_change(bigint[],jsonb)",
+      "source": "database/functions/eshop_payment_references/legacy_boundaries.sql"
+    },
+    "f00522d66211f033225abe761d64ea9f62d1cc06daa4f1a02f8e5a344d6a4639": {
+      "signature": "public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb)",
+      "source": "database/functions/eshop/confirm_blueprint_order_change.sql"
     }
   }
 }

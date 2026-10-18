@@ -100,17 +100,12 @@ class DbOccasions {
       }
       return null;
     }
-    final response = await _supabase
-        .from(Tb.occasions.table)
-        .select(Tb.occasions.data)
-        .eq(Tb.occasions.id, RightsService.currentOccasionId()!)
-        .maybeSingle();
+    final response =
+        (await getOccasion(RightsService.currentOccasionId()!)).toJson();
 
-    if (response != null) {
-      final data = response[Tb.occasions.data];
-      if (data != null && data[Tb.occasions.data_game] != null) {
-        return GameSettingsModel.fromJson(data[Tb.occasions.data_game]);
-      }
+    final data = response[Tb.occasions.data];
+    if (data != null && data[Tb.occasions.data_game] != null) {
+      return GameSettingsModel.fromJson(data[Tb.occasions.data_game]);
     }
     return null;
   }
@@ -138,11 +133,8 @@ class DbOccasions {
   }
 
   static Future<OccasionModel> getOccasion(int oc) async {
-    var data = await _supabase
-        .from(Tb.occasions.table)
-        .select()
-        .eq(Tb.occasions.id, oc)
-        .single();
+    final data = await _supabase
+        .rpc('get_occasion_for_context_v1', params: {'p_occasion': oc});
     return OccasionModel.fromJson(data);
   }
 

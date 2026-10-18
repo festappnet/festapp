@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
+import { verifyManifest } from './generate_csp_policy.mjs';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -21,6 +22,7 @@ if (!expectedVersion) {
   throw new Error('Usage: verify_web_build.mjs <build-dir> <expected-version> [project-conf] [cloudflare|static]');
 }
 assert.ok(['cloudflare', 'static'].includes(target), `unsupported deploy target: ${target}`);
+const cspManifest = await verifyManifest(buildDir);
 const escapedVersion = expectedVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const manifest = JSON.parse(await readFile(
@@ -306,6 +308,7 @@ assert.equal(
 );
 if (target === 'cloudflare') {
   const edgeWorker = await readFile(path.join(buildDir, '_worker.js'), 'utf8');
+  assert.deepEqual(JSON.parse(edgeWorker.match(/^const CSP_MANIFEST = (.+);$/m)?.[1] || 'null'), cspManifest, 'Worker CSP differs from final documents');
   assert.match(
     edgeWorker,
     new RegExp(`const IS_APP_SUPPORTED = ${expectedIsAppSupported};`),

@@ -107,7 +107,13 @@ class WaitlistCommands {
     });
     final raw = await transport.invoke(endpoint, {});
     final response = ClientCommandResponse.from(raw);
-    _pending.remove(identity);
+    if (response.code == 200 ||
+        (response.code >= 400 &&
+            response.code < 500 &&
+            response.code != 408 &&
+            response.code != 429)) {
+      _pending.remove(identity);
+    }
     if (response.code != 200) throw WaitlistCommandException(response.data);
     await applyClientCommandReplacements(response);
     return response.data;

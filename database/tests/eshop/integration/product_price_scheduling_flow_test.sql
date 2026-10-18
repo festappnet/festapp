@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 DO $$
 DECLARE
     v_org_id bigint;

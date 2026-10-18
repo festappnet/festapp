@@ -18,7 +18,9 @@ test('security activation has digest, target, lock, validation and live readback
 });
 test('online restore refuses mutable images, production mounts, network and preexisting evidence',()=>{
  const s=read('automation/hetzner-supabase/restore/drill-online-backup-local.py');
- for(const text of ["'--network','none'","'HostConfig']['Binds']","not a.evidence.exists()","'@sha256:'","'runtime_executed':False","'rpo_seconds':None"]) assert(s.includes(text),text);
+ for(const text of ["'--network','none'","'HostConfig']['Binds']","not a.evidence.exists()","'@sha256:'","'rpo_seconds':None"]) assert(s.includes(text),text);
+ assert.match(s, /'runtime_executed':bool\(a\.gateway_smoke\)/);
+ assert.match(s, /add_argument\('\-\-gateway-smoke',action='store_true'\)/);
  const isolated=read('database/tests/security/run-local.sh');
  assert.match(isolated,/major_version = 17/);
  assert.match(read('automation/bootstrap_local_db.sh'),/postgresql:\/\/supabase_admin:postgres@127\.0\.0\.1/);

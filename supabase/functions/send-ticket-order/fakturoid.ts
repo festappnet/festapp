@@ -88,7 +88,10 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       throw new Error(`Fakturoid lookup failed ${response.status}`);
     }
     const invoices = await response.json();
-    return Array.isArray(invoices) ? invoices[0] : undefined;
+    if (!Array.isArray(invoices) || invoices.length > 1 || response.headers.get("Link")?.includes('rel="next"')) {
+      throw new Error("FAKTUROID_INVOICE_LOOKUP_AMBIGUOUS");
+    }
+    return invoices[0];
   }
 
   function variableSymbol(invoice: Invoice, order: FakturoidOrder): string {
@@ -96,11 +99,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     if (!/^\d{1,10}$/.test(value)) {
       throw new Error("FAKTUROID_VARIABLE_SYMBOL_INVALID");
     }
-    // EUR's RF reference is generated from the order VS by PostgreSQL. Until
-    // that payment-pairing contract changes, Fakturoid must echo the same VS.
-    if (order.payment_info.currency_code.trim().toUpperCase() === "EUR") {
-      assertFakturoidVariableSymbol(invoice, order.payment_info.variable_symbol);
-    }
+    assertFakturoidVariableSymbol(invoice, order.payment_info.variable_symbol);
     return value;
   }
 
@@ -132,6 +131,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       invoice = await response.json();
     }
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
+    variableSymbol(invoice, order);
     const data = order.data ?? {};
     const clientName = `${data.name || ""} ${data.surname || ""}`.trim();
     if (clientName) {
@@ -144,9 +144,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         client_has_delivery_address: false,
         client_phone: data.phone,
       };
-      if (order.payment_info.currency_code.trim().toUpperCase() === "EUR") {
-        patchBody.variable_symbol = String(order.payment_info.variable_symbol);
-      }
+      patchBody.variable_symbol = String(order.payment_info.variable_symbol);
       const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
         { method: "PUT", headers, body: JSON.stringify(patchBody) },

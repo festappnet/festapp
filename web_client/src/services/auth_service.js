@@ -108,11 +108,6 @@ export class AuthService {
         return data; // Returns { code: 200, email: "..." } or error code
     }
 
-    static async isLoggedIn() {
-        const { data, error } = await SupabaseService.getClient().auth.getSession();
-        return !error && !!data?.session;
-    }
-
     static async completeExternalLogin(result) {
         const client = SupabaseService.getClient();
         if (result.organization !== AppConfig.organization || !result.userId || !result.session?.refresh_token) throw new Error('account_identity_inconsistent');

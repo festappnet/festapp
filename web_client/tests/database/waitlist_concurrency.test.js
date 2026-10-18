@@ -64,7 +64,7 @@ async function withFixture(capacity, run) {
   try {
     await assertDisposableDatabase(control);
     // Reuse transaction-local helpers from the SQL behavioral suite.
-    const sql = await fs.readFile(repositoryFile('database/tests/eshop_orders/waitlist_lifecycle_test.sql'), 'utf8');
+    const sql = (await fs.readFile(repositoryFile('database/tests/eshop_orders/waitlist_lifecycle_test.sql'), 'utf8')).replaceAll('regression@example.invalid', `${randomUUID()}@example.invalid`);
     await control.query(sql.slice(0, sql.indexOf('DO $$\nDECLARE x jsonb')));
     fixture = (await control.query('SELECT pg_temp.fixture($1) fixture', [capacity])).rows[0].fixture;
     await control.query('COMMIT');

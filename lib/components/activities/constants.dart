@@ -67,15 +67,4 @@ class ActivityConstants {
   /// cleaned up on the next save operation.
   static const Duration historyMaxAge = Duration(days: 30);
 
-  /// Converts a Dart Duration object into a PostgreSQL interval string.
-  /// Example: Duration(days: 30) becomes '30 days'.
-  static String durationToPostgresInterval(Duration duration) {
-    if (duration.inDays > 0) {
-      return '${duration.inDays} days';
-    }
-    if (duration.inHours > 0) {
-      return '${duration.inHours} hours';
-    }
-    return '${duration.inSeconds} seconds';
-  }
 }

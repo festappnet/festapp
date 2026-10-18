@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Form overrides remain distinct from inherited occasion defaults.
 DO $$
 DECLARE

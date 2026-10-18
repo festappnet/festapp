@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 // Transfer the existing tenant secret to its owner's workstation, never logs.
-export function sealReleaseManifest(source, publicKeyPem) {
+export function sealReleaseManifest(source, publicKeyPem, tenantId = 'festapptickets') {
   assert.ok(source, 'Existing release manifest is required');
   const manifest = JSON.parse(source);
-  assert.equal(manifest.backend?.activation?.tenantId, 'festapptickets');
+  assert.match(tenantId, /^[a-z][a-z0-9-]*$/);
+  assert.equal(manifest.backend?.activation?.tenantId, tenantId);
   const publicKey = crypto.createPublicKey(publicKeyPem);
   assert.equal(publicKey.asymmetricKeyType, 'rsa');
   assert.ok(publicKey.asymmetricKeyDetails.modulusLength >= 3072);
@@ -17,7 +18,7 @@ export function sealReleaseManifest(source, publicKeyPem) {
   const ciphertext = Buffer.concat([cipher.update(source, 'utf8'), cipher.final()]);
   return {
     schemaVersion: 1,
-    tenantId: 'festapptickets',
+    tenantId,
     encryptedKey: crypto.publicEncrypt({ key: publicKey, oaepHash: 'sha256' }, key).toString('base64'),
     iv: iv.toString('base64'),
     tag: cipher.getAuthTag().toString('base64'),
@@ -29,7 +30,8 @@ export function sealReleaseManifest(source, publicKeyPem) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const envelope = sealReleaseManifest(process.env.RELEASE_MANIFEST,
-      Buffer.from(process.env.RECIPIENT_PUBLIC_KEY_BASE64 || '', 'base64').toString('utf8'));
+      Buffer.from(process.env.RECIPIENT_PUBLIC_KEY_BASE64 || '', 'base64').toString('utf8'),
+      process.env.RELEASE_TENANT_ID || 'festapptickets');
     fs.writeFileSync(process.argv[2], JSON.stringify(envelope), { mode: 0o600 });
     console.log('Existing tenant release input sealed for the recipient.');
   } catch {

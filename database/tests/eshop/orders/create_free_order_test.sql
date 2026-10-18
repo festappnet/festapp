@@ -3,7 +3,7 @@ BEGIN;
 -- 1. Setup Data
 INSERT INTO organizations (id, title) VALUES (997, 'Test Org Free');
 INSERT INTO units (id, organization, title) VALUES (997, 997, 'Test Unit Free');
-INSERT INTO occasions (id, unit, title, link, start_time, end_time) VALUES (125, 997, 'Test Occasion Free', 'free-link', now(), now() + interval '1 day');
+INSERT INTO occasions (organization, id, unit, title, link, start_time, end_time) VALUES ((SELECT organization FROM public.units WHERE id=997), 125, 997, 'Test Occasion Free', 'free-link', now(), now() + interval '1 day');
 INSERT INTO public.forms (id, key, occasion, data, is_open) VALUES (800, '00000000-0000-0000-0000-000000000800', 125, '{}', true);
 
 -- Need a Bank Account for VS generation (even if free)

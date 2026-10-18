@@ -208,9 +208,6 @@ class OrdersStrings {
       'FeatureOrders.ticketUsage'.tr(); // "Ticket usage"
 
   // --- Tickets/Items Tab ---
-  static String stornoCompleted({required String item}) =>
-      'FeatureOrders.stornoCompletedItem'
-          .tr(namedArgs: {'item': item}); // "Storno completed for {item}."
 
   // --- Scan Page Specific ---
   // (Scan-specific labels moved to ScanStrings in lib/components/scan/scan_strings.dart)

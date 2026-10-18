@@ -60,6 +60,8 @@ mkdir -p "$TMP_ROOT/automation/fonts"
 touch "$TMP_ROOT/automation/fonts/Futura-Regular.ttf"
 cp "$PROJECT_ROOT/automation/hetzner-supabase/merge/source-registry.json" \
    "$TMP_ROOT/automation/hetzner-supabase/merge/source-registry.json"
+cp "$PROJECT_ROOT/automation/lib/csp_policy.mjs" "$TMP_ROOT/automation/lib/csp_policy.mjs"
+cp "$PROJECT_ROOT/automation/lib/web_headers.template" "$TMP_ROOT/automation/lib/web_headers.template"
 cp "$PROJECT_ROOT/automation/lib/supabase_client_config.mjs" "$TMP_ROOT/automation/lib/supabase_client_config.mjs"
 cp "$PROJECT_ROOT/automation/lib/backend_activation_manifest.mjs" "$TMP_ROOT/automation/lib/backend_activation_manifest.mjs"
 cp "$PROJECT_ROOT/automation/release/generate_backend_activation_manifest.mjs" "$TMP_ROOT/automation/release/generate_backend_activation_manifest.mjs"

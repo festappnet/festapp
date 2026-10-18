@@ -25,10 +25,6 @@ class ImportHelper {
         groupColumn: "Skupina:",
       };
 
-  static int getIndex(String s, List<String> row) {
-    return row.indexOf(migrateColumns[s]!);
-  }
-
   static Future<List<Map<String, dynamic>>> getUsersFromFile(XFile file) async {
     final rawData = await file.readAsString();
     return getUsersFromCsv(rawData);

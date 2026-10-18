@@ -14,7 +14,7 @@ AS $$
 
 BEGIN
     -- Check if the user has access to the occasion
-    PERFORM check_access_to_occasion(oc);
+    PERFORM public.get_occasion_for_context_v1(oc);
 
     -- Return the news data with the total views count, ordered by highest news_id
     RETURN QUERY
@@ -41,3 +41,5 @@ BEGIN
 
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_news_with_views(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_news_with_views(bigint) TO anon,authenticated,service_role;

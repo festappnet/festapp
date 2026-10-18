@@ -1,3 +1,4 @@
+-- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 BEGIN;
 DO $$
 DECLARE org bigint; u bigint; occ bigint; ord bigint; other_ord bigint; actor uuid; ctx jsonb; msg jsonb; n int; message_ids uuid[]; attempt_ids uuid[]; log_id bigint; states text[]:=ARRAY['pending','retry_wait','blocked','preparing','sending','accepted','unknown','dead','cancelled','suppressed','expired'];

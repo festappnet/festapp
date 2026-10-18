@@ -106,7 +106,7 @@ async function runTest(file) {
     
     console.error(`  ❌ FAILED`);
     console.error(`  Error: ${err.message}`);
-    if (err.context) console.error(`  Context: ${err.context}`);
+    if (err.where) console.error(`  Context: ${err.where}`);
     if (err.detail) console.error(`  Detail: ${err.detail}`);
     // Check for PostgreSQL error codes (e.g. 23505)
     if (err.code) console.error(`  Code: ${err.code}`);

@@ -71,6 +71,8 @@ class DbOrders {
     final commandId = await ClientCommandIdentity.claimIntent(
       namespace,
       payload,
+      principalBinding:
+          '${_supabase.rest.url}:${_supabase.auth.currentUser?.id ?? 'anonymous'}',
     );
     final response = await _supabase.functions.invoke(
       "send-ticket-order",
@@ -80,7 +82,14 @@ class DbOrders {
         "clientId": clientId,
       },
     );
-    await ClientCommandIdentity.completeIntent(namespace, payload);
+    final data = response.data;
+    final code = data is Map ? data['code'] : null;
+    if (code is int &&
+        (code == 200 ||
+            (code >= 1000 && code < 2000) ||
+            (code >= 400 && code < 500 && code != 408 && code != 429))) {
+      await ClientCommandIdentity.completeIntent(namespace, payload);
+    }
     return response;
   }
 

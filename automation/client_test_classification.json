@@ -658,6 +658,34 @@
       "sources": [
         "test/components/occasion_settings/advanced_link_visibility_test.dart"
       ]
+    },
+    "test/components/images/recovering_image_test.dart": {
+      "kind": "environment",
+      "reason": "Flutter image stream, decoded dart:ui images and retry timers require a widget binding.",
+      "sources": [
+        "test/components/images/recovering_image_test.dart"
+      ]
+    },
+    "test/components/navigation/inventory_navigation_behavior_test.dart": {
+      "kind": "environment",
+      "reason": "Flutter router, retained drafts and localized inventory widgets use scoped RightsService state.",
+      "sources": [
+        "test/components/navigation/inventory_navigation_behavior_test.dart"
+      ]
+    },
+    "test/components/eshop/report_number_format_test.dart": {
+      "kind": "environment",
+      "reason": "Current application report formatter is tested through its Flutter test adapter.",
+      "sources": [
+        "test/components/eshop/report_number_format_test.dart"
+      ]
+    },
+    "test/data_services/client_command_identity_test.dart": {
+      "kind": "environment",
+      "reason": "Platform path-provider singleton and on-disk Sembast reopen/concurrency require an isolated binding.",
+      "sources": [
+        "test/data_services/client_command_identity_test.dart"
+      ]
     }
   }
 }
