@@ -958,6 +958,11 @@
     "withinDeadline": "V termíne úhrady"
   },
   "OccasionSetup": {
+    "draft": "Koncept",
+    "cancelDraft": "Zrušiť koncept",
+    "cancellingDraft": "Ruším koncept…",
+    "cancelDraftConfirm": "Naozaj zrušiť koncept „{title}“? Rozpracované nastavenia budú trvalo zmazané.",
+    "progress": "Dokončené {value} %",
     "createStepByStep": "Vytvoriť krok za krokom",
     "createEvent": "Vytvoriť udalosť",
     "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."

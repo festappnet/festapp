@@ -2583,6 +2583,11 @@
     "includingCancelled": "Including cancelled"
   },
   "OccasionSetup": {
+    "draft": "Draft",
+    "cancelDraft": "Discard draft",
+    "cancellingDraft": "Discarding draft…",
+    "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
+    "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
     "drafts": "Drafts",
     "untitled": "New event",
