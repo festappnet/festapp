@@ -5,6 +5,7 @@ import 'package:fstapp/services/exception_handler.dart';
 
 import 'html_media_service.dart';
 import 'html_strings.dart';
+import 'template_authoring.dart';
 import 'rich_html_editor.dart';
 import 'rich_html_editor_controller.dart';
 
@@ -36,6 +37,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
     HtmlSaveCoordinator? coordinator,
     HtmlMediaDraft? media,
     bool readOnly = false,
+    TemplateAuthoringProvider? authoring,
   }) async {
     String? html = initialHtml;
     if (html == null && loadHtml != null) {
@@ -57,6 +59,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
       owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
       profile: profile,
       media: draftMedia,
+      authoring: authoring,
     );
     final result = await showDialog<String>(
       context: context,
@@ -101,6 +104,8 @@ class RichHtmlEditorDialog extends StatefulWidget {
 class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
   bool _expanded = false;
   bool _confirmingCancel = false;
+  bool get _parentAuthoring =>
+      !widget.ownsController && widget.controller.authoring != null;
   bool get _fullPage => widget.fullPage || _expanded;
 
   void _finish(bool save) {
@@ -158,6 +163,10 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
   }
 
   Future<void> _requestCancel() async {
+    if (_parentAuthoring) {
+      await _toggleFullscreen();
+      return;
+    }
     if (await _canClose() && mounted) _finish(false);
   }
 
@@ -227,31 +236,33 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                       ),
                     ),
                   ),
-            bottomNavigationBar: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () async {
-                        if (await _canClose() && context.mounted)
-                          _finish(false);
-                      },
-                      child: Text(CommonStrings.storno),
+            bottomNavigationBar: _parentAuthoring
+                ? null
+                : SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () async {
+                              if (await _canClose() && context.mounted)
+                                _finish(false);
+                            },
+                            child: Text(CommonStrings.storno),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton(
+                            onPressed: !widget.readOnly &&
+                                    widget.controller.hasUserChanges
+                                ? () => _finish(true)
+                                : null,
+                            child: Text(CommonStrings.save),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed:
-                          !widget.readOnly && widget.controller.hasUserChanges
-                              ? () => _finish(true)
-                              : null,
-                      child: Text(CommonStrings.save),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
         );
         return AppDialogDismissal(

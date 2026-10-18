@@ -1,6 +1,43 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailTemplatesStrings {
+  static String get variableGuide =>
+      'EmailTemplates.authoring.variableGuide'.tr();
+  static String get variableGuideHint =>
+      'EmailTemplates.authoring.variableGuideHint'.tr();
+  static String get occasionSample =>
+      'EmailTemplates.authoring.occasionSample'.tr();
+  static String get modelSample => 'EmailTemplates.authoring.modelSample'.tr();
+  static String get contextUnavailable =>
+      'EmailTemplates.authoring.contextUnavailable'.tr();
+  static String get recommended => 'EmailTemplates.authoring.recommended'.tr();
+  static String get usedBlocks => 'EmailTemplates.authoring.usedBlocks'.tr();
+  static String scenarioName(String value) =>
+      'EmailTemplates.authoring.$value'.tr();
+  static String toneName(String value) =>
+      'EmailTemplates.authoring.$value'.tr();
+  static String get authoringHint =>
+      'EmailTemplates.authoring.authoringHint'.tr();
+  static String get insertVariable =>
+      'EmailTemplates.authoring.insertVariable'.tr();
+  static String get noVariable => 'EmailTemplates.authoring.noVariable'.tr();
+  static String get alreadyUsed => 'EmailTemplates.authoring.alreadyUsed'.tr();
+  static String get sampleData => 'EmailTemplates.authoring.sampleData'.tr();
+  static String get variable => 'EmailTemplates.authoring.variable'.tr();
+  static String get previewUnavailable =>
+      'EmailTemplates.authoring.previewUnavailable'.tr();
+  static String get preview => 'EmailTemplates.authoring.preview'.tr();
+  static String get previewScope =>
+      'EmailTemplates.authoring.previewScope'.tr();
+  static String get scenario => 'EmailTemplates.authoring.scenario'.tr();
+  static String get replaceVariable =>
+      'EmailTemplates.authoring.replaceVariable'.tr();
+  static String get keepText => 'EmailTemplates.authoring.keepText'.tr();
+  static String get unknownVariable =>
+      'EmailTemplates.authoring.unknownVariable'.tr();
+  static String suggestTitle(String title) =>
+      'EmailTemplates.authoring.suggestTitle'.tr(args: [title]);
+
   static String get subParticipantCount =>
       'EmailTemplates.subs.participantCount'.tr();
   static String get subManageWaitlistUrl =>

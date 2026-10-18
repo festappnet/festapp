@@ -6,6 +6,7 @@ import 'package:fstapp/services/exception_handler.dart';
 
 import 'html_strings.dart';
 import 'html_embedded_block.dart';
+import 'template_authoring.dart';
 import 'html_text_style.dart';
 import 'html_view.dart';
 import 'rich_html_editor.dart';
@@ -25,10 +26,14 @@ class EditableHtmlField extends StatefulWidget {
     this.fontSize = 18,
     this.onSave,
     this.coordinator,
+    this.authoring,
+    this.onDraftChanged,
     this.twoFingersOn,
     this.twoFingersOff,
     super.key,
   });
+  final TemplateAuthoringProvider? authoring;
+  final ValueChanged<RichHtmlEditorController?>? onDraftChanged;
   final String? html;
   final HtmlEmbeddedBlock? embeddedBlock;
   final String? placeholder;
@@ -54,6 +59,18 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
   bool _saving = false;
   bool _expanded = false;
   bool _confirmingCancel = false;
+  bool _startedAuthoring = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_startedAuthoring && widget.authoring != null && widget.enabled) {
+      _startedAuthoring = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_active) _begin();
+      });
+    }
+  }
+
   void _begin() {
     _coordinator = widget.coordinator ?? HtmlEditingScope.maybeOf(context);
     _activationHtml = widget.html ?? '';
@@ -67,6 +84,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
           : widget.owner,
       profile: widget.profile,
       media: _coordinator?.media,
+      authoring: widget.authoring,
     );
     if (_controller!.html != _activationHtml)
       _controller!.reset(_activationHtml);
@@ -88,9 +106,11 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
       },
     );
     setState(() => _active = true);
+    widget.onDraftChanged?.call(_controller);
   }
 
   void _draftChanged() {
+    widget.onDraftChanged?.call(_controller);
     _coordinator?.draftChanged();
     if (mounted && _active) setState(() {});
   }
@@ -127,6 +147,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
   }
 
   void _cancel() {
+    widget.onDraftChanged?.call(null);
     _controller!.removeListener(_draftChanged);
     _coordinator?.unregisterActive(this);
     _controller!.reset(_activationHtml);
@@ -192,26 +213,32 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     super.dispose();
   }
 
-  Widget _editingActions() => Wrap(
-        alignment: WrapAlignment.end,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        children: [
-          TextButton(
-            onPressed: _saving ? null : _requestCancel,
-            child: Text(CommonStrings.storno),
-          ),
-          FilledButton(
-            onPressed: _saving || !_controller!.hasUserChanges ? null : _apply,
-            child: Text(CommonStrings.save),
-          ),
-          IconButton(
-            tooltip: HtmlStrings.expand,
-            onPressed: _saving ? null : _expand,
-            icon: const Icon(Icons.open_in_full),
-          ),
-        ],
-      );
+  Widget _editingActions() => widget.authoring != null
+      ? IconButton(
+          tooltip: HtmlStrings.expand,
+          onPressed: _saving ? null : _expand,
+          icon: const Icon(Icons.open_in_full))
+      : Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          children: [
+            TextButton(
+              onPressed: _saving ? null : _requestCancel,
+              child: Text(CommonStrings.storno),
+            ),
+            FilledButton(
+              onPressed:
+                  _saving || !_controller!.hasUserChanges ? null : _apply,
+              child: Text(CommonStrings.save),
+            ),
+            IconButton(
+              tooltip: HtmlStrings.expand,
+              onPressed: _saving ? null : _expand,
+              icon: const Icon(Icons.open_in_full),
+            ),
+          ],
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -246,11 +273,12 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
     }
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): () {
-          if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
-            _requestCancel();
-          }
-        },
+        if (widget.authoring == null)
+          const SingleActivator(LogicalKeyboardKey.escape): () {
+            if (!_expanded && ModalRoute.of(context)?.isCurrent != false) {
+              _requestCancel();
+            }
+          },
       },
       child: Focus(
         autofocus: true,
@@ -263,7 +291,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
               RichHtmlEditor(
                 controller: _controller!,
                 textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
-                onCancel: _requestCancel,
+                onCancel: widget.authoring == null ? _requestCancel : null,
                 toolbarActions: _editingActions(),
                 enabled: !_saving && widget.enabled,
               ),

@@ -1,3 +1,4 @@
+import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
@@ -14,6 +15,10 @@ class EmailTemplateSub {
     required this.description,
     required this.defaultValue,
   });
+
+  EmailVariableDefinition get definition => EmailTemplateRules.definition(code);
+  EmailValueKind get kind => definition.kind;
+  bool supportsField(EmailTargetField field) => definition.supports(field);
 
   @override
   String toString() {
@@ -69,137 +74,137 @@ class EmailTemplateModel {
   }
 
   // Common substitution definitions (codes are now without '{{' and '}}'):
-  static EmailTemplateSub appPlatformLinksSub = EmailTemplateSub(
-    code: 'platformLinks',
-    description: EmailTemplatesStrings.subPlatformLinks,
-    defaultValue: 'Open the app on https://live.festapp.net/.',
-  );
+  static EmailTemplateSub get appPlatformLinksSub => EmailTemplateSub(
+        code: 'platformLinks',
+        description: EmailTemplatesStrings.subPlatformLinks,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub appLinksSub = EmailTemplateSub(
-    code: 'appLinks',
-    description: EmailTemplatesStrings.subPlatformLinks,
-    defaultValue: 'Open the app on https://live.festapp.net/.',
-  );
+  static EmailTemplateSub get appLinksSub => EmailTemplateSub(
+        code: 'appLinks',
+        description: EmailTemplatesStrings.subPlatformLinks,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub appNameSub = EmailTemplateSub(
-    code: 'appName',
-    description: EmailTemplatesStrings.subAppName,
-    defaultValue: 'Festapp',
-  );
+  static EmailTemplateSub get appNameSub => EmailTemplateSub(
+        code: 'appName',
+        description: EmailTemplatesStrings.subAppName,
+        defaultValue: 'Festapp',
+      );
 
-  static EmailTemplateSub emailSub = EmailTemplateSub(
-    code: 'email',
-    description: EmailTemplatesStrings.subEmail,
-    defaultValue: 'jan.novak@festapp.net',
-  );
+  static EmailTemplateSub get emailSub => EmailTemplateSub(
+        code: 'email',
+        description: EmailTemplatesStrings.subEmail,
+        defaultValue: 'jana.novakova@example.invalid',
+      );
 
-  static EmailTemplateSub nameSub = EmailTemplateSub(
-    code: 'name',
-    description: EmailTemplatesStrings.subName,
-    defaultValue: 'Jan',
-  );
+  static EmailTemplateSub get nameSub => EmailTemplateSub(
+        code: 'name',
+        description: EmailTemplatesStrings.subName,
+        defaultValue: 'Jan',
+      );
 
-  static EmailTemplateSub surnameSub = EmailTemplateSub(
-    code: 'surname',
-    description: EmailTemplatesStrings.subSurname,
-    defaultValue: 'Novák',
-  );
+  static EmailTemplateSub get surnameSub => EmailTemplateSub(
+        code: 'surname',
+        description: EmailTemplatesStrings.subSurname,
+        defaultValue: 'Novák',
+      );
 
-  static EmailTemplateSub resetLinkSub = EmailTemplateSub(
-    code: 'resetLink',
-    description: EmailTemplatesStrings.subResetLink,
-    defaultValue: 'https://live.festapp.net/reset',
-  );
+  static EmailTemplateSub get resetLinkSub => EmailTemplateSub(
+        code: 'resetLink',
+        description: EmailTemplatesStrings.subResetLink,
+        defaultValue: 'https://example.invalid/reset',
+      );
 
-  static EmailTemplateSub signInCodeSub = EmailTemplateSub(
-    code: 'code',
-    description: EmailTemplatesStrings.subSignInCode,
-    defaultValue: '123456',
-  );
+  static EmailTemplateSub get signInCodeSub => EmailTemplateSub(
+        code: 'code',
+        description: EmailTemplatesStrings.subSignInCode,
+        defaultValue: '123456',
+      );
 
-  static EmailTemplateSub occasionTitleSub = EmailTemplateSub(
-    code: 'occasionTitle',
-    description: EmailTemplatesStrings.subOccasionTitle,
-    defaultValue: 'Festival of Creaky Music',
-  );
+  static EmailTemplateSub get occasionTitleSub => EmailTemplateSub(
+        code: 'occasionTitle',
+        description: EmailTemplatesStrings.subOccasionTitle,
+        defaultValue: 'Festival of Creaky Music',
+      );
 
-  static EmailTemplateSub amountSub = EmailTemplateSub(
-    code: 'amount',
-    description: EmailTemplatesStrings.subAmount,
-    defaultValue: '100 CZK',
-  );
+  static EmailTemplateSub get amountSub => EmailTemplateSub(
+        code: 'amount',
+        description: EmailTemplatesStrings.subAmount,
+        defaultValue: '100 CZK',
+      );
 
-  static EmailTemplateSub accountNumberSub = EmailTemplateSub(
-    code: 'accountNumber',
-    description: EmailTemplatesStrings.subAccountNumber,
-    defaultValue: '2502719268/2010',
-  );
+  static EmailTemplateSub get accountNumberSub => EmailTemplateSub(
+        code: 'accountNumber',
+        description: EmailTemplatesStrings.subAccountNumber,
+        defaultValue: '0000000000/0000',
+      );
 
-  static EmailTemplateSub ibanSub = EmailTemplateSub(
-    code: 'iban',
-    description: EmailTemplatesStrings.subIban,
-    defaultValue: 'CZ4520100000002502719268',
-  );
+  static EmailTemplateSub get ibanSub => EmailTemplateSub(
+        code: 'iban',
+        description: EmailTemplatesStrings.subIban,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub orderSymbolSub = EmailTemplateSub(
-    code: 'orderSymbol',
-    description: OrdersStrings.gridOrderSymbol,
-    defaultValue: '7G4K9M2R6A',
-  );
+  static EmailTemplateSub get orderSymbolSub => EmailTemplateSub(
+        code: 'orderSymbol',
+        description: OrdersStrings.gridOrderSymbol,
+        defaultValue: '7G4K9M2R6A',
+      );
 
-  static EmailTemplateSub variableSymbolSub = EmailTemplateSub(
-    code: 'variableSymbol',
-    description: EmailTemplatesStrings.subVariableSymbol,
-    defaultValue: '9654',
-  );
+  static EmailTemplateSub get variableSymbolSub => EmailTemplateSub(
+        code: 'variableSymbol',
+        description: EmailTemplatesStrings.subVariableSymbol,
+        defaultValue: '9654',
+      );
 
-  static EmailTemplateSub deadlineSub = EmailTemplateSub(
-    code: 'deadline',
-    description: EmailTemplatesStrings.subDeadline,
-    defaultValue: '30. 2. 2026',
-  );
+  static EmailTemplateSub get deadlineSub => EmailTemplateSub(
+        code: 'deadline',
+        description: EmailTemplatesStrings.subDeadline,
+        defaultValue: '30. 10. 2026',
+      );
 
-  static EmailTemplateSub fullOrderSub = EmailTemplateSub(
-    code: 'fullOrder',
-    description: EmailTemplatesStrings.subFullOrder,
-    defaultValue: 'Order details here',
-  );
+  static EmailTemplateSub get fullOrderSub => EmailTemplateSub(
+        code: 'fullOrder',
+        description: EmailTemplatesStrings.subFullOrder,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub changeOverviewSub = EmailTemplateSub(
-    code: 'changeOverview',
-    description: EmailTemplatesStrings.subChangeOverview,
-    defaultValue: 'Here is an overview of the changes in your order.',
-  );
+  static EmailTemplateSub get changeOverviewSub => EmailTemplateSub(
+        code: 'changeOverview',
+        description: EmailTemplatesStrings.subChangeOverview,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub balanceReasoningSub = EmailTemplateSub(
-    code: 'balanceReasoning',
-    description: EmailTemplatesStrings.subBalanceReasoning,
-    defaultValue: 'Your order is fully paid.',
-  );
+  static EmailTemplateSub get balanceReasoningSub => EmailTemplateSub(
+        code: 'balanceReasoning',
+        description: EmailTemplatesStrings.subBalanceReasoning,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub paymentDetailsSub = EmailTemplateSub(
-    code: 'paymentDetails',
-    description: EmailTemplatesStrings.subPaymentDetails,
-    defaultValue: 'Payment details table',
-  );
+  static EmailTemplateSub get paymentDetailsSub => EmailTemplateSub(
+        code: 'paymentDetails',
+        description: EmailTemplatesStrings.subPaymentDetails,
+        defaultValue: '',
+      );
 
-  static EmailTemplateSub remainingTimeSub = EmailTemplateSub(
-    code: 'remainingTime',
-    description: EmailTemplatesStrings.subRemainingTime,
-    defaultValue: '5 days',
-  );
+  static EmailTemplateSub get remainingTimeSub => EmailTemplateSub(
+        code: 'remainingTime',
+        description: EmailTemplatesStrings.subRemainingTime,
+        defaultValue: '5 days',
+      );
 
-  static EmailTemplateSub confirmationUrlSub = EmailTemplateSub(
-    code: 'confirmationUrl',
-    description: EmailTemplatesStrings.subConfirmationUrl,
-    defaultValue: 'https://live.festapp.net/delete-account/confirm',
-  );
+  static EmailTemplateSub get confirmationUrlSub => EmailTemplateSub(
+        code: 'confirmationUrl',
+        description: EmailTemplatesStrings.subConfirmationUrl,
+        defaultValue: 'https://example.invalid/delete-account/confirm',
+      );
 
-  static EmailTemplateSub expiresAtSub = EmailTemplateSub(
-    code: 'expiresAt',
-    description: EmailTemplatesStrings.subExpiresAt,
-    defaultValue: '31. 12. 2026 23:59',
-  );
+  static EmailTemplateSub get expiresAtSub => EmailTemplateSub(
+        code: 'expiresAt',
+        description: EmailTemplatesStrings.subExpiresAt,
+        defaultValue: '31. 12. 2026 23:59',
+      );
 
   /// Mapping of template codes to their available substitutions.
   static List<EmailTemplateSub> get orderOverviewSubs => [
@@ -211,8 +216,7 @@ class EmailTemplateModel {
         EmailTemplateSub(
             code: 'order_overview_button',
             description: OrderOverviewStrings.text('title'),
-            defaultValue:
-                '<a href="https://example.invalid/form/example">Order overview</a>'),
+            defaultValue: ''),
       ];
 
   static List<EmailTemplateSub> get waitlistSubs => [
@@ -241,191 +245,185 @@ class EmailTemplateModel {
         EmailTemplateSub(
             code: 'manage_waitlist_button',
             description: EmailTemplatesStrings.subManageWaitlistButton,
-            defaultValue:
-                '<a href="https://example.invalid/form/example">Manage waiting</a>'),
+            defaultValue: ''),
       ];
 
-  static final Map<String, List<EmailTemplateSub>> substitutionDefinitions = {
-    'waitlist_confirmation': waitlistSubs,
-    'waitlist_offer': [
-      ...waitlistSubs,
-      EmailTemplateSub(
-          code: 'offered_count',
-          description: EmailTemplatesStrings.subOfferedCount,
-          defaultValue: '1'),
-      EmailTemplateSub(
-          code: 'offered_places',
-          description: EmailTemplatesStrings.subOfferedCount,
-          defaultValue: '1 místo'),
-      EmailTemplateSub(
-          code: 'offer_expires_at',
-          description: EmailTemplatesStrings.subOfferExpiresAt,
-          defaultValue: '14. 10. 2026 14:00'),
-      EmailTemplateSub(
-          code: 'offer_url',
-          description: EmailTemplatesStrings.subOfferUrl,
-          defaultValue:
-              'https://example.invalid/order?waitlist=1&offer_id=preview&token=preview'),
-      EmailTemplateSub(
-          code: 'offer_button',
-          description: EmailTemplatesStrings.subOfferButton,
-          defaultValue:
-              '<a href="https://example.invalid/form/example">Open offer</a>'),
-    ],
-    'RESET_PASSWORD': [
-      appNameSub,
-      appPlatformLinksSub,
-      emailSub,
-      resetLinkSub,
-    ],
-    'SIGN_IN_CODE': [
-      appNameSub,
-      appPlatformLinksSub,
-      emailSub,
-      nameSub,
-      surnameSub,
-      signInCodeSub,
-    ],
-    'APP_LINKS': [appLinksSub],
-    'ACCOUNT_DELETION_CONFIRM': [
-      appNameSub,
-      confirmationUrlSub,
-      expiresAtSub,
-    ],
-    'ACCOUNT_DELETION_COMPLETE': [appNameSub],
-    'TICKET_ORDER_CONFIRMATION': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      amountSub,
-      accountNumberSub,
-      ibanSub,
-      variableSymbolSub,
-      deadlineSub,
-      balanceReasoningSub,
-      fullOrderSub,
-    ],
-    'TICKET_ORDER_UPDATE': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      fullOrderSub,
-      changeOverviewSub,
-      balanceReasoningSub,
-    ],
-    'TICKET_ORDER_PAYMENT_DONE': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      fullOrderSub,
-      balanceReasoningSub,
-      amountSub,
-    ],
-    'TICKET_ORDER_REMINDER': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      balanceReasoningSub,
-      fullOrderSub,
-      amountSub,
-      deadlineSub,
-      paymentDetailsSub,
-      remainingTimeSub,
-    ],
-    'TICKET_ORDER_STORNO': [
-      ...orderOverviewSubs,
-      orderSymbolSub,
-      occasionTitleSub,
-      amountSub,
-    ],
-  };
+  static Map<String, List<EmailTemplateSub>> get substitutionDefinitions => {
+        'waitlist_confirmation': waitlistSubs,
+        'waitlist_offer': [
+          ...waitlistSubs,
+          EmailTemplateSub(
+              code: 'offered_count',
+              description: EmailTemplatesStrings.subOfferedCount,
+              defaultValue: '1'),
+          EmailTemplateSub(
+              code: 'offered_places',
+              description: EmailTemplatesStrings.subOfferedCount,
+              defaultValue: '1 místo'),
+          EmailTemplateSub(
+              code: 'offer_expires_at',
+              description: EmailTemplatesStrings.subOfferExpiresAt,
+              defaultValue: '14. 10. 2026 14:00'),
+          EmailTemplateSub(
+              code: 'offer_url',
+              description: EmailTemplatesStrings.subOfferUrl,
+              defaultValue:
+                  'https://example.invalid/order?waitlist=1&offer_id=preview&token=preview'),
+          EmailTemplateSub(
+              code: 'offer_button',
+              description: EmailTemplatesStrings.subOfferButton,
+              defaultValue: ''),
+        ],
+        'RESET_PASSWORD': [
+          appNameSub,
+          appPlatformLinksSub,
+          emailSub,
+          resetLinkSub,
+        ],
+        'SIGN_IN_CODE': [
+          appNameSub,
+          appPlatformLinksSub,
+          emailSub,
+          nameSub,
+          surnameSub,
+          signInCodeSub,
+        ],
+        'APP_LINKS': [appLinksSub],
+        'ACCOUNT_DELETION_CONFIRM': [
+          appNameSub,
+          confirmationUrlSub,
+          expiresAtSub,
+        ],
+        'ACCOUNT_DELETION_COMPLETE': [appNameSub],
+        'TICKET_ORDER_CONFIRMATION': [
+          ...orderOverviewSubs,
+          orderSymbolSub,
+          occasionTitleSub,
+          amountSub,
+          accountNumberSub,
+          ibanSub,
+          variableSymbolSub,
+          deadlineSub,
+          balanceReasoningSub,
+          fullOrderSub,
+        ],
+        'TICKET_ORDER_UPDATE': [
+          ...orderOverviewSubs,
+          orderSymbolSub,
+          occasionTitleSub,
+          fullOrderSub,
+          changeOverviewSub,
+          balanceReasoningSub,
+        ],
+        'TICKET_ORDER_PAYMENT_DONE': [
+          ...orderOverviewSubs,
+          orderSymbolSub,
+          occasionTitleSub,
+          fullOrderSub,
+          balanceReasoningSub,
+          amountSub,
+        ],
+        'TICKET_ORDER_REMINDER': [
+          ...orderOverviewSubs,
+          orderSymbolSub,
+          occasionTitleSub,
+          balanceReasoningSub,
+          fullOrderSub,
+          amountSub,
+          deadlineSub,
+          paymentDetailsSub,
+          remainingTimeSub,
+        ],
+        'TICKET_ORDER_STORNO': [
+          ...orderOverviewSubs,
+          orderSymbolSub,
+          occasionTitleSub,
+          amountSub,
+        ],
+      };
 
   /// Returns usage details based on the template code.
   /// The returned map includes:
   /// - 'title': A translated title for the template.
   /// - 'description': A translated description of what the template is used for.
   /// - 'subs': A list of [EmailTemplateSub] objects for available substitutions.
-  Map<String, dynamic> getUsageDetails() {
+  List<EmailTemplateSub> get substitutions =>
+      substitutionDefinitions[code] ?? const [];
+
+  Map<String, dynamic> getUsageDetails() => {
+        ..._usageDescription(),
+        'subs': substitutions,
+      };
+
+  Map<String, dynamic> _usageDescription() {
     switch (code) {
       case 'waitlist_confirmation':
         return {
           'title': EmailTemplatesStrings.usageWaitlistConfirmationTitle,
           'description':
               EmailTemplatesStrings.usageWaitlistConfirmationDescription,
-          'subs': substitutionDefinitions['waitlist_confirmation'] ?? [],
         };
       case 'waitlist_offer':
         return {
           'title': EmailTemplatesStrings.usageWaitlistOfferTitle,
           'description': EmailTemplatesStrings.usageWaitlistOfferDescription,
-          'subs': substitutionDefinitions['waitlist_offer'] ?? [],
         };
       case 'RESET_PASSWORD':
         return {
           'title': EmailTemplatesStrings.usageResetPasswordTitle,
           'description': EmailTemplatesStrings.usageResetPasswordDescription,
-          'subs': substitutionDefinitions['RESET_PASSWORD'] ?? [],
         };
       case 'SIGN_IN_CODE':
         return {
           'title': EmailTemplatesStrings.usageSignInCodeTitle,
           'description': EmailTemplatesStrings.usageSignInCodeDescription,
-          'subs': substitutionDefinitions['SIGN_IN_CODE'] ?? [],
         };
       case 'APP_LINKS':
         return {
           'title': EmailTemplatesStrings.usageAppLinksTitle,
           'description': EmailTemplatesStrings.usageAppLinksDescription,
-          'subs': substitutionDefinitions['APP_LINKS'] ?? [],
         };
       case 'ACCOUNT_DELETION_CONFIRM':
         return {
           'title': EmailTemplatesStrings.usageAccountDeletionConfirmTitle,
           'description':
               EmailTemplatesStrings.usageAccountDeletionConfirmDescription,
-          'subs': substitutionDefinitions['ACCOUNT_DELETION_CONFIRM'] ?? [],
         };
       case 'ACCOUNT_DELETION_COMPLETE':
         return {
           'title': EmailTemplatesStrings.usageAccountDeletionCompleteTitle,
           'description':
               EmailTemplatesStrings.usageAccountDeletionCompleteDescription,
-          'subs': substitutionDefinitions['ACCOUNT_DELETION_COMPLETE'] ?? [],
         };
       case 'TICKET_ORDER_CONFIRMATION':
         return {
           'title': EmailTemplatesStrings.usageTicketOrderConfirmationTitle,
           'description':
               EmailTemplatesStrings.usageTicketOrderConfirmationDescription,
-          'subs': substitutionDefinitions['TICKET_ORDER_CONFIRMATION'] ?? [],
         };
       case 'TICKET_ORDER_UPDATE':
         return {
           'title': EmailTemplatesStrings.usageTicketOrderUpdateTitle,
           'description':
               EmailTemplatesStrings.usageTicketOrderUpdateDescription,
-          'subs': substitutionDefinitions['TICKET_ORDER_UPDATE'] ?? [],
         };
       case 'TICKET_ORDER_PAYMENT_DONE':
         return {
           'title': EmailTemplatesStrings.usageTicketOrderPaymentDoneTitle,
           'description':
               EmailTemplatesStrings.usageTicketOrderPaymentDoneDescription,
-          'subs': substitutionDefinitions['TICKET_ORDER_PAYMENT_DONE'] ?? [],
         };
       case 'TICKET_ORDER_REMINDER':
         return {
           'title': EmailTemplatesStrings.usageTicketOrderPaymentReminderTitle,
           'description':
               EmailTemplatesStrings.usageTicketOrderPaymentReminderDescription,
-          'subs': substitutionDefinitions['TICKET_ORDER_REMINDER'] ?? [],
         };
       case 'TICKET_ORDER_STORNO':
         return {
           'title': EmailTemplatesStrings.usageTicketOrderStornoTitle,
           'description':
               EmailTemplatesStrings.usageTicketOrderStornoDescription,
-          'subs': substitutionDefinitions['TICKET_ORDER_STORNO'] ?? [],
         };
       default:
         return {
@@ -433,7 +431,6 @@ class EmailTemplateModel {
               ? title!.trim()
               : (code?.trim().isNotEmpty == true ? code!.trim() : '-'),
           'description': '-',
-          'subs': [],
         };
     }
   }
