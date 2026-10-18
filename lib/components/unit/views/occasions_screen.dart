@@ -323,6 +323,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                               for (final draft in _filteredDrafts)
                                 SizedBox(
                                     width: width,
+                                    height: 110,
                                     child: OccasionSetupDraftCard(
                                         key: ValueKey(draft.id),
                                         draft: draft,
