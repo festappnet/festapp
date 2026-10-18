@@ -1,6 +1,6 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.1",
+  "version": "0.20.266",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
@@ -11,8 +11,7 @@
     "start": "npm run dev",
     "test": "node --test tests/**/*.test.js",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
-    "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs",
-    "test:form-access-browser": "node scripts/test_form_access_browser.mjs"
+    "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
