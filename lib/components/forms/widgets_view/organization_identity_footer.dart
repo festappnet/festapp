@@ -63,7 +63,7 @@ class _OrganizationIdentityFooterState
       child: Center(
           child: Semantics(
         label:
-            '${value.legalName}, ${VerificationStrings.text('verified')}, ${VerificationStrings.text('showDetails')}',
+            '${VerificationStrings.text('organizer')}: ${value.legalName}, ${VerificationStrings.text('verified')}, ${VerificationStrings.text('showDetails')}',
         button: true,
         onTap: () => _open(value),
         child: ExcludeSemantics(
@@ -75,7 +75,9 @@ class _OrganizationIdentityFooterState
           child: LayoutBuilder(
               builder: (context, constraints) => Text.rich(
                   TextSpan(children: [
-                    TextSpan(text: words.isEmpty ? '' : '${words.join(' ')} '),
+                    TextSpan(
+                        text:
+                            "${VerificationStrings.text('organizer')}: ${words.isEmpty ? '' : '${words.join(' ')} '}"),
                     WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: ConstrainedBox(

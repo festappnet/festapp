@@ -58,6 +58,7 @@ void main() {
         'countryOther',
         'publicNotice',
         'verified',
+        'organizer',
         'verifiedDescription',
         'pendingDescription',
         'verifiedOn',

@@ -14,9 +14,9 @@ export class OrganizationIdentityFooter {
         this.clear(); const identity = parseOrganizationIdentity(value); if (!identity) return;
         this.host.hidden = false;
         const button = document.createElement('button'); button.type = 'button'; button.className = 'organization-identity-button';
-        button.setAttribute('aria-label', `${identity.legalName}, ${t('verified')}, ${t('showDetails')}`);
+        button.setAttribute('aria-label', `${t('organizer')}: ${identity.legalName}, ${t('verified')}, ${t('showDetails')}`);
         const words = identity.legalName.split(' '); const last = words.pop();
-        button.append(document.createTextNode(words.length ? `${words.join(' ')} ` : ''));
+        button.append(document.createTextNode(`${t('organizer')}: ${words.length ? `${words.join(' ')} ` : ''}`));
         const tail = document.createElement('span'); tail.className = 'organization-identity-tail'; tail.append(document.createTextNode(last), icon()); button.append(tail);
         button.onclick = () => this.open(identity, button); this.host.append(button);
     }
@@ -25,8 +25,13 @@ export class OrganizationIdentityFooter {
         const dialog = document.createElement('dialog'); this.dialog = dialog; dialog.className = 'organization-identity-dialog';
         const heading = document.createElement('h2'); heading.id = 'organization-identity-heading'; heading.append(document.createTextNode(identity.legalName), icon());
         dialog.setAttribute('aria-labelledby',heading.id);
-        const close = document.createElement('button'); close.type='button'; close.className='organization-identity-close'; close.textContent=t('close'); close.onclick=()=>dialog.close();
-        dialog.append(heading,close);
+        const close = document.createElement('button'); close.type='button'; close.className='organization-identity-close';
+        close.setAttribute('aria-label', t('close')); close.title = t('close'); close.onclick=()=>dialog.close();
+        const closeIcon = icon(); closeIcon.setAttribute('width', '24'); closeIcon.setAttribute('height', '24');
+        closeIcon.querySelector('path').setAttribute('d', 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z');
+        close.append(closeIcon);
+        const header = document.createElement('div'); header.className = 'organization-identity-header'; header.append(heading, close);
+        dialog.append(header);
         const dl = document.createElement('dl'); dialog.append(dl);
         const add = (label,value,href) => { if(!value)return; const dt=document.createElement('dt'); dt.textContent=t(label); const dd=document.createElement('dd');
             const node=document.createElement(href?'a':'span'); node.textContent=value; if(href)node.href=href; dd.append(node); dl.append(dt,dd); };

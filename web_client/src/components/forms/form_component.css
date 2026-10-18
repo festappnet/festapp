@@ -802,9 +802,12 @@ body.dark-mode .surcharge-info {
 .organization-identity-button:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:4px; }
 .organization-identity-tail { display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
 .organization-identity-tail svg, .organization-identity-dialog h2 svg { margin-inline-start:6px; vertical-align:middle; }
-.organization-identity-dialog { box-sizing:border-box; width:calc(100% - 32px); max-width:480px; max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid #888; border-radius:12px; background:var(--surface-color,#fff); color:var(--text-color,#222); text-align:start; overflow-wrap:anywhere; }
+.organization-identity-dialog { box-sizing:border-box; width:calc(100% - 32px); max-width:480px; max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:0; border-radius:12px; box-shadow:0 4px 20px #0003; background:var(--surface-color,#fff); color:var(--text-color,#222); text-align:start; overflow-wrap:anywhere; }
 .organization-identity-dialog::backdrop { background:#0008; }
-.organization-identity-dialog h2 { font-size:20px; margin:0 0 16px; }
+.organization-identity-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:16px; }
+.organization-identity-dialog h2 { flex:1; min-width:0; font-size:20px; margin:0; }
 .organization-identity-dialog dt { font-weight:600; margin-top:16px; }
 .organization-identity-dialog dd { margin:4px 0 0; }
-.organization-identity-close { min-height:44px; padding:8px 16px; }
+.organization-identity-close { display:inline-flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; height:44px; margin:-8px -8px 0 0; padding:10px; border:0; border-radius:50%; background:transparent; color:inherit; cursor:pointer; }
+.organization-identity-close:hover { background:var(--hover-color,rgba(128,128,128,.12)); }
+.organization-identity-close:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
