@@ -3180,6 +3180,10 @@
     "restore_draft": "Obnovit neuložený návrh",
     "holder_name": "Jméno držitele",
     "groups": "Skupiny",
-    "note": "Poznámka vstupenky"
+    "note": "Poznámka vstupenky",
+    "display_settings": "Co zobrazit při skenování",
+    "back": "Zpět",
+    "order_fields": "Údaje objednávky",
+    "ticket_fields": "Údaje vstupenky"
   }
 }

@@ -3179,6 +3179,10 @@
     "restore_draft": "Restore unsaved draft",
     "holder_name": "Ticket holder",
     "groups": "Groups",
-    "note": "Ticket note"
+    "note": "Ticket note",
+    "display_settings": "Scanner display settings",
+    "back": "Back",
+    "order_fields": "Order answers",
+    "ticket_fields": "Ticket answers"
   }
 }

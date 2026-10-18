@@ -294,6 +294,13 @@ assert.match(
 );
 assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
 
+// Validate the actual published catalogs, not only Flutter's source strings.
+for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+  const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
+  const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
+  assert.deepEqual(published.Scanner, canonical.Scanner, `published ${locale} scanner translations differ from canonical source`);
+}
+
 const siteManifest = JSON.parse(siteManifestText);
 const configuredStartPath = new URL(siteManifest.start_url, 'https://festapp.test')
   .pathname.replace(/\/$/, '');
