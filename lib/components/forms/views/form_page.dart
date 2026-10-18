@@ -1,3 +1,5 @@
+import '../models/verified_organization_identity.dart';
+import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -84,6 +86,7 @@ class _FormPageState extends State<FormPage> {
   Map<String, dynamic>? formResult;
   FormHolder? formHolder;
   FormBundle? form;
+  VerifiedOrganizationIdentity? _terminalIdentity;
   FormSession? formSession;
 
   final _formKey = GlobalKey<FormBuilderState>();
@@ -422,6 +425,7 @@ class _FormPageState extends State<FormPage> {
           return Theme(
             data: _buildFormTheme(context),
             child: OrderPreviewScreen(
+              organizationIdentity: form?.organizationIdentity,
               formHolder: formHolder!,
               totalPrice: formSession?.totalPrice ?? 0,
               metaSurchargeSums: formSession?.metaSurchargeSums ?? const {},
@@ -479,6 +483,7 @@ class _FormPageState extends State<FormPage> {
       barrierDismissible: false, // Disable dismissing by tapping outside
       barrierLabel: "FinishOrderDialog",
       pageBuilder: (context, anim1, anim2) => FinishOrderScreen(
+        organizationIdentity: form?.organizationIdentity,
         overviewAvailable: _overviewScope != null,
         occasionTitle: form!.occasion?.title ?? form!.definition.title,
         orderFutureFunction: () async {
@@ -657,6 +662,13 @@ class _FormPageState extends State<FormPage> {
     return theme;
   }
 
+  Widget _withIdentity(Widget child) =>
+      Column(mainAxisSize: MainAxisSize.min, children: [
+        child,
+        OrganizationIdentityFooter(
+            identity: form?.organizationIdentity ?? _terminalIdentity)
+      ]);
+
   @override
   Widget build(BuildContext context) {
     // Check time limits
@@ -731,7 +743,8 @@ class _FormPageState extends State<FormPage> {
           body: Center(
               child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text(_waitlistMessage!))));
+                  child: SingleChildScrollView(
+                      child: _withIdentity(Text(_waitlistMessage!))))));
     if (_offerBundle != null &&
         (_offerId == null ||
             (_offerBundle!['pendingCount'] as num? ?? 0) == 0)) {
@@ -741,7 +754,9 @@ class _FormPageState extends State<FormPage> {
                   padding: const EdgeInsets.all(24),
                   child: Column(children: [
                     _buildOverview(),
-                    _buildWaitlistPeople(manage: true)
+                    _buildWaitlistPeople(manage: true),
+                    OrganizationIdentityFooter(
+                        identity: form?.organizationIdentity ?? _terminalIdentity)
                   ]))));
     }
     if (form?.definition.registrationMode == 'full' && !isClosed) {
@@ -756,11 +771,15 @@ class _FormPageState extends State<FormPage> {
               if (form?.definition.header != null)
                 HtmlView(html: form!.definition.header!, isSelectable: true),
               Text(WaitlistStrings.full),
+              OrganizationIdentityFooter(
+                  identity: form?.organizationIdentity ?? _terminalIdentity),
             ])),
       ))));
     }
     if (_formNotAvailable || (isClosed && !showPreview && !showCountdown)) {
-      return Scaffold(body: _buildFormNotAvailableMessage());
+      return Scaffold(
+          body: SingleChildScrollView(
+              child: _withIdentity(_buildFormNotAvailableMessage())));
     }
 
     ThemeData theme = _buildFormTheme(context);
@@ -916,6 +935,8 @@ class _FormPageState extends State<FormPage> {
                                   );
                                 }),
                               ),
+                            OrganizationIdentityFooter(
+                                identity: form?.organizationIdentity ?? _terminalIdentity),
                           ],
                         ),
                       ),
@@ -935,7 +956,7 @@ class _FormPageState extends State<FormPage> {
       data: theme,
       child: Scaffold(
         body: showCountdown
-            ? SafeArea(child: SingleChildScrollView(child: bodyContent))
+            ? SafeArea(child: SingleChildScrollView(child: _withIdentity(bodyContent)))
             : bodyContent,
         floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         floatingActionButton: Padding(
@@ -1284,6 +1305,8 @@ class _FormPageState extends State<FormPage> {
       _isLoading = true;
       _fontLoadFailed = false;
       _formNotAvailable = false; // Reset the message flag
+      form = null;
+      _terminalIdentity = null;
     });
 
     if (widget.formLink == null &&
@@ -1316,6 +1339,8 @@ class _FormPageState extends State<FormPage> {
         RouterService.canonicalizePublicLink(
             'form', widget.formLink, canonical);
         if (canonical != null) widget.formLink = canonical;
+        _terminalIdentity = VerifiedOrganizationIdentity.tryParse(
+            _offerBundle!['organizationIdentity']);
         if (_offerBundle!['form'] == null) {
           if (mounted)
             setState(() {

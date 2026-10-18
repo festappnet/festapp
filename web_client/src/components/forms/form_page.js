@@ -1,3 +1,4 @@
+import { OrganizationIdentityFooter } from './organization_identity_footer.js';
 import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, stopOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistLocation, waitlistRegistrationPayload } from './waitlist_commands.js';
 import { prepareOfferSession, renderWaitlistControls, prefillOfferFields, ticketLabel, appendWaitlistContext } from './waitlist_form.js';
@@ -41,6 +42,7 @@ export class FormPage extends Component {
     // Let's go fully instance.
     constructor(hostId) {
         super(hostId);
+        this.pageHost = this.host;
         this.currentPriceWidget = null;
         this.currentSession = null;
         this.currentLink = null;
@@ -48,10 +50,11 @@ export class FormPage extends Component {
         this._previewModulePromise = null;
     }
 
-    clear() { this.cleanup(); }
+    clear() { this.loadGeneration = (this.loadGeneration || 0) + 1; this.cleanup(); this.pageHost?.replaceChildren(); }
 
     cleanup({ preserveEditButton = false } = {}) {
         CountdownWidget.stop();
+        this.identityFooter?.clear();
         if (this.host) {
             stopOrderOverview(this.host);
             this.host.querySelectorAll('.order-overview').forEach(stopOrderOverview);
@@ -104,6 +107,7 @@ export class FormPage extends Component {
         if (options.onBack) this.onBack = options.onBack;
 
         this.setOverviewLayout(false);
+        const loadGeneration = this.loadGeneration = (this.loadGeneration || 0) + 1;
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
@@ -125,9 +129,14 @@ export class FormPage extends Component {
         }
 
         // Keep visible content while an embedded browser waits for the RPC.
+        this.pageHost.replaceChildren();
+        this.host = document.createElement('div');
+        const footer = document.createElement('div'); footer.className = 'organization-identity-slot';
+        this.pageHost.append(this.host, footer);
+        this.identityFooter = new OrganizationIdentityFooter(footer);
         this.renderLoading();
         // Containment for fixed children (Embedding Support)
-        this.host.style.transform = 'translate(0)';
+        this.pageHost.style.transform = 'translate(0)';
         this.host.style.display = 'block';
 
         // Hide the main application container to prevent layout shifts
@@ -148,8 +157,10 @@ export class FormPage extends Component {
                 this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
                 this.host.replaceChildren();
+                const identityFooter = this.identityFooter;
                 const overview = await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
-                    this.continuationScope ? () => this.continueOverviewOffer() : null);
+                    this.continuationScope ? () => this.continueOverviewOffer() : null, false, false, value => { if (loadGeneration === this.loadGeneration) identityFooter.render(value); });
+                if (loadGeneration !== this.loadGeneration) return;
                 this.currentLink = overview?.root?.formLink || link;
                 return;
             }
@@ -160,7 +171,9 @@ export class FormPage extends Component {
                 if (!referrer) { referrer = document.createElement('meta'); referrer.name = 'referrer'; document.head.appendChild(referrer); }
                 referrer.content = 'no-referrer';
                 const bundle = await this.waitlistCommands.read(this.waitlistScope);
+                if (loadGeneration !== this.loadGeneration) return;
                 this.waitlistBundle = bundle;
+                this.identityFooter.render(bundle.form?.organizationIdentity || bundle.organizationIdentity);
                 link = bundle.form?.link || bundle.formLink || link;
                 this.currentLink = link;
                 if (!this.waitlistScope.offerId || !bundle.pendingCount) {
@@ -171,6 +184,7 @@ export class FormPage extends Component {
                 formModel = new FormModel(bundle.form);
                 formModel.offerBundle = bundle;
             } else formModel = await DbForms.getFormByLink(link);
+            if (loadGeneration !== this.loadGeneration) return;
 
             if (!formModel) {
                 this.renderError(FormStrings.formNotFound);
@@ -180,6 +194,7 @@ export class FormPage extends Component {
             RouterService.canonicalizePublicLink('form', link, formModel.link);
             link = formModel.link || link;
             this.currentLink = link;
+            this.identityFooter.render(formModel.organizationIdentity);
             // 4. Apply Theme
             this.applyTheme(formModel);
 
@@ -217,6 +232,8 @@ export class FormPage extends Component {
             });
 
         } catch (e) {
+            if (loadGeneration !== this.loadGeneration) return;
+            this.identityFooter?.clear();
             // Capability failures must never log request or transport details.
             this.currentLink = null; // A retry must not hit the same-link guard.
             this.renderError(e.message === 'INVALID_CAPABILITY' ? WaitlistStrings.invalid : FormStrings.loadFailed, () => this.init(link));
@@ -224,13 +241,13 @@ export class FormPage extends Component {
     }
 
     setOverviewLayout(enabled) {
-        this.host.classList.toggle('order-overview-page', enabled);
+        this.pageHost.classList.toggle('order-overview-page', enabled);
         if (!enabled) this.host.classList.remove('order-overview');
         const header = document.getElementById('universal-header');
         const app = document.getElementById('app');
         if (!header || !app) return;
         header.classList.remove('header-hidden');
-        if (enabled) this.host.before(header);
+        if (enabled) this.pageHost.before(header);
         else app.prepend(header);
     }
 
@@ -454,6 +471,7 @@ export class FormPage extends Component {
     }
 
     renderError(message, onRetry) {
+        this.identityFooter?.clear();
         this.host.innerHTML = '<div class="error-message" role="alert"></div>';
         const error = this.host.firstElementChild;
         error.textContent = message;
@@ -723,8 +741,10 @@ export class FormPage extends Component {
                      this._pendingPaymentType = paymentType || null;
                      this.submitOrder(form, formModel, overlay || document.body);
                  }, () => {
-                     // On Close
+                     if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
                  }, precalculatedPayload);
+                 const previewContent = document.querySelector('#order-preview-overlay .order-preview-content');
+                 if (previewContent && this.identityFooter) previewContent.append(this.identityFooter.host);
 
              } catch (e) {
                  console.error('[FormPage] OrderPreview.show crashed:', e);
@@ -933,6 +953,7 @@ export class FormPage extends Component {
 
         // Cleanup Function
         const cleanup = () => {
+            if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
             container.remove();
             document.body.style.overflow = ''; // Restore scroll
 
@@ -957,5 +978,9 @@ export class FormPage extends Component {
             // This will fire 'popstate', which calls cleanup()
             RouterService.goBackProgrammatically();
         });
+        if (this.identityFooter) {
+            this.identityFooter.render(formModel.organizationIdentity);
+            container.append(this.identityFooter.host);
+        }
     }
 }

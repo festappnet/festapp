@@ -38,6 +38,7 @@ BEGIN
         SELECT jsonb_build_object(
             'code', 400,
             'data', jsonb_build_object(
+                'organizationIdentity', (SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
                 'header_off', f.header_off,
                 'is_open', f.is_open
             )
@@ -54,6 +55,7 @@ BEGIN
         'code', 200,
         'data', jsonb_build_object(
             'demo_simulation', public.is_demo_occasion(f.occasion),
+            'organizationIdentity', CASE WHEN o.organization=(SELECT organization FROM public.units WHERE id=o.unit) THEN public.get_verified_unit_identity_internal(o.unit) END,
             'capacity', public.get_form_capacity_snapshot_internal(f.id),
             'registrationMode',public.get_form_registration_mode_internal(f.id),
             'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,

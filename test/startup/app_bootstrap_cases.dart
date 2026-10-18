@@ -79,6 +79,32 @@ void main() {
     );
   });
 
+  test('organization admin startup does not require a default occasion', () {
+    for (final path in [
+      '/organizationEdit',
+      '/organizationEdit/1',
+      '/organizationEdit/1/?tab=verification',
+    ]) {
+      expect(
+          isUnitAdminStartupRoute(
+              Uri.parse('https://preview.example$path')),
+          isTrue,
+          reason: path);
+    }
+    for (final path in [
+      '/organizationEditOther/1',
+      '/event/organizationEdit/1',
+      '/form/example',
+      '/organizationEdit/not-an-id'
+    ]) {
+      expect(
+          isUnitAdminStartupRoute(
+              Uri.parse('https://preview.example$path')),
+          isFalse,
+          reason: path);
+    }
+  });
+
   testWidgets('preserves a password-reset deep link while initialization runs',
       (tester) async {
     const resetRoute = '/resetPassword?token=test-token';

@@ -1,3 +1,4 @@
+import { parseOrganizationIdentity } from './organization_identity.js';
 
 export class FormStatsModel {
     constructor(data = {}) {
@@ -38,6 +39,7 @@ export class FormFieldModel {
     static metaOptions = "options";
 
     constructor(data = {}) {
+        this.organizationIdentity = parseOrganizationIdentity(data.organizationIdentity);
         this.capacity = data.capacity || null;
         this.registrationMode = data.registrationMode || null;
         this.waitlistEnabled = data.waitlist_enabled === true;
@@ -116,6 +118,7 @@ export class FormModel {
     static metaCommunicationTone = "communication_tone";
 
     constructor(data = {}) {
+        this.organizationIdentity = parseOrganizationIdentity(data.organizationIdentity);
         this.capacity = data.capacity || null;
         this.registrationMode = data.registrationMode || null;
         this.waitlistEnabled = data.waitlist_enabled === true;

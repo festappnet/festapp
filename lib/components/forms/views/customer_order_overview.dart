@@ -1,3 +1,5 @@
+import '../models/verified_organization_identity.dart';
+import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:festapp_core/forms.dart';
@@ -129,6 +131,10 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                         paragraph(
                                             '${ticket['label'] ?? '#${ticket['id']}'} - ${text(ticket['displayStatus'])}'),
                                     ]))),
+                      if (!widget.offerInPage)
+                        OrganizationIdentityFooter(
+                            identity: VerifiedOrganizationIdentity.tryParse(
+                                data.data['organizationIdentity'])),
                     ]))));
   }
 

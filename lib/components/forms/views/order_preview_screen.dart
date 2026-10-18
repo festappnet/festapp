@@ -1,3 +1,5 @@
+import '../models/verified_organization_identity.dart';
+import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,7 @@ class OrderPreviewScreen extends StatefulWidget {
   final VoidCallback onSendPressed;
   final VoidCallback? onClose;
   final String? tone;
+  final VerifiedOrganizationIdentity? organizationIdentity;
   final bool hasTickets;
   final Map<String, double> metaSurchargeSums;
 
@@ -35,6 +38,7 @@ class OrderPreviewScreen extends StatefulWidget {
     required this.onSendPressed,
     this.onClose,
     this.tone,
+    this.organizationIdentity,
     this.hasTickets = true,
     this.metaSurchargeSums = const {},
   });
@@ -156,6 +160,8 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                             width: 250.0,
                           ),
                         ),
+                        OrganizationIdentityFooter(
+                            identity: widget.organizationIdentity),
                       ],
                     ),
                   ),
