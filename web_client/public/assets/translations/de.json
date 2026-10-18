@@ -1151,6 +1151,8 @@
     "preview_action": "Vorschau anzeigen",
     "preview_empty": "Geben Sie einen Ticketcode ein, um die Vorschau zu sehen.",
     "reason_scanner_settings_forbidden": "Nur Bearbeiter oder Reservierungsbearbeiter dieser Veranstaltung können diese Einstellungen ändern.",
-    "reason_offline_storage_unavailable": "Offline-Daten können nicht geöffnet werden. Internetverbindung herstellen und das Gerät erneut vorbereiten."
+    "reason_offline_storage_unavailable": "Offline-Daten können nicht geöffnet werden. Internetverbindung herstellen und das Gerät erneut vorbereiten.",
+    "filter_answers": "Feld suchen",
+    "no_matching_answers": "Keine weiteren passenden Felder."
   }
 }
