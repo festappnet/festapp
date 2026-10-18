@@ -27,7 +27,7 @@
   ],
   "runtime_files": {
     "automation/hetzner-supabase/runtime/Caddyfile": "9edee96f430a45554af67af4a78cf0730c640a98d01da40ed7b671283441c4b0",
-    "automation/hetzner-supabase/runtime/prepare-asset-runtime.py": "7006f42e7692145e9408961b8fd4f2142869c77a8ab75ae5c6f9071516bf303a",
+    "automation/hetzner-supabase/runtime/prepare-asset-runtime.py": "dc9c577ac8582ca661aafd9b1ddb1c3866b0d8e991a4fd662285688a9a3959b7",
     "automation/hetzner-supabase/runtime/pins.json": "f326fe1c02d778b1426345517986bedb932013bf9452d30bf89cffcd075f7687",
     "automation/hetzner-supabase/runtime/bootstrap-host.sh": "86a6f43ecbd2607d5924a336ebf6a699d465f361af3795b804fcdc3a09f3f2c9",
     "automation/hetzner-supabase/runtime/deploy-rehearsal.sh": "a99c43adb34d4c51967f9e6a9a02c13dc98ff814e773efb09cb752bd0e585049",

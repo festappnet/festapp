@@ -17,6 +17,22 @@ import yaml
 RETIRED = {'storage', 'imgproxy'}
 
 
+class TemplateDumper(yaml.SafeDumper):
+    """Keep placeholders strings after the entrypoint substitutes empty keys."""
+
+
+def _template_string(dumper, value):
+    return dumper.represent_scalar('tag:yaml.org,2002:str', value,
+                                   style='"' if '${' in value else None)
+
+
+TemplateDumper.add_representer(str, _template_string)
+
+
+def render_configuration(document):
+    return yaml.dump(document, Dumper=TemplateDumper, sort_keys=False).encode()
+
+
 def prepare(compose, clusters, listeners):
     compose, clusters, listeners = copy.deepcopy((compose, clusters, listeners))
     if not RETIRED <= compose['services'].keys():
@@ -77,7 +93,7 @@ def main():
     for name, before, document in zip(names, original, result):
         target = args.output_dir / name
         target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        body = yaml.safe_dump(document, sort_keys=False).encode()
+        body = render_configuration(document)
         target.write_bytes(body)
         receipt['files'][name] = {'source_sha256': hashlib.sha256(before).hexdigest(),
                                  'prepared_sha256': hashlib.sha256(body).hexdigest()}
