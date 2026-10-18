@@ -35,8 +35,9 @@ bucket pair. Existing `a` URLs translate at that boundary; AKH retains its own
 bucket and Auth/DB. Never introduce a new Supabase Storage producer or legacy
 URL fallback. The 2026-10-18 production reference rewrite and scoped adapters are
 active. Independent v2 recovery passed and local Storage/imgproxy and its
-source volume are retired. Source a/a-private bucket deletion remains gated by
-API-token permission contraction; the 4GB capacity decision remains explicit.
+source volume are retired. All three redundant buckets and their dedicated
+source-reader grants are retired; existing R2 URLs and AKH remain intact.
+The measured 4 GB capacity decision remains explicit.
 See `docs/operations/supabase-self-hosted/storage-authority.md` and its linked
 execution receipt for the current deployment boundary.
 
