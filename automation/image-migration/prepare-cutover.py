@@ -14,6 +14,21 @@ from urllib.parse import quote
 
 from storage_references import digest, inspect_value, rewrite_value
 
+# User-approved disposal is limited to the broken map feature of this one test
+# occasion. This fingerprint seals the reviewed full field, not a URL pattern.
+ROMA_TEST_FEATURES_SHA256 = '0c51406181d99cf0e67ca014a3e8ce9040ceafffac684b04a4b9a12cd86e22fc'
+
+
+def discard_test_map(field):
+    if (field['schema'], field['table'], field['key'], field['field']) != ('public', 'occasions', {'id': 63}, 'features'):
+        raise ValueError('unreviewed_test_map_disposal')
+    if digest(field['original']) != ROMA_TEST_FEATURES_SHA256 or field['original_digest'] != ROMA_TEST_FEATURES_SHA256:
+        raise ValueError('test_map_prestate_changed')
+    features = field['original']
+    if not isinstance(features, list) or sum(f.get('code') == 'map' for f in features) != 1:
+        raise ValueError('test_map_shape_changed')
+    return [feature for feature in features if feature.get('code') != 'map']
+
 
 def identity_hash(identity):
     # The copy driver's JSON.stringify preserves the declared bucket/key order.
@@ -21,8 +36,13 @@ def identity_hash(identity):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
 
 
-def prepare(manifest, manifest_sha256, receipts):
-    if not manifest['summary'].get('ready_for_reference_rewrite'):
+def prepare(manifest, manifest_sha256, receipts, discard_roma_test_map=False):
+    unresolved = [f for f in manifest['fields'] if f['classification'] == 'current' and f['issues']]
+    if discard_roma_test_map:
+        if len(unresolved) != 1 or unresolved[0]['issues'] != ['reference_source_not_in_storage']:
+            raise ValueError('single_reviewed_test_map_required')
+        discard_test_map(unresolved[0])
+    if not manifest['summary'].get('ready_for_reference_rewrite') and not discard_roma_test_map:
         raise ValueError('complete_reference_inventory_required')
     if not manifest['summary'].get('ready_for_copy'):
         raise ValueError('complete_source_inventory_required')
@@ -81,7 +101,8 @@ def prepare(manifest, manifest_sha256, receipts):
     for field in manifest['fields']:
         if field['classification'] != 'current':
             continue
-        if field['issues'] or not field['key'] or field['schema'] not in ('public', 'eshop'):
+        disposal = discard_roma_test_map and field in unresolved
+        if (field['issues'] and not disposal) or not field['key'] or field['schema'] not in ('public', 'eshop'):
             raise ValueError('unresolved_current_field')
         if digest(field['original']) != field['original_digest']:
             raise ValueError('field_prestate_digest_mismatch')
@@ -90,7 +111,8 @@ def prepare(manifest, manifest_sha256, receipts):
             raise ValueError('duplicate_field_identity')
         identities.add(identity)
         try:
-            after = rewrite_value(field['original'], set(manifest['owned_hosts']), mapping)
+            original = discard_test_map(field) if disposal else field['original']
+            after = rewrite_value(original, set(manifest['owned_hosts']), mapping)
         except KeyError:
             raise ValueError('private_reference_boundary_or_source_missing') from None
         if after == field['original'] or list(inspect_value(after, set(manifest['owned_hosts']))):
@@ -101,6 +123,7 @@ def prepare(manifest, manifest_sha256, receipts):
                 r2_inventory_sha256=manifest['r2_inventory_sha256'], copy_source_revision=revisions.pop(),
                 verified_objects=len(verified), registry=registry, edits=edits,
                 retained_orphan_objects=manifest.get('orphan_objects', []),
+                discarded_roma_test_map=discard_roma_test_map,
                 requires_atomic_client_sync_publication=True, production_mutations=False)
 
 
@@ -109,6 +132,8 @@ def main():
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--receipts', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--discard-roma-test-map', action='store_true',
+                        help='Discard only the exact reviewed broken map feature on test occasion 63; preserve its other content.')
     args = parser.parse_args()
     os.umask(0o077)
     body = args.manifest.read_bytes()
@@ -117,7 +142,7 @@ def main():
     if any(p.is_symlink() or p.stat().st_uid != os.getuid() or p.stat().st_mode & 0o077 for p in receipt_files):
         raise ValueError('private_owned_receipt_files_required')
     result = prepare(manifest, hashlib.sha256(body).hexdigest(),
-                     {p.stem: json.loads(p.read_bytes()) for p in receipt_files})
+                     {p.stem: json.loads(p.read_bytes()) for p in receipt_files}, args.discard_roma_test_map)
     # Exclusive creation: a prepared predecessor must remain independently auditable.
     with args.output.open('x') as output:
         json.dump(result, output, ensure_ascii=False, indent=2)

@@ -1,12 +1,13 @@
 # Retire Supabase Storage and consolidate Festapp assets on R2
 
 Date: 2026-10-18
-Status: Implementation staged on current main; copy inventory prepared, reference/restore/cutover gates pending
+Status: Canonical service/copy tooling merged; production additive copy running; reference/restore/cutover gates pending
 Verification: standard
 
 Actual execution state is recorded in
 `docs/operations/security-remediation-20261016/storage-r2-retirement-execution-20261018.md`.
-No production copy, rewrite, rollout or source retirement has occurred.
+Production additive copy is running. No reference rewrite, new Worker code
+rollout or source retirement has occurred.
 
 ## Outcome and scope
 

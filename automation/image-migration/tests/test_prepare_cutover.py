@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -72,6 +73,32 @@ class Cutover(unittest.TestCase):
         manifest['fields'].append(copy.deepcopy(manifest['fields'][0]))
         with self.assertRaisesRegex(ValueError, 'duplicate_field'):
             module.prepare(manifest, 'c' * 64, receipts)
+
+    def test_explicit_test_map_disposal_preserves_other_features_and_still_checks_every_copy(self):
+        manifest, receipts = self.fixture()
+        features = [{'code': 'map', 'missing': 'https://api.festapp.net/storage/v1/object/public/public-files/missing'},
+                    {'code': 'ticket', 'layout': {'untouched': True}}]
+        field = dict(schema='public', table='occasions', key={'id': 63}, field='features',
+                     original=features, original_digest=digest(features), classification='current',
+                     issues=['reference_source_not_in_storage'])
+        manifest['fields'].append(field)
+        manifest['summary']['ready_for_reference_rewrite'] = False
+        with self.assertRaisesRegex(ValueError, 'complete_reference_inventory'):
+            module.prepare(manifest, 'c' * 64, receipts)
+        with patch.object(module, 'ROMA_TEST_FEATURES_SHA256', digest(features)):
+            result = module.prepare(manifest, 'c' * 64, receipts, True)
+            self.assertTrue(result['discarded_roma_test_map'])
+            self.assertEqual(result['edits'][1]['replacement'], features[1:])
+            self.assertEqual(result['edits'][1]['original'], features)
+            with self.assertRaisesRegex(ValueError, 'receipt_missing'):
+                module.prepare(manifest, 'c' * 64, {}, True)
+            field['key']['id'] = 64
+            with self.assertRaisesRegex(ValueError, 'unreviewed_test_map'):
+                module.prepare(manifest, 'c' * 64, receipts, True)
+            field['key']['id'] = 63
+            features[1]['layout']['untouched'] = False
+            with self.assertRaisesRegex(ValueError, 'test_map_prestate_changed'):
+                module.prepare(manifest, 'c' * 64, receipts, True)
 
 
 if __name__ == '__main__':

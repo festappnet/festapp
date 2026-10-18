@@ -297,7 +297,7 @@ three draft-card UI/test files. Rebase was conflict-free, with no migration-file
 change; the affected standalone Flutter suite passed all three tests. Final
 publication base: `2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb`.
 
-## Work not completed
+## Earlier staged-state boundary
 
 The reference-completeness gate has not passed. Additive source-copy inventory
 and account-deletion ownership/retry code are now prepared locally. Registry
@@ -314,3 +314,53 @@ production references remain intact. Final read-only runtime inspection found
 This single readback does not prove the capacity budget. The accepted 50-row cleanup was not
 repeated. No disaster promotion, email/payment replay, paid resize or additional
 tenant rollout was attempted.
+
+## Production execution follow-up
+
+PR #478 merged the canonical service implementation; PR #484 merged the
+conditional remote R2 transport and verified cutover-bundle preparation.
+Production copying runs from clean authoritative main
+`a0c212c9523d94f34409ae8d408c942371513596`, using existing Cloudflare OAuth.
+The fixed transport can read the four source buckets and conditionally create
+only in the two canonical destinations. Per-object receipts distinguish new
+creates from independently verified existing bytes. The complete source set is
+2,817 identities, including all 264 private unregistered disk files. Copy is in
+progress, with no source deletion or overwrite. A fresh independent capture
+found source objects, orphan provenance and all 533 reference fields unchanged.
+
+Two separate font/cleanup capabilities are installed in protected stores. Their
+same-code Worker secret deployment preserves the active code SHA and all five
+R2 bindings, including AKH. The provider route-list API was unavailable; no route
+write was issued. The prepared canonical Worker implementation is not deployed.
+
+Fresh encrypted production backup `20261018T152837Z` completed off-host
+verification. An isolated restore acquired its key/reader from the existing
+iCloud recovery ZIP, downloaded the selected set and restored the real DB on the
+pinned PG17 image with no network, ports, host mounts or production integrations.
+It verified 1,180 selected archive objects and 947 DB R2 references with zero
+missing. Restore execution took 80.17 seconds; acquisition/download are recorded
+separately in protected evidence. This is an old-format pre-cutover DB/R2 proof,
+not a new-format full application/PITR recovery or an RTO guarantee.
+
+The next source increment implements the exact operator transaction and v2
+backup/restore path. Registry import, typed original-value matching and canonical
+public/private sync commits share one atomic transaction. Five actual isolated
+PG17 tests passed, including concurrent edits, changed source ownership and sync
+failure rolling back every mutation. The explicit approved exception discards
+only the fingerprinted broken map feature on test occasion 63, preserving other
+features; production guards also require the unchanged hidden test identity,
+one membership and zero orders. No general low-user occasion cleanup is added.
+
+V2 sets require both canonical asset buckets and sealed private orphan provenance
+inside the encrypted runtime archive, without a Storage artifact. The reader
+checks all current application fields, registry hashes/size/MIME and retained
+orphan identities. Historical v1 sets retain their named reader. Marker activation,
+actual new off-host backup/full isolated restore and recovery-kit refresh remain
+unexecuted. Reference SQL is implemented but not applied; cleanup remains fenced.
+
+Targeted Python/archive checks and all five actual PG17 transaction tests pass.
+The affected normal automation lane passed on frozen inputs. Previously passing
+unchanged web/SQL/client/Edge lanes from PR #484 remain recorded separately.
+Final publication must reconcile current main and its affected checks. Runtime
+contraction, old bucket retirement and the numerical enforced 4 GB budget remain
+required; no production completion is claimed from this source increment.

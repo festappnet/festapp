@@ -88,40 +88,43 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
  try:
   start('rest',{'PGRST_DB_URI':uri,'PGRST_DB_ANON_ROLE':'anon','PGRST_DB_SCHEMAS':'public','PGRST_DB_CONFIG':'false','PGRST_JWT_SECRET':secret,'PGRST_SERVER_HOST':'127.0.0.1'})
   start('auth',{'GOTRUE_API_HOST':'127.0.0.1','GOTRUE_API_PORT':'9999','API_EXTERNAL_URL':'http://127.0.0.1:9999','GOTRUE_SITE_URL':'http://127.0.0.1','GOTRUE_DB_DRIVER':'postgres','GOTRUE_DB_DATABASE_URL':uri,'GOTRUE_JWT_SECRET':secret,'GOTRUE_JWT_ADMIN_ROLES':'service_role','GOTRUE_JWT_AUD':'authenticated','GOTRUE_JWT_DEFAULT_GROUP_NAME':'authenticated','GOTRUE_DISABLE_SIGNUP':'true','GOTRUE_EXTERNAL_EMAIL_ENABLED':'true','GOTRUE_MAILER_AUTOCONFIRM':'false'})
-  storage=start('storage',{'DATABASE_URL':uri,'ANON_KEY':anon,'SERVICE_KEY':service,'POSTGREST_URL':'http://127.0.0.1:3000','AUTH_JWT_SECRET':secret,'STORAGE_BACKEND':'file','FILE_STORAGE_BACKEND_PATH':'/var/lib/storage','GLOBAL_S3_BUCKET':'stub','TENANT_ID':'stub','REGION':'stub','ENABLE_IMAGE_TRANSFORMATION':'false','FILE_SIZE_LIMIT':'52428800'},prepare=True)
-  # Stream the private host archive: docker cp can preserve a workstation UID
-  # that a cap-dropped root process cannot read. Never hide tar failure behind rm.
-  with storage_archive.open('rb') as stream:
-   run(['docker','exec','-i','-u','root',storage,'sh','-c','mkdir -p /var/lib/storage && tar -xof - -C /var/lib/storage'],stdin=stream)
-  objects=json.loads(sql("SELECT json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'metadata',metadata)) FROM storage.objects;"))
-  with tarfile.open(storage_archive) as archive:
-   members={str(Path(x.name)):x for x in archive.getmembers() if x.isfile()}
-   attributes,rebuilt=storage_metadata(objects,members,rebuild_metadata)
-  # BusyBox tar does not restore GNU/PAX xattrs. Use the exact Storage image's
-  # existing fs-xattr library; values are data on stdin, never executable code.
-  program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(e=>{console.error(JSON.stringify({operation:'restore-storage-xattr',code:e.code||e.name}));process.exit(1)});"
-  run(['docker','exec','-i','-u','root',storage,'node','-e',program],input=json.dumps(attributes).encode())
-  # Restore all files and xattrs before Storage starts background jobs.
-  config=json.loads(capture(['docker','image','inspect',pins['supabase']['images']['storage']]))[0]['Config']
-  assert config['Entrypoint']==['docker-entrypoint.sh'] and config['Cmd']==['node','dist/start/server.js']
-  run(['docker','exec','-d',storage,*config['Entrypoint'],*config['Cmd']])
-  wait(9999,'/health');wait(5000,'/status')
+  wait(9999,'/health')
   for _ in range(90):
    try:
     assert json.loads(http(3000,'/organizations?select=id&id=eq.1',service))==[{'id':1}];break
    except (subprocess.CalledProcessError,AssertionError):time.sleep(.5)
   else:raise RuntimeError('isolated REST organization read failed')
   users=json.loads(http(9999,'/admin/users?page=1&per_page=1',service));assert users.get('users'),'restored Auth user read returned no users'
-  buckets=json.loads(http(5000,'/bucket',service));assert isinstance(buckets,list) and buckets,'restored Storage bucket read returned no buckets'
-  obj=json.loads(sql("SELECT row_to_json(o) FROM (SELECT bucket_id,name,version FROM storage.objects WHERE (metadata->>'size')::bigint BETWEEN 1 AND 1048576 ORDER BY id LIMIT 1) o;"))
-  key='stub/stub/'+obj['bucket_id']+'/'+obj['name'];version=obj.get('version')
-  candidates=[key+'/'+version,key+'-$v-'+version] if version else [key]
-  with tarfile.open(storage_archive) as archive:
-   members={str(Path(x.name)):x for x in archive.getmembers() if x.isfile()}
-   member=next(members[key] for key in candidates if key in members)
-   expected=hashlib.sha256(archive.extractfile(member).read()).digest()
-  downloaded=http(5000,'/object/'+quote(obj['bucket_id'],safe='')+'/'+quote(obj['name'],safe='/'),service)
-  assert hashlib.sha256(downloaded).digest()==expected,'restored Storage object content mismatch'
+  attributes={};rebuilt=0
+  if storage_archive is not None:
+   storage=start('storage',{'DATABASE_URL':uri,'ANON_KEY':anon,'SERVICE_KEY':service,'POSTGREST_URL':'http://127.0.0.1:3000','AUTH_JWT_SECRET':secret,'STORAGE_BACKEND':'file','FILE_STORAGE_BACKEND_PATH':'/var/lib/storage','GLOBAL_S3_BUCKET':'stub','TENANT_ID':'stub','REGION':'stub','ENABLE_IMAGE_TRANSFORMATION':'false','FILE_SIZE_LIMIT':'52428800'},prepare=True)
+   # Stream the private host archive: docker cp can preserve a workstation UID
+   # that a cap-dropped root process cannot read. Never hide tar failure behind rm.
+   with storage_archive.open('rb') as stream:
+    run(['docker','exec','-i','-u','root',storage,'sh','-c','mkdir -p /var/lib/storage && tar -xof - -C /var/lib/storage'],stdin=stream)
+   objects=json.loads(sql("SELECT json_agg(json_build_object('bucket',bucket_id,'name',name,'version',version,'metadata',metadata)) FROM storage.objects;"))
+   with tarfile.open(storage_archive) as archive:
+    members={str(Path(x.name)):x for x in archive.getmembers() if x.isfile()}
+    attributes,rebuilt=storage_metadata(objects,members,rebuild_metadata)
+   # BusyBox tar does not restore GNU/PAX xattrs. Use the exact Storage image's
+   # existing fs-xattr library; values are data on stdin, never executable code.
+   program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(e=>{console.error(JSON.stringify({operation:'restore-storage-xattr',code:e.code||e.name}));process.exit(1)});"
+   run(['docker','exec','-i','-u','root',storage,'node','-e',program],input=json.dumps(attributes).encode())
+   # Restore all files and xattrs before Storage starts background jobs.
+   config=json.loads(capture(['docker','image','inspect',pins['supabase']['images']['storage']]))[0]['Config']
+   assert config['Entrypoint']==['docker-entrypoint.sh'] and config['Cmd']==['node','dist/start/server.js']
+   run(['docker','exec','-d',storage,*config['Entrypoint'],*config['Cmd']])
+   wait(5000,'/status')
+   buckets=json.loads(http(5000,'/bucket',service));assert isinstance(buckets,list) and buckets,'restored Storage bucket read returned no buckets'
+   obj=json.loads(sql("SELECT row_to_json(o) FROM (SELECT bucket_id,name,version FROM storage.objects WHERE (metadata->>'size')::bigint BETWEEN 1 AND 1048576 ORDER BY id LIMIT 1) o;"))
+   key='stub/stub/'+obj['bucket_id']+'/'+obj['name'];version=obj.get('version')
+   candidates=[key+'/'+version,key+'-$v-'+version] if version else [key]
+   with tarfile.open(storage_archive) as archive:
+    members={str(Path(x.name)):x for x in archive.getmembers() if x.isfile()}
+    member=next(members[key] for key in candidates if key in members)
+    expected=hashlib.sha256(archive.extractfile(member).read()).digest()
+   downloaded=http(5000,'/object/'+quote(obj['bucket_id'],safe='')+'/'+quote(obj['name'],safe='/'),service)
+   assert hashlib.sha256(downloaded).digest()==expected,'restored Storage object content mismatch'
   admin=None
   if admin_resources:
    limits=json.loads((Path(__file__).resolve().parents[1]/'runtime/docker-compose.resource-budget.yml').read_text())['services']
@@ -140,12 +143,12 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
   gateway=None
   if gateway_archive is not None:
    from gateway_smoke import gateway_reads
-   gateway=gateway_reads(database_container,gateway_archive,start,run,capture,http,wait,service,anon)
+   gateway=gateway_reads(database_container,gateway_archive,start,run,capture,http,wait,service,anon,retired_storage=storage_archive is None)
   edge=None
   if edge_cache_volume is not None:
    from edge_smoke import edge_reads
    edge=edge_reads(database_container,gateway_archive,edge_cache_volume,start,run,capture,service,anon,secret)
-  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_bucket_read':True,'storage_object_bytes_match_archive':True,'storage_data_prepared_before_api_start':True,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'edge_reads':edge,'source_images':{key:pins['supabase']['images'][key] for key in ['rest','auth','storage']}}
+  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_services_started':storage_archive is not None,'storage_bucket_read':storage_archive is not None,'storage_object_bytes_match_archive':storage_archive is not None,'storage_data_prepared_before_api_start':storage_archive is not None,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'edge_reads':edge,'source_images':{key:pins['supabase']['images'][key] for key in (['rest','auth','storage'] if storage_archive is not None else ['rest','auth'])}}
  finally:
   for name in reversed(names):
    subprocess.run(['docker','logs',name],stdout=log,stderr=log)
