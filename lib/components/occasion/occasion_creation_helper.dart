@@ -4,6 +4,8 @@ import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_strings.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_page.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -68,29 +70,14 @@ class OccasionCreationHelper {
       UnitModel unit, List<OccasionModel> existingOccasions,
       {OccasionModel? source, String? copyLocale}) async {
     final intentLocale = copyLocale ?? context.locale.languageCode;
-    if (AppConfig.occasionSetupEnabled) {
-      final store = OccasionSetupDrafts(Supabase.instance.client);
-      final draft =
-          await ExceptionHandler.guard(context, futureFunction: () async {
-        final created =
-            await store.create(unit.id!, OccasionSetupDrafts.newId());
-        return source == null
-            ? created
-            : await store.save(
-                created,
-                {
-                  ...created.data,
-                  'sourceId': source.id,
-                  'sourceUnitId': source.unit,
-                  'sourceSelectionPending': true,
-                  'copy_locale': intentLocale,
-                  'copy_title_edited': false
-                },
-                0);
+    if (source != null && AppConfig.occasionSetupEnabled) {
+      await _openSetup(context, unit, {
+        'sourceId': source.id,
+        'sourceUnitId': source.unit,
+        'sourceSelectionPending': true,
+        'copy_locale': intentLocale,
+        'copy_title_edited': false,
       });
-      if (draft != null && context.mounted) {
-        await OccasionSetupPage.open(context, draft);
-      }
       return null;
     }
     final formKey = GlobalKey<FormState>();
@@ -122,7 +109,8 @@ class OccasionCreationHelper {
           !endDate!.isBefore(startDate!);
     }
 
-    return await showDialog<OccasionModel?>(
+    var useSetup = false;
+    final occasion = await showDialog<OccasionModel?>(
       context: context,
       builder: (BuildContext context) {
         return MouseDetector(
@@ -230,6 +218,21 @@ class OccasionCreationHelper {
                     ),
                   ),
                   actions: [
+                    if (AppConfig.occasionSetupEnabled)
+                      PopupMenuButton<String>(
+                        tooltip: CommonStrings.moreOptions,
+                        icon: const Icon(Icons.more_horiz),
+                        onSelected: (_) {
+                          useSetup = true;
+                          Navigator.of(context).pop();
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'setup',
+                            child: Text(OccasionSetupStrings.createStepByStep),
+                          ),
+                        ],
+                      ),
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).pop(null);
@@ -275,6 +278,28 @@ class OccasionCreationHelper {
         );
       },
     );
+    if (useSetup && context.mounted) {
+      await _openSetup(context, unit, {
+        'title': title ?? '',
+        'link': link ?? '',
+        if (startDate != null) 'start': startDate!.toIso8601String(),
+        if (endDate != null) 'end': endDate!.toIso8601String(),
+      });
+    }
+    return occasion;
+  }
+
+  static Future<void> _openSetup(BuildContext context, UnitModel unit,
+      Map<String, dynamic> initialData) async {
+    final store = OccasionSetupDrafts(Supabase.instance.client);
+    final draft =
+        await ExceptionHandler.guard(context, futureFunction: () async {
+      final created = await store.create(unit.id!, OccasionSetupDrafts.newId());
+      return store.save(created, {...created.data, ...initialData}, 0);
+    });
+    if (draft != null && context.mounted) {
+      await OccasionSetupPage.open(context, draft);
+    }
   }
 
   static String? _validateLink(String link) {

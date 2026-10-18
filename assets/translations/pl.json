@@ -952,6 +952,7 @@
     "withinDeadline": "W terminie płatności"
   },
   "OccasionSetup": {
+    "createStepByStep": "Utwórz krok po kroku",
     "createEvent": "Utwórz wydarzenie",
     "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."
   }

@@ -2583,6 +2583,7 @@
     "includingCancelled": "Including cancelled"
   },
   "OccasionSetup": {
+    "createStepByStep": "Create step by step",
     "drafts": "Drafts",
     "untitled": "New event",
     "resume": "Continue",
