@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb",
+  "release": {
+    "version": "0.20.261+745",
+    "note": "Draft card polish and cancel action"
+  }
+}
