@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -113,7 +113,7 @@ jobs:
           git show "$base_main_sha:automation/check_tenant_branch_drift.sh" > "$RUNNER_TEMP/check_tenant_branch_drift.sh"
           CANONICAL_MAIN_REF=origin/main bash "$RUNNER_TEMP/check_tenant_branch_drift.sh" \
             "$base_main_sha" "$TENANT" "$SOURCE_SHA"
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
