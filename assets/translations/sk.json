@@ -958,6 +958,7 @@
     "withinDeadline": "V termíne úhrady"
   },
   "OccasionSetup": {
+    "createStepByStep": "Vytvoriť krok za krokom",
     "createEvent": "Vytvoriť udalosť",
     "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."
   }

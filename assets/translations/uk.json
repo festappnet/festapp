@@ -1131,6 +1131,7 @@
     "withinDeadline": "У межах терміну оплати"
   },
   "OccasionSetup": {
+    "createStepByStep": "Створити крок за кроком",
     "createEvent": "Створити подію",
     "finalizeFailed": "Не вдалося підтвердити створення. Повторіть той самий запит."
   }

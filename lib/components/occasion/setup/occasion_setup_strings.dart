@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OccasionSetupStrings {
+  static String get createStepByStep => 'OccasionSetup.createStepByStep'.tr();
   static String get createEvent => 'OccasionSetup.createEvent'.tr();
   static String get finalizeFailed => 'OccasionSetup.finalizeFailed'.tr();
   static String get drafts => 'OccasionSetup.drafts'.tr();
