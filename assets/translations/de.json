@@ -984,7 +984,12 @@
         "platformLinks": "App-Links",
         "appLinks": "App-Links",
         "orderSymbol": "Bestellnummer"
-      }
+      },
+      "variableGuide": "Verfügbare Angaben",
+      "variableGuideHint": "Angaben für diese Vorlage. Öffnen Sie einen Eintrag, um ein Beispiel zu sehen. Beim Versand werden die tatsächlichen Werte eingesetzt.",
+      "occasionSample": "Beispiel mit Produkten dieser Veranstaltung",
+      "modelSample": "Musterbeispiel",
+      "contextUnavailable": "Veranstaltungsprodukte konnten nicht geladen werden. Ein Musterbeispiel wird angezeigt."
     },
     "subject": "Betreff",
     "emailTemplateContent": "E-Mail-Inhalt"

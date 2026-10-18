@@ -126,7 +126,7 @@ void main() {
             field: EmailTargetField.subject));
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: RichHtmlEditor(controller: controller))));
-    await tester.tap(find.widgetWithIcon(TextButton, Icons.alternate_email));
+    await tester.tap(find.byIcon(Icons.alternate_email));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'occasionTitle');
     await tester.pumpAndSettle();

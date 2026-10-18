@@ -104,6 +104,8 @@ class RichHtmlEditorDialog extends StatefulWidget {
 class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
   bool _expanded = false;
   bool _confirmingCancel = false;
+  bool get _parentAuthoring =>
+      !widget.ownsController && widget.controller.authoring != null;
   bool get _fullPage => widget.fullPage || _expanded;
 
   void _finish(bool save) {
@@ -161,6 +163,10 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
   }
 
   Future<void> _requestCancel() async {
+    if (_parentAuthoring) {
+      await _toggleFullscreen();
+      return;
+    }
     if (await _canClose() && mounted) _finish(false);
   }
 
@@ -230,31 +236,33 @@ class _RichHtmlEditorDialogState extends State<RichHtmlEditorDialog> {
                       ),
                     ),
                   ),
-            bottomNavigationBar: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () async {
-                        if (await _canClose() && context.mounted)
-                          _finish(false);
-                      },
-                      child: Text(CommonStrings.storno),
+            bottomNavigationBar: _parentAuthoring
+                ? null
+                : SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () async {
+                              if (await _canClose() && context.mounted)
+                                _finish(false);
+                            },
+                            child: Text(CommonStrings.storno),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton(
+                            onPressed: !widget.readOnly &&
+                                    widget.controller.hasUserChanges
+                                ? () => _finish(true)
+                                : null,
+                            child: Text(CommonStrings.save),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed:
-                          !widget.readOnly && widget.controller.hasUserChanges
-                              ? () => _finish(true)
-                              : null,
-                      child: Text(CommonStrings.save),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
         );
         return AppDialogDismissal(

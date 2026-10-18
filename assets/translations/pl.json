@@ -984,7 +984,12 @@
         "platformLinks": "Linki do aplikacji",
         "appLinks": "Linki do aplikacji",
         "orderSymbol": "Symbol zamówienia"
-      }
+      },
+      "variableGuide": "Dostępne dane",
+      "variableGuideHint": "Dane dostępne dla tego szablonu. Rozwiń wpis, aby zobaczyć przykład. Rzeczywiste wartości zostaną uzupełnione przy wysyłaniu.",
+      "occasionSample": "Przykład z produktami tego wydarzenia",
+      "modelSample": "Przykładowe dane",
+      "contextUnavailable": "Nie udało się wczytać produktów wydarzenia. Wyświetlane są przykładowe dane."
     },
     "subject": "Temat",
     "emailTemplateContent": "Treść e-maila"

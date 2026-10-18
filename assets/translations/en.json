@@ -1062,7 +1062,12 @@
         "platformLinks": "Application links",
         "appLinks": "Application links",
         "orderSymbol": "Order symbol"
-      }
+      },
+      "variableGuide": "Variable guide",
+      "variableGuideHint": "Available variables for this template. Expand a variable to see an example. Actual values are filled in when sending.",
+      "occasionSample": "Sample using this event’s products",
+      "modelSample": "Illustrative sample",
+      "contextUnavailable": "Event products could not be loaded. An illustrative sample is shown."
     }
   },
   "Inventory": {

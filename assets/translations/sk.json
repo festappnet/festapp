@@ -990,7 +990,12 @@
         "platformLinks": "Odkazy na aplikáciu",
         "appLinks": "Odkazy na aplikáciu",
         "orderSymbol": "Symbol objednávky"
-      }
+      },
+      "variableGuide": "Prehľad údajov",
+      "variableGuideHint": "Dostupné údaje pre túto šablónu. Rozbaľte údaj a pozrite si ukážku. Pri odoslaní sa doplnia skutočné hodnoty.",
+      "occasionSample": "Ukážka s produktmi tejto akcie",
+      "modelSample": "Modelová ukážka",
+      "contextUnavailable": "Produkty akcie sa nepodarilo načítať. Zobrazuje sa modelová ukážka."
     },
     "subject": "Predmet",
     "emailTemplateContent": "Obsah e-mailu"

@@ -1,6 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailTemplatesStrings {
+  static String get variableGuide =>
+      'EmailTemplates.authoring.variableGuide'.tr();
+  static String get variableGuideHint =>
+      'EmailTemplates.authoring.variableGuideHint'.tr();
+  static String get occasionSample =>
+      'EmailTemplates.authoring.occasionSample'.tr();
+  static String get modelSample => 'EmailTemplates.authoring.modelSample'.tr();
+  static String get contextUnavailable =>
+      'EmailTemplates.authoring.contextUnavailable'.tr();
   static String get recommended => 'EmailTemplates.authoring.recommended'.tr();
   static String get usedBlocks => 'EmailTemplates.authoring.usedBlocks'.tr();
   static String scenarioName(String value) =>

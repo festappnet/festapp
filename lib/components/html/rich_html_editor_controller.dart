@@ -289,6 +289,11 @@ class RichHtmlEditorController extends ChangeNotifier {
       return false;
     final position = DocumentPosition(
         nodeId: node.id, nodePosition: TextNodePosition(offset: start));
+    // The native reaction must clear its range before structured paste can
+    // remove that paragraph. This changes decorations, not saved content.
+    if (expectedTag != null) {
+      editor.execute([CancelComposingActionTagRequest(_tagRule)]);
+    }
     editor.execute([
       if (!selection.isCollapsed)
         DeleteContentRequest(documentRange: selection),
