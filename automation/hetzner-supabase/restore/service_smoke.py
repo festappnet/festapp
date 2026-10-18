@@ -55,8 +55,14 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
  service=jwt('service_role');anon=jwt('anon')
  uri='postgresql://supabase_admin@127.0.0.1:5432/isolated_restore?options=-c%20session_preload_libraries%3D%20-c%20local_preload_libraries%3D'
  names=[]
+ def image_for(kind):
+  # Storage is available only to the explicit retained v1 backup reader.
+  if kind=='storage':
+   assert storage_archive is not None
+   return pins['supabase']['historicalBackupImages']['storage']
+  return pins['supabase']['images'][kind]
  def start(kind,environment,limits=None,prepare=False,cache_volume=None):
-  image=pins['supabase']['images'][kind];assert '@sha256:' in image
+  image=image_for(kind);assert '@sha256:' in image
   name=database_container+'-'+kind;names.append(name)
   args=['docker','run','-d','--name',name,'--network','container:'+database_container,'--cap-drop=ALL','--security-opt=no-new-privileges']
   # The pinned Caddy binary has a file capability; exec fails EPERM if its
@@ -111,7 +117,7 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
    program="const x=require('fs-xattr'),fs=require('fs'),path=require('path');(async()=>{const records=JSON.parse(fs.readFileSync(0,'utf8'));for(const [name,attrs] of Object.entries(records)){const p=path.resolve('/var/lib/storage',name);if(!p.startsWith('/var/lib/storage/'))throw Error('path');for(const [k,v] of Object.entries(attrs)){if(!['user.supabase.content-type','user.supabase.cache-control','user.supabase.etag'].includes(k))throw Error('attribute');await x.set(p,k,v);}}})().catch(e=>{console.error(JSON.stringify({operation:'restore-storage-xattr',code:e.code||e.name}));process.exit(1)});"
    run(['docker','exec','-i','-u','root',storage,'node','-e',program],input=json.dumps(attributes).encode())
    # Restore all files and xattrs before Storage starts background jobs.
-   config=json.loads(capture(['docker','image','inspect',pins['supabase']['images']['storage']]))[0]['Config']
+   config=json.loads(capture(['docker','image','inspect',image_for('storage')]))[0]['Config']
    assert config['Entrypoint']==['docker-entrypoint.sh'] and config['Cmd']==['node','dist/start/server.js']
    run(['docker','exec','-d',storage,*config['Entrypoint'],*config['Cmd']])
    wait(5000,'/status')
@@ -148,7 +154,7 @@ def application_reads(database_container, pins, storage_archive, log, admin_reso
   if edge_cache_volume is not None:
    from edge_smoke import edge_reads
    edge=edge_reads(database_container,gateway_archive,edge_cache_volume,start,run,capture,service,anon,secret)
-  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_services_started':storage_archive is not None,'storage_bucket_read':storage_archive is not None,'storage_object_bytes_match_archive':storage_archive is not None,'storage_data_prepared_before_api_start':storage_archive is not None,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'edge_reads':edge,'source_images':{key:pins['supabase']['images'][key] for key in (['rest','auth','storage'] if storage_archive is not None else ['rest','auth'])}}
+  return {'auth_health':True,'auth_restored_user_read':True,'rest_organization_read':True,'storage_services_started':storage_archive is not None,'storage_bucket_read':storage_archive is not None,'storage_object_bytes_match_archive':storage_archive is not None,'storage_data_prepared_before_api_start':storage_archive is not None,'storage_metadata_files':len(attributes),'storage_metadata_attributes_rebuilt_from_db':rebuilt,'network':'private loopback of network-none clone','production_credentials_loaded':False,'background_preloads_disabled':True,'production_integrations_started':False,'admin_resource_burst':admin,'gateway_reads':gateway,'edge_reads':edge,'source_images':{key:image_for(key) for key in (['rest','auth','storage'] if storage_archive is not None else ['rest','auth'])}}
  finally:
   for name in reversed(names):
    subprocess.run(['docker','logs',name],stdout=log,stderr=log)

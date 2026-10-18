@@ -21,3 +21,10 @@ const target = path.join(root, 'supabase/migrations/20261018010000_storage_asset
 if (process.argv.includes('--check')) {
   if (read('supabase/migrations/20261018010000_storage_asset_cleanup.sql') !== sql) throw new Error('asset migration source parity');
 } else fs.writeFileSync(target, sql);
+
+const retirement = '-- Canonical source: database/functions/account_deletion/retire_storage.sql\n'
+  + read('database/functions/account_deletion/retire_storage.sql') + "\nNOTIFY pgrst, 'reload schema';\n";
+const retirementName = 'supabase/migrations/20261019020000_storage_runtime_retirement.sql';
+if (process.argv.includes('--check')) {
+  if (read(retirementName) !== retirement) throw new Error('storage retirement source parity');
+} else fs.writeFileSync(path.join(root, retirementName), retirement);

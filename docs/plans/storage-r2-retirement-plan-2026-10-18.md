@@ -1,13 +1,15 @@
 # Retire Supabase Storage and consolidate Festapp assets on R2
 
 Date: 2026-10-18
-Status: Canonical service/copy tooling merged; production additive copy running; reference/restore/cutover gates pending
+Status: Production copy, Worker, references and scoped Edge activated; new recovery and runtime retirement gates pending
 Verification: standard
 
 Actual execution state is recorded in
 `docs/operations/security-remediation-20261016/storage-r2-retirement-execution-20261018.md`.
-Production additive copy is running. No reference rewrite, new Worker code
-rollout or source retirement has occurred.
+The full 2,817-object copy, canonical Worker and transactional reference rewrite
+are deployed. The scoped Edge activation took 18.55 seconds within the user's
+subsequently approved two-minute window. New-format recovery, source retirement
+and the enforced capacity budget remain pending; see the execution receipt.
 
 ## Outcome and scope
 

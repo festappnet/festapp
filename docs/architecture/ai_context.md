@@ -5,7 +5,7 @@ Festapp is an event management platform: Flutter (mobile+web) + Supabase (Postgr
 ## Critical: Resolve the Live Supabase Target from Activation
 
 Since the 2026-09-10 production activation, `https://api.festapp.net` is the
-canonical live Auth, REST, Storage and Function endpoint. For a tenant, verify
+canonical live Auth, REST and Function endpoint. For a tenant, verify
 `BACKEND_ACTIVATION_PHASE=canonical` in its `automation/project.conf` and read
 its current `WEB_LINK/backend-activation.json` before investigating live data.
 The document must match the tenant ID and canonical generation. Verify the
@@ -26,7 +26,17 @@ Business logic is split between **SQL functions** (`database/functions/`) and Da
 - Search for `supabase.rpc('...')` in Dart/JS to find which SQL function handles the operation
 - **In SQL**: Order creation, permissions, payments, ticket scanning, sign-ups, inventory
 - **In Dart/JS**: UI, navigation, file operations (image upload/copy via `workers/image-worker/`)
-- **Hybrid**: Occasion duplication/deletion — SQL copies DB rows, Dart copies images from Storage
+- **Hybrid**: Occasion duplication/deletion - SQL copies DB rows; Dart uses the canonical image Worker for asset copies/deletion.
+
+## Critical: Canonical Asset Authority
+
+Festapp files and fonts use the shared image Worker and one public/private R2
+bucket pair. Existing `a` URLs translate at that boundary; AKH retains its own
+bucket and Auth/DB. Never introduce a new Supabase Storage producer or legacy
+URL fallback. The 2026-10-18 production reference rewrite and scoped adapters are
+active; source retirement still requires independent new-format recovery proof.
+See `docs/operations/supabase-self-hosted/storage-authority.md` and its linked
+execution receipt for the current deployment boundary.
 
 ## Critical: Post-Cutover Database Authority
 

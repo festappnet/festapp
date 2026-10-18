@@ -124,7 +124,9 @@ def main():
     # every other globals statement must succeed, even though psql continued.
     errors=[line for line in globals_output.splitlines() if 'ERROR:' in line]
     assert all(re.fullmatch(r'.*ERROR:\s+role "[^"]+" already exists',line) for line in errors),'globals restore error'
-    run(['docker','exec',name,'createdb','-U','supabase_admin','-O','supabase_admin','isolated_restore'],stdout=log,stderr=log)
+    # Canonical production is owned by postgres; pg_database_owner owns public.
+    # A different clone owner silently breaks the restored administration path.
+    run(['docker','exec',name,'createdb','-U','supabase_admin','-O','postgres','isolated_restore'],stdout=log,stderr=log)
     # pg_cron background jobs cannot execute: network-none and cron database_name
     # remains postgres, while all restored jobs/data live in isolated_restore.
     # Exclude only pg_cron extension-owned items that cannot install in this DB.

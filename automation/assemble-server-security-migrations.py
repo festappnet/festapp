@@ -49,6 +49,13 @@ COMMIT;
  manifest['phases'].append({'version':version,'file':'supabase/migrations/'+name,'sha256':digest,'database_user':account,'driver':str(target.relative_to(root))})
 manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [
  root/'automation/hetzner-supabase/runtime/Caddyfile',
+ root/'automation/hetzner-supabase/runtime/prepare-asset-runtime.py',
+ root/'automation/hetzner-supabase/runtime/pins.json',
+ root/'automation/hetzner-supabase/runtime/bootstrap-host.sh',
+ root/'automation/hetzner-supabase/runtime/deploy-rehearsal.sh',
+ root/'automation/hetzner-supabase/runtime/promote-production-runtime.sh',
+ root/'automation/hetzner-supabase/runtime/switch-rehearsal-runtime-database.sh',
+ root/'automation/hetzner-supabase/runtime/finalize-canonical-database-operations.sh',
  root/'automation/hetzner-supabase/runtime/apply-security-config.sh',
  root/'automation/hetzner-supabase/runtime/audit-security-state.sql',
  root/'automation/hetzner-supabase/runtime/collect-resource-budget.sh',

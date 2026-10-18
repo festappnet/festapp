@@ -19,16 +19,10 @@ BEGIN
   BEGIN PERFORM public.merge_ticket_layout_features(jsonb_build_array(jsonb_build_object('code','ticket','layout',jsonb_set(v2,'{schemaVersion}','4'))),features,jsonb_build_object('expected',jsonb_set(v2,'{schemaVersion}','4'),'next',v2));RAISE EXCEPTION 'future edit accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='future edit accepted' THEN RAISE;END IF;END;
   PERFORM assert_true(NOT has_table_privilege('authenticated','public.ticket_font_assets','INSERT'),'client cannot register');
   PERFORM assert_true(NOT has_table_privilege('service_role','public.ticket_font_assets','UPDATE'),'registry append only');
-  PERFORM assert_true(NOT (SELECT public FROM storage.buckets WHERE id='ticket-fonts'),'bucket private');
 END $$;
-INSERT INTO storage.objects(bucket_id,name) VALUES ('ticket-fonts','read-probe.ttf');
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
-  IF EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='ticket-fonts') THEN RAISE EXCEPTION 'private fonts exposed'; END IF;
   BEGIN INSERT INTO public.ticket_font_assets(id,metadata) VALUES ('gf:'||repeat('0',64),'{}');RAISE EXCEPTION 'client registry write accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
-  BEGIN
-    INSERT INTO storage.objects(bucket_id,name) VALUES ('ticket-fonts','test.ttf');RAISE EXCEPTION 'client upload accepted';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
 ROLLBACK;

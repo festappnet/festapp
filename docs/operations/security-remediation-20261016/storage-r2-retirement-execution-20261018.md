@@ -1,6 +1,8 @@
 # Storage retirement execution - 2026-10-18
 
-The full plan is **not implemented or deployed**. The prepared implementation
+The full plan is **not complete**. The latest production state appears in the
+final section; earlier sections retain their historical execution boundaries.
+The prepared implementation
 was transferred onto freshly fetched main
 `2aa995c6c` on branch `feat/storage-r2-retirement-20261018`, in
 `/tmp/festapp-storage-r2-main-20261018`. The earlier isolated worktree remains
@@ -364,3 +366,72 @@ unchanged web/SQL/client/Edge lanes from PR #484 remain recorded separately.
 Final publication must reconcile current main and its affected checks. Runtime
 contraction, old bucket retirement and the numerical enforced 4 GB budget remain
 required; no production completion is claimed from this source increment.
+
+
+## Production activation at canonical main 036244b63
+
+This section supersedes the earlier staged-state descriptions. PR #487 merged
+source `036244b63c5d9ea08cc7588281d946a43492271c` after all four required CI
+checks passed. No other tenant release was performed.
+
+- All 2,817 source identities were independently hash/length verified at their
+  canonical destinations: 2,407 conditional creates and 410 existing objects.
+  All 264 retained disk-only objects have encrypted private custody provenance.
+  A fresh canonical listing comparison found all 664 former `a` objects
+  unchanged. No source was deleted or overwritten.
+- The canonical Worker is actually deployed at version
+  `e664db1b-c25f-4b17-a37b-16107a25c5ca`, with exactly public, private and AKH
+  bindings. Former `a` reads translate to canonical imports. Three independent
+  reads each for default, former `a` and AKH matched their expected hashes;
+  unauthenticated private reads were denied. All 13 service fonts matched
+  their original bytes, totaling 2,170,816 bytes.
+- The guarded production transaction imported all 1,479 original registry
+  identities, rewrote the 533 exact typed fields, recorded 145 canonical sync
+  commits and sealed manifest SHA-256
+  `6453d0a89442e93cd6e5d9e4c96a3270e13390d9470632c6c69f33a6bb19bb65`.
+  The cleanup flag remains inactive. Only the fingerprinted broken test map
+  feature was discarded; the Jubilee map and other occasion content remain.
+- A new catalog scan of 2,339 current matching values found zero owned Storage
+  URLs. All 66 latest sync components matched source revisions, with 11 of 11
+  existing public heads current. The tenant rollout scope was unchanged.
+- Six exact font/account-cleanup Edge files and the two required capability
+  references were activated without unrelated main changes. The user approved
+  a maximum two-minute restart; measured service interruption was 18.55 seconds.
+  Studio, Auth and database container identities and health remained unchanged.
+  Safe read-boundary probes passed, the original email pause was restored and
+  historical unknown email outcomes were not replayed.
+- Backup format v2 was enabled with protected custody metadata. Official backup
+  `20261018T163914Z` is streaming its encrypted canonical R2 archive. It is not
+  yet a completed backup or a new-format recovery proof. No plaintext artifact
+  is written. The independent 4 GB recovery VM has been started using its
+  existing pinned cached images, without production access or a paid resize.
+
+Detailed per-object and customer-bearing evidence stays outside Git under
+`~/.local/share/festapp-storage-retirement-20261018/`; Worker release evidence
+is in `~/.local/share/festapp-r2-worker-activation-20261018/`.
+
+The next source increment removes Storage/imgproxy from canonical Compose and
+Envoy inputs, makes the public legacy endpoint return 410, retires application
+metadata privileges and the legacy deletion helper, and preserves an explicit
+v1 backup reader with its historical Storage image pin. Configuration preparation
+refuses any unexpected remaining consumer and changes no live service. It also
+fixes restored database ownership to the verified canonical owner `postgres`,
+rather than broadening schema privileges to hide a recovery failure. The
+obsolete initial migration-only integration script is removed; it exported an
+old service credential and created Storage fixtures outside the active owner.
+
+Actual new-format full application/PITR recovery, recovery-kit refresh, runtime
+activation, source-volume/three-bucket retirement and an enforced measured 4 GB
+capacity budget still require their ordered gates. No production completion or
+new RPO/RTO guarantee is claimed from this source publication.
+
+Runtime source validation passed the normal complete automation lane (140 final
+Node cases plus the archive/manifest/configuration Python suites), all 225
+isolated SQL files, changed Python/shell syntax and both immutable migration
+assemblers. Real production Compose/Envoy inputs were prepared additively with
+no unexpected consumers. The retirement migration must execute as protected
+`supabase_admin`: PostgreSQL's non-superuser `postgres` cannot revoke grants
+issued by the Storage owner. An explicit guard and final privilege assertion
+prevent that silent partial retirement. Actual-role denial also passed against
+a deliberately permissive test policy. Unchanged client/Worker release lanes
+retain PR #487's passing evidence.
