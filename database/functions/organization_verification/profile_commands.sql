@@ -116,6 +116,7 @@ BEGIN
  reviewed_at=NULL,reviewed_by=NULL,reviewed_organization_id=NULL,feedback_to_applicant=NULL,review_note=NULL,review_source=NULL WHERE unit_id=p_unit;
  INSERT INTO public.unit_legal_profile_audit(unit_id,organization_id,revision,actor_id,action,snapshot)
  SELECT p_unit,org,revision,auth.uid(),'submit',to_jsonb(t) FROM public.unit_legal_profiles t WHERE unit_id=p_unit;
+ PERFORM public.enqueue_unit_verification_request(p_unit);
  RETURN jsonb_build_object('code',200,'outcome','applied','profile',public.get_unit_legal_profile(p_unit)->'profile');
 END $$;
 REVOKE ALL ON FUNCTION public.get_unit_legal_profile(bigint),public.save_unit_legal_profile(bigint,bigint,jsonb),public.submit_unit_verification(bigint,bigint) FROM PUBLIC,anon;

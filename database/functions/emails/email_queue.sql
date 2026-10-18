@@ -54,6 +54,13 @@ BEGIN
  PERFORM public.require_service_role();
  IF public.is_demo_occasion(p_message.occasion) THEN RETURN false; END IF;
  IF p_message.expires_at<=now() THEN RETURN false; END IF;
+ IF p_message.message_kind='custom' AND p_message.code='UNIT_VERIFICATION_REQUEST' THEN
+  RETURN EXISTS(SELECT 1 FROM public.unit_legal_profiles p JOIN public.units u ON u.id=p.unit_id
+   JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
+   WHERE p.unit_id=p_message.unit AND u.organization=p_message.organization AND p.status='pending'
+    AND p.revision=p_message.source_version
+    AND public.get_user_delivery_email(ou."user")=p_message.recipient);
+ END IF;
  IF p_message.message_kind='custom' AND p_message.code='BANK_SYNC_WARNING' THEN
   IF NOT EXISTS (SELECT 1 FROM eshop.bank_sync_health h JOIN eshop.bank_sync_connections c ON c.id=h.connection_id
     WHERE h.connection_id=(p_message.data->>'connection_id')::bigint

@@ -273,7 +273,8 @@
       "behaviorTests": [
         "supabase/functions/_shared/orderEmailOverview_test.ts",
         "supabase/functions/_shared/canonicalEmail_test.ts",
-        "supabase/functions/_shared/bankSyncWarningEmail_test.ts"
+        "supabase/functions/_shared/bankSyncWarningEmail_test.ts",
+        "supabase/functions/_shared/unitVerificationEmail_test.ts"
       ],
       "abusePolicy": [
         "email.dispatch",

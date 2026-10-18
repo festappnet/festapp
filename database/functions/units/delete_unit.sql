@@ -23,6 +23,13 @@ BEGIN
         RAISE EXCEPTION 'CANNOT_DELETE_LAST_UNIT';
     END IF;
 
+    -- Preserve notification history without retaining a deleted unit or live intent.
+    UPDATE public.email_messages
+       SET unit = NULL,
+           workflow_state = CASE WHEN workflow_state IN ('pending','retry_wait','blocked','preparing')
+                                 THEN 'cancelled' ELSE workflow_state END
+     WHERE unit = p_unit_id AND message_kind = 'custom' AND code = 'UNIT_VERIFICATION_REQUEST';
+
     DELETE FROM public.unit_users WHERE unit = p_unit_id;
     DELETE FROM public.units WHERE id = p_unit_id;
 END;

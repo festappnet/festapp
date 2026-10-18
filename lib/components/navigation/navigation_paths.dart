@@ -23,6 +23,7 @@ abstract final class NavigationPaths {
   static const info = 'info';
   static const information = 'information';
   static const inventoryPools = 'inventory-pools';
+  static const legalProfile = 'legal-profile';
   static const list = 'list';
   static const occasions = 'occasions';
   static const occupancy = 'occupancy';

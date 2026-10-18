@@ -700,6 +700,13 @@
       "sources": [
         "test/components/forms/organization_identity_test.dart"
       ]
+    },
+    "test/components/forms/verification_review_test.dart": {
+      "kind": "environment",
+      "reason": "Localized verification review dialog with real focus, scrolling and injected RPC transport; covers decision validation and retained drafts.",
+      "sources": [
+        "test/components/forms/verification_review_test.dart"
+      ]
     }
   }
 }

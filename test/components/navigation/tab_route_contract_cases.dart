@@ -98,6 +98,7 @@ void main() {
     'users',
     'quotes',
     'settings',
+    'settings/legal-profile',
     'email-templates',
     'bank-accounts',
     'bank-accounts/9/general',

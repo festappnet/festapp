@@ -1,4 +1,4 @@
-import '../verification/unit_legal_profile_section.dart';
+import '../verification/verification_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -494,10 +494,16 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                 ),
               ),
               if (!_isLoading && _unit.id != null)
-                UnitLegalProfileSection(
-                    key: ValueKey(_unit.id),
-                    unitId: _unit.id!,
-                    canEdit: _canEdit),
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: ListTile(
+                    leading: const Icon(Icons.verified_outlined),
+                    title: Text(VerificationStrings.text('title')),
+                    subtitle: Text(VerificationStrings.text('settingsDescription')),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.router.push(const UnitLegalProfileRoute()),
+                  ),
+                ),
               if (!_isLoading) ...[
                 const SizedBox(height: 24),
                 const SizedBox(height: 24),

@@ -114,7 +114,16 @@ class AppRouter extends RootStackRouter {
                         path: NavigationPaths.emailTemplates),
                     AutoRoute(
                         page: UnitSettingsRoute.page,
-                        path: NavigationPaths.settings),
+                        path: NavigationPaths.settings,
+                        children: [
+                          AutoRoute(
+                              page: UnitSettingsContentRoute.page,
+                              path: '',
+                              initial: true),
+                          AutoRoute(
+                              page: UnitLegalProfileRoute.page,
+                              path: NavigationPaths.legalProfile),
+                        ]),
                     AutoRoute(
                         page: UnitBankAccountsNavigationRoute.page,
                         path: NavigationPaths.bankAccounts,
