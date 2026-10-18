@@ -148,6 +148,45 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
+  for (final code in ['amount', 'order_overview_button']) {
+    testWidgets(
+        'all-rich loaded body inserts $code without mutating on chooser open',
+        (tester) async {
+      const source = '<p>{{fullOrder}}</p><p>{{balanceReasoning}}</p>';
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+          field: EmailTargetField.body,
+          scenario: scenario);
+      final controller = RichHtmlEditorController(
+          initialHtml: source,
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider);
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: RichHtmlEditor(controller: controller, fullscreen: true))));
+      expect(controller.editor.document.whereType<TextNode>(), isEmpty);
+      await tester.tap(find.byIcon(Icons.alternate_email));
+      await tester.pumpAndSettle();
+      expect(controller.html, source);
+      expect(controller.hasUserChanges, isFalse);
+      expect(find.byType(TextField), findsOneWidget);
+      await tester.enterText(find.byType(TextField), code);
+      await tester.pumpAndSettle();
+      await tester
+          .tap(find.widgetWithText(ListTile, provider.entry(code)!.label));
+      await tester.pumpAndSettle();
+      expect(controller.html, contains('{{$code}}'));
+      expect(controller.html, isNot(contains('<p></p>')));
+      expect(controller.html, isNot(contains('\uFFFC')));
+      expect(find.byType(TextField), findsNothing);
+      controller.undo();
+      await tester.pumpAndSettle();
+      expect(controller.html, source);
+      expect(controller.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   testWidgets('preview surface follows dark app theme', (tester) async {
     final theme = ThemeData.dark();
     await tester.pumpWidget(MaterialApp(

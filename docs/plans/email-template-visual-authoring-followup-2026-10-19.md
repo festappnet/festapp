@@ -62,6 +62,9 @@ UI verification:
 - Affected Flutter batch: 69 passing cases; the remaining case initially used a
   fullscreen TextButton locator for an IconButton. With that locator corrected,
   the focused case passes (70 cases covered across the two runs).
+- Two additional all-rich-body cases pass: scalar and rich insertion do not
+  mutate source merely by opening the chooser, export no placeholder artifact,
+  and one undo restores the exact clean original.
 - Targeted UI analyzer: zero errors or warnings (existing informational lints).
 - Native rich `@` insertion and one undo, explicit chooser after a selected rich
   block, mixed-paragraph rendering, compact subject, one parent Save, fullscreen

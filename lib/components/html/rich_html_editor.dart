@@ -106,13 +106,21 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     if (selection == null ||
         selection.base.nodePosition is! TextNodePosition ||
         selection.extent.nodePosition is! TextNodePosition) {
-      final node = controller.editor.document.whereType<TextNode>().lastOrNull;
+      final document = controller.editor.document;
+      final node = document.whereType<TextNode>().lastOrNull ??
+          (selection == null
+              ? null
+              : document.getNodeById(selection.extent.nodeId)) ??
+          document.lastOrNull;
       if (node == null) return;
       controller.editor.execute([
         ChangeSelectionRequest(
             DocumentSelection.collapsed(
                 position: DocumentPosition(
-                    nodeId: node.id, nodePosition: node.endPosition)),
+                    nodeId: node.id,
+                    nodePosition: node is TextNode
+                        ? node.endPosition
+                        : selection?.extent.nodePosition ?? node.endPosition)),
             SelectionChangeType.placeCaret,
             SelectionReason.userInteraction)
       ]);
