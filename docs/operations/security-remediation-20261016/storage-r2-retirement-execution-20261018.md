@@ -435,3 +435,34 @@ issued by the Storage owner. An explicit guard and final privilege assertion
 prevent that silent partial retirement. Actual-role denial also passed against
 a deliberately permissive test policy. Unchanged client/Worker release lanes
 retain PR #487's passing evidence.
+
+
+## Recovery cadence and retained-set format follow-up
+
+Runtime source PR #488 merged as canonical main
+`1c28f2c0ef63501cdef45d039cc6a6070e4329c7`; all four CI checks passed.
+Its production contraction remains gated by actual new-format recovery.
+Jubilee's map and style now pass real public canonical-R2 GET verification:
+18,675,782 bytes in total, exact original SHA-256 and MIME. This is not a
+physical-device cold-offline test; the documented pre-existing sprite/style
+limitations remain. A read-only account-wide audit checked all 43 deployed
+Workers and found no binding to any of the three retired-source buckets. Their
+custom-domain lists remain empty, managed public access is disabled and only
+the default multipart abort lifecycle remains. Notification API code 11015
+again indicates no configured notifications. The current OAuth authority
+returns HTTP 403 for API-token policy administration; source-reader grant
+retirement has not been performed or represented as complete.
+
+The next source increment schedules the existing backup owner twice daily
+rather than relying on a 24-hour interval plus execution time to meet a
+24-hour file objective. Monitoring warns after 18 hours without success; the
+separate physical PITR base-backup threshold remains unchanged. Retention stays
+14 days and four completed weekly copies. The pruner recognizes exact v2 sets
+through the same format validator used by recovery; incomplete, unknown and
+extended sets remain outside destructive cleanup. This source change has not
+yet been installed and does not modify the currently running backup.
+
+Cadence/retention validation passed the complete normal automation lane, the
+six retention cases (including mixed exact v1/v2 sets, unknown-format custody
+and changed-size rejection), and the monitor's 18-hour threshold boundary.
+These checks do not constitute production timer installation.

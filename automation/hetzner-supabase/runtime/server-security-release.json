@@ -38,7 +38,7 @@
     "automation/hetzner-supabase/runtime/audit-security-state.sql": "dcb4c4cd5f67c83437894fd91abb7888c8aa555663a54c0660fb39a35035f2e0",
     "automation/hetzner-supabase/runtime/collect-resource-budget.sh": "8485ab057a68c96c4f49ffaeb9e7f1b6b48dc789e6063bfd53a1d7fac05424f3",
     "automation/hetzner-supabase/monitoring/agent.mjs": "f668f803d09507a3c59e9a49fba148815c2602932583f9a52a28c45b38914076",
-    "automation/hetzner-supabase/monitoring/metrics.mjs": "272ae171290e40f65e532a57a0d7d7208ece4457c5e6322cebaacd44831982d3",
+    "automation/hetzner-supabase/monitoring/metrics.mjs": "6d233f17b568cdf533b89334be4148eef4266c55f3e3a179e67dbb2e94594389",
     "automation/hetzner-supabase/monitoring/runtime-evidence.py": "cdbbbbe4f2227f7c66f09ccddafeb14f76b1e14b62a4962ab40db9f155663f04",
     "supabase/functions/_shared/runtime_resource_metrics.ts": "cbbf911cae31e29a5b495c57d538759ca3567da0a36fb847088ed47cea4d6cf0",
     "automation/hetzner-supabase/runtime/patch-function-resource-metrics.py": "e4b9353d0b46868e577027fc1a9258ff9609168d5857fd2629d0d8da5234a697",
@@ -65,7 +65,9 @@
     "automation/hetzner-supabase/backup/create-online-encrypted-backup.sh": "7c219e9ac0c167aedb0b71bb9d33ddf1c0bce7ec19f748bd5ec7b5933944dae6",
     "automation/hetzner-supabase/backup/create-r2-image-archive.py": "3233912079e354de8a4782cbcc30a5111713502671ed90ff881912c84111dcd8",
     "automation/hetzner-supabase/backup/archive-runtime.sh": "1ac98efa9d1c3c4ed6e1c9febb95e6689ba578107ebf1a89c228442a7e197f8f",
-    "automation/hetzner-supabase/backup/install-online-backup.sh": "ddceabf59c4694540fe7e2d9e06cdd4ded36cb8710cd07a96a63b853ace3129b"
+    "automation/hetzner-supabase/backup/install-online-backup.sh": "3d980831dcee6fd80bd14f7d56ade43f16b8724d84108252794c6367579c4c73",
+    "automation/hetzner-supabase/backup/prune-online-backups.py": "65ff173129c3dbf4c9614a80e82389353dfe2f44ce8d2183b5ecde145bea6ee4",
+    "automation/hetzner-supabase/backup/festapp-supabase-backup.timer": "db023a5c167d76300025b2b24c85559ec9c664b3e4aca86c67667d73fe84f2ef"
   },
   "contract_files": {
     "database/functions/security/server_security_acl_manifest.json": "e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb",

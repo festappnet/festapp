@@ -1,8 +1,8 @@
 [Unit]
-Description=Daily Festapp encrypted off-host Supabase backup
+Description=Twice-daily Festapp encrypted off-host Supabase backup
 
 [Timer]
-OnCalendar=*-*-* 02:30:00 UTC
+OnCalendar=*-*-* 02,14:30:00 UTC
 RandomizedDelaySec=20min
 Persistent=true
 Unit=festapp-supabase-backup.service
