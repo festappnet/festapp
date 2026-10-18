@@ -99,7 +99,7 @@ jobs:
             '.schemaVersion == 2 and .releaseBranch == $branch and (.androidPackage | type == "string")' \
             "$RUNNER_TEMP/release-manifest.json" >/dev/null
       - name: Download the encrypted raw AAB from the named candidate run
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: android-raw-${{ matrix.tenant }}-${{ matrix.sourceSha }}-${{ needs.plan.outputs.raw_run_id }}
           path: ${{ runner.temp }}/raw

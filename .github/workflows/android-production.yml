@@ -94,7 +94,7 @@ jobs:
             '.schemaVersion == 2 and .androidPackage == $package and .releaseBranch == $branch' \
             "$RUNNER_TEMP/release-manifest.json" >/dev/null
       - name: Download the exact authorized candidate from GitHub
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: android-candidate-${{ matrix.tenant }}-${{ matrix.sourceSha }}
           path: ${{ runner.temp }}/candidate
