@@ -25,7 +25,8 @@ test('existing agent detects OOM/restarts, stale recovery evidence and long DB t
  assert.equal(runtimeFailure({...good,at:now-180001},null,now),'runtime_collection_unavailable');
  assert.equal(runtimeFailure({...good,containers:[{name:'db',running:true,oom:true}]},null,now),'container_oom');
  assert.equal(runtimeFailure({...good,containers:[{name:'db',running:true,restarts:1}]},good,now),'container_restarted');
- assert.equal(runtimeFailure({...good,backupAt:now/1000-27*3600},good,now),'backup_stale');
+ assert.equal(runtimeFailure({...good,backupAt:now/1000-17*3600},good,now),null);
+ assert.equal(runtimeFailure({...good,backupAt:now/1000-18*3600-1},good,now),'backup_stale');
  assert.equal(runtimeFailure({...good,logUploadAt:now/1000-3*3600},good,now),'log_upload_stale');
  assert.equal(runtimeFailure({...good,longTransactions:1},good,now),'database_long_transaction');
 });

@@ -6,9 +6,15 @@ shares only the network-none container's private loopback, with fixture auth.
 import argparse,datetime,json,os,re,subprocess,tempfile,time,uuid
 from pathlib import Path
 IMAGE='festapp-postgres-pgbackrest:17.6-2.57.0-r0'
+def postgres_recovery_target(value):
+ target=datetime.datetime.fromisoformat(value.replace('Z','+00:00'))
+ if target.tzinfo is None:raise ValueError('Recovery target requires an explicit timezone')
+ # PostgreSQL's recovery GUC rejects the otherwise valid ISO UTC suffix Z.
+ return target.astimezone(datetime.timezone.utc).isoformat(sep=' ')
+
 def main():
  p=argparse.ArgumentParser();p.add_argument('--repo-dir',type=Path,required=True);p.add_argument('--recovery',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--target',required=True);p.add_argument('--backup-label',required=True);p.add_argument('--evidence',type=Path,required=True);p.add_argument('--rest-smoke',action='store_true');a=p.parse_args()
- target=datetime.datetime.fromisoformat(a.target.replace('Z','+00:00'));assert target.tzinfo
+ target=postgres_recovery_target(a.target)
  assert re.fullmatch(r'\d{8}-\d{6}F(?:_\d{8}-\d{6}D)?',a.backup_label), 'restore from an explicit full/differential backup'
  assert a.repo_dir.is_dir() and (a.repo_dir/'backup/festapp/backup.info').is_file()
  assert not any(x.is_symlink() for x in a.repo_dir.rglob('*'))
@@ -33,7 +39,7 @@ def main():
     run('docker','exec','--user','root',name,'chown','-R','100:101','/tmp/offline-repo')
     config='[global]\nrepo1-type=posix\nrepo1-path=/tmp/offline-repo\nrepo1-cipher-type=aes-256-cbc\nrepo1-cipher-pass='+recovery['cipher_pass']+'\nprocess-max=1\nlog-level-file=off\nlog-level-console=warn\nlock-path=/tmp/pgbackrest-lock\nspool-path=/tmp/pgbackrest-spool\n[festapp]\npg1-path=/tmp/restore-data\n'
     ex('sh','-c','umask 077; cat > /tmp/pgbackrest.conf',input=config.encode())
-    ex('pgbackrest','--config=/tmp/pgbackrest.conf','--stanza=festapp','--set='+a.backup_label,'--type=time','--target='+a.target,'--target-action=pause','--link-all=n','--tablespace-map-all=/tmp/restore-tablespaces','restore')
+    ex('pgbackrest','--config=/tmp/pgbackrest.conf','--stanza=festapp','--set='+a.backup_label,'--type=time','--target='+target,'--target-action=pause','--link-all=n','--tablespace-map-all=/tmp/restore-tablespaces','restore')
     # Replace external server configuration; retain only pgBackRest's recovery
     # settings in postgresql.auto.conf. No app/cron/net preload or TCP listener.
     control=ex('pg_controldata','/tmp/restore-data',capture=True)
@@ -90,7 +96,7 @@ def main():
      assert rest_actual['HostConfig']['NetworkMode']=='container:'+actual['Id'] or rest_actual['HostConfig']['NetworkMode']=='container:'+name
      assert not rest_actual['HostConfig']['PortBindings'] and not any(m['Type']=='bind' for m in rest_actual['Mounts'])
      rest_smoke=True
-    result={'status':'pass','tool':'pgbackrest 2.57.0','backup_label':a.backup_label,'target':a.target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'application_rest_read_smoke':rest_smoke,'production_integrations_started':False,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
+    result={'status':'pass','tool':'pgbackrest 2.57.0','backup_label':a.backup_label,'target':a.target,'postgres_recovery_target':target,'paused_at_target':True,'replay_at':state['replay_at'],'replay_lsn':state['replay_lsn'],'catalog_smoke':True,'application_rest_read_smoke':rest_smoke,'production_integrations_started':False,'network':'none','ports':False,'host_mounts':False,'application_preloads_disabled':True,'encrypted_key_escrow_used':True,'isolated_restore_seconds':round(time.monotonic()-started,2),'full_service_rto_proven':False,'storage_r2_consistency_proven':False}
    except Exception:
     subprocess.run(['docker','logs',rest_name],stdout=log,stderr=log)
     subprocess.run(['docker','cp',name+':/tmp/server.log',str(Path(temp)/'server.log')],stdout=log,stderr=log)

@@ -1,4 +1,4 @@
-import importlib.util,io,json,subprocess,sys,tarfile,tempfile,unittest
+import hashlib,importlib.util,io,json,subprocess,sys,tarfile,tempfile,unittest
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('r2_archive',Path(__file__).resolve().parents[1]/'hetzner-supabase/backup/create-r2-image-archive.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
@@ -9,6 +9,27 @@ spec3=importlib.util.spec_from_file_location('r2_dump_verify',Path(__file__).res
 d=importlib.util.module_from_spec(spec3);spec3.loader.exec_module(d)
 
 class R2ArchiveTest(unittest.TestCase):
+ def test_current_application_html_json_and_arrays_are_verified_and_storage_is_rejected(self):
+  url='https://img.festapp.net/assets/storage/fixture'
+  source={'html':'<img src="'+url+'"><style>a{background:url('+url+')}</style>','encoded':json.dumps([url.replace('/',r'\/')])}
+  self.assertEqual(v.application_references(source,{'api.festapp.net'}),[url,url,url])
+  self.assertEqual(v.application_references('https://external.test/?file='+url,{'api.festapp.net'}),[])
+  with self.assertRaisesRegex(AssertionError,'owned Storage'):
+   v.application_references('<a href="https://api.festapp.net/storage/v1/object/public/public-files/file.pdf">PDF</a>',{'api.festapp.net'})
+
+ def test_selected_database_registry_must_match_archive_hash_size_and_mime(self):
+  inventories={bucket:[] for bucket in m.ASSET_BUCKETS}
+  inventories['festapp-images-private']=[{'Path':'ticket-fonts/sha256/fixture.ttf','Size':3,'MimeType':'font/ttf'}]
+  def fetch(bucket,key):return subprocess.Popen(['python3','-c',"import sys;sys.stdout.buffer.write(b'abc')"],stdout=subprocess.PIPE)
+  stream=io.BytesIO();m.write_archive(inventories,fetch,stream,asset_format=True)
+  ref={'bucket':'festapp-images-private','key':'ticket-fonts/sha256/fixture.ttf','sha256':hashlib.sha256(b'abc').hexdigest(),'bytes':3,'content_type':'font/ttf'}
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'fixture.tar';path.write_bytes(stream.getvalue())
+   self.assertTrue(v.verify_archive(path,[ref])['consistent'])
+   for name,value in [('sha256','a'*64),('bytes',4),('content_type','image/png')]:
+    result=v.verify_archive(path,[ref|{name:value}])
+    self.assertFalse(result['consistent']);self.assertEqual(result['mismatched_database_r2_references'],1)
+
  def test_new_asset_format_covers_colliding_a_keys_and_service_fonts(self):
   inventories={bucket:[] for bucket in m.ASSET_BUCKETS}
   for key in ['images/same.png','imports/a/images/same.png']:

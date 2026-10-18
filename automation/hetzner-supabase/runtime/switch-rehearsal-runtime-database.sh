@@ -5,7 +5,7 @@ readonly EXPECTED_HOSTNAME="festapp-supabase-rehearsal-01"
 readonly COMPOSE_DIR="${FESTAPP_REHEARSAL_COMPOSE_DIR:-/opt/festapp-supabase/docker}"
 readonly EVIDENCE_ROOT="${FESTAPP_REHEARSAL_EVIDENCE_ROOT:-/var/lib/festapp-rehearsal-evidence}"
 readonly TARGET_DATABASE="${FESTAPP_RUNTIME_DATABASE:-}"
-readonly SERVICES=(auth rest realtime storage meta functions studio)
+readonly SERVICES=(auth rest realtime meta functions studio)
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPOSITORY_SOURCE_REGISTRY="$SCRIPT_DIR/../merge/source-registry.json"
 readonly INSTALLED_SOURCE_REGISTRY="$SCRIPT_DIR/festapp-source-registry.json"
@@ -49,7 +49,7 @@ if [[ "$TARGET_DATABASE" =~ ^festapp_rehearsal_ ]]; then
   readonly TARGET_STATE="$(psql_target -Atqc "SELECT concat_ws('|',
     (SELECT count(*) FROM festapp_merge.import_runs WHERE NOT (source_alias = ANY (string_to_array('$APPROVED_ALIASES_CSV', ',')))),
     (SELECT count(*) FROM festapp_merge.validation_results WHERE status<>'pass'),
-    (SELECT count(*)>0 FROM auth.users),(SELECT count(*)>0 FROM storage.objects),
+    (SELECT count(*)>0 FROM auth.users),(SELECT active AND inventory_sha256 IS NOT NULL FROM public.canonical_asset_cutover WHERE singleton),
     (SELECT count(*) FROM realtime.schema_migrations)>0)")"
   [[ "$TARGET_STATE" == "0|0|t|t|t" ]] || fail "target database is not fully validated ($TARGET_STATE)"
 fi
@@ -101,7 +101,7 @@ docker compose up -d --force-recreate "${SERVICES[@]}" >/dev/null
 wait_for_services
 
 for spec in \
-  auth:GOTRUE_DB_DATABASE_URL rest:PGRST_DB_URI realtime:DB_NAME storage:DATABASE_URL \
+  auth:GOTRUE_DB_DATABASE_URL rest:PGRST_DB_URI realtime:DB_NAME \
   meta:PG_META_DB_NAME functions:SUPABASE_DB_URL studio:POSTGRES_DB; do
   service="${spec%%:*}"
   variable="${spec#*:}"
@@ -121,22 +121,22 @@ readonly AUTH_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
 readonly REST_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
   -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
   "$API_ORIGIN/rest/v1/occasions?select=id&limit=1")"
-readonly STORAGE_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+readonly RETIRED_STORAGE_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
   "$API_ORIGIN/storage/v1/status")"
 readonly REALTIME_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --http1.1 --max-time 10 \
   -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
   -H 'Sec-WebSocket-Key: MDEyMzQ1Njc4OWFiY2RlZg==' \
   "$API_ORIGIN/realtime/v1/websocket?apikey=$ANON_KEY&vsn=1.0.0" 2>/dev/null || true)"
-[[ "$AUTH_STATUS|$REST_STATUS|$STORAGE_STATUS|$REALTIME_STATUS" == "200|200|200|101" ]] ||
-  fail "public canary failed ($AUTH_STATUS|$REST_STATUS|$STORAGE_STATUS|$REALTIME_STATUS)"
+[[ "$AUTH_STATUS|$REST_STATUS|$RETIRED_STORAGE_STATUS|$REALTIME_STATUS" == "200|200|410|101" ]] ||
+  fail "public canary failed ($AUTH_STATUS|$REST_STATUS|$RETIRED_STORAGE_STATUS|$REALTIME_STATUS)"
 
 trap - ERR
 jq -n --arg switchedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg previousDatabase "$CURRENT_DATABASE" --arg targetDatabase "$TARGET_DATABASE" \
   --arg envBackup "$COMPOSE_DIR/$ENV_BACKUP" \
-  --arg authStatus "$AUTH_STATUS" --arg restStatus "$REST_STATUS" --arg storageStatus "$STORAGE_STATUS" --arg realtimeStatus "$REALTIME_STATUS" \
+  --arg authStatus "$AUTH_STATUS" --arg restStatus "$REST_STATUS" --arg retiredStorageStatus "$RETIRED_STORAGE_STATUS" --arg realtimeStatus "$REALTIME_STATUS" \
   '{switched_at:$switchedAt,previous_database:$previousDatabase,target_database:$targetDatabase,
-    env_backup:$envBackup,services_recreated:7,public_canary:{auth:$authStatus,rest:$restStatus,storage:$storageStatus,realtime:$realtimeStatus},
+    env_backup:$envBackup,services_recreated:6,public_canary:{auth:$authStatus,rest:$restStatus,retired_storage:$retiredStorageStatus,realtime:$realtimeStatus},
     production_dns_mutated:false,deleted_databases:[],deleted_paths:[]}' >"$RUN_DIR/result.json"
 chmod 0600 "$RUN_DIR/result.json"
 echo "Rehearsal runtime switched to $TARGET_DATABASE with public canaries passing."

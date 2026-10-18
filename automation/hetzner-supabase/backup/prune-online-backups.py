@@ -10,15 +10,21 @@ import os
 from pathlib import Path
 import re
 import socket
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
+# Repository and installed backup toolkit share the selected-set format owner.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'restore'))
+from backup_manifest import validate_artifacts
+
 HOST = 'festapp-supabase-rehearsal-01'
 BUCKET = 'festapp-supabase-backups'
 PREFIX = f'backups/{HOST}/'
-ARTIFACTS = {'postgres.dump.age', 'globals.sql.age', 'storage.tar.age', 'runtime.tar.age'}
+LEGACY_ARTIFACTS = {'postgres.dump.age', 'globals.sql.age', 'storage.tar.age', 'runtime.tar.age'}
+ASSET_ARTIFACTS = {'postgres.dump.age', 'globals.sql.age', 'r2-images.tar.age', 'runtime.tar.age'}
 NS = {'s': 'http://s3.amazonaws.com/doc/2006-03-01/'}
 
 
@@ -122,7 +128,7 @@ def complete_sets(store, rows):
             grouped.setdefault(prefix, {})[name] = row
     complete = {}
     for prefix, objects in grouped.items():
-        if set(objects) != ARTIFACTS | {'manifest.json'}:
+        if set(objects) not in (LEGACY_ARTIFACTS | {'manifest.json'}, ASSET_ARTIFACTS | {'manifest.json'}):
             continue  # Preserve incomplete, unrecognized or extended sets.
         manifest = json.loads(store.request('GET', prefix + '/manifest.json'))
         if (manifest.get('source_host') != HOST or manifest.get('encrypted') is not True
@@ -130,11 +136,16 @@ def complete_sets(store, rows):
                 or manifest.get('destination', {}).get('prefix') != prefix
                 or manifest.get('destination', {}).get('bucket') != BUCKET):
             continue  # Preserve non-routine recovery evidence.
-        facts = manifest.get('artifacts', {})
-        if set(facts) != ARTIFACTS or any(
+        try:
+            validate_artifacts(manifest)
+        except (AssertionError, KeyError, ValueError):
+            continue  # Unknown formats are preserved rather than guessed.
+        facts = manifest['artifacts']
+        artifacts = set(facts)
+        if set(objects) != artifacts | {'manifest.json'} or any(
                 objects[name]['Size'] != facts[name].get('bytes') or objects[name]['Size'] <= 0
                 or not re.fullmatch(r'[0-9a-f]{64}', facts[name].get('sha256', ''))
-                for name in ARTIFACTS):
+                for name in artifacts):
             raise RuntimeError('Backup manifest and object inventory disagree')
         complete[prefix] = list(objects.values())
     if len(complete) < 3:

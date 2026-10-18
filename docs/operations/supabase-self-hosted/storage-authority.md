@@ -1,6 +1,25 @@
-# Storage authority during the self-hosted cutover
+# Canonical asset authority
 
-Decision date: 2026-08-27
+Decision updated: 2026-10-18
+
+The approved Storage retirement supersedes the original consolidation boundary
+below. The shared image Worker owns all Festapp file/font operations in
+`festapp-images` and `festapp-images-private`; former `a` URLs translate to
+canonical imported keys. AKH retains its separate bucket/Auth/DB contract.
+`festapp-public` sync/maps and encrypted backups remain independent.
+
+Production copy, current-reference rewrite, Worker and scoped Edge adapters
+are deployed. Actual independent v2 backup and full isolated recovery passed.
+Local Storage/imgproxy containers, routes and source volume are retired and
+canonical cleanup is active. Old API Storage URLs return 410 before CDN cache.
+The empty temp bucket is deleted. Source a/a-private buckets remain only behind
+the unresolved API-token permission-contraction gate (HTTP403); the measured
+4GB budget also retains an explicit capacity decision. Follow the authoritative
+[plan](../../plans/storage-r2-retirement-plan-2026-10-18.md) and
+[execution receipt](../security-remediation-20261016/storage-r2-retirement-execution-20261018.md)
+for actual proof and remaining gates.
+
+## Historical 2026-08-27 consolidation boundary
 
 The Supabase consolidation does not perform a new Supabase-to-R2 migration.
 Every object that still exists in either cloud Supabase Storage project is

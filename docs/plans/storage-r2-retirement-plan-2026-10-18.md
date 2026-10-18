@@ -1,12 +1,18 @@
 # Retire Supabase Storage and consolidate Festapp assets on R2
 
 Date: 2026-10-18
-Status: Implementation staged on current main; copy inventory prepared, reference/restore/cutover gates pending
+Status: Production Storage retired after actual v2 recovery; a/a-private permission gate and explicit capacity decision remain
 Verification: standard
 
 Actual execution state is recorded in
 `docs/operations/security-remediation-20261016/storage-r2-retirement-execution-20261018.md`.
-No production copy, rewrite, rollout or source retirement has occurred.
+The full copy, references, scoped adapters, fresh backup and full isolated
+application/PITR recovery are verified. Local Storage/imgproxy and their source
+volume are removed; the empty temp bucket is deleted and old API Storage URLs
+return 410. Final gateway activation 1.09s; conservative accumulated maintenance
+accounting 74.44s within the approved 120s. The two a-source bucket deletions await
+reader-permission administration (HTTP403). The measured 4GB shortfall remains
+an explicit capacity decision; neither remaining gate is reported complete.
 
 ## Outcome and scope
 

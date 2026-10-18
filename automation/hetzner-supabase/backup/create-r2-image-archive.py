@@ -46,7 +46,7 @@ def write_archive(inventories,fetch,stream,*,asset_format=False):
  return {'objects':count,'bytes':total,'buckets':list(selected),'archive_version':2 if asset_format else 1}
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--output',type=Path,required=True);p.add_argument('--asset-format',action='store_true');a=p.parse_args()
  assert os.geteuid()==0 and os.uname().nodename.split('.')[0]=='festapp-supabase-rehearsal-01'
  assert CONFIG.stat().st_uid==0 and CONFIG.stat().st_mode&0o777==0o600
  assert not a.output.exists() and a.output.name=='r2-images.tar.age'
@@ -57,12 +57,12 @@ def main():
  env=os.environ.copy()
  for key,value in {'TYPE':'s3','PROVIDER':'Cloudflare','ACCESS_KEY_ID':values['R2_SOURCE_ACCESS_KEY_ID'],'SECRET_ACCESS_KEY':values['R2_SOURCE_SECRET_ACCESS_KEY'],'ENDPOINT':values['R2_SOURCE_ENDPOINT'],'NO_CHECK_BUCKET':'true'}.items():env['RCLONE_CONFIG_IMAGES_'+key]=value
  os.umask(0o077);inventories={}
- for bucket in BUCKETS:
+ for bucket in (ASSET_BUCKETS if a.asset_format else BUCKETS):
   inventories[bucket]=json.loads(subprocess.check_output(['rclone','--config','/dev/null','lsjson','--recursive','--files-only','--metadata','images:'+bucket],env=env,stderr=subprocess.DEVNULL))
  def fetch(bucket,key):return subprocess.Popen(['rclone','--config','/dev/null','cat','images:'+bucket+'/'+key],env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
  with subprocess.Popen(['age','-r',recipient,'-o',str(a.output)],stdin=subprocess.PIPE,stderr=subprocess.DEVNULL) as age:
   try:
-   result=write_archive(inventories,fetch,age.stdin);age.stdin.close();assert age.wait()==0
+   result=write_archive(inventories,fetch,age.stdin,asset_format=a.asset_format);age.stdin.close();assert age.wait()==0
   except Exception:
    age.stdin.close();age.terminate();age.wait();raise RuntimeError('R2 archive failed; no source changes or plaintext files') from None
  print(json.dumps({'encrypted_r2_image_archive':True,**result}))

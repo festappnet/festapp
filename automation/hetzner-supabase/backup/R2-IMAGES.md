@@ -1,58 +1,20 @@
-# R2 image recovery
+# Canonical R2 asset backups
 
-Current image uploads use the image Worker and R2. Supabase Storage retains
-historical data: on 2026-10-16, organization 1 had 24 R2 image records and no
-Storage image records; Slunovrat had 224 Storage and six R2 records. Existing
-Slunovrat event descriptions still fetched Storage bytes without redirection.
-Do not remove Storage or rewrite those URLs as a backup operation.
+New v2 `festapp-assets` sets contain the database, globals, protected runtime
+and exactly the canonical public/private R2 archive. They contain no Storage
+archive. The sealed registry and private orphan custody are checked during
+independent restore; separate capture intervals are not an atomic snapshot.
+The explicit v1 reader remains available for historical encrypted sets.
 
-The existing daily encrypted backup can include `r2-images.tar.age` using
-`create-r2-image-archive.py`. It streams rclone reads into tar and the existing
-age recipient, without writing plaintext files. The one encrypted archive
-contains objects, original rclone metadata and per-object SHA-256. Source
-objects are never written or deleted. It uses the same 14 daily/four weekly
-retention policy. It adds no daemon, bucket or new encryption key.
+The canonical timer runs at 02:30 and 14:30 UTC with up to 20 minutes jitter.
+The existing monitor warns after 18 hours without a successful set, before the
+24-hour file recovery-point objective is exhausted. Healthy jobs must finish
+within that remaining margin; an incomplete or failed job never advances the
+verified recovery point. Database PITR retains its separate 15-minute objective.
+Retention remains 14 days and four completed weekly copies, preserving the
+latest three sets. Unknown, extended and incomplete formats are kept outside
+pruning. V2 manifests use the same canonical selected-set validator as restore.
 
-Source scope is exactly `festapp-images`, `festapp-images-a`,
-`festapp-images-private`, `festapp-images-a-private`. The unrelated akhweb
-backend is outside this server-recovery package. Provision an Object Read only
-S3 credential restricted to those four source buckets; the existing backup
-credential cannot list them (actual AccessDenied). Its write scope must remain
-limited to the existing backup destination.
-
-Activation is the deliberate creation of root-owned mode 0600
-`/etc/festapp-backup/images.env` with these generated provisioning inputs:
-
-```dotenv
-R2_SOURCE_ACCESS_KEY_ID=<read-only source access key>
-R2_SOURCE_SECRET_ACCESS_KEY=<read-only source secret>
-R2_SOURCE_ENDPOINT=https://84b32318ac235bf6738bdf1c8caa0795.r2.cloudflarestorage.com
-```
-
-The file is included only in the age-encrypted runtime backup, never source
-control. The helper must be installed next to the existing backup script.
-Without that file, existing DB/Storage/runtime backups continue unchanged;
-their manifests must not be treated as R2 image backups. Implementation and
-synthetic archive tests do not prove live R2 backup/restore. The user authorized activation on 2026-10-16. The first daily run
-`20261016T150700Z` uploaded all five encrypted artifacts and verified the
-off-host copy. Its R2 archive contains all 1,074 source objects, 341,530,791
-plaintext bytes, with verified SHA-256. The independent recovery reader
-downloaded the complete set directly from R2 in 148.39 seconds. A strict
-comparison found 50 pre-existing missing registry references among 997 R2
-links; 45 carry test markers and none of the 50 exact URLs appears in checked
-occasion/event/information payloads. These rows were not deleted, and the
-strict consistency check remains unsuccessful. See the actual receipts and
-`../restore/RECOVERY.md`; activation is not a claim of perfect source data.
-
-The archive is an online snapshot. Concurrent deletion/overwrite can abort
-object reads, and it is not an atomic snapshot with PostgreSQL. Daily image
-backup does not make image-history RPO equal to the database's 15-minute PITR
-objective. Recovery must compare the chosen database's image references with
-the selected R2 archive before claiming cross-store consistency.
-
-For historical Supabase Storage, new archives preserve `user.supabase.*`
-xattrs in GNU/PAX format. BusyBox tar does not restore these attributes. The
-isolated service drill restores them using the pinned Storage image's existing
-fs-xattr library. Older archives need explicit `--rebuild-storage-metadata`,
-which recovers MIME/cache attributes from the same restored DB and reports the
-number rebuilt; it does not pretend those attributes existed in the archive.
+Production deployment and actual recovery evidence are recorded in
+`docs/operations/security-remediation-20261016/storage-r2-retirement-execution-20261018.md`.
+Do not infer runtime activation or completed recovery from this source file.

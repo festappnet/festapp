@@ -34,4 +34,10 @@ fi
 if [[ -f "$system_root/etc/festapp-backup/images.env" ]]; then
   extra_paths+=(etc/festapp-backup/images.env)
 fi
+if [[ -f "$system_root/etc/festapp-backup/asset-format" ]]; then
+  [[ -f "$system_root/etc/festapp-assets/orphan-custody.json" ]] || {
+    echo 'Missing unregistered asset provenance' >&2; exit 1;
+  }
+  extra_paths+=(etc/festapp-backup/asset-format etc/festapp-assets/orphan-custody.json)
+fi
 COPYFILE_DISABLE=1 tar -C "$runtime_root" -cf - "${runtime_paths[@]}" "${extra_paths[@]}"

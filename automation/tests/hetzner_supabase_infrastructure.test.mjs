@@ -66,7 +66,7 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.doesNotMatch(compose,/EMAIL_SES_ACCESS_KEY_ID:/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
   assert.doesNotMatch(compose, /5432:5432/);
-  assert.equal((compose.match(/@sha256:/g) ?? []).length, 13);
+  assert.equal((compose.match(/@sha256:/g) ?? []).length, 11);
   assert.match(compose, /admin-tunnel:[\s\S]*profiles:[\s\S]*admin-dashboard/);
   assert.match(compose, /admin-tunnel:[\s\S]*network_mode: host/);
   assert.match(compose, /admin-tunnel:[\s\S]*--token-file/);
@@ -83,10 +83,12 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.match(studioLogout, /text-foreground-lighter/);
   const studioInstaller = fs.readFileSync(path.join(runtime, 'studio-customization/install-logout.mjs'), 'utf8');
   assert.match(studioInstaller, /Expected one pinned Studio document chunk/);
-  for (const service of ['auth', 'rest', 'realtime', 'storage', 'meta', 'functions', 'studio']) {
+  for (const service of ['auth', 'rest', 'realtime', 'meta', 'functions', 'studio']) {
     assert.match(databaseTarget, new RegExp(`^  ${service}:`, 'm'));
   }
-  assert.match(databaseTarget, /storage:[\s\S]*DATABASE_URL:[\s\S]*FESTAPP_RUNTIME_DATABASE/);
+  assert.doesNotMatch(databaseTarget, /^  (storage|imgproxy):/m);
+  assert.doesNotMatch(compose, /^  (storage|imgproxy):/m);
+  assert.match(deploy, /prepare-asset-runtime\.py/);
   assert.match(deploy, /caddy\/Caddyfile/);
   assert.match(deploy, /switch-rehearsal-runtime-database\.sh/);
   assert.match(deploy, /activate-admin-dashboard\.sh/);

@@ -322,6 +322,8 @@ test('promotion shell preserves rollback and excludes activation/write-authority
   assert.match(databaseFinalizer, /Integration Test Account/);
   assert.match(databaseFinalizer, /external_sync_sources/);
   assert.match(databaseFinalizer, /canonical Auth email mapping/);
+  assert.match(databaseFinalizer, /canonical R2 assets must be verified and active/);
+  assert.doesNotMatch(databaseFinalizer, /regexp_replace|LEFT JOIN storage\.objects|restart rest storage/);
   for (const script of [promotion, upgrade, barrier, bundleBuilder, bundleInstaller, databaseFinalizer]) {
     const syntax = spawnSync('bash', ['-n'], { input: script, encoding: 'utf8' });
     assert.equal(syntax.status, 0, syntax.stderr);

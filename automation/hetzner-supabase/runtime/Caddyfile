@@ -38,13 +38,10 @@
 		}
 		import festapp_supabase_proxy
 	}
-	# 50MiB Storage contract plus multipart overhead; covers resumable/copy paths.
+	# Retired file service: historical URLs intentionally no longer resolve.
 	@storage path /storage/v1 /storage/v1/*
 	handle @storage {
-		request_body {
-			max_size 52MiB
-		}
-		import festapp_supabase_proxy
+		respond "Gone" 410
 	}
 	@public_api path \
  /.well-known/* \
@@ -52,8 +49,7 @@
  /functions/v1 /functions/v1/* \
  /graphql/v1 /graphql/v1/* \
  /realtime/v1 /realtime/v1/* \
- /rest/v1 /rest/v1/* \
- /storage/v1 /storage/v1/*
+ /rest/v1 /rest/v1/*
 
 	handle @public_api {
 		request_body {

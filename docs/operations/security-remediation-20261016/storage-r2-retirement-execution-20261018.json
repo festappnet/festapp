@@ -1,38 +1,26 @@
 {
   "date_local": "2026-10-18",
   "verification": "standard",
-  "source_main": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb",
+  "source_main": "d26abdbf62233d0ab350376fd55162861003cce9",
   "isolated_worktree": "/private/tmp/festapp-storage-r2-main-20261018",
-  "production_mutations": false,
-  "production_copy_performed": false,
-  "database_rewrite_applied": false,
-  "worker_deployed": false,
-  "edge_bundle_deployed": false,
-  "services_stopped": false,
-  "buckets_deleted": false,
-  "new_backup_created": false,
-  "new_isolated_restore_completed": false,
+  "production_mutations": true,
+  "production_copy_performed": true,
+  "database_rewrite_applied": true,
+  "worker_deployed": true,
+  "edge_bundle_deployed": true,
+  "services_stopped": true,
+  "buckets_deleted": true,
+  "new_backup_created": true,
+  "new_isolated_restore_completed": true,
   "capacity_budget_proven": false,
   "inventory": {
-    "storage_objects": 1479,
-    "disk_files": 1743,
-    "matched_disk_files": 1479,
-    "unreferenced_disk_files": 264,
-    "relations_scanned": 141,
-    "privately_retained_orphan_objects": 264,
-    "current_fields": 533,
-    "history_fields": 0,
-    "current_references": 572,
-    "objects_with_issues": 0,
-    "blockers": {
-      "reference_source_not_in_storage": 1
-    },
-    "copy_blockers": {},
-    "ready_for_copy": true,
-    "ready_for_reference_rewrite": false,
-    "production_mutations": false,
-    "r2_objects": 1074,
-    "r2_bytes": 341530791
+    "manifest_sha256": "6453d0a89442e93cd6e5d9e4c96a3270e13390d9470632c6c69f33a6bb19bb65",
+    "canonical_objects": 2817,
+    "canonical_bytes": 1642200830,
+    "storage_registry_objects_migrated": 1479,
+    "source_disk_files_retired": 1743,
+    "private_orphans_retained": 264,
+    "unresolved_current_owned_storage_references": 0
   },
   "evidence_sha256": {
     "database.ndjson": "f98f57013fbad4201a67b5ebe54ecb657369798cfca61e1e0087184387c723db",
@@ -41,14 +29,7 @@
     "manifest": "593a65df05c86cfe0086a1be55f2bd2f13b3f3a4b2768014e66ed76510f84f6c",
     "r2_inventory": "7275ea0d11ed8d14a1ededdb0cb98d79a32e883143d335be567d2ac602f6e6c7"
   },
-  "missing_current_sources": {
-    "relation": "public.occasions",
-    "id": 63,
-    "field": "features",
-    "objects": 2,
-    "kind": "offline-map binaries",
-    "disk_path_candidates": 0
-  },
+  "missing_current_sources": [],
   "protected_evidence": "/Users/miakh/.local/share/festapp-storage-retirement-20261018",
   "targeted_checks": {
     "worker_typecheck": "pass",
@@ -100,29 +81,31 @@
     }
   },
   "publication": {
-    "committed": false,
-    "pushed": false,
-    "pull_request": null,
-    "required_main_approvals": 1,
-    "branch": "feat/storage-r2-retirement-20261018",
-    "full_suite_passed": true,
-    "main_auto_merge_enabled": false,
-    "validated_source_base": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb"
+    "committed": true,
+    "pushed": true,
+    "pull_request": 493,
+    "merged_main_revision": "d26abdbf62233d0ab350376fd55162861003cce9",
+    "implementation_source_revision": "8c1d596d87099548939d99ae7da120797c538d08",
+    "required_checks_passed": [
+      "image-contract",
+      "seat-checkout",
+      "web-startup",
+      "ticket-preview-and-delivery"
+    ],
+    "review_exception": "existing authorized admin merge; protection unchanged"
   },
   "scope_limits": [
-    "Account asset SQL/Worker/Edge cleanup staged and targeted-tested; registry import, secrets and cutover activation not performed",
-    "No exact SQL reference rewrite/sync batch implemented or applied",
-    "Online backup producer and full restore remain on historical Storage-inclusive contract",
-    "Runtime service retirement and numerical caps remain unchanged"
+    "Cloudflare API-token policy administration returns 403; cannot contract the existing four-bucket source reader before deleting a/a-private.",
+    "4GB always-on Studio capacity screen is 735.8MiB short before safety margin; even isolated lower-admin candidate leaves 223.8MiB. No unsupported critical caps deployed.",
+    "No additional tenant frontend release, physical native cold-offline test or incident recovery-time guarantee."
   ],
   "protected_manifest": "manifest-ready-copy-20261018/manifest.json",
   "final_runtime_readback": {
-    "running_containers": 13,
-    "oom_flags": 0,
-    "studio_running": true,
-    "storage_running": true,
-    "imgproxy_running": true,
-    "scope": "Current running/OOM snapshot only, not capacity or incident proof"
+    "protected_receipt_sha256": "8eb2543f14c0908775976db52f3d229b3857c20aadd16c9863c299b717e2e943",
+    "storage_running": false,
+    "imgproxy_running": false,
+    "source_volume_present": false,
+    "studio_auth_database_ids_unchanged": true
   },
   "isolated_test_fixture_cleaned_up": true,
   "local_source_files_sha256": {
@@ -376,5 +359,191 @@
       "provider_cases_skipped": 27,
       "live_provider_copy_proven": false
     }
+  },
+  "historical_initial_publication": {
+    "committed": false,
+    "pushed": false,
+    "pull_request": null,
+    "required_main_approvals": 1,
+    "branch": "feat/storage-r2-retirement-20261018",
+    "full_suite_passed": true,
+    "main_auto_merge_enabled": false,
+    "validated_source_base": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb"
+  },
+  "historical_original_source_main": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb",
+  "historical_initial_missing_current_sources": {
+    "relation": "public.occasions",
+    "id": 63,
+    "field": "features",
+    "objects": 2,
+    "kind": "offline-map binaries",
+    "disk_path_candidates": 0
+  },
+  "historical_initial_inventory": {
+    "storage_objects": 1479,
+    "disk_files": 1743,
+    "matched_disk_files": 1479,
+    "unreferenced_disk_files": 264,
+    "relations_scanned": 141,
+    "privately_retained_orphan_objects": 264,
+    "current_fields": 533,
+    "history_fields": 0,
+    "current_references": 572,
+    "objects_with_issues": 0,
+    "blockers": {
+      "reference_source_not_in_storage": 1
+    },
+    "copy_blockers": {},
+    "ready_for_copy": true,
+    "ready_for_reference_rewrite": false,
+    "production_mutations": false,
+    "r2_objects": 1074,
+    "r2_bytes": 341530791
+  },
+  "all_three_redundant_buckets_deleted": false,
+  "latest_production_state": {
+    "at_utc": "2026-10-18T19:14:51.575185+00:00",
+    "status": "production-storage-retired-two-buckets-blocked",
+    "published_main_revision": "d26abdbf62233d0ab350376fd55162861003cce9",
+    "runtime_source_revision": "8c1d596d87099548939d99ae7da120797c538d08",
+    "full_restore_source_revision": "faec9fb73948adf48e365695efdd00707c6d28dc",
+    "production_copy": {
+      "objects": 2817,
+      "bytes": 1642200830,
+      "all_sha256_verified": true
+    },
+    "database_rewrite": {
+      "fields": 533,
+      "storage_urls": 572,
+      "canonical_assets": 1479,
+      "sync_commits": 145,
+      "approved_missing_links_removed": 5,
+      "approved_missing_link_fields": 4,
+      "additional_sync_commits": 3,
+      "original_50_registry_cleanup_repeated": false
+    },
+    "runtime_retirement": {
+      "status": "pass",
+      "source_revision": "8c1d596d87099548939d99ae7da120797c538d08",
+      "recovery_source_revision": "faec9fb73948adf48e365695efdd00707c6d28dc",
+      "backup_run_id": "20261018T180252Z",
+      "backup_manifest_sha256": "5cc358085471187525136ab244e4b42e1e7c8381517cf71c9569998b3c9626a9",
+      "full_restore_receipt_sha256": "dc79c39ee9d7fac35a15ec41460bce020ca137116df2c977e8eacbbaf3ebce19",
+      "maintenance_seconds": 1.09,
+      "prior_retirement_attempt_elapsed_seconds": 54.8,
+      "cumulative_edge_gateway_seconds": 74.44,
+      "studio_auth_database_container_ids_unchanged": true,
+      "retired_services": [
+        "storage",
+        "imgproxy"
+      ],
+      "source_volume_files_deleted": 1743,
+      "source_volume_removed": true,
+      "canonical_asset_cleanup_active": true,
+      "migration_version": "20261019020000",
+      "normal_startup_services": [
+        "admin-tunnel",
+        "api-gw",
+        "auth",
+        "caddy",
+        "db",
+        "functions",
+        "meta",
+        "realtime",
+        "rest",
+        "studio",
+        "supavisor"
+      ],
+      "r2_source_buckets_deleted": false,
+      "original_email_pause_restored": true,
+      "unknown_email_outcomes_unchanged": true,
+      "published_main_revision": "d26abdbf62233d0ab350376fd55162861003cce9",
+      "local_operator_elapsed_seconds": 12.18,
+      "operator_sha256": "9a9a8b9b0db0d8d880436fe4fa809c9ba6b5f4fafc448b0ed6fe92a70bcb7385",
+      "recovery_gate_sha256": "e66b1f664539306f0213927187d4d43cc37291d20ab503b6d3aba09b562d350c"
+    },
+    "deleted_r2_buckets": [
+      "festapp-images-temp"
+    ],
+    "retained_pending_reader_permission_contraction": [
+      "festapp-images-a",
+      "festapp-images-a-private"
+    ],
+    "retained_target_buckets": [
+      "festapp-images",
+      "festapp-images-private",
+      "festapp-images-akhweb",
+      "festapp-public",
+      "festapp-supabase-backups"
+    ],
+    "terminal_worker_version": "14cea778-fb21-4565-96a5-2b0d5d135b91",
+    "current_email_pause": false,
+    "email_resume_explicitly_authorized": true,
+    "historical_unknown_email_outcomes_unchanged": 2,
+    "original_retirement_captured_pause_boolean_not_retained": true,
+    "remaining_account_buckets": 20,
+    "scoped_asset_buckets_remaining": 7,
+    "token_administration_http_status": 403,
+    "new_backup_run_id": "20261018T180252Z",
+    "full_restore": {
+      "status": "pass",
+      "seconds": 58.09,
+      "objects": 2817,
+      "bytes": 1642200830,
+      "references_checked": 5226,
+      "missing_references": 0,
+      "mismatched_references": 0,
+      "private_orphans_preserved": 264,
+      "network_none": true,
+      "production_integrations_started": false
+    },
+    "pitr": {
+      "status": "pass",
+      "requested_target_utc": "2026-10-18T18:06:00Z",
+      "actual_replay_utc": "2026-10-18T18:05:59.633574Z",
+      "seconds": 57.96,
+      "selected_repository_acquisition_seconds": 401.236,
+      "separate_from_file_snapshot": true
+    },
+    "backup_and_recovery_timings": {
+      "backup_seconds": 1711,
+      "download_recorded_lower_bound_seconds": 250.652779,
+      "private_transfer_to_full_restore_end_seconds": 97.285337,
+      "acquisition_directory_birth_to_restore_end_seconds": 882.159545,
+      "cold_vm_and_image_cache_start_not_included": true,
+      "recorded_interval_includes_operator_waiting": true,
+      "no_incident_rto_guarantee": true
+    },
+    "recovery_kit": {
+      "version": 4,
+      "sha256": "863afd65a81d59defd82901eed176ff2ba68c37cbfd2459485db15f0776ba374",
+      "source_revision": "8c1d596d87099548939d99ae7da120797c538d08",
+      "original_identity_and_reader_preserved": true,
+      "actual_offline_decryption_passed": true,
+      "icloud_remote_sync_acknowledged": false
+    },
+    "capacity_budget_proven": false,
+    "capacity_remaining_decision": "storage-r2-capacity-followup-20261018.json",
+    "tenant_frontend_releases": [],
+    "remaining_blockers": [
+      "Cloudflare API-token policy administration returns 403; cannot contract the existing four-bucket source reader before deleting a/a-private.",
+      "4GB always-on Studio capacity screen is 735.8MiB short before safety margin; even isolated lower-admin candidate leaves 223.8MiB. No unsupported critical caps deployed."
+    ],
+    "proof_evidence_sha256": {
+      "final-recovery-gate-quoted-20261018.json": "e66b1f664539306f0213927187d4d43cc37291d20ab503b6d3aba09b562d350c",
+      "full-v2-recovery-final-20261018.json": "dc79c39ee9d7fac35a15ec41460bce020ca137116df2c977e8eacbbaf3ebce19",
+      "pitr-rehearsal-final-20261018-180600Z-compatible.json": "7d756dc168a9285b96bd6f9b4875a382e5d3fc3c10f9a6395b843fdcf2711cdb",
+      "new-backup-private-custody-verification-20261018.json": "31b57c718c7bee75380e9fd44b96fadaee0c6876c275383257875e5f2497581a",
+      "retire-local-storage-live-result-20261018.json": "61f2d6def96d41cdbf0b0e0ab7c309758694a8e20fb5df7519adc531ee01e0fc",
+      "empty-temp-bucket-retirement-result-20261018.json": "f3f0c39b3efb2521b48845be3b583cf0e1d6b5261574d2e665b33bf536ef342a",
+      "terminal-storage-worker-deployment-20261018.json": "3898a333b41344b64f9f5bde45af3bd9f8b1d000203e878570d7dbbb71a16f09",
+      "final-production-readback-20261018.json": "8eb2543f14c0908775976db52f3d229b3857c20aadd16c9863c299b717e2e943",
+      "normal-email-resumed-20261018.json": "7e1553adfa1750eaf0744cd823c873a19a1cf190f1738b57572a174756874dfd",
+      "final-production-email-readback-20261018.json": "5bf85c384ff544135a98e3fd641c3da39d9632e2cefbafd0d3b2bb42d85f5e4d",
+      "quoted-envoy-isolated-proof-20261018.json": "4567241ae3bdad92c73497da63925548bd89561da466831ddd7e9c59abbb5ecc",
+      "refreshed-recovery-kit-v4-offline-verification-20261018.json": "03fc435ea15cf29fec638af94b569672d824add6e55dbc74fa4d777d2a789bf8",
+      "akh-final-public-delivery-20261018.json": "1baa30ca4dc4397ccbb9bb1998b6febe29fecb6d87999d96e97cc5dbfbe917eb"
+    },
+    "akh_post_retirement_sha256_samples": 3
   }
 }

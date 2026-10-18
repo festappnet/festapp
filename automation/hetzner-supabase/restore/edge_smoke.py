@@ -96,7 +96,7 @@ def edge_reads(database_container,runtime_archive,cache_volume,start,run,capture
   args=['docker','exec',database_container,'curl','--silent','--max-time','10','-w','\n%{http_code}','-X',method,'-H','apikey: '+anon]
   if invalid_jwt:args+=['-H','Authorization: Bearer '+invalid_token]
   if body is not None:args+=['-H','Content-Type: application/json','--data',json.dumps(body)]
-  out=capture(args+['http://127.0.0.1:8081/functions/v1/'+path]);payload,status=out.rsplit(b'\n',1);return int(status),payload
+  out=capture(args+['http://127.0.0.1:18081/functions/v1/'+path]);payload,status=out.rsplit(b'\n',1);return int(status),payload
  for _ in range(90):
   try:
    status,payload=request('download-ticket',invalid_jwt=True)

@@ -13,6 +13,14 @@ git clone --filter=blob:none --no-checkout https://github.com/supabase/supabase.
 git -C "$ROOT" fetch --depth 1 origin "$REVISION"
 git -C "$ROOT" checkout --detach "$REVISION"
 
+# Canonical inputs omit the retired services even from the upstream base.
+# Prepared output is additive; only this new installation is changed here.
+readonly ASSET_RUNTIME_STAGE="$ROOT/festapp-asset-runtime-prepared"
+python3 "$SCRIPT_DIR/prepare-asset-runtime.py" --compose-dir "$ROOT/docker" --output-dir "$ASSET_RUNTIME_STAGE"
+for input in docker-compose.yml volumes/api/envoy/cds.yaml volumes/api/envoy/lds.template.yaml; do
+  install -o root -g root -m 0644 "$ASSET_RUNTIME_STAGE/$input" "$ROOT/docker/$input"
+done
+
 cd "$ROOT/docker"
 cp .env.example .env
 chmod 0600 .env

@@ -1,9 +1,11 @@
 # Canonical Storage retirement
 
 The authoritative scope is [the retirement plan](../../docs/plans/storage-r2-retirement-plan-2026-10-18.md).
-The additive copy inventory is prepared; reference completeness remains blocked.
-No production copy, rewrite,
-Worker rollout, service retirement or bucket deletion has occurred.
+Production additive copying is in progress from the sealed private manifest.
+Reference execution and replacement recovery remain gated. No reference rewrite,
+new Worker implementation rollout, service retirement or bucket deletion has
+occurred. The two new Worker capabilities were provisioned with unchanged code
+and existing bucket bindings.
 
 Map styles are assets with dependencies, not standalone JSON files. Retain the
 map package, style, sprite indexes/atlases and any consumed glyph assets. Existing
@@ -78,7 +80,8 @@ It uses conditional S3 creates, exact length/MIME/SHA-256 checks, bounded SSH
 streams for Storage, separate destination reads and atomic immutable receipts.
 An existing conflicting object is an error. A missing receipt can be resumed
 by rechecking the destination. No source deletion is implemented by this tool.
-Unit tests simulate the object-store boundary; real provider copy remains unrun.
+Unit tests simulate the object-store boundary; production receipts separately
+record actual conditional creates and independently verified existing objects.
 
 The alternative `--wrangler-remote` uses the existing authenticated Wrangler
 connection instead of `--r2-config`. Run with Node 22 and the pinned installed
@@ -96,6 +99,27 @@ registry records plus exact before/after reference values. It rejects missing,
 conflicting or mixed-source receipts, unresolved references and private URLs
 without a reviewed permission boundary. This creates no SQL transaction and
 performs no database mutation; atomic synchronization remains a separate gate.
+
+`--discard-roma-test-map` is the explicit user-approved exception for the broken
+map feature of test occasion 63. It requires the exact reviewed field digest and
+one missing-source field, removes only that feature and preserves all other
+content. It cannot exempt another occasion or changed field. The operator SQL
+also checks its organization, unit, hidden state, slug, one membership and zero
+orders. Jubilee is outside this exception.
+
+`render-cutover.py --bundle ... --output ... --custody-output ...` renders an
+exclusive, private transaction from clean canonical main. Its registry seal,
+exact typed field edits and canonical client-sync commits share one transaction.
+Changed source ownership/catalog, field prestates, missing durable keys or
+unreviewed scope types abort the entire batch. Cleanup stays inactive until the
+backup/restore and runtime gates pass. The publisher must then publish the
+existing authorized scopes without broadening tenant activation.
+
+The separate custody output retains every unregistered file's original source
+identity privately. Install it at `/etc/festapp-assets/orphan-custody.json` with
+root ownership and mode 0600 before activating new-format backups. Its inventory
+seal must match the database; it is included only inside the encrypted runtime
+archive and validated during recovery. Do not commit its contents.
 
 Account cleanup now has staged canonical SQL sources and a forward migration:
 `node automation/generate_storage_asset_migration.mjs --check` verifies assembly.

@@ -20,8 +20,11 @@ for (const [name, version] of Object.entries(pins.host)) {
   assert.match(version, versionPattern, `${name} must be an exact stable version`);
 }
 for (const [name, image] of Object.entries(pins.supabase.images)) {
+  assert.ok(!['storage', 'imgproxy'].includes(name), `${name} is retired from the active runtime`);
   assert.match(image, digestPattern, `${name} must be pinned by tag and arm64 digest`);
 }
+assert.deepEqual(Object.keys(pins.supabase.historicalBackupImages), ['storage']);
+assert.match(pins.supabase.historicalBackupImages.storage, digestPattern);
 for (const [name, source] of Object.entries(pins.sources)) {
   assert.match(source, /^https:\/\//, `${name} must cite an HTTPS primary source`);
 }

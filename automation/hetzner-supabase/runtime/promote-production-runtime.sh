@@ -11,7 +11,7 @@ readonly RESTORE_RESULT="${FESTAPP_PROMOTION_RESTORE_RESULT:-}"
 readonly RUNTIME_CONFIG="${FESTAPP_PRODUCTION_RUNTIME_CONFIG:-}"
 readonly OPERATIONAL_READINESS="${FESTAPP_OPERATIONAL_READINESS_DECISION:-}"
 readonly ACTIVATION_ACK="${FESTAPP_ACTIVATION_OPEN_WRITES_ACK:-}"
-readonly SERVICES=(caddy api-gw auth rest realtime storage meta functions studio)
+readonly SERVICES=(caddy api-gw auth rest realtime meta functions studio)
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 [[ "${FESTAPP_PRODUCTION_PROMOTION_ACK:-}" == "promote-validated-runtime-without-opening-write-authority" ]] ||
@@ -129,7 +129,7 @@ readonly TARGET_STATE="$(docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U
         AND v.observed->>'storage_url_rewrite_gate'='api.festapp.net-cutover'
         AND (v.observed->>'legacy_storage_links')::bigint =
             (v.observed->>'legacy_storage_links_with_copied_objects')::bigint),
-    (SELECT count(*)>0 FROM auth.users),(SELECT count(*)>0 FROM storage.objects),
+    (SELECT count(*)>0 FROM auth.users),(SELECT active AND inventory_sha256 IS NOT NULL FROM public.canonical_asset_cutover WHERE singleton),
     (SELECT count(*)>0 FROM realtime.schema_migrations),
     (SELECT count(*) FROM pg_trigger WHERE tgname='push_log_notifications' AND NOT tgisinternal))")"
 [[ "$TARGET_STATE" == "3|0|$EXPECTED_REFERENCE_PASSES|$EXPECTED_REFERENCE_PASSES|t|t|t|0" ]] ||
@@ -207,7 +207,7 @@ docker compose config -q
 docker compose up -d --force-recreate "${SERVICES[@]}" >/dev/null
 wait_for_services
 
-for spec in auth:GOTRUE_DB_DATABASE_URL rest:PGRST_DB_URI realtime:DB_NAME storage:DATABASE_URL \
+for spec in auth:GOTRUE_DB_DATABASE_URL rest:PGRST_DB_URI realtime:DB_NAME \
   meta:PG_META_DB_NAME functions:SUPABASE_DB_URL studio:POSTGRES_DB; do
   service="${spec%%:*}"; variable="${spec#*:}"
   container="$(docker compose ps -q "$service")"
@@ -250,14 +250,14 @@ readonly AUTH_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
 readonly REST_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
   -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" \
   "$API_ORIGIN/rest/v1/occasions?select=id&limit=1")"
-readonly STORAGE_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+readonly RETIRED_STORAGE_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
   "$API_ORIGIN/storage/v1/status")"
 readonly REALTIME_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --http1.1 --max-time 10 \
   -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
   -H 'Sec-WebSocket-Key: MDEyMzQ1Njc4OWFiY2RlZg==' \
   "$API_ORIGIN/realtime/v1/websocket?apikey=$ANON_KEY&vsn=1.0.0" 2>/dev/null || true)"
-[[ "$AUTH_STATUS|$REST_STATUS|$STORAGE_STATUS|$REALTIME_STATUS" == "200|200|200|101" ]] ||
-  fail "canonical API canary failed ($AUTH_STATUS|$REST_STATUS|$STORAGE_STATUS|$REALTIME_STATUS)"
+[[ "$AUTH_STATUS|$REST_STATUS|$RETIRED_STORAGE_STATUS|$REALTIME_STATUS" == "200|200|410|101" ]] ||
+  fail "canonical API canary failed ($AUTH_STATUS|$REST_STATUS|$RETIRED_STORAGE_STATUS|$REALTIME_STATUS)"
 
 readonly CANARY_COUNT="$(jq '.tenant_canaries|length' "$RUNTIME_CONFIG")"
 while IFS=$'\t' read -r tenant organization occasion web_origin manifest_url manifest_sha; do
@@ -284,12 +284,12 @@ trap - ERR
 jq -n --arg promoted_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg previous_database "$CURRENT_DATABASE" --arg target_database "$TARGET_DATABASE" \
   --arg rollback_env "$ENV_BACKUP" --argjson tenant_canaries "$CANARY_COUNT" \
-  --arg auth "$AUTH_STATUS" --arg rest "$REST_STATUS" --arg storage "$STORAGE_STATUS" \
+  --arg auth "$AUTH_STATUS" --arg rest "$REST_STATUS" --arg retiredStorage "$RETIRED_STORAGE_STATUS" \
   --arg realtime "$REALTIME_STATUS" \
   --arg function_bundle_sha256 "$FUNCTION_BUNDLE_SHA256" \
   --arg writes_opened "$([[ "$ACTIVATION_ACK" == "open-canonical-writes-during-approved-runtime-activation" ]] && printf true || printf false)" \
   '{promoted_at:$promoted_at,previous_database:$previous_database,target_database:$target_database,
-    rollback_env:$rollback_env,canonical_api_canary:{auth:$auth,rest:$rest,storage:$storage,realtime:$realtime},
+    rollback_env:$rollback_env,canonical_api_canary:{auth:$auth,rest:$rest,retired_storage:$retiredStorage,realtime:$realtime},
     tenant_canaries:$tenant_canaries,client_activation_documents_published:false,
     external_write_authority_opened:($writes_opened=="true"),
     target_write_barrier:(if $writes_opened=="true" then "open" else "database-default-read-only" end),

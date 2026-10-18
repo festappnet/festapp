@@ -37,7 +37,7 @@ export function runtimeFailure(current, previous, now = Date.now()) {
     const old = previous?.containers?.find(p => p.name === c.name);
     if (old && c.restarts > old.restarts) return 'container_restarted';
   }
-  if (!Number.isFinite(current.backupAt) || now / 1000 - current.backupAt > 26 * 3600) return 'backup_stale';
+  if (!Number.isFinite(current.backupAt) || now / 1000 - current.backupAt > 18 * 3600) return 'backup_stale';
   if (!Number.isFinite(current.logUploadAt) || now / 1000 - current.logUploadAt > 2 * 3600) return 'log_upload_stale';
   if (current.pitr) {
     if (current.pitr.enabled !== true) return 'pitr_archiving_disabled';
