@@ -5,6 +5,7 @@ import 'package:fstapp/services/exception_handler.dart';
 
 import 'html_media_service.dart';
 import 'html_strings.dart';
+import 'template_authoring.dart';
 import 'rich_html_editor.dart';
 import 'rich_html_editor_controller.dart';
 
@@ -36,6 +37,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
     HtmlSaveCoordinator? coordinator,
     HtmlMediaDraft? media,
     bool readOnly = false,
+    TemplateAuthoringProvider? authoring,
   }) async {
     String? html = initialHtml;
     if (html == null && loadHtml != null) {
@@ -57,6 +59,7 @@ class RichHtmlEditorDialog extends StatefulWidget {
       owner: draftMedia == null ? const HtmlMediaOwner.none() : owner,
       profile: profile,
       media: draftMedia,
+      authoring: authoring,
     );
     final result = await showDialog<String>(
       context: context,

@@ -1,5 +1,7 @@
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
@@ -9,12 +11,16 @@ import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_settings_page.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
+import 'package:fstapp/components/html/rich_html_editor.dart';
+import 'package:fstapp/components/html/html_strings.dart';
+import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester) async {
-  RightsService.occasionLinkModelNotifier.value =
-      OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
+Future<void> openTemplate(WidgetTester tester, {String? occasionTitle}) async {
+  RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+      unitUser: OccasionUserModel(isEditor: true),
+      occasionUser: OccasionUserModel(isEditor: true));
   addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
@@ -24,13 +30,23 @@ Future<void> openTemplate(WidgetTester tester) async {
             context: context,
             builder: (_) => EmailTemplateSettingsPage(
               template: EmailTemplateModel(
-                code: 'SIGN_IN_CODE',
+                code: occasionTitle == null
+                    ? 'SIGN_IN_CODE'
+                    : 'TICKET_ORDER_CONFIRMATION',
                 subject: 'Subject',
                 html: '<p>Content</p>',
               ),
               emailTemplatesResponse: EmailTemplatesResponse(
                 unit: UnitModel(id: 1, title: 'Unit'),
                 organization: UnitModel(id: 2, title: 'Organization'),
+                occasion: occasionTitle == null
+                    ? null
+                    : OccasionModel(
+                        id: 3,
+                        title: occasionTitle,
+                        isOpen: true,
+                        isHidden: false,
+                        isPromoted: false),
                 templates: [],
               ),
             ),
@@ -50,6 +66,78 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('subject-only edit is protected when closing parent',
+      (tester) async {
+    await openTemplate(tester);
+    final editor = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor).first)
+        .controller;
+    final node = editor.editor.document.first as TextNode;
+    editor.editor.execute([
+      InsertTextRequest(
+          documentPosition: DocumentPosition(
+              nodeId: node.id, nodePosition: const TextNodePosition(offset: 0)),
+          textToInsert: 'Draft ',
+          attributions: {})
+    ]);
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.pumpAndSettle();
+    expect(find.text(HtmlStrings.discardDraft), findsOneWidget);
+    expect(editor.plainText, 'Draft Subject');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
+    expect(editor.plainText, 'Draft Subject');
+  });
+
+  testWidgets(
+      'title suggestion accepts once, undoes, and withdraws after leaving range',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await openTemplate(tester, occasionTitle: 'Podzimní slavnost');
+    final controller = tester
+        .widget<RichHtmlEditor>(find.byType(RichHtmlEditor).first)
+        .controller;
+    final node = controller.editor.document.first as TextNode;
+    controller.focusNode.requestFocus();
+    await tester.pump();
+    controller.editor.execute([
+      InsertTextRequest(
+          documentPosition: DocumentPosition(
+              nodeId: node.id,
+              nodePosition: TextNodePosition(offset: node.text.length)),
+          textToInsert: ' Podzimní slavnost',
+          attributions: {})
+    ]);
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    expect(find.text(EmailTemplatesStrings.replaceVariable), findsOneWidget);
+    await tester
+        .ensureVisible(find.text(EmailTemplatesStrings.replaceVariable));
+    await tester.tap(find.text(EmailTemplatesStrings.replaceVariable));
+    await tester.pump();
+    expect(controller.plainText, 'Subject {{occasionTitle}}');
+    controller.undo();
+    expect(controller.plainText, 'Subject Podzimní slavnost');
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    controller.editor.execute([
+      ChangeSelectionRequest(
+          DocumentSelection.collapsed(
+              position: DocumentPosition(
+                  nodeId: node.id,
+                  nodePosition: const TextNodePosition(offset: 0))),
+          SelectionChangeType.placeCaret,
+          SelectionReason.userInteraction)
+    ]);
+    await tester.pump();
+    expect(find.text(EmailTemplatesStrings.replaceVariable), findsNothing);
+  });
+
   for (final width in [320.0, 1200.0]) {
     testWidgets('email settings use the shared modal at width $width',
         (tester) async {
@@ -75,9 +163,6 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await openTemplate(tester);
-    await tester.ensureVisible(find.byIcon(Icons.edit));
-    await tester.tap(find.byIcon(Icons.edit));
-    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byIcon(Icons.open_in_full));
     await tester.tap(find.byIcon(Icons.open_in_full));
     await tester.pumpAndSettle();

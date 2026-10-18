@@ -68,3 +68,33 @@ history, but the template catalog excludes the code, its enqueue RPC is retired,
 and the send-time intent gate rejects old queued messages. The access endpoint
 never sends mail or rotates the link. Existing templates can position
 `order_overview_button` themselves; otherwise rendering appends it once.
+
+## Authoring and generated examples
+
+Email authoring uses native Super Editor action-tag composition and atomic
+placeholder objects. The editor serializes them only as existing `{{code}}`
+substitutions. Preview data and editor metadata never enter the saved HTML.
+The portable rules and preview composer live in `festapp_core/email_templates.dart`;
+localized authoring labels remain in the Flutter adapter.
+
+Preview HTML is generated from production pure renderers, using synthetic inputs
+in `automation/fixtures/email_preview/order.json`. Regenerate from the repository
+root with:
+
+```sh
+deno run --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write=assets/email_templates automation/generate_email_preview_examples.ts
+```
+
+Use the same command with `--check` and without `--allow-write` to check freshness.
+`automation/test_all.sh` runs that check once with Edge Function validation.
+The versioned asset records a deterministic source digest, not a generation time.
+The small scenario matrix uses actual email languages (cs/en orders and cs waitlist)
+and relevant producer scenarios. Order amounts, product groups and payment text
+come from one fixture. No remote preview endpoint, runtime JS, live QR or customer
+data is used. Content preview excludes inherited wrappers/banners; Flutter and
+mail clients may differ in rendering unsupported CSS.
+
+Production action HTML belongs to `_shared/emailActionLink.ts`; completion belongs
+to `_shared/emailContentCompletion.ts`, including the current order-card slot.
+TS and Dart completion use identical generated fixtures to prevent missing or
+duplicate required overview links. There is no standalone ORDER_OVERVIEW template.

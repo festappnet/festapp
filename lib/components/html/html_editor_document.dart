@@ -7,11 +7,13 @@ import 'package:html/parser.dart' as parser;
 import 'package:super_editor/super_editor.dart';
 
 import 'html_document_codec.dart';
+import 'template_authoring.dart';
 
 /// Maps editable leaf blocks to Super Editor while retaining the surrounding
 /// HTML AST (including nested email tables) as the authoritative envelope.
 class HtmlEditorDocument {
-  HtmlEditorDocument(String? html) {
+  HtmlEditorDocument(String? html,
+      {Set<String> tokenCodes = const {}, Set<String> blockCodes = const {}}) {
     final draft = HtmlDocumentCodec.decode(html);
     _original = draft.encode();
     _template = draft.copyRoot();
@@ -112,6 +114,19 @@ class HtmlEditorDocument {
       parent.nodes.add(dom.Comment('html-editor:${node.id}'));
       _envelopes[node.id] = _Envelope([], null);
       nodes.add(node);
+    }
+    for (var i = 0; i < nodes.length; i++) {
+      final node = nodes[i];
+      if (node is TextNode) {
+        final text = tokenizeTemplateText(node.text, tokenCodes);
+        final token = text.placeholders[0];
+        nodes[i] = text.length == 1 &&
+                token is TemplateTokenPlaceholder &&
+                blockCodes.contains(token.code)
+            ? TemplateTokenBlock(
+                id: node.id, code: token.code, metadata: node.metadata)
+            : node.copyTextNodeWith(text: text);
+      }
     }
     document = MutableDocument(nodes: nodes);
     _baseline = {for (final node in nodes) node.id: _copyNode(node)};
@@ -299,6 +314,12 @@ class HtmlEditorDocument {
   }
 
   List<dom.Node> _serializeNode(DocumentNode node, _Envelope? envelope) {
+    if (node is TemplateTokenBlock) {
+      final source = dom.Text(TemplateTokenPlaceholder(node.code).source);
+      if (envelope?.wrapper != null)
+        return [envelope!.wrapper!.clone(false)..nodes.add(source)];
+      return [source];
+    }
     if (node is ImageNode) {
       final image = envelope?.original.firstOrNull is dom.Element
           ? (envelope!.original.first as dom.Element).clone(true)
@@ -726,7 +747,7 @@ String _writeInline(AttributedText text, {bool preformatted = false}) {
       container.nodes.add(link);
       container = link;
     }
-    final value = text.toPlainText().substring(span.start, span.end + 1);
+    final value = templatePlainText(text, start: span.start, end: span.end + 1);
     if (preformatted) {
       container.nodes.add(dom.Text(value));
       result.write(root.outerHtml);
@@ -753,3 +774,5 @@ bool _equivalent(DocumentNode a, DocumentNode b) =>
     a.hasEquivalentContent(b) &&
     jsonEncode(a.metadata.map((k, v) => MapEntry(k, v.toString()))) ==
         jsonEncode(b.metadata.map((k, v) => MapEntry(k, v.toString())));
+
+String templateInlineHtml(AttributedText text) => _writeInline(text);

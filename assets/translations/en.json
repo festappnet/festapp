@@ -974,7 +974,9 @@
       "offeredCount": "Number of offered places",
       "offerExpiresAt": "Offer expiry",
       "offerUrl": "Personal offer link",
-      "offerButton": "Open offer button (HTML)"
+      "offerButton": "Open offer button (HTML)",
+      "orderOverviewUrl": "Order overview - URL",
+      "orderOverviewButton": "Order overview - button"
     },
     "usage": {
       "resetPassword_title": "Reset Password",
@@ -1027,7 +1029,41 @@
     "emailTemplateContent": "Email Template Content",
     "subject": "Subject",
     "subjectRequired": "Subject is required",
-    "template": "Template"
+    "template": "Template",
+    "authoring": {
+      "authoringHint": "Type @ to choose information filled in when sending.",
+      "insertVariable": "Insert information",
+      "noVariable": "No matching information",
+      "alreadyUsed": "Already inserted",
+      "sampleData": "Sample data",
+      "variable": "Variable",
+      "previewUnavailable": "Preview could not load. Try again.",
+      "preview": "Email content preview",
+      "previewScope": "Sample data without a banner. Links are inactive.",
+      "scenario": "Example",
+      "suggestTitle": "Use the event name variable instead of “{}”?",
+      "replaceVariable": "Replace with variable",
+      "keepText": "Keep text",
+      "unknownVariable": "Unrecognized or unsupported information will be preserved.",
+      "unpaid": "To pay",
+      "deposit": "Deposit",
+      "paid": "Paid",
+      "zero": "Zero price",
+      "standard": "Standard message",
+      "formal": "Formal",
+      "informal": "Informal",
+      "recommended": "Recommended",
+      "usedBlocks": "Already inserted sections",
+      "labels": {
+        "fullOrder": "Order details",
+        "balanceReasoning": "Payment status",
+        "paymentDetails": "Payment details",
+        "changeOverview": "Order changes",
+        "platformLinks": "Application links",
+        "appLinks": "Application links",
+        "orderSymbol": "Order symbol"
+      }
+    }
   },
   "Inventory": {
     "edit": "Edit",

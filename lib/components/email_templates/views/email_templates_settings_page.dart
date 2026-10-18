@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
+import 'package:festapp_core/email_templates.dart';
+import 'package:super_editor/super_editor.dart';
+import '../email_authoring_provider.dart';
+import '../email_preview_examples.dart';
+import '../email_preview_html.dart';
+import '../../html/rich_html_editor.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/services/exception_handler.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
@@ -34,6 +40,189 @@ class EmailTemplateSettingsPage extends StatefulWidget {
 
 class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   final _htmlSave = HtmlSaveCoordinator();
+  late final RichHtmlEditorController _subjectEditor;
+  late final EmailAuthoringProvider _subjectProvider;
+  late final EmailAuthoringProvider _bodyProvider;
+  RichHtmlEditorController? _bodyDraft;
+  List<EmailPreviewScenario> _scenarios = [];
+  EmailPreviewScenario? _scenario;
+  bool _previewError = false;
+  Timer? _suggestTimer;
+  bool _dismissSuggestions = false;
+  ({
+    RichHtmlEditorController controller,
+    int revision,
+    String nodeId,
+    EmailTitleMatch match,
+    String code
+  })? _suggestion;
+  Future<void> _loadExamples() async {
+    try {
+      final examples = await EmailPreviewExamples.load();
+      if (!mounted) return;
+      setState(() {
+        _scenarios = examples.scenariosFor(widget.template.code ?? '');
+        _scenario = _scenarios.firstOrNull;
+        _subjectProvider.scenario = _scenario;
+        _bodyProvider.scenario = _scenario;
+        _previewError = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _previewError = true);
+    }
+  }
+
+  void _draftUpdated(RichHtmlEditorController controller) {
+    _htmlSave.draftChanged();
+    _suggestTimer?.cancel();
+    if (_suggestion != null) setState(() => _suggestion = null);
+    if (_dismissSuggestions ||
+        controller.revision == 0 ||
+        !controller.focusNode.hasFocus) return;
+    final title = widget.emailTemplatesResponse.occasion?.title;
+    final code = widget.template.substitutions
+        .map((s) => s.code)
+        .where((code) => code == 'occasionTitle' || code == 'occasion_title')
+        .firstOrNull;
+    if (title == null || code == null) return;
+    _suggestTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted ||
+          controller.editor.composer.composingRegion.value != null ||
+          !controller.focusNode.hasFocus) return;
+      final selection = controller.editor.composer.selection;
+      if (selection == null || !selection.isCollapsed) return;
+      final node =
+          controller.editor.document.getNodeById(selection.extent.nodeId);
+      if (node is! TextNode) return;
+      final text = node.text.toPlainText();
+      final caret = (selection.extent.nodePosition as TextNodePosition).offset;
+      for (final match in EmailTemplateRules.titleMatches(text, title)) {
+        if (caret < match.start || caret > match.end + 1) continue;
+        if (List.generate(match.end - match.start,
+                (i) => node.text.getAllAttributionsAt(match.start + i))
+            .any((attrs) =>
+                attrs.any((a) => a is LinkAttribution || a == codeAttribution)))
+          continue;
+        setState(() => _suggestion = (
+              controller: controller,
+              revision: controller.revision,
+              nodeId: node.id,
+              match: match,
+              code: code
+            ));
+        controller.refreshAuthoringPresentation();
+        break;
+      }
+    });
+  }
+
+  void _withdrawSuggestionIfLeft() {
+    final suggestion = _suggestion;
+    if (suggestion == null) return;
+    final selection = suggestion.controller.editor.composer.selection;
+    final position = selection?.extent.nodePosition;
+    if (selection == null ||
+        !selection.isCollapsed ||
+        selection.extent.nodeId != suggestion.nodeId ||
+        position is! TextNodePosition ||
+        position.offset < suggestion.match.start ||
+        position.offset > suggestion.match.end + 1) {
+      setState(() => _suggestion = null);
+      suggestion.controller.refreshAuthoringPresentation();
+    }
+  }
+
+  Widget _suggestionView() {
+    final suggestion = _suggestion;
+    if (suggestion == null) return const SizedBox.shrink();
+    return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(EmailTemplatesStrings.suggestTitle(suggestion.match.text)),
+          Wrap(children: [
+            TextButton(
+                onPressed: () {
+                  suggestion.controller.insertTemplateToken(suggestion.code,
+                      expectedRevision: suggestion.revision,
+                      expectedText: suggestion.match.text,
+                      replacement: DocumentSelection(
+                          base: DocumentPosition(
+                              nodeId: suggestion.nodeId,
+                              nodePosition: TextNodePosition(
+                                  offset: suggestion.match.start)),
+                          extent: DocumentPosition(
+                              nodeId: suggestion.nodeId,
+                              nodePosition: TextNodePosition(
+                                  offset: suggestion.match.end))));
+                  setState(() => _suggestion = null);
+                },
+                child: Text(EmailTemplatesStrings.replaceVariable)),
+            TextButton(
+                onPressed: () => setState(() {
+                      _dismissSuggestions = true;
+                      _suggestion = null;
+                      suggestion.controller.refreshAuthoringPresentation();
+                    }),
+                child: Text(EmailTemplatesStrings.keepText))
+          ]),
+        ]));
+  }
+
+  Future<void> _showPreview() async {
+    if (_previewError || _scenario == null) {
+      await _loadExamples();
+      if (!mounted || _scenario == null) return;
+    }
+    await showDialog<void>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+            builder: (context, update) => AppAlertDialog(
+                  onClose: () => Navigator.pop(context),
+                  title: Text(EmailTemplatesStrings.preview),
+                  content: SizedBox(
+                      width: 680,
+                      child: SingleChildScrollView(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                            Text(EmailTemplatesStrings.previewScope),
+                            if (_scenarios.length > 1)
+                              DropdownButtonFormField<EmailPreviewScenario>(
+                                  value: _scenario,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                      labelText:
+                                          EmailTemplatesStrings.scenario),
+                                  items: _scenarios
+                                      .map((s) => DropdownMenuItem(
+                                          value: s,
+                                          child: Text(
+                                              '${EmailTemplatesStrings.scenarioName(s.scenario)} · ${s.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(s.tone)}',
+                                              overflow: TextOverflow.ellipsis)))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    update(() => _scenario = value);
+                                    setState(() {
+                                      _subjectProvider.scenario = value;
+                                      _bodyProvider.scenario = value;
+                                    });
+                                  }),
+                            const SizedBox(height: 16),
+                            Text(
+                                _scenario!
+                                    .composeSubject(_subjectEditor.plainText),
+                                style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 16),
+                            EmailPreviewHtml(
+                                html: _scenario!.composeHtml(
+                                    _bodyDraft?.html ?? _htmlContent ?? ''),
+                                imageBytesResolver:
+                                    _htmlSave.media.previewBytes),
+                          ]))),
+                )));
+  }
+
   bool get _canEdit => widget.emailTemplatesResponse.occasion != null
       ? RightsService.canEditOccasion() || RightsService.isOrderEditor()
       : RightsService.isUnitEditor();
@@ -42,6 +231,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       coordinator: _htmlSave, child: _buildHtmlParent(context));
   @override
   void dispose() {
+    _suggestTimer?.cancel();
+    _subjectEditor.dispose();
     _htmlSave.dispose();
     super.dispose();
   }
@@ -55,6 +246,32 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     super.initState();
     _subject = widget.template.subject;
     _htmlContent = widget.template.html;
+    _subjectProvider = EmailAuthoringProvider(widget.template,
+        field: EmailTargetField.subject);
+    _bodyProvider =
+        EmailAuthoringProvider(widget.template, field: EmailTargetField.body);
+    _subjectEditor = RichHtmlEditorController(
+        initialHtml: '<p>${htmlEscape.convert(_subject ?? '')}</p>',
+        owner: const HtmlMediaOwner.none(),
+        authoring: _subjectProvider);
+    _subjectProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
+    _bodyProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
+    _subjectProvider.footerBuilder = (_) =>
+        _suggestion?.controller == _subjectEditor
+            ? _suggestionView()
+            : const SizedBox.shrink();
+    _bodyProvider.footerBuilder = (_) => _suggestion?.controller == _bodyDraft
+        ? _suggestionView()
+        : const SizedBox.shrink();
+    _subjectEditor.addListener(() {
+      _subject = _subjectEditor.plainText;
+      _draftUpdated(_subjectEditor);
+    });
+    _htmlSave.registerActive(
+        _subjectEditor, () => _subject = _subjectEditor.plainText,
+        isDirty: () => _subjectEditor.hasUserChanges,
+        acceptSave: () => _subjectEditor.reset(_subjectEditor.html));
+    _loadExamples();
   }
 
   Future<void> _saveSettings() async {
@@ -89,44 +306,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           context, "${CommonStrings.saved}: ${widget.template.subject ?? ''}");
       Navigator.of(context).pop();
     }
-  }
-
-  /// Builds a widget displaying the available substitutions.
-  /// If [subs] is a list, each substitution is shown on its own line.
-  Widget _buildSubsDefinition(dynamic subs) {
-    if (subs == null) return const SizedBox();
-    if (subs is List) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: subs.map<Widget>((sub) {
-          if (sub is EmailTemplateSub) {
-            return Text(
-              "{{${sub.code}}}: ${sub.description}",
-              style: const TextStyle(fontSize: 14),
-            );
-          }
-          return const SizedBox();
-        }).toList(),
-      );
-    } else if (subs is String) {
-      return Text(
-        subs,
-        style: const TextStyle(fontSize: 14),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      );
-    } else if (subs is Map<String, dynamic>) {
-      final subsText = subs.entries
-          .map((entry) => "${entry.key}: ${entry.value}".tr())
-          .join("\n");
-      return Text(
-        subsText,
-        style: const TextStyle(fontSize: 14),
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-    return const SizedBox();
   }
 
   Widget _buildHtmlParent(BuildContext context) {
@@ -187,35 +366,30 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        EmailTemplatesStrings.availableSubstitutions,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      _buildSubsDefinition(usageDetails['subs']),
+                      Text(EmailTemplatesStrings.authoringHint),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
               // Subject text field.
-              TextFormField(
-                enabled: _canEdit,
-                initialValue: _subject,
-                decoration:
-                    InputDecoration(labelText: EmailTemplatesStrings.subject),
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(
-                      errorText: EmailTemplatesStrings.subjectRequired),
-                ]),
-                onSaved: (val) => _subject = val,
-                style: TextStyle(
-                  color: ThemeConfig.grey850(context),
-                ),
-              ),
+              FormField<String>(
+                  validator: (_) => _subjectEditor.plainText.trim().isEmpty
+                      ? EmailTemplatesStrings.subjectRequired
+                      : null,
+                  builder: (field) => InputDecorator(
+                      decoration: InputDecoration(
+                          labelText: EmailTemplatesStrings.subject,
+                          errorText: field.errorText),
+                      child: Semantics(
+                          label: EmailTemplatesStrings.subject,
+                          textField: true,
+                          enabled: _canEdit,
+                          onTap: _canEdit
+                              ? _subjectEditor.focusNode.requestFocus
+                              : null,
+                          child: RichHtmlEditor(
+                              controller: _subjectEditor, enabled: _canEdit)))),
               const SizedBox(height: 16),
               // Email Template Content Section header.
               Container(
@@ -246,6 +420,11 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               const SizedBox(height: 8),
               EditableHtmlField(
                   enabled: _canEdit,
+                  authoring: _bodyProvider,
+                  onDraftChanged: (controller) {
+                    _bodyDraft = controller;
+                    if (controller != null) _draftUpdated(controller);
+                  },
                   html: _htmlContent,
                   coordinator: _htmlSave,
                   profile: HtmlContentProfile.emailContent,
@@ -255,7 +434,13 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       : HtmlMediaOwner.unit(
                           widget.emailTemplatesResponse.unit.id),
                   onChanged: (html) => setState(() => _htmlContent = html)),
-              const SizedBox(height: 8),
+              if (_previewError) Text(EmailTemplatesStrings.previewUnavailable),
+              Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                      onPressed: _showPreview,
+                      icon: const Icon(Icons.preview_outlined),
+                      label: Text(EmailTemplatesStrings.preview))),
               const SizedBox(height: 16),
             ],
           ),

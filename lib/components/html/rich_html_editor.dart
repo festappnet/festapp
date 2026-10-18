@@ -15,6 +15,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:super_editor_clipboard/super_editor_clipboard.dart';
 
 import 'html_editor_document.dart';
+import 'template_authoring.dart';
 import 'html_image_preview.dart';
 import 'html_strings.dart';
 import 'html_text_style.dart';
@@ -43,7 +44,302 @@ class RichHtmlEditor extends StatefulWidget {
 }
 
 class _RichHtmlEditorState extends State<RichHtmlEditor> {
+  bool get _sideToolbar =>
+      widget.fullscreen && MediaQuery.sizeOf(context).width >= 600;
   final _selectionLinks = SelectionLayerLinks();
+  final _mentionOverlay = OverlayPortalController();
+  bool _explicitChooser = false;
+  bool _consumeEscapeUp = false;
+  int _activeResult = 0;
+  String _lastQuery = '';
+  String _explicitQuery = '';
+  DocumentSelection? _insertionSelection;
+  int? _insertionRevision;
+  List<TemplateAuthoringEntry> _results = [];
+  final _menuScroll = ScrollController();
+  bool get _menuOpen => _explicitChooser || controller.composingTag != null;
+  void _mentionsChanged() {
+    if (!mounted) return;
+    final query = _explicitChooser
+        ? _explicitQuery
+        : controller.composingTag?.tag.raw.substring(1) ?? '';
+    if (query != _lastQuery || !_mentionOverlay.isShowing) {
+      _lastQuery = query;
+      _activeResult = 0;
+      _results =
+          controller.authoring?.search(query, controller.templateUsage) ?? [];
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_menuOpen) {
+        _mentionOverlay.show();
+      } else {
+        _mentionOverlay.hide();
+      }
+      setState(() {});
+    });
+  }
+
+  void _closeMentions() {
+    _explicitChooser = false;
+    controller.cancelTemplateQuery();
+    _mentionOverlay.hide();
+  }
+
+  void _choose(TemplateAuthoringEntry entry) {
+    final tag = controller.composingTag;
+    final revision = controller.revision;
+    if (controller.insertTemplateToken(entry.code,
+        expectedTag: tag,
+        expectedRevision: _explicitChooser ? _insertionRevision : revision,
+        replacement: _explicitChooser ? _insertionSelection : null)) {
+      _closeMentions();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) controller.focusNode.requestFocus();
+      });
+    }
+  }
+
+  void _openMentions() {
+    if (controller.editor.composer.selection == null) {
+      final node = controller.editor.document.whereType<TextNode>().lastOrNull;
+      if (node == null) return;
+      controller.editor.execute([
+        ChangeSelectionRequest(
+            DocumentSelection.collapsed(
+                position: DocumentPosition(
+                    nodeId: node.id, nodePosition: node.endPosition)),
+            SelectionChangeType.placeCaret,
+            SelectionReason.userInteraction)
+      ]);
+    }
+    _insertionSelection = controller.editor.composer.selection;
+    _insertionRevision = controller.revision;
+    _explicitChooser = true;
+    _explicitQuery = '';
+    controller.focusNode.requestFocus();
+    _mentionsChanged();
+  }
+
+  Widget _mentionMenu(BuildContext context) {
+    final provider = controller.authoring!;
+    final width = (MediaQuery.sizeOf(context).width - 24).clamp(0.0, 380.0);
+    return Positioned(
+        left: 0,
+        top: 0,
+        child: Follower.withOffset(
+            link: _selectionLinks.caretLink,
+            leaderAnchor: Alignment.bottomLeft,
+            followerAnchor: Alignment.topLeft,
+            offset: const Offset(0, 8),
+            boundary: const SafeAreaFollowerBoundary(),
+            showWhenUnlinked: false,
+            child: SuperEditorPopover(
+                popoverFocusNode: _popoverFocus,
+                editorFocusNode: controller.focusNode,
+                child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(8),
+                    clipBehavior: Clip.antiAlias,
+                    child: SizedBox(
+                        width: width,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                              maxHeight: (MediaQuery.sizeOf(context).height -
+                                      MediaQuery.viewInsetsOf(context).bottom) *
+                                  .45),
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            if (_explicitChooser)
+                              Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Focus(
+                                      onKeyEvent: (_, event) {
+                                        if (event.logicalKey ==
+                                            LogicalKeyboardKey.escape) {
+                                          if (event is KeyDownEvent) {
+                                            _closeMentions();
+                                            controller.focusNode.requestFocus();
+                                          }
+                                          return KeyEventResult.handled;
+                                        }
+                                        if (event is KeyDownEvent &&
+                                            {
+                                              LogicalKeyboardKey.arrowDown,
+                                              LogicalKeyboardKey.arrowUp
+                                            }.contains(event.logicalKey) &&
+                                            _results.isNotEmpty) {
+                                          setState(() => _activeResult =
+                                              (_activeResult +
+                                                      (event.logicalKey ==
+                                                              LogicalKeyboardKey
+                                                                  .arrowDown
+                                                          ? 1
+                                                          : -1)) %
+                                                  _results.length);
+                                          return KeyEventResult.handled;
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: TextField(
+                                          autofocus: true,
+                                          decoration: InputDecoration(
+                                              labelText: provider.insertLabel,
+                                              prefixIcon:
+                                                  const Icon(Icons.search)),
+                                          onChanged: (value) {
+                                            _explicitQuery = value;
+                                            _mentionsChanged();
+                                          },
+                                          onSubmitted: (_) {
+                                            if (_results.isNotEmpty)
+                                              _choose(_results[_activeResult]);
+                                          }))),
+                            Flexible(
+                                child: Semantics(
+                                    liveRegion: true,
+                                    label:
+                                        '${provider.insertLabel}: ${_results.length}',
+                                    child: _results.isEmpty
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Text(provider.emptyLabel))
+                                        : ListView.builder(
+                                            controller: _menuScroll,
+                                            shrinkWrap: true,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 4),
+                                            itemCount: _results.length,
+                                            itemBuilder: (_, index) {
+                                              final entry = _results[index];
+                                              final count =
+                                                  controller.templateUsage[
+                                                          entry.code] ??
+                                                      0;
+                                              final usedBlock =
+                                                  entry.block && count > 0;
+                                              final previous = index == 0
+                                                  ? null
+                                                  : _results[index - 1];
+                                              final heading = _lastQuery
+                                                      .isEmpty &&
+                                                  (index == 0 ||
+                                                      usedBlock &&
+                                                          !(previous!.block &&
+                                                              (controller.templateUsage[
+                                                                          previous
+                                                                              .code] ??
+                                                                      0) >
+                                                                  0));
+                                              return Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .stretch,
+                                                  children: [
+                                                    if (heading)
+                                                      Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .fromLTRB(
+                                                                  16, 8, 16, 4),
+                                                          child: Text(
+                                                              usedBlock
+                                                                  ? provider
+                                                                      .usedBlocksLabel
+                                                                  : provider
+                                                                      .recommendedLabel,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .labelMedium)),
+                                                    ListTile(
+                                                        selected: index ==
+                                                            _activeResult,
+                                                        title:
+                                                            Text(entry.label),
+                                                        subtitle: Text(
+                                                            [
+                                                              entry.example,
+                                                              if (count > 0)
+                                                                '${provider.usedLabel} ($count)'
+                                                            ]
+                                                                .where((s) => s
+                                                                    .isNotEmpty)
+                                                                .join(' · '),
+                                                            maxLines: 2,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis),
+                                                        onTap: () =>
+                                                            _choose(entry)),
+                                                  ]);
+                                            }))),
+                          ]),
+                        ))))));
+  }
+
+  ExecutionInstruction _authoringKeys(
+      {required SuperEditorContext editContext, required KeyEvent keyEvent}) {
+    final key = keyEvent.logicalKey;
+    if (_consumeEscapeUp && key == LogicalKeyboardKey.escape) {
+      if (keyEvent is KeyUpEvent) _consumeEscapeUp = false;
+      return ExecutionInstruction.haltExecution;
+    }
+    if (_menuOpen) {
+      if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.tab) {
+        if (keyEvent is KeyDownEvent) {
+          _consumeEscapeUp = key == LogicalKeyboardKey.escape;
+          _closeMentions();
+        }
+        return key == LogicalKeyboardKey.tab
+            ? ExecutionInstruction.continueExecution
+            : ExecutionInstruction.haltExecution;
+      }
+      if ({
+        LogicalKeyboardKey.arrowDown,
+        LogicalKeyboardKey.arrowUp,
+        LogicalKeyboardKey.enter
+      }.contains(key)) {
+        if (keyEvent is KeyDownEvent && _results.isNotEmpty) {
+          if (key == LogicalKeyboardKey.enter) {
+            _choose(_results[_activeResult]);
+          } else {
+            setState(() => _activeResult = (_activeResult +
+                    (key == LogicalKeyboardKey.arrowDown ? 1 : -1)) %
+                _results.length);
+            if (_menuScroll.hasClients)
+              _menuScroll.animateTo(
+                  (_activeResult * 72.0)
+                      .clamp(0.0, _menuScroll.position.maxScrollExtent),
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeOut);
+          }
+        }
+        return ExecutionInstruction.haltExecution;
+      }
+    }
+    if (controller.authoring?.singleLine == true &&
+        key == LogicalKeyboardKey.enter)
+      return ExecutionInstruction.haltExecution;
+    if (keyEvent is KeyDownEvent &&
+        (HardwareKeyboard.instance.isMetaPressed ||
+            HardwareKeyboard.instance.isControlPressed)) {
+      if (key == LogicalKeyboardKey.keyZ) {
+        if (HardwareKeyboard.instance.isShiftPressed) {
+          controller.redo();
+        } else {
+          controller.undo();
+        }
+        return ExecutionInstruction.haltExecution;
+      }
+      if (key == LogicalKeyboardKey.keyC || key == LogicalKeyboardKey.keyX) {
+        _async(() => controller.copy(cut: key == LogicalKeyboardKey.keyX));
+        return ExecutionInstruction.haltExecution;
+      }
+    }
+    return ExecutionInstruction.continueExecution;
+  }
+
   final _selectionToolbar = OverlayPortalController();
   final _popoverFocus = FocusNode();
   SuperEditorIosControlsControllerWithNativePaste? _ios;
@@ -55,6 +351,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     super.initState();
     if (kIsWeb) ClipboardEvents.instance?.registerPasteEventListener(_webPaste);
     controller.addListener(_controllerChanged);
+    controller.authoringChanges.addListener(_mentionsChanged);
     controller.focusNode.addListener(_selectionChanged);
     _android = SuperEditorAndroidControlsController(
         toolbarBuilder: (context, key, focalPoint) =>
@@ -62,11 +359,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
               floatingToolbarKey: key,
               focalPoint: focalPoint,
               onCutPressed: () {
-                controller.operations.cut();
+                _async(() => controller.copy(cut: true));
                 _android.hideToolbar();
               },
               onCopyPressed: () {
-                controller.operations.copy();
+                _async(controller.copy);
                 _android.hideToolbar();
               },
               onPastePressed: () {
@@ -99,7 +396,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     _ios?.dispose();
     _configuredEditor = controller.editor;
     controller.editor.composer.selectionNotifier.addListener(_selectionChanged);
-    _ios = SuperEditorIosControlsControllerWithNativePaste(
+    _ios = _TemplateIosControls(controller,
         editor: controller.editor,
         documentLayoutResolver: () =>
             controller.layoutKey.currentState as DocumentLayout,
@@ -112,6 +409,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   }
 
   void _selectionChanged() {
+    controller.authoring?.selectionChanged();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final selection = controller.editor.composer.selection;
@@ -186,6 +484,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != controller) {
       oldWidget.controller.removeListener(_controllerChanged);
+      oldWidget.controller.authoringChanges.removeListener(_mentionsChanged);
+      controller.authoringChanges.addListener(_mentionsChanged);
       oldWidget.controller.focusNode.removeListener(_selectionChanged);
       controller.addListener(_controllerChanged);
       controller.focusNode.addListener(_selectionChanged);
@@ -200,6 +500,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     if (kIsWeb)
       ClipboardEvents.instance?.unregisterPasteEventListener(_webPaste);
     controller.removeListener(_controllerChanged);
+    controller.authoringChanges.removeListener(_mentionsChanged);
+    _menuScroll.dispose();
     controller.focusNode.removeListener(_selectionChanged);
     _configuredEditor?.composer.selectionNotifier
         .removeListener(_selectionChanged);
@@ -237,10 +539,27 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         builder: (context) => AppAlertDialog(
                 onClose: () => Navigator.pop(context),
                 title: Text(HtmlStrings.link),
-                content: TextField(
-                    controller: text,
-                    autofocus: true,
-                    keyboardType: TextInputType.url),
+                content: Column(mainAxisSize: MainAxisSize.min, children: [
+                  TextField(
+                      controller: text,
+                      autofocus: true,
+                      keyboardType: TextInputType.url),
+                  if (controller.authoring != null)
+                    DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                            labelText: controller.authoring!.insertLabel),
+                        items: controller.authoring!
+                            .search('', const {})
+                            .where((entry) => entry.url)
+                            .map((entry) => DropdownMenuItem(
+                                value: entry.code, child: Text(entry.label)))
+                            .toList(),
+                        onChanged: (code) {
+                          if (code != null)
+                            text.text = TemplateTokenPlaceholder(code).source;
+                        }),
+                ]),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -252,7 +571,13 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     text.dispose();
     if (value == null || !mounted) return;
     final uri = Uri.tryParse(value);
-    if (uri == null || !{'https', 'http', 'mailto', 'tel'}.contains(uri.scheme))
+    final variable = controller.authoring?.search('', const {}).any((entry) =>
+            entry.url &&
+            TemplateTokenPlaceholder(entry.code).source == value) ??
+        false;
+    if (!variable &&
+        (uri == null ||
+            !{'https', 'http', 'mailto', 'tel'}.contains(uri.scheme)))
       throw StateError('Invalid link URL');
     if (selection != null)
       controller.editor.execute([
@@ -376,223 +701,339 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
             imageBytesResolver: controller.media.previewBytes),
       ]);
     return OverlayPortal(
-        controller: _selectionToolbar,
-        overlayChildBuilder: _floatingToolbar,
-        child: AnimatedBuilder(
-            animation: controller,
-            builder: (context, _) => Flex(
-                  direction:
-                      widget.fullscreen ? Axis.horizontal : Axis.vertical,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _toolbarLayout(SizedBox(
-                        width: widget.fullscreen ? 56 : null,
-                        child: SingleChildScrollView(
-                            scrollDirection: widget.fullscreen
-                                ? Axis.vertical
-                                : Axis.horizontal,
-                            child: Flex(
-                                direction: widget.fullscreen
-                                    ? Axis.vertical
-                                    : Axis.horizontal,
-                                children: [
-                                  _tool(Icons.format_bold, HtmlStrings.bold,
-                                      () => controller.toggle(boldAttribution),
-                                      attribution: boldAttribution),
-                                  _tool(
-                                      Icons.format_italic,
-                                      HtmlStrings.italic,
-                                      () =>
-                                          controller.toggle(italicsAttribution),
-                                      attribution: italicsAttribution),
-                                  _tool(
-                                      Icons.format_underlined,
-                                      HtmlStrings.underline,
-                                      () => controller
-                                          .toggle(underlineAttribution),
-                                      attribution: underlineAttribution),
-                                  _tool(
-                                      Icons.format_strikethrough,
-                                      HtmlStrings.strike,
-                                      () => controller
-                                          .toggle(strikethroughAttribution),
-                                      attribution: strikethroughAttribution),
-                                  _tool(Icons.link, HtmlStrings.link,
-                                      () => _async(_link)),
-                                  _tool(Icons.image_outlined, HtmlStrings.image,
-                                      () => _async(_image),
-                                      available: controller.owner.canImport),
-                                  _tool(Icons.content_paste, HtmlStrings.paste,
-                                      () => _async(controller.paste)),
-                                  _tool(Icons.undo, HtmlStrings.undo,
-                                      controller.undo),
-                                  _tool(Icons.redo, HtmlStrings.redo,
-                                      controller.redo),
-                                  PopupMenuButton<String>(
-                                      icon: const Icon(Icons.more_horiz),
-                                      onSelected: (value) {
-                                        switch (value) {
-                                          case 'imageUrl':
-                                            _async(_imageUrl);
-                                          case 'h2':
-                                            _block(header2Attribution);
-                                          case 'h3':
-                                            _block(header3Attribution);
-                                          case 'ol':
-                                            _list(ListItemType.ordered);
-                                          case 'ul':
-                                            _list(ListItemType.unordered);
-                                          case 'in':
-                                            _indent(true);
-                                          case 'out':
-                                            _indent(false);
-                                          case 'left':
-                                            _align(TextAlign.left);
-                                          case 'center':
-                                            _align(TextAlign.center);
-                                          case 'right':
-                                            _align(TextAlign.right);
-                                        }
-                                        controller.focusNode.requestFocus();
-                                      },
-                                      itemBuilder: (_) => [
-                                            if (controller.owner.canImport)
-                                              PopupMenuItem(
-                                                  value: 'imageUrl',
-                                                  child: Text(
-                                                      HtmlStrings.imageUrl)),
-                                            for (final item in [
-                                              ('h2', HtmlStrings.heading2),
-                                              ('h3', HtmlStrings.heading3),
-                                              ('ol', HtmlStrings.orderedList),
-                                              ('ul', HtmlStrings.bulletList),
-                                              ('in', HtmlStrings.indent),
-                                              ('out', HtmlStrings.outdent),
-                                              ('left', HtmlStrings.alignLeft),
-                                              (
-                                                'center',
-                                                HtmlStrings.alignCenter
-                                              ),
-                                              ('right', HtmlStrings.alignRight)
-                                            ])
-                                              PopupMenuItem(
-                                                  value: item.$1,
-                                                  child: Text(item.$2)),
-                                          ]),
-                                ])))),
-                    _documentViewport(ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 180),
-                        child: SuperEditorAndroidControlsScope(
-                            controller: _android,
-                            child: SuperEditorIosControlsScope(
-                                controller: _ios!,
-                                child: CustomScrollView(
-                                    shrinkWrap: !widget.fullscreen,
-                                    physics: widget.fullscreen
-                                        ? null
-                                        : const NeverScrollableScrollPhysics(),
-                                    slivers: [
-                                      SuperEditor(
-                                        editor: controller.editor,
-                                        selectionLayerLinks: _selectionLinks,
-                                        documentOverlayBuilders: [
-                                          for (final overlay
-                                              in defaultSuperEditorDocumentOverlayBuilders)
-                                            if (overlay
-                                                is DefaultCaretOverlayBuilder)
-                                              DefaultCaretOverlayBuilder(
-                                                caretStyle:
-                                                    overlay.caretStyle.copyWith(
-                                                  color: Theme.of(context)
-                                                              .brightness ==
-                                                          Brightness.dark
-                                                      ? Colors.white
-                                                      : Colors.black,
-                                                ),
-                                              )
-                                            else
-                                              overlay,
-                                        ],
-                                        autofocus: widget.fullscreen,
-                                        focusNode: controller.focusNode,
-                                        documentLayoutKey: controller.layoutKey,
-                                        shrinkWrap: true,
-                                        log: null,
-                                        selectionPolicies:
-                                            const SuperEditorSelectionPolicies(
-                                                clearSelectionWhenEditorLosesFocus:
-                                                    false,
-                                                clearSelectionWhenImeConnectionCloses:
-                                                    false),
-                                        stylesheet: defaultStylesheet.copyWith(
-                                            inlineTextStyler:
-                                                htmlInlineTextStyler,
-                                            documentPadding:
-                                                const EdgeInsets.all(8),
-                                            addRulesAfter: [
-                                              StyleRule(
-                                                  BlockSelector.all,
-                                                  (doc, node) => {
-                                                        Styles.textStyle:
-                                                            htmlBlockTextStyler(
-                                                                node,
-                                                                (widget.textStyle ??
-                                                                        htmlTextStyle(
-                                                                            context))
-                                                                    .copyWith(
-                                                                  fontSize: (widget.textStyle ??
-                                                                              htmlTextStyle(
-                                                                                  context))
-                                                                          .fontSize! *
-                                                                      switch (node
-                                                                          .getMetadataValue(
-                                                                              'blockType')) {
-                                                                        final type
-                                                                            when type ==
-                                                                                header1Attribution =>
-                                                                          2.0,
-                                                                        final type
-                                                                            when type ==
-                                                                                header2Attribution =>
-                                                                          1.5,
-                                                                        final type
-                                                                            when type ==
-                                                                                header3Attribution =>
-                                                                          1.17,
-                                                                        _ =>
-                                                                          1.0,
-                                                                      },
-                                                                  fontFamily: node.getMetadataValue(
-                                                                              'blockType') ==
-                                                                          const NamedAttribution(
-                                                                              'pre')
-                                                                      ? 'monospace'
-                                                                      : null,
-                                                                )),
-                                                        Styles.padding:
-                                                            const CascadingPadding
-                                                                .symmetric(
-                                                                horizontal: 0),
-                                                      })
-                                            ]),
-                                        componentBuilders: [
-                                          _DraftImageBuilder(controller),
-                                          _PreservedBuilder(controller),
-                                          ...defaultComponentBuilders
-                                        ],
-                                        keyboardActions: [
-                                          if (widget.onCancel != null)
-                                            _cancelShortcut,
-                                          if (!kIsWeb) _pasteShortcut,
-                                          ...defaultImeKeyboardActions.where(
-                                              (action) =>
-                                                  action !=
-                                                  pasteWhenCmdVIsPressed)
-                                        ],
-                                      )
-                                    ]))))),
-                  ],
-                )));
+        controller: _mentionOverlay,
+        overlayChildBuilder: _mentionMenu,
+        child: OverlayPortal(
+            controller: _selectionToolbar,
+            overlayChildBuilder: _floatingToolbar,
+            child: AnimatedBuilder(
+                animation: controller,
+                builder: (context, _) => Flex(
+                      direction: _sideToolbar ? Axis.horizontal : Axis.vertical,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (controller.authoring?.singleLine != true)
+                          _toolbarLayout(SizedBox(
+                              width: _sideToolbar ? 56 : null,
+                              child: SingleChildScrollView(
+                                  scrollDirection: _sideToolbar
+                                      ? Axis.vertical
+                                      : Axis.horizontal,
+                                  child: Flex(
+                                      direction: _sideToolbar
+                                          ? Axis.vertical
+                                          : Axis.horizontal,
+                                      children: [
+                                        _tool(
+                                            Icons.format_bold,
+                                            HtmlStrings.bold,
+                                            () => controller
+                                                .toggle(boldAttribution),
+                                            attribution: boldAttribution),
+                                        _tool(
+                                            Icons.format_italic,
+                                            HtmlStrings.italic,
+                                            () => controller
+                                                .toggle(italicsAttribution),
+                                            attribution: italicsAttribution),
+                                        _tool(
+                                            Icons.format_underlined,
+                                            HtmlStrings.underline,
+                                            () => controller
+                                                .toggle(underlineAttribution),
+                                            attribution: underlineAttribution),
+                                        _tool(
+                                            Icons.format_strikethrough,
+                                            HtmlStrings.strike,
+                                            () => controller.toggle(
+                                                strikethroughAttribution),
+                                            attribution:
+                                                strikethroughAttribution),
+                                        _tool(Icons.link, HtmlStrings.link,
+                                            () => _async(_link)),
+                                        _tool(
+                                            Icons.image_outlined,
+                                            HtmlStrings.image,
+                                            () => _async(_image),
+                                            available:
+                                                controller.owner.canImport),
+                                        _tool(
+                                            Icons.content_paste,
+                                            HtmlStrings.paste,
+                                            () => _async(controller.paste)),
+                                        _tool(Icons.undo, HtmlStrings.undo,
+                                            controller.undo),
+                                        _tool(Icons.redo, HtmlStrings.redo,
+                                            controller.redo),
+                                        PopupMenuButton<String>(
+                                            icon: const Icon(Icons.more_horiz),
+                                            onSelected: (value) {
+                                              switch (value) {
+                                                case 'imageUrl':
+                                                  _async(_imageUrl);
+                                                case 'h2':
+                                                  _block(header2Attribution);
+                                                case 'h3':
+                                                  _block(header3Attribution);
+                                                case 'ol':
+                                                  _list(ListItemType.ordered);
+                                                case 'ul':
+                                                  _list(ListItemType.unordered);
+                                                case 'in':
+                                                  _indent(true);
+                                                case 'out':
+                                                  _indent(false);
+                                                case 'left':
+                                                  _align(TextAlign.left);
+                                                case 'center':
+                                                  _align(TextAlign.center);
+                                                case 'right':
+                                                  _align(TextAlign.right);
+                                              }
+                                              controller.focusNode
+                                                  .requestFocus();
+                                            },
+                                            itemBuilder: (_) => [
+                                                  if (controller
+                                                      .owner.canImport)
+                                                    PopupMenuItem(
+                                                        value: 'imageUrl',
+                                                        child: Text(HtmlStrings
+                                                            .imageUrl)),
+                                                  for (final item in [
+                                                    (
+                                                      'h2',
+                                                      HtmlStrings.heading2
+                                                    ),
+                                                    (
+                                                      'h3',
+                                                      HtmlStrings.heading3
+                                                    ),
+                                                    (
+                                                      'ol',
+                                                      HtmlStrings.orderedList
+                                                    ),
+                                                    (
+                                                      'ul',
+                                                      HtmlStrings.bulletList
+                                                    ),
+                                                    ('in', HtmlStrings.indent),
+                                                    (
+                                                      'out',
+                                                      HtmlStrings.outdent
+                                                    ),
+                                                    (
+                                                      'left',
+                                                      HtmlStrings.alignLeft
+                                                    ),
+                                                    (
+                                                      'center',
+                                                      HtmlStrings.alignCenter
+                                                    ),
+                                                    (
+                                                      'right',
+                                                      HtmlStrings.alignRight
+                                                    )
+                                                  ])
+                                                    PopupMenuItem(
+                                                        value: item.$1,
+                                                        child: Text(item.$2)),
+                                                ]),
+                                      ])))),
+                        if (controller.hasUnsupportedTokens &&
+                            !widget.fullscreen)
+                          Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(
+                                  controller.authoring!.unsupportedLabel,
+                                  style:
+                                      Theme.of(context).textTheme.bodySmall)),
+                        if (controller.authoring != null && !_sideToolbar)
+                          Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              child: Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    Text(controller.authoring!.helper),
+                                    TextButton.icon(
+                                        onPressed: _openMentions,
+                                        icon: const Icon(Icons.alternate_email),
+                                        label: Text(
+                                            controller.authoring!.insertLabel))
+                                  ])),
+                        if (controller.authoring != null && _sideToolbar)
+                          IconButton(
+                              tooltip: controller.authoring!.insertLabel,
+                              onPressed: _openMentions,
+                              icon: const Icon(Icons.alternate_email)),
+                        _documentViewport(ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minHeight:
+                                    controller.authoring?.singleLine == true
+                                        ? 48
+                                        : 180),
+                            child: SuperEditorAndroidControlsScope(
+                                controller: _android,
+                                child: SuperEditorIosControlsScope(
+                                    controller: _ios!,
+                                    child: CustomScrollView(
+                                        shrinkWrap: !widget.fullscreen,
+                                        physics: widget.fullscreen
+                                            ? null
+                                            : const NeverScrollableScrollPhysics(),
+                                        slivers: [
+                                          SuperEditor(
+                                            editor: controller.editor,
+                                            inputRole:
+                                                'html-${identityHashCode(controller)}',
+                                            imeConfiguration:
+                                                SuperEditorImeConfiguration(
+                                                    keyboardActionButton:
+                                                        controller.authoring
+                                                                    ?.singleLine ==
+                                                                true
+                                                            ? TextInputAction
+                                                                .done
+                                                            : TextInputAction
+                                                                .newline),
+                                            selectionLayerLinks:
+                                                _selectionLinks,
+                                            documentOverlayBuilders: [
+                                              for (final overlay
+                                                  in defaultSuperEditorDocumentOverlayBuilders)
+                                                if (overlay
+                                                    is DefaultCaretOverlayBuilder)
+                                                  DefaultCaretOverlayBuilder(
+                                                    caretStyle: overlay
+                                                        .caretStyle
+                                                        .copyWith(
+                                                      color: Theme.of(context)
+                                                                  .brightness ==
+                                                              Brightness.dark
+                                                          ? Colors.white
+                                                          : Colors.black,
+                                                    ),
+                                                  )
+                                                else
+                                                  overlay,
+                                            ],
+                                            autofocus: widget.fullscreen,
+                                            focusNode: controller.focusNode,
+                                            documentLayoutKey:
+                                                controller.layoutKey,
+                                            shrinkWrap: true,
+                                            log: null,
+                                            selectionPolicies:
+                                                const SuperEditorSelectionPolicies(
+                                                    clearSelectionWhenEditorLosesFocus:
+                                                        false,
+                                                    clearSelectionWhenImeConnectionCloses:
+                                                        false),
+                                            stylesheet:
+                                                defaultStylesheet.copyWith(
+                                                    inlineWidgetBuilders: [
+                                                      (context, style, value) {
+                                                        if (value
+                                                            is! TemplateTokenPlaceholder)
+                                                          return null;
+                                                        final provider =
+                                                            controller
+                                                                .authoring!;
+                                                        final label = provider
+                                                                .entry(
+                                                                    value.code)
+                                                                ?.label ??
+                                                            value.code;
+                                                        return Semantics(
+                                                            label:
+                                                                '${provider.tokenLabel}: $label',
+                                                            excludeSemantics:
+                                                                true,
+                                                            child: Container(
+                                                                padding: const EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        5,
+                                                                    vertical:
+                                                                        2),
+                                                                decoration: BoxDecoration(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .colorScheme
+                                                                        .secondaryContainer,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            4)),
+                                                                child: Text(
+                                                                    '@$label',
+                                                                    textScaler:
+                                                                        TextScaler
+                                                                            .noScaling,
+                                                                    style: style.copyWith(
+                                                                        color: Theme.of(context)
+                                                                            .colorScheme
+                                                                            .onSecondaryContainer))));
+                                                      }
+                                                    ],
+                                                    inlineTextStyler:
+                                                        htmlInlineTextStyler,
+                                                    documentPadding:
+                                                        const EdgeInsets.all(8),
+                                                    addRulesAfter: [
+                                                      StyleRule(
+                                                          BlockSelector.all,
+                                                          (doc, node) => {
+                                                                Styles.textStyle:
+                                                                    htmlBlockTextStyler(
+                                                                        node,
+                                                                        (widget.textStyle ??
+                                                                                htmlTextStyle(context))
+                                                                            .copyWith(
+                                                                          fontSize: (widget.textStyle ?? htmlTextStyle(context)).fontSize! *
+                                                                              switch (node.getMetadataValue('blockType')) {
+                                                                                final type when type == header1Attribution => 2.0,
+                                                                                final type when type == header2Attribution => 1.5,
+                                                                                final type when type == header3Attribution => 1.17,
+                                                                                _ => 1.0,
+                                                                              },
+                                                                          fontFamily: node.getMetadataValue('blockType') == const NamedAttribution('pre')
+                                                                              ? 'monospace'
+                                                                              : null,
+                                                                        )),
+                                                                Styles.padding:
+                                                                    const CascadingPadding
+                                                                        .symmetric(
+                                                                        horizontal:
+                                                                            0),
+                                                              })
+                                                    ]),
+                                            componentBuilders: [
+                                              _TemplateBlockBuilder(controller),
+                                              _DraftImageBuilder(controller),
+                                              _PreservedBuilder(controller),
+                                              ...defaultComponentBuilders
+                                            ],
+                                            keyboardActions: [
+                                              if (controller.authoring != null)
+                                                _authoringKeys,
+                                              if (widget.onCancel != null)
+                                                _cancelShortcut,
+                                              if (!kIsWeb) _pasteShortcut,
+                                              ...defaultImeKeyboardActions
+                                                  .where((action) =>
+                                                      action !=
+                                                      pasteWhenCmdVIsPressed)
+                                            ],
+                                          ),
+                                          if (controller.authoring != null)
+                                            SliverToBoxAdapter(
+                                                child: controller.authoring!
+                                                        .footer(context) ??
+                                                    const SizedBox.shrink()),
+                                        ]))))),
+                      ],
+                    ))));
   }
 
   Widget _toolbarLayout(Widget tools) {
@@ -773,4 +1214,80 @@ class _PreservedBuilder implements ComponentBuilder {
             html: node.html,
             imageBytesResolver: controller.media.previewBytes));
   }
+}
+
+class _TemplateBlockBuilder extends ComponentBuilder {
+  _TemplateBlockBuilder(this.controller);
+  final RichHtmlEditorController controller;
+  @override
+  SingleColumnLayoutComponentViewModel? createViewModel(
+          Document document, DocumentNode node) =>
+      node is TemplateTokenBlock
+          ? HorizontalRuleComponentViewModel(
+              nodeId: node.id, caretColor: Colors.transparent)
+          : null;
+  @override
+  Widget? createComponent(SingleColumnDocumentComponentContext context,
+      SingleColumnLayoutComponentViewModel model) {
+    final node = controller.editor.document.getNodeById(model.nodeId);
+    if (node is! TemplateTokenBlock) return null;
+    final provider = controller.authoring!;
+    return BoxComponent(
+        key: context.componentKey,
+        child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+                border: Border.all(
+                    color: Theme.of(context.context).colorScheme.outline),
+                borderRadius: BorderRadius.circular(6)),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      child: Row(children: [
+                        Expanded(
+                            child: Text(
+                                '${provider.entry(node.code)?.label ?? node.code} · ${provider.sampleLabel}')),
+                        IconButton(
+                            tooltip: MaterialLocalizations.of(context.context)
+                                .deleteButtonTooltip,
+                            icon: const Icon(Icons.close),
+                            onPressed: () => controller.editor
+                                .execute([DeleteNodeRequest(nodeId: node.id)]))
+                      ])),
+                  Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: provider.preview(context.context, node.code) ??
+                          Text(provider.sampleLabel)),
+                ])));
+  }
+}
+
+class _TemplateIosControls
+    extends SuperEditorIosControlsControllerWithNativePaste {
+  _TemplateIosControls(this.owner,
+      {required super.editor,
+      required super.documentLayoutResolver,
+      super.customPasteDataInserter});
+  final RichHtmlEditorController owner;
+  @override
+  DocumentFloatingToolbarBuilder? get toolbarBuilder => owner.authoring == null
+      ? super.toolbarBuilder
+      : (context, key, point) => IOSTextEditingFloatingToolbar(
+          floatingToolbarKey: key,
+          focalPoint: point,
+          onCopyPressed: () {
+            owner.copy();
+            hideToolbar();
+          },
+          onCutPressed: () {
+            owner.copy(cut: true);
+            hideToolbar();
+          },
+          onPastePressed: () {
+            onUserRequestedPaste();
+            hideToolbar();
+          });
 }

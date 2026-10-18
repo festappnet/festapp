@@ -204,6 +204,7 @@ if [ "$RUN_DB" = true ] || [ "$RUN_INTEGRATION" = true ]; then
     node automation/hetzner-supabase/merge/edge-function-test-coverage.mjs >/dev/null
 
     if command -v deno &> /dev/null; then
+        deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/generate_email_preview_examples.ts --check
         # Both naming conventions are established in this repository. Keep the
         # paths explicit so unrelated TypeScript files never become tests.
         DENO_TEST_FILES=$(find supabase/functions -type f \

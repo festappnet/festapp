@@ -1,3 +1,4 @@
+import { waitlistActionLink } from './emailActionLink.ts';
 import { overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
 import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import {
@@ -193,8 +194,6 @@ export async function renderWaitlistEmail(
     waitlistCapabilityUrl(context, source, row.data.offer_id),
   );
   const manageUrl = escapeHtml(waitlistCapabilityUrl(context, manageSource));
-  const button = (href: string, label: string) =>
-    `<a href="${href}" rel="noreferrer noopener" referrerpolicy="no-referrer" style="display:inline-block;padding:12px 20px;background:#1565c0;color:#ffffff;text-decoration:none;border-radius:6px">${label}</a>`;
   let overviewUrl = "";
   if (source.version === 2 && context.overviewSource) {
     overviewUrl = await openOrderOverviewUrl(context, context.overviewSource);
@@ -215,14 +214,14 @@ export async function renderWaitlistEmail(
     waitlist_offer_instructions: escapeHtml(context.toneSubstitutions![offer && context.participantCount === 1 && context.offeredCount === 1 ? "waitlist_offer_instructions_single" : "waitlist_offer_instructions"]),
     participant_phrase: waitlistCountPhrase(offer ? context.participantCount! : source.participantCount, "person"),
     manage_waitlist_url: manageUrl,
-    manage_waitlist_button: button(manageUrl, escapeHtml(context.toneSubstitutions!.waitlist_manage_button_label)),
+    manage_waitlist_button: waitlistActionLink(manageUrl, escapeHtml(context.toneSubstitutions!.waitlist_manage_button_label)),
     ...(offer
       ? {
         offered_count: context.offeredCount!,
         offered_places: waitlistCountPhrase(context.offeredCount!, "place"),
         offer_expires_at: escapeHtml(waitlistExpiryText(source.expiresAt!, context.timeZone!)),
         offer_url: url,
-        offer_button: button(url, escapeHtml(context.toneSubstitutions![context.offeredCount === 1 ? "waitlist_offer_button_single" : "waitlist_offer_button_multiple"])),
+        offer_button: waitlistActionLink(url, escapeHtml(context.toneSubstitutions![context.offeredCount === 1 ? "waitlist_offer_button_single" : "waitlist_offer_button_multiple"])),
       }
       : {}),
   };
