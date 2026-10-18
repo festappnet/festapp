@@ -34,6 +34,7 @@ jobs:
           python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'
           python3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'
           python3 -m unittest discover -s automation/tests -p 'test_backup_asset_manifest.py'
+          python3 -m unittest discover -s automation/tests -p 'test_backup_retention.py'
           python3 -m unittest discover -s automation/tests -p 'test_asset_runtime.py'
           node --check automation/image-migration/copy-assets.mjs
           node automation/generate_storage_asset_migration.mjs --check

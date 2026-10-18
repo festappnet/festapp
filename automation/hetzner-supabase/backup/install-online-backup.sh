@@ -15,8 +15,10 @@ for file in archive-runtime.sh create-online-encrypted-backup.sh create-r2-image
   festapp-runtime-log-upload.service festapp-runtime-log-upload.timer; do
   [[ -f "$SCRIPT_DIR/$file" ]] || fail "missing $file"
 done
+[[ -f "$SCRIPT_DIR/../restore/backup_manifest.py" ]] || fail "selected-set format helper is missing"
 install -d -o root -g root -m 0700 /opt/festapp-backup /var/backups/festapp-supabase \
   /var/backups/festapp-supabase-logs
+install -o root -g root -m 0600 "$SCRIPT_DIR/../restore/backup_manifest.py" /opt/festapp-backup/backup_manifest.py
 install -o root -g root -m 0700 "$SCRIPT_DIR/archive-runtime.sh" /opt/festapp-backup/archive-runtime.sh
 install -o root -g root -m 0700 "$SCRIPT_DIR/create-online-encrypted-backup.sh" \
   /opt/festapp-backup/create-online-encrypted-backup.sh

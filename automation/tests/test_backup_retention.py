@@ -1,5 +1,6 @@
 import datetime as dt
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -44,6 +45,32 @@ class RetentionTest(unittest.TestCase):
     def test_minimum_retention_guard(self):
         with self.assertRaises(ValueError):
             module.choose_sets(set(), dt.datetime.now(dt.timezone.utc), daily_days=1)
+
+    def test_mixed_real_formats_preserve_unknown_and_reject_changed_bytes(self):
+        manifests = {}
+        rows = []
+        for index, version in enumerate([1, 2, 2, 3]):
+            name = module.PREFIX + f'2026101{index}T000000Z'
+            artifacts = module.LEGACY_ARTIFACTS if version == 1 else module.ASSET_ARTIFACTS
+            manifests[name + '/manifest.json'] = {
+                'version': version, 'format': 'festapp-assets' if version != 1 else 'legacy-storage',
+                'source_host': module.HOST, 'source_database': 'festapp_rehearsal_20260909220601',
+                'encrypted': True, 'storage_extended_attributes': version == 1,
+                'consistency': 'online-operational-backup-not-promotion-rpo0',
+                'destination': {'bucket': module.BUCKET, 'prefix': name},
+                'artifacts': {a: {'bytes': 42, 'sha256': 'a' * 64} for a in artifacts},
+            }
+            rows.extend({'Path': name + '/' + a, 'Size': 42} for a in artifacts | {'manifest.json'})
+        class Store:
+            def request(self, method, name):
+                return json.dumps(manifests[name]).encode()
+        complete = module.complete_sets(Store(), rows)
+        self.assertEqual(len(complete), 3)
+        self.assertNotIn(module.PREFIX + '20261013T000000Z', complete)
+        row = next(r for r in rows if r['Path'].endswith('/r2-images.tar.age'))
+        row['Size'] = 41
+        with self.assertRaisesRegex(RuntimeError, 'inventory disagree'):
+            module.complete_sets(Store(), rows)
 
     def test_incomplete_or_nonroutine_sets_remain_outside_cleanup(self):
         class FakeStore:
