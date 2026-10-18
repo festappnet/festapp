@@ -1,3 +1,6 @@
+import 'package:festapp_core/sync.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
+import 'orders_strings.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -276,7 +279,36 @@ class DbOrders {
     return ReservationsBundle(orders: orders, forms: forms ?? []);
   }
 
-  static Future<void> deleteOrder(OrderModel model) async {
+  static Future<bool> hasFakturoidForDeletion(int orderId) async {
+    final context = await _supabase
+        .rpc('get_order_deletion_context_v1', params: {'p_order': orderId});
+    return context['hasFakturoid'] == true;
+  }
+
+  static Future<void> deleteOrder(OrderModel model,
+      {bool deleteFakturoidInvoice = false}) async {
+    if (deleteFakturoidInvoice) {
+      final payload = {'orderId': model.id, 'deleteFakturoidInvoice': true};
+      final commandId = await ClientCommandIdentity.claimIntent(
+          'order_delete_fakturoid', payload,
+          principalBinding: _supabase.auth.currentUser?.id);
+      try {
+        final result = await _supabase.functions.invoke('delete-order', body: {
+          ...payload,
+          'commandId': commandId,
+        });
+        final response = ClientCommandResponse.from(result.data);
+        if (response.code != 200) {
+          throw StateError(OrdersStrings.deleteFakturoidInvoiceFailed);
+        }
+        await applyClientCommandReplacements(response);
+        await ClientCommandIdentity.completeIntent(
+            'order_delete_fakturoid', payload);
+      } on FunctionException {
+        throw StateError(OrdersStrings.deleteFakturoidInvoiceFailed);
+      }
+      return;
+    }
     if (ClientSyncRuntime.isV1Selected) {
       await _commands.delete(model.id!);
       return;

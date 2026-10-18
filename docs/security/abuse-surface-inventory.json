@@ -274,6 +274,14 @@
       "evidence": "database/tests/abuse/image_capacity_project_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "Fakturoid invoice deletion preflight",
+      "source": "database/functions/eshop_orders/get_order_deletion_context_v1.sql",
+      "admission": "admit_order_mutation_v1",
+      "evidence": "database/tests/eshop/orders/fakturoid_deletion_context_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16"
     }
   ],
   "edgeFunctions": [
@@ -379,6 +387,21 @@
         "supabase/functions/_shared/customerOrderAccess_test.ts"
       ],
       "reason": "Existing SQL capability/command authorization and the shared email admission apply; producer pre-render paths and ingress remain in the reconciliation scope."
+    },
+    {
+      "name": "delete-order",
+      "path": "supabase/functions/delete-order/index.ts",
+      "policies": [
+        "order.mutation"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/delete-order/delete_test.ts",
+        "database/tests/eshop/orders/fakturoid_deletion_context_test.sql"
+      ],
+      "reason": "Authorized preflight charges the shared order mutation burst budget before credential lookup and Fakturoid calls. The final canonical deletion charges its existing mutation/item budgets; receipt replay performs no provider work. Local tests do not certify live activation."
     },
     {
       "name": "download-ticket",

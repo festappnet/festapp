@@ -2,6 +2,14 @@
   "version": 1,
   "canonical_origin": "https://api.festapp.net",
   "edge_functions": {
+    "delete-order": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "fakturoid-invoice-delete"
+      ],
+      "mutates_authority": true
+    },
     "preview-ticket-layout": {
       "trigger": "client-http",
       "effects": [

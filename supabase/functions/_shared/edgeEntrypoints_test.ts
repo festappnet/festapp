@@ -50,6 +50,7 @@ async function loadHandler(name: string): Promise<EdgeHandler> {
 }
 
 const optionEntrypoints = [
+  "delete-order",
   "report-exchange-rates",
   "process-email-queue",
   "email-confirmation-status",
@@ -385,4 +386,23 @@ Deno.test("customer ticket download rejects foreign tickets before details or PD
   const missing=await handler(new Request('https://edge-test.invalid',{method:'POST',body:JSON.stringify({ticketId:7})}));
   assertEquals(missing.status,401);assertEquals(reads.length,1);
  } finally {supabaseAdmin.rpc=previousRpc;}
+});
+
+Deno.test("delete-order rejects missing authorization before privileged work", async () => {
+  const handler = await loadHandler("delete-order");
+  const response = await handler(new Request("https://edge-test.invalid", {
+    method: "POST", body: "{}",
+  }));
+  assertEquals(response.status, 401);
+});
+
+Deno.test("delete-order requires explicit invoice opt-in and valid command identity", async () => {
+  const handler = await loadHandler("delete-order");
+  for (const body of [{}, { orderId: 1, commandId: "invalid", deleteFakturoidInvoice: true },
+    { orderId: 1, commandId: "12345678-1234-4234-8234-123456789012", deleteFakturoidInvoice: false }]) {
+    const response = await handler(new Request("https://edge-test.invalid", {
+      method: "POST", headers: { authorization: "Bearer invalid" }, body: JSON.stringify(body),
+    }));
+    assertEquals(response.status, 400);
+  }
 });

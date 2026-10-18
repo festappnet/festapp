@@ -1,6 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OrdersStrings {
+  static String get deleteOrderNotice =>
+      'FeatureOrders.deleteOrderNotice'.tr();
+  static String get deleteFakturoidInvoice =>
+      'FeatureOrders.deleteFakturoidInvoice'.tr();
+  static String get deleteFakturoidInvoiceHelp =>
+      'FeatureOrders.deleteFakturoidInvoiceHelp'.tr();
+  static String get deleteFakturoidInvoiceFailed =>
+      'FeatureOrders.deleteFakturoidInvoiceFailed'.tr();
+
   static String get waveSeatProductTitle =>
       'FeatureOrders.waveSeatProductTitle'.tr();
   static String get waveSeatProductHint =>
