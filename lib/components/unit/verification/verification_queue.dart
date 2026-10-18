@@ -54,8 +54,7 @@ class _VerificationQueueState extends State<VerificationQueue> {
   Future<void> _review(int unit) async {
     await showDialog<void>(
         context: context,
-        builder: (context) =>
-            UnitVerificationReviewDialog(unitId: unit, db: _db));
+        builder: (context) => _ReviewDialog(unitId: unit, db: _db));
     if (mounted) await _load();
   }
 
@@ -100,31 +99,21 @@ class _VerificationQueueState extends State<VerificationQueue> {
           ])));
 }
 
-class UnitVerificationReviewDialog extends StatefulWidget {
+class _ReviewDialog extends StatefulWidget {
   final int unitId;
   final DbUnitVerification db;
-  const UnitVerificationReviewDialog(
-      {super.key, required this.unitId, required this.db});
+  const _ReviewDialog({required this.unitId, required this.db});
   @override
-  State<UnitVerificationReviewDialog> createState() => _ReviewDialogState();
+  State<_ReviewDialog> createState() => _ReviewDialogState();
 }
 
-class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
+class _ReviewDialogState extends State<_ReviewDialog> {
   final _feedback = TextEditingController(),
       _note = TextEditingController(),
       _source = TextEditingController();
-  final _focus = {
-    for (final key in ['source', 'feedback', 'note']) key: FocusNode()
-  };
-  final _anchors = {
-    for (final key in ['source', 'feedback', 'note']) key: GlobalKey()
-  };
-  final Map<String, String> _fieldErrors = {};
-  String? _decision;
   UnitLegalProfile? _profile;
   bool _busy = false;
   String? _message;
-  bool _canRetry = false;
   String t(String k) => VerificationStrings.text(k);
   @override
   void initState() {
@@ -134,7 +123,6 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
 
   @override
   void dispose() {
-    for (final node in _focus.values) node.dispose();
     _feedback.dispose();
     _note.dispose();
     _source.dispose();
@@ -142,10 +130,6 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _message = null;
-      _canRetry = false;
-    });
     try {
       final p = await widget.db.get(widget.unitId);
       if (mounted)
@@ -158,67 +142,19 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
           _profile = p;
         });
     } catch (_) {
-      if (mounted)
-        setState(() {
-          _message = t('failed');
-          _canRetry = true;
-        });
+      if (mounted) setState(() => _message = t('failed'));
     }
-  }
-
-  Map<String, TextEditingController> get _inputs => {
-        'source': _source,
-        'feedback': _feedback,
-        'note': _note,
-      };
-
-  String? _errorFor(String field) {
-    final text = _inputs[field]!.text;
-    if (text.runes.length > (field == 'source' ? 2000 : 4000)) {
-      return t(field == 'source' ? 'sourceTooLong' : 'reviewTextTooLong');
-    }
-    if (field == 'source' && _decision == 'approve' && text.trim().isEmpty) {
-      return t('sourceRequired');
-    }
-    if (field == 'feedback' &&
-        ['reject', 'revoke'].contains(_decision) &&
-        text.trim().isEmpty) {
-      return t('feedbackRequired');
-    }
-    return null;
-  }
-
-  void _focusFirstError() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _fieldErrors.isEmpty) return;
-      final field =
-          _inputs.keys.firstWhere((key) => _fieldErrors.containsKey(key));
-      _focus[field]!.requestFocus();
-      final target = _anchors[field]!.currentContext;
-      if (target != null) Scrollable.ensureVisible(target, alignment: 0.5);
-    });
   }
 
   Future<void> _decide(String decision) async {
     if (_busy || _profile == null) return;
-    setState(() {
-      _decision = decision;
-      _message = null;
-      _canRetry = false;
-      _fieldErrors.clear();
-      for (final field in _inputs.keys) {
-        final error = _errorFor(field);
-        if (error != null) _fieldErrors[field] = error;
-      }
-    });
-    if (_fieldErrors.isNotEmpty) {
-      _focusFirstError();
+    if ((decision == 'approve' ? _source : _feedback).text.trim().isEmpty) {
+      setState(() => _message = t('required'));
       return;
     }
     setState(() {
       _busy = true;
       _message = null;
-      _canRetry = false;
     });
     try {
       final result = await widget.db.review(_profile!, decision,
@@ -230,62 +166,12 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
       }
       setState(() {
         _profile = result.profile ?? _profile;
-        if (result.code == 409) {
-          _message = t('conflict');
-          _canRetry = true;
-        } else {
-          for (final error in result.fieldErrors.entries) {
-            final field = switch (error.key) {
-              'reviewSource' => 'source',
-              'feedbackToApplicant' => 'feedback',
-              'reviewNote' => 'note',
-              _ => null,
-            };
-            if (field != null) {
-              _fieldErrors[field] = error.value == 'REQUIRED'
-                  ? t(field == 'source' ? 'sourceRequired' : 'feedbackRequired')
-                  : error.value == 'TOO_LONG'
-                      ? t(field == 'source'
-                          ? 'sourceTooLong'
-                          : 'reviewTextTooLong')
-                      : t('invalid');
-            }
-          }
-          if (result.fieldErrors.containsKey('review')) {
-            for (final field in _inputs.keys) {
-              final error = _errorFor(field);
-              if (error != null) _fieldErrors[field] = error;
-            }
-          }
-          if (_fieldErrors.isEmpty ||
-              result.fieldErrors.keys.any((key) => ![
-                    'reviewSource',
-                    'feedbackToApplicant',
-                    'reviewNote',
-                    'review'
-                  ].contains(key))) {
-            _message = t('invalid');
-            _canRetry = false;
-          }
-        }
+        _message = t(result.code == 409 ? 'conflict' : 'invalid');
       });
-      if (result.code == 409) {
-        await _load();
-        if (mounted)
-          setState(() {
-            _message = t('conflict');
-            _canRetry = true;
-          });
-      } else {
-        _focusFirstError();
-      }
+      if (result.code == 409) await _load();
     } catch (_) {
       await _load();
-      if (mounted)
-        setState(() {
-          _message = t('uncertain');
-          _canRetry = true;
-        });
+      if (mounted) setState(() => _message = t('uncertain'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -314,10 +200,9 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
                               const LinearProgressIndicator(),
                             if (_message != null) ...[
                               Text(_message!),
-                              if (_canRetry)
-                                TextButton(
-                                    onPressed: _busy ? null : _load,
-                                    child: Text(t('retry')))
+                              TextButton(
+                                  onPressed: _busy ? null : _load,
+                                  child: Text(t('retry')))
                             ],
                             if (_profile != null) ...[
                               Text(
@@ -326,42 +211,20 @@ class _ReviewDialogState extends State<UnitVerificationReviewDialog> {
                                   details: _profile!.details),
                               const SizedBox(height: 16),
                               Text(t('reviewNotice')),
-                              for (final entry in _inputs.entries)
+                              for (final entry in {
+                                'feedback': _feedback,
+                                'note': _note,
+                                'source': _source
+                              }.entries)
                                 Padding(
-                                    key: _anchors[entry.key],
                                     padding: const EdgeInsets.only(top: 16),
                                     child: TextField(
-                                        key: ValueKey(
-                                            'verification-review-${entry.key}'),
                                         controller: entry.value,
-                                        focusNode: _focus[entry.key],
                                         enabled: !_busy,
                                         minLines: 2,
                                         maxLines: 4,
-                                        onChanged: (_) => setState(() {
-                                              _fieldErrors.remove(entry.key);
-                                              final error =
-                                                  _errorFor(entry.key);
-                                              if (error != null)
-                                                _fieldErrors[entry.key] = error;
-                                            }),
                                         decoration: InputDecoration(
-                                            labelText: t(switch (entry.key) {
-                                              'source' => 'sourceRequiredLabel',
-                                              'feedback' =>
-                                                'feedbackRequiredLabel',
-                                              _ => 'noteOptionalLabel',
-                                            }),
-                                            helperText: entry.key == 'note'
-                                                ? null
-                                                : t(entry.key == 'source'
-                                                    ? 'sourceHelp'
-                                                    : 'feedbackHelp'),
-                                            helperMaxLines: 8,
-                                            errorText: _fieldErrors[entry.key],
-                                            errorMaxLines: 4,
-                                            counterText:
-                                                '${entry.value.text.runes.length}/${entry.key == 'source' ? 2000 : 4000}',
+                                            labelText: t(entry.key),
                                             border:
                                                 const OutlineInputBorder()))),
                               if (_busy) Text(t('saving')),
