@@ -36,7 +36,9 @@ void main() {
         url: 'https://fixture.invalid',
         publishableKey: 'fixture',
         authOptions: const FlutterAuthClientOptions(
-            autoRefreshToken: false, localStorage: EmptyLocalStorage()),
+            autoRefreshToken: false,
+            detectSessionInUri: false,
+            localStorage: EmptyLocalStorage()),
         httpClient: MockClient((request) {
           requests.add(request.url.path);
           if (request.url.path == '/auth/v1/logout') {

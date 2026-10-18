@@ -952,6 +952,7 @@
     "withinDeadline": "Innerhalb der Zahlungsfrist"
   },
   "OccasionSetup": {
+    "createStepByStep": "Schritt für Schritt erstellen",
     "createEvent": "Veranstaltung erstellen",
     "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage."
   }
