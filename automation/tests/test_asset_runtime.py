@@ -1,5 +1,7 @@
 """Canonical Compose/Envoy contraction; requires distribution python3-yaml."""
 import copy
+import re
+import yaml
 import importlib.util
 from pathlib import Path
 import unittest
@@ -33,6 +35,22 @@ class AssetRuntime(unittest.TestCase):
         expected[1]['resources'].pop(0)
         expected[2]['resources'][0]['filter_chains'][0]['filters'][0]['typed_config']['route_config']['virtual_hosts'][0]['routes'].pop(0)
         self.assertEqual(result, expected)
+
+    def test_empty_entrypoint_substitutions_remain_strings_in_envoy_matchers(self):
+        original = {'string_match': {'exact': '${SUPABASE_SECRET_KEY}'},
+                    'legacy': {'exact': '${ANON_KEY}'},
+                    'lua': "local key = '${SUPABASE_SECRET_KEY}'\nreturn key"}
+        values = {'SUPABASE_SECRET_KEY': '', 'ANON_KEY': 'fixture-legacy-key'}
+        substitute = lambda text: re.sub(r'\$\{([A-Z_]+)\}', lambda m: values[m[1]], text)
+        rendered = substitute(module.render_configuration(original).decode())
+        actual = yaml.safe_load(rendered)
+        self.assertEqual(actual['string_match']['exact'], '')
+        self.assertEqual(actual['legacy']['exact'], 'fixture-legacy-key')
+        self.assertEqual(actual['lua'], "local key = ''\nreturn key")
+        # The old serializer drops the quote, producing YAML null and an unset
+        # Envoy StringMatcher oneof after the real entrypoint substitution.
+        old = yaml.safe_load(substitute(yaml.safe_dump(original)))
+        self.assertIsNone(old['string_match']['exact'])
 
     def test_new_upstream_consumer_or_route_blocks_retirement(self):
         inputs = self.fixture()
