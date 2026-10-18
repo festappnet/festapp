@@ -1,9 +1,9 @@
 {
-  "name": "vstupenky.online",
-  "short_name": "vstupenky.online",
-  "description": "Prodej vstupenek a registrace na akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.",
+  "name": "CSA 2024",
+  "short_name": "CSA 2024",
+  "description": "Program Celostátního setkání animátorů 2024.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/csa2024/event",
   "scope": "/",
   "orientation": "portrait-primary",
   "icons": [
