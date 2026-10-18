@@ -35,16 +35,18 @@ def gateway_reads(database_container,runtime_archive,start,run,capture,http,wait
   run(['docker','exec','-i',envoy,'sh','-c','mkdir -p /etc/envoy && cat > "$1"','sh',destination],input=files[source])
  run(['docker','exec','-d',envoy,'sh','-c','exec "$@" > /proc/1/fd/1 2>/proc/1/fd/2','sh','sh','/tmp/recovery-envoy-entrypoint.sh','--concurrency','1'])
  wait(9901,'/ready')
- caddy=start('caddy',{'FESTAPP_SUPABASE_SITE_ADDRESSES':'http://127.0.0.1:8081','FESTAPP_SUPABASE_ADMIN_HOSTNAME':'127.0.0.1','FESTAPP_SUPABASE_ADMIN_BASIC_AUTH':'cmVjb3Zlcnk6Zml4dHVyZS1vbmx5'},prepare=True)
+ # postgres-meta reserves PG_META_PORT+1 (8081) for its admin listener.
+ # Caddy needs a separate test listener in this shared isolated namespace.
+ caddy=start('caddy',{'FESTAPP_SUPABASE_SITE_ADDRESSES':'http://127.0.0.1:18081','FESTAPP_SUPABASE_ADMIN_HOSTNAME':'127.0.0.1','FESTAPP_SUPABASE_ADMIN_BASIC_AUTH':'cmVjb3Zlcnk6Zml4dHVyZS1vbmx5'},prepare=True)
  run(['docker','exec','-i',caddy,'sh','-c','mkdir -p /etc/caddy && cat > /etc/caddy/Caddyfile'],input=files['docker/caddy/Caddyfile'])
  run(['docker','exec','-d',caddy,'sh','-c','exec "$@" > /proc/1/fd/1 2>/proc/1/fd/2','sh','caddy','run','--config','/etc/caddy/Caddyfile','--adapter','caddyfile'])
  # Readiness must not bypass the actual API-key gate on /auth/v1/health.
  wait(2019,'/config/')
  def api(port,path):
   return capture(['docker','exec',database_container,'curl','--fail','--silent','--max-time','5','-H','apikey: '+service,'-H','Authorization: Bearer '+service,'http://127.0.0.1:'+str(port)+path])
- denied=capture(['docker','exec',database_container,'curl','--silent','--max-time','5','-o','/dev/null','-w','%{http_code}','http://127.0.0.1:8081/auth/v1/health'])
+ denied=capture(['docker','exec',database_container,'curl','--silent','--max-time','5','-o','/dev/null','-w','%{http_code}','http://127.0.0.1:18081/auth/v1/health'])
  assert denied==b'401','restored gateway must reject an unauthenticated request'
- for port in [8000,8081]:
+ for port in [8000,18081]:
   assert json.loads(api(port,'/rest/v1/organizations?select=id&id=eq.1'))==[{'id':1}]
   api(port,'/auth/v1/health')
   if not retired_storage:
