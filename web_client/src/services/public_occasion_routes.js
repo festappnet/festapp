@@ -5,7 +5,7 @@ export function isPublicOccasionAppPath(pathname) {
     const segments = path.split('/').filter(Boolean);
     if (segments.length === 0) return false;
     const reservedRoots = new Set([
-        'form', 'order', 'login', 'login-qr', 'admin', 'transfer', 'unit', 'signup',
+        'form', 'order', 'login', 'login-qr', 'admin', 'transfer', 'organizationEdit', 'unit', 'signup',
         'settings', 'install', 'instanceInstall', 'scan', 'check', 'map-editor',
         'resetPassword', 'forgotPassword', 'reset-password', 'forgot-password',
         'google-auth', 'app', 'privacy', 'terms', 'support', 'delete-account',
