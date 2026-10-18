@@ -6,9 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { copyVerifiedAsset } from './lib/verified-copy.js';
+import { remoteR2Transport } from './lib/remote-r2.js';
 
 const { values } = parseArgs({ options: {
-  manifest:{type:'string'}, 'r2-inventory':{type:'string'}, 'r2-config':{type:'string'}, receipts:{type:'string'}, validate:{type:'boolean'},
+  manifest:{type:'string'}, 'r2-inventory':{type:'string'}, 'r2-config':{type:'string'}, 'wrangler-remote':{type:'boolean'}, receipts:{type:'string'}, validate:{type:'boolean'},
 } });
 if (!values.manifest) throw new Error('manifest_required');
 const manifestBytes=await readFile(values.manifest);
@@ -28,25 +29,35 @@ if (values.validate) {
   // too. Branch names grant no authority; source identity and cleanliness do.
   if(git('rev-parse','HEAD')!==git('rev-parse','origin/main')||git('status','--porcelain')) throw new Error('reviewed_clean_canonical_main_required');
   const sourceRevision=git('rev-parse','HEAD');
-  if (!values['r2-config'] || !values.receipts) throw new Error('protected_config_and_receipts_required');
+  if ((!values['r2-config'] && !values['wrangler-remote']) || !values.receipts) throw new Error('protected_transport_and_receipts_required');
+  if (values['r2-config'] && values['wrangler-remote']) throw new Error('one_copy_transport_required');
   if (!values['r2-inventory']) throw new Error('complete_r2_inventory_required');
   const r2Bytes=await readFile(values['r2-inventory']);
   if(createHash('sha256').update(r2Bytes).digest('hex')!==manifest.r2_inventory_sha256)throw new Error('r2_inventory_digest_mismatch');
   const r2Inventory=JSON.parse(r2Bytes);
   if(r2Inventory.version!==1||r2Inventory.read_only!==true)throw new Error('invalid_r2_inventory');
+  let platform, client, GetObjectCommand, HeadObjectCommand, PutObjectCommand;
+  try {
+  if(values['wrangler-remote']) {
+    const {getPlatformProxy}=await import('wrangler');
+    platform=await getPlatformProxy({configPath:path.join(repositoryRoot,'automation/image-migration/wrangler.copy.json'),remoteBindings:true,persist:false,envFiles:[]});
+  } else {
   const configStat=await stat(values['r2-config']);
   if ((configStat.mode & 0o777)!==0o600 || configStat.uid!==process.getuid()) throw new Error('private_config_mode_or_owner');
   const config=JSON.parse(await readFile(values['r2-config'],'utf8'));
   if (config.endpoint!=='https://84b32318ac235bf6738bdf1c8caa0795.r2.cloudflarestorage.com') throw new Error('unexpected_r2_account');
-  const { S3Client, GetObjectCommand, HeadObjectCommand, PutObjectCommand }=await import('@aws-sdk/client-s3');
-  const client=new S3Client({region:'auto',endpoint:config.endpoint,credentials:{accessKeyId:config.accessKeyId,secretAccessKey:config.secretAccessKey},requestChecksumCalculation:'WHEN_REQUIRED'});
+  const sdk=await import('@aws-sdk/client-s3');
+  ({GetObjectCommand,HeadObjectCommand,PutObjectCommand}=sdk);
+  client=new sdk.S3Client({region:'auto',endpoint:config.endpoint,credentials:{accessKeyId:config.accessKeyId,secretAccessKey:config.secretAccessKey},requestChecksumCalculation:'WHEN_REQUIRED'});
+  }
   await mkdir(values.receipts,{mode:0o700,recursive:true});
   const receiptStat=await stat(values.receipts);
   if ((receiptStat.mode & 0o777)!==0o700 || receiptStat.uid!==process.getuid()) throw new Error('private_receipt_directory');
   const missing=error=>error?.$metadata?.httpStatusCode===404;
   const sourceProgram=`import json,sys,os,stat\nfrom pathlib import Path\nassert os.uname().nodename.split('.')[0]=='festapp-supabase-rehearsal-01'\nroot=Path('/opt/festapp-supabase/docker/volumes/storage')\nvalue=json.load(sys.stdin)\np=root/value['path']\nassert not Path(value['path']).is_absolute() and '..' not in Path(value['path']).parts\nassert p.resolve().is_relative_to(root)\nfd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)\nassert stat.S_ISREG(os.fstat(fd).st_mode) and os.fstat(fd).st_size==value['size']\nwith os.fdopen(fd,'rb') as f:\n while True:\n  data=f.read(1048576)\n  if not data:break\n  sys.stdout.buffer.write(data)\n`;
   const quote=value=>"'"+value.replaceAll("'","'\\''")+"'";
-  const destination={
+  const remote=platform?remoteR2Transport(platform.env):null;
+  const destination=remote?.destination ?? {
     async exists(Bucket,Key) { try { await client.send(new HeadObjectCommand({Bucket,Key}));return true; } catch(error) {if(missing(error))return false;throw new Error('destination_head_failed');} },
     async read(Bucket,Key) { try {const object=await client.send(new GetObjectCommand({Bucket,Key}));return {stream:object.Body,contentType:object.ContentType};} catch(error) {if(missing(error))return null;throw new Error('destination_read_failed');} },
     async create(Bucket,Key,Body,options) {
@@ -71,6 +82,11 @@ if (values.validate) {
       async openSource() {
         if(item.sourceKind==='r2') {
           if(!['festapp-images','festapp-images-a','festapp-images-private','festapp-images-a-private'].includes(item.identity.bucket))throw new Error('unexpected_r2_source');
+          if(remote) {
+            const object=await remote.read(item.identity.bucket,item.identity.key);
+            if(!object||object.contentType!==contentType)throw new Error('source_mime_changed');
+            return {stream:object.stream,done:Promise.resolve()};
+          }
           const object=await client.send(new GetObjectCommand({Bucket:item.identity.bucket,Key:item.identity.key}));
           if(object.ContentType!==contentType)throw new Error('source_mime_changed');
           return {stream:object.Body,done:Promise.resolve()};
@@ -99,4 +115,5 @@ if (values.validate) {
     verified++;
   }
   process.stdout.write(JSON.stringify({verifiedStorageCopies:verified,sourceDeletes:0})+'\n');
+  } finally { await platform?.dispose(); client?.destroy(); }
 }

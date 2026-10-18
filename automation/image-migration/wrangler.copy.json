@@ -1,0 +1,11 @@
+{
+  "name": "festapp-image-migration",
+  "account_id": "84b32318ac235bf6738bdf1c8caa0795",
+  "compatibility_date": "2026-10-18",
+  "r2_buckets": [
+    { "binding": "ASSETS_PUBLIC", "bucket_name": "festapp-images", "remote": true },
+    { "binding": "ASSETS_PRIVATE", "bucket_name": "festapp-images-private", "remote": true },
+    { "binding": "SOURCE_A", "bucket_name": "festapp-images-a", "remote": true },
+    { "binding": "SOURCE_A_PRIVATE", "bucket_name": "festapp-images-a-private", "remote": true }
+  ]
+}

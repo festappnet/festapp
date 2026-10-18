@@ -5,6 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'../..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const hasDirectRevoke=(source,name)=>[...source.matchAll(/\bREVOKE\s+ALL\s+ON\s+FUNCTION\s+([^;]+?)\s+FROM\s+/gi)]
+ .some(m=>new RegExp('(?:^|,)\\s*(?:public\\.)?'+name+'\\s*\\(','i').test(m[1]));
 test('forward security migrations agree with canonical SQL',()=>{
  assert.match(execFileSync('python3',['automation/assemble-server-security-migrations.py','--check'],{cwd:root,encoding:'utf8'}),/canonical/);
  assert.match(read('database/functions/inventory/update_spots_assignments.sql'),/REVOKE ALL ON FUNCTION public\.update_spot_assignments\(jsonb\) FROM PUBLIC, anon/);
@@ -35,7 +37,7 @@ test('every definer in the security package declares its path and direct ACL',()
   for(const match of source.matchAll(/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:public\.)?(\w+)\s*\([\s\S]*?\bAS\s+\$[\w]*\$/gi)){
    if(!/SECURITY\s+DEFINER/i.test(match[0]))continue;
    assert.match(match[0],/SET\s+search_path/i,file);
-   assert.match(source,new RegExp('REVOKE[\\s\\S]*?ON FUNCTION (?:public\\.)?'+match[1]+'\\(','i'),file);
+   assert(hasDirectRevoke(source,match[1]),file+': explicit function REVOKE required');
    assert(Object.keys(manifest.entrypoints).some(key=>key.startsWith('public.'+match[1]+'(')),file+' must declare its ACL in the manifest');
   }
  }
@@ -61,7 +63,7 @@ test('new application definer headers require an explicit signature and ACL decl
    assert.equal(declared.source,file);
    assert(manifest.entrypoints[declared.signature],file+': missing role ACL');
    assert.match(m[0],/SET\s+search_path/i,file);
-   assert.match(source,new RegExp('REVOKE[\\s\\S]*?ON FUNCTION (?:public\\.)?'+m[1]+'\\(','i'),file);
+   assert(hasDirectRevoke(source,m[1]),file+': explicit function REVOKE required');
   }
  }
  function walk(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
@@ -71,4 +73,11 @@ test('new application definer headers require an explicit signature and ACL decl
  }}
  walk(path.join(root,'database/functions'));
  assert.throws(()=>validate('CREATE FUNCTION public.undeclared_security_fixture(bigint) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$','new.sql'),/undeclared definer/);
+});
+
+test('direct ACL declarations accept explicit function lists and reject a different statement',()=>{
+ const sql='REVOKE ALL ON FUNCTION public.first(bigint,text),public.second(bigint) FROM PUBLIC,anon;';
+ assert(hasDirectRevoke(sql,'first'));assert(hasDirectRevoke(sql,'second'));
+ assert(!hasDirectRevoke(sql,'third'));
+ assert(!hasDirectRevoke('REVOKE ALL ON TABLE public.first FROM PUBLIC; SELECT public.second(1);','second'));
 });

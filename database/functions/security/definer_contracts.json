@@ -592,6 +592,34 @@
     "f465b899efd535f513f88f537910f797e7e418196ad5e9d4e108ae8d6e297805": {
       "signature": "public.ack_account_deletion_asset(uuid,uuid,text)",
       "source": "database/functions/account_deletion/asset_cleanup.sql"
+    },
+    "2f86cbb76d082a989713f081f746082229317e563f57c1df2d4e4748e7979dff": {
+      "signature": "public.enqueue_unit_verification_request(bigint)",
+      "source": "database/functions/organization_verification/notifications.sql"
+    },
+    "8a473c87a3b10689f734afe828b726255120dadc3f94b99a4308ca86be4eea95": {
+      "signature": "public.get_unit_verification_queue(bigint,text,jsonb,integer)",
+      "source": "database/functions/organization_verification/review_commands.sql"
+    },
+    "4da3dc72bbf51e9170b793ad6e873952901c25836ddec86bc3ed8d9c1907bdda": {
+      "signature": "public.review_unit_verification(bigint,bigint,text,text,text,text)",
+      "source": "database/functions/organization_verification/review_commands.sql"
+    },
+    "bfe3bf6192fecbfea38defabf3ac4262ff159267b5e28a97fa5801c8c102fc1b": {
+      "signature": "public.get_verified_unit_identity_internal(bigint)",
+      "source": "database/functions/organization_verification/public_identity.sql"
+    },
+    "715304d1186e3662cd4f38e916a1ae4de9f64dc3006a71a637bfe7eed40fb110": {
+      "signature": "public.get_unit_legal_profile(bigint)",
+      "source": "database/functions/organization_verification/profile_commands.sql"
+    },
+    "cdba6648ac01d8bee974a68b7fc693ebd1f1fe7768d15465ac4e489e3ef3d57b": {
+      "signature": "public.save_unit_legal_profile(bigint,bigint,jsonb)",
+      "source": "database/functions/organization_verification/profile_commands.sql"
+    },
+    "558fb750392c30f0328ed3b646b1f616cd31b30c737d1a8342742660a07336d0": {
+      "signature": "public.submit_unit_verification(bigint,bigint)",
+      "source": "database/functions/organization_verification/profile_commands.sql"
     }
   }
 }

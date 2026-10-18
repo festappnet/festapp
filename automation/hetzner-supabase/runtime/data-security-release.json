@@ -52,8 +52,8 @@
   ],
   "contracts": {
     "database/functions/security/data_security_contracts.json": "7031ca9bbd0c7a38cd2649f494719dc87337cb872ad0a92e86b73d3c39be20de",
-    "database/functions/security/server_security_acl_manifest.json": "9031f8c40f54d34e531d5b3286b33e55fc35e84770b32dbd3bdb6531e1f84a6c",
-    "database/functions/security/definer_contracts.json": "93054d3a5f7cdc57b7a1e13b8ed47e7e222adb26201bfa3461352e163079727f",
+    "database/functions/security/server_security_acl_manifest.json": "18334ae9c564d9cc11a146b12b65b390c5ae5ab5a491f23911cbf12c91bfbba2",
+    "database/functions/security/definer_contracts.json": "2bb01ea77ca9ab6ca6a4162eb5b1d1e61e0cf85f92314f60283916392eeb0f2f",
     "automation/hetzner-supabase/runtime/audit-data-security-state.sql": "fca19952e97634e0ae271e395bd45e57631c723b999d9ab372262ab3c18f710d",
     "automation/hetzner-supabase/runtime/data-security-preflight.sql": "ea690131ec5aa9999a33badf0386eefef695a5712d4b949bbcb17db149afa115"
   },

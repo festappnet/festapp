@@ -25,7 +25,7 @@ def canonical_source(name):
     marker = '-- Source: database/functions/' + name + '\n'
     original = historical.split(marker, 1)[1].split('\n-- Source:', 1)[0].split('\nUPDATE eshop.spots SET secret_expiration_time=', 1)[0].rstrip()
     pattern = r'CREATE OR REPLACE FUNCTION public\.(\w+)\([^;]*?\bAS\s+(\$\w*\$)[\s\S]*?\2\s*;'
-    applied = {m.group(1): m.group(0).strip() for m in re.finditer(pattern, original + '\n' + followup.read_text() + '\n' + (root / 'supabase/migrations/20261018210000_integration_contract_reconciliation.sql').read_text(), re.I)}
+    applied = {m.group(1): m.group(0).strip() for m in re.finditer(pattern, original + '\n' + followup.read_text() + '\n' + (root / 'supabase/migrations/20261018210000_integration_contract_reconciliation.sql').read_text() + '\n' + (root / 'supabase/migrations/20261019010000_unit_verification_notifications.sql').read_text(), re.I)}
     for match in re.finditer(pattern, source, re.I):
         if applied.get(match.group(1)) != match.group(0).strip():
             raise SystemExit('Missing forward migration for ' + match.group(1))

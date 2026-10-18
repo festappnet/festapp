@@ -135,6 +135,41 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.enqueue_unit_verification_request(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_unit_verification_queue(bigint,text,jsonb,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.review_unit_verification(bigint,bigint,text,text,text,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_verified_unit_identity_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_unit_legal_profile(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_unit_legal_profile(bigint,bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.submit_unit_verification(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -152,7 +187,11 @@
     "database/functions/security/public_map_projection.sql",
     "database/functions/users/create_user_from_registration.sql",
     "database/functions/users/create_user_in_organization_with_data_ws.sql",
-    "database/functions/account_deletion/asset_cleanup.sql"
+    "database/functions/account_deletion/asset_cleanup.sql",
+    "database/functions/organization_verification/notifications.sql",
+    "database/functions/organization_verification/review_commands.sql",
+    "database/functions/organization_verification/public_identity.sql",
+    "database/functions/organization_verification/profile_commands.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",
