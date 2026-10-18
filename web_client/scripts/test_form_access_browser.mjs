@@ -29,7 +29,7 @@ try {
     server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, strictPort: true },
         plugins: [{ name: 'form-access-fixture', configureServer(server) {
             server.middlewares.use(async (req, res, next) => {
-                if (req.url.startsWith('/form/account-access')) {
+                if (req.url.startsWith('/form/account-access') || req.url === '/' || req.url.startsWith('/?')) {
                     res.setHeader('Content-Type', 'text/html'); res.end(shell); return;
                 }
                 if (/^\/assets\/translations\/(cs|en)\.json$/.test(req.url)) {
@@ -57,6 +57,7 @@ try {
                     is_open: !scenario.endsWith('closed'), header: '<p>Registration details</p>',
                     fields: [{ id: 1, type: 'email', title: 'E-mail', is_required: true }],
                 } };
+                else if (name === 'get_available_occasions') data = [];
                 else if (name === 'google-auth-start') data = args.operation === 'capability'
                     ? { enabled: true } : { attempt: 'fixture-attempt', url: `http://${req.headers.host}/functions/v1/google-auth-start?bootstrap=fixture` };
                 else throw new Error(`Unexpected fixture request: ${name}`);
@@ -70,7 +71,7 @@ try {
         await browser('open', `${origin}/form/account-access?scenario=${scenario}`);
         assert.equal((await browser('session', 'info')).runtime.pageCount, 1, 'isolated local Chromium required');
         await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
-        await browser('wait', '--fn', visible('#universal-header'));
+        await browser('wait', '--fn', `!(${visible('#universal-header')})`);
         await browser('wait', '--fn', visible('#form-page-container'));
         assert.equal((await browser('get', 'count', '#universal-header')).count, 1);
         const editor = scenario.startsWith('editor') || scenario.startsWith('unit-editor');
@@ -81,19 +82,21 @@ try {
             await browser('click', '.fab-edit');
             await browser('wait', '--fn', 'window.__adminDestination === "/fixture-event/reservations"');
         } else {
-            await browser('wait', '.btn-sign-in');
             assert.equal((await browser('get', 'count', '.fab-edit')).count, 0, 'visitors must not receive editor controls');
         }
-        if (scenario === 'guest-open') {
-            await browser('set', 'viewport', '390', '844');
-            await browser('click', '.btn-sign-in');
-            await browser('wait', '--fn', visible('#google-start'));
-            await browser('click', '#google-start');
-            await browser('wait', '[data-provider-boundary]');
-            await browser('wait', '--fn', 'JSON.parse(sessionStorage.getItem("festapp-google-attempt-v1")).returnPath === "/form/account-access"');
-        }
-        console.log(`PASS: ${scenario} - visible account/form controls and permitted navigation`);
+        if (scenario === 'guest-open') await browser('set', 'viewport', '390', '844');
+        console.log(`PASS: ${scenario} - visible form, hidden site header and permitted editor access`);
     }
+    // Account login belongs to the catalogue; public forms stay unbranded.
+    await browser('open', `${origin}/?scenario=guest-login`);
+    await browser('wait', '--fn', '!document.getElementById("web-client-startup")');
+    await browser('wait', '--fn', visible('#universal-header'));
+    await browser('click', '.btn-sign-in');
+    await browser('wait', '--fn', visible('#google-start'));
+    await browser('click', '#google-start');
+    await browser('wait', '[data-provider-boundary]');
+    await browser('wait', '--fn', 'JSON.parse(sessionStorage.getItem("festapp-google-attempt-v1")).returnPath === "/"');
+    console.log('PASS: catalogue login - visible Google action and provider handoff');
 } catch (error) {
     console.error('Browser errors:', await browser('errors').catch(() => null));
     console.error('Browser snapshot:', await browser('snapshot', '-i').catch(() => null));

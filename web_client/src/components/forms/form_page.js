@@ -247,8 +247,10 @@ export class FormPage extends Component {
         const app = document.getElementById('app');
         if (!header || !app) return;
         header.classList.remove('header-hidden');
-        // The catalogue stays hidden for every form view, including entry.
-        this.pageHost.before(header);
+        // Ordinary forms own their branding. Account navigation is shown only
+        // on the catalogue and the order overview.
+        if (enabled) this.pageHost.before(header);
+        else app.prepend(header);
     }
 
     async attachOverview() {

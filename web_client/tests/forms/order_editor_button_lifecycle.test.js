@@ -7,7 +7,7 @@ register('../css_loader.mjs', import.meta.url);
 
 for (const role of ['occasion editor', 'unit editor', 'visitor']) {
  for (const closed of [false, true]) {
-  test(`${role} (${closed ? "closed" : "open"}): account header and editor access remain visible`, async (t) => {
+  test(`${role} (${closed ? "closed" : "open"}): form hides the site header and preserves editor access`, async (t) => {
     const dom = new JSDOM('<div id="app" style="display:none"><div id="universal-header" class="header-hidden">Account</div></div><div id="form-page-container"></div>', {
       url: 'https://example.test/form/test',
     });
@@ -51,7 +51,7 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
     });
     await page.init('test');
     const header = document.getElementById('universal-header');
-    assert.equal(header.parentElement, document.body, 'account controls must be outside the hidden catalogue');
+    assert.equal(header.parentElement, document.getElementById('app'), 'public forms must keep site branding inside the hidden catalogue');
     assert.equal(header.classList.contains('header-hidden'), false);
     const editor = role !== 'visitor';
     assert.equal(!!document.querySelector('.fab-edit'), editor);
