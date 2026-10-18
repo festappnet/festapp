@@ -2,6 +2,23 @@ name: Provision encrypted local release input
 on:
   workflow_dispatch:
     inputs:
+      tenant_id:
+        description: Authorized production tenant
+        required: true
+        default: festapptickets
+        type: choice
+        options:
+          - absolventskyvelehrad
+          - aksmcz
+          - cavfotofest
+          - csmostrava2026
+          - doobiscup
+          - farnostopava
+          - festapp
+          - festapptickets
+          - festivalslunovrat
+          - hvezdamorska
+          - jubileum2025
       recipient_public_key_base64:
         description: Base64 RSA public key of the release workstation
         required: true
@@ -17,14 +34,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Seal the existing vstupenky.online input
+      - name: Select the existing tenant input
+        id: target
         env:
-          RELEASE_MANIFEST: ${{ secrets.FESTAPP_RELEASE_MANIFEST_FESTAPPTICKETS }}
+          TENANT_ID: ${{ inputs.tenant_id }}
+        run: node -e 'console.log("secret_name=FESTAPP_RELEASE_MANIFEST_" + process.env.TENANT_ID.toUpperCase())' >> "$GITHUB_OUTPUT"
+      - name: Seal the existing tenant input
+        env:
+          RELEASE_TENANT_ID: ${{ inputs.tenant_id }}
+          RELEASE_MANIFEST: ${{ secrets[steps.target.outputs.secret_name] }}
           RECIPIENT_PUBLIC_KEY_BASE64: ${{ inputs.recipient_public_key_base64 }}
         run: node automation/release/seal_local_release_manifest.mjs "$RUNNER_TEMP/sealed-release-input.json"
       - uses: actions/upload-artifact@v4
         with:
-          name: festapptickets-local-release-input
+          name: ${{ inputs.tenant_id }}-local-release-input
           path: ${{ runner.temp }}/sealed-release-input.json
           retention-days: 1
           if-no-files-found: error

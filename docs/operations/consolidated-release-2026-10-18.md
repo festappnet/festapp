@@ -3,8 +3,17 @@
 Selected deployment: `festapptickets`, `prod/festapptickets`,
 `https://vstupenky.online`, canonical organization 3. The user authorized deployment
 of the combined PR work on October 18 and selected this tenant explicitly.
-Other tenants, mobile/store releases, BankSync deployment and activation of the
-new payment-reference registry are outside this rollout.
+The write-boundary contract is global across all organizations, including
+occasions without sync readers. There is no tenant activation table or exception.
+The original selected web is vstupenky.online. The user's subsequent global
+cutover instruction expands the necessary web-client rollout to the eleven active
+production branches listed below, all at one common version. Mobile store
+publication and payment-reference registry activation remain separate steps.
+
+Web branches in scope: prod/absolventskyvelehrad, prod/aksmcz,
+prod/cavfotofest, prod/csmostrava2026, prod/doobiscup, prod/farnostopava,
+prod/festapp, prod/festapptickets, prod/festivalslunovrat, prod/hvezdamorska,
+prod/jubileum2025. Retired production branches are excluded.
 
 ## Integrated source
 
@@ -62,17 +71,18 @@ was created.
 
 ## Publication and production gates
 
-GitHub main protection requires one approving review. The consolidated PR must
-receive that review before merge; admin bypass is not used. After merge, use its
+GitHub main protection requires one approving review. The author cannot approve
+his own PR; the user explicitly authorized administrative merge for this release.
+Protection settings remain unchanged. After merge, use its
 exact main SHA for the canonical tenant overlay and mandatory main-owned drift
 check, then build locally and deploy via `automation/deploy_direct.sh`.
 CSP remains Report-Only; enforcing CSP requires its separate compatibility matrix.
 
 The live activation identifies `festapptickets`, generation 1, canonical backend,
-and the selected production config identifies organization 3. The persisted SSH
-profile instead asserts `festapp`/organization 1. Host identity matches, but the
-profile must be provisioned for the selected scope before production SQL access;
-no backend query or migration was performed after detecting the tenant mismatch.
+and the selected production config identifies organization 3. The persisted SSH profile was reprovisioned to the selected festapptickets/
+organization 3 assertions without changing transport credentials. Protected
+read-only checks verified the expected host and database and organization 3.
+No production migration has been applied yet.
 
 The data-security read-ACL phase additionally requires concrete supported-client
 compatibility evidence, as specified by its guarded driver. Local tests do not
@@ -83,5 +93,28 @@ operations; the payment migration stays dormant.
 The release also needs the existing protected `FESTAPP_RELEASE_MANIFEST` on the
 release workstation. It may be transferred using the existing encrypted
 `local-release-input.yml` workflow; it must not be fabricated. That provisioning
-workflow does not build or deploy production. Only the selected tenant may be
-prepared or deployed.
+workflow does not build or deploy production. Provisioning binds each encrypted manifest to its explicitly selected tenant.
+The local-only build/deploy requirement applies to every branch in scope.
+
+## Global write-boundary correction
+
+The rejected tenant-specific compatibility experiment was removed before commit
+or production execution. All organizations use the existing domain commands;
+read projection capability does not select a second write implementation.
+The new global ACL phase also revokes historical column privileges, which survive
+ordinary table REVOKE, and drops the obsolete Slunovrat direct-write policies.
+The runtime audit detects column-grant or tenant-policy reintroduction. An upgrade
+regression injects old grants, applies the canonical phase and verifies their
+removal while authenticated scoped readers remain available. The dormant payment
+replacement's internal function now explicitly revokes inherited service-role
+EXECUTE to match its existing internal-only contract.
+
+Follow-up verification: all 219 SQL files, the complete client runner, 359 Deno
+tests and automation checks passed in `/tmp/festapp-global-boundaries-full.log`.
+The initially missing concurrency template was recreated on the verified owned
+local server; the web batch then passed all 419 enabled tests in
+`/tmp/festapp-global-boundaries-web.log`. Changed provisioning passed the
+subsequent complete automation batch in
+`/tmp/festapp-global-boundaries-automation.log`. Final boundary catalog/upgrade
+and SQL tests passed in `/tmp/festapp-global-boundaries-catalog.log` and
+`/tmp/festapp-global-boundaries-sql.log`. Manifest generation is reproducible.

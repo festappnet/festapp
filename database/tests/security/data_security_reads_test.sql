@@ -70,6 +70,9 @@ BEGIN
  END LOOP;
  FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
  IF has_any_column_privilege(r,'public.email_templates','SELECT') THEN RAISE EXCEPTION 'template column access'; END IF;
+ FOREACH t IN ARRAY ARRAY['news','user_news','user_groups','user_group_info'] LOOP
+ IF has_any_column_privilege(r,'public.'||t,'INSERT,UPDATE') THEN RAISE EXCEPTION 'column write bypass: % %',r,t; END IF;
+ END LOOP;
  END LOOP;
 END $$;
 

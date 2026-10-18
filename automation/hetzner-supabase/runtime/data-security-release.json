@@ -31,13 +31,13 @@
     },
     {
       "file": "supabase/migrations/20261018102000_data_security_reads.sql",
-      "sha256": "dea0410f52a0177f8b69713998cd8de04e05155e858263bc34ffc3631d99b911",
+      "sha256": "b4e8a4ce5aa623294b609e6fd57949fc0619e72b0eb0f0da93a03a25af1891d1",
       "sources": [
         "database/functions/security/data_security_reads.sql"
       ],
       "database_user": "postgres",
       "driver": "automation/hetzner-supabase/runtime/apply-data-security-reads.sql",
-      "driver_sha256": "92d3e993ebcccfc6dbbca74beaf1e5bff3d8330be7515f58df222a6b647d8dfa"
+      "driver_sha256": "039a246a2cf1be14bee3ea61b8ffdf1b63b7d568bde3675bf7d91fdd3388cf16"
     },
     {
       "file": "supabase/migrations/20261018103000_data_security_defaults.sql",
@@ -54,7 +54,7 @@
     "database/functions/security/data_security_contracts.json": "7031ca9bbd0c7a38cd2649f494719dc87337cb872ad0a92e86b73d3c39be20de",
     "database/functions/security/server_security_acl_manifest.json": "b64201bf25042721c7615d17144e581f823abb1d90e5ab2bb4e50510016b01b8",
     "database/functions/security/definer_contracts.json": "b587484e8fadf8c87a323f07a6016e13ea083fb56c332a5fb39086deda13ad9e",
-    "automation/hetzner-supabase/runtime/audit-data-security-state.sql": "e2aab8bf114419ae97d3b89521fb3a4e4398ca6a40e20450f77049ec715fa413",
+    "automation/hetzner-supabase/runtime/audit-data-security-state.sql": "fca19952e97634e0ae271e395bd45e57631c723b999d9ab372262ab3c18f710d",
     "automation/hetzner-supabase/runtime/data-security-preflight.sql": "e2850da5bf5a2b08c67663bf3cca0963c253a5808fd4228ec5829061d602d3c4"
   },
   "client_sources": {

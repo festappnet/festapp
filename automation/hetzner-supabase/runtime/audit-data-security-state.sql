@@ -1,6 +1,6 @@
 -- Read-only companion to audit-security-state.sql; run both after these phases.
 DO $$
-DECLARE p record; r text; bad boolean;
+DECLARE p record; r text; t text; bad boolean;
 BEGIN
  IF EXISTS(SELECT 1 FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname IN
  ('set_user_password','create_user','create_user_with_data','create_user_in_organization_with_data')) THEN
@@ -13,9 +13,21 @@ BEGIN
  IF has_table_privilege(r,'public.email_templates','SELECT') OR has_table_privilege(r,'public.user_news','INSERT,UPDATE,DELETE')
  OR has_table_privilege(r,'public.user_groups','INSERT,UPDATE,DELETE') OR has_table_privilege(r,'public.user_group_info','INSERT,UPDATE,DELETE')
  OR has_table_privilege(r,'public.news','INSERT,UPDATE,DELETE') THEN RAISE EXCEPTION 'data-security table grant drift: %',r; END IF;
+   FOREACH t IN ARRAY ARRAY['news','user_news','user_groups','user_group_info'] LOOP
+     IF has_any_column_privilege(r,'public.'||t,'INSERT,UPDATE') THEN
+       RAISE EXCEPTION 'data-security column write grant drift: % %',r,t;
+     END IF;
+   END LOOP;
+   IF has_any_column_privilege(r,'public.email_templates','SELECT') THEN
+     RAISE EXCEPTION 'data-security template column grant drift: %',r;
+   END IF;
  END LOOP;
  IF has_table_privilege('anon','public.occasions','SELECT') OR has_table_privilege('anon','public.user_news','SELECT') THEN
  RAISE EXCEPTION 'anonymous private table grant drift'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_policies WHERE schemaname='public'
+ AND policyname IN ('slunovrat_news_insert_scope','slunovrat_news_delete_scope',
+ 'slunovrat_news_marker_insert','slunovrat_news_marker_update','slunovrat_news_marker_delete')) THEN
+ RAISE EXCEPTION 'retired tenant write policy drift'; END IF;
  IF EXISTS(SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename IN ('user_group_info','user_groups','user_news','occasions','places','email_templates')
  AND cmd IN ('SELECT','ALL') AND permissive='PERMISSIVE' AND qual='true' AND roles && ARRAY['public','anon','authenticated']::name[]) THEN
  RAISE EXCEPTION 'permissive read policy drift'; END IF;

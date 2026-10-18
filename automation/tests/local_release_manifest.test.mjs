@@ -31,3 +31,12 @@ test('CLI failures do not expose private input in logs', () => {
   assert.ok(!`${result.stdout}${result.stderr}`.includes('existing-private-fixture'));
   assert.equal(result.stderr.trim(), 'Existing release input could not be sealed.');
 });
+
+test('explicit tenant selection binds the sealed envelope to the requested manifest', () => {
+  for (const tenant of ['festapp', 'festivalslunovrat', 'hvezdamorska']) {
+    const selected = JSON.stringify({ backend: { activation: { tenantId: tenant } } });
+    assert.equal(sealReleaseManifest(selected, publicPem, tenant).tenantId, tenant);
+    assert.throws(() => sealReleaseManifest(source, publicPem, tenant));
+  }
+  assert.throws(() => sealReleaseManifest(source, publicPem, '../festapptickets'));
+});

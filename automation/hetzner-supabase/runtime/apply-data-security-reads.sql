@@ -59,6 +59,13 @@ CREATE POLICY data_security_own_news_read ON public.user_news FOR SELECT TO auth
    WHERE ou.occasion=user_news.occasion AND ou."user"=auth.uid()));
 REVOKE ALL ON public.user_news FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.user_news TO authenticated;
+-- Retire the former tenant-specific direct-write policies. Domain commands
+-- authorize the object scope for every organization.
+DROP POLICY IF EXISTS slunovrat_news_insert_scope ON public.news;
+DROP POLICY IF EXISTS slunovrat_news_delete_scope ON public.news;
+DROP POLICY IF EXISTS slunovrat_news_marker_insert ON public.user_news;
+DROP POLICY IF EXISTS slunovrat_news_marker_update ON public.user_news;
+DROP POLICY IF EXISTS slunovrat_news_marker_delete ON public.user_news;
 -- News DML must not bypass command receipts/revisions on non-sync occasions.
 REVOKE INSERT,UPDATE,DELETE ON public.news FROM PUBLIC,anon,authenticated;
 
@@ -94,7 +101,31 @@ DROP POLICY IF EXISTS data_security_news_context_read ON public.news;
 CREATE POLICY data_security_news_context_read ON public.news AS RESTRICTIVE FOR SELECT TO public
  USING(public.can_read_news_data_security_v1(occasion));
 
+-- Table-level REVOKE leaves historical column grants intact. Close the same
+-- boundary at both levels, independently of tenant and sync read capability.
+DO $$
+DECLARE boundary record; columns text; privilege text;
+BEGIN
+ FOR boundary IN SELECT * FROM (VALUES
+   ('user_group_info', ARRAY['SELECT','INSERT','UPDATE','REFERENCES'], 'PUBLIC,anon,authenticated'),
+   ('user_groups', ARRAY['SELECT','INSERT','UPDATE','REFERENCES'], 'PUBLIC,anon,authenticated'),
+   ('user_news', ARRAY['SELECT','INSERT','UPDATE','REFERENCES'], 'PUBLIC,anon,authenticated'),
+   ('news', ARRAY['INSERT','UPDATE'], 'PUBLIC,anon,authenticated'),
+   ('occasions', ARRAY['SELECT'], 'PUBLIC,anon'),
+   ('email_templates', ARRAY['SELECT'], 'PUBLIC,anon,authenticated')
+ ) AS boundaries(table_name, privileges, roles)
+ LOOP
+   SELECT string_agg(format('%I',attname),',' ORDER BY attnum) INTO columns
+   FROM pg_attribute WHERE attrelid=format('public.%I',boundary.table_name)::regclass
+     AND attnum>0 AND NOT attisdropped;
+   FOREACH privilege IN ARRAY boundary.privileges LOOP
+     EXECUTE format('REVOKE %s (%s) ON TABLE public.%I FROM %s',
+       privilege,columns,boundary.table_name,boundary.roles);
+   END LOOP;
+ END LOOP;
+END $$;
+
 INSERT INTO supabase_migrations.schema_migrations(version,name,statements)
- VALUES('20261018102000','data_security_reads',ARRAY['-- sha256:dea0410f52a0177f8b69713998cd8de04e05155e858263bc34ffc3631d99b911']);
+ VALUES('20261018102000','data_security_reads',ARRAY['-- sha256:b4e8a4ce5aa623294b609e6fd57949fc0619e72b0eb0f0da93a03a25af1891d1']);
 NOTIFY pgrst,'reload schema';
 COMMIT;
