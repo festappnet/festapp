@@ -544,3 +544,85 @@ The exact disposition passed three actual isolated PG17 transaction cases with
 the real canonical sync owner: success/replay denial, changed-field rollback,
 and sync-failure rollback. Three preparation/history cases and the complete
 normal automation lane also passed. No production cleanup was executed by tests.
+
+
+## Final production state after PR #493
+
+The local Storage migration is deployed, including its destructive retirement.
+The complete plan remains open only for the two source-bucket permission gate
+and the explicitly measured 4 GB capacity decision below. Earlier sections are
+historical evidence, not the current deployment status.
+
+Canonical main `d26abdbf62233d0ab350376fd55162861003cce9` contains runtime
+source `8c1d596d87099548939d99ae7da120797c538d08`. All four required CI checks
+passed before merge. Final gateway activation took **1.09s**. Counting the earlier
+Edge activation and both rolled-back operator attempts conservatively totals
+**74.44s**, within the approved 120s budget; this is an accounting envelope, not
+a claim that login was unavailable throughout. Studio/Auth/DB kept their IDs.
+The original email pause was restored and both unknown historical outcomes were
+not replayed.
+
+Storage and imgproxy containers are removed, normal Compose lists 11 services,
+and the verified 1,743-file source volume is deleted. Migration `20261019020000`
+fences retired Storage access and enables canonical cleanup. The final attempt
+followed a real pinned-Envoy isolation check with empty optional keys: the YAML
+serializer now preserves placeholder quotes, avoiding invalid null matchers.
+Two gateway attempts rolled back; an additional missing-proof-input preflight
+failed before any runtime change. Their receipts/logs remain protected.
+
+The canonical Worker retains the public/private pair and separate AKH contract.
+Three fresh AKH public samples match their prior lengths and SHA256 after
+retirement. A separate zero-binding terminal Worker rejects old API Storage paths with 410
+before CDN cache reads; it does not change the shared image Worker. The empty
+`festapp-images-temp` bucket is deleted after deployed-consumer and reader-scope
+checks. The five target buckets remain; `festapp-images-a` (664 verified copied
+objects) and empty `festapp-images-a-private` remain pending contraction of the
+old four-bucket backup reader. Account/user API-token administration returns 403.
+Available protected credentials did not provide that authority; neither source
+bucket nor its grants were falsely declared retired.
+
+The five explicitly approved pre-existing missing links were removed from four
+fields with three canonical sync commits. No original 50-row cleanup repeated.
+The broad current-field scan after cleanup found zero owned Storage references,
+including HTML/CSS, encoded URLs, arrays/nested JSON and active queued messages.
+Immutable replay/audit data and delivered messages retain their historical URLs.
+Existing latest sync components for all 11 existing scopes match; no additional
+tenant rollout was enabled.
+
+Actual fresh backup `20261018T180252Z` has exactly four encrypted v2 artifacts
+and no Storage archive. Independent original-key acquisition and complete
+network-none recovery at `faec9fb73948adf48e365695efdd00707c6d28dc` passed:
+2,817 objects / 1,642,200,830 bytes, all hashes, 5,226 current R2 references,
+zero missing/mismatched references and all 264 private custody objects retained.
+Actual Auth/REST, Studio/Meta bursts, Envoy/Caddy and backed-up Edge reads passed
+without external integrations, production credentials, host mounts or ports.
+Recovery task data, keys and containers were removed.
+
+Backup took 28m31s. Download has a recorded lower-bound interval 250.65s, not a
+measured complete subprocess duration. Private transfer through final recovery
+end took 97.29s; the full application runner took 58.09s. The recorded acquisition
+directory birth through successful restore spans 14m42.16s including operator
+waiting and a pre-existing VM/image cache. No cold-start end-to-end incident RTO
+is established. Separate actual PITR paused at 18:05:59.633574Z for 18:06 UTC
+and passed catalog/REST reads in 57.96s; the frozen selected repository acquired
+in 401.24s covered that target within the 15-minute objective at acquisition.
+This is not an atomic DB/file snapshot. Twice-daily file backups, 18-hour stale
+alert and existing WAL/retention owners are installed.
+
+Independent recovery kit v4 preserves the original key/reader, includes corrected
+canonical tools and both actual restore receipts, and passed offline decryption.
+Its SHA256 is `863afd65a81d59defd82901eed176ff2ba68c37cbfd2459485db15f0776ba374`.
+Writing its iCloud directory does not prove remote sync acknowledgement.
+Jubilee package/style delivery also passes native Dart HTTP user agents with
+matching hashes; physical-device cold-offline behavior was not tested and the
+previously recorded missing-sprite/style-network limitations remain.
+
+The server remains 4GB with continuously available Studio. The conservative
+capacity screen is 735.8MiB short before safety margin. Isolated lower-admin
+candidates passed read bursts and forced-OOM/manual recovery, but leave 223.8MiB
+deficit and only 5.3MiB observed Meta headroom; they were not silently deployed.
+The exact remaining global Edge admission/backup envelope and representative
+Studio editing decision is recorded in
+[capacity evidence](storage-r2-capacity-followup-20261018.json). Existing delivered
+alert/recovery evidence remains valid; no synthetic customer email was sent.
+The adjacent JSON binds sanitized current state to the protected proof digests.

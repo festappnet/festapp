@@ -9,12 +9,15 @@ canonical imported keys. AKH retains its separate bucket/Auth/DB contract.
 `festapp-public` sync/maps and encrypted backups remain independent.
 
 Production copy, current-reference rewrite, Worker and scoped Edge adapters
-are deployed. Cleanup remains fenced until the actual new-format independent
-recovery passes. Storage services, original volumes and three source buckets
-are not yet retired. Follow the authoritative
+are deployed. Actual independent v2 backup and full isolated recovery passed.
+Local Storage/imgproxy containers, routes and source volume are retired and
+canonical cleanup is active. Old API Storage URLs return 410 before CDN cache.
+The empty temp bucket is deleted. Source a/a-private buckets remain only behind
+the unresolved API-token permission-contraction gate (HTTP403); the measured
+4GB budget also retains an explicit capacity decision. Follow the authoritative
 [plan](../../plans/storage-r2-retirement-plan-2026-10-18.md) and
 [execution receipt](../security-remediation-20261016/storage-r2-retirement-execution-20261018.md)
-for current gates, rather than treating source publication as live retirement.
+for actual proof and remaining gates.
 
 ## Historical 2026-08-27 consolidation boundary
 

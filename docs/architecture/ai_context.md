@@ -34,7 +34,9 @@ Festapp files and fonts use the shared image Worker and one public/private R2
 bucket pair. Existing `a` URLs translate at that boundary; AKH retains its own
 bucket and Auth/DB. Never introduce a new Supabase Storage producer or legacy
 URL fallback. The 2026-10-18 production reference rewrite and scoped adapters are
-active; source retirement still requires independent new-format recovery proof.
+active. Independent v2 recovery passed and local Storage/imgproxy and its
+source volume are retired. Source a/a-private bucket deletion remains gated by
+API-token permission contraction; the 4GB capacity decision remains explicit.
 See `docs/operations/supabase-self-hosted/storage-authority.md` and its linked
 execution receipt for the current deployment boundary.
 
