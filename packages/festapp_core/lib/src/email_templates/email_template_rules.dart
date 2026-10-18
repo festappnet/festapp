@@ -59,7 +59,14 @@ abstract final class EmailTemplateRules {
       code: code,
       kind: kind,
       order: order,
-      repeatable: kind == EmailValueKind.text || kind == EmailValueKind.url,
+      // Whole content sections appear once. Links/buttons and inline content
+      // may deliberately appear in several places, regardless of their kind.
+      repeatable: !const {
+        'fullOrder',
+        'paymentDetails',
+        'balanceReasoning',
+        'changeOverview',
+      }.contains(code),
     );
   }
 
@@ -205,14 +212,14 @@ abstract final class EmailTemplateRules {
         .toList();
     final positions = {for (var i = 0; i < result.length; i++) result[i]: i};
     result.sort((a, b) {
-      final relevance = score(a).compareTo(score(b));
-      if (relevance != 0) return relevance;
       int used(T v) =>
           !definition(v).repeatable && (usage[definition(v).code] ?? 0) > 0
           ? 1
           : 0;
       final group = used(a).compareTo(used(b));
       if (group != 0) return group;
+      final relevance = score(a).compareTo(score(b));
+      if (relevance != 0) return relevance;
       final order = definition(a).order.compareTo(definition(b).order);
       return order != 0 ? order : positions[a]!.compareTo(positions[b]!);
     });

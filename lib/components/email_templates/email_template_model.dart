@@ -1,5 +1,4 @@
 import 'package:festapp_core/email_templates.dart';
-import 'package:fstapp/components/forms/order_overview_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -210,12 +209,13 @@ class EmailTemplateModel {
   static List<EmailTemplateSub> get orderOverviewSubs => [
         EmailTemplateSub(
             code: 'order_overview_url',
-            description: OrderOverviewStrings.text('title'),
+            description: EmailTemplatesStrings.subOrderOverviewUrlDescription,
             defaultValue:
                 'https://example.invalid/order?order_id=1&token=preview'),
         EmailTemplateSub(
             code: 'order_overview_button',
-            description: OrderOverviewStrings.text('title'),
+            description:
+                EmailTemplatesStrings.subOrderOverviewButtonDescription,
             defaultValue: ''),
       ];
 

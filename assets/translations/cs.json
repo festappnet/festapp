@@ -976,33 +976,35 @@
       "offerUrl": "Osobní odkaz na nabídku",
       "offerButton": "Tlačítko pro otevření nabídky (HTML)",
       "orderOverviewUrl": "Přehled objednávky - odkaz",
-      "orderOverviewButton": "Přehled objednávky - tlačítko"
+      "orderOverviewButton": "Přehled objednávky - tlačítko",
+      "orderOverviewUrlDescription": "Osobní odkaz na aktuální stav objednávky, platby a historii změn.",
+      "orderOverviewButtonDescription": "Tlačítko „Zobrazit aktuální stav objednávky“. Pokud chybí, doplní se při odeslání automaticky."
     },
     "usage": {
       "resetPassword_title": "Obnovení hesla",
-      "resetPassword_description": "Tato šablona se používá k zasílání pokynů pro obnovení hesla.",
+      "resetPassword_description": "Uživatel ji dostane, když požádá o obnovení hesla. Obsahuje odkaz pro nastavení nového hesla.",
       "signInCode_title": "Přihlašovací kód",
-      "signInCode_description": "Tato šablona se používá k zasílání přihlašovacích kódů.",
+      "signInCode_description": "Uživatel ji dostane při registraci nebo po vyžádání přihlašovacího kódu. Obsahuje kód pro přihlášení.",
       "appLinks_title": "Odkazy na aplikace",
-      "appLinks_description": "Tato šablona se používá k zasílání odkazů na aplikace účastníkům.",
+      "appLinks_description": "Účastník ji dostane, když mu správce ze seznamu účastníků odešle odkazy na aplikaci.",
       "accountDeletionConfirm_title": "Smazání účtu – potvrzení",
-      "accountDeletionConfirm_description": "Odešle bezpečný odkaz pro kontrolu a potvrzení žádosti o smazání účtu.",
+      "accountDeletionConfirm_description": "Uživatel ji dostane po žádosti o smazání účtu. Smazání musí ještě potvrdit odkazem v tomto e-mailu.",
       "accountDeletionComplete_title": "Smazání účtu – dokončeno",
-      "accountDeletionComplete_description": "Potvrzuje, že smazání účtu bylo dokončeno.",
+      "accountDeletionComplete_description": "Uživatel ji dostane po dokončení smazání účtu.",
       "ticketOrderConfirmation_title": "Objednávka přijata",
-      "ticketOrderConfirmation_description": "Tato šablona slouží k potvrzení objednávek vstupenek/přihlášek.",
+      "ticketOrderConfirmation_description": "Zákazník ji dostane po přijetí nové objednávky. Potvrzuje vytvoření objednávky, i když ještě není zaplacená.",
       "ticketOrderUpdate_title": "Změna objednávky",
-      "ticketOrderUpdate_description": "Tato šablona se používá k zaslání aktualizovaného stavu objednávky zákazníkovi, například po změně produktů. V případě potřeby obsahuje aktuální zůstatek a platební pokyny.",
+      "ticketOrderUpdate_description": "Zákazník ji dostane, když mu správce po úpravě objednávky odešle její aktualizaci. Ukazuje změny a aktuální stav platby.",
       "ticketOrderPaymentDone_title": "Objednávka zaplacena",
-      "ticketOrderPaymentDone_description": "Tato šablona slouží k potvrzení úspěšných plateb za objednávky vstupenek/přihlášek.",
+      "ticketOrderPaymentDone_description": "Zákazník ji dostane po potvrzení přijaté zálohy nebo doplatku zálohové objednávky. Vstupenky se odesílají samostatně.",
       "ticketOrderPaymentReminder_title": "Připomenutí platby objednávky",
-      "ticketOrderPaymentReminder_description": "Tato šablona slouží k připomenutí neuhrazených objednávek vstupenek/přihlášek.",
+      "ticketOrderPaymentReminder_description": "Zákazník ji dostane před splatností neuhrazené částky, pokud jsou zapnuté upomínky. Čas odeslání určuje nastavení formuláře nebo akce.",
       "ticketOrderStorno_title": "Zrušení objednávky",
-      "ticketOrderStorno_description": "Tato šablona slouží k informování o stornu objednávek vstupenek/přihlášek.",
+      "ticketOrderStorno_description": "Zákazník ji dostane při zrušení objednávky, pokud správce zvolí odeslání oznámení.",
       "waitlistConfirmation_title": "Potvrzení náhradníka",
-      "waitlistConfirmation_description": "Potvrzení zařazení do pořadníku bez platby a výběru produktů.",
+      "waitlistConfirmation_description": "Zájemce ji dostane po přihlášení do pořadníku náhradníků. Zatím nic neplatí ani nevybírá produkty.",
       "waitlistOffer_title": "Nabídka míst náhradníkovi",
-      "waitlistOffer_description": "Nabídka míst s osobním odkazem a termínem. Produkty se vybírají podle aktuální dostupnosti."
+      "waitlistOffer_description": "Náhradník ji dostane, když mu pořadatel nabídne volná místa. Nabídka má termín přijetí; produkty si vybere při přijetí podle dostupnosti."
     },
     "title": "Šablony e-mailů",
     "settings": {
@@ -1067,7 +1069,11 @@
       "variableGuideHint": "Dostupné údaje pro tuto šablonu. Rozbalte údaj a prohlédněte si ukázku. Při odeslání se doplní skutečné hodnoty.",
       "occasionSample": "Ukázka s produkty této akce",
       "modelSample": "Modelová ukázka",
-      "contextUnavailable": "Produkty akce se nepodařilo načíst. Zobrazuje se modelová ukázka."
+      "contextUnavailable": "Produkty akce se nepodařilo načíst. Zobrazuje se modelová ukázka.",
+      "previewFrom": "Od",
+      "previewTo": "Komu",
+      "previewReceivedMessage": "Přijatá zpráva",
+      "uniqueAlreadyUsed": "Tato sekce je již vložena. V jednom e-mailu může být jen jednou."
     }
   },
   "Inventory": {

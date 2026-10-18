@@ -102,6 +102,46 @@ void main() {
     });
     expect(EmailTemplateRules.kindFor('resetLink'), EmailValueKind.url);
   });
+  test(
+    'used sections stay below repeatable entries even for exact queries',
+    () {
+      final result = EmailTemplateRules.rank(
+        ['fullOrder', 'order_overview_button', 'occasionTitle'],
+        definition: EmailTemplateRules.definition,
+        label: (code) => code == 'fullOrder' ? 'Order' : 'Order details',
+        usage: {'fullOrder': 1, 'order_overview_button': 2, 'occasionTitle': 2},
+        query: 'Order',
+      );
+      expect(result, ['order_overview_button', 'occasionTitle', 'fullOrder']);
+      for (final code in [
+        'occasionTitle',
+        'order_overview_url',
+        'order_overview_button',
+        'manage_waitlist_button',
+        'offer_button',
+        'platformLinks',
+        'appLinks',
+      ]) {
+        expect(
+          EmailTemplateRules.definition(code).repeatable,
+          isTrue,
+          reason: code,
+        );
+      }
+      for (final code in [
+        'fullOrder',
+        'balanceReasoning',
+        'paymentDetails',
+        'changeOverview',
+      ]) {
+        expect(
+          EmailTemplateRules.definition(code).repeatable,
+          isFalse,
+          reason: code,
+        );
+      }
+    },
+  );
   test('title suggestions are conservative whole-title occurrences', () {
     const title = 'Podzimní slavnost v Zahradě';
     final text = 'Pozvání na $title. $title!';

@@ -20,6 +20,7 @@ class TemplateAuthoringEntry {
       this.example = '',
       this.description = '',
       this.rich = false,
+      this.repeatable = true,
       this.block = false,
       this.url = false});
   final String code;
@@ -27,6 +28,7 @@ class TemplateAuthoringEntry {
   final String example;
   final String description;
   final bool rich;
+  final bool repeatable;
   final bool block;
   final bool url;
 }
@@ -43,6 +45,7 @@ abstract class TemplateAuthoringProvider {
   String get unsupportedLabel => '';
   String get recommendedLabel => insertLabel;
   String get usedBlocksLabel => usedLabel;
+  String get uniqueUsedLabel => usedLabel;
   bool supports(String code) =>
       search('', const {}).any((entry) => entry.code == code);
   TemplateAuthoringEntry? entry(String code);

@@ -88,6 +88,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
   }
 
   void _choose(TemplateAuthoringEntry entry) {
+    if (!entry.repeatable && (controller.templateUsage[entry.code] ?? 0) > 0) return;
     final tag = controller.composingTag;
     final revision = controller.revision;
     if (controller.insertTemplateToken(entry.code,
@@ -229,7 +230,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                           entry.code] ??
                                                       0;
                                               final usedBlock =
-                                                  entry.block && count > 0;
+                                                  !entry.repeatable && count > 0;
                                               final previous = index == 0
                                                   ? null
                                                   : _results[index - 1];
@@ -237,7 +238,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                       .isEmpty &&
                                                   (index == 0 ||
                                                       usedBlock &&
-                                                          !(previous!.block &&
+                                                          !(!previous!.repeatable &&
                                                               (controller.templateUsage[
                                                                           previous
                                                                               .code] ??
@@ -265,14 +266,17 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                   .textTheme
                                                                   .labelMedium)),
                                                     ListTile(
+                                                        dense: true,
+                                                        visualDensity: const VisualDensity(vertical: -1),
+                                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                                                        enabled: !usedBlock,
                                                         selected: index ==
                                                             _activeResult,
-                                                        title:
-                                                            Text(entry.label),
+                                                        title: Text(entry.label, maxLines: 2, overflow: TextOverflow.ellipsis),
                                                         subtitle: Text(
                                                             [
-                                                              entry.example,
-                                                              if (count > 0)
+                                                              if (usedBlock) provider.uniqueUsedLabel else entry.example,
+                                                              if (count > 0 && !usedBlock)
                                                                 '${provider.usedLabel} ($count)'
                                                             ]
                                                                 .where((s) => s
@@ -282,8 +286,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                             overflow:
                                                                 TextOverflow
                                                                     .ellipsis),
-                                                        onTap: () =>
-                                                            _choose(entry)),
+                                                        onTap: usedBlock ? null : () => _choose(entry)),
                                                   ]);
                                             }))),
                           ]),
@@ -740,6 +743,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                             ? Axis.vertical
                                             : Axis.horizontal,
                                         children: [
+                                          if (controller.authoring != null)
+                                            IconButton(
+                                                tooltip: controller.authoring!.insertLabel,
+                                                onPressed: _openMentions,
+                                                icon: const Icon(Icons.alternate_email)),
                                           _tool(
                                               Icons.format_bold,
                                               HtmlStrings.bold,
@@ -871,34 +879,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                     controller.authoring!.unsupportedLabel,
                                     style:
                                         Theme.of(context).textTheme.bodySmall)),
-                          if (controller.authoring != null &&
-                              !controller.authoring!.singleLine &&
-                              !_sideToolbar)
-                            Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                child: Wrap(
-                                    alignment: WrapAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: [
-                                      TextButton.icon(
-                                          onPressed: _openMentions,
-                                          icon:
-                                              const Icon(Icons.alternate_email),
-                                          label: Text(controller
-                                              .authoring!.insertLabel))
-                                    ])),
-                          if (controller.authoring != null && _sideToolbar)
-                            IconButton(
-                                tooltip: controller.authoring!.insertLabel,
-                                onPressed: _openMentions,
-                                icon: const Icon(Icons.alternate_email)),
                           _documentViewport(ConstrainedBox(
                               constraints: BoxConstraints(
                                   minHeight:
                                       controller.authoring?.singleLine == true
-                                          ? 48
+                                          ? 40
                                           : 180),
                               child: SuperEditorAndroidControlsScope(
                                   controller: _android,
@@ -959,6 +944,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                           false),
                                               stylesheet:
                                                   defaultStylesheet.copyWith(
+                                                      rules: controller.authoring?.singleLine == true ? const [] : null,
                                                       inlineWidgetBuilders: [
                                                         (context, style,
                                                             value) {
@@ -1027,9 +1013,9 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                       ],
                                                       inlineTextStyler:
                                                           htmlInlineTextStyler,
-                                                      documentPadding:
-                                                          const EdgeInsets.all(
-                                                              8),
+                                                      documentPadding: controller.authoring?.singleLine == true
+                                                          ? const EdgeInsets.symmetric(horizontal: 4, vertical: 4)
+                                                          : const EdgeInsets.all(8),
                                                       addRulesAfter: [
                                                         StyleRule(
                                                             BlockSelector.all,
@@ -1335,16 +1321,13 @@ class _TemplateComponent extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
             color: colors.surface,
-            border: Border.all(color: colors.primary.withValues(alpha: .45)),
-            borderRadius: BorderRadius.circular(6)),
+            border: Border(left: BorderSide(width: 2, color: colors.primary.withValues(alpha: .45)))),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(
-              padding: const EdgeInsets.only(left: 12, right: 4),
+              padding: const EdgeInsets.only(left: 8, right: 4),
               decoration: BoxDecoration(
-                  color: colors.surfaceContainerLow,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(6))),
+                  color: colors.surface),
               child: Row(children: [
                 Expanded(
                     child: Text(entry?.label ?? code,
@@ -1370,7 +1353,7 @@ class _TemplateComponent extends StatelessWidget {
                       icon: const Icon(Icons.close, size: 18)),
               ])),
           Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(left: 8, bottom: 8),
               child: provider.preview(context, code) ??
                   Text(provider.sampleLabel)),
         ]));
