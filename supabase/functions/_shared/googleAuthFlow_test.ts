@@ -26,7 +26,10 @@ Deno.test("broker bootstraps a host-only cookie, validates signed OIDC and excha
       return json(attempt);
     }
     const body=JSON.parse(String(init?.body??'{}'));
-    if(url.pathname.endsWith('/consume_auth_abuse_v1'))return json(true);
+    if(url.pathname.endsWith('/consume_auth_abuse_v1')) {
+      // Match the canonical SQL admission contract, including digest encoding.
+      return json(/^[0-9a-f]{64}$/.test(body.p_key_hash));
+    }
     if(url.pathname.endsWith('/google_auth_transition_v1')){
       const p=body.p_payload;
       switch(body.p_operation){
@@ -47,6 +50,9 @@ Deno.test("broker bootstraps a host-only cookie, validates signed OIDC and excha
   };
   const post=(endpoint:'start'|'complete',body:unknown,origin=client.origin)=>handleGoogleAuth(endpoint,new Request(`https://api.fixture.invalid/functions/v1/google-auth-${endpoint}`,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(body)}));
   try {
+    const capability = await post('start', { clientId: client.client_id, organization: 1, operation: 'capability' });
+    assertEquals(capability.status, 200);
+    assertEquals(await capability.json(), { enabled: true });
     const verifier=randomSecret();
     const started=await post('start',{clientId:client.client_id,organization:1,challenge:await hash(verifier)});
     assertEquals(started.status,200);

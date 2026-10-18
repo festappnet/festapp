@@ -203,6 +203,12 @@ export class FormPage extends Component {
             if (!this.waitlistScope) SeoService.updateMetaTags(formModel, window.location.href);
 
 
+            // Editors need access even when sales are closed or not yet open.
+            RightsService.updateAppData({ formLink: link }).then(() => {
+                if (loadGeneration !== this.loadGeneration) return;
+                if (RightsService.canSeeReservations()) this.renderEditButton(link);
+            });
+
             // --- Availability Check Logic ---
             // Refactored to Service
             const statusResult = FormAvailabilityService.getStatus(formModel);
@@ -224,13 +230,6 @@ export class FormPage extends Component {
             // 5. Render Form
             this.renderForm(formModel, showPreview);
 
-            // 6. Update Rights & Show Edit Button
-            // Pass the form link as 'formLink' to match Flutter's behavior
-            RightsService.updateAppData({ formLink: link }).then(() => {
-                if (RightsService.canSeeReservations()) {
-                    this.renderEditButton(link);
-                }
-            });
 
         } catch (e) {
             if (loadGeneration !== this.loadGeneration) return;
@@ -248,8 +247,8 @@ export class FormPage extends Component {
         const app = document.getElementById('app');
         if (!header || !app) return;
         header.classList.remove('header-hidden');
-        if (enabled) this.pageHost.before(header);
-        else app.prepend(header);
+        // The catalogue stays hidden for every form view, including entry.
+        this.pageHost.before(header);
     }
 
     async attachOverview() {
@@ -428,6 +427,9 @@ export class FormPage extends Component {
         const btn = document.createElement('button');
         // ... (rest of creation logic)
         btn.className = 'fab-edit';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', CommonStrings.edit);
+        btn.title = CommonStrings.edit;
         // Material Edit Icon
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 17l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm635-498-57-57 57 57Zm-58 58L462-200H368v-94l329-329 57 57Z"/></svg>';
 
