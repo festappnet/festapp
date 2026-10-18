@@ -136,6 +136,9 @@
     "orderLabel": "Zamówienie"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
+    "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
+    "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",
     "labelShowPaymentQr": "Pokaż kod QR płatności po zamówieniu",
     "helperShowPaymentQr": "Po złożeniu zamówienia pokazuje kod QR płatności i dane bezpośrednio na ekranie potwierdzenia."
   },

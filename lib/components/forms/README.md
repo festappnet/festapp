@@ -19,6 +19,15 @@ If a product isn't showing, check `is_product_dynamically_available` in SQL, not
 
 `FormPage` calls `DbForms.getFormFromLink`, iterates `form.fields`, selects widget by `field.type`, collects data into `FormHolder`.
 
+## Before registration opens
+
+The schedule's optional `show_before_start_message` and `before_start_message`
+add rich information below an enabled countdown. Existing forms keep countdown-only
+behavior. The message uses the normal HTML editor and media-save coordinator, so
+organizers can publish text, images and a hall-plan image without enabling seat
+selection or registration. Hiding the message retains its draft. Manual closure
+still wins, and countdown completion reloads the current server bundle.
+
 ## SQL RPCs
 
 - `get_form_by_link` -- complete form bundle for user rendering (includes session secret)

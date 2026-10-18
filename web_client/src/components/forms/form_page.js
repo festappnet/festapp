@@ -24,7 +24,7 @@ import { ThemeService } from '../../services/theme_service.js';
 import { FeatureService } from '../features/feature_service.js';
 import { FormAvailabilityService } from './form_availability_service.js';
 // Widgets moved to Service
-// import { CountdownWidget } from './widgets/countdown_widget.js';
+import { CountdownWidget } from './widgets/countdown_widget.js';
 // import { NotAvailableWidget } from './widgets/not_available_widget.js';
 import { FormRenderer } from './form_renderer.js';
 import { FormDataReader } from './form_data_reader.js';
@@ -48,7 +48,10 @@ export class FormPage extends Component {
         this._previewModulePromise = null;
     }
 
+    clear() { this.cleanup(); }
+
     cleanup({ preserveEditButton = false } = {}) {
+        CountdownWidget.stop();
         if (this.host) {
             stopOrderOverview(this.host);
             this.host.querySelectorAll('.order-overview').forEach(stopOrderOverview);
@@ -94,7 +97,7 @@ export class FormPage extends Component {
         // Prevent re-init if same link (e.g. hash change/back from preview)
         // Hardened Check: If container has content, we assume it's valid.
         // NOTE: this.host is managed by base Component
-        if (link != null && this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
+        if (!options.forceReload && link != null && this.currentLink === link && this.host && this.host.innerHTML.trim() !== '') {
             return;
         }
         // Check for existing instance to prevent duplicates or state leaks
@@ -197,7 +200,7 @@ export class FormPage extends Component {
 
             const handled = FormAvailabilityService.renderStatus(this.host, formModel, statusResult, {
                 showPreview,
-                onReload: () => this.init(link)
+                onReload: () => this.init(link, { forceReload: true })
             });
 
             if (handled) return;

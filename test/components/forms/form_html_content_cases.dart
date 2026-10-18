@@ -47,7 +47,8 @@ void main() {
         ],
         data: {
           FormDefinition.metaSchedule: {
-            FormDefinition.metaCountdownTitle: html
+            FormDefinition.metaCountdownTitle: html,
+            FormDefinition.metaBeforeStartMessage: html
           },
           FormDefinition.metaPaymentMessage: {'type': 'name_surname'},
           'unrelated': html
@@ -57,6 +58,7 @@ void main() {
       form.definition.header,
       form.definition.headerOff,
       form.definition.countdownTitle,
+      form.definition.beforeStartMessage,
       field.definition.description,
       option.description,
       field.definition.productType!.products!.single.description,

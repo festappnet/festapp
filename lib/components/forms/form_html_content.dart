@@ -18,6 +18,10 @@ Future<void> prepareFormHtml(
     form.definition = form.definition
         .withCountdownTitle(await prepare(form.definition.countdownTitle));
   }
+  if (form.definition.beforeStartMessage != null) {
+    form.definition = form.definition
+        .withBeforeStartMessage(await prepare(form.definition.beforeStartMessage));
+  }
   for (final field in form.relatedFields) {
     field.definition = field.definition
         .copyWith(description: await prepare(field.definition.description));

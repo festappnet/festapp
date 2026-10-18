@@ -136,6 +136,9 @@
     "orderLabel": "Objednávka"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
+    "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
+    "labelBeforeStartMessage": "Informácie pred začiatkom",
     "labelShowPaymentQr": "Zobraziť QR platbu po objednávke",
     "helperShowPaymentQr": "Po dokončení objednávky zobrazí platobný QR kód a údaje priamo na potvrdzovacej obrazovke."
   },

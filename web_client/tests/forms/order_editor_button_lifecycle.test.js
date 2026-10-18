@@ -76,3 +76,33 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
       'leaving the form must still remove the edit button');
   });
 }
+
+test('countdown completion refetches the same link and leaving cancels its timer', async (t) => {
+  const dom = new JSDOM('<div id="form-page-container"></div>', { url: 'https://example.test/form/test' });
+  Object.assign(globalThis, { window: dom.window, document: dom.window.document,
+    HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent });
+  window.scrollTo = () => {};
+  t.after(() => dom.window.close());
+  const [{ FormPage }, { FormModel }, { DbForms }, { CountdownWidget }] = await Promise.all([
+    import('../../src/components/forms/form_page.js'),
+    import('../../src/components/forms/form_models.js'),
+    import('../../src/components/forms/db_forms.js'),
+    import('../../src/components/forms/widgets/countdown_widget.js'),
+  ]);
+  const fetch = t.mock.method(DbForms, 'getFormByLink', async () => new FormModel({
+    link: 'test', is_open: true,
+    data: { schedule: { start_time: '2099-01-01', enable_countdown: true } },
+  }));
+  const page = new FormPage('form-page-container');
+  t.after(() => page.cleanup());
+  t.mock.method(page, 'applyTheme', () => {});
+  await page.init('test');
+  assert.ok(page.host.querySelector('.countdown-widget'));
+  assert.notEqual(CountdownWidget.timer, null);
+  await page.init('test');
+  assert.equal(fetch.mock.calls.length, 1, 'normal same-link navigation preserves the current view');
+  await page.init('test', { forceReload: true });
+  assert.equal(fetch.mock.calls.length, 2, 'opening must request current authoritative availability');
+  page.clear();
+  assert.equal(CountdownWidget.timer, null);
+});

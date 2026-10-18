@@ -212,6 +212,12 @@ class FormStrings {
   static String get countdownDescription =>
       'FeatureFormSettings.countdownDescription'
           .tr(); // "Displayed before scheduled start time."
+  static String get labelShowBeforeStartMessage =>
+      'FeatureFormSettings.labelShowBeforeStartMessage'.tr();
+  static String get helperBeforeStartMessage =>
+      'FeatureFormSettings.helperBeforeStartMessage'.tr();
+  static String get labelBeforeStartMessage =>
+      'FeatureFormSettings.labelBeforeStartMessage'.tr();
   static String get labelCountdownMessage =>
       'FeatureFormSettings.labelCountdownMessage'.tr(); // "Countdown Message:"
   static String get labelClosedMessage =>

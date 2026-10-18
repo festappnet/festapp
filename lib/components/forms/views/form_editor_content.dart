@@ -421,6 +421,27 @@ class _FormEditorContentState extends State<FormEditorContent>
                         ],
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(FormStrings.labelShowBeforeStartMessage),
+                      subtitle: Text(FormStrings.helperBeforeStartMessage),
+                      value: form.definition.showBeforeStartMessage,
+                      onChanged: _canEdit
+                          ? (value) => setState(() => form.definition =
+                              form.definition.withShowBeforeStartMessage(value))
+                          : null,
+                    ),
+                    if (form.definition.showBeforeStartMessage) ...[
+                      const SizedBox(height: 12),
+                      _buildHtmlFieldPreview(
+                        FormStrings.labelBeforeStartMessage,
+                        form.definition.beforeStartMessage,
+                        (value) => setState(() => form.definition =
+                            form.definition.withBeforeStartMessage(value)),
+                        enabled: _canEdit,
+                      ),
+                    ],
                   ],
                 ],
               ),

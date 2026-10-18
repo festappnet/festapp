@@ -665,14 +665,14 @@ class _FormPageState extends State<FormPage> {
 
     if (form != null && _offerBundle == null) {
       final now = DateTime.now();
-      if (form!.definition.startTime != null &&
+      if (form!.definition.isOpen == false) {
+        isClosed = true;
+      } else if (form!.definition.startTime != null &&
           now.isBefore(form!.definition.startTime!)) {
         isClosed = true;
         isBeforeStart = true;
       } else if (form!.definition.endTime != null &&
           now.isAfter(form!.definition.endTime!)) {
-        isClosed = true;
-      } else if (form!.definition.isOpen == false) {
         isClosed = true;
       }
     }
@@ -744,7 +744,7 @@ class _FormPageState extends State<FormPage> {
                     _buildWaitlistPeople(manage: true)
                   ]))));
     }
-    if (form?.definition.registrationMode == 'full') {
+    if (form?.definition.registrationMode == 'full' && !isClosed) {
       return Scaffold(
           body: Center(
               child: SingleChildScrollView(
@@ -768,14 +768,35 @@ class _FormPageState extends State<FormPage> {
     Widget bodyContent;
 
     if (showCountdown) {
-      bodyContent = CountdownWidget(
-        targetTime: form!.definition.startTime!,
-        title: form!.definition.countdownTitle ?? FormStrings.registrationStart,
-        onFinished: () {
-          setState(() {
-            // Re-evaluate state to show form
-          });
-        },
+      bodyContent = Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CountdownWidget(
+                targetTime: form!.definition.startTime!,
+                title: form!.definition.countdownTitle ??
+                    FormStrings.registrationStart,
+                onFinished: loadData,
+              ),
+              if (form!.definition.showBeforeStartMessage &&
+                  (form!.definition.beforeStartMessage?.trim().isNotEmpty ??
+                      false))
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: HtmlView(
+                      html: form!.definition.beforeStartMessage!,
+                      isSelectable: true,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       );
     } else {
       // Main Form Content
@@ -913,7 +934,9 @@ class _FormPageState extends State<FormPage> {
     return Theme(
       data: theme,
       child: Scaffold(
-        body: bodyContent,
+        body: showCountdown
+            ? SafeArea(child: SingleChildScrollView(child: bodyContent))
+            : bodyContent,
         floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         floatingActionButton: Padding(
           padding: EdgeInsets.only(bottom: 24),

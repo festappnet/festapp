@@ -80,6 +80,8 @@ class FormDefinition {
   static const String metaEndTime = "end_time";
   static const String metaEnableCountdown = "enable_countdown";
   static const String metaCountdownStyle = "countdown_style";
+  static const String metaShowBeforeStartMessage = "show_before_start_message";
+  static const String metaBeforeStartMessage = "before_start_message";
   static const String metaCountdownTitle = "countdown_title";
   static const String metaPrimaryColor = "primary_color";
   static const String metaSecondaryColor = "secondary_color";
@@ -272,6 +274,31 @@ class FormDefinition {
 
     section[metaEnableCountdown] = value;
 
+    return copyWith(data: {...?data, metaSchedule: section});
+  }
+
+  bool get showBeforeStartMessage =>
+      _scheduleData[metaShowBeforeStartMessage] == true;
+
+  FormDefinition withShowBeforeStartMessage(bool value) {
+    final section = Map<String, dynamic>.from(_scheduleData);
+    section[metaShowBeforeStartMessage] = value;
+    return copyWith(data: {...?data, metaSchedule: section});
+  }
+
+  String? get beforeStartMessage =>
+      _scheduleData[metaBeforeStartMessage] as String?;
+
+  FormDefinition withBeforeStartMessage(String? value) {
+    if (value == null && !_scheduleData.containsKey(metaBeforeStartMessage)) {
+      return this;
+    }
+    final section = Map<String, dynamic>.from(_scheduleData);
+    if (value == null) {
+      section.remove(metaBeforeStartMessage);
+    } else {
+      section[metaBeforeStartMessage] = value;
+    }
     return copyWith(data: {...?data, metaSchedule: section});
   }
 

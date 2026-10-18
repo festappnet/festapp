@@ -280,6 +280,9 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Zobrazit informace před zahájením",
+    "helperBeforeStartMessage": "Pod odpočtem můžete zveřejnit informace o akci, obrázky nebo plánek sálu. Přihlašování se otevře až v nastavený čas.",
+    "labelBeforeStartMessage": "Informace před zahájením",
     "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu.",
     "title": "Nastavení formuláře",
     "formNotFound": "Formulář nenalezen.",

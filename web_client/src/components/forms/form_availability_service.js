@@ -70,6 +70,12 @@ export class FormAvailabilityService {
             if (formModel.enableCountdown) {
                 container.replaceChildren();
                 CountdownWidget.render(container, formModel, context.onReload);
+                if (formModel.showBeforeStartMessage && formModel.beforeStartMessage) {
+                    const information = document.createElement('div');
+                    information.className = 'form-before-start-message form-header';
+                    information.innerHTML = sanitizeHtml(formModel.beforeStartMessage);
+                    container.appendChild(information);
+                }
                 return true; // Stop flow
             }
             // If countdown disabled, fall through to Not Available

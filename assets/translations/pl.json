@@ -148,6 +148,9 @@
     "orderLabel": "Zamówienie"
   },
   "FeatureFormSettings": {
+    "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
+    "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
+    "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",
     "fontLoadFailed": "Nie udało się załadować czcionek. Spróbuj ponownie.",
     "helperReminderEnabled": "Domyślne wysyłanie przypomnień o płatności. Każdy formularz może mieć własne ustawienie.",
     "helperDeadlineDuration": "Domyślna liczba dni na opłacenie nowego zamówienia. Puste pole oznacza 7 dni.",
