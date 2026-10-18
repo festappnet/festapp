@@ -138,10 +138,7 @@ async function rate(
   family: "source" | "client" | "global" | "attempt" | "proof" = "source",
 ) {
   const { data, error } = await admin.rpc("consume_auth_abuse_v1", {
-    p_key_hash: Array.from(
-      new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))),
-      byte => byte.toString(16).padStart(2, "0"),
-    ).join(""),
+    p_key_hash: await hash(key),
     p_family: `google.${family}`,
   });
   if (error || data !== true) throw new Error("rate_limited");
