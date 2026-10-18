@@ -1,47 +1,25 @@
-# Ochrana osobních údajů - Vstupenky.online
+# Zásady ochrany osobních údajů – Hvězda Mořská
 
-Účinnost: 9. října 2026. Verze: 1.1.
+Účinnost: 25. srpna 2026. Verze: 1.0.
 
-## Kdo odpovídá za vaše údaje
+Tyto zásady popisují zpracování osobních údajů v mobilní a webové aplikaci Hvězda Mořská. Aplikace poskytuje program poutí a dalších událostí, mapu, aktuální zprávy, praktické informace, uživatelský účet a podle konkrétní události také registrace, objednávky nebo vstupenky.
 
-Účet a provoz systému zajišťuje Michael Bujnovský, IČO 06455361, Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt: `info@festapp.net`.
+Správcem osobních údajů souvisejících s činností Hvězdy Mořské je CK Hvězda Mořská s.r.o., IČ 23146354, Nové sady 988/2, Staré Brno, 602 00 Brno, zapsaná u Krajského soudu v Brně pod sp. zn. C 144412. Správce lze kontaktovat na `info@hvezdamorska.cz` nebo +420 733 356 244. Technickou podporu aplikace zajišťuje její vývojář a vydavatel Michael Bujnovský na `info@festapp.net`.
 
-Za údaje účastníků konkrétní akce, rozsah přihlášky a její účel odpovídá pořadatel uvedený u nabídky nebo objednávky.
+Program, mapa, novinky a praktické informace lze zpravidla používat bez přihlášení. Při vytvoření účtu, registraci na aktivitu, odeslání formuláře nebo objednávce můžeme podle konkrétní služby zpracovávat zejména jméno, příjmení, e-mail, telefon, adresní a fakturační údaje, identifikátor účtu, údaje o objednávce a platbě, přidělené vstupenky nebo QR kódy, uložený program, registrace, odpovědi ve formulářích, zpětnou vazbu a komunikaci s podporou. Údaje platební karty aplikace neukládá.
 
-## Jaké údaje používáme
+Pro bezpečný a spolehlivý provoz mohou vznikat omezené technické, síťové, bezpečnostní a chybové záznamy, například typ zařízení, verze aplikace, čas požadavku a IP adresa. Pokud uživatel povolí oznámení, zpracovává se technický identifikátor potřebný k jejich doručení. Část dat se ukládá do zařízení pro offline provoz. Poloha zařízení se používá pouze po udělení systémového oprávnění k zobrazení aktuální polohy v mapě; aplikace ji nepřidává do uživatelského profilu ani ji nepoužívá k reklamnímu sledování.
 
-Pro účet potřebujeme jméno, příjmení a e-mail. Podle přihlášky či objednávky zpracováváme také kontaktní a fakturační údaje, odpovědi ve formuláři, údaje účastníků, vstupenky a údaje o platbě. Pořadatel může vyžadovat například datum narození či údaje dokladu. Povinné údaje jsou označené; bez nich nemusí být možné službu poskytnout.
+Údaje používáme k poskytnutí aplikace a objednaných služeb, vedení účtu, vyřízení registrací a objednávek, zobrazení osobního programu a vstupenek, doručování organizačních oznámení, podpoře uživatelů, zabezpečení a řešení provozních problémů. Zpracování potřebné pro účet, objednávku, registraci nebo účast na akci se opírá zejména o předsmluvní kroky a plnění smlouvy podle čl. 6 odst. 1 písm. b) GDPR. Plnění zákonných povinností, zejména účetních a daňových, se opírá o čl. 6 odst. 1 písm. c) GDPR. Bezpečnost a spolehlivý provoz jsou oprávněným zájmem správce podle čl. 6 odst. 1 písm. f) GDPR. U nepovinných funkcí založených na souhlasu lze souhlas kdykoli odvolat.
 
-Údaje získáváme od vás, objednavatele, zákonného zástupce, pořadatele nebo z bankovních podkladů. Pro zabezpečení vznikají technické záznamy, například IP adresa a čas požadavku.
+Pro poskytování služby využíváme zejména Michaela Bujnovského jako technického dodavatele aplikace, Supabase pro databázi, autentizaci a serverové funkce, OneSignal pro volitelná push oznámení, Netlify pro webovou infrastrukturu, poskytovatele e-mailu a Apple a Google pro distribuci aplikace. Při objednávce mohou být v nezbytném rozsahu zapojeni také smluvní poskytovatelé platebních nebo účetních služeb. Tito příjemci zpracovávají údaje podle příslušných smluvních a technických podmínek. Pokud dochází ke zpracování mimo Evropský hospodářský prostor, musí být přenos založen na odpovídajícím právním mechanismu a ochranných opatřeních.
 
-## Proč údaje potřebujeme
+Účetní a daňové doklady se uchovávají po zákonem stanovenou dobu, zpravidla až deset let. Údaje potřebné k vyřízení objednávky, registrace, reklamace nebo k ochraně právních nároků se uchovávají pouze po dobu potřebnou pro daný účel a navazující zákonné lhůty. Technické záznamy a zálohy se uchovávají po omezené provozní lhůty příslušných poskytovatelů. Ostatní údaje účtu se odstraní po jeho smazání, pokud pro jejich další uchování neexistuje zákonný důvod.
 
-Údaje používáme pro účet, přihlášky, objednávky, platby, komunikaci a podporu. Právním základem je plnění smlouvy, předsmluvní kroky, zákonná povinnost nebo oprávněný zájem na zabezpečení a ochraně práv. Nepovinné zpracování může vyžadovat samostatný souhlas. Registrace sama není souhlasem s reklamou ani nepovinným sledováním.
+Smazání účtu lze zahájit v profilu aplikace. Na e-mail účtu se odešle časově omezený jednorázový odkaz; pouhé otevření odkazu nic nemaže a smazání proběhne až po závěrečném potvrzení. Smazáním se odstraní účet aplikace, soukromý profil a propojená data, která není nutné dále uchovat. Podrobný postup a další nastavení popisuje <https://hvezdamorska.festapp.net/privacy/choices/>.
 
-## E-maily
+Uživatel má právo na přístup k osobním údajům, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu a námitku proti zpracování založenému na oprávněném zájmu. Žádost lze poslat na `info@hvezdamorska.cz`; technický požadavek související s aplikací také na `info@festapp.net`. Stížnost lze podat u Úřadu pro ochranu osobních údajů: <https://uoou.gov.cz/>.
 
-Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
+Pokud jsou prostřednictvím aplikace zpracovávány údaje nezletilého účastníka, děje se tak v souvislosti s objednávkou, registrací nebo účastí na konkrétní akci a se zapojením zákonného zástupce tam, kde je vyžadováno. Heslo, přihlašovací kód ani jednorázový odkaz nikdy neposílejte jiné osobě.
 
-Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
-
-## Kde údaje zpracováváme
-
-Hlavní databázi a účty provozujeme na serverech Hetzner, které sami spravujeme. Cloudflare zajišťuje web, ochranu provozu, soubory a šifrované zálohy. Údaje mají v potřebném rozsahu také pořadatel a jeho pověřené osoby.
-
-Při volitelném přihlášení přes Google získáme identifikátor účtu, ověřený e-mail a jméno. Google Fonts dodává písma a ikony; při otevření online mapy se mohou načítat podklady OpenStreetMap. Tyto služby při načítání dostávají IP adresu a údaje požadavku. Poloha v mapě vyžaduje povolení prohlížeče.
-
-Některé služby mají globální infrastrukturu. Předání mimo Evropský hospodářský prostor vyžaduje odpovídající právní záruky, například rozhodnutí Evropské komise nebo standardní smluvní doložky. Podrobnosti si můžete vyžádat na kontaktním e-mailu.
-
-## Ukládání a uchování
-
-V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace. Odstranit je můžete v jeho nastavení; tím se můžete odhlásit.
-
-Údaje účtu uchováváme po dobu používání. Přihlášky a objednávky po dobu potřebnou pro akci, vypořádání a reklamace. Déle pouze kvůli zákonným povinnostem nebo ochraně právních nároků; lhůty údajů konkrétní akce určuje pořadatel.
-
-Údaje o e-mailové komunikaci uchováváme pro doručení zpráv, řešení problémů a doložení poskytnuté služby. Smazané údaje mohou dočasně zůstat ve starších zálohách.
-
-## Vaše práva
-
-Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
-
-Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+Tyto zásady můžeme aktualizovat při změně aplikace, poskytovatelů nebo právních požadavků. Aktuální znění a datum účinnosti jsou vždy zveřejněny na této stránce.
