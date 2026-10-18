@@ -506,3 +506,41 @@ is enabled with both daily points and unchanged 14-day/four-week retention.
 The fixture port/health correction passed 15 targeted archive/Edge/service
 isolation cases and the complete normal automation lane. Its actual complete
 v2 retry remains the decisive validation before production retirement.
+
+
+## Complete service recovery and exact pre-existing reference disposition
+
+The corrected complete drill at source `1622eaac8623cf86fefc182e92628dd21afe02d7`
+recovered DB/Auth/REST, Studio/Meta, Envoy/Caddy and the actual Edge router/worker
+in 51.43s, without Storage, external integrations or production credentials.
+Studio and Meta each completed an 80-request burst with no OOM or restart.
+All 2,817 archived objects / 1,642,200,830 bytes passed SHA-256 validation.
+Its final reference check still failed: 46 missing references, zero mismatches.
+The original failure/partial receipts are preserved, not relabelled as success.
+
+All 46 URLs were already present before this migration. Forty-one occur only
+in immutable commit audit labels and durable idempotency replay responses;
+those are history, not current file consumers. No such field was changed in
+the production Storage rewrite. The next source correction explicitly names
+these two history tables in inventory/recovery, while continuing to inspect
+active pending/blocked/preparing/sending/retry messages. It does not ignore
+active templates or content.
+
+Five references in four current fields are genuinely absent and return 404:
+two wrapper images, two event header images, and one occasion image. They were
+not found in original asset buckets, local files, the 47,125-object sync
+inventory or the independent 516-object AKH inventory. The user explicitly
+approved removal of these five links. A narrow operator removes exactly two
+img tags and the three image properties, preserving every other value and
+recording three existing canonical occasion sync commits in the same transaction.
+It rejects changed original fields and replay. No image registry row or object
+is deleted, and the original accepted 50-row cleanup is not repeated.
+
+This disposition is prepared locally, not yet applied or backed up. The new
+actual post-disposition backup/complete restore remains the destruction gate.
+Current source buckets, local Storage files and services remain preserved.
+
+The exact disposition passed three actual isolated PG17 transaction cases with
+the real canonical sync owner: success/replay denial, changed-field rollback,
+and sync-failure rollback. Three preparation/history cases and the complete
+normal automation lane also passed. No production cleanup was executed by tests.
