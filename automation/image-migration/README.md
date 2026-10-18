@@ -80,6 +80,23 @@ An existing conflicting object is an error. A missing receipt can be resumed
 by rechecking the destination. No source deletion is implemented by this tool.
 Unit tests simulate the object-store boundary; real provider copy remains unrun.
 
+The alternative `--wrangler-remote` uses the existing authenticated Wrangler
+connection instead of `--r2-config`. Run with Node 22 and the pinned installed
+Wrangler dependency. Its fixed `wrangler.copy.json` connects only the four
+inventoried buckets; the adapter permits writes only to the canonical pair.
+No application Worker or route is deployed. R2 `onlyIf` enforces atomic
+create-if-absent, with the same independent hash/MIME verification and receipts.
+One object at a time is bounded to 64 MiB on the workstation; source hashing
+still streams from the backend. Larger objects fail before a destination write.
+The platform connection is disposed when the copy finishes or fails.
+
+`prepare-cutover.py --manifest ... --receipts ... --output ...` verifies every
+copy receipt against the exact manifest and R2 inventory, and prepares private
+registry records plus exact before/after reference values. It rejects missing,
+conflicting or mixed-source receipts, unresolved references and private URLs
+without a reviewed permission boundary. This creates no SQL transaction and
+performs no database mutation; atomic synchronization remains a separate gate.
+
 Account cleanup now has staged canonical SQL sources and a forward migration:
 `node automation/generate_storage_asset_migration.mjs --check` verifies assembly.
 Its registry preserves the exact original user-owner binding independently of
