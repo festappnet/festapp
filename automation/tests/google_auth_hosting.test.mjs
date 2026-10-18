@@ -2,8 +2,22 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const script=readFileSync(new URL('../cloudflare_build.sh',import.meta.url),'utf8');
-const workerSource=script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const scannerRoutes=readFileSync(new URL('../../web_client/src/services/scanner_routes.js',import.meta.url),'utf8').replaceAll('export function','function');
+const workerSource=scannerRoutes+'\n'+script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
 const {default:worker}=await import('data:text/javascript;base64,'+Buffer.from(workerSource).toString('base64'));
+test('Flutter map documents allow OSM identification without overriding callback protection',async()=>{
+ const html=readFileSync(new URL('../../web/index.html',import.meta.url),'utf8');
+ const env={ASSETS:{fetch:async(request)=>new URL(request.url).pathname==='/flutter'
+  ?new Response(html,{headers:{'content-type':'text/html'}}):new Response('',{status:404})}};
+ for(const path of ['/2025we-copy-5e6268f4/map/overview','/app/google-auth']){
+  const response=await worker.fetch(new Request('https://tenant.invalid'+path),env);
+  assert.equal(response.status,200);
+  // Document meta overrides HTTP headers. Inherit the host's default/browser
+  // policy for maps and its explicit no-referrer for sensitive callbacks.
+  assert.equal(/<meta\b[^>]*\bname\s*=\s*["']referrer["'][^>]*>/i.test(await response.text()),false);
+  assert.equal(response.headers.get('referrer-policy'),path==='/app/google-auth'?'no-referrer':null);
+ }
+});
 test('real generated hosting router chooses the correct callback adapter and disables proof caching',async()=>{
  const paths=[];const env={ASSETS:{fetch:async(request)=>{const p=new URL(request.url).pathname;paths.push(p);return new Response(p,{headers:{'content-type':'application/octet-stream'}});}}};
  for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter']]){
