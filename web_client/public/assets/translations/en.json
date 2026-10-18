@@ -3145,6 +3145,12 @@
     "display_settings": "Scanner display settings",
     "back": "Back",
     "order_fields": "Order answers",
-    "ticket_fields": "Ticket answers"
+    "ticket_fields": "Ticket answers",
+    "always_shown": "Always shown",
+    "core_status": "Ticket status and confirmation result",
+    "core_identity": "Holder and purchaser names, when provided",
+    "core_seat": "Seat and table, when assigned",
+    "core_notes": "Order and ticket notes, when provided",
+    "core_help": "Core details cannot be hidden. Choose additional details below."
   }
 }

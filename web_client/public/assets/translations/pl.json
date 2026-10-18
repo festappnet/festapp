@@ -1128,6 +1128,12 @@
     "display_settings": "Dane widoczne przy skanowaniu",
     "back": "Wstecz",
     "order_fields": "Dane zamówienia",
-    "ticket_fields": "Dane biletu"
+    "ticket_fields": "Dane biletu",
+    "always_shown": "Zawsze widoczne",
+    "core_status": "Status biletu i wynik potwierdzenia",
+    "core_identity": "Imię posiadacza i zamawiającego, jeśli podane",
+    "core_seat": "Miejsce i stolik, jeśli przypisane",
+    "core_notes": "Wypełnione uwagi do zamówienia i biletu",
+    "core_help": "Podstawowych danych nie można ukryć. Wybierz dodatkowe dane poniżej."
   }
 }

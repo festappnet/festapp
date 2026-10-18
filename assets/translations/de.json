@@ -1253,6 +1253,12 @@
     "display_settings": "Anzeige beim Scannen",
     "back": "Zurück",
     "order_fields": "Bestellangaben",
-    "ticket_fields": "Ticketangaben"
+    "ticket_fields": "Ticketangaben",
+    "always_shown": "Immer sichtbar",
+    "core_status": "Ticketstatus und Bestätigung",
+    "core_identity": "Name des Inhabers und Bestellers, falls angegeben",
+    "core_seat": "Sitzplatz und Tisch, falls zugewiesen",
+    "core_notes": "Vorhandene Bestell- und Ticketnotizen",
+    "core_help": "Kerndaten können nicht ausgeblendet werden. Weitere Angaben unten auswählen."
   }
 }

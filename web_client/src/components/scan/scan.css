@@ -242,3 +242,5 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-group-list .already-used .scan-ticket-status {color:var(--scan-used)}
 .scan-result.used {--scan-tone:var(--scan-used)}
 .scan-result.used .scan-result-icon {background:var(--scan-used-bg)}
+
+.scan-fixed-fields{border:0;padding:0;margin:0 0 1.5rem;min-width:0}.scan-fixed-fields legend{font-weight:700;font-size:1.2rem;margin-bottom:.75rem}.scan-fixed-fields p{color:var(--scan-muted);font-size:.9rem}

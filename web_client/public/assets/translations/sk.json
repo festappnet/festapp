@@ -1134,6 +1134,12 @@
     "display_settings": "Čo zobraziť pri skenovaní",
     "back": "Späť",
     "order_fields": "Údaje objednávky",
-    "ticket_fields": "Údaje vstupenky"
+    "ticket_fields": "Údaje vstupenky",
+    "always_shown": "Vždy zobrazené",
+    "core_status": "Stav vstupenky a výsledok potvrdenia",
+    "core_identity": "Meno držiteľa a objednávky, ak sú uvedené",
+    "core_seat": "Miesto a stôl, ak sú priradené",
+    "core_notes": "Vyplnené poznámky objednávky a vstupenky",
+    "core_help": "Základné údaje nemožno skryť. Ďalšie údaje vyberte nižšie."
   }
 }
