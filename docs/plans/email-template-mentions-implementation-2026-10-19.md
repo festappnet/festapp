@@ -116,3 +116,15 @@ Flutter/email-client CSS rendering is not promised to be pixel-identical.
 
 Implementation is complete locally with the documented verification limits.
 No commit, push, email, migration, production operation or deployment occurred.
+
+## Publication readiness - 2026-10-19
+
+The user subsequently authorized a PR, merge to main and a local web release
+for vstupenky.online only. The original implementation was rebased onto fetched
+main `56f85d4215c72cff05fe3acac59db9f12a374235`. Both conflicts preserved upstream
+embedded-block support/movement guards alongside template authoring. The updated
+four-suite Flutter batch passed 59 tests; core 7 and TS 45 passed again; generator
+freshness/typecheck passed. Regeneration changed only the source digest, preserving
+preview content. Root targeted analysis exited 0 with no warning/error (78 infos).
+Rebase receipts: `/tmp/email-rebase-flutter.log`, `/tmp/email-rebase-analyzer.log`,
+`/tmp/email-publish-core.log`, `/tmp/email-publish-ts.log`.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sourceDigest": "2c76f68b82932b7bb985991f747512274373cb4b042b62423b6752265b636661",
+  "sourceDigest": "dbdf103df6887d86141d5e63f80ced2b3c35af7f0e235d72aac390dfb47ff897",
   "sources": [
     "automation/generate_email_preview_examples.ts",
     "automation/fixtures/email_preview/order.json",
