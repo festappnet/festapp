@@ -1,5 +1,14 @@
 {
   "OrganizationVerification": {
+    "sourceRequiredLabel": "Źródło weryfikacji (wymagane do zatwierdzenia)",
+    "sourceHelp": "Opisz, jak sprawdzono podmiot prawny i uprawnienia wnioskodawcy do jego reprezentowania. Np. porównanie danych z publicznym rejestrem i sprawdzenie pełnomocnictwa. Samo pobranie danych z ARES nie wystarczy.",
+    "sourceRequired": "Aby zatwierdzić, opisz sprawdzenie organizacji i uprawnień wnioskodawcy.",
+    "feedbackRequiredLabel": "Informacja zwrotna (wymagana przy odrzuceniu lub cofnięciu)",
+    "feedbackHelp": "Wyjaśnij organizatorowi powód odrzucenia lub cofnięcia weryfikacji oraz co należy poprawić.",
+    "feedbackRequired": "Podaj organizatorowi powód odrzucenia lub cofnięcia weryfikacji.",
+    "noteOptionalLabel": "Notatka wewnętrzna (opcjonalna)",
+    "sourceTooLong": "Źródło weryfikacji może zawierać najwyżej 2000 znaków.",
+    "reviewTextTooLong": "Tekst może zawierać najwyżej 4000 znaków.",
     "countryLabel": "Kraj",
     "countryCzechia": "Czechy",
     "countrySlovakia": "Słowacja",

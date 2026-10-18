@@ -1,5 +1,14 @@
 {
   "OrganizationVerification": {
+    "sourceRequiredLabel": "Zdroj ověření (povinné pro schválení)",
+    "sourceHelp": "Popište, jak jste ověřili právní subjekt i oprávnění žadatele jej zastupovat. Např. porovnání údajů s veřejným rejstříkem a kontrola pověření žadatele. Samotné načtení z ARES nestačí.",
+    "sourceRequired": "Pro schválení popište ověření organizace a oprávnění žadatele.",
+    "feedbackRequiredLabel": "Zpětná vazba (povinné při zamítnutí nebo odebrání)",
+    "feedbackHelp": "Vysvětlete pořadateli důvod zamítnutí nebo odebrání ověření a co má napravit.",
+    "feedbackRequired": "Uveďte důvod zamítnutí nebo odebrání ověření pro pořadatele.",
+    "noteOptionalLabel": "Interní poznámka (volitelné)",
+    "sourceTooLong": "Zdroj ověření může mít nejvýše 2 000 znaků.",
+    "reviewTextTooLong": "Text může mít nejvýše 4 000 znaků.",
     "countryLabel": "Země",
     "countryCzechia": "Česko",
     "countrySlovakia": "Slovensko",
