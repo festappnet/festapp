@@ -1157,6 +1157,8 @@
     "preview_action": "Zobraziť náhľad",
     "preview_empty": "Náhľad sa zobrazí po zadaní kódu vstupenky.",
     "reason_scanner_settings_forbidden": "Nastavenie môže meniť iba editor alebo editor rezervácií tejto akcie.",
-    "reason_offline_storage_unavailable": "Offline údaje nemožno otvoriť. Pripojte sa na internet a pripravte zariadenie znova."
+    "reason_offline_storage_unavailable": "Offline údaje nemožno otvoriť. Pripojte sa na internet a pripravte zariadenie znova.",
+    "filter_answers": "Hľadať údaj",
+    "no_matching_answers": "Žiadne ďalšie zodpovedajúce údaje."
   }
 }

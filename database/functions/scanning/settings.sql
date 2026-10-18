@@ -68,8 +68,12 @@ BEGIN
  RETURN jsonb_build_object('code',200,'data',jsonb_build_object('revision',s.revision,'config',s.config,
  'occasion_link',(SELECT link FROM public.occasions WHERE id=p_occasion),'occasion_title',(SELECT title FROM public.occasions WHERE id=p_occasion),
  'products',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'title',p.title,'type_id',p.product_type,'type_title',pt.title) ORDER BY p."order",p.id),'[]'::jsonb) FROM eshop.products p LEFT JOIN eshop.product_types pt ON pt.id=p.product_type WHERE p.occasion=p_occasion),
- 'fields',(SELECT coalesce(jsonb_agg(jsonb_build_object('field_id',ff.id,'form_id',ff.form,'label',ff.title,'form_title',fm.title,'source',CASE WHEN ff.is_ticket_field THEN 'ticket_field' ELSE 'order_field' END)),'[]'::jsonb)
- FROM public.form_fields ff JOIN public.forms fm ON fm.id=ff.form WHERE fm.occasion=p_occasion)),'server_time',now());
+ 'fields',(SELECT coalesce(jsonb_agg(jsonb_build_object('field_id',ff.id,'form_id',ff.form,'label',ff.title,'type',ff.type,'form_title',coalesce(nullif(btrim(fm.title),''),fm.link),'source',CASE WHEN ff.is_ticket_field THEN 'ticket_field' ELSE 'order_field' END) ORDER BY fm.id,ff."order",ff.id),'[]'::jsonb)
+ FROM public.form_fields ff JOIN public.forms fm ON fm.id=ff.form
+ WHERE fm.occasion=p_occasion AND NOT ff.is_hidden
+ -- Identity, notes, seats and purchased products already have dedicated presentation.
+ AND ff.type IN ('text','email','phone','city','birth_year','birth_date','address','nationality','sex','id_document','select_one','select_many')
+ AND (NOT ff.is_ticket_field OR EXISTS(SELECT 1 FROM public.form_fields parent WHERE parent.form=fm.id AND parent.type='ticket' AND NOT parent.is_hidden)))),'server_time',now());
 END $$;
 CREATE OR REPLACE FUNCTION public.update_scanner_settings(p_occasion bigint,p_expected_revision bigint,p_config jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

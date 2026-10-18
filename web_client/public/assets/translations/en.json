@@ -3168,6 +3168,8 @@
     "preview_action": "Show preview",
     "preview_empty": "Enter a ticket code to see the preview.",
     "reason_scanner_settings_forbidden": "Only an editor or reservation editor of this event can change these settings.",
-    "reason_offline_storage_unavailable": "Offline data cannot be opened. Connect to the internet and prepare this device again."
+    "reason_offline_storage_unavailable": "Offline data cannot be opened. Connect to the internet and prepare this device again.",
+    "filter_answers": "Search fields",
+    "no_matching_answers": "No more matching fields."
   }
 }

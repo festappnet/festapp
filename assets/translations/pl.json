@@ -1276,6 +1276,8 @@
     "preview_action": "Pokaż podgląd",
     "preview_empty": "Wpisz kod biletu, aby zobaczyć podgląd.",
     "reason_scanner_settings_forbidden": "Ustawienia może zmieniać tylko edytor lub edytor rezerwacji tego wydarzenia.",
-    "reason_offline_storage_unavailable": "Nie można otworzyć danych offline. Połącz się z internetem i przygotuj urządzenie ponownie."
+    "reason_offline_storage_unavailable": "Nie można otworzyć danych offline. Połącz się z internetem i przygotuj urządzenie ponownie.",
+    "filter_answers": "Szukaj pola",
+    "no_matching_answers": "Brak kolejnych pasujących pól."
   }
 }

@@ -17,9 +17,9 @@ test('editor selects products and order/ticket answers and saves the scoped sett
   assert.equal(fixed.length,4);assert.ok(fixed.every(input=>input.checked&&input.disabled));
   assert.equal(page.host.querySelector('[data-product]'),null,'all mode needs no individual selection');
   assert.equal(page.host.querySelector('option[value="builtin:holder_name"]'),null);
-  let select=page.host.querySelector('[data-mode]');select.value='selected';select.onchange({target:select});
+  const mode=page.host.querySelector('[data-mode][value=selected]');mode.checked=true;mode.onchange({target:mode});
   const product=page.host.querySelector('[data-product="3"]');assert.equal(product.checked,true,'all -> selected preserves effective selection');assert.equal(product.disabled,false);product.checked=false;product.onchange();assert.deepEqual(page.draft.products.ids,[]);product.checked=true;product.onchange();
-  for(const value of ['0','1']){select=page.host.querySelector('[data-add-field]');select.value=value;select.onchange({target:select});}
+  for(const value of ['0','1'])page.host.querySelector(`[data-add-field="${value}"]`).click();
   assert.match(page.host.textContent,/Stravovací omezení/);assert.doesNotMatch(page.host.textContent,/order_field|ticket_field|order:1:2/);
   await page.host.querySelector('[data-settings]').onsubmit({preventDefault(){}});
   assert.equal(saved.p_expected_revision,7);assert.deepEqual(saved.p_config.products.ids,[3]);assert.deepEqual(saved.p_config.fields.map(f=>f.source),['order_field','ticket_field']);
@@ -61,4 +61,29 @@ test('direct settings link returns to this event tickets and uses current event 
   assert.equal(page.host.querySelectorAll('.scan-settings-nav a').length,1);
   assert.equal(page.host.querySelector('.scan-settings-nav a').getAttribute('href'),'/scan');
  }finally{globalThis.document=old;dom.window.close();}
+});
+
+test('answer picker uses form labels, searches and excludes already selected answers',async()=>{
+ const dom=new JSDOM('<div id="settings"></div>');const old={document:globalThis.document,translations:LocalizationService.translations};globalThis.document=dom.window.document;
+ LocalizationService.translations=JSON.parse(await readFile(new URL('../../public/assets/translations/cs.json',import.meta.url),'utf8'));
+ try{
+  const page=new ScannerSettingsPage(document.getElementById('settings'),{api:{},session:{occasion_id:42}});
+  page.data={products:[],fields:[{form_id:1,field_id:2,type:'email',source:'order_field',label:null,form_title:null},{form_id:1,field_id:3,type:'text',source:'ticket_field',label:'Stravovací omezení',form_title:'Ples'}]};
+  page.draft={products:{mode:'all',ids:[],order:[]},fields:[],manual_search:{},sensitive:{},offline:{max_hours:0}};page.render();
+  assert.equal(page.host.querySelector('select'),null,'no system popup with unstyled options');
+  assert.match(page.host.querySelector('[data-add-field="0"]').textContent,/E-mail/);
+  assert.doesNotMatch(page.host.textContent,/null|undefined|FormsFeature\./);
+  page.host.querySelector('.scan-answer-picker').open=true;
+  let input=page.host.querySelector('[data-answer-search]');input.value='omezení';input.oninput({target:input});
+  assert.equal(page.host.querySelectorAll('[data-add-field]').length,1);
+  page.host.querySelector('[data-add-field="1"]').click();
+  assert.equal(page.draft.fields[0].label,'Stravovací omezení');
+  assert.equal(page.host.querySelector('[data-add-field="1"]'),null,'added item cannot be offered twice');
+  assert.equal(page.host.querySelector('.scan-answer-picker').open,true);
+  input=page.host.querySelector('[data-answer-search]');input.value='';input.oninput({target:input});
+  assert.equal(page.host.querySelectorAll('[data-add-field]').length,1);
+  page.host.querySelector('[data-add-field="0"]').click();
+  assert.equal(page.draft.fields[1].label,'E-mail');
+  assert.equal(page.host.querySelectorAll('[data-add-field]').length,0);
+ }finally{globalThis.document=old.document;LocalizationService.translations=old.translations;dom.window.close();}
 });

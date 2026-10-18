@@ -3169,6 +3169,8 @@
     "preview_action": "Zobrazit náhled",
     "preview_empty": "Náhled se zobrazí po zadání kódu vstupenky.",
     "reason_scanner_settings_forbidden": "Nastavení může měnit pouze editor nebo editor rezervací této akce.",
-    "reason_offline_storage_unavailable": "Offline data nelze otevřít. Připojte se k internetu a připravte zařízení znovu."
+    "reason_offline_storage_unavailable": "Offline data nelze otevřít. Připojte se k internetu a připravte zařízení znovu.",
+    "filter_answers": "Hledat údaj",
+    "no_matching_answers": "Žádné další odpovídající údaje."
   }
 }

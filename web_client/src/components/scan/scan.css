@@ -292,3 +292,20 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-settings-saved {padding:16px;background:var(--scan-success-bg);color:var(--scan-success);border-radius:10px;margin-bottom:24px!important}
 @media(min-width:1000px) {.scan-settings .scan-settings-grid {grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:32px}}
 @media(max-width:599px) {.scan-settings-grid>form,.scan-settings-preview {padding:20px 16px}.scan-settings-heading {margin-bottom:24px}.scan-settings .scan-settings-nav {margin-bottom:20px}.scan-settings-heading h1 {font-size:1.75rem}.scan-settings .scan-settings-nav a {font-size:.9rem}.scan-answer details {margin-inline-start:0}}
+
+/* Keep answer choices in the page so their styling is consistent across platforms. */
+.scan-answer-picker {margin-top:16px;border:1px solid var(--scan-line);border-radius:10px;background:var(--surface-color);padding:0 14px}
+.scan-answer-picker>summary {color:var(--primary-color);padding:12px 0;min-height:48px}
+.scan-answer-picker .scan-field-label {margin:4px 0 12px}
+.scan-answer-choices {max-height:320px;overflow:auto;overscroll-behavior:contain;padding-bottom:8px}
+.scan-answer-choices>button {display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;text-align:start;border:0;border-radius:8px;background:transparent;padding:12px;margin:0;color:var(--text-color)}
+.scan-answer-choices>button:hover {background:var(--scan-soft)}
+.scan-answer-choices>button>span:first-child {min-width:0;overflow-wrap:anywhere}
+.scan-answer-choices small {display:block;color:var(--scan-muted);font-size:.875rem;line-height:1.4;margin-top:4px}
+.scan-answer-choices>button>span:last-child {color:var(--primary-color);font-size:1.4rem}
+
+.scan-product-modes {display:flex;flex-wrap:wrap;gap:8px;border:0;margin:16px 0;padding:0;min-width:0}
+.scan-product-modes legend {margin-bottom:8px;font-size:1rem}
+.scan-settings .scan-product-modes label {display:flex;align-items:center;gap:8px;margin:0;padding:10px 14px;min-height:48px;border:1px solid var(--scan-line);border-radius:10px;cursor:pointer}
+.scan-settings .scan-product-modes label:has(:checked) {border-color:var(--primary-color);background:var(--scan-soft)}
+.scan-settings .scan-product-modes input[type=radio] {appearance:auto;width:20px;height:20px;min-height:20px;padding:0;margin:0;accent-color:var(--primary-color);flex-shrink:0}
