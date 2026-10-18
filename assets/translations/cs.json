@@ -974,7 +974,9 @@
       "offeredCount": "Počet nabídnutých míst",
       "offerExpiresAt": "Platnost nabídky do",
       "offerUrl": "Osobní odkaz na nabídku",
-      "offerButton": "Tlačítko pro otevření nabídky (HTML)"
+      "offerButton": "Tlačítko pro otevření nabídky (HTML)",
+      "orderOverviewUrl": "Přehled objednávky - odkaz",
+      "orderOverviewButton": "Přehled objednávky - tlačítko"
     },
     "usage": {
       "resetPassword_title": "Obnovení hesla",
@@ -1027,7 +1029,41 @@
     "emailTemplateContent": "Obsah e-mailové šablony",
     "subject": "Předmět",
     "subjectRequired": "Předmět je povinný",
-    "template": "Šablona"
+    "template": "Šablona",
+    "authoring": {
+      "authoringHint": "Napište @ a vyberte údaj, který se doplní při odeslání.",
+      "insertVariable": "Vložit údaj",
+      "noVariable": "Žádný odpovídající údaj",
+      "alreadyUsed": "Již vloženo",
+      "sampleData": "Ukázková data",
+      "variable": "Proměnný údaj",
+      "previewUnavailable": "Ukázku nelze načíst. Zkuste to znovu.",
+      "preview": "Náhled obsahu e-mailu",
+      "previewScope": "Ukázková data bez banneru. Odkazy nejsou aktivní.",
+      "scenario": "Ukázka",
+      "suggestTitle": "Použít proměnný název akce místo „{}“?",
+      "replaceVariable": "Nahradit údajem",
+      "keepText": "Ponechat text",
+      "unknownVariable": "Nerozpoznané nebo nepodporované údaje zůstanou zachovány.",
+      "unpaid": "K úhradě",
+      "deposit": "Záloha",
+      "paid": "Uhrazeno",
+      "zero": "Nulová cena",
+      "standard": "Běžná zpráva",
+      "formal": "Formální",
+      "informal": "Neformální",
+      "recommended": "Doporučené",
+      "usedBlocks": "Již vložené bloky",
+      "labels": {
+        "fullOrder": "Přehled objednávky",
+        "balanceReasoning": "Stav platby",
+        "paymentDetails": "Platební údaje",
+        "changeOverview": "Změny objednávky",
+        "platformLinks": "Odkazy na aplikaci",
+        "appLinks": "Odkazy na aplikaci",
+        "orderSymbol": "Symbol objednávky"
+      }
+    }
   },
   "Inventory": {
     "edit": "Upravit",

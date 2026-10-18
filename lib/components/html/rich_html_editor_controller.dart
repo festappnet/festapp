@@ -12,6 +12,7 @@ import 'package:html/parser.dart' as html_parser;
 
 import 'html_editor_document.dart';
 import 'html_embedded_block.dart';
+import 'template_authoring.dart';
 import 'html_document_codec.dart';
 import 'html_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -26,7 +27,8 @@ class RichHtmlEditorController extends ChangeNotifier {
       this.embeddedBlock,
       required this.owner,
       this.profile = HtmlContentProfile.appContent,
-      HtmlMediaDraft? media})
+      HtmlMediaDraft? media,
+      this.authoring})
       : originalHtml = initialHtml ?? '',
         media = media ?? HtmlMediaDraft(),
         _ownsMedia = media == null {
@@ -35,6 +37,25 @@ class RichHtmlEditorController extends ChangeNotifier {
   final HtmlMediaOwner owner;
   final HtmlEmbeddedBlock? embeddedBlock;
   final HtmlContentProfile profile;
+  final TemplateAuthoringProvider? authoring;
+  ActionTagsPlugin? _tags;
+  final _tagReactions = <EditReaction>[];
+  IndexedTag? get composingTag => _validTag;
+  IndexedTag? _validTag;
+  final authoringChanges = ChangeNotifier();
+  void refreshAuthoringPresentation() => authoringChanges.notifyListeners();
+  static final _tagRule = TagRule(trigger: '@', excludedCharacters: {
+    ' ',
+    '\n',
+    '\r',
+    '\t',
+    '.',
+    ',',
+    ';',
+    ':',
+    '!',
+    '?'
+  });
   String originalHtml;
   final HtmlMediaDraft media;
   final bool _ownsMedia;
@@ -66,7 +87,12 @@ class RichHtmlEditorController extends ChangeNotifier {
       documentLayoutResolver: () => layoutKey.currentState as DocumentLayout);
 
   void _load(String? value) {
-    _codec = HtmlEditorDocument(value);
+    _codec = HtmlEditorDocument(value,
+        tokenCodes: authoring?.codes ?? const {},
+        blockCodes: authoring?.codes
+                .where((c) => authoring!.entry(c)?.block == true)
+                .toSet() ??
+            const {});
     _originalImageSources = HtmlDocumentCodec.decode(value)
         .imageSlots
         .map((image) => image.source ?? image.attributes['data-src'])
@@ -79,6 +105,44 @@ class RichHtmlEditorController extends ChangeNotifier {
     // and bare image URL reactions must not rewrite songs or email templates.
     editor.reactionPipeline.removeWhere(
         (reaction) => reaction is! UpdateComposerTextStylesReaction);
+    if (authoring != null) {
+      _tags = ActionTagsPlugin(tagRule: _tagRule)..attach(editor);
+      // Native tag decoration belongs to the same undo item as typing/insertion.
+      // Keep the upstream reaction intact; only schedule it before history closes.
+      for (var i = 0; i < editor.reactionPipeline.length; i++) {
+        final reaction = editor.reactionPipeline[i];
+        if (reaction is ActionTagComposingReaction) {
+          final atomic = _AtomicActionTagReaction(reaction);
+          _tagReactions.add(atomic);
+          editor.reactionPipeline[i] = atomic;
+        }
+      }
+      _tags!.composingActionTag.addListener(_tagChanged);
+    }
+    if (authoring?.singleLine == true)
+      editor.requestHandlers.insert(0, (editor, request) {
+        if (request is SplitParagraphRequest) return _IgnoreSubjectNewline();
+        if (request is ChangeSelectionRequest &&
+            request.newSelection != null &&
+            editor.document.getNodeById(request.newSelection!.extent.nodeId) ==
+                null) return _IgnoreSubjectNewline();
+        if (request is InsertTextRequest)
+          return InsertTextCommand(
+              documentPosition: request.documentPosition,
+              textToInsert:
+                  request.textToInsert.replaceAll(RegExp(r'[\r\n]+'), ' '),
+              attributions: {},
+              createdAt: request.createdAt);
+        if (request is InsertAttributedTextRequest)
+          return InsertAttributedTextCommand(
+              documentPosition: request.documentPosition,
+              textToInsert: tokenizeTemplateText(
+                  AttributedText(templatePlainText(request.textToInsert)
+                      .replaceAll(RegExp(r'[\r\n]+'), ' ')),
+                  authoring!.codes),
+              createdAt: request.createdAt);
+        return null;
+      });
     editor.document.addListener(_changed);
   }
 
@@ -91,12 +155,212 @@ class RichHtmlEditorController extends ChangeNotifier {
   void reset(String html) {
     _generation++;
     originalHtml = html;
+    _detachTags();
     editor.document.removeListener(_changed);
     editor.dispose();
     _cachedHtml = null;
     _load(html);
     revision++;
     notifyListeners();
+  }
+
+  void _detachTags() {
+    editor.reactionPipeline.removeWhere(_tagReactions.contains);
+    _tagReactions.clear();
+    _tags?.composingActionTag.removeListener(_tagChanged);
+    _tags?.detach(editor);
+    _tags?.dispose();
+    _tags = null;
+    _validTag = null;
+  }
+
+  void _tagChanged() {
+    final tag = _tags?.composingActionTag.value;
+    final node = tag == null ? null : editor.document.getNodeById(tag.nodeId);
+    _validTag = null;
+    if (tag != null && node is TextNode) {
+      final attrs = node.text.getAllAttributionsAt(tag.startOffset);
+      if (authoring!.canTrigger(node.text.toPlainText(), tag.startOffset,
+          inLink: attrs.any((a) => a is LinkAttribution),
+          inCode: attrs.contains(codeAttribution),
+          composing: editor.composer.composingRegion.value != null)) {
+        _validTag = tag;
+      } else {
+        // Clear before publishing UI state; cancelling through the editor is
+        // deferred because this listener can run inside its reaction pipeline.
+        _tags!.composingActionTag.value = null;
+        final generation = _generation;
+        scheduleMicrotask(() {
+          if (!_disposed &&
+              generation == _generation &&
+              _validTag == null &&
+              _tags?.composingActionTag.value == null)
+            editor.execute([CancelComposingActionTagRequest(_tagRule)]);
+        });
+      }
+    }
+    authoringChanges.notifyListeners();
+  }
+
+  void cancelTemplateQuery() {
+    editor.execute([CancelComposingActionTagRequest(_tagRule)]);
+    _validTag = null;
+    authoringChanges.notifyListeners();
+  }
+
+  String get plainText => editor.document
+      .whereType<TextNode>()
+      .map((node) => templatePlainText(node.text))
+      .join(authoring?.singleLine == true ? ' ' : '\n');
+
+  bool get hasUnsupportedTokens {
+    if (authoring == null) return false;
+    final pattern = RegExp(r'\{\{([A-Za-z_][A-Za-z0-9_]*)\}\}');
+    final value = plainText;
+    return pattern
+            .allMatches(value)
+            .any((m) => !authoring!.supports(m.group(1)!)) ||
+        value.replaceAll(pattern, '').contains('{{');
+  }
+
+  Map<String, int> get templateUsage {
+    final counts = <String, int>{};
+    for (final block in editor.document.whereType<TemplateTokenBlock>()) {
+      counts.update(block.code, (n) => n + 1, ifAbsent: () => 1);
+    }
+    for (final node in editor.document.whereType<TextNode>()) {
+      for (final token in node.text.placeholders.values
+          .whereType<TemplateTokenPlaceholder>()) {
+        counts.update(token.code, (n) => n + 1, ifAbsent: () => 1);
+      }
+    }
+    return counts;
+  }
+
+  /// Range and revision are checked again immediately before one history batch.
+  bool insertTemplateToken(String code,
+      {IndexedTag? expectedTag,
+      int? expectedRevision,
+      DocumentSelection? replacement,
+      String? expectedText}) {
+    if (authoring?.entry(code) == null ||
+        !authoring!.search('', const {}).any((e) => e.code == code) ||
+        expectedRevision != null && revision != expectedRevision) return false;
+    var selection = replacement ?? editor.composer.selection;
+    if (expectedTag != null) {
+      final node = editor.document.getNodeById(expectedTag.nodeId);
+      if (node is! TextNode ||
+          expectedTag.endOffset > node.text.length ||
+          node.text
+                  .toPlainText()
+                  .substring(expectedTag.startOffset, expectedTag.endOffset) !=
+              expectedTag.tag.raw) return false;
+      selection =
+          DocumentSelection(base: expectedTag.start, extent: expectedTag.end);
+    }
+    if (selection == null ||
+        selection.base.nodeId != selection.extent.nodeId ||
+        selection.base.nodePosition is! TextNodePosition ||
+        selection.extent.nodePosition is! TextNodePosition) return false;
+    final node = editor.document.getNodeById(selection.base.nodeId);
+    if (node is! TextNode) return false;
+    final a = (selection.base.nodePosition as TextNodePosition).offset;
+    final b = (selection.extent.nodePosition as TextNodePosition).offset;
+    final start = a < b ? a : b;
+    final end = a > b ? a : b;
+    if (start < 0 || end > node.text.length) return false;
+    final attrs = node.text.isEmpty
+        ? <Attribution>{}
+        : node.text.getAllAttributionsAt(start.clamp(0, node.text.length - 1));
+    if (expectedText != null &&
+        node.text.toPlainText().substring(start, end) != expectedText)
+      return false;
+    if (expectedTag == null &&
+        !authoring!.canInsert(node.text.toPlainText(), start,
+            inLink: attrs.any((a) => a is LinkAttribution),
+            inCode: attrs.contains(codeAttribution),
+            composing: editor.composer.composingRegion.value != null))
+      return false;
+    if (expectedTag != null &&
+        !authoring!.canTrigger(node.text.toPlainText(), start,
+            inLink: attrs.any((a) => a is LinkAttribution),
+            inCode: attrs.contains(codeAttribution),
+            composing: editor.composer.composingRegion.value != null))
+      return false;
+    final position = DocumentPosition(
+        nodeId: node.id, nodePosition: TextNodePosition(offset: start));
+    editor.execute([
+      if (!selection.isCollapsed)
+        DeleteContentRequest(documentRange: selection),
+      ChangeSelectionRequest(DocumentSelection.collapsed(position: position),
+          SelectionChangeType.placeCaret, SelectionReason.userInteraction),
+      if (authoring!.entry(code)!.block)
+        PasteStructuredContentEditorRequest(
+            content: MutableDocument(nodes: [
+              TemplateTokenBlock(id: Editor.createNodeId(), code: code),
+              ParagraphNode(id: Editor.createNodeId(), text: AttributedText())
+            ]),
+            pastePosition: position)
+      else
+        InsertInlinePlaceholderAtCaretRequest(TemplateTokenPlaceholder(code)),
+      CancelComposingActionTagRequest(_tagRule),
+    ]);
+    focusNode.requestFocus();
+    return true;
+  }
+
+  ({String text, String html})? selectedTemplateContent() {
+    final selection = editor.composer.selection;
+    if (selection == null || selection.isCollapsed) return null;
+    final range =
+        editor.document.getRangeBetween(selection.base, selection.extent);
+    final text = <String>[];
+    final html = <String>[];
+    final nodes = editor.document.getNodesInside(range.start, range.end);
+    for (final node in nodes) {
+      if (node is TemplateTokenBlock) {
+        final source = TemplateTokenPlaceholder(node.code).source;
+        text.add(source);
+        html.add(source);
+      }
+      if (node is TextNode) {
+        final start = node.id == range.start.nodeId
+            ? (range.start.nodePosition as TextNodePosition).offset
+            : 0;
+        final end = node.id == range.end.nodeId
+            ? (range.end.nodePosition as TextNodePosition).offset
+            : node.text.length;
+        final selected = node.text.copyText(start, end);
+        text.add(templatePlainText(selected));
+        html.add('<p>${templateInlineHtml(selected)}</p>');
+      }
+    }
+    return (text: text.join('\n'), html: html.join());
+  }
+
+  Future<void> copy({bool cut = false}) async {
+    if (authoring == null) {
+      if (cut) {
+        operations.cut();
+      } else {
+        operations.copy();
+      }
+      return;
+    }
+    final selected = selectedTemplateContent();
+    if (selected == null) return;
+    final selection = editor.composer.selection!;
+    final version = revision;
+    final clipboard = SystemClipboard.instance;
+    if (clipboard == null) return;
+    await clipboard.write([
+      DataWriterItem()
+        ..add(Formats.plainText(selected.text))
+        ..add(Formats.htmlText(selected.html))
+    ]);
+    if (cut && version == revision) {
+      editor.execute([DeleteContentRequest(documentRange: selection)]);
+    }
   }
 
   Future<String> prepareForSave({BuildContext? context}) async {
@@ -120,8 +384,29 @@ class RichHtmlEditorController extends ChangeNotifier {
     ]);
   }
 
-  void undo() => editor.undo();
-  void redo() => editor.redo();
+  void undo() {
+    if (authoring == null) {
+      editor.undo();
+      return;
+    }
+    final before = html;
+    var remaining = editor.history.length;
+    do {
+      editor.undo();
+    } while (--remaining > 0 && html == before);
+  }
+
+  void redo() {
+    if (authoring == null) {
+      editor.redo();
+      return;
+    }
+    final before = html;
+    var remaining = editor.future.length;
+    do {
+      editor.redo();
+    } while (--remaining > 0 && html == before);
+  }
 
   Future<void> insertImage(Uint8List bytes) async {
     final selection = editor.composer.selection;
@@ -162,7 +447,9 @@ class RichHtmlEditorController extends ChangeNotifier {
     final selection = editor.composer.selection;
     final generation = _generation;
     final version = revision;
-    final imported = await media.importHtml(html, owner);
+    final imported = authoring?.singleLine == true
+        ? html
+        : await media.importHtml(html, owner);
     _checkPending(generation, version);
     _restoreSelection(selection);
     _pasteHtml(imported);
@@ -189,7 +476,9 @@ class RichHtmlEditorController extends ChangeNotifier {
       if (item.canProvide(Formats.htmlText)) {
         final value = await item.readValue(Formats.htmlText);
         if (value != null && value.isNotEmpty) {
-          final imported = await media.importHtml(value, owner);
+          final imported = authoring?.singleLine == true
+              ? value
+              : await media.importHtml(value, owner);
           imageSources.addAll(HtmlDocumentCodec.decode(imported)
               .imageSlots
               .map((image) => image.source)
@@ -199,13 +488,15 @@ class RichHtmlEditorController extends ChangeNotifier {
         }
       }
       var imageRead = false;
-      for (final format in [
-        Formats.png,
-        Formats.jpeg,
-        Formats.webp,
-        Formats.gif,
-        Formats.heic
-      ]) {
+      for (final format in authoring?.singleLine == true
+          ? <SimpleFileFormat>[]
+          : [
+              Formats.png,
+              Formats.jpeg,
+              Formats.webp,
+              Formats.gif,
+              Formats.heic
+            ]) {
         if (!item.canProvide(format)) continue;
         final completion = Completer<Uint8List>();
         final progress = item.getFile(format, (file) async {
@@ -241,13 +532,30 @@ class RichHtmlEditorController extends ChangeNotifier {
   }
 
   Iterable<DocumentNode> _pasteContent(String html) {
+    if (authoring?.singleLine == true) {
+      final fragment = html_parser.parseFragment(html);
+      for (final br in fragment.querySelectorAll('br')) {
+        br.replaceWith(html_parser.parseFragment(' ').nodes.first);
+      }
+      final text = (fragment.text ?? '').replaceAll(RegExp(r'[\r\n]+'), ' ');
+      return [
+        ParagraphNode(
+            id: Editor.createNodeId(),
+            text: tokenizeTemplateText(AttributedText(text), authoring!.codes))
+      ];
+    }
     final fragment = html_parser.parseFragment(html);
     final complex = fragment.querySelector(
             'table,ul,ol,pre,img,hr,blockquote,h1,h2,h3,h4,h5,h6,p[style],p[class],div[style]') !=
         null;
-    if (complex)
+    if (complex && authoring == null)
       return [PreservedHtmlNode(id: Editor.createNodeId(), html: html)];
-    final incoming = HtmlEditorDocument(html);
+    final incoming = HtmlEditorDocument(html,
+        tokenCodes: authoring?.codes ?? const {},
+        blockCodes: authoring?.codes
+                .where((c) => authoring!.entry(c)?.block == true)
+                .toSet() ??
+            const {});
     _codec.adoptFragment(incoming);
     return incoming.document;
   }
@@ -294,9 +602,11 @@ class RichHtmlEditorController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _generation++;
+    _detachTags();
     editor.document.removeListener(_changed);
     editor.dispose();
     focusNode.dispose();
+    authoringChanges.dispose();
     if (_ownsMedia) media.dispose();
     super.dispose();
   }
@@ -540,4 +850,20 @@ class _HtmlBinding {
   final void Function(String) write;
   final HtmlMediaOwner owner;
   final String original;
+}
+
+class _IgnoreSubjectNewline extends EditCommand {
+  @override
+  void execute(EditContext context, CommandExecutor executor) {}
+}
+
+class _AtomicActionTagReaction extends EditReaction {
+  _AtomicActionTagReaction(this.native);
+  final EditReaction native;
+  @override
+  void modifyContent(EditContext context, RequestDispatcher dispatcher,
+      List<EditEvent> changes) {
+    native.modifyContent(context, dispatcher, changes);
+    native.react(context, dispatcher, changes);
+  }
 }
