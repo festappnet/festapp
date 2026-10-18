@@ -7,7 +7,7 @@ BEGIN
  SELECT * INTO s FROM public.scanner_sessions WHERE id=p_session FOR SHARE;
  IF s.id IS NULL OR p_token IS NULL OR s.token_hash<>encode(digest(p_token,'sha256'),'hex') THEN
   RAISE SQLSTATE 'PT401' USING MESSAGE='invalid_scanner_session'; END IF;
- IF s.actor_user_id IS NOT NULL AND (auth.uid() IS DISTINCT FROM s.actor_user_id OR NOT public.get_is_editor_order_on_occasion(s.occasion_id)) THEN
+ IF s.actor_user_id IS NOT NULL AND (auth.uid() IS DISTINCT FROM s.actor_user_id OR NOT public.scanner_can_manage_settings_internal(s.occasion_id)) THEN
   RAISE SQLSTATE 'PT403' USING MESSAGE='scanner_actor_changed'; END IF;
  SELECT oh.secret INTO secret FROM public.occasions o JOIN public.occasions_hidden oh ON oh.id=o.occasion_hidden WHERE o.id=s.occasion_id;
  IF NOT p_allow_expired AND (s.revoked_at IS NOT NULL OR s.expires_at<=now() OR s.epoch<>cfg.epoch
@@ -25,7 +25,7 @@ BEGIN
   -- record assignment above must match the occasion row exactly
   origin:='scan_link'; sec:=p_scan_code;
  ELSE
-  PERFORM public.check_is_editor_order_on_occasion(p_occasion);
+  PERFORM public.scanner_require_settings_editor_internal(p_occasion);
   SELECT * INTO oc FROM public.occasions WHERE id=p_occasion; origin:='authenticated';
  END IF;
  IF oc.id IS NULL THEN PERFORM public.admit_scan_access_v1(NULL,false); RETURN jsonb_build_object('code',401,'reason','invalid_scan_code','server_time',now()); END IF;
@@ -39,7 +39,7 @@ BEGIN
  RETURN jsonb_build_object('code',200,'server_time',now(),'data',jsonb_build_object('session_id',s.id,'token',token,'occasion_id',oc.id,'organization_id',oc.organization,
  'title',oc.title,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
  'capabilities',jsonb_build_object('search_tickets',(cfg.config#>>'{manual_search,tickets}')::boolean,'search_users',(cfg.config#>>'{manual_search,users}')::boolean,
- 'settings',auth.uid() IS NOT NULL AND public.get_is_editor_order_on_occasion(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
+ 'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.get_is_editor_order_on_occasion(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
 END $$;
 CREATE OR REPLACE FUNCTION public.revoke_scanner_session(p_session uuid,p_token text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

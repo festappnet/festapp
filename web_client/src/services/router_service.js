@@ -164,6 +164,7 @@ export class RouterService {
         const scannerRoute = resolveScannerRoute(path);
         if (scannerRoute) {
             const requestedOccasion = new URL(fullUrl).searchParams.get('occasion');
+            scannerRoute.returnTo = new URL(fullUrl).searchParams.get('returnTo');
             if (/^[1-9][0-9]*$/.test(requestedOccasion || '')) {
                 scannerRoute.occasion = requestedOccasion;
             }

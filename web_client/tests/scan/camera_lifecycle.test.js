@@ -157,3 +157,33 @@ test('camera appends new tickets while lookups and confirmations are pending wit
         page.disposeControllers();clearTimeout(page.advanceTimer);
     }finally{dom.window.close();globalThis.document=previous.document;Object.defineProperty(globalThis,'navigator',previous.navigator);}
 });
+
+test('editor display settings are a direct menu action and the back arrow targets the ticket list',()=>{
+ const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});
+ const previous=globalThis.document;globalThis.document=dom.window.document;
+ try {
+  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
+  page.route={page:'scan'};page.returnPath='/PlesAKH2025-copy-ad8a55ba/reservations/tickets';
+  page.row={session:{title:'Fixture',capabilities:{settings:true},settings:{fields:[]}}};
+  page.host.innerHTML=page.shell('');
+  assert.equal(page.host.querySelector('.scan-home').getAttribute('href'),page.returnPath);
+  assert.ok(page.host.querySelector('.scan-menu nav a[href="/scan/settings"]'));
+  page.row.session.capabilities.settings=false;page.host.innerHTML=page.shell('');
+  assert.equal(page.host.querySelector('a[href="/scan/settings"]'),null);
+ }finally {globalThis.document=previous;dom.window.close();}
+});
+
+test('device preferences cannot override the shared event field visibility',()=>{
+ const c={state:'result',ticket:{state:'sent',admission_allowed:true,products:[],fields:[{key:'order:1:2',label:'Diet',value:'SHARED VISIBLE',default_visible:true},{key:'order:1:3',label:'Private',value:'SHARED HIDDEN',default_visible:false}]}};
+ const html=ScanPage.prototype.resultHtml.call({preferences:{'order:1:2':false,'order:1:3':true},storageAvailable:true,row:{locked:false}},c);
+ assert.match(html,/SHARED VISIBLE/);assert.doesNotMatch(html,/SHARED HIDDEN/);
+});
+
+test('allowed offline preparation runs automatically without a snapshot; disabled events do not download',async()=>{
+ const previous=Object.getOwnPropertyDescriptor(globalThis,'navigator');Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
+ try{
+  let preparations=0;const page={row:{partition:'p',session:{capabilities:{offline:true},settings:{offline:{enabled:true}}}},store:{put:async()=>{},get:async()=>null},api:{summary:async()=>({used_current:0,eligible_total:1})},summaryAt:Date.now(),summary:{},render(){},async prepare({automatic}){assert.equal(automatic,true);preparations++;}};
+  await ScanPage.prototype.recover.call(page);await page.backgroundPreparation;assert.equal(preparations,1);
+  page.row.session.capabilities.offline=false;page.lastSnapshotAttempt=0;await ScanPage.prototype.recover.call(page);assert.equal(preparations,1);
+ }finally{if(previous)Object.defineProperty(globalThis,'navigator',previous);else delete globalThis.navigator;}
+});

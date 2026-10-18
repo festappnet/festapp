@@ -19,7 +19,7 @@ export function scanResult(c, storageAvailable) {
     else if (t?.requires_unpaid_confirmation) message = tr('unpaid');
     else if (t?.admission_allowed) { message = tr('valid'); tone = 'allowed'; }
     else message = tr('not_allowed');
-    const fields = (t?.fields || []).filter(f => f.default_visible && !(f.key==='note' && t.note) && !(f.hide_empty && (f.value == null || f.value === '')));
+    const fields = (t?.fields || []).filter(f => !['holder_name','spot','note'].includes(f.key) && f.default_visible && !(f.key==='note' && t.note) && !(f.hide_empty && (f.value == null || f.value === '')));
     const field = f => `<div><dt>${e(f.label)}</dt><dd>${f.missing ? tr('missing_field') : e(typeof f.value === 'object' ? JSON.stringify(f.value) : f.value)}</dd></div>`;
     const canConfirm = state === 'result' && t?.admission_allowed && storageAvailable && !(t.source === 'offline' && t.requires_unpaid_confirmation);
     const busy = ['persisting','awaiting_server','looking_up'].includes(state) || (['sending','pending'].includes(state) && !c.offlineReady);

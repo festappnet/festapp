@@ -1,15 +1,18 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/scan/scan_page.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/services/toast_helper.dart';
+
 import 'dart:math';
-import 'package:fstapp/components/html/html_view.dart';
+
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/scan/scan_strings.dart';
+import 'package:fstapp/router_service.dart';
+import 'package:fstapp/services/launch_url_service.dart';
 
 class TicketCodeHelper {
   static String generateRandomCode(int length) {
@@ -24,7 +27,10 @@ class TicketCodeHelper {
   }
 
   static Future<bool> showScanTicketCode(
-      BuildContext context, String titleMessage, String formLink) async {
+    BuildContext context,
+    String titleMessage,
+    String formLink,
+  ) async {
     String? getCode = await DbTickets.getScanCode(formLink);
     if (getCode == null) {
       getCode = generateRandomCode(5);
@@ -35,8 +41,22 @@ class TicketCodeHelper {
     String linkBase = "${AppConfig.webLink}/${ScanPage.ROUTE}/";
     String fullLink = linkBase + generatedCode;
 
-    // Add the htmlLink field here
-    String htmlLink = '<a href="$fullLink">$fullLink</a>';
+    final occasionId = RightsService.currentOccasionId();
+    final source = RouterService.getCurrentBrowserUri();
+    final returnPath =
+        '${source.path}${source.hasQuery ? '?${source.query}' : ''}${source.hasFragment ? '#${source.fragment}' : ''}';
+    Future<bool> openScanner(String path, {bool settings = false}) {
+      final target = Uri.parse('${AppConfig.webLink}$path').replace(
+        queryParameters: {
+          'returnTo': returnPath,
+          if (settings && occasionId != null) 'occasion': '$occasionId',
+        },
+      );
+      return LaunchUrlService.openExternalUrl(
+        target.toString(),
+        inCurrentWindow: true,
+      );
+    }
 
     await showDialog(
       context: context,
@@ -45,27 +65,18 @@ class TicketCodeHelper {
           builder: (BuildContext context, StateSetter setState) {
             Future<void> handleGenerateCode() async {
               bool confirm = await DialogHelper.showConfirmationDialog(
-                  context, titleMessage, OrdersStrings.generateNewCodeWarning);
+                context,
+                titleMessage,
+                OrdersStrings.generateNewCodeWarning,
+              );
               if (confirm) {
                 String newCode = generateRandomCode(5);
                 await DbTickets.updateScanCode(formLink, newCode);
                 setState(() {
                   generatedCode = newCode;
                   fullLink = "$linkBase$newCode";
-                  htmlLink =
-                      '<a href="$fullLink">$fullLink</a>'; // Update htmlLink
                 });
               }
-            }
-
-            void handleCopyCode() {
-              Clipboard.setData(ClipboardData(text: generatedCode));
-              ToastHelper.Show(context, CommonStrings.copiedToClipboard);
-            }
-
-            void handleCopyLink() {
-              Clipboard.setData(ClipboardData(text: fullLink));
-              ToastHelper.Show(context, CommonStrings.copiedToClipboard);
             }
 
             return AppAlertDialog(
@@ -74,9 +85,7 @@ class TicketCodeHelper {
               },
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(child: Text(titleMessage)),
-                ],
+                children: [Expanded(child: Text(titleMessage))],
               ),
               content: SingleChildScrollView(
                 child: Padding(
@@ -93,39 +102,26 @@ class TicketCodeHelper {
                       Row(
                         children: [
                           Expanded(
-                            child: HtmlView(
-                              html:
-                                  htmlLink, // Use htmlLink instead of fullLink
-                              fontSize: 14,
-                              isSelectable: true,
+                            child: TextButton(
+                              onPressed: () =>
+                                  openScanner('/scan/$generatedCode'),
+                              child: Text(fullLink),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.copy),
-                            tooltip: OrdersStrings.copyLink,
-                            onPressed:
-                                fullLink.isNotEmpty ? handleCopyLink : null,
-                          ),
+                          CopyButton(value: fullLink),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SelectableText(
-                              generatedCode.isNotEmpty ? generatedCode : '',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.copy),
-                            tooltip: OrdersStrings.copy,
-                            onPressed: generatedCode.isNotEmpty
-                                ? handleCopyCode
-                                : null,
-                          ),
-                        ],
-                      ),
+                      if (occasionId != null &&
+                          (RightsService.isEditorOrder() ||
+                              RightsService.isEditor())) ...[
+                        const SizedBox(height: 20),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.tune),
+                          label: Text(ScanStrings.displaySettings),
+                          onPressed: () =>
+                              openScanner('/scan/settings', settings: true),
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       Center(
                         child: ElevatedButton(

@@ -51,3 +51,9 @@ test('non-seat product captions identify dinner and transport using the configur
  assert.equal(scannerProductCaption({type:'other',type_title:'Odvoz',title:'Opava, Východní nádraží'}),'Odvoz: Opava, Východní nádraží');
  assert.equal(scannerProductCaption({type:'spot',type_title:'Místo',title:'VIP'}),'VIP');
 });
+
+test('different orders retain purchaser names with seats and never group by a matching name',()=>{
+ const batch=[1,2].map((order_id,index)=>({symbol:`T${index}`,controller:{state:'result',ticket:{symbol:`T${index}`,holder_name:`T${index}`,purchaser_name:'Shared surname',order_id,admission_allowed:true,spot:`S1${index}`,products:[]}}}));
+ const dom=new JSDOM(ScanPage.prototype.batchHtml.call({batch,storageAvailable:true,row:{locked:false}}));
+ try{const cards=[...dom.window.document.querySelectorAll('[data-group-ticket]')];assert.equal(cards.length,2);for(const card of cards)assert.equal(card.querySelector('strong').textContent,'Shared surname');assert.equal(dom.window.document.querySelectorAll('.scan-order-header').length,0);assert.match(cards[0].querySelector('.scan-group-seat').textContent,/S10/);}finally{dom.window.close();}
+});

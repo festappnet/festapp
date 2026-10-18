@@ -1,3 +1,19 @@
+-- Same-occasion editing rights only; a scan code never grants configuration access.
+CREATE OR REPLACE FUNCTION public.scanner_can_manage_settings_internal(p_occasion bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT auth.uid() IS NOT NULL AND (public.get_is_editor_on_occasion(p_occasion) OR public.get_is_editor_order_on_occasion(p_occasion));
+$$;
+REVOKE ALL ON FUNCTION public.scanner_can_manage_settings_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.scanner_require_settings_editor_internal(p_occasion bigint)
+RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
+BEGIN
+ IF NOT public.scanner_can_manage_settings_internal(p_occasion) THEN
+  RAISE insufficient_privilege USING MESSAGE='scanner_settings_forbidden';
+ END IF;
+ PERFORM public.check_occasion_writable(p_occasion);
+END $$;
+REVOKE ALL ON FUNCTION public.scanner_require_settings_editor_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.scanner_default_settings_internal(p_occasion bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('schema_version',1,'products',jsonb_build_object('mode','all','ids','[]'::jsonb,'order','[]'::jsonb),
@@ -46,19 +62,24 @@ CREATE OR REPLACE FUNCTION public.get_scanner_settings(p_occasion bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.scanner_settings;
 BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_occasion);
+ PERFORM public.scanner_require_settings_editor_internal(p_occasion);
  INSERT INTO public.scanner_settings(occasion_id,config) VALUES(p_occasion,public.scanner_default_settings_internal(p_occasion)) ON CONFLICT DO NOTHING;
  SELECT * INTO s FROM public.scanner_settings WHERE occasion_id=p_occasion;
  RETURN jsonb_build_object('code',200,'data',jsonb_build_object('revision',s.revision,'config',s.config,
+ 'occasion_link',(SELECT link FROM public.occasions WHERE id=p_occasion),'occasion_title',(SELECT title FROM public.occasions WHERE id=p_occasion),
  'products',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'title',p.title,'type_id',p.product_type,'type_title',pt.title) ORDER BY p."order",p.id),'[]'::jsonb) FROM eshop.products p LEFT JOIN eshop.product_types pt ON pt.id=p.product_type WHERE p.occasion=p_occasion),
- 'fields',(SELECT coalesce(jsonb_agg(jsonb_build_object('field_id',ff.id,'form_id',ff.form,'label',ff.title,'form_title',fm.title,'source',CASE WHEN ff.is_ticket_field THEN 'ticket_field' ELSE 'order_field' END)),'[]'::jsonb)
- FROM public.form_fields ff JOIN public.forms fm ON fm.id=ff.form WHERE fm.occasion=p_occasion)),'server_time',now());
+ 'fields',(SELECT coalesce(jsonb_agg(jsonb_build_object('field_id',ff.id,'form_id',ff.form,'label',ff.title,'type',ff.type,'form_title',coalesce(nullif(btrim(fm.title),''),fm.link),'source',CASE WHEN ff.is_ticket_field THEN 'ticket_field' ELSE 'order_field' END) ORDER BY fm.id,ff."order",ff.id),'[]'::jsonb)
+ FROM public.form_fields ff JOIN public.forms fm ON fm.id=ff.form
+ WHERE fm.occasion=p_occasion AND NOT ff.is_hidden
+ -- Identity, notes, seats and purchased products already have dedicated presentation.
+ AND ff.type IN ('text','email','phone','city','birth_year','birth_date','address','nationality','sex','id_document','select_one','select_many')
+ AND (NOT ff.is_ticket_field OR EXISTS(SELECT 1 FROM public.form_fields parent WHERE parent.form=fm.id AND parent.type='ticket' AND NOT parent.is_hidden)))),'server_time',now());
 END $$;
 CREATE OR REPLACE FUNCTION public.update_scanner_settings(p_occasion bigint,p_expected_revision bigint,p_config jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.scanner_settings;
 BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_occasion); PERFORM public.check_occasion_writable(p_occasion);
+ PERFORM public.scanner_require_settings_editor_internal(p_occasion); PERFORM public.check_occasion_writable(p_occasion);
  PERFORM public.scanner_validate_settings_internal(p_occasion,p_config);
  SELECT * INTO s FROM public.scanner_settings WHERE occasion_id=p_occasion FOR UPDATE;
  IF NOT FOUND OR s.revision IS DISTINCT FROM p_expected_revision THEN RETURN jsonb_build_object('code',409,'reason','settings_changed','server_time',now()); END IF;

@@ -1,8 +1,9 @@
 # Web scanner
 
 The scanner uses the existing web client and Supabase RPCs. Its server source is
-`database/functions/scanning/`; regenerate the forward migration with
-`python3 automation/assemble-scanner-migration.py`. Do not edit the generated SQL.
+`database/functions/scanning/`. The initial migration is immutable after release.
+Generate the settings/editor follow-up with
+`python3 automation/assemble-scanner-settings-migration.py`; do not edit generated SQL.
 The migration also includes the retained native wrappers, scan-code rotation,
 parent locks, occasion copy and the additive program companion projection.
 
@@ -13,7 +14,8 @@ parent locks, occasion copy and the additive program companion projection.
    explicitly when changing devices or saved sessions.
 2. Use the live camera; manual entry is available as a fallback. New codes keep
    being collected while tickets await confirmation. Confirm the displayed tickets; unpaid admission requires its explicit checkbox.
-3. Open Offline and prepare the device before losing connectivity. Readiness
+3. When the event permits it, a complete matching PWA shell prepares the offline
+   cache automatically in the background. Manual preparation remains available. Readiness
    requires persistent storage, the matching complete PWA shell, the local decoder
    and an atomically verified snapshot. Check authorization expiry.
 4. Pending means saved on this device. Accepted means a server receipt exists.
@@ -31,11 +33,19 @@ cleared browser storage can lose unsent operations. There is no promise of sync
 while the browser is closed. An expired grant blocks new offline admissions.
 Clock rollback blocks offline admission until online verification.
 
+Offline ticket payloads are encrypted with AES-GCM using a non-extractable
+WebCrypto key. This reduces casual plaintext exposure in IndexedDB; a user with
+control of the browser/device or same-origin script can still use the key. It
+is not protection against a compromised device. Expiry/locking clear guest caches;
+legacy plaintext caches are protected or discarded without dropping admissions.
+
 Storage failure blocks confirmation even with working internet. Online lookup
 remains available. Use another prepared device rather than treating an in-memory
 record as saved. A missing offline ticket means unverified, not invalid.
 
-Shared settings require the existing order-editor permission. Products use
+Shared settings require editor or reservation-editor permission on the same event.
+One server configuration applies to every scanner; per-device field overrides are
+not applied. A scan code never grants settings access. Products use
 all/none/explicit selection; fields refer to their actual form and ticket/order
 scope. Local visibility is a subset of the server projection. Draft CAS conflicts
 can reload the saved revision and restore the unsaved draft.
