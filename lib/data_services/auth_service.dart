@@ -70,7 +70,22 @@ class AuthService {
 
   static Future<void> login(String email, String password) async {
     DbEvents.invalidateSavedProgramMutationScope();
-    var data = await _supabase.auth
+    if (RegExp(r'^\d{6}$').hasMatch(password)) {
+      final exchange =
+          await _supabase.functions.invoke('exchange-sign-in-code', body: {
+        'email': AppConfig.removeUserPrefix(email),
+        'code': password,
+        'organization': AppConfig.organization,
+      });
+      final refreshToken =
+          exchange.data is Map ? exchange.data['refresh_token'] : null;
+      if (refreshToken is String && refreshToken.isNotEmpty) {
+        final data = await _supabase.auth.setSession(refreshToken);
+        await _finalizeLogin(data.session!);
+        return;
+      }
+    }
+    final data = await _supabase.auth
         .signInWithPassword(email: email, password: password);
     await _finalizeLogin(data.session!);
   }
@@ -336,12 +351,6 @@ class AuthService {
     if (data["code"] != 200) {
       throw Exception(data["message"]);
     }
-  }
-
-  static Future<void> changeMyPassword(String pw) async {
-    await _supabase.auth.updateUser(UserAttributes(
-      password: pw,
-    ));
   }
 
   static Future<dynamic> changePassword(String token, String pw) async {

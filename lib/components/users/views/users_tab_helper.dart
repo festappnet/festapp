@@ -1,6 +1,5 @@
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/import/import_dialog_helper.dart';
 import 'package:fstapp/components/single_data_grid/i_has_id.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
@@ -18,13 +17,6 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/components/users/user_management_helper.dart';
 
 class UsersTabHelper {
-  /// Calls the import routine and then reloads users via the provided callback.
-  static Future<void> importUsers(
-      BuildContext context, Future<void> Function() reloadUsers) async {
-    await ImportDialogHelper.import(context);
-    await reloadUsers();
-  }
-
   /// Returns the list of checked OccasionUserModel items from the data grid.
   static List<OccasionUserModel> getCheckedUsers(
       SingleDataGridController singleDataGrid) {

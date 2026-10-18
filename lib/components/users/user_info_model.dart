@@ -61,7 +61,7 @@ class UserInfoModel extends IHasId {
   static const String occasionsField = "occasions";
   static const String ticketIdColumn = "ticket_id";
   static const String scheduleColumn = "schedule";
-  static const String userInfoOffline = "user_info";
+  static const String userInfoOffline = "user_info_data_security_v1";
   static const String birthDateJsonFormat = "yyyy-MM-dd";
   static const sexes = ["male", "female", ""];
 

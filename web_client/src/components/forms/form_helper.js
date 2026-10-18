@@ -87,10 +87,6 @@ export class FormHelper {
     }
 
     
-    static replaceSpotWithId(data) {
-        // Placeholder if needed, logic depends on if 'spot' is used
-        return data; 
-    }
     static calculatePrice(payload, formModel) {
         let totalPrice = 0;
         let totalItems = 0;

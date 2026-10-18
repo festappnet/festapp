@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "base_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "findings": [
+    "DB01",
+    "DB02",
+    "DB03",
+    "DB04",
+    "DB05",
+    "DB06",
+    "DB07",
+    "DB08"
+  ],
+  "acl_manifest": "database/functions/security/server_security_acl_manifest.json",
+  "retired_auth_names": [
+    "set_user_password",
+    "create_user",
+    "create_user_with_data",
+    "create_user_in_organization_with_data"
+  ],
+  "compatibility_status": "supported mobile build inventory unproven - final SELECT contraction blocked",
+  "compatibility_reads": [
+    {
+      "objects": [
+        "public.user_group_info.*",
+        "public.user_groups.*"
+      ],
+      "authorization": "current member of the target group or editor_view of its occasion",
+      "supported_builds": null,
+      "owner": "groups",
+      "remove_when": "all supported Android/iOS sources use group DTO RPCs and deployed minimum build is evidenced"
+    },
+    {
+      "objects": [
+        "public.user_news.*"
+      ],
+      "authorization": "JWT identity owns marker and is a current occasion member",
+      "supported_builds": null,
+      "owner": "news",
+      "remove_when": "all supported Android/iOS sources use private_news or get_news_read_state_v1"
+    },
+    {
+      "objects": [
+        "public.occasions.*"
+      ],
+      "authorization": "current member, editor_view, manager or organization administrator; demo fences retained",
+      "supported_builds": null,
+      "owner": "occasion",
+      "current_consumers": [
+        "DbUnits.hasOccasions"
+      ],
+      "remove_when": "DbUnits count and all supported mobile context readers use scoped RPCs"
+    }
+  ],
+  "production_applied": false,
+  "production_blockers": [
+    "explicit shared database release authorization",
+    "supported Android/iOS build contracts",
+    "published immutable map artifact inventory and any necessary cache removal"
+  ],
+  "read_write_owners": {
+    "DB01": [
+      "reset_user_password",
+      "get_can_reset_user_password",
+      "set_user_password_token",
+      "reset_password_via_scan"
+    ],
+    "DB02": [
+      "register -> enqueue_account_email -> create_user_from_registration -> pure invoker",
+      "update_user_internal_v1 -> internal invoker create_user_in_organization_with_data_ws -> pure invoker"
+    ],
+    "DB03": [
+      "get_user_groups_editor_bundle_v1",
+      "get_user_group_editor_bundle_v1",
+      "save_user_group_client_sync_v1",
+      "delete_user_group_client_sync_v1",
+      "replace_group_assignments_client_sync_v1"
+    ],
+    "DB04": [
+      "private_news / ClientSyncProjection.news",
+      "get_news_read_state_v1",
+      "get_news_for_context_v1 -> get_news_with_views",
+      "save/delete/publish_news_client_sync_v1",
+      "mark_news_read_client_sync_v1"
+    ],
+    "DB05": [
+      "get_occasion_for_context_v1",
+      "get_public_occasions",
+      "get_occasion_for_edit_v1",
+      "get_form_by_link -> get_form_bundle_internal"
+    ],
+    "DB06": [
+      "get_all_email_templates",
+      "get_entity_email_templates"
+    ],
+    "DB07": [
+      "get_user_group_info_with_users",
+      "get_private_profile_payload_v1"
+    ],
+    "DB08": [
+      "private_profile.groups.placeData / member group DTO",
+      "public map excludes hidden and group points",
+      "MapPageHelper.visiblePlacesForContext binds private profile to identity and occasion"
+    ]
+  },
+  "cache_contract": {
+    "retired_key": "user_info",
+    "replacement_key": "user_info_data_security_v1",
+    "removal": "getUserInfo and clearUserData delete only the retired profile key",
+    "preserved": [
+      "public catalogs",
+      "pending mutation receipts",
+      "sync identity epoch and protocol 1"
+    ]
+  },
+  "storage_ddl_objects": [
+    "storage.buckets",
+    "storage.objects",
+    "storage.buckets_analytics"
+  ]
+}

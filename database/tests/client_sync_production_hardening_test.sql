@@ -58,7 +58,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',v_user_one::text,true);
   PERFORM set_config('request.jwt.claim.role','authenticated',true);
   PERFORM public.add_image_record(
-    'https://img.festapp.net/offline-description.webp',v_occasion,NULL);
+    'https://img.festapp.net/images/offline-description.webp',v_occasion,NULL);
   SELECT source_revision INTO v_media_revision
   FROM public.client_sync_scopes WHERE component='occasion_config'
     AND scope_type='occasion' AND scope_id=v_occasion;
@@ -69,12 +69,12 @@ BEGIN
   v_config:=public.get_public_client_sync_component_v1(
     'occasion_config','occasion',v_occasion);
   PERFORM assert_eq(v_config#>>'{payload,media,0,url}',
-    'https://img.festapp.net/offline-description.webp',
+    'https://img.festapp.net/images/offline-description.webp',
     'occasion_config publishes the complete media manifest');
 
   PERFORM set_config('request.jwt.claim.role','authenticated',true);
   PERFORM public.remove_image_records(
-    ARRAY['https://img.festapp.net/offline-description.webp']);
+    ARRAY['https://img.festapp.net/images/offline-description.webp']);
   SELECT source_revision INTO v_media_revision
   FROM public.client_sync_scopes WHERE component='occasion_config'
     AND scope_type='occasion' AND scope_id=v_occasion;

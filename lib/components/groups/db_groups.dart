@@ -126,22 +126,6 @@ class DbGroups {
     }
   }
 
-  /// Atomically makes the CSV group column authoritative for imported users.
-  /// The RPC replaces standard-group membership and leaves typed groups alone.
-  static Future<void> replaceImportedUserGroups(
-      Map<String, String?> groupTitleByUserId) async {
-    if (!RightsService.isEditor()) {
-      throw Exception("Must be editor to import groups.");
-    }
-
-    final result = await _commands.replaceAssignments(
-        RightsService.currentOccasionId()!, groupTitleByUserId);
-    if (result.status == GroupCommandStatus.rejected ||
-        result.status == GroupCommandStatus.conflict) {
-      throw StateError('Group assignment import was rejected or conflicted');
-    }
-  }
-
   static Future<void> deleteUserGroupInfo(UserGroupInfoModel model) async {
     final result =
         await _commands.delete(RightsService.currentOccasionId()!, model);

@@ -137,7 +137,6 @@ class ThemeConfig {
   static Color logoBackgroundColor(BuildContext context) =>
       backgroundColor(context);
 
-  static Color surfaceColor(BuildContext context) => grey200(context);
   static Color seed1 = const Color(0xFF253759);
   static Color seed2 = const Color(0xFF80BDF2);
   static Color seed3 = const Color(0xFF4465A6);
@@ -163,8 +162,6 @@ class ThemeConfig {
 
   static Color greenColor(BuildContext context) =>
       isDarkMode(context) ? lightGreen : darkGreen;
-  static Color blueColor() =>
-      Colors.deepPurple.changeColorLightness(0.3).changeColorSaturation(0.5);
   static Color redColor(BuildContext context) =>
       isDarkMode(context) ? Color(0xFFff5252) : Color(0xFFd32f2f);
   static Color warningColor(BuildContext context) =>
@@ -225,14 +222,6 @@ class ThemeConfig {
 
   static Color timetableHorizontalLineColor(BuildContext context) =>
       appBarColor();
-  static Color timetableSelectedColor(BuildContext context, Color color) =>
-      isDarkMode(context)
-          ? color.changeColorSaturation(0.7).changeColorLightness(0.8)
-          : color.changeColorSaturation(0.5).changeColorLightness(0.6);
-  static Color timetableUnselectedColor(BuildContext context, Color color) =>
-      isDarkMode(context)
-          ? color.changeColorSaturation(0.1).changeColorLightness(0.3)
-          : color.changeColorSaturation(0.2).changeColorLightness(0.6);
   static Color timetableTimeSplitColor(BuildContext context) => Colors.red;
   static Color timetableBackground1(BuildContext context) =>
       whiteColor(context);
@@ -250,8 +239,6 @@ class ThemeConfig {
       ? seed3.changeColorSaturation(0.2)
       : seed3.changeColorSaturation(0.2);
 
-  static Color grey900(BuildContext context) =>
-      isDarkMode(context) ? Colors.grey[200]! : Colors.grey[900]!;
   static Color grey850(BuildContext context) =>
       isDarkMode(context) ? Colors.grey[200]! : Colors.grey[850]!;
   static Color grey800(BuildContext context) =>

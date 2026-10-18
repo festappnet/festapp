@@ -1,11 +1,6 @@
 import 'package:html/parser.dart' as html_parser;
 
 class HtmlHelper {
-  static String stripHtml(String htmlText) {
-    return htmlText.replaceAll(
-        RegExp(r'<(?!img\b)[^>]*>', caseSensitive: false), '');
-  }
-
   /// Converts an HTML fragment to a single-line, plain-text snippet suitable
   /// for list subtitles: decodes entities, drops every tag (tolerating
   /// truncated or malformed markup such as a dangling "<" left by a naive

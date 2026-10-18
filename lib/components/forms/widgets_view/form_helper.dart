@@ -6,7 +6,6 @@ import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/widgets/standard_dialog.dart';
 import 'package:fstapp/components/forms/models/holder_models/id_document_field_holder.dart';
 import 'package:fstapp/components/forms/widgets_view/check_box_field_builder.dart';
 import 'package:fstapp/components/forms/widgets_view/radio_field_builder.dart';
@@ -451,33 +450,6 @@ class FormHelper {
       }
     }
     return inputData;
-  }
-
-  static Widget buildDescriptionButton(
-      BuildContext context, String title, String description) {
-    return TextButton(
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (context) => StandardDialog(
-            title: Text(title),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  HtmlView(
-                    html: description,
-                    isSelectable: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-      child: Text(FormStrings.viewMore),
-    );
   }
 
   static TextStyle labelTextStyle(BuildContext context) {

@@ -94,18 +94,6 @@ class StorageHelper {
         .toList(growable: false);
   }
 
-  static Future<void> removeByPrefix(String prefix, [String? dbPath]) async {
-    final store = StoreRef.main();
-    final db = await openDatabase(dbPath);
-    final keys = await store.findKeys(db);
-    await db.transaction((transaction) async {
-      for (final key
-          in keys.whereType<String>().where((key) => key.startsWith(prefix))) {
-        await store.record(key).delete(transaction);
-      }
-    });
-  }
-
   /// Removes several key families in one database transaction.
   static Future<void> removeByPrefixesAtomic(List<String> prefixes,
       [String? dbPath]) async {

@@ -15,13 +15,11 @@ import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/occasion/link_model.dart';
 import 'package:fstapp/services/time_helper.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 
 class RightsService {
-  static final _supabase = Supabase.instance.client;
 
   // The model is now wrapped in a ValueNotifier.
   static final occasionLinkModelNotifier =
@@ -34,8 +32,6 @@ class RightsService {
       occasionLinkModelNotifier.value?.userInfo;
   static OccasionUserModel? currentOccasionUser() =>
       occasionLinkModelNotifier.value?.occasionUser;
-  static OccasionUserModel? currentUnitUser() =>
-      occasionLinkModelNotifier.value?.unitUser;
   static int? currentOccasionId() =>
       occasionLinkModelNotifier.value?.occasion?.id;
   static OccasionModel? currentOccasion() =>
@@ -156,12 +152,6 @@ class RightsService {
     return true;
   }
 
-  static Future<bool> getIsAdmin() async {
-    var data = await _supabase.rpc("get_is_admin_on_occasion",
-        params: {"oc": RightsService.currentOccasionId()!});
-    return data;
-  }
-
   static bool canSeeAdmin() {
     if (isDemoReadOnly) return true;
     return isEditor() || isManager() || isUnitEditorView() || isAdmin();
@@ -206,11 +196,6 @@ class RightsService {
 
   static bool canEditOccasion() {
     return isManager() || isEditor();
-  }
-
-  static bool canSignInOutUsersFromEvents() {
-    if (isDemoReadOnly) return false;
-    return currentOccasionUser()?.isEditor ?? false;
   }
 
   static bool get isDemoReadOnly =>

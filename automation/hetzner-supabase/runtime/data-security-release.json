@@ -1,0 +1,69 @@
+{
+  "base_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "production_applied": false,
+  "phases": [
+    {
+      "file": "supabase/migrations/20261018100000_data_security_auth.sql",
+      "sha256": "f2f3db992e95ade63c46543b8324e2a9f6a3f123734d19bffe9e1e77ad6686e3",
+      "sources": [
+        "database/functions/users/create_user_from_registration.sql",
+        "database/functions/users/create_user_in_organization_with_data_ws.sql",
+        "database/functions/security/data_security_auth.sql"
+      ],
+      "database_user": "postgres",
+      "driver": "automation/hetzner-supabase/runtime/apply-data-security-auth.sql",
+      "driver_sha256": "58726b970a13ce7c62e51b760c8f6c8d15f996fc1f8bc9d766c99696df14dfdc"
+    },
+    {
+      "file": "supabase/migrations/20261018101000_data_security_readers.sql",
+      "sha256": "b95b16692aa5043f9be48d02c2ad9b9e9057c56f53a7d50d0a62c6bdec7b87c9",
+      "sources": [
+        "database/functions/others/get_occasion_for_context.sql",
+        "database/functions/others/get_news_with_views.sql",
+        "database/functions/others/get_news_read_state.sql",
+        "database/functions/groups/group_member_read.sql",
+        "database/functions/security/news_read_marker.sql",
+        "database/functions/security/public_map_projection.sql"
+      ],
+      "database_user": "postgres",
+      "driver": "automation/hetzner-supabase/runtime/apply-data-security-readers.sql",
+      "driver_sha256": "f9cab365db91abdaaea36fcc3673c9f8cf3295093975092b59c1da66b0aff39c"
+    },
+    {
+      "file": "supabase/migrations/20261018102000_data_security_reads.sql",
+      "sha256": "b4e8a4ce5aa623294b609e6fd57949fc0619e72b0eb0f0da93a03a25af1891d1",
+      "sources": [
+        "database/functions/security/data_security_reads.sql"
+      ],
+      "database_user": "postgres",
+      "driver": "automation/hetzner-supabase/runtime/apply-data-security-reads.sql",
+      "driver_sha256": "039a246a2cf1be14bee3ea61b8ffdf1b63b7d568bde3675bf7d91fdd3388cf16"
+    },
+    {
+      "file": "supabase/migrations/20261018103000_data_security_defaults.sql",
+      "sha256": "2647147f858ccca5992bd6e172f574033b382a4c53cf2877830cbc13e38dbb0e",
+      "sources": [
+        "database/functions/security/data_security_defaults.sql"
+      ],
+      "database_user": "supabase_admin",
+      "driver": "automation/hetzner-supabase/runtime/apply-data-security-defaults.sql",
+      "driver_sha256": "0e724c5c99e1aea611a7de9984c8558797bd1f1c0601dc064d120dc638b735e1"
+    }
+  ],
+  "contracts": {
+    "database/functions/security/data_security_contracts.json": "7031ca9bbd0c7a38cd2649f494719dc87337cb872ad0a92e86b73d3c39be20de",
+    "database/functions/security/server_security_acl_manifest.json": "b64201bf25042721c7615d17144e581f823abb1d90e5ab2bb4e50510016b01b8",
+    "database/functions/security/definer_contracts.json": "b587484e8fadf8c87a323f07a6016e13ea083fb56c332a5fb39086deda13ad9e",
+    "automation/hetzner-supabase/runtime/audit-data-security-state.sql": "fca19952e97634e0ae271e395bd45e57631c723b999d9ab372262ab3c18f710d",
+    "automation/hetzner-supabase/runtime/data-security-preflight.sql": "e2850da5bf5a2b08c67663bf3cca0963c253a5808fd4228ec5829061d602d3c4"
+  },
+  "client_sources": {
+    "lib/components/news/db_news.dart": "310be06b0f1b072e0e754ce44b3bedc8799c77045217202b34e2dddcf6b03220",
+    "lib/components/occasion/db_occasions.dart": "27700652117d34cdb4659b1de378ff04c3e9a88a7a3493df601f911df6ddd57c",
+    "lib/components/users/db_users.dart": "ccd7862dc976d8af314fedaa944a1a03b4e022b80b5f68b29a80fc243f4f9497",
+    "lib/components/users/user_info_model.dart": "4131cb8216a4c460715ebace94a036ddf742127bb241e1a50e9cf1ac81e1b047",
+    "lib/data_services/offline_data_service.dart": "ae786aefc3e03c09a81cac08e112e240cf18454ad55f15c4d7c80f3c270d4917",
+    "lib/components/map/map_page.dart": "58059715d79cadab30ea6df3434284d10a46ac4134462e05641b59d8fc5059e8",
+    "lib/components/map/map_page_helper.dart": "8c6312f295bd7ddc37fe9529987e2fcbcb9d8ba5051c535499f313c58d56e7fd"
+  }
+}

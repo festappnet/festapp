@@ -41,8 +41,8 @@ BEGIN
     INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority) VALUES (v_unit_id, v_acc_id, 1);
 
     -- Create Occasion
-    INSERT INTO public.occasions (title, unit, link, start_time, end_time)
-    VALUES ('Test Occasion Deposit', v_unit_id, 'test-occ-deposit-' || floor(random()*100000)::text, now(), now() + interval '1 day')
+    INSERT INTO public.occasions (organization, title, unit, link, start_time, end_time)
+    VALUES ((SELECT organization FROM public.units WHERE id=v_unit_id), 'Test Occasion Deposit', v_unit_id, 'test-occ-deposit-' || floor(random()*100000)::text, now(), now() + interval '1 day')
     RETURNING id INTO v_occasion_id;
 
     -- Create Form (Open)

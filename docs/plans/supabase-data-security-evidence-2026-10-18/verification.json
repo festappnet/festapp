@@ -1,0 +1,232 @@
+{
+  "base_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "production_applied": false,
+  "databases": {
+    "upgrade": {
+      "host": "127.0.0.1",
+      "port": 55462,
+      "project": "festapp-data-security-20261018"
+    },
+    "fresh": {
+      "host": "127.0.0.1",
+      "port": 56922,
+      "project": "festapp-data-security-e2e-20261018"
+    }
+  },
+  "catalog_equivalence": {
+    "acl": {
+      "equal": true,
+      "count": 147,
+      "sha256": "4a65d2a468874ef34bc69e68a007a1960f1a676482dc8fd0d5d6aba5f5183f92"
+    },
+    "defaults": {
+      "equal": true,
+      "count": 11,
+      "sha256": "e0e0cb199d8487e9eac08b11a9f45ae62baa8465bc00aebf728d17fc915e798a"
+    },
+    "policies": {
+      "equal": true,
+      "count": 52,
+      "sha256": "abae4c0f1bbb33c014b0d363979fb92c6f1c3c2faaabd872a88bdbc4620d4975"
+    },
+    "functions": {
+      "equal": true,
+      "count": 11,
+      "sha256": "fad4ba0e6299df224a7511f3d9d668c0fe931a32bd0708229854d7682bc0b4a5"
+    }
+  },
+  "checks": {
+    "fresh_sql": {
+      "sql_files": [
+        "database/tests/google_auth_test.sql",
+        "database/tests/get_occasion_for_edit_tenant_scope_test.sql",
+        "database/tests/get_email_templates_tenant_scope_test.sql",
+        "database/tests/duplicate_occasion_target_unit_test.sql",
+        "database/tests/duplicate_occasion_creator_editor_test.sql",
+        "database/tests/demo_occasion_copy_test.sql",
+        "database/tests/client_sync_v1_runtime_test.sql",
+        "database/tests/client_sync_v1_contract_test.sql",
+        "database/tests/users/reset_user_password_permissions_test.sql",
+        "database/tests/users/reception_qr_login_test.sql",
+        "database/tests/users/password_reset_token_expiry_test.sql",
+        "database/tests/users/import_user_group_assignments_test.sql",
+        "database/tests/security/data_security_reads_test.sql",
+        "database/tests/security/data_security_defaults_test.sql",
+        "database/tests/security/data_security_auth_test.sql",
+        "database/tests/groups/canonical_group_commands_test.sql",
+        "database/tests/eshop/reset_password_via_scan_authorization_test.sql",
+        "database/tests/emails/waitlist_template_visibility_test.sql",
+        "database/tests/emails/occasion_template_roundtrip_test.sql",
+        "database/tests/emails/get_all_email_templates_test.sql",
+        "database/tests/emails/account_email_service_role_permissions_test.sql",
+        "database/tests/emails/account_email_defaults_test.sql",
+        "database/tests/client_sync/canonical_mutation_write_release_test.sql",
+        "database/tests/auth/registration_db_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 24 Passed, 0 Failed"
+      ]
+    },
+    "upgrade_sql_initial": {
+      "sql_files": [
+        "database/tests/get_occasion_for_edit_tenant_scope_test.sql",
+        "database/tests/get_email_templates_tenant_scope_test.sql",
+        "database/tests/users/reset_user_password_permissions_test.sql",
+        "database/tests/users/password_reset_token_expiry_test.sql",
+        "database/tests/security/data_security_reads_test.sql",
+        "database/tests/security/data_security_defaults_test.sql",
+        "database/tests/security/data_security_auth_test.sql",
+        "database/tests/groups/canonical_group_commands_test.sql",
+        "database/tests/eshop/reset_password_via_scan_authorization_test.sql",
+        "database/tests/emails/waitlist_template_visibility_test.sql",
+        "database/tests/emails/occasion_template_roundtrip_test.sql",
+        "database/tests/emails/get_all_email_templates_test.sql",
+        "database/tests/auth/registration_db_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 13 Passed, 0 Failed"
+      ]
+    },
+    "upgrade_sql_extended": {
+      "sql_files": [
+        "database/tests/client_sync_v1_runtime_test.sql",
+        "database/tests/client_sync_v1_contract_test.sql",
+        "database/tests/security/data_security_reads_test.sql",
+        "database/tests/security/data_security_defaults_test.sql",
+        "database/tests/security/data_security_auth_test.sql",
+        "database/tests/forms/create_form_test.sql",
+        "database/tests/eshop_forms/form_capacity_test.sql",
+        "database/tests/emails/account_email_service_role_permissions_test.sql",
+        "database/tests/emails/account_email_defaults_test.sql",
+        "database/tests/client_sync/canonical_mutation_write_release_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 10 Passed, 0 Failed"
+      ]
+    },
+    "upgrade_sql_final_security": {
+      "sql_files": [
+        "database/tests/security/data_security_reads_test.sql",
+        "database/tests/security/data_security_defaults_test.sql",
+        "database/tests/security/data_security_auth_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 3 Passed, 0 Failed"
+      ]
+    },
+    "upgrade_admin_defaults": {
+      "sql_files": [
+        "database/tests/security/data_security_defaults_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 1 Passed, 0 Failed"
+      ]
+    },
+    "http_rest_rpc_graphql": {
+      "sql_files": [],
+      "summary": [
+        "\u2139 tests 5",
+        "\u2139 pass 5",
+        "\u2139 fail 0"
+      ]
+    },
+    "fresh_catalog_effective_acl_and_drift": {
+      "sql_files": [],
+      "summary": [
+        "\u2139 tests 2",
+        "\u2139 pass 2",
+        "\u2139 fail 0"
+      ]
+    },
+    "upgrade_catalog_effective_acl_and_drift": {
+      "sql_files": [],
+      "summary": [
+        "\u2139 tests 2",
+        "\u2139 pass 2",
+        "\u2139 fail 0"
+      ]
+    },
+    "new_artifact_digests": {
+      "sql_files": [],
+      "summary": [
+        "\u2139 tests 1",
+        "\u2139 pass 1",
+        "\u2139 fail 0"
+      ]
+    },
+    "server_security_targeted": {
+      "sql_files": [],
+      "summary": [
+        "\u2139 tests 3",
+        "\u2139 pass 3",
+        "\u2139 fail 0"
+      ]
+    },
+    "flutter_final": {
+      "sql_files": [],
+      "summary": [
+        "+691: All tests passed!"
+      ]
+    },
+    "map_helper": {
+      "sql_files": [],
+      "summary": [
+        "+15: All tests passed!"
+      ]
+    },
+    "analyzer_final": {
+      "sql_files": [],
+      "summary": [
+        "No issues found!"
+      ]
+    },
+    "additional_internal_contract": {
+      "sql_files": [
+        "database/tests/client_sync_internal_function_contract_test.sql"
+      ],
+      "summary": [
+        "1 passed (in the initial 2-file batch; the other file was corrected and rerun below)"
+      ]
+    },
+    "additional_production_hardening": {
+      "sql_files": [
+        "database/tests/client_sync_production_hardening_test.sql"
+      ],
+      "summary": [
+        "SUMMARY: 1 Passed, 0 Failed"
+      ],
+      "fixture_correction": "The unchanged main test used an image URL outside the canonical /images/ path. Updated its three synthetic URL references; no image authorization rule changed."
+    }
+  },
+  "preexisting_registry_failure_unchanged": true,
+  "preexisting_server_security_failure": "The full existing suite fails the same restore assertion on pristine main and this worktree: runtime_executed:False text expectation; 5/6 pass. The three targeted migration/manifest/definer checks pass.",
+  "http_boundaries": "Real local GoTrue/Auth + PostgREST + pg_graphql; no production API; synthetic fixture; 5 tests pass.",
+  "browser": {
+    "session": "festapp-data-security-20261018",
+    "headless": true,
+    "closed": true,
+    "cases": [
+      "anonymous public news",
+      "member password login",
+      "member profile group link",
+      "member private group point rendered on map",
+      "news acknowledgement and badge zero",
+      "hidden occasion editor settings",
+      "email template editor",
+      "group editor roster"
+    ],
+    "mocked_boundary": "external push JSInterop resolve callbacks; known production endpoints blocked",
+    "not_proven": [
+      "live Google OAuth",
+      "external email delivery",
+      "mobile installed-version compatibility",
+      "release build",
+      "UI copy creation (SQL copy tests passed)"
+    ]
+  },
+  "driver_refusals": [
+    "wrong database rejected before Auth phase source execution",
+    "missing compatibility evidence rejected with nonzero psql exit before read ACL transaction"
+  ],
+  "catalog_snapshot_query": "catalog-snapshot.sql"
+}

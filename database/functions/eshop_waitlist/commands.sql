@@ -55,7 +55,7 @@ BEGIN
   RETURN jsonb_build_object('code',409,'errorCode','COMMAND_PAYLOAD_CONFLICT');
  END;
  IF claim->>'disposition'='replay' THEN
-  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN claim->'response'; END IF;
+  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN public.project_local_payment_reference_order_internal(claim->'response'); END IF;
  SELECT coalesce(array_agg("user"),'{}') INTO before_users FROM public.occasion_users WHERE occasion=occ;
  BEGIN
   PERFORM 1 FROM public.forms WHERE id=fid FOR UPDATE;

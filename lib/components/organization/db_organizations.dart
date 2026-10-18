@@ -33,20 +33,6 @@ class DbOrganizations {
     }
   }
 
-  static Future<OrganizationModel?> getOrganization(int organizationId) async {
-    try {
-      final response = await _supabase
-          .from('organizations')
-          .select()
-          .eq('id', organizationId)
-          .single();
-      return OrganizationModel.fromJson(response);
-    } catch (e) {
-      AppLogger.error("Failed to fetch organization: $e");
-      return null;
-    }
-  }
-
   static Future<int?> getMyAdminOrganizationId() async {
     try {
       return await _supabase.rpc('get_my_admin_organization_id');

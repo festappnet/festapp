@@ -330,45 +330,6 @@ class ClientSyncRuntime {
     }
   }
 
-  /// Reconciles fields returned authoritatively by a private mutation even
-  /// when an idempotent/no-op response carries no replacement artifact.
-  static Future<void> patchPrivateComponent({
-    required ClientSyncComponent component,
-    required Map<String, dynamic> fields,
-    bool notifyProjection = true,
-    String? expectedContextToken,
-  }) async {
-    if (expectedContextToken != null &&
-        !isCurrentMutationContext(expectedContextToken)) {
-      return;
-    }
-    final context = _context;
-    final scope = context?.privateScope;
-    if (!_v1Selected || context == null || scope == null) return;
-    final current = await _store.activeGeneration(
-      scope,
-      SyncFreshnessClass.privateIdentity,
-    );
-    final raw = await readPrivate(component);
-    final revision = current?.revisions[component];
-    if (_context != context ||
-        (expectedContextToken != null &&
-            !isCurrentMutationContext(expectedContextToken))) {
-      return;
-    }
-    if (raw is! Map || revision == null) {
-      await refresh(SyncReason.manual, privateConsumer: true);
-      return;
-    }
-    await applyPrivateReplacement(
-      component: component,
-      revision: revision,
-      payload: {...raw.cast<String, dynamic>(), ...fields},
-      notifyProjection: notifyProjection,
-      expectedContextToken: expectedContextToken,
-    );
-  }
-
   static Future<void> applyPublicReplacement({
     required ClientSyncComponent component,
     required int revision,

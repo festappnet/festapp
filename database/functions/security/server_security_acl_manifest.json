@@ -30,6 +30,96 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.get_occasion_for_context_v1(bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_news_read_state_v1(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_news_for_context_v1(bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.can_read_group_data_security_v1(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.mark_news_read_client_sync_v1(bigint,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_public_client_sync_component_core_v1(text,text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.create_user_from_registration(bigint,text,text,jsonb,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.create_user_in_organization_with_data_ws(bigint,text,text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.can_read_news_data_security_v1(bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.confirm_blueprint_order_change_client_sync_v1(bigint[],jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.reserve_draft_payment_reference(bigint,bigint,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.import_payment_reference(bigint,text,bigint,text,bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.activate_payment_reference_scope(bigint,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.enroll_payment_reference_account(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.create_ticket_order(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.confirm_blueprint_order_change(bigint[],jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -39,8 +129,16 @@
   "application_client_truncate": false,
   "application_definer_search_path_required": true,
   "reviewed_definer_sources": [
-    "database/functions/inventory/update_spots_assignments.sql"
+    "database/functions/inventory/update_spots_assignments.sql",
+    "database/functions/others/get_occasion_for_context.sql",
+    "database/functions/others/get_news_read_state.sql",
+    "database/functions/security/data_security_reads.sql",
+    "database/functions/security/news_read_marker.sql",
+    "database/functions/security/public_map_projection.sql",
+    "database/functions/users/create_user_from_registration.sql",
+    "database/functions/users/create_user_in_organization_with_data_ws.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
-  "monitor_credential_table": "public.festapp_monitoring_credentials"
+  "monitor_credential_table": "public.festapp_monitoring_credentials",
+  "data_security_contracts": "database/functions/security/data_security_contracts.json"
 }

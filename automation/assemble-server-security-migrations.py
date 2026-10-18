@@ -77,9 +77,8 @@ manifest['runtime_files']={str(p.relative_to(root)):hashlib.sha256(p.read_bytes(
  root/'automation/hetzner-supabase/backup/create-r2-image-archive.py',
  root/'automation/hetzner-supabase/backup/archive-runtime.sh',
  root/'automation/hetzner-supabase/backup/install-online-backup.sh']}
-manifest['contract_files']={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in [
- 'database/functions/security/server_security_acl_manifest.json',
- 'database/functions/security/definer_contracts.json']}
+# Immutable 2026-10-16 receipt. Subsequent contracts are sealed by the data-security assembler.
+manifest['contract_files']={'database/functions/security/server_security_acl_manifest.json': 'e977bebe9018d7b2d89070e651ce527d685c58fb9c13f48caf0188470878e7eb', 'database/functions/security/definer_contracts.json': '0a5448ecaf1a7deb6a715093df7de8210abe1a76a08eb8fd734bbc3748e6fa35'}
 manifest_file=root/'automation/hetzner-supabase/runtime/server-security-release.json' 
 content=json.dumps(manifest,indent=2)+'\n'
 if args.check:
