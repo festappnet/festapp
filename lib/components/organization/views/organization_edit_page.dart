@@ -1,3 +1,5 @@
+import '../../unit/verification/verification_queue.dart';
+import '../../unit/verification/verification_strings.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/organization/db_organizations.dart';
@@ -168,6 +170,14 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            ListTile(
+                                leading: const Icon(Icons.verified_outlined),
+                                title: Text(VerificationStrings.text('queue')),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) => VerificationQueue(
+                                            organizationId: orgId)))),
                             Text("Organization Settings",
                                 style:
                                     Theme.of(context).textTheme.headlineMedium),

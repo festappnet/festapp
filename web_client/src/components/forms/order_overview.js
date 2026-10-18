@@ -226,11 +226,12 @@ function scheduleOverviewRefresh(host, refresh) {
     if (visible()) timer = win.setTimeout(run, 30000);
 }
 
-export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false, background = false) {
+export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false, background = false, onIdentity = () => {}) {
     host._overviewRefreshCleanup?.();
     const generation = (host._overviewGeneration || 0) + 1; host._overviewGeneration = generation;
     host.classList.add('order-overview');
     if (!background) {
+        onIdentity(null);
         host._overviewSnapshot = null;
         host.replaceChildren(); host.setAttribute('aria-busy', 'true');
         const loading = line(host, 'div', '');
@@ -242,6 +243,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
+        onIdentity(data.organizationIdentity);
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.
@@ -266,6 +268,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         return data;
     } catch (error) {
         if (host._overviewGeneration !== generation) return;
+        onIdentity(null);
         unavailable = error.message === 'OVERVIEW_UNAVAILABLE';
         host._overviewSnapshot = null;
         host.replaceChildren();
@@ -276,11 +279,11 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         }
         line(host, 'p', overviewText('failed')).setAttribute('role', 'alert');
         const retry = line(host, 'button', LocalizationService.tr('Common.retry')); retry.type = 'button';
-        retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage);
+        retry.onclick = () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity);
     } finally {
         if (host._overviewGeneration === generation) {
             host.removeAttribute('aria-busy');
-            if (!unavailable) scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true));
+            if (!unavailable) scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true, onIdentity));
         }
     }
 }

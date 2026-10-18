@@ -796,3 +796,15 @@ body.dark-mode .surcharge-info {
 
 .overview-payment-link { display: inline-block; margin-block-start: 8px; color: var(--primary-color, #1565c0); text-underline-offset: 3px; }
 .overview-payment-details, .order-overview .result-payment-more { scroll-margin-block-start: 24px; }
+
+.organization-identity-slot { margin:24px auto 0; padding:0 16px 24px; max-width:850px; text-align:center; color:var(--text-color,#222); }
+.organization-identity-button { border:0; background:transparent; color:inherit; font:inherit; font-size:14px; min-height:44px; padding:8px; cursor:pointer; overflow-wrap:anywhere; }
+.organization-identity-button:focus-visible { outline:2px solid currentColor; outline-offset:2px; border-radius:4px; }
+.organization-identity-tail { display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.organization-identity-tail svg, .organization-identity-dialog h2 svg { margin-inline-start:6px; vertical-align:middle; }
+.organization-identity-dialog { box-sizing:border-box; width:calc(100% - 32px); max-width:480px; max-height:calc(100dvh - 32px); overflow:auto; padding:24px; border:1px solid #888; border-radius:12px; background:var(--surface-color,#fff); color:var(--text-color,#222); text-align:start; overflow-wrap:anywhere; }
+.organization-identity-dialog::backdrop { background:#0008; }
+.organization-identity-dialog h2 { font-size:20px; margin:0 0 16px; }
+.organization-identity-dialog dt { font-weight:600; margin-top:16px; }
+.organization-identity-dialog dd { margin:4px 0 0; }
+.organization-identity-close { min-height:44px; padding:8px 16px; }

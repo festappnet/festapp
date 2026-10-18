@@ -95,6 +95,9 @@ String initialRouteForUri(Uri uri) {
 }
 
 bool isUnitAdminStartupRoute(Uri uri) {
+  if (RegExp(r'^/organizationEdit(?:/[1-9][0-9]*)?/?$').hasMatch(uri.path)) {
+    return true;
+  }
   final segments = uri.pathSegments;
   return segments.length >= 3 &&
       segments[0] == 'unit' &&
