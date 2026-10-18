@@ -21,3 +21,12 @@ test('new phase digests, embedded drivers and current contracts agree without re
  execFileSync('python3',['automation/assemble-data-security-migrations.py','--check'],{cwd:root});
  for(const [p,digest] of before)assert.equal(hash(read(p)),digest,p);
 });
+
+test('global release eligibility has one source owner and no organization activation list',()=>{
+ const source=read('database/functions/client_sync/canonical_mutation_write_release.sql').toString();
+ const body=source.slice(source.indexOf('CREATE OR REPLACE FUNCTION'));
+ const migration=read('supabase/migrations/20261018220000_global_canonical_mutation_release.sql').toString();
+ assert(migration.endsWith(body));
+ assert.match(migration,/DROP COLUMN organization_ids;/);
+ assert.doesNotMatch(source,/organization_ids|organization_id|organizationIds/);
+});

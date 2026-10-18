@@ -3,16 +3,16 @@
 -- All 11 active occasions share these grants. No tenant-local ACL is implied.
 -- Pause prevents mixed old/new editors; it does not satisfy G3 or open editing.
 -- Forward recovery must reopen canonical RPCs only after the release gate.
--- Establish the gate before draining writes. Exact build/org match is fail-closed.
+-- Establish the gate before draining writes. The global minimum build is fail-closed.
 DO $mutation_overloads$ BEGIN
  IF EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=ANY(ARRAY['update_activities','save_activity_history','delete_autosave_history','import_user_group_assignments','import_occasion_users_from_csv','delete_occasion_user_ws','delete_occasion_user','game_guess','save_place_location']) AND p.oid::regprocedure::text<>ALL(ARRAY['update_activities(bigint,jsonb)','save_activity_history(bigint,jsonb,text,bigint,text)','delete_autosave_history(bigint)','import_user_group_assignments(bigint,jsonb)','import_occasion_users_from_csv(bigint,jsonb,jsonb)','delete_occasion_user_ws(uuid,bigint)','delete_occasion_user(uuid,bigint)','game_guess(bigint,text)','save_place_location(bigint,double precision,double precision)','update_activities(bigint)'])) THEN RAISE EXCEPTION 'unexpected legacy overload: re-inventory before contraction'; END IF;
 END $mutation_overloads$;
 DO $gate$ BEGIN
  IF to_regprocedure('public.assert_canonical_mutation_write_release_internal_v1(bigint)') IS NULL THEN RAISE EXCEPTION 'release guard migration required'; END IF;
- IF EXISTS(SELECT 1 FROM public.canonical_mutation_write_release_gate WHERE minimum_build<>620 OR organization_ids<>ARRAY[12]::bigint[]) THEN RAISE EXCEPTION 'unexpected existing release policy'; END IF;
+ IF EXISTS(SELECT 1 FROM public.canonical_mutation_write_release_gate WHERE minimum_build<>620) THEN RAISE EXCEPTION 'unexpected existing release policy'; END IF;
 END $gate$;
-INSERT INTO public.canonical_mutation_write_release_gate(singleton,paused,minimum_build,organization_ids)
- VALUES(true,true,620,ARRAY[12]) ON CONFLICT(singleton) DO UPDATE SET paused=true;
+INSERT INTO public.canonical_mutation_write_release_gate(singleton,paused,minimum_build)
+ VALUES(true,true,620) ON CONFLICT(singleton) DO UPDATE SET paused=true;
 -- Drain in-flight writes before the atomic grant switch. The executor bounds
 -- this transaction to 45 seconds; a timeout leaves every change unapplied.
 LOCK TABLE public.user_group_info,public.user_groups,public.activities,

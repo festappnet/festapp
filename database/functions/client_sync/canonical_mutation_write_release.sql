@@ -2,18 +2,18 @@
 CREATE TABLE public.canonical_mutation_write_release_gate(
  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
  paused boolean NOT NULL,
- minimum_build bigint NOT NULL CHECK(minimum_build BETWEEN 1 AND 999999999),
- organization_ids bigint[] NOT NULL CHECK(cardinality(organization_ids)>0
-  AND array_position(organization_ids,NULL) IS NULL AND 0<ALL(organization_ids))
+ minimum_build bigint NOT NULL CHECK(minimum_build BETWEEN 1 AND 999999999)
 );
 REVOKE ALL ON TABLE public.canonical_mutation_write_release_gate FROM PUBLIC,anon,authenticated,service_role;
 
 -- Header metadata never grants domain permissions. Absent policy preserves
 -- additive compatibility until the explicitly authorized shared write fence.
+-- Release eligibility is global; each command still derives domain permissions
+-- from its actual occasion. New organizations need no release allowlist entry.
 CREATE OR REPLACE FUNCTION public.assert_canonical_mutation_write_release_internal_v1(p_occasion bigint)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE gate public.canonical_mutation_write_release_gate%ROWTYPE;
- client_build text; headers jsonb; organization_id bigint;
+ client_build text; headers jsonb;
 BEGIN
  SELECT * INTO gate FROM public.canonical_mutation_write_release_gate WHERE singleton FOR SHARE;
  IF NOT FOUND THEN RETURN; END IF;
@@ -27,9 +27,8 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN
   RAISE insufficient_privilege USING MESSAGE='canonical editor requires valid release metadata';
  END;
- SELECT organization INTO organization_id FROM public.occasions WHERE id=p_occasion;
  IF gate.paused OR client_build IS NULL OR client_build::bigint<gate.minimum_build
- OR organization_id IS NULL OR NOT organization_id=ANY(gate.organization_ids) THEN
+ OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion) THEN
   RAISE insufficient_privilege USING MESSAGE='canonical editor requires an enabled current release';
  END IF;
 END $$;

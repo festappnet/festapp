@@ -4,7 +4,7 @@ SELECT current_database(),session_user;
 SELECT version,name FROM supabase_migrations.schema_migrations
  WHERE version IN ('20261016170000','20261016171000','20261016172000',
  '20261018100000','20261018101000','20261018102000','20261018103000') ORDER BY version;
-SELECT paused,minimum_build,organization_ids FROM public.canonical_mutation_write_release_gate;
+SELECT paused,minimum_build FROM public.canonical_mutation_write_release_gate;
 SELECT p.oid::regprocedure AS signature,p.prosecdef,pg_get_userbyid(p.proowner) AS owner,
  has_function_privilege('anon',p.oid,'EXECUTE') AS anon_execute,
  has_function_privilege('authenticated',p.oid,'EXECUTE') AS authenticated_execute,
