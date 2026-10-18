@@ -1,13 +1,11 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/scan/scan_page.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-import 'package:fstapp/services/toast_helper.dart';
 
 import 'dart:math';
 
@@ -81,16 +79,6 @@ class TicketCodeHelper {
               }
             }
 
-            void handleCopyCode() {
-              Clipboard.setData(ClipboardData(text: generatedCode));
-              ToastHelper.Show(context, CommonStrings.copiedToClipboard);
-            }
-
-            void handleCopyLink() {
-              Clipboard.setData(ClipboardData(text: fullLink));
-              ToastHelper.Show(context, CommonStrings.copiedToClipboard);
-            }
-
             return AppAlertDialog(
               onClose: () {
                 Navigator.of(context).pop();
@@ -120,35 +108,12 @@ class TicketCodeHelper {
                               child: Text(fullLink),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.copy),
-                            tooltip: OrdersStrings.copyLink,
-                            onPressed: fullLink.isNotEmpty
-                                ? handleCopyLink
-                                : null,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SelectableText(
-                              generatedCode.isNotEmpty ? generatedCode : '',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.copy),
-                            tooltip: OrdersStrings.copy,
-                            onPressed: generatedCode.isNotEmpty
-                                ? handleCopyCode
-                                : null,
-                          ),
+                          CopyButton(value: fullLink),
                         ],
                       ),
                       if (occasionId != null &&
-                          RightsService.isEditorOrder()) ...[
+                          (RightsService.isEditorOrder() ||
+                              RightsService.isEditor())) ...[
                         const SizedBox(height: 20),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.tune),

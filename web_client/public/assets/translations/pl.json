@@ -1134,6 +1134,23 @@
     "core_identity": "Imię posiadacza i zamawiającego, jeśli podane",
     "core_seat": "Miejsce i stolik, jeśli przypisane",
     "core_notes": "Wypełnione uwagi do zamówienia i biletu",
-    "core_help": "Podstawowych danych nie można ukryć. Wybierz dodatkowe dane poniżej."
+    "core_help": "Podstawowych danych nie można ukryć. Wybierz dodatkowe dane poniżej.",
+    "back_to_tickets": "Wróć do biletów",
+    "settings_scope": "Te ustawienia dotyczą wszystkich skanerów tego wydarzenia.",
+    "products_display": "Pokaż produkty",
+    "filter_products": "Znajdź produkt",
+    "no_matching_products": "Brak pasujących produktów.",
+    "all_products_help": "Zostaną pokazane wszystkie produkty na bilecie, także nowo dodane.",
+    "no_products_help": "Produkty nie będą wyświetlane podczas skanowania.",
+    "optional_answers": "Dodatkowe odpowiedzi z formularzy",
+    "answers_help": "Wybierz dane potrzebne obsłudze przy kontroli wejścia.",
+    "answer_options": "Edytuj wyświetlanie",
+    "add_answer": "Dodaj dane",
+    "advanced_help": "Wyszukiwanie, dane wewnętrzne i praca offline dla tego wydarzenia.",
+    "preview_help": "Wpisz kod istniejącego biletu, aby sprawdzić podgląd przed zapisaniem. Nie spowoduje to potwierdzenia wejścia.",
+    "preview_action": "Pokaż podgląd",
+    "preview_empty": "Wpisz kod biletu, aby zobaczyć podgląd.",
+    "reason_scanner_settings_forbidden": "Ustawienia może zmieniać tylko edytor lub edytor rezerwacji tego wydarzenia.",
+    "reason_offline_storage_unavailable": "Nie można otworzyć danych offline. Połącz się z internetem i przygotuj urządzenie ponownie."
   }
 }

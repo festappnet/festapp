@@ -3151,6 +3151,23 @@
     "core_identity": "Holder and purchaser names, when provided",
     "core_seat": "Seat and table, when assigned",
     "core_notes": "Order and ticket notes, when provided",
-    "core_help": "Core details cannot be hidden. Choose additional details below."
+    "core_help": "Core details cannot be hidden. Choose additional details below.",
+    "back_to_tickets": "Back to tickets",
+    "settings_scope": "These settings apply to every scanner for this event.",
+    "products_display": "Show products",
+    "filter_products": "Find a product",
+    "no_matching_products": "No matching products.",
+    "all_products_help": "All products on the ticket will appear, including newly added products.",
+    "no_products_help": "Products will not appear when scanning.",
+    "optional_answers": "Additional form answers",
+    "answers_help": "Choose the details staff need when checking admission.",
+    "answer_options": "Edit display",
+    "add_answer": "Add a detail",
+    "advanced_help": "Search, internal details and offline operation for this event.",
+    "preview_help": "Enter an existing ticket code to check your draft before saving. This does not confirm admission.",
+    "preview_action": "Show preview",
+    "preview_empty": "Enter a ticket code to see the preview.",
+    "reason_scanner_settings_forbidden": "Only an editor or reservation editor of this event can change these settings.",
+    "reason_offline_storage_unavailable": "Offline data cannot be opened. Connect to the internet and prepare this device again."
   }
 }

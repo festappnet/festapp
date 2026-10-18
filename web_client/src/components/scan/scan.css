@@ -244,3 +244,51 @@ body.dark-mode .scan-shell {--scan-used:#9bbdf6;--scan-used-bg:#263751}
 .scan-result.used .scan-result-icon {background:var(--scan-used-bg)}
 
 .scan-fixed-fields{border:0;padding:0;margin:0 0 1.5rem;min-width:0}.scan-fixed-fields legend{font-weight:700;font-size:1.2rem;margin-bottom:.75rem}.scan-fixed-fields p{color:var(--scan-muted);font-size:.9rem}
+
+/* Event-wide scanner settings, with optional controls progressively disclosed. */
+.scan-settings-shell {--scan-muted:color-mix(in srgb,var(--text-color) 78%,var(--surface-color))}
+.scan-settings-shell .scan-settings {max-width:1120px;padding:0;border:0;background:transparent;box-shadow:none}
+.scan-settings .scan-settings-nav {justify-content:space-between;margin-bottom:28px;border:0;gap:12px}
+.scan-settings .scan-settings-nav a {flex:initial;color:var(--primary-color);border:0;padding:8px 0;margin:0;text-align:start}
+.scan-settings-heading {margin-bottom:32px;max-width:760px}
+.scan-settings-heading h1 {font-size:clamp(1.7rem,3vw,2.2rem);line-height:1.2;letter-spacing:-.025em;margin:8px 0 12px}
+.scan-settings-heading p {color:var(--scan-muted);max-width:65ch}
+.scan-settings-heading .scan-settings-event {font-weight:500;color:var(--primary-color)}
+.scan-settings-grid {display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:start}
+.scan-settings-grid>form {min-width:0;background:var(--surface-color);border:1px solid var(--scan-line);border-radius:16px;padding:24px}
+.scan-fixed-fields {border:0;padding:0;margin:0;min-width:0}
+.scan-fixed-fields legend {font-size:1.25rem;font-weight:500;padding:0}
+.scan-settings .scan-settings-help {color:var(--scan-muted);font-size:1rem;margin:8px 0 16px;line-height:1.5}
+.scan-core-list {display:grid;gap:4px}
+.scan-settings label {color:var(--text-color);line-height:1.45;flex-wrap:nowrap;align-items:flex-start}
+.scan-settings input[type=checkbox] {margin:2px 0 0}
+.scan-core-list input:disabled {opacity:1}
+.scan-core-list label {font-size:1rem;gap:12px;margin:6px 0}
+.scan-settings-section {border-top:1px solid var(--scan-line);padding-top:24px;margin-top:24px}
+.scan-settings .scan-field-label {display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:16px 0;font-size:1rem}
+.scan-settings .scan-field-label select {text-overflow:ellipsis}
+.scan-settings .scan-setting-row {gap:12px;padding:8px 0}
+.scan-settings .scan-setting-row label {min-width:0;gap:12px}
+.scan-settings label>span {min-width:0}
+.scan-settings label small {display:block;color:var(--scan-muted);margin-top:3px;line-height:1.4;font-size:.9rem}
+.scan-order-buttons {display:flex;gap:4px;flex-shrink:0}
+.scan-order-buttons button {padding:8px 12px;min-width:44px;background:transparent}
+.scan-product-options {max-height:400px;overflow:auto;padding:0 4px}
+.scan-answer {padding:12px 0;border-bottom:1px solid var(--scan-line)}
+.scan-answer>label {gap:12px}
+.scan-answer details {margin-inline-start:36px;color:var(--scan-muted)}
+.scan-answer summary {font-size:.95rem;min-height:44px}
+.scan-answer-actions {display:flex;flex-wrap:wrap;gap:8px}
+.scan-answer-actions button {font-size:.9rem;padding:8px 12px}
+.scan-settings-advanced {border-top:1px solid var(--scan-line);margin-top:24px;padding-top:12px}
+.scan-settings-advanced>summary {font-weight:500}
+.scan-settings-advanced label {padding:4px 0;gap:12px}
+.scan-settings-save {padding-top:24px;margin-top:12px;border-top:1px solid var(--scan-line)}
+.scan-settings-save button {min-height:52px;width:100%}
+.scan-settings-preview {min-width:0;padding:24px;background:var(--scan-soft);border-radius:16px;border:1px solid var(--scan-line)}
+.scan-settings-preview [data-preview]>button {width:100%}
+.scan-settings-preview [data-preview-result] {margin-top:24px}
+.scan-preview-empty {text-align:center;padding:24px 8px;color:var(--scan-muted);font-size:1rem;border-top:1px solid var(--scan-line)}
+.scan-settings-saved {padding:16px;background:var(--scan-success-bg);color:var(--scan-success);border-radius:10px;margin-bottom:24px!important}
+@media(min-width:1000px) {.scan-settings .scan-settings-grid {grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:32px}}
+@media(max-width:599px) {.scan-settings-grid>form,.scan-settings-preview {padding:20px 16px}.scan-settings-heading {margin-bottom:24px}.scan-settings .scan-settings-nav {margin-bottom:20px}.scan-settings-heading h1 {font-size:1.75rem}.scan-settings .scan-settings-nav a {font-size:.9rem}.scan-answer details {margin-inline-start:0}}

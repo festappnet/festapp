@@ -3190,6 +3190,23 @@
     "core_identity": "Jméno držitele a objednávky, pokud jsou uvedené",
     "core_seat": "Místo a stůl, pokud jsou přiřazené",
     "core_notes": "Vyplněné poznámky objednávky a vstupenky",
-    "core_help": "Základní údaje nelze skrýt. Další údaje vyberte níže."
+    "core_help": "Základní údaje nelze skrýt. Další údaje vyberte níže.",
+    "back_to_tickets": "Zpět na vstupenky",
+    "settings_scope": "Nastavení platí pro všechny skenery této akce.",
+    "products_display": "Zobrazit produkty",
+    "filter_products": "Hledat produkt",
+    "no_matching_products": "Žádné odpovídající produkty.",
+    "all_products_help": "Zobrazí se všechny produkty dané vstupenky, včetně nově přidaných.",
+    "no_products_help": "Produkty se při skenování nezobrazí.",
+    "optional_answers": "Další odpovědi z formulářů",
+    "answers_help": "Vyberte údaje, které obsluha potřebuje při kontrole vstupu.",
+    "answer_options": "Upravit zobrazení",
+    "add_answer": "Přidat údaj",
+    "advanced_help": "Vyhledávání, interní údaje a provoz bez internetu pro tuto akci.",
+    "preview_help": "Zadejte kód existující vstupenky a ověřte návrh před uložením. Vstup se tím nepotvrdí.",
+    "preview_action": "Zobrazit náhled",
+    "preview_empty": "Náhled se zobrazí po zadání kódu vstupenky.",
+    "reason_scanner_settings_forbidden": "Nastavení může měnit pouze editor nebo editor rezervací této akce.",
+    "reason_offline_storage_unavailable": "Offline data nelze otevřít. Připojte se k internetu a připravte zařízení znovu."
   }
 }

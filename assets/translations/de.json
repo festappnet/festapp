@@ -1259,6 +1259,23 @@
     "core_identity": "Name des Inhabers und Bestellers, falls angegeben",
     "core_seat": "Sitzplatz und Tisch, falls zugewiesen",
     "core_notes": "Vorhandene Bestell- und Ticketnotizen",
-    "core_help": "Kerndaten können nicht ausgeblendet werden. Weitere Angaben unten auswählen."
+    "core_help": "Kerndaten können nicht ausgeblendet werden. Weitere Angaben unten auswählen.",
+    "back_to_tickets": "Zurück zu den Tickets",
+    "settings_scope": "Diese Einstellungen gelten für alle Scanner dieser Veranstaltung.",
+    "products_display": "Produkte anzeigen",
+    "filter_products": "Produkt suchen",
+    "no_matching_products": "Keine passenden Produkte.",
+    "all_products_help": "Alle Produkte des Tickets werden angezeigt, auch neu hinzugefügte.",
+    "no_products_help": "Beim Scannen werden keine Produkte angezeigt.",
+    "optional_answers": "Weitere Formularantworten",
+    "answers_help": "Wählen Sie die Angaben, die das Personal bei der Einlasskontrolle benötigt.",
+    "answer_options": "Anzeige bearbeiten",
+    "add_answer": "Angabe hinzufügen",
+    "advanced_help": "Suche, interne Angaben und Offline-Betrieb für diese Veranstaltung.",
+    "preview_help": "Geben Sie einen vorhandenen Ticketcode ein, um den Entwurf vor dem Speichern zu prüfen. Der Einlass wird dadurch nicht bestätigt.",
+    "preview_action": "Vorschau anzeigen",
+    "preview_empty": "Geben Sie einen Ticketcode ein, um die Vorschau zu sehen.",
+    "reason_scanner_settings_forbidden": "Nur Bearbeiter oder Reservierungsbearbeiter dieser Veranstaltung können diese Einstellungen ändern.",
+    "reason_offline_storage_unavailable": "Offline-Daten können nicht geöffnet werden. Internetverbindung herstellen und das Gerät erneut vorbereiten."
   }
 }
