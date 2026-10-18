@@ -8,16 +8,17 @@ below. The shared image Worker owns all Festapp file/font operations in
 canonical imported keys. AKH retains its separate bucket/Auth/DB contract.
 `festapp-public` sync/maps and encrypted backups remain independent.
 
-Production copy, current-reference rewrite, Worker and scoped Edge adapters
-are deployed. Actual independent v2 backup and full isolated recovery passed.
-Local Storage/imgproxy containers, routes and source volume are retired and
-canonical cleanup is active. Old API Storage URLs return 410 before CDN cache.
-The empty temp bucket is deleted. Source a/a-private buckets remain only behind
-the unresolved API-token permission-contraction gate (HTTP403); the measured
-4GB budget also retains an explicit capacity decision. Follow the authoritative
+Production copy, reference rewrite, Worker and scoped Edge adapters are
+deployed. Independent v2 backup and full isolated recovery passed. Local
+Storage/imgproxy, old routes, source volume and all three redundant buckets
+are retired. Existing R2 a URLs still translate to canonical imported keys.
+The installed read-only backup key is restricted to the canonical public/private
+pair and verified with actual S3 reads/denials; AKH/sync/encrypted backups stay
+independent. Old API Storage URLs return 410 before CDN cache. The measured 4 GB
+capacity decision remains explicit; no complete enforceable fit is claimed.
+See the authoritative
 [plan](../../plans/storage-r2-retirement-plan-2026-10-18.md) and
-[execution receipt](../security-remediation-20261016/storage-r2-retirement-execution-20261018.md)
-for actual proof and remaining gates.
+[execution receipt](../security-remediation-20261016/storage-r2-retirement-execution-20261018.md).
 
 ## Historical 2026-08-27 consolidation boundary
 

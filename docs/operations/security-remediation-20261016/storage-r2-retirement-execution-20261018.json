@@ -95,9 +95,9 @@
     "review_exception": "existing authorized admin merge; protection unchanged"
   },
   "scope_limits": [
-    "Cloudflare API-token policy administration returns 403; cannot contract the existing four-bucket source reader before deleting a/a-private.",
-    "4GB always-on Studio capacity screen is 735.8MiB short before safety margin; even isolated lower-admin candidate leaves 223.8MiB. No unsupported critical caps deployed.",
-    "No additional tenant frontend release, physical native cold-offline test or incident recovery-time guarantee."
+    "Complete enforceable4GB budget remains the precise capacity decision in the adjacent capacity receipt; no unsupported DB/Edge/admin limits or RAM resize were deployed.",
+    "No additional tenant release or physical-device cold-offline test; previously documented Jubilee sprite/style-network limitations persist.",
+    "Account-wide bucket-list equality is not claimed from an incomplete baseline; only the two authorized source buckets were mutated, and all five retained resources were directly verified."
   ],
   "protected_manifest": "manifest-ready-copy-20261018/manifest.json",
   "final_runtime_readback": {
@@ -400,10 +400,10 @@
     "r2_objects": 1074,
     "r2_bytes": 341530791
   },
-  "all_three_redundant_buckets_deleted": false,
+  "all_three_redundant_buckets_deleted": true,
   "latest_production_state": {
-    "at_utc": "2026-10-18T19:14:51.575185+00:00",
-    "status": "production-storage-retired-two-buckets-blocked",
+    "at_utc": "2026-10-18T19:37:15.807010+00:00",
+    "status": "production-migration-complete-capacity-decision-recorded",
     "published_main_revision": "d26abdbf62233d0ab350376fd55162861003cce9",
     "runtime_source_revision": "8c1d596d87099548939d99ae7da120797c538d08",
     "full_restore_source_revision": "faec9fb73948adf48e365695efdd00707c6d28dc",
@@ -463,12 +463,11 @@
       "recovery_gate_sha256": "e66b1f664539306f0213927187d4d43cc37291d20ab503b6d3aba09b562d350c"
     },
     "deleted_r2_buckets": [
-      "festapp-images-temp"
+      "festapp-images-temp",
+      "festapp-images-a-private",
+      "festapp-images-a"
     ],
-    "retained_pending_reader_permission_contraction": [
-      "festapp-images-a",
-      "festapp-images-a-private"
-    ],
+    "retained_pending_reader_permission_contraction": [],
     "retained_target_buckets": [
       "festapp-images",
       "festapp-images-private",
@@ -481,8 +480,7 @@
     "email_resume_explicitly_authorized": true,
     "historical_unknown_email_outcomes_unchanged": 2,
     "original_retirement_captured_pause_boolean_not_retained": true,
-    "remaining_account_buckets": 20,
-    "scoped_asset_buckets_remaining": 7,
+    "scoped_asset_buckets_remaining": 5,
     "token_administration_http_status": 403,
     "new_backup_run_id": "20261018T180252Z",
     "full_restore": {
@@ -526,8 +524,7 @@
     "capacity_remaining_decision": "storage-r2-capacity-followup-20261018.json",
     "tenant_frontend_releases": [],
     "remaining_blockers": [
-      "Cloudflare API-token policy administration returns 403; cannot contract the existing four-bucket source reader before deleting a/a-private.",
-      "4GB always-on Studio capacity screen is 735.8MiB short before safety margin; even isolated lower-admin candidate leaves 223.8MiB. No unsupported critical caps deployed."
+      "4GB always-on Studio capacity screen is735.8MiB short before safety margin; lower-admin candidates still leave223.8MiB. The plan permits this precise remaining capacity decision; complete enforceable critical-service limits are not claimed."
     ],
     "proof_evidence_sha256": {
       "final-recovery-gate-quoted-20261018.json": "e66b1f664539306f0213927187d4d43cc37291d20ab503b6d3aba09b562d350c",
@@ -542,8 +539,56 @@
       "final-production-email-readback-20261018.json": "5bf85c384ff544135a98e3fd641c3da39d9632e2cefbafd0d3b2bb42d85f5e4d",
       "quoted-envoy-isolated-proof-20261018.json": "4567241ae3bdad92c73497da63925548bd89561da466831ddd7e9c59abbb5ecc",
       "refreshed-recovery-kit-v4-offline-verification-20261018.json": "03fc435ea15cf29fec638af94b569672d824add6e55dbc74fa4d777d2a789bf8",
-      "akh-final-public-delivery-20261018.json": "1baa30ca4dc4397ccbb9bb1998b6febe29fecb6d87999d96e97cc5dbfbe917eb"
+      "akh-final-public-delivery-20261018.json": "1baa30ca4dc4397ccbb9bb1998b6febe29fecb6d87999d96e97cc5dbfbe917eb",
+      "source-reader-policy-contracted-20261018.json": "70313ebae511ef09973dcee0a46374d7c162901ed556c121bd80162832f16fa9",
+      "browser-reader-identity-preflight-20261018.json": "628693f82fc69b0d09255e7db2673fe24b9c7709fa6fd88f660c187f2b709669",
+      "contracted-reader-verification-20261018.json": "dbca618fe51b7f37cd460d60bd70c8fec984422a2eb6e1092949018fb2558399",
+      "final-a-custody-verification-20261018.json": "eea1fe3393f3cb98348b91f7560630b9e977529af7f7612daf570afaa9621960",
+      "final-a-retirement-journal-20261018.jsonl": "c957929f4dc414814a39a4696f1e805e18518b6169f246b86e92a76a8d38c792",
+      "final-a-bucket-retirement-result-20261018.json": "fa3b3d51248d44136cabc10012761f8f546d852c2e1aaf649027ea6747b13c27",
+      "final-a-bucket-retirement-reconciled-20261018.json": "dfdaf7ea4f9e52799336d7e393e15bf22582e32b9521456745a7b369a48ad7e0",
+      "delivery-after-all-retirement-20261018.json": "9df4e98349e1fac8f15ac85c308cfc0d39770fe8967b035f80152f59a064cecc",
+      "akh-post-source-retirement-public-delivery-20261018.json": "28c215e88463f736c5622dd489fc82bd6d94cdb9be700b46ae755507948919a6",
+      "akh-historical-receipt-byte-recovery-20261018.json": "727497b1474c368846d5a4b769d0191a96b39f2e6ad890155574c313bc822040",
+      "recovery-vm-final-stop-20261018.json": "dd0342fc931ae4525d39b143b8e73b295a2b50672de5ffd3585f270e72bc2f29"
     },
-    "akh_post_retirement_sha256_samples": 3
+    "akh_post_retirement_sha256_samples": 3,
+    "source_reader_scope": [
+      "festapp-images",
+      "festapp-images-private"
+    ],
+    "source_reader_permission": "Object Read only",
+    "source_reader_existing_credentials_still_valid": true,
+    "token_admin_api_403_resolved_by_authorized_browser_session": true,
+    "account_global_bucket_count_claimed": false,
+    "bucket_delete_reconciliation": {
+      "initial_blanket_list_comparison_failed": true,
+      "initial_baseline_incomplete": true,
+      "direct_all_three_retired_404": true,
+      "direct_all_five_retained_200": true,
+      "no_destructive_replay": true,
+      "source_a_objects_deleted": 664,
+      "source_a_bytes_preverified_again": 187091477,
+      "source_and_canonical_hashes_rechecked": true
+    },
+    "delivery_after_source_retirement": {
+      "default_a_samples_sha256": 6,
+      "akh_samples_sha256": 3,
+      "old_api_storage_410_no_store": true,
+      "a_existing_urls_preserved": true
+    },
+    "completion_documentation_base_main": "28167e4b59aa5ee6976f674c39506cd459e26549"
+  },
+  "historical_state_before_source_bucket_retirement": {
+    "at_utc": "2026-10-18T19:14:51.575185+00:00",
+    "status": "production-storage-retired-two-buckets-blocked",
+    "remaining_blockers": [
+      "Cloudflare API-token policy administration returns 403; cannot contract the existing four-bucket source reader before deleting a/a-private.",
+      "4GB always-on Studio capacity screen is 735.8MiB short before safety margin; even isolated lower-admin candidate leaves 223.8MiB. No unsupported critical caps deployed."
+    ],
+    "retained_source_buckets": [
+      "festapp-images-a",
+      "festapp-images-a-private"
+    ]
   }
 }

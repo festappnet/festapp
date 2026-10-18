@@ -1,7 +1,9 @@
 # Storage retirement execution - 2026-10-18
 
-The full plan is **not complete**. The latest production state appears in the
-final section; earlier sections retain their historical execution boundaries.
+The production asset migration and all three source-bucket retirements are
+complete. The plan's permitted precise remaining 4 GB capacity decision is
+recorded separately; no complete enforceable budget is claimed. The latest
+production state appears in the final section; earlier sections are historical.
 The prepared implementation
 was transferred onto freshly fetched main
 `2aa995c6c` on branch `feat/storage-r2-retirement-20261018`, in
@@ -546,7 +548,7 @@ and sync-failure rollback. Three preparation/history cases and the complete
 normal automation lane also passed. No production cleanup was executed by tests.
 
 
-## Final production state after PR #493
+## Production state before final bucket contraction (PR #493/#494)
 
 The local Storage migration is deployed, including its destructive retirement.
 The complete plan remains open only for the two source-bucket permission gate
@@ -626,3 +628,54 @@ Studio editing decision is recorded in
 [capacity evidence](storage-r2-capacity-followup-20261018.json). Existing delivered
 alert/recovery evidence remains valid; no synthetic customer email was sent.
 The adjacent JSON binds sanitized current state to the protected proof digests.
+
+
+## Production source retirement complete
+
+The last permission gate is resolved. The user explicitly authorized a new
+background Chrome tab through Panerelay. Before editing, the selected account
+token ID was matched to the installed backup reader. Only
+`festapp-image-backup-read-20261016` changed: Object Read only remains, scoped
+to `festapp-images` and `festapp-images-private`; no credential rotation, TTL/IP
+change or unrelated token edit occurred. The same installed S3 key then passed
+LIST and hash-checked GET on both canonical buckets and received 403/AccessDenied
+on both old sources. Browser cookies and secret values were not exported. The
+created tab was closed and only this browser participant released.
+
+Immediately before deletion, all 664 source-a objects / 187,091,477 bytes and their
+canonical imported destinations were read again and matched every SHA256 and
+length. The source-private bucket was empty, current-field scan found 0 owned
+Storage references, and the fresh 44-Worker audit found no retired bindings or
+external bucket consumers. Copy/new-backup/full-restore/private-custody gates
+remained valid. The operator durably recorded and verified seven batches, then
+removed the emptied a bucket and empty a-private bucket. The final five scoped
+buckets are public/private Festapp assets, independent AKH, sync/maps and
+encrypted backups. All three retired buckets return 404 on direct API details;
+all five retained buckets return 200 with the expected resource identities.
+
+The initial blanket account-list comparison failed after both DELETE calls
+succeeded: the baseline list omitted two unrelated pre-existing buckets, which
+became visible afterward. Their creation dates predate this operation. The
+failure log/receipt are preserved, and read-only direct-resource reconciliation
+established the actual successful retirement. No deletion was replayed. No
+claim about complete account-wide list equality or total bucket count is made.
+
+After source deletion, six default/a URLs still returned the original lengths
+and SHA256, and three AKH samples also matched. Old API Storage paths continue
+to return 410/no-store; the normal email worker remains resumed as explicitly
+authorized, with two unknown historical outcomes untouched. The recovery VM
+was stopped normally after verifying no task containers or recovery jobs remain.
+Its public cache and all other workstation VM instances were preserved.
+
+One repeated AKH read helper refreshed an earlier dated receipt; its exact
+original bytes were recovered and verified against the already published SHA256.
+The new post-retirement receipt is stored separately. All bound proof digests,
+including the original restored receipt, passed the final integrity check.
+
+There is no remaining storage-migration permission blocker. The 4 GB budget has
+the precise remaining capacity decision allowed by wave 6: 735.8MiB conservative
+screen deficit before safety margin, or 223.8MiB even with the isolated lower-admin
+candidate. Studio remains available at its existing enforced limits; no RAM
+resize, unsupported critical cap or automatic tenant rollout occurred. See
+[capacity evidence](storage-r2-capacity-followup-20261018.json) for the exact
+global Edge admission/backup envelope and representative Studio-load decision.
