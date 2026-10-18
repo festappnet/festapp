@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festivalslunovrat",
+  "baseMainSha": "ba080c122098d9186426ce8d072607d3e9610f36",
+  "release": {
+    "version": "0.20.259+743",
+    "note": "Dependency updates and production occasion setup wizard"
+  }
+}
