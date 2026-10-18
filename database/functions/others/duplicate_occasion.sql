@@ -41,7 +41,7 @@ BEGIN
   SELECT now(), now(), data, CASE WHEN v_demo THEN true ELSE is_hidden END,
          CASE WHEN v_demo THEN false ELSE is_open END, CASE WHEN v_demo THEN false ELSE is_promoted END, start_time, end_time,
          '' AS link,
-         public.copy_occasion_title_internal(title,p_locale), v_organization, services, v_target_unit, features, CASE WHEN v_demo THEN NULL ELSE occasion_hidden END, description
+         public.copy_occasion_title_internal(title,p_locale), v_organization, services, v_target_unit, features, NULL, description
   FROM public.occasions
   WHERE id = oc
   RETURNING id INTO new_occ;
@@ -63,6 +63,7 @@ BEGIN
   CREATE TEMP TABLE tmp_inventory_contexts (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_resources (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_resource_slots (old_id bigint, new_id bigint) ON COMMIT DROP;
+  CREATE TEMP TABLE tmp_scanner_fields (old_id bigint,new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_forms (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_information_hidden (old_id bigint, new_id bigint) ON COMMIT DROP;
 
@@ -370,17 +371,24 @@ BEGIN
   END LOOP;
 
   -- 7b. Form Fields – update the "form" foreign key and product_type via mapping tables.
-  INSERT INTO public.form_fields
-    (created_at, title, description, data, type, is_required, form, is_hidden, "order", product_type, is_ticket_field)
-  SELECT now(), title, description, data, type, is_required,
-         (SELECT tf.new_id FROM tmp_forms AS tf WHERE tf.old_id = form),
-         is_hidden, "order",
-         CASE WHEN product_type IS NOT NULL
-              THEN (SELECT tp.new_id FROM tmp_product_types AS tp WHERE tp.old_id = product_type)
-              ELSE NULL END,
-         is_ticket_field
-  FROM public.form_fields
-  WHERE form IN (SELECT old_id FROM tmp_forms);
+  FOR rec IN SELECT * FROM public.form_fields WHERE form IN (SELECT old_id FROM tmp_forms) LOOP
+    INSERT INTO public.form_fields(created_at,title,description,data,type,is_required,form,is_hidden,"order",product_type,is_ticket_field)
+    VALUES(now(),rec.title,rec.description,rec.data,rec.type,rec.is_required,
+      (SELECT new_id FROM tmp_forms WHERE old_id=rec.form),rec.is_hidden,rec."order",
+      (SELECT new_id FROM tmp_product_types WHERE old_id=rec.product_type),rec.is_ticket_field) RETURNING id INTO v_new_id;
+    INSERT INTO tmp_scanner_fields VALUES(rec.id,v_new_id);
+  END LOOP;
+  INSERT INTO public.scanner_settings(occasion_id,config)
+  SELECT new_occ,jsonb_set(jsonb_set(config,'{products}',jsonb_build_object('mode',config#>>'{products,mode}',
+    'ids',coalesce((SELECT jsonb_agg(m.new_id ORDER BY n) FROM jsonb_array_elements(config#>'{products,ids}') WITH ORDINALITY x(p,n) JOIN tmp_products m ON m.old_id=p::text::bigint),'[]'::jsonb),
+    'order',coalesce((SELECT jsonb_agg(m.new_id ORDER BY n) FROM jsonb_array_elements(config#>'{products,order}') WITH ORDINALITY x(p,n) JOIN tmp_products m ON m.old_id=p::text::bigint),'[]'::jsonb))),
+    '{fields}',coalesce((SELECT jsonb_agg(CASE WHEN f->>'source'='builtin' THEN f ELSE
+      f||jsonb_build_object('form_id',fm.new_id,'field_id',ff.new_id,'key',(CASE WHEN f->>'source'='ticket_field' THEN 'ticket' ELSE 'order' END)||':'||fm.new_id||':'||ff.new_id) END ORDER BY n)
+      FROM jsonb_array_elements(config->'fields') WITH ORDINALITY x(f,n)
+      LEFT JOIN tmp_forms fm ON fm.old_id=(f->>'form_id')::bigint LEFT JOIN tmp_scanner_fields ff ON ff.old_id=(f->>'field_id')::bigint
+      WHERE f->>'source'='builtin' OR (fm.new_id IS NOT NULL AND ff.new_id IS NOT NULL)),'[]'::jsonb))
+  FROM public.scanner_settings WHERE occasion_id=oc;
+
 
   ------------------------------------------------------------------
   -- 8. Return the new occasion id
@@ -395,7 +403,7 @@ BEGIN
   PERFORM public.validate_ticket_layout_references(new_occ,f->'layout') FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=new_occ AND f->>'code'='ticket' AND f ? 'layout';
   DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,
     tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden,
-    tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots;
+    tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots,tmp_scanner_fields;
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;

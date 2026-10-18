@@ -14,11 +14,23 @@ import { UserHeader } from './components/users/user_header.js';
 import { FeedbackFab } from './components/feedback/feedback_fab.js';
 import { ImageLoader } from './utils/image_loader.js';
 import { initializeCoreServices } from './startup/initialize_core_services.js';
+import { resolveScannerRoute } from './services/scanner_routes.js';
 
 class Main {
     static async init() {
         try {
             ThemeService.init();
+            // A prepared scanner must mount its local shell before optional
+            // account refresh or rights startup can require network access.
+            const scannerRoute = resolveScannerRoute(RouterService.normalizeUrl(window.location.href));
+            if (scannerRoute) {
+                await LocalizationService.init();
+                SupabaseService.initializeScannerOffline();
+                await RouterService.handleInitialLoad();
+                RouterService.initPopStateListener();
+                window.markFestappAppReady?.();
+                return;
+            }
             // 1. Init Core Services
             await initializeCoreServices({
                 localizationService: LocalizationService,

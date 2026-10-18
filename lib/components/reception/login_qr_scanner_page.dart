@@ -1,9 +1,11 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/reception/reception_strings.dart';
 import 'package:fstapp/components/reception/login_qr_barcode.dart';
 import 'package:fstapp/components/reception/manual_login_code_field.dart';
+import 'package:fstapp/services/launch_url_service.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 enum ReceptionLoginCredentialType { qr, manualCode }
@@ -34,9 +36,10 @@ class _LoginQrScannerPageState extends State<LoginQrScannerPage> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb)
-      MobileScannerPlatform.instance.setBarcodeLibraryScriptUrl(
-          'https://unpkg.com/@zxing/library@0.21.3');
+    if (kIsWeb) {
+      LaunchUrlService.openExternalUrl('${AppConfig.webLink}/login-qr',
+          inCurrentWindow: true);
+    }
   }
 
   @override
@@ -69,7 +72,9 @@ class _LoginQrScannerPageState extends State<LoginQrScannerPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => kIsWeb
+      ? const SizedBox.shrink()
+      : Scaffold(
       appBar: AppBar(title: Text(ReceptionStrings.scan)),
       body: Stack(
         children: [

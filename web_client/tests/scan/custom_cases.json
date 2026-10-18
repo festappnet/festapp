@@ -1,0 +1,424 @@
+{
+  "occasion": 1281,
+  "cases": [
+    {
+      "key": "custom",
+      "label": "Vlastní pole: vyplněná objednávka",
+      "symbol": "DEMO-1281-CUSTOM",
+      "ticket_id": 21756,
+      "holder": "Klára Veselá",
+      "fields": [
+        {
+          "key": "order:780:1269",
+          "label": "Název skupiny",
+          "value": "Taneční klub Orion",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1270",
+          "label": "Počet hostů v objednávce",
+          "value": "4",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1271",
+          "label": "Stravování hosta",
+          "value": "Vegetariánské menu",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1272",
+          "label": "Poznámka pro vstup",
+          "value": "Příchod bočním vchodem, doprovod 1 dítěte.",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1273",
+          "label": "Interní kontakt objednatele",
+          "value": "Tento údaj je ve scanneru vypnutý",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": false
+        }
+      ],
+      "products": [
+        {
+          "id": 742,
+          "price": 100,
+          "title": "Vstup do hlavního sálu"
+        }
+      ],
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m2 0h3m2 0h7M4 5.5h1m5 0h1m2 0h1m1 0h1m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1m2 0h2M4 12.5h1m1 0h5m5 0h1m1 0h5M4 13.5h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h4M5 14.5h1m1 0h2m1 0h1m2 0h3m1 0h2m2 0h1m1 0h1M4 15.5h1m2 0h2m3 0h1m1 0h1m2 0h1m1 0h3m1 0h1M5 16.5h3m2 0h1m1 0h2m1 0h1m1 0h1m5 0h1M12 17.5h2m2 0h2m3 0h1m2 0h1M4 18.5h7m3 0h1m1 0h1m4 0h2M4 19.5h1m5 0h1m1 0h2m2 0h1m2 0h1m1 0h1M4 20.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m1 0h2m2 0h2m3 0h1M4 22.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h2m1 0h2M4 23.5h1m5 0h1m2 0h3m4 0h1m3 0h1M4 24.5h7m1 0h1m1 0h3m1 0h2m2 0h1\"/></svg>\n"
+    },
+    {
+      "key": "ball",
+      "label": "Ples: účet hosta, stůl a večeře",
+      "symbol": "DEMO-1281-BALL-A",
+      "ticket_id": 21757,
+      "holder": "Jana Dvořáková",
+      "spot": "Stůl 7 · místo 1",
+      "fields": [
+        {
+          "key": "order:795:1274",
+          "label": "Společnost / rezervace",
+          "value": "Novákovi a přátelé",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:795:1275",
+          "label": "Počet míst v objednávce",
+          "value": "2",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:795:1276",
+          "label": "Menu hosta",
+          "value": "Kuřecí menu",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        }
+      ],
+      "products": [
+        {
+          "id": 758,
+          "price": 100,
+          "title": "Ples - vstup se sezením"
+        },
+        {
+          "id": 759,
+          "price": 100,
+          "title": "Slavnostní večeře"
+        }
+      ],
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h2m2 0h1m1 0h7M4 5.5h1m5 0h1m2 0h2m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h2m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h3M4 12.5h1m3 0h1m1 0h3m1 0h1m1 0h6m2 0h1M4 13.5h1m1 0h1m2 0h1m1 0h3m2 0h1m2 0h4M4 14.5h3m1 0h1m1 0h2m1 0h1m2 0h5m1 0h2M4 15.5h3m1 0h2m2 0h1m2 0h2m2 0h1m2 0h2M4 16.5h1m1 0h2m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m4 0h1M12 17.5h3m1 0h1m2 0h1m1 0h1m1 0h1M4 18.5h7m1 0h4m1 0h2m1 0h1M4 19.5h1m5 0h1m3 0h2m3 0h2m1 0h1M4 20.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m3 0h2M4 21.5h1m1 0h3m1 0h1m2 0h2m1 0h2m1 0h1m1 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m2 0h1m1 0h6M4 23.5h1m5 0h1m5 0h1m1 0h1m2 0h2m1 0h1M4 24.5h7m1 0h1m2 0h1m2 0h1m3 0h3\"/></svg>\n"
+    },
+    {
+      "key": "ball_partner",
+      "label": "Ples: druhý host stejné objednávky",
+      "symbol": "DEMO-1281-BALL-B",
+      "ticket_id": 21758,
+      "holder": "Petr Dvořák",
+      "spot": "Stůl 7 · místo 2",
+      "fields": [
+        {
+          "key": "order:795:1274",
+          "label": "Společnost / rezervace",
+          "value": "Novákovi a přátelé",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:795:1275",
+          "label": "Počet míst v objednávce",
+          "value": "2",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:795:1276",
+          "label": "Menu hosta",
+          "value": "Bezlepkové menu",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        }
+      ],
+      "products": [
+        {
+          "id": 758,
+          "price": 100,
+          "title": "Ples - vstup se sezením"
+        },
+        {
+          "id": 759,
+          "price": 100,
+          "title": "Slavnostní večeře"
+        }
+      ],
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h1m2 0h1m2 0h7M4 5.5h1m5 0h1m3 0h3m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m5 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h3m3 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M15 11.5h1M4 12.5h1m1 0h1m3 0h2m2 0h3m2 0h1m2 0h1m1 0h1M4 13.5h1m1 0h1m1 0h2m3 0h2m2 0h5m1 0h2M7 14.5h2m1 0h1m1 0h3m4 0h2m3 0h1M5 15.5h2m4 0h4m1 0h1m3 0h4M4 16.5h1m2 0h5m1 0h1m3 0h1m2 0h2m2 0h1M12 17.5h3m2 0h3m1 0h2m1 0h1M4 18.5h7m1 0h1m2 0h2m3 0h1m1 0h3M4 19.5h1m5 0h1m3 0h1m6 0h2M4 20.5h1m1 0h3m1 0h1m2 0h4m1 0h6M4 21.5h1m1 0h3m1 0h1m7 0h2m1 0h2M4 22.5h1m1 0h3m1 0h1m1 0h5m2 0h2m1 0h3M4 23.5h1m5 0h1m2 0h1m4 0h3m1 0h1m1 0h1M4 24.5h7m1 0h1m2 0h3m1 0h6\"/></svg>\n"
+    },
+    {
+      "key": "empty",
+      "label": "Vlastní pole: nevyplněné odpovědi",
+      "symbol": "DEMO-1281-EMPTY",
+      "ticket_id": 21759,
+      "holder": "Martin Král",
+      "fields": [
+        {
+          "key": "order:780:1269",
+          "label": "Název skupiny",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1270",
+          "label": "Počet hostů v objednávce",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1271",
+          "label": "Stravování hosta",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1272",
+          "label": "Poznámka pro vstup",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1273",
+          "label": "Interní kontakt objednatele",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": false
+        }
+      ],
+      "products": [
+        {
+          "id": 742,
+          "price": 100,
+          "title": "Vstup do hlavního sálu"
+        }
+      ],
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m5 0h1m1 0h7M4 5.5h1m5 0h1m1 0h2m1 0h2m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m3 0h2m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2M4 12.5h1m5 0h1m1 0h1m2 0h1m1 0h2m2 0h3M6 13.5h4m2 0h5m1 0h6M5 14.5h2m3 0h5m1 0h2m3 0h1m1 0h1M4 15.5h1m2 0h1m1 0h1m3 0h1m1 0h2m1 0h1m1 0h2m1 0h1M5 16.5h2m1 0h3m1 0h1m2 0h2m1 0h1m1 0h2m2 0h1M12 17.5h3m1 0h1m2 0h1m1 0h1m2 0h1M4 18.5h7m2 0h3m2 0h1m2 0h2m1 0h1M4 19.5h1m5 0h1m2 0h2m3 0h1m1 0h2m1 0h1M4 20.5h1m1 0h3m1 0h1m3 0h2m3 0h1m2 0h2M4 21.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h2m1 0h1M4 22.5h1m1 0h3m1 0h1m2 0h5m1 0h2m1 0h3M4 23.5h1m5 0h1m3 0h1m1 0h1m2 0h2m3 0h1M4 24.5h7m1 0h1m3 0h1m1 0h2m2 0h1\"/></svg>\n"
+    },
+    {
+      "key": "long",
+      "label": "Vlastní pole: dlouhá poznámka",
+      "symbol": "DEMO-1281-LONG",
+      "ticket_id": 21760,
+      "holder": "Eliška Novotná",
+      "fields": [
+        {
+          "key": "order:780:1269",
+          "label": "Název skupiny",
+          "value": "Spolek přátel kultury a společenského tance z Nového Města",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1270",
+          "label": "Počet hostů v objednávce",
+          "value": "12",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1271",
+          "label": "Stravování hosta",
+          "value": "Bez lepku a laktózy",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "ticket:780:1272",
+          "label": "Poznámka pro vstup",
+          "value": "Hosté přijdou postupně mezi 18:00 a 19:30. Paní Novotná potřebuje bezbariérový přístup; doprovod má vlastní vstupenku. U vstupu prosíme předat modrý náramek.",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": true
+        },
+        {
+          "key": "order:780:1273",
+          "label": "Interní kontakt objednatele",
+          "value": "",
+          "missing": false,
+          "hide_empty": true,
+          "default_visible": false
+        }
+      ],
+      "products": [
+        {
+          "id": 742,
+          "price": 100,
+          "title": "Vstup do hlavního sálu"
+        }
+      ],
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m3 0h1m3 0h7M4 5.5h1m5 0h1m2 0h3m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m3 0h1m1 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h5M4 12.5h1m1 0h5m3 0h1m1 0h1m1 0h5M7 13.5h3m3 0h2m1 0h1m1 0h1m1 0h5M7 14.5h2m1 0h3m1 0h2m1 0h1m3 0h1m1 0h1M5 15.5h1m3 0h1m2 0h2m5 0h3m1 0h1M6 16.5h1m3 0h1m1 0h4m1 0h2m4 0h1M12 17.5h2m1 0h2m4 0h1m2 0h1M4 18.5h7m3 0h1m1 0h1m4 0h2M4 19.5h1m5 0h1m1 0h2m1 0h3m1 0h1m1 0h1m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h2M4 21.5h1m1 0h3m1 0h1m1 0h2m2 0h3m2 0h1M4 22.5h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m1 0h2M4 23.5h1m5 0h1m2 0h1m6 0h1m3 0h1M4 24.5h7m1 0h1m1 0h2m3 0h1m2 0h1\"/></svg>\n"
+    },
+    {
+      "key": "ball_order",
+      "label": "Ples: jedna objednávka, dvě různá menu",
+      "symbol": "DEMO-1281-PLES-7-1",
+      "seat": "7A",
+      "purchaser": "Petra Svobodová",
+      "menu": "Menu 1: Hovězí guláš, houskový knedlík",
+      "ticket_id": 21781,
+      "order_id": 21790,
+      "holder": null,
+      "fields": [],
+      "note": "Prosím bezbariérový přístup.",
+      "order_note": "Přijdeme společně kolem 19:30.",
+      "products": [
+        {
+          "id": 771,
+          "type": "spot",
+          "price": 150,
+          "title": "Místo",
+          "type_id": 631,
+          "type_title": "Místo"
+        },
+        {
+          "id": 773,
+          "type": "food",
+          "price": 160,
+          "title": "Menu 1: Hovězí guláš, houskový knedlík",
+          "type_id": 632,
+          "type_title": "Večeře"
+        }
+      ],
+      "spot_group": {
+        "id": "7",
+        "title": "7",
+        "blueprint_id": 66
+      },
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h1m1 0h1m1 0h1m1 0h7M4 5.5h1m5 0h1m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m3 0h1m3 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m7 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M13 11.5h2M4 12.5h1m2 0h7m1 0h1m1 0h1m2 0h1m1 0h3M4 13.5h1m1 0h4m4 0h1m1 0h2m2 0h4M5 14.5h1m1 0h1m2 0h2m1 0h5m1 0h2m2 0h2M4 15.5h4m1 0h1m2 0h6m5 0h1M4 16.5h2m2 0h4m1 0h1m1 0h4m1 0h2m2 0h1M12 17.5h3m2 0h1m1 0h1m1 0h1m1 0h1M4 18.5h7m1 0h1m1 0h5m1 0h4M4 19.5h1m5 0h1m1 0h1m2 0h1m1 0h2m1 0h2m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h2m1 0h2M4 21.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h3M4 22.5h1m1 0h3m1 0h1m2 0h1m2 0h1m2 0h2m1 0h3M4 23.5h1m5 0h1m2 0h2m2 0h1m1 0h2m2 0h1M4 24.5h7m1 0h1m2 0h1m3 0h2m1 0h2\"/></svg>\n"
+    },
+    {
+      "key": "ball_order",
+      "label": "Ples: jedna objednávka, dvě různá menu",
+      "symbol": "DEMO-1281-PLES-7-2",
+      "seat": "7B",
+      "purchaser": "Petra Svobodová",
+      "menu": "Menu 2: Vepřová panenka zabalená ve slanině, pepřová omáčka, šťouchaný brambor",
+      "ticket_id": 21782,
+      "order_id": 21790,
+      "holder": null,
+      "fields": [],
+      "order_note": "Přijdeme společně kolem 19:30.",
+      "products": [
+        {
+          "id": 771,
+          "type": "spot",
+          "price": 150,
+          "title": "Místo",
+          "type_id": 631,
+          "type_title": "Místo"
+        },
+        {
+          "id": 774,
+          "type": "food",
+          "price": 170,
+          "title": "Menu 2: Vepřová panenka zabalená ve slanině, pepřová omáčka, šťouchaný brambor",
+          "type_id": 632,
+          "type_title": "Večeře",
+          "short_title": "Menu 2: Panenka s pepřovou omáčkou"
+        }
+      ],
+      "spot_group": {
+        "id": "7",
+        "title": "7",
+        "blueprint_id": 66
+      },
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m2 0h3m2 0h7M4 5.5h1m5 0h1m3 0h1m1 0h1m1 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m2 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h3M4 12.5h1m1 0h5m2 0h1m1 0h1m2 0h5M5 13.5h2m4 0h1m2 0h1m1 0h4m1 0h4M5 14.5h1m2 0h1m1 0h5m1 0h6m1 0h1M4 15.5h1m3 0h2m2 0h3m1 0h2m1 0h3m1 0h1M5 16.5h1m1 0h2m1 0h3m1 0h1m1 0h1m6 0h1M12 17.5h4m2 0h1m2 0h1m2 0h1M4 18.5h7m3 0h3m1 0h1m2 0h2M4 19.5h1m5 0h1m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m1 0h4m2 0h1m2 0h1M4 22.5h1m1 0h3m1 0h1m1 0h8m1 0h2M4 23.5h1m5 0h1m7 0h1m1 0h1m3 0h1M4 24.5h7m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1\"/></svg>\n"
+    },
+    {
+      "key": "ball_without_dinner",
+      "label": "Ples: menu a bez večeře",
+      "symbol": "DEMO-1281-PLES-8-1",
+      "seat": "8A",
+      "purchaser": "Tomáš Novák",
+      "menu": "Menu 3: Kuřecí soté, rýže",
+      "ticket_id": 21783,
+      "order_id": 21791,
+      "holder": null,
+      "fields": [],
+      "note": "Přijde později.",
+      "products": [
+        {
+          "id": 771,
+          "type": "spot",
+          "price": 150,
+          "title": "Místo",
+          "type_id": 631,
+          "type_title": "Místo"
+        },
+        {
+          "id": 775,
+          "type": "food",
+          "price": 155,
+          "title": "Menu 3: Kuřecí soté, rýže",
+          "type_id": 632,
+          "type_title": "Večeře"
+        }
+      ],
+      "spot_group": {
+        "id": "8",
+        "title": "8",
+        "blueprint_id": 66
+      },
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m1 0h1m5 0h7M4 5.5h1m5 0h1m2 0h1m1 0h1m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m4 0h2m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m1 0h2m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h5M4 12.5h1m3 0h1m1 0h3m2 0h1m1 0h5m2 0h1M5 13.5h3m1 0h1m1 0h2m3 0h1m4 0h2M5 14.5h2m1 0h3m2 0h3m1 0h3m2 0h2M4 15.5h2m1 0h3m1 0h5m1 0h1m1 0h1m2 0h2M4 16.5h2m1 0h1m2 0h2m2 0h1m1 0h4m4 0h1M12 17.5h1m4 0h1m1 0h1m1 0h1m1 0h1M4 18.5h7m1 0h2m4 0h1m1 0h1M4 19.5h1m5 0h1m5 0h2m1 0h2m1 0h2M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h3m3 0h2M4 21.5h1m1 0h3m1 0h1m2 0h3m1 0h1m1 0h1m1 0h1m1 0h2M4 22.5h1m1 0h3m1 0h1m5 0h5M4 23.5h1m5 0h1m2 0h4m1 0h1m2 0h2m1 0h1M4 24.5h7m1 0h2m1 0h1m2 0h1m3 0h3\"/></svg>\n"
+    },
+    {
+      "key": "ball_without_dinner",
+      "label": "Ples: menu a bez večeře",
+      "symbol": "DEMO-1281-PLES-8-2",
+      "seat": "8B",
+      "purchaser": "Tomáš Novák",
+      "menu": "Bez večeře",
+      "ticket_id": 21784,
+      "order_id": 21791,
+      "holder": null,
+      "fields": [],
+      "products": [
+        {
+          "id": 771,
+          "type": "spot",
+          "price": 150,
+          "title": "Místo",
+          "type_id": 631,
+          "type_title": "Místo"
+        },
+        {
+          "id": 772,
+          "type": "food",
+          "price": 0,
+          "title": "Bez večeře",
+          "type_id": 632,
+          "type_title": "Večeře"
+        }
+      ],
+      "spot_group": {
+        "id": "8",
+        "title": "8",
+        "blueprint_id": 66
+      },
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 29 29\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h29v29H0z\"/><path stroke=\"#000000\" d=\"M4 4.5h7m3 0h1m1 0h1m1 0h7M4 5.5h1m5 0h1m2 0h1m1 0h1m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m1 0h1m2 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h1M4 12.5h1m1 0h5m2 0h3m2 0h5M4 13.5h3m4 0h2m1 0h1m1 0h4m1 0h4M4 14.5h2m1 0h4m2 0h1m2 0h6m1 0h1M6 15.5h2m1 0h1m1 0h2m1 0h1m1 0h2m1 0h3m1 0h1M5 16.5h1m1 0h2m1 0h3m1 0h1m1 0h1m6 0h1M12 17.5h1m2 0h1m2 0h1m2 0h1m2 0h1M4 18.5h7m2 0h1m1 0h2m1 0h1m2 0h2M4 19.5h1m5 0h1m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1M4 20.5h1m1 0h3m1 0h1m1 0h2m2 0h1m2 0h1m2 0h1m1 0h1M4 21.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h1M4 22.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h3m1 0h2M4 23.5h1m5 0h1m2 0h2m3 0h1m1 0h1m3 0h1M4 24.5h7m1 0h1m2 0h1m1 0h1m1 0h1m2 0h1\"/></svg>\n"
+    }
+  ],
+  "reference": {
+    "title": "Sportovní ples Větřkovice 2026",
+    "configuration_snapshot": "2026-10-05",
+    "synthetic_customers": true
+  }
+}
