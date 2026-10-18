@@ -274,7 +274,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   title: Text(EmailTemplatesStrings.preview),
                   content: SizedBox(
-                      width: 680,
+                      width: 480,
                       child: SingleChildScrollView(
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -282,16 +282,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             Text(EmailTemplatesStrings.previewScope),
                             _sampleControls(onChanged: () => update(() {})),
                             const SizedBox(height: 16),
-                            Text(
-                                _scenario!
-                                    .composeSubject(_subjectEditor.plainText),
-                                style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 16),
-                            EmailPreviewHtml(
-                                html: _scenario!.composeHtml(
-                                    _bodyDraft?.html ?? _htmlContent ?? ''),
-                                imageBytesResolver:
-                                    _htmlSave.media.previewBytes),
+                            EmailReceivedMessage(
+                                subject: _scenario!.composeSubject(_subjectEditor.plainText),
+                                html: _scenario!.composeHtml(_bodyDraft?.html ?? _htmlContent ?? ''),
+                                imageBytesResolver: _htmlSave.media.previewBytes),
                           ]))),
                 )));
   }
@@ -446,6 +440,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       : null,
                   builder: (field) => InputDecorator(
                       decoration: InputDecoration(
+                          isDense: true,
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),

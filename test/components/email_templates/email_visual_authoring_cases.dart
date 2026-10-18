@@ -36,10 +36,77 @@ void main() {
                 child: RichHtmlEditor(controller: controller)))));
     expect(find.text(scenario.values['occasionTitle']!), findsOneWidget);
     expect(tester.getSize(find.byType(RichHtmlEditor)).height,
-        lessThanOrEqualTo(96));
+        lessThanOrEqualTo(52));
+    expect(tester.getTopLeft(find.text(scenario.values['occasionTitle']!)).dx, lessThanOrEqualTo(16));
     expect(controller.plainText, '{{occasionTitle}}');
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
+  });
+  testWidgets(
+      'used unique components stay visible while repeatable buttons remain insertable',
+      (tester) async {
+    final provider = EmailAuthoringProvider(
+        EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+        field: EmailTargetField.body,
+        scenario: scenario);
+    final controller = RichHtmlEditorController(
+        initialHtml:
+            '<p>{{fullOrder}}</p><p>{{order_overview_button}}</p><p>Text</p>',
+        owner: const HtmlMediaOwner.none(),
+        authoring: provider);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: RichHtmlEditor(controller: controller)))));
+    await tester.tap(find.byIcon(Icons.alternate_email));
+    await tester.pumpAndSettle();
+    final ranked = provider.search('', controller.templateUsage);
+    expect(ranked.last.code, 'fullOrder');
+    await tester.enterText(find.byType(TextField), 'fullOrder');
+    await tester.pumpAndSettle();
+    final unique = tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .firstWhere((tile) =>
+            (tile.title as Text).data == provider.entry('fullOrder')!.label);
+    await tester.enterText(find.byType(TextField), 'order_overview_button');
+    await tester.pumpAndSettle();
+    final button = tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .firstWhere((tile) =>
+            (tile.title as Text).data ==
+            provider.entry('order_overview_button')!.label);
+    expect(unique.enabled, isFalse);
+    expect(button.enabled, isTrue);
+
+    expect(controller.insertTemplateToken('fullOrder'), isFalse);
+    expect(tester.getTopLeft(find.byIcon(Icons.alternate_email)).dy,
+        tester.getTopLeft(find.byIcon(Icons.format_bold)).dy);
+    await tester.tap(find.byWidget(button));
+    await tester.pumpAndSettle();
+    expect(RegExp(r'\{\{order_overview_button\}\}').allMatches(controller.html),
+        hasLength(2));
+    controller.undo();
+    expect(RegExp(r'\{\{order_overview_button\}\}').allMatches(controller.html),
+        hasLength(1));
+    await tester.pumpWidget(const SizedBox());
+    controller.dispose();
+  });
+  testWidgets('received message is phone width and retains completed content',
+      (tester) async {
+    final html = scenario.composeHtml('<p>{{fullOrder}}</p>');
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+                child: EmailReceivedMessage(
+                    subject: 'Vstupenky na ples', html: html)))));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('info@example.invalid'), findsOneWidget);
+    expect(
+        find.textContaining('jana.novakova@example.invalid'), findsOneWidget);
+    expect(tester.getSize(find.byType(EmailPreviewHtml)).width,
+        lessThanOrEqualTo(400));
+    expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html,
+        html);
   });
   testWidgets(
       'rich token in existing paragraph displays actual component content',
@@ -172,8 +239,9 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
       await tester.enterText(find.byType(TextField), code);
       await tester.pumpAndSettle();
-      await tester
-          .tap(find.widgetWithText(ListTile, provider.entry(code)!.label));
+      await tester.tap(find.byWidgetPredicate((widget) =>
+          widget is ListTile &&
+          (widget.title as Text).data == provider.entry(code)!.label));
       await tester.pumpAndSettle();
       expect(controller.html, contains('{{$code}}'));
       expect(controller.html, isNot(contains('<p></p>')));

@@ -944,13 +944,25 @@
       "fullOrder": "Bestelldetails",
       "balanceReasoning": "Zahlungsstatus",
       "paymentDetails": "Zahlungsdaten",
-      "changeOverview": "Bestelländerungen"
+      "changeOverview": "Bestelländerungen",
+      "orderOverviewUrlDescription": "Persönlicher Link zum aktuellen Bestellstatus, zu Zahlungen und zum Änderungsverlauf.",
+      "orderOverviewButtonDescription": "Schaltfläche zum aktuellen Bestellstatus. Fehlt sie, wird sie beim Versand automatisch ergänzt."
     },
     "usage": {
       "waitlistConfirmation_title": "Wartelistenbestätigung",
-      "waitlistConfirmation_description": "Bestätigt die Wartelistenanmeldung ohne Zahlung oder Produktauswahl.",
+      "waitlistConfirmation_description": "Wird nach der Anmeldung auf der Warteliste gesendet. Zahlung und Produktauswahl sind noch nicht erforderlich.",
       "waitlistOffer_title": "Platzangebot für die Warteliste",
-      "waitlistOffer_description": "Platzangebot mit persönlichem Link und Ablaufzeit. Produktauswahl nach aktueller Verfügbarkeit."
+      "waitlistOffer_description": "Wird gesendet, wenn der Veranstalter freie Plätze auf der Warteliste anbietet. Das Angebot hat eine Annahmefrist; Produkte werden bei Annahme nach Verfügbarkeit ausgewählt.",
+      "resetPassword_description": "Wird gesendet, wenn ein Nutzer das Zurücksetzen des Passworts anfordert. Enthält den Link zum Festlegen eines neuen Passworts.",
+      "signInCode_description": "Wird bei der Registrierung oder beim Anfordern eines Anmeldecodes gesendet. Enthält den Code zur Anmeldung.",
+      "appLinks_description": "Wird gesendet, wenn ein Administrator aus der Teilnehmerliste App-Links verschickt.",
+      "accountDeletionConfirm_description": "Wird nach einem Antrag auf Kontolöschung gesendet. Die Löschung muss über den Link in dieser E-Mail bestätigt werden.",
+      "accountDeletionComplete_description": "Wird nach Abschluss der Kontolöschung gesendet.",
+      "ticketOrderConfirmation_description": "Wird nach Annahme einer neuen Bestellung gesendet. Bestätigt die Bestellung auch dann, wenn sie noch nicht bezahlt ist.",
+      "ticketOrderUpdate_description": "Wird gesendet, wenn ein Administrator nach einer Änderung eine Bestellaktualisierung verschickt. Zeigt Änderungen und Zahlungsstatus.",
+      "ticketOrderPaymentDone_description": "Wird nach Bestätigung der Anzahlung oder Restzahlung einer Anzahlungsbestellung gesendet. Tickets werden separat verschickt.",
+      "ticketOrderPaymentReminder_description": "Wird vor Fälligkeit eines offenen Betrags gesendet, sofern Erinnerungen aktiviert sind. Den Zeitpunkt bestimmen die Formular- oder Veranstaltungseinstellungen.",
+      "ticketOrderStorno_description": "Wird bei Stornierung einer Bestellung gesendet, wenn der Administrator die Benachrichtigung des Kunden auswählt."
     },
     "authoring": {
       "authoringHint": "Geben Sie @ ein und wählen Sie Angaben für den Versand.",
@@ -989,7 +1001,11 @@
       "variableGuideHint": "Angaben für diese Vorlage. Öffnen Sie einen Eintrag, um ein Beispiel zu sehen. Beim Versand werden die tatsächlichen Werte eingesetzt.",
       "occasionSample": "Beispiel mit Produkten dieser Veranstaltung",
       "modelSample": "Musterbeispiel",
-      "contextUnavailable": "Veranstaltungsprodukte konnten nicht geladen werden. Ein Musterbeispiel wird angezeigt."
+      "contextUnavailable": "Veranstaltungsprodukte konnten nicht geladen werden. Ein Musterbeispiel wird angezeigt.",
+      "previewFrom": "Von",
+      "previewTo": "An",
+      "previewReceivedMessage": "Empfangene Nachricht",
+      "uniqueAlreadyUsed": "Dieser Abschnitt ist bereits eingefügt. Er kann nur einmal pro E-Mail erscheinen."
     },
     "subject": "Betreff",
     "emailTemplateContent": "E-Mail-Inhalt"

@@ -243,7 +243,9 @@ class RichHtmlEditorController extends ChangeNotifier {
       int? expectedRevision,
       DocumentSelection? replacement,
       String? expectedText}) {
-    if (authoring?.entry(code) == null ||
+    final entry = authoring?.entry(code);
+    if (entry == null ||
+        !entry.repeatable && (templateUsage[code] ?? 0) > 0 ||
         !authoring!.search('', const {}).any((e) => e.code == code) ||
         expectedRevision != null && revision != expectedRevision) return false;
     var selection = replacement ?? editor.composer.selection;

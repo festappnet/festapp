@@ -944,13 +944,25 @@
       "fullOrder": "Szczegóły zamówienia",
       "balanceReasoning": "Stan płatności",
       "paymentDetails": "Dane płatności",
-      "changeOverview": "Zmiany zamówienia"
+      "changeOverview": "Zmiany zamówienia",
+      "orderOverviewUrlDescription": "Osobisty link do aktualnego stanu zamówienia, płatności i historii zmian.",
+      "orderOverviewButtonDescription": "Przycisk otwierający aktualny stan zamówienia. Jeśli go brakuje, zostanie dodany przy wysyłaniu."
     },
     "usage": {
       "waitlistConfirmation_title": "Potwierdzenie listy rezerwowej",
-      "waitlistConfirmation_description": "Potwierdza zapis na listę rezerwową bez płatności i wyboru produktów.",
+      "waitlistConfirmation_description": "Wysyłana po zapisaniu na listę rezerwową. Płatność i wybór produktów nie są jeszcze wymagane.",
       "waitlistOffer_title": "Oferta miejsc dla osoby z listy rezerwowej",
-      "waitlistOffer_description": "Oferta miejsc z osobistym linkiem i terminem. Produkty wybierane według aktualnej dostępności."
+      "waitlistOffer_description": "Wysyłana, gdy organizator oferuje wolne miejsca osobie z listy rezerwowej. Oferta ma termin przyjęcia; produkty wybiera się przy przyjęciu według dostępności.",
+      "resetPassword_description": "Wysyłana, gdy użytkownik prosi o zresetowanie hasła. Zawiera link do ustawienia nowego hasła.",
+      "signInCode_description": "Wysyłana podczas rejestracji lub po zamówieniu kodu logowania. Zawiera kod umożliwiający zalogowanie.",
+      "appLinks_description": "Wysyłana, gdy administrator wysyła linki do aplikacji z listy uczestników.",
+      "accountDeletionConfirm_description": "Wysyłana po prośbie o usunięcie konta. Użytkownik musi jeszcze potwierdzić usunięcie linkiem w tej wiadomości.",
+      "accountDeletionComplete_description": "Wysyłana po zakończeniu usuwania konta.",
+      "ticketOrderConfirmation_description": "Wysyłana po przyjęciu nowego zamówienia. Potwierdza jego utworzenie, nawet jeśli nie zostało jeszcze opłacone.",
+      "ticketOrderUpdate_description": "Wysyłana, gdy administrator po edycji zamówienia wysyła aktualizację. Pokazuje zmiany i bieżący stan płatności.",
+      "ticketOrderPaymentDone_description": "Wysyłana po potwierdzeniu zaliczki lub dopłaty do zamówienia z zaliczką. Bilety są wysyłane osobno.",
+      "ticketOrderPaymentReminder_description": "Wysyłana przed terminem niezapłaconej kwoty, jeśli przypomnienia są włączone. Termin wysyłki określają ustawienia formularza lub wydarzenia.",
+      "ticketOrderStorno_description": "Wysyłana przy anulowaniu zamówienia, jeśli administrator wybierze powiadomienie klienta."
     },
     "authoring": {
       "authoringHint": "Wpisz @ i wybierz dane uzupełniane przy wysyłaniu.",
@@ -989,7 +1001,11 @@
       "variableGuideHint": "Dane dostępne dla tego szablonu. Rozwiń wpis, aby zobaczyć przykład. Rzeczywiste wartości zostaną uzupełnione przy wysyłaniu.",
       "occasionSample": "Przykład z produktami tego wydarzenia",
       "modelSample": "Przykładowe dane",
-      "contextUnavailable": "Nie udało się wczytać produktów wydarzenia. Wyświetlane są przykładowe dane."
+      "contextUnavailable": "Nie udało się wczytać produktów wydarzenia. Wyświetlane są przykładowe dane.",
+      "previewFrom": "Od",
+      "previewTo": "Do",
+      "previewReceivedMessage": "Odebrana wiadomość",
+      "uniqueAlreadyUsed": "Ta sekcja została już wstawiona. Może wystąpić tylko raz w wiadomości."
     },
     "subject": "Temat",
     "emailTemplateContent": "Treść e-maila"

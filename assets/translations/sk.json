@@ -950,13 +950,25 @@
       "fullOrder": "Prehľad objednávky",
       "balanceReasoning": "Stav platby",
       "paymentDetails": "Platobné údaje",
-      "changeOverview": "Zmeny objednávky"
+      "changeOverview": "Zmeny objednávky",
+      "orderOverviewUrlDescription": "Osobný odkaz na aktuálny stav objednávky, platby a históriu zmien.",
+      "orderOverviewButtonDescription": "Tlačidlo na zobrazenie aktuálneho stavu objednávky. Ak chýba, pri odoslaní sa doplní automaticky."
     },
     "usage": {
       "waitlistConfirmation_title": "Potvrdenie náhradníka",
-      "waitlistConfirmation_description": "Potvrdenie zaradenia do poradovníka bez platby a výberu produktov.",
+      "waitlistConfirmation_description": "Záujemca ju dostane po prihlásení do poradovníka náhradníkov. Zatiaľ nič neplatí ani nevyberá produkty.",
       "waitlistOffer_title": "Ponuka miest náhradníkovi",
-      "waitlistOffer_description": "Ponuka miest s osobným odkazom a termínom. Produkty sa vyberajú podľa aktuálnej dostupnosti."
+      "waitlistOffer_description": "Náhradník ju dostane, keď mu organizátor ponúkne voľné miesta. Ponuka má termín prijatia; produkty si vyberie pri prijatí podľa dostupnosti.",
+      "resetPassword_description": "Používateľ ju dostane, keď požiada o obnovenie hesla. Obsahuje odkaz na nastavenie nového hesla.",
+      "signInCode_description": "Používateľ ju dostane pri registrácii alebo po vyžiadaní prihlasovacieho kódu. Obsahuje kód na prihlásenie.",
+      "appLinks_description": "Účastník ju dostane, keď mu správca zo zoznamu účastníkov odošle odkazy na aplikáciu.",
+      "accountDeletionConfirm_description": "Používateľ ju dostane po žiadosti o zmazanie účtu. Zmazanie musí ešte potvrdiť odkazom v tomto e-maile.",
+      "accountDeletionComplete_description": "Používateľ ju dostane po dokončení zmazania účtu.",
+      "ticketOrderConfirmation_description": "Zákazník ju dostane po prijatí novej objednávky. Potvrdzuje vytvorenie objednávky, aj keď ešte nie je zaplatená.",
+      "ticketOrderUpdate_description": "Zákazník ju dostane, keď mu správca po úprave objednávky odošle aktualizáciu. Ukazuje zmeny a aktuálny stav platby.",
+      "ticketOrderPaymentDone_description": "Zákazník ju dostane po potvrdení prijatej zálohy alebo doplatku zálohovej objednávky. Vstupenky sa odosielajú samostatne.",
+      "ticketOrderPaymentReminder_description": "Zákazník ju dostane pred splatnosťou neuhradenej sumy, ak sú zapnuté pripomienky. Čas odoslania určuje nastavenie formulára alebo akcie.",
+      "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia."
     },
     "authoring": {
       "authoringHint": "Napíšte @ a vyberte údaj, ktorý sa doplní pri odoslaní.",
@@ -995,7 +1007,11 @@
       "variableGuideHint": "Dostupné údaje pre túto šablónu. Rozbaľte údaj a pozrite si ukážku. Pri odoslaní sa doplnia skutočné hodnoty.",
       "occasionSample": "Ukážka s produktmi tejto akcie",
       "modelSample": "Modelová ukážka",
-      "contextUnavailable": "Produkty akcie sa nepodarilo načítať. Zobrazuje sa modelová ukážka."
+      "contextUnavailable": "Produkty akcie sa nepodarilo načítať. Zobrazuje sa modelová ukážka.",
+      "previewFrom": "Od",
+      "previewTo": "Komu",
+      "previewReceivedMessage": "Prijatá správa",
+      "uniqueAlreadyUsed": "Táto sekcia je už vložená. V jednom e-maile môže byť iba raz."
     },
     "subject": "Predmet",
     "emailTemplateContent": "Obsah e-mailu"

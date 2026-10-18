@@ -64,8 +64,9 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
         label: _label(sub),
         description: sub.description,
         rich: rich,
+        repeatable: sub.definition.repeatable,
         example:
-            rich ? sampleLabel : scenario?.values[code] ?? sub.defaultValue,
+            rich ? sub.description : scenario?.values[code] ?? sub.defaultValue,
         block: !singleLine && sub.kind == EmailValueKind.richBlock,
         url: sub.kind == EmailValueKind.url);
   }
@@ -104,6 +105,8 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   String get recommendedLabel => EmailTemplatesStrings.recommended;
   @override
   String get usedBlocksLabel => EmailTemplatesStrings.usedBlocks;
+  @override
+  String get uniqueUsedLabel => EmailTemplatesStrings.uniqueAlreadyUsed;
   @override
   String get unsupportedLabel => EmailTemplatesStrings.unknownVariable;
   @override

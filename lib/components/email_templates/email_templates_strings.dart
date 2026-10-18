@@ -1,6 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailTemplatesStrings {
+  static String get previewFrom => 'EmailTemplates.authoring.previewFrom'.tr();
+  static String get previewTo => 'EmailTemplates.authoring.previewTo'.tr();
+  static String get previewReceivedMessage =>
+      'EmailTemplates.authoring.previewReceivedMessage'.tr();
+  static String get uniqueAlreadyUsed =>
+      'EmailTemplates.authoring.uniqueAlreadyUsed'.tr();
+  static String get subOrderOverviewUrlDescription =>
+      'EmailTemplates.subs.orderOverviewUrlDescription'.tr();
+  static String get subOrderOverviewButtonDescription =>
+      'EmailTemplates.subs.orderOverviewButtonDescription'.tr();
   static String get variableGuide =>
       'EmailTemplates.authoring.variableGuide'.tr();
   static String get variableGuideHint =>

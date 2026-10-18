@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as parser;
+import 'email_templates_strings.dart';
 
 /// Inert email content adapted to the current app theme, without remote fetch.
 /// Removing action attributes also removes tap semantics and keyboard targets.
@@ -93,5 +94,87 @@ class EmailPreviewHtml extends StatelessWidget {
             },
           )),
         ));
+  }
+}
+
+/// A received-message surface with phone-width content, shared with the editor's
+/// inert HTML renderer. Header contacts are synthetic preview identities.
+class EmailReceivedMessage extends StatelessWidget {
+  const EmailReceivedMessage({
+    required this.subject,
+    required this.html,
+    this.imageBytesResolver,
+    super.key,
+  });
+  final String subject;
+  final String html;
+  final Uint8List? Function(String)? imageBytesResolver;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border.all(color: colors.outlineVariant),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 18,
+                        color: colors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          EmailTemplatesStrings.previewReceivedMessage,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(subject, style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${EmailTemplatesStrings.previewFrom}: info@example.invalid',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${EmailTemplatesStrings.previewTo}: Jana Nováková <jana.novakova@example.invalid>',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: colors.outlineVariant),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: EmailPreviewHtml(
+                html: html,
+                imageBytesResolver: imageBytesResolver,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

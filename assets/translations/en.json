@@ -976,33 +976,35 @@
       "offerUrl": "Personal offer link",
       "offerButton": "Open offer button (HTML)",
       "orderOverviewUrl": "Order overview - URL",
-      "orderOverviewButton": "Order overview - button"
+      "orderOverviewButton": "Order overview - button",
+      "orderOverviewUrlDescription": "Personal link to the current order status, payments and change history.",
+      "orderOverviewButtonDescription": "The “View current order status” button. Automatically added when sending if absent."
     },
     "usage": {
       "resetPassword_title": "Reset Password",
-      "resetPassword_description": "This template is used for sending password reset instructions.",
+      "resetPassword_description": "Sent when a user requests a password reset. Contains the link for setting a new password.",
       "signInCode_title": "Sign In Code",
-      "signInCode_description": "This template is used for sending sign-in codes.",
+      "signInCode_description": "Sent during registration or when a user requests a sign-in code. Contains the code for signing in.",
       "appLinks_title": "Application Links",
-      "appLinks_description": "This template is used to send application links to participants.",
+      "appLinks_description": "Sent when an administrator sends application links from the participant list.",
       "accountDeletionConfirm_title": "Account deletion confirmation",
-      "accountDeletionConfirm_description": "Sends a secure link for reviewing and confirming an account deletion request.",
+      "accountDeletionConfirm_description": "Sent after a user requests account deletion. The user must still confirm deletion using the link in this email.",
       "accountDeletionComplete_title": "Account deletion completed",
-      "accountDeletionComplete_description": "Confirms that account deletion has been completed.",
+      "accountDeletionComplete_description": "Sent after account deletion is completed.",
       "ticketOrderConfirmation_title": "Order Received",
-      "ticketOrderConfirmation_description": "This template is used to confirm ticket orders/registrations.",
+      "ticketOrderConfirmation_description": "Sent when a new order is accepted. Confirms the order was created, even if it has not been paid yet.",
       "ticketOrderUpdate_title": "Order Update",
-      "ticketOrderUpdate_description": "This template is used to send an updated order status to the customer, for example after products have been changed. It includes the current balance and payment instructions if needed.",
+      "ticketOrderUpdate_description": "Sent when an administrator sends an update after editing an order. Shows the changes and current payment status.",
       "ticketOrderPaymentDone_title": "Order Payment Done",
-      "ticketOrderPaymentDone_description": "This template is used to confirm successful ticket order/registration payments.",
+      "ticketOrderPaymentDone_description": "Sent after a deposit or the remaining balance of a deposit order is confirmed as paid. Tickets are sent separately.",
       "ticketOrderPaymentReminder_title": "Order Payment Reminder",
-      "ticketOrderPaymentReminder_description": "This template is used to remind customers about pending ticket order/registration payments.",
+      "ticketOrderPaymentReminder_description": "Sent before an outstanding payment is due, if reminders are enabled. The form or event settings determine when it is sent.",
       "ticketOrderStorno_title": "Order Cancellation",
-      "ticketOrderStorno_description": "This template is used to notify users about ticket order/registration cancellations.",
+      "ticketOrderStorno_description": "Sent when an order is cancelled and the administrator chooses to notify the customer.",
       "waitlistConfirmation_title": "Waitlist confirmation",
-      "waitlistConfirmation_description": "Confirms joining the waitlist without payment or product selection.",
+      "waitlistConfirmation_description": "Sent after joining the waiting list. No payment or product selection is required yet.",
       "waitlistOffer_title": "Waitlist place offer",
-      "waitlistOffer_description": "Place offer with a personal link and expiry. Products are selected subject to current availability."
+      "waitlistOffer_description": "Sent when the organizer offers places to someone on the waiting list. The offer has an acceptance deadline; products are selected on acceptance according to availability."
     },
     "title": "Email Templates",
     "settings": {
@@ -1067,7 +1069,11 @@
       "variableGuideHint": "Available variables for this template. Expand a variable to see an example. Actual values are filled in when sending.",
       "occasionSample": "Sample using this event’s products",
       "modelSample": "Illustrative sample",
-      "contextUnavailable": "Event products could not be loaded. An illustrative sample is shown."
+      "contextUnavailable": "Event products could not be loaded. An illustrative sample is shown.",
+      "previewFrom": "From",
+      "previewTo": "To",
+      "previewReceivedMessage": "Received message",
+      "uniqueAlreadyUsed": "This section is already inserted. It can appear only once in an email."
     }
   },
   "Inventory": {
