@@ -1,4 +1,5 @@
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
+import { resolveScannerRoute } from './scanner_routes.js';
 import { AppConfig } from '../app_config.js';
 import { prepareFlutterRuntime } from './flutter_runtime_handoff.js';
 import { unsupportedOccasionAppRedirect } from './public_occasion_routes.js';
@@ -139,7 +140,6 @@ export class RouterService {
         '/unit',
         '/admin',
         // '/form', // Handled by Web Client
-        '/scan',
         '/transfer'
     ];
 
@@ -160,6 +160,19 @@ export class RouterService {
 
         // 0. Normalize URL
         path = RouterService.normalizeUrl(fullUrl);
+
+        const scannerRoute = resolveScannerRoute(path);
+        if (scannerRoute) {
+            const requestedOccasion = new URL(fullUrl).searchParams.get('occasion');
+            if (/^[1-9][0-9]*$/.test(requestedOccasion || '')) {
+                scannerRoute.occasion = requestedOccasion;
+            }
+            const target = scannerRoute.canonical || path;
+            if (!scannerRoute.code) window.history.replaceState(null, '', target);
+            RouterService._lastPath = target;
+            await RouterService.mountScanner(scannerRoute);
+            return true;
+        }
 
         if (!AppConfig.isAppSupported) {
             const redirect = unsupportedOccasionAppRedirect(path);
@@ -364,6 +377,37 @@ export class RouterService {
         return false;
     }
 
+    static async mountScanner(route) {
+        this._scannerPage?.clear();
+        document.getElementById('app')?.style.setProperty('display', 'none');
+        const host = document.getElementById('form-page-container');
+        host.style.display = 'block';
+        const { SupabaseService } = await import('./supabase_service.js');
+        const domain = ['program', 'reception'].includes(route.page);
+        if (domain) await SupabaseService.initialize();
+        const client = domain ? SupabaseService.getClient() : {
+            get supabaseUrl() { return SupabaseService._backend.supabaseUrl; },
+            get scannerBackendContext() {
+                const backend = SupabaseService._backend;
+                return {
+                    generation: backend.isCanonical ? 1 : 0,
+                    origin: backend.supabaseUrl,
+                    organization: backend.organizationId,
+                };
+            },
+            async rpc(...args) {
+                await SupabaseService.initialize();
+                return SupabaseService.getClient().rpc(...args);
+            },
+        };
+        const { ScanPage } = await import('../components/scan/scan_page.js');
+        const { ScannerDomainPage } = await import('../components/scan/scanner_domain_page.js');
+        this._scannerPage = domain
+            ? new ScannerDomainPage(host, { client })
+            : new ScanPage(host, { client });
+        await this._scannerPage.init(route);
+    }
+
     static normalizeUrl(url) {
         let path = url;
 
@@ -420,6 +464,7 @@ export class RouterService {
 
     // Listen for PopState
     static _lastPath = window.location.pathname;
+    static _scannerPage = null;
 
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
@@ -430,6 +475,14 @@ export class RouterService {
                 return;
             }
             RouterService._lastPath = path;
+
+            const scannerRoute = resolveScannerRoute(path);
+            if (scannerRoute) {
+                await RouterService.mountScanner(scannerRoute);
+                return;
+            }
+            RouterService._scannerPage?.clear();
+            RouterService._scannerPage = null;
 
             if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
                  const link = RouterService.getFormLink(path);

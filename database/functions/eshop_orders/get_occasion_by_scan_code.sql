@@ -28,7 +28,10 @@ BEGIN
     RETURN jsonb_build_object(
         'id', found_occasion_record.id,
         'title', found_occasion_record.title,
-        'features', found_occasion_record.features
+        'features', found_occasion_record.features,
+        'scanner_field_mappings', (SELECT coalesce(jsonb_object_agg(f->>'field_id',f->>'label'),'{}'::jsonb)
+         FROM jsonb_array_elements((SELECT config->'fields' FROM public.scanner_settings WHERE occasion_id=found_occasion_record.id)) f
+         WHERE f->>'source'='order_field' AND coalesce((f->>'default_visible')::boolean,true))
     );
 END;
 $$;

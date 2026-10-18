@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import { receptionPayload } from '../../src/components/scan/scanner_input.js';
+test('C17 reception parser matches native length/version contract',()=>{assert.ok(receptionPayload('festapp-login:v1:12:'+'A'.repeat(40)));for(const s of ['festapp-login:v2:12:'+'A'.repeat(40),'festapp-login:v1:0:'+'A'.repeat(40),'festapp-login:v1:12:'+'A'.repeat(39)])assert.equal(receptionPayload(s),null);});

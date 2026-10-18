@@ -82,6 +82,10 @@ async function runTest(file) {
         console.warn("  WARNING: assertions.sql not found. Some tests may fail.");
     }
 
+    if (relativePath.startsWith('database/tests/scanning/')) {
+      await client.query(fs.readFileSync(path.join(TESTS_DIR, 'scanning/fixture.sql'), 'utf8'));
+    }
+
     // Read and Execute Test File
     const testSql = fs.readFileSync(file, 'utf8');
     // Operational maintenance helpers may deliberately live in pg_temp. Load

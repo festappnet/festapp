@@ -26,7 +26,7 @@ BEGIN
     SET
         -- `sent` is the canonical unused state that can be scanned again.
         state = 'sent',
-        updated_at = now()
+        updated_at = clock_timestamp()
     WHERE id = ticket_id
       AND state = 'used';
 

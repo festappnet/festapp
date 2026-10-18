@@ -70,6 +70,13 @@ class RouterService {
 
   static Future<T?> navigatePageInfo<T extends Object?>(
       BuildContext context, PageRouteInfo route) {
+    if (kIsWeb && route is CheckRoute) {
+      unawaited(LaunchUrlService.openExternalUrl(
+        '${AppConfig.webLink}/scan/program/${route.args!.id}',
+        inCurrentWindow: true,
+      ).then<void>((_) {}));
+      return Future.value(null);
+    }
     return context.router.push(route);
   }
 

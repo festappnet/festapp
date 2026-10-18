@@ -58,6 +58,8 @@ try {
   assert.match(worker, /cache\.match\(request, \{ ignoreSearch: true \}\)/);
   assert.match(worker, /event\.data === 'SKIP_WAITING'/);
   assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
+  assert.match(worker, /FESTAPP_SCANNER_SHELL_STATUS/);
+  assert.match(worker, /function resolveScannerRoute\(path\)/);
   assert.match(worker, /url\.pathname === '\/festapp-version\.json'/);
   assert.match(worker, /url\.pathname === '\/backend-activation\.json'/);
   assert.match(worker, /url\.pathname === '\/client-sync-config\.json'/);
@@ -68,7 +70,6 @@ try {
   assert.match(worker, /festapp-app-shell-0\.19\.85\+418/);
   assert.match(worker, /event\.resultingClientId \|\| event\.clientId/);
   assert.match(worker, /if \(emergencyCutover\)/);
-  assert.match(worker, /const FORCED_OCCASION_PATH = "\/csmostrava2026\/event";/);
   assert.match(worker, /cache\.put\(request, response\.clone\(\)\)/);
   const coreUrls = JSON.parse(worker.match(/const CORE_URLS = (\[[\s\S]*?\]);/)[1]);
   const precacheUrls = JSON.parse(
@@ -101,7 +102,6 @@ try {
       path.join(genericRoot, 'festapp_service_worker.js'),
       'utf8',
     );
-    assert.match(genericWorker, /const FORCED_OCCASION_PATH = null;/);
   } finally {
     await rm(genericRoot, { recursive: true, force: true });
   }
@@ -331,8 +331,17 @@ try {
   const rootNavigation = new Request('https://app.test/');
   Object.defineProperty(rootNavigation, 'mode', { value: 'navigate' });
   const rootResponse = await dispatchFetch(rootNavigation, 'updating-tab');
-  assert.equal(await rootResponse.text(), '<html>offline shell</html>',
-    'a forced-occasion tenant must never open the generic event list at /');
+  assert.equal(await rootResponse.text(), '<html>generic event list</html>',
+    'the web client must boot at root so it can handle legacy scanner hashes');
+  for (const pathname of [
+    '/scan', '/scan/SECRET', '/scan/settings', '/scan/history',
+    '/scan/offline', '/scan/program/42', '/login-qr', '/event/check/42',
+  ]) {
+    const request = new Request('https://app.test' + pathname);
+    Object.defineProperty(request, 'mode', { value: 'navigate' });
+    assert.equal(await (await dispatchFetch(request, 'updating-tab')).text(),
+      '<html>generic event list</html>', pathname);
+  }
   for (const pathname of ['/unit/2', '/unit/2/']) {
     const unitNavigation = new Request('https://app.test' + pathname);
     Object.defineProperty(unitNavigation, 'mode', { value: 'navigate' });

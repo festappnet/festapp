@@ -111,6 +111,7 @@ export async function collectPwaShellManifest(buildDir) {
     // Every lazy web module belongs to the same immutable build. Open forms
     // must still open their seat selector after a newer deployment replaces assets.
     (url.startsWith('/web-assets/') && /\.(?:js|css)$/.test(url)) ||
+    url.startsWith('/assets/translations/') ||
     standaloneDocumentSet.has(url) ||
     url === flutterMain ||
     installCriticalNames.has(url.split('?')[0]) ||
