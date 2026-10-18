@@ -1,11 +1,11 @@
--- GATED SOURCE ONLY: verified CSM deployment and explicit reopening authority.
+-- GATED SOURCE ONLY: verified global compatible deployment and explicit reopening authority.
 -- Reopens typed commands only. Old RPCs/direct DML remain inaccessible.
 DO $reopen$
 DECLARE signature text; relation regclass; client_role text;
 BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.canonical_mutation_write_release_gate
-  WHERE singleton AND paused AND minimum_build=620 AND organization_ids=ARRAY[12]::bigint[]) THEN
-  RAISE EXCEPTION 'expected paused CSM build-620 gate required'; END IF;
+  WHERE singleton AND paused AND minimum_build=620) THEN
+  RAISE EXCEPTION 'expected paused global build-620 gate required'; END IF;
  FOREACH signature IN ARRAY ARRAY['public.update_activities(bigint,jsonb)','public.save_activity_history(bigint,jsonb,text,bigint,text)','public.delete_autosave_history(bigint)','public.import_user_group_assignments(bigint,jsonb)','public.import_occasion_users_from_csv(bigint,jsonb,jsonb)','public.delete_occasion_user_ws(uuid,bigint)','public.delete_occasion_user(uuid,bigint)','public.game_guess(bigint,text)','public.save_place_location(bigint,double precision,double precision)'] LOOP
   FOREACH client_role IN ARRAY ARRAY['anon','authenticated'] LOOP
    IF has_function_privilege(client_role,to_regprocedure(signature),'EXECUTE') THEN RAISE EXCEPTION 'old writer still reachable: % %',client_role,signature; END IF;

@@ -118,3 +118,36 @@ subsequent complete automation batch in
 `/tmp/festapp-global-boundaries-automation.log`. Final boundary catalog/upgrade
 and SQL tests passed in `/tmp/festapp-global-boundaries-catalog.log` and
 `/tmp/festapp-global-boundaries-sql.log`. Manifest generation is reproducible.
+
+## Global editor release eligibility
+
+All eleven web overlays are now live from app source
+`5302dc21c4e8670e6ff31253cfabdf360b20655d`, version `0.20.257+741`.
+Each passed three consecutive coherent version/build/legal/assets probes. The
+CSP manifest now includes the organizer document only when generated, and the
+build verifier requires it exactly for the configured organizer tenant.
+
+The existing editor release policy still allowed only organization 12. The
+new forward migration `20261018220000_global_canonical_mutation_release.sql`
+removes that organization list entirely. The global pause and existing minimum
+build are preserved. Each typed command retains its own object-derived rights;
+release headers do not grant permissions. New organizations need no activation.
+The HTTP-context regression now creates two organizations, executes the same
+command in both, checks exact replay and revoked domain rights, and retains
+old/missing-header and maintenance-pause rejection. Pause/reopen operations
+consume the same global contract. Applied migration history is unchanged.
+
+This backend-only correction changes no Flutter, web, Android, iOS or build
+inputs; the frozen app artifacts and overlay ancestry remain valid.
+Six eligible Android candidate builds are a subsequent authorized preparation
+step. Store publication and old-client retirement need their protected package,
+signing, artifact/version and transition evidence. The global read-ACL/default
+phases are not claimed applied while that evidence is pending.
+
+Verification of the global eligibility correction: a fresh isolated baseline plus
+all forward migrations succeeded. The complete test runner passed web (419),
+SQL (218 plus the corrected generated source-parity fixture on targeted rerun),
+all client lanes, Deno (359) and automation (139). The operational pause/reopen
+integration also passed against the owned local fixture. The sole initial SQL
+failure was the stale generated helper digest, refreshed from canonical source;
+no application code changed after the passing client/web checks.

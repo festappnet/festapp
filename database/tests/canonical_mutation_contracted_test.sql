@@ -6,7 +6,7 @@ DO $$ DECLARE actor uuid; occasion bigint; BEGIN
  INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_view,is_approved) VALUES(occasion,actor,true,true,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('test.contracted_occasion',occasion::text,true);
- INSERT INTO public.canonical_mutation_write_release_gate(singleton,paused,minimum_build,organization_ids) SELECT true,false,620,ARRAY[organization] FROM public.occasions WHERE id=occasion;
+ INSERT INTO public.canonical_mutation_write_release_gate(singleton,paused,minimum_build) SELECT true,false,620 FROM public.occasions WHERE id=occasion;
  PERFORM set_config('request.method','POST',true);
  PERFORM set_config('request.headers','{"x-client-info":"festapp/0.20.136+620/web"}',true);
 END $$;
