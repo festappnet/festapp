@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "f9d6d6ef17bcdf8db4c5b2767deda7a1e65d6407",
+  "release": {
+    "version": "0.20.266+750",
+    "note": "Show actionable validation when reviewing organizer verification"
+  }
+}
