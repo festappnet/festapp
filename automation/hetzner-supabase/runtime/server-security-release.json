@@ -55,7 +55,7 @@
     "automation/hetzner-supabase/restore/export-public-edge-sources.py": "8e556ba5754cdce394c12c78baabc050e3494e5cb2baa77b36f53f6a34ff82e0",
     "automation/hetzner-supabase/restore/r2_archive.py": "3ea186f6a5267237f23da3f98c799d5dd415500c10a013071f865c31c3ee3cd4",
     "automation/hetzner-supabase/restore/backup_manifest.py": "d9c615c94bb676fe359227bd1eee5c6bb168e1c9df2c96643cfe6c5bdb805c77",
-    "automation/hetzner-supabase/restore/current_asset_fields.sql": "e07eb2a492d85b3b0c668943c5d0bbf85126085d50e541c341d9759157b665a9",
+    "automation/hetzner-supabase/restore/current_asset_fields.sql": "e14ace021182cae1c7d4b862117d376adb17ec8eb9b6d26f4f3204b8e1b6e69f",
     "automation/image-migration/storage_references.py": "8db70d78f6046d613b8a63a469a01d7a88c72a235fd8e26d07a42c0a5b0de26c",
     "automation/hetzner-supabase/merge/source-registry.json": "3af79cd8e6361abfe62b5972b4cffeb3aa2e17aac41956edad192468a8619511",
     "automation/hetzner-supabase/restore/verify-r2-dump-local.py": "1ca102ccb35f2a147eb935648d785ba3a122b93ad79304cfb67b32cd378acf9b",

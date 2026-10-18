@@ -10,7 +10,12 @@ SELECT format('SELECT v.value FROM %I.%I t CROSS JOIN LATERAL jsonb_each(to_json
 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
 WHERE n.nspname IN ('public','eshop') AND c.relkind IN ('r','p') AND NOT c.relispartition
  AND c.relname NOT LIKE 'log\_%' ESCAPE '\'
- AND c.relname NOT IN ('email_messages','email_delivery_attempts','email_provider_events')
+ AND c.relname NOT IN ('email_messages','email_delivery_attempts','email_provider_events',
+  'client_commit_items','client_mutation_receipts')
 ORDER BY n.nspname,c.relname
 \gexec
+-- Mutable queued messages are current; completed delivery/replay/audit stays history.
+SELECT to_jsonb(m) FROM public.email_messages m
+WHERE workflow_state IN ('pending','blocked','preparing','sending','retry_wait')
+ AND to_jsonb(m)::text ~ 'storage/v1|img[.]festapp[.]net|image-api[.]festapp[.]net';
 COMMIT;

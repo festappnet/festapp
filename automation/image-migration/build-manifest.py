@@ -15,7 +15,8 @@ from storage_references import digest, inspect_value, storage_identity
 
 HERE = Path(__file__).resolve().parent
 HISTORY = {'log_app_config', 'log_emails', 'log_notifications', 'email_messages',
-           'email_delivery_attempts', 'email_provider_events'}
+           'email_delivery_attempts', 'email_provider_events',
+           'client_commit_items', 'client_mutation_receipts'}
 
 
 def private_storage_closed(records):
