@@ -377,6 +377,13 @@ class UnitEmailTemplatesPage extends StatelessWidget {
 class UnitSettingsPage extends StatelessWidget {
   const UnitSettingsPage({super.key});
   @override
+  Widget build(BuildContext context) => const AutoRouter();
+}
+
+@RoutePage(name: 'UnitSettingsContentRoute')
+class UnitSettingsContentPage extends StatelessWidget {
+  const UnitSettingsContentPage({super.key});
+  @override
   Widget build(BuildContext context) {
     final scope = UnitAdministrationScope.of(context);
     return UnitSettingsScreen(unit: scope.unit, onUnitUpdated: scope.onUpdated);
