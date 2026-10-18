@@ -1,4 +1,4 @@
-package fstapp.fstapp
+package fstapp.hvezdamorska
 
 import io.flutter.embedding.android.FlutterActivity
 
