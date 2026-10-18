@@ -91,7 +91,7 @@ describe('control plane', () => {
     expect(response.status).toBe(200);
     const body = await response.json() as { url: string };
     const signed = new URL(body.url);
-    expect(signed.pathname).toBe('/festapp-images-a-private/private/export.txt');
+    expect(signed.pathname).toBe('/festapp-images-private/imports/a/private/export.txt');
     expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
     expect(signed.searchParams.has('X-Amz-Signature')).toBe(true);
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
@@ -292,7 +292,9 @@ describe('control plane', () => {
     }), configured);
     expect(response.status).toBe(200);
     expect(configured.IMAGES_BUCKET.delete).toHaveBeenCalledWith('images/1/x.jpg');
-    expect(JSON.parse(mockedFetch.mock.calls[1][1].body)).toEqual({ files: [link] });
+    const purged = JSON.parse(mockedFetch.mock.calls[1][1].body).files;
+    expect(purged).toContain(link);
+    expect(purged).toContain(`${link}?w=600&f=auto&q=75&_format=webp`);
     expect(mockedFetch.mock.calls[2][0]).toContain('/remove_image_records');
   });
 });

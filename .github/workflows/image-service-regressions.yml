@@ -28,3 +28,10 @@ jobs:
         run: npm run typecheck && npm run test:unit
       - name: Verify production deployment probe regressions
         run: node --test automation/tests/image_service_preflight.test.mjs
+      - name: Verify storage inventory, immutable copy and archive contracts
+        run: |
+          python3 -m unittest discover -s automation/image-migration/tests -p 'test_*.py'
+          python3 -m unittest discover -s automation/tests -p 'test_r2_image_archive.py'
+          node --check automation/image-migration/copy-assets.mjs
+          node automation/generate_storage_asset_migration.mjs --check
+          node --test automation/image-migration/tests/verified-copy.test.js

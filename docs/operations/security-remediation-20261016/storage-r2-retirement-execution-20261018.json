@@ -1,0 +1,380 @@
+{
+  "date_local": "2026-10-18",
+  "verification": "standard",
+  "source_main": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb",
+  "isolated_worktree": "/private/tmp/festapp-storage-r2-main-20261018",
+  "production_mutations": false,
+  "production_copy_performed": false,
+  "database_rewrite_applied": false,
+  "worker_deployed": false,
+  "edge_bundle_deployed": false,
+  "services_stopped": false,
+  "buckets_deleted": false,
+  "new_backup_created": false,
+  "new_isolated_restore_completed": false,
+  "capacity_budget_proven": false,
+  "inventory": {
+    "storage_objects": 1479,
+    "disk_files": 1743,
+    "matched_disk_files": 1479,
+    "unreferenced_disk_files": 264,
+    "relations_scanned": 141,
+    "privately_retained_orphan_objects": 264,
+    "current_fields": 533,
+    "history_fields": 0,
+    "current_references": 572,
+    "objects_with_issues": 0,
+    "blockers": {
+      "reference_source_not_in_storage": 1
+    },
+    "copy_blockers": {},
+    "ready_for_copy": true,
+    "ready_for_reference_rewrite": false,
+    "production_mutations": false,
+    "r2_objects": 1074,
+    "r2_bytes": 341530791
+  },
+  "evidence_sha256": {
+    "database.ndjson": "f98f57013fbad4201a67b5ebe54ecb657369798cfca61e1e0087184387c723db",
+    "disk.ndjson": "6108e587a72b499d1f5ba6bfa26dfdc422598ea422877892f7ef417f33c5639e",
+    "inventory.sql": "d917077b4c4801258e11b55d4454fd90f528e07c1685f8fa75b7e8331e6e0584",
+    "manifest": "593a65df05c86cfe0086a1be55f2bd2f13b3f3a4b2768014e66ed76510f84f6c",
+    "r2_inventory": "7275ea0d11ed8d14a1ededdb0cb98d79a32e883143d335be567d2ac602f6e6c7"
+  },
+  "missing_current_sources": {
+    "relation": "public.occasions",
+    "id": 63,
+    "field": "features",
+    "objects": 2,
+    "kind": "offline-map binaries",
+    "disk_path_candidates": 0
+  },
+  "protected_evidence": "/Users/miakh/.local/share/festapp-storage-retirement-20261018",
+  "targeted_checks": {
+    "worker_typecheck": "pass",
+    "worker_unit_tests": 108,
+    "worker_provider_integration_tests_skipped": 27,
+    "deno_tests": 382,
+    "inventory_python_tests": 12,
+    "archive_python_tests": 8,
+    "copy_node_tests": 4,
+    "automation_node_tests": 22,
+    "dart_analyze": "pass",
+    "new_route_disposition_tests": 2
+  },
+  "full_suite": {
+    "status": "pass",
+    "command": "./automation/test_all.sh",
+    "database": "task-owned disposable localhost:56344",
+    "web": {
+      "passed": 423,
+      "skipped": 10
+    },
+    "sql": {
+      "files_passed": 221,
+      "failed": 0
+    },
+    "client": {
+      "core_cases": 158,
+      "adapter_cases": 78,
+      "adapter_skips": 1,
+      "flutter_cases": 1314,
+      "architecture_pass": true,
+      "inventory_pass": true
+    },
+    "deno": {
+      "passed": 382,
+      "failed": 0
+    },
+    "automation": {
+      "final_node_batch_passed": 139,
+      "failed": 0
+    },
+    "provider_cases_skipped": 27,
+    "live_provider_copy_proven": false,
+    "complete_run_base": "5bc3addccffed0d2dfdeda9655d447c32677fe65",
+    "final_upstream_update": {
+      "base": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb",
+      "scope": "three unrelated draft-card UI/test files; no migration overlap",
+      "affected_flutter_tests_passed": 3
+    }
+  },
+  "publication": {
+    "committed": false,
+    "pushed": false,
+    "pull_request": null,
+    "required_main_approvals": 1,
+    "branch": "feat/storage-r2-retirement-20261018",
+    "full_suite_passed": true,
+    "main_auto_merge_enabled": false,
+    "validated_source_base": "2aa995c6c406fcd23adb79bcae8cfeaa3e7c84eb"
+  },
+  "scope_limits": [
+    "Account asset SQL/Worker/Edge cleanup staged and targeted-tested; registry import, secrets and cutover activation not performed",
+    "No exact SQL reference rewrite/sync batch implemented or applied",
+    "Online backup producer and full restore remain on historical Storage-inclusive contract",
+    "Runtime service retirement and numerical caps remain unchanged"
+  ],
+  "protected_manifest": "manifest-ready-copy-20261018/manifest.json",
+  "final_runtime_readback": {
+    "running_containers": 13,
+    "oom_flags": 0,
+    "studio_running": true,
+    "storage_running": true,
+    "imgproxy_running": true,
+    "scope": "Current running/OOM snapshot only, not capacity or incident proof"
+  },
+  "isolated_test_fixture_cleaned_up": true,
+  "local_source_files_sha256": {
+    ".github/workflows/image-service-regressions.yml": "9348ef0de025ac068c0fe587c896bd38a42dd538e9930e59fa3271da02ae887b",
+    "automation/generate_storage_asset_migration.mjs": "31f2388bc0d47a1782e6daa87c3d88e3d25ad4b6c8402c37ea9435b2c127c66a",
+    "automation/hetzner-supabase/backup/create-r2-image-archive.py": "147068af5579acbffb72addc04c151838aa01ab8476d65998f94d1cbb7f558dc",
+    "automation/hetzner-supabase/restore/r2_archive.py": "61d000ad915fe4663bd89ad678887ccee2f775e8b8e2a34801c77129a52f0459",
+    "automation/hetzner-supabase/runtime/data-security-release.json": "6fbbbb0130fede969f90a3936d2c7e4a1555026840a0d029083fd779d4b7738e",
+    "automation/hetzner-supabase/runtime/docker-compose.festapp.yml": "5aaea3036c43e381debdc88ac1e64d59432dad5ddfff0c2fcf25fa48685411be",
+    "automation/hetzner-supabase/runtime/server-security-release.json": "88319239cf545e40b04098384bc1070904e9f38fa5298302e87c8b43df5816a4",
+    "automation/image-migration/README.md": "45404836d0c98b3c47905502313b5910169a56460807e6ac8174e8098bd4787e",
+    "automation/image-migration/build-manifest.py": "8dd228d7d6323ccacfe515d238365887e2cf19eb1509878a81b255c48561faad",
+    "automation/image-migration/collect-inventory.py": "f864331fb1baf148c16dca23c33e50e9d1d5da7eeb270bd0dcfcab282187d1d2",
+    "automation/image-migration/copy-assets.mjs": "52894df156894b25d61d9bdbc66d8270792eb7105b101bdae8c0a25422e31a79",
+    "automation/image-migration/inventory-r2.py": "14cfed713898a4eeab61868aca02a8905e9a257527e3f8726ce6c710a9faa52c",
+    "automation/image-migration/inventory.sql": "d917077b4c4801258e11b55d4454fd90f528e07c1685f8fa75b7e8331e6e0584",
+    "automation/image-migration/lib/verified-copy.js": "4e843a2d5848ac967a688df6fdad783812df4116af8a1a0578d591b47adddc19",
+    "automation/image-migration/map_dependencies.py": "231bc1d881f39f29f0846fbec9799c95a41a761c0fca6a3c65a63309f42836f3",
+    "automation/image-migration/storage_references.py": "8db70d78f6046d613b8a63a469a01d7a88c72a235fd8e26d07a42c0a5b0de26c",
+    "automation/image-migration/tests/test_map_dependencies.py": "6757e00db815fd4b3b44cda19ea86e2966204228d2c3fc44133fc07514a3df3b",
+    "automation/image-migration/tests/test_storage_references.py": "17fc240c9819b60de1a7c9b7d37d6c9773cbe267bb4035859dc5a398c13e8294",
+    "automation/image-migration/tests/verified-copy.test.js": "7f77661a8d268c600baefddb52130b7487b27086956c195dff5e3af45d1efba6",
+    "automation/test_all.sh": "1ab4a089c1c1753919cb2f3e883ae34d0f90b1515e923873d1f9bd78ff373cf3",
+    "automation/tests/test_r2_image_archive.py": "ea1b4c8dda37f09ea872d92bf96de38746ca556bbb8f3b3e1e95ec7423ba887b",
+    "database/functions/account_deletion/account_deletion_contract.sql": "4bbf3d7c4372a15ac352e59d2a6b39fff2d51863dcccad32c9b35f4d334eb43d",
+    "database/functions/account_deletion/asset_cleanup.sql": "5d824e5595f3121c04287d98b4478fa7f05f1f305da2947e4653b3be6d4a60e2",
+    "database/functions/security/definer_contracts.json": "93054d3a5f7cdc57b7a1e13b8ed47e7e222adb26201bfa3461352e163079727f",
+    "database/functions/security/server_security_acl_manifest.json": "9031f8c40f54d34e531d5b3286b33e55fc35e84770b32dbd3bdb6531e1f84a6c",
+    "database/tables/canonical_assets.sql": "75255faf992773182dd8c412d737297a482d310322b149fd5fd1fb9eaac5fc77",
+    "database/tests/account_asset_cleanup_test.sql": "b7d397cdd13a7f7ae66750844b3b4c4468c79c1eb6c9f67600254b064c194798",
+    "database/tests/account_deletion_contract_test.sql": "cabbdb4238f5b15a05929a1cf5ba0fc14e2bec95d88a11cce86944e112af3cdc",
+    "docs/security/abuse-surface-inventory.json": "d882c7bff208d05644afc033f76875aa64d2c42c47ff618f19c2ad39465cb0a2",
+    "lib/components/images/db_images.dart": "99e9977277811b0d98b6f059ad861848b1fc0feb605a910adee66265e35861ea",
+    "supabase/functions/_shared/accountAssets.ts": "d29c54b374844fd98d4e73007b27468be8c0e0c60a19f07783ba9de928accba2",
+    "supabase/functions/_shared/accountAssets_test.ts": "aced762e679e3e07d80c695ce75008d5445eb74586d0b9ffbeb2c31a1cf5de7f",
+    "supabase/functions/_shared/accountDeletion.ts": "5db35d2bfc13da98ca28d777d068204a1742d00c06acf968b4d086aa53f5ffa1",
+    "supabase/functions/_shared/accountDeletion_test.ts": "c50541747246f77f8147dc569a41fb75ffd124cec2b020d5764c69889f4312ce",
+    "supabase/functions/_shared/emailWorkerEnvironment.ts": "75de833f85044dc11d9e66a01bd178ab315cdb1dbca5371d731eb515c07f5f4d",
+    "supabase/functions/_shared/emailWorkerEnvironment_test.ts": "abf721a107293db01772d5fe48d6451742954f373c143d7bee64ea3def513697",
+    "supabase/functions/_shared/ticketFontR2.ts": "1398687f450d1b1792eab572c9d89b5eb45779bfc0e412cdeeab4a1e72c6302c",
+    "supabase/functions/_shared/ticketFontR2_test.ts": "ecc9233ede58f5c59ff9062fc0d4b5681925bc3d099d0087d25a35704eb19eab",
+    "supabase/functions/_shared/ticketFontStorage.ts": "2674f3d2d40753af0e045de371d01dad13edc40cdb2975eaa13b6a70091a47a8",
+    "supabase/functions/_shared/ticketFontStorage_test.ts": null,
+    "supabase/functions/confirm-account-deletion/index.ts": "efb2ec29ec76d3e0078749ee28d423081ab734d93996967474012613be655f51",
+    "supabase/migrations/20261018010000_storage_asset_cleanup.sql": "25dca7fe38a14274a36ba08946fca80a10b3cad1c0d62eaed3625a162252a46e",
+    "workers/image-worker/src/account-assets.ts": "8d16efd47063a684082cf34c3d16031ff4f39946d68ccd6c55da038138ba03ba",
+    "workers/image-worker/src/asset-key.ts": "0fef77bb822ec1908a1c6a07ffe8f661726251e3a8e79af32a61146360e1280b",
+    "workers/image-worker/src/delete.ts": "2d40235b7962ba7395af1522291a317e8335e25e604d3d9bca70373b5f736e34",
+    "workers/image-worker/src/index.ts": "a629865164fa59c109839da34447ca77e1321a8f5a057efab1975a42c6de7abe",
+    "workers/image-worker/src/presigned.ts": "e2bc46b08e22e6c04b536d83157079eb5888918f67785abd3a93ba74420dd384",
+    "workers/image-worker/src/project-registry.ts": "1836da644e9ae541eeb0b8bf65cbd6289ff21d7ce4b41c15c5f7f873cd406010",
+    "workers/image-worker/src/purge.ts": "222f410d0cc256c5054efc48f6c598f31b6264414616bb7ec64c57ea9129c141",
+    "workers/image-worker/src/serve-private.ts": "8d62bde28a4005e0ec3c0c64b243c5b66ff1322d4d4d0e7c83d4507a5d2c83b9",
+    "workers/image-worker/src/serve-public.ts": "6ceae7aea61ae7413eee7da22fde5a7a3577a732d4645b561f308deecef87ff6",
+    "workers/image-worker/src/service-auth.ts": "5d6e75fcb2be923e46d79e561747f604d8510ffb03284a3b31d68435d2d13f53",
+    "workers/image-worker/src/ticket-fonts.ts": "54f2d80ff67cea33a7781072d15b41000f33ca9a8ea0f14dfc9087f3ca5fea87",
+    "workers/image-worker/src/types.ts": "b91cd2f9c5bf825e8ff10ee0748e0fb11e634081e6182d9858515a5274bc575e",
+    "workers/image-worker/src/upload.ts": "8c9da3fe26b8e7fc8925fbe4b77bd1d498a2ba5c7c60e593ca9fd8a611cf61d8",
+    "workers/image-worker/tests/unit/account-assets.test.ts": "9ef664dcd2c28c26acbc58644fd71ee112bea84f1f22c086d69ead71baa5b7b8",
+    "workers/image-worker/tests/unit/asset-boundary.test.ts": "c3f8c9a181d73c1d9e7ae2ab8e2ae112ee10cc634338f2bbea1864dabb1427e7",
+    "workers/image-worker/tests/unit/control-plane.test.ts": "289c3779064166ac31515395f54b56b84186197041eab7c320eec15b4ab5083a",
+    "workers/image-worker/tests/unit/project-registry.test.ts": "5cfb64057ce429442ffc667513f3fa00d16f68478c8a46cf22752b27ba208a31",
+    "workers/image-worker/tests/unit/ticket-fonts.test.ts": "766814fd5ae54a73d8da9ee6555d6ed56711e1c8e15a8863cf8f3937132a042b",
+    "workers/image-worker/tests/unit/topology.test.ts": "f9e761e6869b1a40bb2ea90fc420835c259bb354364daea6259a621966774626",
+    "workers/image-worker/wrangler.toml": "dd418db9a19d8d745d3d1c914d6ce55b7a0c6900b56c488edef41f9a5494d2ac"
+  },
+  "local_source_set_sha256": "d21d03ec2ce06cb3656e20568f9996fc2e983803809fb5a2eaba5310bccb45b8",
+  "missing_current_sources_followup": {
+    "protected_receipt_sha256": "b04fadc02460c2c170096077d304943bfe0a70b2ad4f065c653a4a4de1df92f3",
+    "occasion_id": 63,
+    "occasion_hidden": true,
+    "occasion_dates": [
+      "2025-12-11",
+      "2025-12-13"
+    ],
+    "map_feature_enabled": true,
+    "forced_native_offline_configuration": true,
+    "web_offline_maps_used": false,
+    "r2_public_objects_scanned": 47125,
+    "r2_public_map_packages_found": 6,
+    "missing_packages_found_in_r2": 0,
+    "full_storage_backup_scans": [
+      "20260920T024421Z",
+      "20261016T164727Z"
+    ],
+    "missing_packages_found_in_selected_backups": 0,
+    "retained_caddy_rows_scanned": 27319,
+    "retained_caddy_missing_package_requests": 0,
+    "zero_usage_proven": false,
+    "configuration_removed": false,
+    "scope_limit": "Selected two complete Storage archives, related R2 file buckets, targeted local/server paths and retained ~2-day logs; inaccessible historical cloud storage and all other retained snapshots are not disproven."
+  },
+  "latest_followup": {
+    "at_utc": "2026-10-18T09:07:21.857087+00:00",
+    "manifest_summary": {
+      "storage_objects": 1479,
+      "disk_files": 1743,
+      "matched_disk_files": 1479,
+      "unreferenced_disk_files": 264,
+      "relations_scanned": 141,
+      "privately_retained_orphan_objects": 264,
+      "current_fields": 533,
+      "history_fields": 0,
+      "current_references": 572,
+      "objects_with_issues": 0,
+      "blockers": {
+        "reference_source_not_in_storage": 1
+      },
+      "copy_blockers": {},
+      "ready_for_copy": true,
+      "ready_for_reference_rewrite": false,
+      "production_mutations": false,
+      "r2_objects": 1074,
+      "r2_bytes": 341530791
+    },
+    "manifest_sha256": "593a65df05c86cfe0086a1be55f2bd2f13b3f3a4b2768014e66ed76510f84f6c",
+    "source_capture": {
+      "version": 1,
+      "read_only": true,
+      "sha256": {
+        "database.ndjson": "f98f57013fbad4201a67b5ebe54ecb657369798cfca61e1e0087184387c723db",
+        "disk.ndjson": "6108e587a72b499d1f5ba6bfa26dfdc422598ea422877892f7ef417f33c5639e",
+        "inventory.sql": "d917077b4c4801258e11b55d4454fd90f528e07c1685f8fa75b7e8331e6e0584"
+      }
+    },
+    "worker_unit_tests": 108,
+    "deno_tests": 361,
+    "inventory_python_tests": 12,
+    "copy_node_tests": 4,
+    "route_disposition_tests": 2,
+    "asset_sql_lifecycle": "passed actual isolated PostgreSQL 17 fixture; not an application restore or provider delete",
+    "migration_parity": true,
+    "fresh_origin_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+    "deployment_readback": "/tmp/festapp-retirement-deployment-readback-20261018.json",
+    "production_mutations": false,
+    "publication_gate": "Complete test surface passed on refreshed main; one approving review required before merge."
+  },
+  "original_base_validation": {
+    "source_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+    "isolated_worktree": "/tmp/festapp-storage-r2-20261018",
+    "inventory": {
+      "storage_objects": 1479,
+      "disk_files": 1743,
+      "matched_disk_files": 1479,
+      "unreferenced_disk_files": 264,
+      "relations_scanned": 141,
+      "current_fields": 533,
+      "history_fields": 0,
+      "current_references": 572,
+      "objects_with_issues": 563,
+      "blockers": {
+        "reference_source_unresolved": 17,
+        "reference_source_not_in_storage": 1,
+        "ownership_unresolved": 563,
+        "disk_orphan_disposition_required": 1
+      },
+      "ready_for_copy": false,
+      "production_mutations": false,
+      "r2_objects": 1074,
+      "r2_bytes": 341530791
+    },
+    "full_suite": {
+      "web_tests": {
+        "passed": 411,
+        "skipped": 9,
+        "failed": 0
+      },
+      "sql_tests_on_fresh_isolated_baseline": {
+        "passed": 193,
+        "failed": 22
+      },
+      "sql_sources_modified": false,
+      "remaining_components": {
+        "portable_core": "pass",
+        "native_adapters": "pass",
+        "flutter": "fail: existing sign-in transport expectations and three unclassified roots",
+        "deno": {
+          "passed": 359,
+          "failed": 0
+        },
+        "provider_integration": {
+          "passed": 0,
+          "skipped": 27
+        },
+        "automation": "three unresolved baseline failures after fixing and verifying the new font-route registration"
+      },
+      "sql_tests_on_shared_stale_fixture": {
+        "passed": 185,
+        "failed": 30
+      },
+      "unresolved_automation_failures": [
+        "Canonical abuse migration differs from canonical SQL sources",
+        "Canonical server-security migrations differ from canonical SQL sources",
+        "Restore source assertion expects a literal runtime_executed=False"
+      ]
+    },
+    "targeted_checks": {
+      "worker_typecheck": "pass",
+      "worker_unit_tests": 108,
+      "worker_provider_integration_tests_skipped": 27,
+      "deno_tests": 362,
+      "inventory_python_tests": 12,
+      "archive_python_tests": 8,
+      "copy_node_tests": 4,
+      "automation_node_tests": 22,
+      "dart_analyze": "pass",
+      "new_route_disposition_tests": 2
+    },
+    "evidence_sha256": {
+      "database_capture": "7e8ef98cfa871bbce33f5ae8ebdad4bce5b0fa9f222126112bb40a3d6083a91f",
+      "disk_capture": "6108e587a72b499d1f5ba6bfa26dfdc422598ea422877892f7ef417f33c5639e",
+      "r2_inventory": "7275ea0d11ed8d14a1ededdb0cb98d79a32e883143d335be567d2ac602f6e6c7",
+      "manifest": "811c2181f9cce205f9a3ed8d92dd31a249a6c289e89fbf75982bd514ab4a9920"
+    }
+  },
+  "previous_refreshed_base_validation": {
+    "source_main": "a7e0f01596258f0be454ec9c2754d97b9a719832",
+    "full_suite": {
+      "status": "pass",
+      "commands": [
+        "./automation/test_all.sh (initial complete invocation; web/SQL passed, dependency resolution and obsolete Deno test corrected)",
+        "./automation/test_all.sh integration automation (Deno/provider/automation lanes; security declarations corrected)",
+        "./automation/test_all.sh flutter (complete client lanes)",
+        "./automation/test_all.sh automation (final security declarations and runtime digests)",
+        "two affected SQL lifecycle tests after explicit ACL declarations"
+      ],
+      "web": {
+        "passed": 418,
+        "skipped": 10
+      },
+      "sql": {
+        "files_passed": 220,
+        "failed": 0
+      },
+      "client": {
+        "core_cases": 157,
+        "adapter_cases": 78,
+        "adapter_skips": 1,
+        "flutter_cases": 1313,
+        "architecture_pass": true,
+        "inventory_pass": true
+      },
+      "deno": {
+        "passed": 362,
+        "failed": 0
+      },
+      "automation": {
+        "final_node_batch_passed": 139,
+        "failed": 0
+      },
+      "provider_cases_skipped": 27,
+      "live_provider_copy_proven": false
+    }
+  }
+}

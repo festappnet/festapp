@@ -4,7 +4,8 @@ Reads local data only; never writes or contacts an object store.
 import hashlib,json,tarfile
 from pathlib import Path
 from urllib.parse import urlparse
-BUCKETS={'festapp-images','festapp-images-a','festapp-images-private','festapp-images-a-private'}
+LEGACY_BUCKETS={'festapp-images','festapp-images-a','festapp-images-private','festapp-images-a-private'}
+BUCKETS={'festapp-images','festapp-images-private'}
 HOSTS={'img.festapp.net':'festapp-images','a.img.festapp.net':'festapp-images-a'}
 
 def verify_archive(path,references):
@@ -13,10 +14,15 @@ def verify_archive(path,references):
   assert all(m.isfile() and not Path(m.name).is_absolute() and '..' not in Path(m.name).parts for m in members),'unsafe R2 archive member'
   names={m.name:m for m in members};assert len(names)==len(members),'duplicate R2 archive path'
   index=names['.r2-objects.json'];assert index.size<=16*1024*1024
-  manifest=json.load(archive.extractfile(index));assert manifest['version']==1
+  manifest=json.load(archive.extractfile(index));assert manifest['version'] in (1,2)
+  # v1 is a retained historical backup boundary, never an application fallback.
+  legacy=manifest['version']==1
+  allowed=LEGACY_BUCKETS if legacy else BUCKETS
+  if not legacy:
+   assert manifest['format']=='festapp-assets' and set(manifest['buckets'])==BUCKETS
   keys=set();total=0
   for obj in manifest['objects']:
-   assert obj['bucket'] in BUCKETS and obj['key'] and not obj['key'].startswith('/') and '..' not in obj['key'].split('/')
+   assert obj['bucket'] in allowed and obj['key'] and not obj['key'].startswith('/') and '..' not in obj['key'].split('/')
    name=obj['bucket']+'/'+obj['key'];assert name not in keys;keys.add(name)
    member=names[name];assert member.size==obj['size']
    with archive.extractfile(member) as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
@@ -25,11 +31,29 @@ def verify_archive(path,references):
   assert set(names)==keys|{'.r2-objects.json'},'unindexed R2 archive object'
   checked=0;missing=0
   for value in references:
+   if isinstance(value,dict):
+    assert set(value)=={'bucket','key'} and value['bucket'] in allowed
+    checked+=1
+    if value['bucket']+'/'+value['key'] not in keys:missing+=1
+    continue
    uri=urlparse(value)
-   if uri.hostname not in HOSTS:continue
+   if uri.hostname not in HOSTS and uri.hostname!='image-api.festapp.net':continue
    checked+=1
-   bucket=HOSTS[uri.hostname]
-   if uri.path.startswith('/private/'):bucket+='-private'
+   if uri.hostname=='image-api.festapp.net':
+    assert uri.path.startswith('/private/'),'unsupported control reference'
+    bucket='festapp-images-private'
+    from urllib.parse import parse_qs
+    project=parse_qs(uri.query).get('projectId',['default'])[0]
+    assert project in ('default','a','slunovrat')
+    is_a=project=='a'
+    if legacy and is_a:bucket='festapp-images-a-private'
+   else:
+    bucket=HOSTS[uri.hostname]
+    is_a=uri.hostname=='a.img.festapp.net'
+    if uri.path.startswith('/private/'):bucket+='-private'
+    if not legacy and is_a:bucket='festapp-images-private' if uri.path.startswith('/private/') else 'festapp-images'
    # Worker passes URL.pathname directly to R2; percent escapes stay literal.
-   if bucket+'/'+uri.path.lstrip('/') not in keys:missing+=1
+   key=uri.path.lstrip('/')
+   if not legacy and is_a:key='imports/a/'+key
+   if bucket+'/'+key not in keys:missing+=1
  return {'objects':len(keys),'bytes':total,'content_hashes_verified':True,'database_r2_references_checked':checked,'missing_database_r2_references':missing,'consistent':checked>0 and missing==0,'scope':'Selected online DB snapshot against selected R2 archive; not arbitrary-time R2 version history'}

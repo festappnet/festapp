@@ -34,7 +34,7 @@ describe('project registry', () => {
   it('registers the inventory-proven projects with explicit contracts', () => {
     expect(projectRegistry(env).map((project) => project.id)).toEqual(['default', 'a', 'akhweb', 'slunovrat']);
     expect(resolveProjectById(env, 'default').privateBucket).toBe(privateDefault);
-    expect(resolveProjectById(env, 'a').publicBucket).toBe(publicA);
+    expect(resolveProjectById(env, 'a').publicBucket).toBe(publicDefault);
     expect(resolveProjectByHostname(env, 'a.img.festapp.net').id).toBe('a');
     expect(resolveProjectByHostname(env, 'akh.img.festapp.net').id).toBe('akhweb');
     expect(resolveProjectById(env, 'akhweb').publicBucket).toBe(publicAkh);

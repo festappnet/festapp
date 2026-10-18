@@ -37,8 +37,8 @@ BEGIN
     'public.create_account_deletion_request(uuid,bigint,text,timestamptz,text)','EXECUTE'),
     'client cannot create deletion jobs directly');
   PERFORM assert_true(NOT has_function_privilege('authenticated',
-    'public.get_account_deletion_storage_batch(uuid,integer)','EXECUTE'),
-    'client cannot inventory another account storage');
+    'public.get_account_deletion_asset_batch(uuid,integer)','EXECUTE'),
+    'client cannot inventory another account assets');
   PERFORM assert_true(has_function_privilege('anon',
     'public.inspect_account_deletion_token(text)','EXECUTE'),
     'public confirmation page can inspect opaque tokens');
@@ -79,6 +79,8 @@ BEGIN
   -- Supabase Admin owns this step in production. The transactional test removes
   -- the actual disposable auth row to prove the complete terminal lifecycle.
   DELETE FROM auth.users WHERE id=v_user;
+  UPDATE public.canonical_asset_cutover SET active=true,inventory_sha256=repeat('0',64);
+  PERFORM public.get_account_deletion_asset_batch(v_request);
   PERFORM public.update_account_deletion_job(v_request,true,true,NULL);
   PERFORM assert_true(NOT EXISTS(SELECT 1 FROM auth.users WHERE id=v_user),
     'disposable auth identity is hard-deleted');

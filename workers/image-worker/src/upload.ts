@@ -9,6 +9,7 @@ import {
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
+import { assetKey } from './asset-key';
 
 /**
  * Sanitize a filename: remove special chars, keep alphanumeric, hyphens, underscores, dots.
@@ -203,7 +204,7 @@ export async function handleUpload(
 
   const isPrivate = key.startsWith('private/');
   const bucket = isPrivate ? project.privateBucket : project.publicBucket;
-  await bucket.put(key, processed.body, {
+  await bucket.put(assetKey(project, key), processed.body, {
     httpMetadata: {
       contentType: processed.contentType,
       ...(isPrivate ? {} : { cacheControl: 'public, max-age=31536000, immutable' }),
@@ -218,7 +219,7 @@ export async function handleUpload(
     try {
       await addImageRecord(userJwt, auth, objectUrl, occasionId, unitId);
     } catch (error) {
-      await bucket.delete(key);
+      await bucket.delete(assetKey(project, key));
       console.error('image_upload_failed', { operation: 'upload', status: 'db_failed_compensated' });
       if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
       return errorResponse(502, 'IMAGE_RECORD_FAILED', 'Image record could not be persisted', true);

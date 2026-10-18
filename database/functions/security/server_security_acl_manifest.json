@@ -125,6 +125,16 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.get_account_deletion_asset_batch(uuid,integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ack_account_deletion_asset(uuid,uuid,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -141,7 +151,8 @@
     "database/functions/security/news_read_marker.sql",
     "database/functions/security/public_map_projection.sql",
     "database/functions/users/create_user_from_registration.sql",
-    "database/functions/users/create_user_in_organization_with_data_ws.sql"
+    "database/functions/users/create_user_in_organization_with_data_ws.sql",
+    "database/functions/account_deletion/asset_cleanup.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

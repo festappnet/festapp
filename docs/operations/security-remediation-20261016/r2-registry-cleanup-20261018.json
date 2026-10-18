@@ -1,0 +1,68 @@
+{
+  "deleted_records": 50,
+  "affected_occasions": 5,
+  "remaining_image_records": 1175,
+  "remaining_target_records": 0,
+  "at": 1792274829.3680964,
+  "transaction_wall_seconds": 0.181,
+  "sql_sha256": "024454dd4382cab60579878a59936979a1f92c4d6df942c3131bfd52d5193223",
+  "encrypted_prestate_sha256": "e4a03523ea3c20315d33e39361b44ade4e7795dbc2c47e125d0e188a6ba8f283",
+  "existing_object_deletions": 0,
+  "sync_actor": "system",
+  "source": "image.remove",
+  "owner_accepted_missing_source_loss": true,
+  "verification": "standard",
+  "scope": "Exact 50 previously identified missing-source registry rows; owner accepted loss and requested cleanup",
+  "reviewed_main": "8b1420ea1da7349db68b4a293bb37da049fb9047",
+  "date_local": "2026-10-18",
+  "target_assertions_matched": true,
+  "tenant_activation": {
+    "tenant": "festapp",
+    "generation": 1,
+    "backend": "canonical",
+    "organization": 1
+  },
+  "preflight": {
+    "exact_rows_matched": 50,
+    "image_records": 1225,
+    "application_tables_scanned": 137,
+    "application_url_references": 0,
+    "excluded_historical_logs": [
+      "public.log_app_config",
+      "public.log_emails",
+      "public.log_notifications"
+    ],
+    "incoming_foreign_keys": 0,
+    "application_image_triggers": 0
+  },
+  "post_cleanup_readback": {
+    "records": 1175,
+    "cleanup_commits": 5,
+    "cleanup_items": 50,
+    "current_r2_references": 947,
+    "missing_current_r2_references": 0,
+    "strict_current_registry_check_passed": true,
+    "objects": 1074,
+    "requested_references": 50,
+    "still_missing": 50,
+    "inventory_sha256": "8e55a739d2b4baeeba070fb511cd6279e32855b68e3985e3d0067a0db19a55f1",
+    "source_objects_modified": false
+  },
+  "validation": {
+    "isolated_cases": 3,
+    "cases": [
+      "exact scope and five sync batches",
+      "changed prestate refuses deletion",
+      "sync persistence failure rolls back deletion"
+    ],
+    "postgres_test_version": 15,
+    "sync_in_test": "persistence stub; unchanged production helper used in real transaction",
+    "auth_health_with_configured_public_key": 200,
+    "storage_health": 200,
+    "checker_changed": false,
+    "fresh_complete_backup_or_full_restore_run": false
+  },
+  "historical_backups": "Retained unchanged; their original consistency failures remain historical. Exact accepted-loss disposition must be reconciled after restoring an old snapshot.",
+  "protected_server_evidence": "/var/lib/festapp-rehearsal-evidence/r2-registry-cleanup-20261018/",
+  "protected_workstation_evidence": "~/.local/share/festapp-r2-cleanup-20261018/"
+}

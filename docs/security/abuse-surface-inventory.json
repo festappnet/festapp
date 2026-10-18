@@ -820,12 +820,37 @@
           "path": "*public-read",
           "policy": "native-cache-miss",
           "status": "local-enforcement"
+        },
+        {
+          "path": "/service/ticket-fonts/",
+          "policy": "service-only-immutable-fonts",
+          "status": "local-enforcement",
+          "reason": "Dedicated server capability, fixed host and hash namespace, GET/conditional PUT only, actual bytes limited to 8 MiB and SHA-256 verified. Existing ticket output and resolver boundaries retain user admission ownership."
+        },
+        {
+          "path": "/service/account-assets",
+          "policy": "service-only-account-asset-cleanup",
+          "status": "local-enforcement",
+          "reason": "Dedicated confirmation-worker capability; DELETE only; canonical immutable migrated asset key/hash and bucket; stored SHA checked; public cache purged before durable SQL acknowledgement. No fonts, AKH or other buckets."
+        },
+        {
+          "path": "/service/",
+          "policy": "reject-unregistered-service-routes",
+          "status": "local-enforcement",
+          "reason": "All other service paths return 404 before any storage operation."
         }
       ],
       "evidence": [
         "workers/image-worker/tests/unit/control-plane.test.ts",
         "workers/image-worker/tests/unit/topology.test.ts",
-        "workers/image-worker/tests/unit/image-tenant-contract.test.ts"
+        "workers/image-worker/tests/unit/image-tenant-contract.test.ts",
+        "workers/image-worker/tests/unit/ticket-fonts.test.ts",
+        "workers/image-worker/tests/unit/asset-boundary.test.ts",
+        "supabase/functions/_shared/ticketFontR2_test.ts",
+        "supabase/functions/_shared/emailWorkerEnvironment_test.ts",
+        "workers/image-worker/tests/unit/account-assets.test.ts",
+        "supabase/functions/_shared/accountAssets_test.ts",
+        "database/tests/account_asset_cleanup_test.sql"
       ]
     },
     {
