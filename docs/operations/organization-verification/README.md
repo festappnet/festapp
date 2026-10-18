@@ -31,3 +31,9 @@ Pro české subjekty lze výslovně načíst veřejné údaje podle IČO z
 IČO, DIČ a sídlo do upravitelného konceptu. Kontakty nepřepisuje; existující
 právní údaje nahradí až po potvrzení. Neprovádí uložení, odeslání žádosti ani
 schválení. Při chybě nebo nedostupnosti ARES lze údaje vyplnit ručně.
+
+## Oznámení žádosti
+
+Přechod na `pending` atomicky zařadí zprávu `UNIT_VERIFICATION_REQUEST` do centrální fronty `email_messages` pro aktuální administrátory platformy (`organization_users.is_admin`). Příjemci se určují na serveru přes `get_user_delivery_email`; veřejný kontakt pořadatele není příjemcem oznámení správci. Klíč jednotka/revize/příjemce zabraňuje duplicitám. Zpráva odkazuje na `/organizationEdit/<organization>` a nepoužívá sledování otevření. Před odesláním se znovu ověřuje stav žádosti, revize i správcovské oprávnění příjemce.
+
+Forward migraci sestavuje `python3 automation/assemble-organization-verification-notifications.py`; původní instalovaná migrace se nepřepisuje. Nejprve musí být dostupný renderer `unitVerificationEmail.ts` v procesu `process-email-queue`, potom lze aktivovat SQL producenta. Oprava starší žádosti může použít interní `enqueue_unit_verification_request(unit_id)` pouze pro explicitně vybranou stále čekající žádost; neprovádí se hromadný backfill.

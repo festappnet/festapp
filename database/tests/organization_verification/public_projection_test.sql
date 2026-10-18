@@ -2,12 +2,13 @@
 CREATE FUNCTION pg_temp.legal_fixture() RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE org bigint; other_org bigint; un bigint; spare bigint; manager uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); editor uuid:=gen_random_uuid();
 BEGIN
- INSERT INTO public.organizations(title) VALUES('Legal fixture') RETURNING id INTO org;
+ INSERT INTO public.organizations(title,data) VALUES('Legal fixture','{"DEFAULT_URL":"https://example.invalid"}') RETURNING id INTO org;
  INSERT INTO public.organizations(title) VALUES('Other legal fixture') RETURNING id INTO other_org;
  INSERT INTO public.units(title,organization) VALUES('Legal fixture',org) RETURNING id INTO un;
  INSERT INTO public.units(title,organization) VALUES('Spare legal fixture',org) RETURNING id INTO spare;
  INSERT INTO auth.users(id,email) VALUES(manager,manager||'@example.invalid'),(admin,admin||'@example.invalid'),(outsider,outsider||'@example.invalid'),(editor,editor||'@example.invalid');
  INSERT INTO public.user_info(id,organization) VALUES(manager,org),(admin,org),(outsider,other_org),(editor,org);
+ UPDATE public.user_info SET email_readonly=id||'@example.invalid' WHERE id IN (manager,admin,outsider,editor);
  INSERT INTO public.unit_users(unit,"user",is_manager,is_editor) VALUES(un,manager,true,true),(spare,manager,true,true),(un,editor,false,true);
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,admin,true),(other_org,outsider,true);
  PERFORM set_config('request.jwt.claim.sub',manager::text,true);
