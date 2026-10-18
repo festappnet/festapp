@@ -258,6 +258,41 @@ class RichHtmlEditorController extends ChangeNotifier {
       selection =
           DocumentSelection(base: expectedTag.start, extent: expectedTag.end);
     }
+    // A loaded template may contain only atomic blocks. Opening the chooser
+    // keeps that document intact; choosing an entry creates its actual node.
+    final anchor = selection == null
+        ? null
+        : editor.document.getNodeById(selection.extent.nodeId);
+    if (anchor is TemplateTokenBlock &&
+        selection!.isCollapsed &&
+        selection.extent.nodePosition is UpstreamDownstreamNodePosition &&
+        expectedTag == null &&
+        expectedText == null &&
+        !authoring!.singleLine) {
+      if (!authoring!.canInsert('', 0,
+          composing: editor.composer.composingRegion.value != null))
+        return false;
+      final position =
+          selection.extent.nodePosition as UpstreamDownstreamNodePosition;
+      final index = editor.document.getNodeIndexById(anchor.id) +
+          (position.affinity == TextAffinity.downstream ? 1 : 0);
+      final DocumentNode inserted = authoring!.entry(code)!.block
+          ? TemplateTokenBlock(id: Editor.createNodeId(), code: code)
+          : ParagraphNode(
+              id: Editor.createNodeId(),
+              text: tokenizeTemplateText(AttributedText('{{$code}}'), {code}));
+      editor.execute([
+        InsertNodeAtIndexRequest(nodeIndex: index, newNode: inserted),
+        ChangeSelectionRequest(
+            DocumentSelection.collapsed(
+                position: DocumentPosition(
+                    nodeId: inserted.id, nodePosition: inserted.endPosition)),
+            SelectionChangeType.insertContent,
+            SelectionReason.userInteraction),
+      ]);
+      focusNode.requestFocus();
+      return true;
+    }
     if (selection == null ||
         selection.base.nodeId != selection.extent.nodeId ||
         selection.base.nodePosition is! TextNodePosition ||
@@ -289,6 +324,11 @@ class RichHtmlEditorController extends ChangeNotifier {
       return false;
     final position = DocumentPosition(
         nodeId: node.id, nodePosition: TextNodePosition(offset: start));
+    // The native reaction must clear its range before structured paste can
+    // remove that paragraph. This changes decorations, not saved content.
+    if (expectedTag != null) {
+      editor.execute([CancelComposingActionTagRequest(_tagRule)]);
+    }
     editor.execute([
       if (!selection.isCollapsed)
         DeleteContentRequest(documentRange: selection),

@@ -1,4 +1,5 @@
 import 'email_template_rules.dart';
+import 'email_preview_context.dart';
 
 class EmailRequiredLink {
   final String url, html;
@@ -41,6 +42,8 @@ class EmailPreviewScenario {
   final String templateCode, scenario, locale, tone;
   final Map<String, String> values;
   final Set<String> richCodes;
+  final Map<String, String> contextTemplates;
+  final Map<String, String> contextDefaults;
   final List<EmailRequiredLink> requiredLinks;
   const EmailPreviewScenario({
     required this.templateCode,
@@ -49,10 +52,18 @@ class EmailPreviewScenario {
     required this.tone,
     required this.values,
     required this.richCodes,
+    this.contextTemplates = const {},
+    this.contextDefaults = const {},
     required this.requiredLinks,
   });
   factory EmailPreviewScenario.fromJson(Map<String, dynamic> json) =>
       EmailPreviewScenario(
+        contextDefaults: Map<String, String>.from(
+          json['contextDefaults'] as Map? ?? const {},
+        ),
+        contextTemplates: Map<String, String>.from(
+          json['contextTemplates'] as Map? ?? const {},
+        ),
         templateCode: json['templateCode'] as String,
         scenario: json['scenario'] as String,
         locale: json['locale'] as String,
@@ -79,8 +90,55 @@ class EmailPreviewScenario {
         if (codes.contains(entry.key)) entry.key: entry.value,
     },
     richCodes: richCodes.intersection(codes),
+    contextDefaults: contextDefaults,
+    contextTemplates: {
+      for (final entry in contextTemplates.entries)
+        if (codes.contains(entry.key)) entry.key: entry.value,
+    },
     requiredLinks: requiredLinks,
   );
+
+  EmailPreviewScenario withContext(EmailPreviewContext context) {
+    final bindings = {
+      ...contextDefaults,
+      ...context.bindings(zero: scenario == 'zero'),
+    };
+    final result = Map<String, String>.from(values);
+    for (final code in ['occasionTitle', 'occasion_title']) {
+      if (result.containsKey(code) && context.occasionTitle?.isNotEmpty == true)
+        result[code] = context.occasionTitle!;
+    }
+    if (context.deadline != null && result.containsKey('deadline'))
+      result['deadline'] = context.deadline!;
+    if (context.deadline != null && result.containsKey('offer_expires_at'))
+      result['offer_expires_at'] = '${context.deadline} 18:00';
+    for (final entry in contextTemplates.entries) {
+      if (!result.containsKey(entry.key)) continue;
+      result[entry.key] = entry.value.replaceAllMapped(
+        EmailTemplateRules.tokenPattern,
+        (m) => bindings.containsKey(m[1])
+            ? escapeEmailHtml(bindings[m[1]]!)
+            : m[0]!,
+      );
+    }
+    if (context.products.isNotEmpty && result.containsKey('amount'))
+      result['amount'] =
+          bindings[scenario == 'deposit'
+              ? 'preview_deposit'
+              : 'preview_total']!;
+
+    return EmailPreviewScenario(
+      templateCode: templateCode,
+      scenario: scenario,
+      locale: locale,
+      tone: tone,
+      values: result,
+      richCodes: richCodes,
+      requiredLinks: requiredLinks,
+      contextTemplates: contextTemplates,
+      contextDefaults: contextDefaults,
+    );
+  }
 
   String composeSubject(String subject) => subject.replaceAllMapped(
     EmailTemplateRules.tokenPattern,

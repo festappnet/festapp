@@ -272,6 +272,86 @@ for (const tone of ["formal", "informal"] as const) {
     });
   }
 }
+// Build display-only binding templates with the SAME production HTML owners.
+// Slots only replace fixture data; the client never recreates order/payment layout.
+const moneySlots: Record<string, string> = {
+  [formatCurrency(450, "CZK")]: "{{preview_price_0}}",
+  [formatCurrency(350, "CZK")]: "{{preview_price_1}}",
+  [formatCurrency(800, "CZK")]: "{{preview_total}}",
+  [formatCurrency(300, "CZK")]: "{{preview_deposit}}",
+  [formatCurrency(500, "CZK")]: "{{preview_remaining}}",
+  [formatCurrency(250, "CZK")]: "{{preview_previous_price}}",
+  [formatCurrency(700, "CZK")]: "{{preview_reference_total}}",
+  [formatCurrency(0, "CZK")]: "{{preview_zero}}",
+};
+const moneyPattern = new RegExp(
+  Object.keys(moneySlots).sort((a, b) => b.length - a.length)
+    .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  "g",
+);
+for (const record of records) {
+  if (!String(record.templateCode).startsWith("TICKET")) continue;
+  const zero = record.scenario === "zero";
+  const tickets = fixture.tickets.map((ticket: any, index: number) => ({
+    ...ticket,
+    products: ticket.products.map((product: any) => ({
+      ...product,
+      title: `{{preview_product_${index}_title}}`,
+      type_title: `{{preview_product_${index}_type}}`,
+      price: zero ? 0 : product.price,
+    })),
+  }));
+  const values = record.values as Record<string, string>;
+  const changes = structuredClone(fixture.changes);
+  for (const change of changes.productChanges) {
+    for (const item of change.changed ?? []) {
+      item.from.title = "{{preview_product_1_title}}";
+      item.to.title = "{{preview_product_1_title}}";
+    }
+  }
+  const templates: Record<string, string> = {
+    fullOrder: generateFullOrder(
+      fixture.orderData,
+      tickets,
+      fixture.features,
+      record.locale as "cs" | "en",
+      fixture.orderSymbol,
+    ),
+    balanceReasoning: values.balanceReasoning,
+    paymentDetails: values.paymentDetails,
+    changeOverview: zero
+      ? ""
+      : generateChangeOverview(changes, record.locale as "cs" | "en"),
+  };
+  record.contextDefaults = {
+    preview_product_0_title: fixture.tickets[0].products[0].title,
+    preview_product_0_type: fixture.tickets[0].products[0].type_title,
+    preview_product_1_title: fixture.tickets[1].products[0].title,
+    preview_product_1_type: fixture.tickets[1].products[0].type_title,
+    preview_price_0: formatCurrency(450),
+    preview_price_1: formatCurrency(350),
+    preview_total: formatCurrency(800),
+    preview_deposit: formatCurrency(300),
+    preview_remaining: formatCurrency(500),
+    preview_previous_price: formatCurrency(250),
+    preview_reference_total: formatCurrency(700),
+    preview_zero: formatCurrency(0),
+    preview_zero_explanation: "0 CZK",
+    preview_deadline: fixture.deadline,
+    preview_currency: "CZK",
+  };
+  record.contextTemplates = Object.fromEntries(
+    Object.entries(templates).map((
+      [code, html],
+    ) => [
+      code,
+      html.replace(moneyPattern, (value) => moneySlots[value])
+        .replaceAll(fixture.deadline, "{{preview_deadline}}")
+        .replace(/0 CZK/g, "{{preview_zero_explanation}}"),
+    ]),
+  );
+}
+
 const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
 const compositionFixtures = [

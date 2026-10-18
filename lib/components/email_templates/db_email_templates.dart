@@ -11,7 +11,11 @@ class DbEmailTemplates {
     final response = await _supabase.rpc(
         "get_all_email_templates_via_occasion_link",
         params: {"occasion_link": link});
-    return EmailTemplatesResponse.fromJson(response);
+    final result = EmailTemplatesResponse.fromJson(response);
+    // This RPC intentionally returns only occasion metadata; retain the known
+    // scoped route link so examples can use its existing catalog reader.
+    result.occasion?.link = link;
+    return result;
   }
 
   static Future<void> updateEmailTemplate(EmailTemplateModel template) async {

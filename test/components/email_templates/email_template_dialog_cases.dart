@@ -1,4 +1,5 @@
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
@@ -155,6 +156,35 @@ void main() {
       expect(find.byType(EmailTemplateSettingsPage), findsNothing);
     });
   }
+
+  testWidgets('one parent save owns subject and body across fullscreen',
+      (tester) async {
+    await openTemplate(tester);
+    expect(find.text(CommonStrings.save), findsOneWidget);
+    final editors =
+        tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).toList();
+    final body = editors.last.controller;
+    final node = body.editor.document.first as TextNode;
+    body.editor.execute([
+      InsertTextRequest(
+          documentPosition: DocumentPosition(
+              nodeId: node.id, nodePosition: const TextNodePosition(offset: 0)),
+          textToInsert: 'Draft ',
+          attributions: {})
+    ]);
+    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    expect(find.text(CommonStrings.save), findsNothing);
+    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+    expect(body.plainText, 'Draft Content');
+    expect(find.text(CommonStrings.save), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text(HtmlStrings.discardDraft), findsOneWidget);
+  });
 
   testWidgets('email HTML expands into the same editor as field descriptions',
       (tester) async {

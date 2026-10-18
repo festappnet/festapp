@@ -1062,7 +1062,12 @@
         "platformLinks": "Odkazy na aplikaci",
         "appLinks": "Odkazy na aplikaci",
         "orderSymbol": "Symbol objednávky"
-      }
+      },
+      "variableGuide": "Přehled údajů",
+      "variableGuideHint": "Dostupné údaje pro tuto šablonu. Rozbalte údaj a prohlédněte si ukázku. Při odeslání se doplní skutečné hodnoty.",
+      "occasionSample": "Ukázka s produkty této akce",
+      "modelSample": "Modelová ukázka",
+      "contextUnavailable": "Produkty akce se nepodařilo načíst. Zobrazuje se modelová ukázka."
     }
   },
   "Inventory": {
