@@ -1,47 +1,25 @@
-# Ochrana osobních údajů - Vstupenky.online
+# Zásady ochrany osobních údajů – CSM Ostrava
 
-Účinnost: 9. října 2026. Verze: 1.1.
+Účinnost: 4. srpna 2026. Verze: 1.1.
 
-## Kdo odpovídá za vaše údaje
+Tyto zásady popisují zpracování osobních údajů v mobilní a webové aplikaci CSM Ostrava, která slouží účastníkům Celostátního setkání mládeže Ostrava 2026.
 
-Účet a provoz systému zajišťuje Michael Bujnovský, IČO 06455361, Přívozská 1704/24, Moravská Ostrava, 702 00 Ostrava. Kontakt: `info@festapp.net`.
+Správcem osobních údajů je Asociace křesťanských spolků mládeže, z. s. (AKSM), IČ 67775861, Thákurova 676/3, 160 00 Praha 6–Dejvice. Kontaktním místem pro technický provoz aplikace, uživatelskou podporu a žádosti související s aplikací je její vývojář a vydavatel Michael Bujnovský na `info@festapp.net`. AKSM lze kontaktovat také poštou na adrese sídla nebo telefonicky na +420 723 758 797.
 
-Za údaje účastníků konkrétní akce, rozsah přihlášky a její účel odpovídá pořadatel uvedený u nabídky nebo objednávky.
+Aplikace nemá veřejnou registraci účtu. Účet získává účastník od pořadatele v návaznosti na registraci a účast na akci. Program, mapa, novinky a praktické informace jsou dostupné i bez přihlášení.
 
-## Jaké údaje používáme
+Zpracovávanými údaji mohou být zejména jméno, příjmení, e-mail, telefon, pohlaví, přiřazení ke skupině a ubytování, identifikátor účtu, uložený program, registrace na aktivity, zpětná vazba a hlášení. Pro bezpečný a spolehlivý provoz mohou vznikat omezené technické, síťové a chybové záznamy. Pokud uživatel povolí oznámení, zpracovává se technický identifikátor potřebný k jejich doručení. Část dat se ukládá v zařízení pro offline provoz. Poloha zařízení se používá jen po udělení systémového oprávnění k zobrazení polohy v mapě a aplikace ji nepřidává do účastnického profilu.
 
-Pro účet potřebujeme jméno, příjmení a e-mail. Podle přihlášky či objednávky zpracováváme také kontaktní a fakturační údaje, odpovědi ve formuláři, údaje účastníků, vstupenky a údaje o platbě. Pořadatel může vyžadovat například datum narození či údaje dokladu. Povinné údaje jsou označené; bez nich nemusí být možné službu poskytnout.
+Údaje používáme pro organizaci akce a účast na ní, zobrazení osobního profilu, ubytování a skupiny, správu osobního programu a kapacitních registrací, doručování organizačních oznámení, podporu uživatelů, zabezpečení a řešení provozních problémů. Zpracování související s organizací a účastí na akci je založeno zejména na plnění smlouvy podle čl. 6 odst. 1 písm. b) GDPR. Plnění zákonných povinností, například v účetnictví, se opírá o čl. 6 odst. 1 písm. c) GDPR. Bezpečnost a spolehlivý provoz jsou oprávněným zájmem správce podle čl. 6 odst. 1 písm. f) GDPR. U nepovinných údajů zpracovávaných na základě souhlasu lze souhlas kdykoli odvolat.
 
-Údaje získáváme od vás, objednavatele, zákonného zástupce, pořadatele nebo z bankovních podkladů. Pro zabezpečení vznikají technické záznamy, například IP adresa a čas požadavku.
+Pro poskytování služby využíváme zejména Sekci pro mládež České biskupské konference, Supabase (databáze, autentizace a serverové funkce), OneSignal (volitelná push oznámení), poskytovatele e-mailu, Cloudflare a webovou infrastrukturu a Apple pro distribuci aplikace. Tito příjemci zpracovávají údaje v nezbytném rozsahu podle svých smluvních a technických podmínek. Pokud poskytovatel zpracovává údaje mimo Evropský hospodářský prostor, musí být přenos založen na odpovídajícím právním mechanismu a ochranných opatřeních.
 
-## Proč údaje potřebujeme
+Údaje pro organizaci akce uchovává správce podle svých zveřejněných pravidel po dobu tří let ode dne konání akce. Údaje potřebné pro účetnictví mohou být uchovávány nejvýše deset let od začátku kalendářního roku následujícího po roce konání akce. Technické záznamy a zálohy se uchovávají jen po omezené provozní lhůty příslušných poskytovatelů.
 
-Údaje používáme pro účet, přihlášky, objednávky, platby, komunikaci a podporu. Právním základem je plnění smlouvy, předsmluvní kroky, zákonná povinnost nebo oprávněný zájem na zabezpečení a ochraně práv. Nepovinné zpracování může vyžadovat samostatný souhlas. Registrace sama není souhlasem s reklamou ani nepovinným sledováním.
+Smazání účtu lze zahájit v profilu aplikace. Na e-mail účtu se odešle časově omezený jednorázový odkaz; pouhé otevření odkazu nic nemaže a smazání proběhne až po závěrečném potvrzení. Smazáním se odstraní účet aplikace, soukromý profil, uložený program, registrace, zpětná vazba a propojená push identita. Záznamy, které musí správce uchovat kvůli zákonné povinnosti nebo obhajobě právních nároků, mohou zůstat pouze v nezbytném rozsahu po příslušnou dobu.
 
-## E-maily
+Hesla nejsou ukládána ani přenášena v otevřené podobě. Nikdy neposílejte heslo, přihlašovací kód ani jednorázový odkaz e-mailem jiné osobě.
 
-Posíláme zprávy k účtu a objednávkám, například přihlašovací odkazy, potvrzení, vstupenky a organizační informace od pořadatele. Doručuje je Amazon SES v evropském regionu Frankfurt, který zpracovává adresu příjemce, zprávu a přílohy.
+Účastníci mají právo na přístup k osobním údajům, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu a námitku proti zpracování založenému na oprávněném zájmu. Žádost související s aplikací lze poslat Michaelu Bujnovskému na `info@festapp.net`. Stížnost lze podat u Úřadu pro ochranu osobních údajů: <https://uoou.gov.cz/>.
 
-Evidujeme doručení a chyby. U objednávkových a některých zpráv pořadatele také měříme otevření pomocí sledovacího obrázku spojeného s příjemcem a časem načtení. U bezpečnostních zpráv je toto měření vypnuté.
-
-## Kde údaje zpracováváme
-
-Hlavní databázi a účty provozujeme na serverech Hetzner, které sami spravujeme. Cloudflare zajišťuje web, ochranu provozu, soubory a šifrované zálohy. Údaje mají v potřebném rozsahu také pořadatel a jeho pověřené osoby.
-
-Při volitelném přihlášení přes Google získáme identifikátor účtu, ověřený e-mail a jméno. Google Fonts dodává písma a ikony; při otevření online mapy se mohou načítat podklady OpenStreetMap. Tyto služby při načítání dostávají IP adresu a údaje požadavku. Poloha v mapě vyžaduje povolení prohlížeče.
-
-Některé služby mají globální infrastrukturu. Předání mimo Evropský hospodářský prostor vyžaduje odpovídající právní záruky, například rozhodnutí Evropské komise nebo standardní smluvní doložky. Podrobnosti si můžete vyžádat na kontaktním e-mailu.
-
-## Ukládání a uchování
-
-V prohlížeči ukládáme přihlášení, jazyk, vzhled a mezipaměť aplikace. Odstranit je můžete v jeho nastavení; tím se můžete odhlásit.
-
-Údaje účtu uchováváme po dobu používání. Přihlášky a objednávky po dobu potřebnou pro akci, vypořádání a reklamace. Déle pouze kvůli zákonným povinnostem nebo ochraně právních nároků; lhůty údajů konkrétní akce určuje pořadatel.
-
-Údaje o e-mailové komunikaci uchováváme pro doručení zpráv, řešení problémů a doložení poskytnuté služby. Smazané údaje mohou dočasně zůstat ve starších zálohách.
-
-## Vaše práva
-
-Podle povahy zpracování můžete požádat o přístup, opravu, výmaz, omezení či přenositelnost údajů, vznést námitku nebo odvolat souhlas. Odvolání nemění zákonnost dřívějšího zpracování. Napište na `info@festapp.net`, u údajů akce také jejímu pořadateli. Zpravidla odpovíme do měsíce; o případném zákonném prodloužení vás informujeme. Stížnost můžete podat u <https://uoou.gov.cz/>.
-
-Smazání účtu zahájíte v profilu a dokončíte potvrzením e-mailového odkazu. Podrobnosti: <https://vstupenky.online/privacy/choices/>.
+U nezletilých účastníků probíhá zpracování v návaznosti na registraci k akci a podle pravidel akce, včetně zapojení zákonného zástupce tam, kde je vyžadováno. Další možnosti a postup smazání popisuje <https://csmostrava.festapp.net/privacy/choices>.
