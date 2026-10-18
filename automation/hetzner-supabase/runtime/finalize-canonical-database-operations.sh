@@ -41,16 +41,10 @@ docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d "$TARGET_DAT
 BEGIN;
 SET LOCAL statement_timeout=0;
 DO $body$
-DECLARE r record; missing_objects bigint; remaining bigint;
 BEGIN
-  SELECT count(*) INTO missing_objects
-  FROM public.images i
-  LEFT JOIN storage.objects o
-    ON o.bucket_id=split_part(split_part(i.link,'/storage/v1/object/public/',2),'/',1)
-   AND o.name=substring(split_part(i.link,'/storage/v1/object/public/',2)
-     from position('/' in split_part(i.link,'/storage/v1/object/public/',2))+1)
-  WHERE i.link LIKE '%.supabase.co/storage/v1/object/public/%' AND o.id IS NULL;
-  IF missing_objects<>0 THEN RAISE EXCEPTION '% legacy image objects were not copied',missing_objects; END IF;
+  IF NOT COALESCE((SELECT active AND inventory_sha256 IS NOT NULL FROM public.canonical_asset_cutover WHERE singleton),false) THEN
+    RAISE EXCEPTION 'canonical R2 assets must be verified and active before finalization';
+  END IF;
 
   CREATE TEMP TABLE canonical_auth_email_map ON COMMIT DROP AS
   SELECT ui.id,ui.organization::text||'+'||lower(btrim(ui.email_readonly)) desired_email,
@@ -79,26 +73,6 @@ BEGIN
     )
   );
   DELETE FROM public.external_sync_sources WHERE supabase_url LIKE '%.supabase.co';
-  FOR r IN SELECT table_schema,table_name,column_name,data_type FROM information_schema.columns
-    WHERE table_schema IN ('public','eshop') AND data_type IN ('text','character varying','json','jsonb')
-      AND is_generated='NEVER' AND NOT (table_schema='public' AND table_name='external_sync_sources')
-  LOOP
-    IF r.data_type='jsonb' THEN
-      EXECUTE format('update %I.%I set %I=regexp_replace(%I::text,%L,%L,%L)::jsonb where %I::text like %L',r.table_schema,r.table_name,r.column_name,r.column_name,'https://[a-z0-9]+\.supabase\.co','https://api.festapp.net','g',r.column_name,'%.supabase.co%');
-    ELSIF r.data_type='json' THEN
-      EXECUTE format('update %I.%I set %I=regexp_replace(%I::text,%L,%L,%L)::json where %I::text like %L',r.table_schema,r.table_name,r.column_name,r.column_name,'https://[a-z0-9]+\.supabase\.co','https://api.festapp.net','g',r.column_name,'%.supabase.co%');
-    ELSE
-      EXECUTE format('update %I.%I set %I=regexp_replace(%I::text,%L,%L,%L) where %I::text like %L',r.table_schema,r.table_name,r.column_name,r.column_name,'https://[a-z0-9]+\.supabase\.co','https://api.festapp.net','g',r.column_name,'%.supabase.co%');
-    END IF;
-  END LOOP;
-  remaining:=0;
-  FOR r IN SELECT table_schema,table_name,column_name FROM information_schema.columns
-    WHERE table_schema IN ('public','eshop') AND data_type IN ('text','character varying','json','jsonb')
-  LOOP
-    EXECUTE format('select count(*) from %I.%I where %I::text like %L',r.table_schema,r.table_name,r.column_name,'%.supabase.co%') INTO missing_objects;
-    remaining:=remaining+missing_objects;
-  END LOOP;
-  IF remaining<>0 THEN RAISE EXCEPTION '% legacy Supabase data references remain',remaining; END IF;
 END $body$;
 COMMIT;
 SQL
@@ -122,9 +96,9 @@ for attempt in $(seq 1 60); do
   sleep 1
 done
 [[ "$(docker inspect -f '{{.State.Health.Status}}' supabase-db 2>/dev/null)" == healthy ]] || fail "database restart failed"
-docker compose restart rest storage auth realtime functions meta studio api-gw >/dev/null
+docker compose restart rest auth realtime functions meta studio api-gw >/dev/null
 for attempt in $(seq 1 60); do
-  unhealthy="$(docker compose ps --format json rest storage auth realtime functions meta studio api-gw | jq -s 'map(select(.State!="running" or (.Health!="" and .Health!="healthy")))|length')"
+  unhealthy="$(docker compose ps --format json rest auth realtime functions meta studio api-gw | jq -s 'map(select(.State!="running" or (.Health!="" and .Health!="healthy")))|length')"
   [[ "$unhealthy" == 0 ]] && break
   sleep 1
 done

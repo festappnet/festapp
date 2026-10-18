@@ -88,12 +88,6 @@ services:
   realtime:
     image: supabase/realtime:v2.102.3@sha256:11651eb260639365adfd8d886ac1bfba9b069440cf92cc29f400f3b4a6554cb9
     logging: *logging
-  storage:
-    image: supabase/storage-api:v1.60.4@sha256:9326eb9c6b74c0a5ba393ab46a08a51d16bc5ea5f2978fc5b0f17fc67c64a4de
-    logging: *logging
-  imgproxy:
-    image: darthsim/imgproxy:v3.30.1@sha256:74215045236d40d5ee31868aeb72ee7940ae1f38a81ad8f8e6f7e53acb5b563c
-    logging: *logging
   meta:
     image: supabase/postgres-meta:v0.96.6@sha256:abbb468e4e5a14b5b4edd29caf1fa1d98ee606da89fed3bfc653a6f85985401a
     logging: *logging

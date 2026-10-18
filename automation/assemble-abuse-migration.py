@@ -19,8 +19,9 @@ historical = installed.read_text()
 if hashlib.sha256(installed.read_bytes()).hexdigest() != '5ba74531a242669dd0a0b846af9648a6e63505a1b16494ec0b24b564d9a59f22':
     raise SystemExit('Installed abuse migration was changed')
 def canonical_source(name):
-    source = (root / 'database/functions' / name).read_text()
-    if name not in {'abuse/health.sql', 'support/monitoring_health.sql', 'users/reception_qr_login.sql', 'eshop_orders/delete_order_client_sync_v1.sql', 'emails/email_queue.sql'}:
+    current_name = 'abuse/image_records.sql' if name == 'abuse/storage.sql' else name
+    source = (root / 'database/functions' / current_name).read_text()
+    if name not in {'abuse/storage.sql', 'abuse/health.sql', 'support/monitoring_health.sql', 'users/reception_qr_login.sql', 'eshop_orders/delete_order_client_sync_v1.sql', 'emails/email_queue.sql'}:
         return source
     marker = '-- Source: database/functions/' + name + '\n'
     original = historical.split(marker, 1)[1].split('\n-- Source:', 1)[0].split('\nUPDATE eshop.spots SET secret_expiration_time=', 1)[0].rstrip()

@@ -463,11 +463,11 @@ for contract in \
 done
 
 
-for required in 'storage:' 'DATABASE_URL:' 'FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE'; do
+for required in 'auth:' 'GOTRUE_DB_DATABASE_URL:' 'FESTAPP_RUNTIME_DATABASE:?set FESTAPP_RUNTIME_DATABASE'; do
   rg -Fq "$required" "$RUNTIME_DATABASE_COMPOSE" || { echo "missing database target contract: $required" >&2; exit 1; }
 done
-for required in 'switch-validated-rehearsal-runtime-database' 'readonly SERVICES=(auth rest realtime storage meta functions studio)' \
-  'storage:DATABASE_URL' 'rolled back to' '200|200|200|101' 'deleted_databases:[]'; do
+for required in 'switch-validated-rehearsal-runtime-database' 'readonly SERVICES=(auth rest realtime meta functions studio)' \
+  'canonical_asset_cutover' 'rolled back to' '200|200|410|101' 'deleted_databases:[]'; do
   rg -Fq "$required" "$RUNTIME_SWITCH_SCRIPT" || { echo "missing runtime switch contract: $required" >&2; exit 1; }
 done
 for required in 'promote-validated-runtime-without-opening-write-authority' \

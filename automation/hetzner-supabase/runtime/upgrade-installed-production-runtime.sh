@@ -22,6 +22,15 @@ command -v node >/dev/null || fail "node is required"
 exec 9>"$COMPOSE_DIR/.festapp-runtime-upgrade.lock"
 flock -n 9 || fail "another runtime upgrade or promotion is active"
 
+# An additive tooling refresh must not install a partial asset contraction over
+# an old upstream base. The verified retirement owner prepares all three inputs.
+CANONICAL_SERVICES="$(docker compose --project-directory "$COMPOSE_DIR" config --services)" ||
+  fail "installed Compose configuration is invalid"
+readonly CANONICAL_SERVICES
+if printf '%s\n' "$CANONICAL_SERVICES" | rg -q '^(storage|imgproxy)$'; then
+  fail "complete verified Storage retirement before upgrading the canonical runtime"
+fi
+
 readonly SOURCE_INSTALLED="$COMPOSE_DIR/festapp-source-registry.json"
 readonly REFERENCE_INSTALLED="$COMPOSE_DIR/festapp-reference-registry.json"
 readonly REGISTRY_PRESENCE="$([[ -e "$SOURCE_INSTALLED" ]] && printf 1 || printf 0)$([[ -e "$REFERENCE_INSTALLED" ]] && printf 1 || printf 0)"
@@ -79,6 +88,7 @@ install_runtime_file "$SCRIPT_DIR/finalize-canonical-database-operations.sh" "$C
 install_runtime_file "$SCRIPT_DIR/upgrade-installed-production-runtime.sh" "$COMPOSE_DIR/upgrade-installed-production-runtime.sh"
 install_runtime_file "$SCRIPT_DIR/activate-admin-dashboard.sh" "$COMPOSE_DIR/activate-admin-dashboard.sh"
 install_runtime_file "$SCRIPT_DIR/switch-rehearsal-runtime-database.sh" "$COMPOSE_DIR/switch-rehearsal-runtime-database.sh"
+install_runtime_file "$SCRIPT_DIR/prepare-asset-runtime.py" "$COMPOSE_DIR/prepare-asset-runtime.py"
 install -d -o root -g root -m 0700 "$COMPOSE_DIR/festapp-admin-dashboard"
 install_runtime_file "$SCRIPT_DIR/Caddyfile" "$COMPOSE_DIR/festapp-admin-dashboard/Caddyfile" 0644
 install_runtime_file "$SCRIPT_DIR/docker-compose.festapp.yml" "$COMPOSE_DIR/festapp-admin-dashboard/docker-compose.festapp.yml" 0644
@@ -104,7 +114,7 @@ for dependency in install-runtime-registries.mjs validate-production-promotion.m
   activate-admin-dashboard.sh Caddyfile docker-compose.festapp.yml \
   studio-customization/entrypoint.sh studio-customization/install-logout.mjs \
   studio-customization/logout.js \
-  switch-rehearsal-runtime-database.sh docker-compose.database-target.yml; do
+  switch-rehearsal-runtime-database.sh prepare-asset-runtime.py docker-compose.database-target.yml; do
   case "$dependency" in
     Caddyfile|docker-compose.festapp.yml) installed_dependency="$COMPOSE_DIR/festapp-admin-dashboard/$dependency" ;;
     *) installed_dependency="$COMPOSE_DIR/$dependency" ;;
