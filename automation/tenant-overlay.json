@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "cavfotofest",
+  "baseMainSha": "5302dc21c4e8670e6ff31253cfabdf360b20655d",
+  "release": {
+    "version": "0.20.257+741",
+    "note": "Shared compatibility and boundary rollout"
+  }
+}

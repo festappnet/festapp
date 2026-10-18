@@ -21,9 +21,9 @@
 
 :root {
     /* Colors from properties matches Flutter ThemeConfig */
-    --seed-1: #253759;
-    --seed-2: #80BDF2; /* dddPrimary */
-    --seed-3: #4465A6; /* lllPrimary */
+    --seed-1: #122640;
+    --seed-2: #BF8641; /* dddPrimary */
+    --seed-3: #1B3659; /* lllPrimary */
     --white: #ffffff;
 
     /* Light Theme (Default) */
@@ -51,7 +51,7 @@
     --radius-round: 50%;
     
     /* Font Scale (Default for Futura) */
-    --font-scale: 1.2;
+    --font-scale: 1.0;
 }
 
 body.dark-mode {
