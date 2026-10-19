@@ -5,9 +5,11 @@ import {
   isUserEditor,
   isUserEditorOrder,
   createUserClient,
+  supabaseAdmin,
   getEmailTemplateAndWrapper,
 } from "../_shared/supabaseUtil.ts";
 import { authoringContextResponse } from "./authoringContext.ts";
+import { loadAuthoringPaymentAccounts } from "./authoringPaymentAccounts.ts";
 
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
 const corsHeaders = {
@@ -45,6 +47,7 @@ Deno.serve(async (req) => {
             return error ? null : data;
           },
           resolve: getEmailTemplateAndWrapper,
+          paymentAccounts: (context) => loadAuthoringPaymentAccounts(supabaseAdmin, context),
         },
         corsHeaders,
       );

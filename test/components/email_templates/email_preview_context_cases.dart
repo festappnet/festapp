@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:festapp_core/eshop.dart';
+import 'package:festapp_core/email_templates.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_context_loader.dart';
 import 'package:fstapp/components/email_templates/email_preview_examples.dart';
@@ -17,6 +18,26 @@ ProductsEditBundle bundle(List<ProductModel> products) => ProductsEditBundle(
       forms: [],
     );
 void main() {
+  test('configured bank example follows sample currency in scalar and canonical rich values', () {
+    final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
+      context: const EmailPreviewContext(products: [EmailPreviewProduct(title: 'Kurz', typeTitle: 'Účast', price: 200, currency: 'EUR')]));
+    const accounts = [
+      EmailPreviewPaymentAccount(accountNumber: '123456789/2010', iban: 'CZ65 2010 0000 0012 3456 7890', currencies: ['CZK']),
+      EmailPreviewPaymentAccount(accountNumber: 'EUR account', iban: 'SK12 3456 0000 0012 3456 7890', currencies: ['EUR']),
+    ];
+    for (final scenario in examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: accounts)) {
+      expect(scenario.values['accountNumber'], 'EUR account');
+      expect(scenario.values['iban'], accounts[1].iban);
+      if (scenario.scenario == 'unpaid') expect(scenario.values['balanceReasoning'], contains(accounts[1].iban));
+    }
+    for (final scenario in examples.scenariosFor('TICKET_ORDER_REMINDER', paymentAccounts: accounts)) {
+      expect(scenario.values['paymentDetails'], contains(accounts[1].iban));
+      expect(scenario.values['paymentDetails'], isNot(contains('0000000000/0000')));
+    }
+    final noMatch = examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: [accounts.first]).first;
+    expect(noMatch.values['accountNumber'], isNot(accounts.first.accountNumber));
+    expect(noMatch.values['fullOrder'], contains('Kurz'));
+  });
   test('remote banner preview uses only canonical images from resolved wrapper',
       () {
     const context = EmailAuthoringContext(

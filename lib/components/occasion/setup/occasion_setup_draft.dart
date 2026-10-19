@@ -2,6 +2,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'occasion_setup_story.dart';
 
 class OccasionSetupDraft {
   final String id;
@@ -21,16 +22,22 @@ class OccasionSetupDraft {
   static List<int> get supportedSteps =>
       AppConfig.isAppSupported ? [0, 1, 2, 3, 4, 5] : [0, 1, 3, 6, 4, 2, 5];
 
-  static int completedCount(Map<String, dynamic> data) =>
-      (data['completed'] as List? ?? [])
-          .whereType<int>()
-          .toSet()
-          .intersection(supportedSteps.toSet())
-          .length;
+  static int completedCount(Map<String, dynamic> data) => (data['completed']
+              as List? ??
+          [])
+      .whereType<int>()
+      .toSet()
+      .intersection(
+          OccasionSetupStory.applicableSteps(data, AppConfig.isAppSupported))
+      .length;
 
   String get title => data['title'] as String? ?? '';
   int get progress => data['completed'] is List
-      ? ((completedCount(data) / supportedSteps.length) * 100)
+      ? ((completedCount(data) /
+                  OccasionSetupStory.applicableSteps(
+                          data, AppConfig.isAppSupported)
+                      .length) *
+              100)
           .round()
           .clamp(0, 100)
       : (basicsReady ? 20 : 0);
@@ -84,8 +91,8 @@ class OccasionSetupDrafts {
       })));
 
   Future<String> finalize(OccasionSetupDraft draft, String commandId) async {
-    final response = Map<String, dynamic>.from(await client.rpc(
-        'finalize_occasion_setup_draft', params: {
+    final response = Map<String, dynamic>.from(
+        await client.rpc('finalize_occasion_setup_draft', params: {
       'p_id': draft.id,
       'p_expected_revision': draft.revision,
       'p_command_id': commandId,

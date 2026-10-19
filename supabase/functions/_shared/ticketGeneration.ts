@@ -1,5 +1,5 @@
 import { drawLayoutTicket, prepareTicketBackground, type PreparedTicketBackground } from './generateTicket.ts';
-import { preset } from './ticketLayout.ts';
+import { defaultTicketTemplate } from './ticketLayout.ts';
 import { validateLayout, pdfBox, type Template, type TicketLayout } from './ticketLayout.ts';
 import { normalizeTicketData, type RenderData, type ProductCatalog, indexProductCatalog, validateProductReferences } from './ticketRenderData.ts';
 import { type FontMetrics } from './ticketText.ts';
@@ -45,7 +45,7 @@ export async function resolveTicketTemplate(occasion:any,resources:Resources):Pr
   if(active)return active;
   const feature=occasion.features?.find((f:any)=>f.code==='ticket');
   if(!feature?.layout&&feature?.background)throw new Error('ticket_layout_migration_required');
-  return preset(feature?.ticket_type==='named'?'named':'wide');
+  return defaultTicketTemplate(feature?.ticket_type==='named'?'named':'wide');
 }
 export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={}, dependencies = {
   load: loadLayoutResources,

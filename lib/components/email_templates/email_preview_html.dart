@@ -197,7 +197,7 @@ class EmailReceivedMessage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${EmailTemplatesStrings.previewTo}: Jana Nováková <jana.novakova@example.invalid>',
+                    '${EmailTemplatesStrings.previewTo}: Jana Nováková <jana.novakova@example.com>',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

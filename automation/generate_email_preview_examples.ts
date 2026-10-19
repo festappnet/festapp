@@ -65,7 +65,7 @@ const scalar = {
   appName: "Festapp",
   name: "Jana",
   surname: "Nováková",
-  email: "jana.novakova@example.invalid",
+  email: fixture.orderData.email,
   resetLink: "https://example.invalid/reset?preview=1",
   confirmationUrl: "https://example.invalid/delete?preview=1",
   expiresAt: "30. 10. 2026 18:00",
@@ -342,13 +342,17 @@ for (const record of records) {
     preview_zero_explanation: "0 CZK",
     preview_deadline: values.deadline || fixture.deadline,
     preview_currency: "CZK",
+    preview_account_number: fixture.accountNumber,
+    preview_iban: formatIBAN(fixture.iban),
   };
   const contextualize = (templates: Record<string, string>) => Object.fromEntries(
     Object.entries(templates).map((
       [code, html],
     ) => [
       code,
-      html.replace(moneyPattern, (value) => moneySlots[value])
+      html.replaceAll(fixture.accountNumber, "{{preview_account_number}}")
+        .replaceAll(formatIBAN(fixture.iban), "{{preview_iban}}")
+        .replace(moneyPattern, (value) => moneySlots[value])
         .replaceAll(values.deadline || fixture.deadline, "{{preview_deadline}}")
         .replace(/0 CZK/g, "{{preview_zero_explanation}}"),
     ]),
@@ -370,9 +374,9 @@ const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
 const paddedWrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
 const compositionFixtures = [
-  { name: "missing fragment", html: "<p>Hello</p>", requiredLinks },
+  { name: "custom fragment omits overview", html: "<p>Hello</p>", requiredLinks },
   {
-    name: "full document",
+    name: "custom document omits overview",
     html: "<html><body><p>Hello</p></body></html>",
     requiredLinks,
   },
@@ -392,7 +396,7 @@ const compositionFixtures = [
     requiredLinks: [],
   },
   {
-    name: "full authored document in padded wrapper",
+    name: "custom full document in padded wrapper omits overview",
     html: "<html><body><p>Signature</p></body></html>",
     wrapperHtml: paddedWrapper,
     requiredLinks,
@@ -404,7 +408,7 @@ const compositionFixtures = [
     requiredLinks,
   },
   {
-    name: "fallback inside padded table wrapper",
+    name: "custom cancellation in padded wrapper omits overview",
     html: "<p>Cancellation</p><p>Signature</p>",
     wrapperHtml: paddedWrapper,
     requiredLinks,

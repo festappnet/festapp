@@ -1,0 +1,226 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_form_link.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_pricing.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_bank_account.dart';
+import '../../support/fixtures/localization_log_fixture.dart';
+
+void main() {
+  setUp(() {
+    final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
+    addTearDown(logs.dispose);
+  });
+  testWidgets(
+      'suggestion uses server availability and manual edits are retained',
+      (tester) async {
+    var value = '';
+    var automatic = true;
+    bool? valid;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: StatefulBuilder(
+      builder: (context, setState) => OccasionSetupFormLink(
+        draftId: 'draft',
+        title: 'Ples',
+        value: value,
+        automatic: automatic,
+        onChanged: (v, a) => setState(() {
+          value = v;
+          automatic = a;
+        }),
+        onValidityChanged: (v) => valid = v,
+        suggest: (title, requested) async => {
+          'suggestion': 'ples-2090-2',
+          'available': requested == 'ples-2090-2'
+        },
+      ),
+    ))));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(value, 'ples-2090-2');
+    expect(automatic, true);
+    expect(valid, true);
+    await tester.enterText(find.byType(TextField), 'taken');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(value, 'taken');
+    expect(automatic, false);
+    expect(valid, false);
+    expect(find.text('OccasionSetup.setupDetails.linkTaken'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('changing title updates automatic suggestion only',
+      (tester) async {
+    var value = 'old-2090';
+    var title = 'Old';
+    var automatic = true;
+    late StateSetter update;
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: StatefulBuilder(
+      builder: (context, setState) {
+        update = setState;
+        return OccasionSetupFormLink(
+          draftId: 'draft',
+          title: title,
+          value: value,
+          automatic: automatic,
+          onChanged: (v, a) => setState(() {
+            value = v;
+            automatic = a;
+          }),
+          suggest: (t, r) async => {
+            'suggestion': t == 'Old' ? 'old-2090' : 'new-2090',
+            'available': true
+          },
+        );
+      },
+    ))));
+    await tester.pump(const Duration(milliseconds: 500));
+    update(() => title = 'New');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(value, 'new-2090');
+    await tester.enterText(find.byType(TextField), 'personal-address');
+    update(() => title = 'Another');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(value, 'personal-address');
+    expect(automatic, false);
+    await tester.pumpWidget(const SizedBox());
+  });
+  test(
+      'draft waves round-trip through actual editor bundle without scheduling writes',
+      () async {
+    final data = <String, dynamic>{
+      'formDraft': {
+        'title': 'Form',
+        'fields': [
+          {
+            'type': 'product_type',
+            'product_type_data': {
+              'id': 10,
+              'type': 'spot',
+              'title': 'Ticket',
+              'products': [
+                {
+                  'id': 100,
+                  'title': 'Admission',
+                  'price': 100,
+                  'currency_code': 'CZK'
+                }
+              ]
+            }
+          }
+        ]
+      }
+    };
+    final draft =
+        OccasionSetupPriceWaveDraft(data, (patch) => data.addAll(patch));
+    final time = DateTime.now().add(const Duration(days: 20));
+    final wave = await draft.create(time);
+    final product = draft.bundle().products.single;
+    await draft.saveTarget(wave, product, 150, null);
+    expect(draft.bundle().products.single.priceChanges.single.price, 150);
+    expect(
+        (data['priceWaves'] as List).single['targets'].single['product'], 100);
+    final moved = time.add(const Duration(days: 1));
+    await draft.move(wave, moved);
+    expect(draft.bundle().priceWaves.single.time, moved.toUtc());
+    await draft.cancel(wave);
+    expect(draft.bundle().products.single.priceChanges, isEmpty);
+  });
+  testWidgets(
+      'account requires confirmation and currency changes invalidate it',
+      (tester) async {
+    final data = <String, dynamic>{
+      'formDraft': {
+        'fields': [
+          {
+            'product_type_data': {
+              'products': [
+                {'id': 1, 'price': 100, 'currency_code': 'CZK'}
+              ]
+            }
+          }
+        ]
+      }
+    };
+    late StateSetter update;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: StatefulBuilder(builder: (context, setState) {
+      update = setState;
+      return OccasionSetupBankAccount(
+        draftId: 'draft',
+        unitId: 1,
+        data: data,
+        onChanged: (patch) => setState(() => data.addAll(patch)),
+        loader: () async => {
+          'canManage': true,
+          'accounts': [
+            {
+              'id': 7,
+              'title': 'Main',
+              'display': '123/0100',
+              'currencies': ['CZK'],
+              'fingerprint': 'digest'
+            }
+          ]
+        },
+      );
+    }))));
+    await tester.pumpAndSettle();
+    expect(data['bankAccountId'], 7);
+    expect(data['bankAccountConfirmed'], false);
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    expect(data['bankAccountConfirmed'], true);
+    expect(data['bankAccountFingerprint'], 'digest');
+    update(() => ((data['formDraft'] as Map)['fields'] as List)
+        .first['product_type_data']['products']
+        .first['currency_code'] = 'EUR');
+    await tester.pumpAndSettle();
+    expect(data['bankAccountId'], isNull);
+    expect(data['bankAccountConfirmed'], false);
+    expect(find.text('OccasionSetup.setupDetails.bankMissing'), findsOneWidget);
+  });
+  testWidgets(
+      'missing account offers setup then reloads without implicit confirmation',
+      (tester) async {
+    final data = <String, dynamic>{};
+    var created = false;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: StatefulBuilder(
+      builder: (context, setState) => OccasionSetupBankAccount(
+        draftId: 'draft',
+        unitId: 1,
+        data: data,
+        onChanged: (patch) => setState(() => data.addAll(patch)),
+        loader: () async => {
+          'canManage': true,
+          'accounts': created
+              ? [
+                  {
+                    'id': 9,
+                    'title': 'New',
+                    'display': '456/0100',
+                    'currencies': ['CZK'],
+                    'fingerprint': 'new'
+                  }
+                ]
+              : []
+        },
+        setup: (_) async {
+          created = true;
+        },
+      ),
+    ))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OccasionSetup.setupDetails.setupBankAccount'));
+    await tester.pumpAndSettle();
+    expect(created, true);
+    expect(data['bankAccountId'], 9);
+    expect(data['bankAccountConfirmed'], false);
+  });
+}

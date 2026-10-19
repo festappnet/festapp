@@ -4,6 +4,7 @@ import 'package:fstapp/components/images/recovering_image.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_editor/super_editor.dart';
@@ -24,6 +25,43 @@ void main() {
   final examples = EmailPreviewExamples.fromJson(jsonDecode(
       File('assets/email_templates/preview_examples.json').readAsStringSync()));
   final scenario = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
+  testWidgets('only the active editor owns a caret while both selections survive', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    List<CaretDocumentOverlay> visibleCarets() => tester.widgetList<CaretDocumentOverlay>(
+        find.byType(CaretDocumentOverlay)).where((caret) => caret.caretStyle.color.a > 0).toList();
+    final subject = RichHtmlEditorController(initialHtml: '<p>Subject</p>',
+      owner: const HtmlMediaOwner.none(), authoring: EmailAuthoringProvider(
+        EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'), field: EmailTargetField.subject));
+    final body = RichHtmlEditorController(initialHtml: '<p>Body</p>', owner: const HtmlMediaOwner.none());
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+      RichHtmlEditor(controller: subject), RichHtmlEditor(controller: body),
+    ]))));
+    await tester.tap(find.text('Subject', findRichText: true));
+    await tester.pumpAndSettle();
+    final subjectSelection = subject.editor.composer.selection;
+    expect(subjectSelection, isNotNull);
+    expect(visibleCarets().single.composer, subject.editor.composer);
+    await tester.tap(find.text('Body', findRichText: true));
+    await tester.pumpAndSettle();
+    final bodySelection = body.editor.composer.selection;
+    expect(subject.focusNode.hasFocus, isFalse);
+    expect(body.focusNode.hasFocus, isTrue);
+    expect(subject.editor.composer.selection, subjectSelection);
+    expect(visibleCarets().single.composer, body.editor.composer);
+    subject.focusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(body.editor.composer.selection, bodySelection);
+    expect(visibleCarets().single.composer, subject.editor.composer);
+    subject.focusNode.unfocus();
+    await tester.pumpAndSettle();
+    expect(visibleCarets(), isEmpty);
+    expect(subject.html, '<p>Subject</p>');
+    expect(body.html, '<p>Body</p>');
+    await tester.pumpWidget(const SizedBox());
+    subject.dispose(); body.dispose();
+    debugDefaultTargetPlatformOverride = null;
+  });
   testWidgets('only approved wrapper banner uses canonical image delivery', (tester) async {
     const banner = 'https://img.festapp.net/images/preview-banner.png';
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: EmailReceivedMessage(
@@ -154,12 +192,44 @@ void main() {
     expect(find.text(scenario.values['occasionTitle']!), findsOneWidget);
     expect(tester.getSize(find.byType(RichHtmlEditor)).height,
         lessThanOrEqualTo(52));
-    expect(tester.getTopLeft(find.text(scenario.values['occasionTitle']!)).dx,
+    expect(tester.getTopLeft(find.text('@')).dx,
         lessThanOrEqualTo(16));
     expect(controller.plainText, '{{occasionTitle}}');
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
+  for (final field in [EmailTargetField.subject, EmailTargetField.body]) {
+    testWidgets('variable indicator shares baseline and preserves $field chip semantics', (tester) async {
+      tester.view.physicalSize = const Size(375, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const title = 'Podzimní slavnost a společné setkání všech přátel';
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'), field: field,
+          scenario: scenario.withContext(const EmailPreviewContext(occasionTitle: title)));
+      final controller = RichHtmlEditorController(initialHtml: '<p>{{occasionTitle}}</p>',
+          owner: const HtmlMediaOwner.none(), authoring: provider);
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Align(
+          alignment: Alignment.topLeft, child: RichHtmlEditor(controller: controller)))));
+      await tester.pumpAndSettle();
+      expect(find.text('@'), findsOneWidget);
+      final marker = tester.getRect(find.text('@'));
+      final sample = tester.getRect(find.text(title));
+      expect(sample.left - marker.right, closeTo(4, .1));
+      expect(sample.top, closeTo(marker.top, 1));
+      expect(sample.right, lessThanOrEqualTo(375));
+      final semantics = tester.widgetList<Semantics>(find.byType(Semantics))
+          .where((widget) => widget.properties.label?.contains(title) == true).single;
+      expect(semantics.excludeSemantics, isTrue);
+      expect(semantics.properties.label, isNot(contains('@')));
+      expect(controller.html, '<p>{{occasionTitle}}</p>');
+      expect(controller.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
+
   testWidgets(
       'used unique components stay visible while repeatable buttons remain insertable',
       (tester) async {
@@ -222,7 +292,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('sender@organizer.test'), findsOneWidget);
     expect(
-        find.textContaining('jana.novakova@example.invalid'), findsOneWidget);
+        find.textContaining('jana.novakova@example.com'), findsOneWidget);
     expect(tester.getSize(find.byType(EmailPreviewHtml)).width,
         lessThanOrEqualTo(400));
     expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html,

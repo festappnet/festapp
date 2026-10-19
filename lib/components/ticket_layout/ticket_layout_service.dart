@@ -182,6 +182,22 @@ class TicketLayoutResources {
   }
 }
 
+/// Text-only context for an unsaved occasion; resource identity stays separate.
+class TicketPreviewOccasion {
+  final String title;
+  final DateTime? startTime, endTime;
+  final String? placeName;
+  const TicketPreviewOccasion(
+      {required this.title, this.startTime, this.endTime, this.placeName});
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'start_time': startTime?.toUtc().toIso8601String(),
+        'end_time': endTime?.toUtc().toIso8601String(),
+        'data': {'place_name': placeName},
+      };
+}
+
 class TicketLayoutService {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;
   final Future<String?> Function(String) _readPreference;
@@ -193,6 +209,17 @@ class TicketLayoutService {
       : _readPreference = readPreference ?? ((key) => StorageHelper.get(key)),
         _writePreference =
             writePreference ?? ((key, value) => StorageHelper.set(key, value));
+
+  TicketLayoutService withPreviewOccasion(TicketPreviewOccasion occasion) =>
+      TicketLayoutService(
+          readPreference: _readPreference,
+          writePreference: _writePreference,
+          transport: (body) => _request({
+                ...body,
+                if (body['readOnly'] != true &&
+                    (body['mode'] == 'resolve' || body['mode'] == 'pdf'))
+                  'previewOccasion': occasion.toJson(),
+              }));
 
   static final Map<String, Future<TicketFontResource>> _fonts = {};
   static Future<TicketFontResource> _register(Map j) async {

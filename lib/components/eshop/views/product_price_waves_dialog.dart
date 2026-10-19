@@ -11,19 +11,22 @@ import '../models/product_edit_bundle.dart';
 import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
 import 'product_price_changes_dialog.dart';
+import 'product_price_wave_actions.dart';
 
 /// A shared-term matrix projected from the canonical queue; no second executor.
 class ProductPriceWavesDialog extends StatefulWidget {
   final String occasionLink;
   final ProductsEditBundle initialBundle;
   final bool canEdit;
+  final ProductPriceWaveActions? actions;
   final Future<ProductsEditBundle> Function()? loader;
   const ProductPriceWavesDialog(
       {super.key,
       required this.occasionLink,
       required this.initialBundle,
       required this.canEdit,
-      this.loader});
+      this.loader,
+      this.actions});
   @override
   State<ProductPriceWavesDialog> createState() =>
       _ProductPriceWavesDialogState();
@@ -36,9 +39,10 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (!busy) reload();
-    });
+    if (widget.actions == null)
+      timer = Timer.periodic(const Duration(minutes: 1), (_) {
+        if (!busy) reload();
+      });
   }
 
   @override
@@ -69,9 +73,18 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
             wave: wave,
             save: (time) async {
               if (wave == null) {
-                await DbEshop.createProductPriceWave(widget.occasionLink, time);
+                if (widget.actions != null) {
+                  await widget.actions!.create(time);
+                } else {
+                  await DbEshop.createProductPriceWave(
+                      widget.occasionLink, time);
+                }
               } else {
-                await DbEshop.moveProductPriceWave(wave, time);
+                if (widget.actions != null) {
+                  await widget.actions!.move(wave, time);
+                } else {
+                  await DbEshop.moveProductPriceWave(wave, time);
+                }
               }
             }));
     if (!mounted) return;
@@ -88,6 +101,14 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
             wave: wave,
             product: product,
             save: (price, hidden) async {
+              if (widget.actions != null) {
+                final persisted = wave.id == null
+                    ? await widget.actions!.create(wave.time)
+                    : wave;
+                await widget.actions!
+                    .saveTarget(persisted, product, price, hidden);
+                return;
+              }
               final persisted = wave.id == null
                   ? await DbEshop.createProductPriceWave(
                       widget.occasionLink, wave.time)
@@ -124,7 +145,9 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
     if (confirmed != true || !mounted) return;
     setState(() => busy = true);
     final success = await ExceptionHandler.guardVoid(context,
-        futureFunction: () => DbEshop.cancelProductPriceWave(wave));
+        futureFunction: () => widget.actions != null
+            ? widget.actions!.cancel(wave)
+            : DbEshop.cancelProductPriceWave(wave));
     if (!mounted) return;
     setState(() => busy = false);
     if (success) await reload();

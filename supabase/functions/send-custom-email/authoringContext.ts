@@ -1,6 +1,11 @@
+import type { AuthoringPaymentAccount } from "./authoringPaymentAccounts.ts";
+
 /** Read-only authoring metadata. No rendering, customer lookup or queue access. */
 export interface AuthoringContextDependencies {
   senderAddress: string;
+  paymentAccounts?: (
+    context: Record<string, number>,
+  ) => Promise<AuthoringPaymentAccount[]>;
   catalog: (
     authorization: string,
     entityType: "occasion" | "unit",
@@ -61,7 +66,14 @@ export async function authoringContextResponse(
       return reply({ error: "Sender unavailable" }, 503);
     }
     const resolved = await dependencies.resolve(templateCode, context);
+    let paymentAccounts: AuthoringPaymentAccount[] = [];
+    try {
+      paymentAccounts = await dependencies.paymentAccounts?.(context) ?? [];
+    } catch (_) {
+      // Bank metadata is optional; preserve usable sender/wrapper information.
+    }
     return reply({
+      paymentAccounts,
       senderAddress,
       wrapperHtml: typeof resolved?.wrapper?.html === "string"
         ? resolved.wrapper.html

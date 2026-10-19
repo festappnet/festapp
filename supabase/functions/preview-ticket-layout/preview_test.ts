@@ -35,7 +35,7 @@ Deno.test('image-backed presets inherit existing text color without weakening QR
   const png=await Deno.readFile('test/fixtures/ticket_layout/background.png');s.deps.resources=async()=>({font,metrics,background:png});
   const result=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
   assertEquals(result.template.elements.find((e:any)=>e.binding==='price').style.color,'FFFFFF');
-  assertEquals(result.template.elements.find((e:any)=>e.binding==='qr').style.color,'2A2A2A');
+  assertEquals(result.template.elements.find((e:any)=>e.binding==='qr').style.color,'000000');
 });
 
 Deno.test('portrait PDF page includes the default margin after resizing',async()=>{
@@ -201,4 +201,58 @@ Deno.test('blank setup draft borrows resources without exposing source product f
 Deno.test('preview denies central output exhaustion without returning a partial PDF',async()=>{
  const s=setup();s.deps.authorize=async()=>({abuseLimits:{...admission.abuseLimits,'document.output.bytes':1}});
  assertEquals((await handlePreview(req(),s.deps)).status,429);
+});
+
+Deno.test('unconfigured preview uses the production default and retains legible event details',async()=>{
+  const {resolveTicketTemplate}=await import('../_shared/ticketGeneration.ts');
+  const s=setup();
+  const occasion={id:7,title:'Podzimní slavnost',start_time:'2026-11-07T18:00:00Z',data:{place_name:'Kulturní dům'},features:[{code:'ticket',ticket_type:'wide',darkColor:'FFFFFF'}]};
+  s.deps.occasion=async()=>occasion;
+  const response=await handlePreview(req({...body,type:'wide'}),s.deps);
+  assertEquals(response.status,200);
+  const result=await response.json();
+  assertEquals(result.template,await resolveTicketTemplate(occasion,{font,metrics}));
+  assertEquals(result.data.occasionTitle,occasion.title);
+  assert(result.data.occasionDatePlace.includes('Kulturní dům'));
+  assertEquals(result.template.canvasColor,'FFFFFF');
+  assertEquals(result.template.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'165C55');
+});
+
+Deno.test('draft preview text overrides scenarios while resource authorization stays on the saved occasion',async()=>{
+  const s=setup();
+  const source={id:7,organization:3,title:'Borrowed source',start_time:'2025-01-01T18:00:00Z',data:{place_name:'Source hall'},features:[]};
+  const previewOccasion={title:'Nový podzimní ples',start_time:'2026-11-07T18:00:00.000Z',end_time:'2026-11-07T22:00:00.000Z',data:{place_name:'Sokolovna v Brně'}};
+  s.deps.authorize=async(_auth,id)=>{assertEquals(id,7);return admission;};
+  s.deps.occasion=async(id)=>{assertEquals(id,7);return source;};
+  s.deps.resources=async(occasion)=>{assertEquals(occasion,source);return {font,metrics};};
+  const response=await handlePreview(req({...body,borrowResourcesOnly:true,previewOccasion}),s.deps);
+  assertEquals(response.status,200);
+  const result=await response.json();
+  for(const data of [result.data,...Object.values(result.scenarios)] as any[]) {
+    assertEquals(data.occasionTitle,previewOccasion.title);
+    assert(data.occasionDatePlace.includes(previewOccasion.data.place_name));
+    assert(!data.occasionDatePlace.includes('Source'));
+    assertEquals(data.occasionStartTime,'19:00');
+  }
+  const pdf=await handlePreview(req({...body,mode:'pdf',previewOccasion}),s.deps);
+  assertEquals(pdf.status,200);
+  assert(atob((await pdf.json()).file).startsWith('%PDF'));
+  const empty=await handlePreview(req({...body,previewOccasion:{title:'',start_time:null,end_time:null,data:{place_name:null}}}),s.deps);
+  const emptyData=(await empty.json()).data;
+  assertEquals(emptyData.occasionTitle,null);
+  assertEquals(emptyData.occasionDatePlace,null);
+});
+
+Deno.test('draft preview rejects identity, asset, malformed and unbounded context before resource reads',async()=>{
+  const invalid=[null,[],{title:'x',id:8},{title:'x',organization:3},{title:'x',features:[]},{title:'x',data:{logo:'https://img.festapp.net/logo.png'}},{title:'x',data:{link:'https://example.com'}},{title:'x',data:[]},{title:42},{title:'x'.repeat(501)},{title:'x',data:{place_name:'x'.repeat(501)}},{title:'x',start_time:'yesterday'},{title:'x',end_time:'2026-01-01'},{title:'x',start_time:42},{title:'x',start_time:'2026-13-99T18:00:00Z'}];
+  for(const previewOccasion of invalid) {
+    const s=setup();
+    assertEquals((await handlePreview(req({...body,previewOccasion}),s.deps)).status,400);
+    assertEquals(s.counts(),[0,0,0]);
+  }
+  for(const extra of [{readOnly:true},{mode:'catalog'},{mode:'font',fontId:futuraId}]) {
+    const s=setup();
+    assertEquals((await handlePreview(req({...body,...extra,previewOccasion:{title:'Draft'}}),s.deps)).status,400);
+    assertEquals(s.counts(),[0,0,0]);
+  }
 });

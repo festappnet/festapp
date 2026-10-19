@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -23,7 +24,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String html = '<p>Content</p>', Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
+Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String? code, String html = '<p>Content</p>', Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
   RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       unitUser: OccasionUserModel(isEditor: true),
       occasionUser: OccasionUserModel(isEditor: true));
@@ -38,9 +39,9 @@ Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String ht
               authoringContextLoader: authoringContextLoader,
               previewExamplesLoader: previewExamplesLoader,
               template: EmailTemplateModel(
-                code: occasionTitle == null
+                code: code ?? (occasionTitle == null
                     ? 'SIGN_IN_CODE'
-                    : 'TICKET_ORDER_CONFIRMATION',
+                    : 'TICKET_ORDER_CONFIRMATION'),
                 subject: 'Subject',
                 html: html,
               ),
@@ -74,42 +75,77 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  testWidgets('automatic completion follows live draft and survives fullscreen without persistence',
-      (tester) async {
-    final metadata = Completer<EmailAuthoringContext>();
-    await openTemplate(tester, occasionTitle: 'Festival',
-        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
+  for (final metadataFirst in [true, false]) {
+    testWidgets('bank metadata updates authoring examples independent of load order $metadataFirst', (tester) async {
+      final metadata = Completer<EmailAuthoringContext>();
+      final examples = Completer<EmailPreviewExamples>();
+      const account = EmailPreviewPaymentAccount(accountNumber: '123456789/2010',
+        iban: 'CZ65 2010 0000 0012 3456 7890', currencies: ['CZK']);
+      await openTemplate(tester, occasionTitle: 'Festival',
+        html: '<p>{{accountNumber}} - {{iban}}</p>{{balanceReasoning}}',
+        previewExamplesLoader: () => examples.future,
         authoringContextLoader: () => metadata.future);
-    const footerKey = ValueKey('email-automatic-completion');
-    expect(find.byKey(footerKey), findsNothing);
-    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
-    metadata.complete(const EmailAuthoringContext(senderAddress: 'sender@test.invalid'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    final automatic = tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html;
-    expect(automatic, contains('href='));
-    expect(body.html, '<p>Content</p>');
-    expect(body.hasUserChanges, isFalse);
-    final node = body.editor.document.first;
-    body.editor.execute([ChangeSelectionRequest(
-        DocumentSelection.collapsed(position: DocumentPosition(
-            nodeId: node.id, nodePosition: node.endPosition)),
-        SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
-    expect(body.insertTemplateToken('order_overview_button'), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsNothing);
-    expect(body.html, contains('{{order_overview_button}}'));
-    body.undo();
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    expect(body.html, '<p>Content</p>');
-    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
-    await tester.tap(find.byIcon(Icons.open_in_full));
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    expect(tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html, automatic);
-    expect(body.html, '<p>Content</p>');
-  });
+      void completeMetadata() => metadata.complete(const EmailAuthoringContext(
+        senderAddress: 'sender@test.invalid', paymentAccounts: [account]));
+      void completeExamples() => examples.complete(EmailPreviewExamples.fromJson(
+        jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())));
+      if (metadataFirst) { completeMetadata(); } else { completeExamples(); }
+      await tester.pumpAndSettle();
+      if (metadataFirst) { completeExamples(); } else { completeMetadata(); }
+      await tester.pumpAndSettle();
+      expect(find.text(account.accountNumber), findsOneWidget);
+      expect(find.text(account.iban), findsOneWidget);
+      expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains(account.iban));
+      final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+      expect(body.html, '<p>{{accountNumber}} - {{iban}}</p>{{balanceReasoning}}');
+      expect(body.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+  for (final code in ['TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_STORNO']) {
+    testWidgets('custom $code body omits overview until author inserts it', (tester) async {
+      final metadata = Completer<EmailAuthoringContext>();
+      await openTemplate(tester, code: code, occasionTitle: 'Festival',
+          previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
+          authoringContextLoader: () => metadata.future);
+      final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+      metadata.complete(const EmailAuthoringContext(senderAddress: 'sender@test.invalid'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      expect(body.hasUserChanges, isFalse);
+      void insert(String code) {
+        final node = body.editor.document.first;
+        body.editor.execute([ChangeSelectionRequest(
+            DocumentSelection.collapsed(position: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)),
+            SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+        expect(body.insertTemplateToken(code), isTrue);
+      }
+      insert('order_overview_button');
+      await tester.pumpAndSettle();
+      expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains('href='));
+      body.undo();
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      if (code == 'TICKET_ORDER_CONFIRMATION') {
+        insert('fullOrder');
+        await tester.pumpAndSettle();
+        expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains('href='));
+        body.undo();
+        await tester.pumpAndSettle();
+        expect(find.byType(EmailPreviewHtml), findsNothing);
+        expect(body.html, '<p>Content</p>');
+      }
+    });
+  }
 
   testWidgets('wrapper overview action suppresses automatic editor completion', (tester) async {
     final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()));
@@ -217,6 +253,49 @@ void main() {
       });
     }
   }
+  for (final width in [1000.0, 375.0]) {
+    for (final source in [
+      '{{fullOrder}}\n<p>Přejeme pěkný den</p>',
+      '<p>Ahoj,</p>\n{{balanceReasoning}}{{fullOrder}}\n'
+          '<p>Přejeme pěkný den</p>\n<p>Organizační tým {{occasionTitle}}</p>',
+    ]) {
+      testWidgets('bare rich blocks have no phantom line before signature $width ${source.length}', (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await openTemplate(tester, code: 'TICKET_ORDER_REMINDER', html: source,
+            occasionTitle: 'Sample event',
+            previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(
+                File('assets/email_templates/preview_examples.json').readAsStringSync())),
+            authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'info@example.invalid'));
+        final controller = tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor).last).controller;
+        expect(controller.html, source);
+        expect(controller.hasUserChanges, isFalse);
+        Future<void> expectSignatureGap(String signature) async {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -10000));
+          await tester.pumpAndSettle();
+          final signoff = tester.getRect(find.text(signature, findRichText: true));
+          final blocks = find.byType(EmailPreviewHtml).evaluate()
+              .map((element) => tester.getRect(find.byWidget(element.widget)))
+              .where((rect) => rect.top < signoff.top).toList()
+            ..sort((a, b) => a.bottom.compareTo(b.bottom));
+          expect(signoff.top - blocks.last.bottom, inInclusiveRange(0, 80));
+        }
+        await expectSignatureGap('Přejeme pěkný den');
+        final signature = controller.editor.document.whereType<TextNode>()
+            .firstWhere((node) => node.text.toPlainText() == 'Přejeme pěkný den');
+        controller.editor.execute([InsertTextRequest(
+            documentPosition: DocumentPosition(nodeId: signature.id,
+                nodePosition: const TextNodePosition(offset: 0)),
+            textToInsert: 'Test ', attributions: {})]);
+        await tester.pumpAndSettle();
+        await expectSignatureGap('Test Přejeme pěkný den');
+        expect(controller.html, source.replaceFirst('Přejeme pěkný den', 'Test Přejeme pěkný den'));
+      });
+    }
+  }
+
   testWidgets('action gap stays outside scroll viewport at its bottom', (tester) async {
     tester.view.physicalSize = const Size(1000, 450);
     tester.view.devicePixelRatio = 1;

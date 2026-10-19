@@ -91,17 +91,18 @@ class HtmlEditorDocument {
           // Direct text in a complex container (e.g. a td or a nested li).
           // The ancestor envelope preserves cell/list/layout attributes.
           final container = child.parent;
+          final text = _richBlockTextProjection(child, blockCodes);
           add(
               [child],
               container?.localName == 'li'
                   ? ListItemNode(
                       id: Editor.createNodeId(),
-                      text: AttributedText(child.data),
+                      text: AttributedText(text),
                       itemType: _listType(container!),
                       indent: _listIndent(container))
                   : ParagraphNode(
                       id: Editor.createNodeId(),
-                      text: AttributedText(child.data)));
+                      text: AttributedText(text)));
         }
       }
     }
@@ -650,6 +651,29 @@ int _listIndent(dom.Element element) {
     if (parent.localName == 'ul' || parent.localName == 'ol') depth++;
   }
   return depth.clamp(0, 20);
+}
+
+/// Formatting whitespace around bare rich blocks is not an authored line break.
+/// A literal newline after a tall inline widget otherwise creates another line
+/// with that widget's height. The envelope still retains the original HTML.
+String _richBlockTextProjection(dom.Text node, Set<String> blockCodes) {
+  final source = node.data;
+  if (blockCodes.isEmpty) return source;
+  final tokens = RegExp(r'\{\{([^{}]+)\}\}');
+  final matches = tokens.allMatches(source).toList();
+  if (matches.isEmpty ||
+      matches.any((match) => !blockCodes.contains(match.group(1))) ||
+      source.replaceAll(tokens, '').contains(RegExp(r'[^ \t\r\n\f]'))) {
+    return source;
+  }
+  for (var parent = node.parent; parent != null; parent = parent.parent) {
+    if (parent.localName == 'pre' ||
+        RegExp(r'white-space\s*:', caseSensitive: false)
+            .hasMatch(parent.attributes['style'] ?? '')) {
+      return source;
+    }
+  }
+  return matches.map((match) => match.group(0)!).join();
 }
 
 AttributedText _readInline(List<dom.Node> nodes) {

@@ -52,7 +52,7 @@ void main() {
     await openTemplate(tester, occasionTitle: 'Festival',
         previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
         authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'sender@organizer.test'));
-    expect(find.byKey(const ValueKey('email-automatic-completion')), findsOneWidget);
+    expect(find.byKey(const ValueKey('email-automatic-completion')), findsNothing);
     final editors =
         tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).toList();
     for (final widget in editors) {
