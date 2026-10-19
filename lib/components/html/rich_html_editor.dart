@@ -380,7 +380,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     if (kIsWeb) ClipboardEvents.instance?.registerPasteEventListener(_webPaste);
     controller.addListener(_controllerChanged);
     controller.authoringChanges.addListener(_mentionsChanged);
-    controller.focusNode.addListener(_selectionChanged);
+    controller.focusNode.addListener(_focusChanged);
     _android = SuperEditorAndroidControlsController(
         toolbarBuilder: (context, key, focalPoint) =>
             AndroidTextEditingFloatingToolbar(
@@ -434,6 +434,13 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
           }, defaultErrorMessage: HtmlStrings.importFailed);
           return true; // Never fall through to the package's lossy Markdown path.
         });
+  }
+
+  void _focusChanged() {
+    // Retain the selection for toolbar actions, but only the focused editor
+    // owns a visible caret. SuperEditor's default overlay ignores focus.
+    if (mounted) setState(() {});
+    _selectionChanged();
   }
 
   void _selectionChanged() {
@@ -514,9 +521,9 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
       oldWidget.controller.removeListener(_controllerChanged);
       oldWidget.controller.authoringChanges.removeListener(_mentionsChanged);
       controller.authoringChanges.addListener(_mentionsChanged);
-      oldWidget.controller.focusNode.removeListener(_selectionChanged);
+      oldWidget.controller.focusNode.removeListener(_focusChanged);
       controller.addListener(_controllerChanged);
-      controller.focusNode.addListener(_selectionChanged);
+      controller.focusNode.addListener(_focusChanged);
     }
     if (oldWidget.controller != controller ||
         _configuredEditor != controller.editor) _configureIos();
@@ -530,7 +537,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     controller.removeListener(_controllerChanged);
     controller.authoringChanges.removeListener(_mentionsChanged);
     _menuScroll.dispose();
-    controller.focusNode.removeListener(_selectionChanged);
+    controller.focusNode.removeListener(_focusChanged);
     _configuredEditor?.composer.selectionNotifier
         .removeListener(_selectionChanged);
     _popoverFocus.dispose();
@@ -929,17 +936,15 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               documentOverlayBuilders: [
                                                 for (final overlay
                                                     in defaultSuperEditorDocumentOverlayBuilders)
-                                                  if (overlay
-                                                      is DefaultCaretOverlayBuilder)
+                                                  if (overlay is DefaultCaretOverlayBuilder)
                                                     DefaultCaretOverlayBuilder(
                                                       caretStyle: overlay
                                                           .caretStyle
                                                           .copyWith(
-                                                        color: Theme.of(context)
-                                                                    .brightness ==
-                                                                Brightness.dark
-                                                            ? Colors.white
-                                                            : Colors.black,
+                                                        color: !controller.focusNode.hasFocus
+                                                            ? Colors.transparent
+                                                            : Theme.of(context).brightness == Brightness.dark
+                                                                ? Colors.white : Colors.black,
                                                       ),
                                                     )
                                                   else
