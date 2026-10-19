@@ -692,9 +692,12 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (_editingPlan || _busy || controller.mode != BlueprintLayoutMode.manage)
       return;
     _setCommercialSelection(selection);
-    final openDetail = !HardwareKeyboard.instance.isShiftPressed;
     final selectedId =
         _commercialSelection.length == 1 ? _commercialSelection.single : null;
+    // Table clicks on the canvas select/reveal; the sidebar opens their detail.
+    final openDetail = !HardwareKeyboard.instance.isShiftPressed &&
+        (controller.snapshot.seatBindings.containsKey(selectedId) ||
+            controller.snapshot.areaBindings.containsKey(selectedId));
     final tableId = selectedId == null
         ? null
         : controller.snapshot.seatBindings[selectedId]?.groupNodeId ??

@@ -540,6 +540,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getRect(scroll).contains(tester.getCenter(row)), isTrue);
     expect(tester.widget<ListTile>(row).selected, isTrue);
+    expect(find.byKey(const ValueKey('commercial-detail-dialog')), findsNothing,
+        reason: 'Canvas table clicks only select and reveal the table');
+    await tester.tap(row);
+    await tester.pumpAndSettle();
     expect(find.text('${BlueprintStrings.manageGroupProducts}: T18'),
         findsOneWidget);
     final detailRoute = ModalRoute.of(tester
