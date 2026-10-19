@@ -176,6 +176,19 @@ export class FormModel {
              ticketField.subFields.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
 
+        // Preserve the authoritative offered catalog before presentation hides
+        // addressed-seat selectors. Area bindings resolve only within this form.
+        const freeze = value => {
+            if (value && typeof value === 'object') {
+                Object.values(value).forEach(freeze); Object.freeze(value);
+            }
+            return value;
+        };
+        this.offeredTicketProductFields = freeze(JSON.parse(JSON.stringify(
+            this.registrationMode === 'waitlist' ? [] : (ticketField?.subFields || [])
+                .filter(field => field.type === 'product_type' && field.isHidden !== true)
+        )));
+
         const usesSeatSelection = [...this.relatedFields, ...(ticketField?.subFields || [])]
             .some(f => f.type === 'spot' && f.isHidden !== true);
         const usesRegularChoice = f =>

@@ -36,6 +36,12 @@ class RadioFieldBuilder {
   static FormOptionDefinition? resolveDefault(
       FieldHolder fieldHolder, List<FormOptionDefinition> options) {
     final raw = fieldHolder.defaultValue;
+    if (raw is FormOptionDefinition) {
+      for (final option in options) {
+        if (option.id == raw.id) return option;
+      }
+      return null;
+    }
     if (raw is! String || raw.isEmpty) return null;
     for (final o in options) {
       if (o.title == raw || o.id == raw) return o;

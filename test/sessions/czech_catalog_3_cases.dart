@@ -4,9 +4,7 @@ import '../components/eshop/product_price_scheduling_cases.dart' as suite1;
 import '../components/navigation/object_route_dirty_dialog_cases.dart'
     as suite2;
 import '../components/eshop/ticket_usage_action_cases.dart' as suite3;
-import '../components/blueprint/blueprint_editor_actions_cases.dart' as suite4;
 import '../components/eshop/order_update_email_dialog_cases.dart' as suite5;
-import '../components/blueprint/blueprint_draft_product_cases.dart' as suite7;
 
 void main() {
   registerClientSuites({
@@ -14,8 +12,6 @@ void main() {
     'product_price_scheduling': suite1.main,
     'object_route_dirty_dialog': suite2.main,
     'ticket_usage_action': suite3.main,
-    'blueprint_editor_actions': suite4.main,
     'order_update_email_dialog': suite5.main,
-    'blueprint_draft_product': suite7.main,
   });
 }

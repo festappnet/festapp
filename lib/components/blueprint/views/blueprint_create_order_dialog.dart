@@ -5,16 +5,19 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 
 class BlueprintCreateOrderDialog extends StatefulWidget {
   final List<int> selectedSpotIds;
+  final Future<Map<String, dynamic>> Function(List<int>)? analyze;
+  final Future<void> Function(List<int>, Map<String, dynamic>)? submit;
 
   const BlueprintCreateOrderDialog({
     super.key,
     required this.selectedSpotIds,
+    this.analyze,
+    this.submit,
   });
 
   @override
@@ -42,6 +45,8 @@ class _BlueprintCreateOrderDialogState
   static const String _kProductTitle = 'product_title';
 
   bool _loading = true;
+  String? _error;
+  bool _analysisReady = false;
   // New state to track the submission process
   bool _isSubmitting = false;
 
@@ -53,6 +58,7 @@ class _BlueprintCreateOrderDialogState
   List<dynamic> _newItems = [];
 
   double _sumCur = 0;
+  String? _currency;
 
   @override
   void initState() {
@@ -68,33 +74,44 @@ class _BlueprintCreateOrderDialogState
   }
 
   Future<void> _analyze() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _analysisReady = false;
+    });
     try {
-      final data = await DbEshop.analyzeNewOrderSpots(widget.selectedSpotIds);
+      final data = await (widget.analyze ??
+          DbEshop.analyzeNewOrderSpots)(widget.selectedSpotIds);
+      final total = data[_kTotalPrice];
+      final currency = data['currency'];
+      if (total is! num ||
+          !total.isFinite ||
+          currency is! String ||
+          currency.isEmpty) {
+        throw const FormatException('Missing authoritative order total');
+      }
       if (mounted) {
         setState(() {
           _conflicts = data[_kConflicts] ?? [];
           _newItems = data[_kNewItems] ?? [];
-          _recalc();
+          _sumCur = total.toDouble();
+          _currency = currency;
+          _analysisReady = true;
           _loading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
-        ToastHelper.Show(context, "Error analyzing spots: $e",
-            severity: ToastSeverity.NotOk);
+        setState(() {
+          _loading = false;
+          _error = BlueprintStrings.analysisFailed;
+        });
       }
     }
   }
 
-  void _recalc() {
-    _sumCur = _newItems.fold(0.0, (sum, item) {
-      final price = (item[_kPrice] as num?)?.toDouble() ?? 0.0;
-      return sum + price;
-    });
-  }
-
   Future<void> _confirm() async {
+    if (_loading || _isSubmitting || !_analysisReady) return;
     if (!_formKey.currentState!.validate()) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -106,6 +123,7 @@ class _BlueprintCreateOrderDialogState
 
     setState(() {
       _isSubmitting = true;
+      _error = null;
     });
 
     final inputData = {
@@ -114,7 +132,11 @@ class _BlueprintCreateOrderDialogState
 
     try {
       // API call performed here so we can show loading state
-      await DbEshop.createOrderFromSpots(widget.selectedSpotIds, inputData);
+      if (widget.submit != null) {
+        await widget.submit!(widget.selectedSpotIds, inputData);
+      } else {
+        await DbEshop.createOrderFromSpots(widget.selectedSpotIds, inputData);
+      }
 
       if (mounted) {
         // Return true to indicate success
@@ -122,9 +144,8 @@ class _BlueprintCreateOrderDialogState
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
-            severity: ToastSeverity.NotOk);
         setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
           _isSubmitting = false;
         });
       }
@@ -149,121 +170,142 @@ class _BlueprintCreateOrderDialogState
       content: _loading
           ? const SizedBox(
               height: 150, child: Center(child: CircularProgressIndicator()))
-          : SizedBox(
-              width: StylesConfig.formMaxWidth,
-              child: SelectionArea(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- SECTION 1: CANCELLED ITEMS ---
-                      if (groupedConflicts.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+          : !_analysisReady
+              ? Column(mainAxisSize: MainAxisSize.min, children: [
+                  Semantics(
+                      liveRegion: true,
+                      child: Text(_error ?? BlueprintStrings.analysisFailed)),
+                  TextButton(
+                      onPressed: _analyze, child: Text(CommonStrings.retry)),
+                ])
+              : SizedBox(
+                  width: StylesConfig.formMaxWidth,
+                  child: SelectionArea(
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_error != null)
+                            Semantics(
+                                liveRegion: true,
+                                child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Text(_error!,
+                                        style: TextStyle(
+                                            color: theme.colorScheme.error)))),
+                          // --- SECTION 1: CANCELLED ITEMS ---
+                          if (groupedConflicts.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.remove_shopping_cart,
-                                      color: theme.colorScheme.error, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(OrdersStrings.cancelledItemsTitle,
-                                      style: TextStyle(
+                                  Row(
+                                    children: [
+                                      Icon(Icons.remove_shopping_cart,
                                           color: theme.colorScheme.error,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16)),
+                                          size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(OrdersStrings.cancelledItemsTitle,
+                                          style: TextStyle(
+                                              color: theme.colorScheme.error,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    BlueprintStrings.warningNoCancellationEmail,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                BlueprintStrings.warningNoCancellationEmail,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ...groupedConflicts.entries.map((entry) {
-                          return _buildOrderConflictCard(
-                              entry.key, entry.value);
-                        }),
-                        const SizedBox(height: 24),
-                        const Divider(thickness: 1),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // --- SECTION 2: NEW ORDER ---
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.add_shopping_cart,
-                                color: theme.colorScheme.primary, size: 20),
-                            const SizedBox(width: 8),
-                            Text(OrdersStrings.newOrderTitle,
-                                style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16)),
+                            ),
+                            ...groupedConflicts.entries.map((entry) {
+                              return _buildOrderConflictCard(
+                                  entry.key, entry.value);
+                            }),
+                            const SizedBox(height: 24),
+                            const Divider(thickness: 1),
+                            const SizedBox(height: 24),
                           ],
-                        ),
-                      ),
-                      _buildNewOrderCard(),
 
-                      const SizedBox(height: 24),
-
-                      // --- SECTION 3: EMAIL INPUT ---
-                      Text(OrdersStrings.infoEmail,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(
-                        OrdersStrings.emailHelpText,
-                        style: TextStyle(
-                            fontSize: 14, color: theme.colorScheme.onSurface),
-                      ),
-                      const SizedBox(height: 8),
-                      Form(
-                        key: _formKey,
-                        child: TextFormField(
-                          controller: _emailController,
-                          enabled:
-                              !_isSubmitting, // Disable input while submitting
-                          decoration: InputDecoration(
-                            hintText: OrdersStrings.customerExample,
-                            hintStyle: TextStyle(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6)),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 16),
+                          // --- SECTION 2: NEW ORDER ---
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.add_shopping_cart,
+                                    color: theme.colorScheme.primary, size: 20),
+                                const SizedBox(width: 8),
+                                Text(OrdersStrings.newOrderTitle,
+                                    style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
+                              ],
+                            ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty)
-                              return 'Email is required';
-                            if (!value.contains('@')) return 'Invalid email';
-                            return null;
-                          },
-                        ),
+                          _buildNewOrderCard(),
+
+                          const SizedBox(height: 24),
+
+                          // --- SECTION 3: EMAIL INPUT ---
+                          Text(OrdersStrings.infoEmail,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(
+                            OrdersStrings.emailHelpText,
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface),
+                          ),
+                          const SizedBox(height: 8),
+                          Form(
+                            key: _formKey,
+                            child: TextFormField(
+                              controller: _emailController,
+                              enabled:
+                                  !_isSubmitting, // Disable input while submitting
+                              decoration: InputDecoration(
+                                hintText: OrdersStrings.customerExample,
+                                hintStyle: TextStyle(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6)),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 16),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return CommonStrings.fieldCannotBeEmpty;
+                                if (!value.contains('@'))
+                                  return CommonStrings.invalidFormat;
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(
-          onPressed: (_loading || _isSubmitting) ? null : _confirm,
+          onPressed:
+              (_loading || _isSubmitting || !_analysisReady) ? null : _confirm,
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: theme.colorScheme.onPrimary,
@@ -342,7 +384,8 @@ class _BlueprintCreateOrderDialogState
                           overflow: TextOverflow.ellipsis)
                     ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text("-${Utilities.formatPrice(context, orderTotalRefund)}",
+                  Text(
+                      "-${Utilities.formatPrice(context, orderTotalRefund, currencyCode: _currency)}",
                       style: TextStyle(
                           color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
@@ -457,7 +500,8 @@ class _BlueprintCreateOrderDialogState
                               style: const TextStyle(fontSize: 13))
                         ]),
                     const Spacer(),
-                    Text("+${Utilities.formatPrice(context, price)}",
+                    Text(
+                        "+${Utilities.formatPrice(context, price, currencyCode: item['currency'] as String? ?? _currency)}",
                         style: TextStyle(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold))
@@ -469,7 +513,9 @@ class _BlueprintCreateOrderDialogState
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary)),
-              Text(Utilities.formatPrice(context, _sumCur),
+              Text(
+                  Utilities.formatPrice(context, _sumCur,
+                      currencyCode: _currency),
                   style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.bold,

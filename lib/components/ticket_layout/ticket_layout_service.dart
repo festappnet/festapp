@@ -107,7 +107,8 @@ class TicketLayoutResources {
       : fonts = Map.of(fonts) {
     this.catalog = catalog;
   }
-  Map<String, String?> previewBindings(TicketTemplate template, String scenario) {
+  Map<String, String?> previewBindings(
+      TicketTemplate template, String scenario) {
     final base = Map<String, String?>.of(scenarios[scenario]!);
     final selected = <int, Map<String, dynamic>>{};
     final admissions = catalog
@@ -155,14 +156,16 @@ class TicketLayoutResources {
     final base = previewBindings(template, scenario);
     final data = {
       for (final e in template.elements)
-        e.id: e.binding == 'text' ? e.text : e.binding == 'productType'
-            ? scenario == 'missing'
-                ? null
-                : _productText(
-                    e.label!,
-                    _catalogIndex[e.productTypeId]?.example?['value']
-                        as String?)
-            : base[e.binding]
+        e.id: e.binding == 'text'
+            ? e.text
+            : e.binding == 'productType'
+                ? scenario == 'missing'
+                    ? null
+                    : _productText(
+                        e.label!,
+                        _catalogIndex[e.productTypeId]?.example?['value']
+                            as String?)
+                : base[e.binding]
     };
     cache[scenario] = (revision: _catalogRevision, data: data);
     return data;
@@ -259,6 +262,33 @@ class TicketLayoutService {
             'fontProtocol': 2,
             'fontId': id
           }));
+
+  /// The same registered font bytes, projected to the portable layout protocol.
+  Future<Map<String, dynamic>> layoutFont(int occasionId, String id,
+          {String characters = ''}) =>
+      _request({
+        'occasionId': occasionId,
+        'mode': 'font',
+        'fontProtocol': 2,
+        'fontId': id,
+        'outline': true,
+        'characters': characters,
+      });
+
+  /// Reuses the same font resolver before an occasion exists. The server checks
+  /// the private draft's unit and charges the same preview budget.
+  Future<Map<String, dynamic>> layoutFontForSetupDraft(
+          String draftId, String id,
+          {String characters = ''}) =>
+      _request({
+        'setupDraftId': draftId,
+        'mode': 'font',
+        'fontProtocol': 2,
+        'fontId': id,
+        'outline': true,
+        'characters': characters,
+      });
+
   Future<bool> openTemplatePickerOnce(int occasionId, String userId,
       {required bool configured}) async {
     final key = 'ticket-editor-opened:$userId:$occasionId';

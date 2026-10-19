@@ -1,3 +1,4 @@
+import { blueprintImageAccess, registerBlueprintAsset, hex, type BlueprintImageAsset } from './blueprint-assets';
 import { MAX_IMAGE_INPUT_BYTES, readUploadForm, resolveUploadPolicy, processUploadImage, ImageProcessingError } from './upload-policy';
 import type { Env } from './types';
 import {
@@ -104,9 +105,26 @@ export async function handleUpload(
     return errorResponse(400, 'INVALID_OWNER', 'AKH uploads do not accept Festapp owner identifiers');
   }
 
+  if (file.size > MAX_IMAGE_INPUT_BYTES) return errorResponse(413, 'FILE_TOO_LARGE', 'Image exceeds 20 MB');
+  let policy;
+  try { policy = resolveUploadPolicy(formData); }
+  catch (error) {
+    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message);
+    throw error;
+  }
+
+  const blueprintAsset = policy.profile === 'blueprint-background';
+  if (blueprintAsset && (project.authContract !== 'festapp' || (occasionId === null && unitId === null) || formData.has('key'))) {
+    return errorResponse(400, 'INVALID_BLUEPRINT_OWNER', 'Blueprint artwork requires an authorized public owner');
+  }
+  if (blueprintAsset && (!env.IMAGE_PROCESSING_SERVICE_SECRET || env.IMAGE_PROCESSING_SERVICE_SECRET.length < 32)) {
+    return errorResponse(503, 'IMAGE_MANIFEST_UNAVAILABLE', 'Image verification unavailable', true);
+  }
   // Check the selected project's permission contract using the user's JWT.
   let isEditor = false;
-  if (project.authContract === 'akhweb') {
+  if (blueprintAsset) {
+    isEditor = await blueprintImageAccess(userJwt, auth, occasionId, project.id, unitId);
+  } else if (project.authContract === 'akhweb') {
     isEditor = await checkAkhEventManagerPermission(userJwt, auth);
   } else {
     isEditor = await checkImageProjectAccess(userJwt, auth, project.id, occasionId, unitId);
@@ -115,13 +133,6 @@ export async function handleUpload(
     return errorResponse(403, 'FORBIDDEN', 'Forbidden');
   }
 
-  if (file.size > MAX_IMAGE_INPUT_BYTES) return errorResponse(413, 'FILE_TOO_LARGE', 'Image exceeds 20 MB');
-  let policy;
-  try { policy = resolveUploadPolicy(formData); }
-  catch (error) {
-    if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message);
-    throw error;
-  }
 
   // Use explicit key for private uploads, otherwise generate one
   const explicitKey = formData.get('key') as string | null;
@@ -163,7 +174,7 @@ export async function handleUpload(
       const admission = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_upload_v1`, {
         method: 'POST',
         headers: { apikey: auth.anonKey, Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_bytes: file.size, p_occasion_id: occasionId, p_unit_id: unitId }),
+        body: JSON.stringify({ p_bytes: file.size, p_occasion_id: occasionId, p_unit_id: unitId, ...(blueprintAsset ? { p_profile: policy.profile } : {}) }),
         signal: AbortSignal.timeout(8000),
       });
       if (!admission.ok) {
@@ -174,7 +185,7 @@ export async function handleUpload(
     } catch { return errorResponse(503, 'UPLOAD_ADMISSION', 'Upload temporarily unavailable', true); }
   }
 
-  let processed;
+  let processed: Awaited<ReturnType<typeof processUploadImage>>;
   try {
     processed = key.startsWith('private/')
       ? { body: file.stream(), contentType: file.type || 'application/octet-stream', extension: undefined }
@@ -184,6 +195,15 @@ export async function handleUpload(
     throw error;
   }
   if (processed.extension) key = key.replace(/\.[^./]+$/, `.${processed.extension}`);
+  let asset: BlueprintImageAsset | undefined;
+  if (blueprintAsset) {
+    if (!(processed.body instanceof ArrayBuffer) || !processed.width || !processed.height) return errorResponse(502, 'INVALID_IMAGE_OUTPUT', 'Image verification requires processed bytes');
+    const hash = hex(await crypto.subtle.digest('SHA-256', processed.body));
+    key = `images/${unitId === null ? occasionId : `unit-${unitId}`}/blueprint/${hash}.${processed.extension}`;
+    asset = { assetRef: `image:${hash}`, hash, url: `https://${project.publicHostname}/${key}`,
+      width: processed.width, height: processed.height, mimeType: processed.contentType, byteLength: processed.body.byteLength, state: 'ready' };
+  }
+
 
   // Charge actual transformed bytes before the R2 write. Streaming original
   // bodies have the measured File size; processed raster bodies are ArrayBuffers.
@@ -192,7 +212,7 @@ export async function handleUpload(
     try {
       const admission=await fetch(`${auth.supabaseUrl}/rest/v1/rpc/admit_image_storage_v1`, {
         method:'POST', headers:{apikey:auth.anonKey,Authorization:`Bearer ${userJwt}`,'Content-Type':'application/json'},
-        body:JSON.stringify({p_bytes:storedBytes,p_occasion_id:occasionId,p_unit_id:unitId}), signal:AbortSignal.timeout(8000),
+        body:JSON.stringify({p_bytes:storedBytes,p_occasion_id:occasionId,p_unit_id:unitId,...(blueprintAsset ? {p_profile:policy.profile} : {})}), signal:AbortSignal.timeout(8000),
       });
       if(!admission.ok) {
         const error=await admission.json() as {code?:string};
@@ -205,6 +225,7 @@ export async function handleUpload(
   const isPrivate = key.startsWith('private/');
   const bucket = isPrivate ? project.privateBucket : project.publicBucket;
   await bucket.put(assetKey(project, key), processed.body, {
+    ...(asset ? { onlyIf: { etagDoesNotMatch: '*' }, customMetadata: { sha256: asset.hash, purpose: 'blueprint-background' } } : {}),
     httpMetadata: {
       contentType: processed.contentType,
       ...(isPrivate ? {} : { cacheControl: 'public, max-age=31536000, immutable' }),
@@ -217,9 +238,12 @@ export async function handleUpload(
 
   if (!isPrivate && project.persistsImageRecords) {
     try {
-      await addImageRecord(userJwt, auth, objectUrl, occasionId, unitId);
+      if (asset) await registerBlueprintAsset(userJwt, auth, env, occasionId, project.id, asset, unitId);
+      else await addImageRecord(userJwt, auth, objectUrl, occasionId, unitId);
     } catch (error) {
-      await bucket.delete(assetKey(project, key));
+      // An immutable retry may concurrently register this same hash. Keeping an
+      // unregistered blob is safer than deleting bytes another receipt made ready.
+      if (!asset) await bucket.delete(assetKey(project, key));
       console.error('image_upload_failed', { operation: 'upload', status: 'db_failed_compensated' });
       if (error instanceof ImageProcessingError) return errorResponse(error.status, error.code, error.message, error.retryable);
       return errorResponse(502, 'IMAGE_RECORD_FAILED', 'Image record could not be persisted', true);
@@ -227,7 +251,7 @@ export async function handleUpload(
   }
 
   console.log('image_operation', { operation: 'upload', status: 'success', projectId: project.id });
-  return jsonResponse({ url: objectUrl, key, projectId: project.id });
+  return jsonResponse({ url: objectUrl, key, projectId: project.id, ...(asset ? { asset } : {}) });
 }
 
 function normalizeAkhPath(value: unknown, fallback: string): string {

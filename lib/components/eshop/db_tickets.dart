@@ -288,6 +288,10 @@ class DbTickets {
     }
   }
 
+  /// Blueprint V2 always uses the receipted command authority.
+  static Future<void> swapBlueprintSpots(int firstSpotId, int secondSpotId) =>
+      _commands.swapSpots(firstSpotId, secondSpotId);
+
   static Future<void> swapSpotTickets(
     int spotId1,
     int spotId2,
