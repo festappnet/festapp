@@ -153,38 +153,20 @@ class FormFieldBuilders {
                   ),
               ]));
     }
-    var removingTicket = false;
     return StatefulBuilder(
       builder: (context, setState) {
         Future<void> removeTicket(int index) async {
-          if (removingTicket) return;
-          final selected = ticket.tickets[index];
-          final spotId = selected.seat?.seat?.id;
-          setState(() => removingTicket = true);
-          try {
-            var released = <int>{};
-            if (spotId != null && !formHolder.controller!.demoSimulation) {
-              final controller = formHolder.controller!;
-              final result = await DbOrders.selectSpotResult(
-                  controller.formKey!, controller.secret!, spotId, false);
-              if (!result.accepted) throw StateError(result.code.toString());
-              controller.updateReservationSession(result.secret, result.expiresAt);
-              released = result.spotIds.toSet();
-            }
-            if (!context.mounted) return;
-            setState(() {
-              ticket.tickets.removeWhere((item) => identical(item, selected) ||
-                  released.contains(item.seat?.seat?.id));
-            });
-            formHolder.controller!.updateTotalPrice?.call();
-          } catch (_) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(CommonStrings.unexpectedError)));
-            }
-          } finally {
-            if (context.mounted) setState(() => removingTicket = false);
-          }
+          if (!formHolder.controller!.demoSimulation)
+            await DbOrders.selectSpot(
+                context,
+                formHolder.controller!.formKey!,
+                formHolder.controller!.secret!,
+                ticket.tickets[index].seat!.seat!.id!,
+                false);
+          setState(() {
+            ticket.tickets.removeAt(index);
+          });
+          formHolder.controller!.updateTotalPrice?.call();
         }
 
         return Column(
@@ -241,7 +223,7 @@ class FormFieldBuilders {
                             Align(
                               alignment: Alignment.centerRight,
                               child: IconButton(
-                                onPressed: removingTicket ? null : () => removeTicket(i),
+                                onPressed: () => removeTicket(i),
                                 icon: Icon(Icons.delete),
                                 tooltip: CommonStrings.delete,
                               ),
@@ -249,11 +231,7 @@ class FormFieldBuilders {
                           ],
                         ),
                         Text(
-                          ticket.tickets[i].seat?.seat?.toString() ??
-                              ticket.tickets[i].productDefaults.values
-                                  .map((product) => product.title)
-                                  .where((title) => title.isNotEmpty)
-                                  .join(', '),
+                          "${ticket.tickets[i].seat!.seat}",
                           style: TextStyle(
                               fontSize: 14 * FormHelper.fontSizeFactor),
                         ),
