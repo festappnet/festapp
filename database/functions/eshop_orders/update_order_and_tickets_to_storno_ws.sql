@@ -7,6 +7,7 @@ AS $$
 DECLARE
     occasion_id bigint;
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=order_id)]);
     -- Retrieve the occasion associated with the order
     SELECT occasion INTO occasion_id FROM eshop.orders WHERE id = order_id;
 

@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(p_tickets)));
   IF cardinality(p_tickets)>(SELECT hard_cap FROM public.abuse_policy_rules WHERE rule_key='order.mutation.items') THEN RAISE SQLSTATE 'PT429' USING MESSAGE='abuse_limit_exceeded'; END IF;
   SELECT min(t.occasion) INTO v_occasion FROM eshop.tickets t
     WHERE t.id=ANY(p_tickets);

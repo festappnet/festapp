@@ -17,6 +17,8 @@ DECLARE
   v_new_spot_rec RECORD;
   v_email TEXT;
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
+  PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
   -- Extract Email for validation
   v_email := p_input_data->>'email';
 
