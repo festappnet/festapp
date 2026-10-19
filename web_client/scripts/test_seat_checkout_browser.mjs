@@ -87,9 +87,34 @@ try {
     await browser('fill', `input[name="${fixture.name}"]`, 'Test');
     await browser('fill', `input[name="${fixture.surname}"]`, 'Checkout');
     await browser('click', '.btn-blueprint-select');
-    await browser('wait', `.blueprint-seat-container[data-seat-id="${fixture.seat}"]`);
+    const seatSelector = `.venue-layout-viewer svg g:nth-child(1 of [data-node-id="${fixture.node}"])`;
+    await browser('wait', seatSelector);
+    const controls = (await browser('eval', `(() => {
+        const modal=document.querySelector('.blueprint-modal-container');
+        const list=modal.querySelector('.venue-layout-viewer > [role="list"]');
+        const bounds=list.getBoundingClientRect();
+        const button=modal.querySelector('.blueprint-btn-confirm');
+        const b=button.getBoundingClientRect();
+        return {listWidth:bounds.width,listHeight:bounds.height,
+            buttons:modal.querySelectorAll(':scope > button').length,
+            oldClass:button.className,buttonType:button.type,
+            centered:Math.abs(b.x+b.width/2-innerWidth/2)<2,
+            extraControls:!!modal.querySelector('.blueprint-modal-actions,.blueprint-state-legend')};
+    })()`)).result;
+    assert.ok(controls.listWidth<=1 && controls.listHeight<=1, 'Assistive seat list must not be visible');
+    assert.equal(controls.buttons,1,'Keep the original single Continue button');
+    assert.equal(controls.oldClass,'btn btn-primary btn-submit blueprint-btn-confirm');
+    assert.equal(controls.buttonType,'button');
+    assert.equal(controls.centered,true,'Continue keeps its original centered placement');
+    assert.equal(controls.extraControls,false,'No new footer actions or legend');
+
+    const fit=(await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
+    await browser('click', '.blueprint-zoom-button:first-child');
+    assert.notEqual((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
+    await browser('click', '.blueprint-zoom-reset');
+    assert.equal((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
     await browser('snapshot', '-i');
-    await browser('click', `.blueprint-seat-container[data-seat-id="${fixture.seat}"]`);
+    await browser('click', seatSelector);
     await browser('wait', '--fn', `document.querySelector('.ticket-item[data-seat-id="${fixture.seat}"]') !== null`);
     // The seat appears optimistically. Wait for the real reservation response
     // before inspecting SQL on the fixture connection used by the RPC adapter.

@@ -83,28 +83,23 @@ body.blueprint-active #floating-price-widget {
     margin: 0 !important;
 }
 
-/* Host controls surround the shared viewer and remain reachable on narrow screens. */
-.blueprint-modal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    padding: 12px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom));
-    flex: 0 0 auto;
-    background: var(--background-color, #fff);
+/* Confirm / Continue Button */
+.blueprint-btn-confirm {
+    margin: 16px auto;
+    z-index: 3010;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    min-width: 200px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
 }
-.blueprint-modal-actions button { min-height: 44px; white-space: normal; }
+
 .blueprint-operation-status { padding: 0 16px; }
 .blueprint-content > .venue-layout-viewer { height: 100%; min-height: 0; display: flex; flex-direction: column; }
 .blueprint-content > .venue-layout-viewer > svg { flex: 1; min-height: 240px; }
-.blueprint-content > .venue-layout-viewer > [role="list"] { max-height: 30vh; overflow-y: auto; }
-.blueprint-content > .venue-layout-viewer button { min-height: 44px; }
-.blueprint-content > .venue-layout-viewer > [role="list"] {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 12px;
-    flex-shrink: 0;
-}
 .blueprint-content > .venue-layout-viewer button,
 .blueprint-content > .venue-layout-viewer input {
     font: inherit;
@@ -143,4 +138,80 @@ body.blueprint-active #floating-price-widget {
 .blueprint-content { min-height: 0; }
 .blueprint-content > .blueprint-error { height: auto; padding: 16px; margin: 16px; color: inherit; border-inline-start: 4px solid var(--danger-color, #b42318); }
 
-.blueprint-state-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 4px 12px; font-size: .75rem; }
+/* Fixed, touch-friendly controls, independent of the map transform. */
+.blueprint-zoom-controls {
+    position: absolute;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(16px, env(safe-area-inset-right));
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px;
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 8px;
+    background: var(--surface-color, var(--card-bg, #fff));
+    color: var(--primary-color, #4465a6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+    touch-action: manipulation;
+}
+
+.blueprint-zoom-button {
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .15s;
+}
+
+.blueprint-zoom-button svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .blueprint-zoom-button:hover:not(:disabled) {
+        background: var(--background-color, #ebf1f6);
+        background: color-mix(in srgb, currentColor 12%, transparent);
+    }
+}
+
+.blueprint-zoom-button:active:not(:disabled) {
+    background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.blueprint-zoom-button:focus-visible:not(:disabled) {
+    outline: 3px solid var(--primary-color, #2563eb);
+    outline-offset: -3px;
+}
+
+.blueprint-zoom-button:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.blueprint-zoom-controls .blueprint-zoom-reset {
+    margin-top: 2px;
+    border-top: 1px solid var(--input-border, #d1d5db);
+    border-radius: 0 0 6px 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blueprint-zoom-button {
+        transition: none;
+    }
+}

@@ -216,9 +216,9 @@ BEGIN
          coalesce((product->>'ordered_count')::bigint,0)<(product->>'maximum')::bigint))),'[]')
     INTO productsData
     FROM (SELECT DISTINCT ON (offered_product.value->>'id') offered_product.value AS product
-      FROM jsonb_array_elements(coalesce(form_bundle#>'{data,fields}','[]')) field
-      CROSS JOIN LATERAL jsonb_array_elements(coalesce(field#>'{product_type_data,products}','[]')) AS offered_product(value)
-      WHERE (field->>'is_ticket_field')::boolean AND field->>'type'='product_type'
+      FROM jsonb_array_elements(coalesce(nullif(form_bundle#>'{data,fields}','null'::jsonb),'[]'::jsonb)) field
+      CROSS JOIN LATERAL jsonb_array_elements(coalesce(nullif(field#>'{product_type_data,products}','null'::jsonb),'[]'::jsonb)) AS offered_product(value)
+      WHERE (field->>'type'='ticket' OR ((field->>'is_ticket_field')::boolean AND field->>'type'='product_type'))
         AND (offered_product.value->>'id')::bigint IN (
           SELECT s.product FROM eshop.spots s WHERE s.id=ANY(SELECT jsonb_array_elements_text(valid_spots)::bigint)
           UNION SELECT ab.product FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=blueprint_id)

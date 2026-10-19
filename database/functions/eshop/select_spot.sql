@@ -15,7 +15,7 @@ BEGIN
   GROUP BY p.id ORDER BY p.id LOOP
   IF item.is_hidden THEN RETURN jsonb_build_object('code',409,'reason','PRODUCT_HIDDEN'); END IF;
   IF NOT EXISTS(SELECT 1 FROM public.form_fields ff WHERE ff.form=p_form AND ff.product_type=item.product_type
-   AND ff.type='product_type' AND ff.is_ticket_field AND NOT ff.is_hidden) THEN
+   AND (ff.type='ticket' OR (ff.type='product_type' AND ff.is_ticket_field)) AND NOT ff.is_hidden) THEN
    RETURN jsonb_build_object('code',409,'reason','PRODUCT_NOT_IN_FORM'); END IF;
   IF coalesce(item.maximum,0)>0 THEN
    SELECT count(*) INTO occupied FROM eshop.order_product_ticket WHERE product=item.id;

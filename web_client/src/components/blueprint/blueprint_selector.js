@@ -18,6 +18,46 @@ if (typeof document !== 'undefined') {
 export class BlueprintSelector {
     constructor() { this.renderer = null; this.adapter = null; this.close = null; }
 
+    createZoomControls(content) {
+        const controls = document.createElement('div');
+        controls.className = 'blueprint-zoom-controls';
+        controls.setAttribute('role', 'group');
+        controls.setAttribute('aria-label', BlueprintStrings.zoomControls);
+        // Keep controls outside the transformed map and its gesture handling.
+        for (const event of ['mousedown', 'touchstart', 'pointerdown', 'click', 'wheel']) {
+            controls.addEventListener(event, e => e.stopPropagation());
+        }
+        const button = (label, path, action) => {
+            const element = document.createElement('button');
+            element.type = 'button';
+            element.className = 'blueprint-zoom-button';
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('aria-hidden', 'true');
+            svg.setAttribute('focusable', 'false');
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            icon.setAttribute('d', path);
+            svg.appendChild(icon);
+            element.appendChild(svg);
+            element.title = label;
+            element.setAttribute('aria-label', label);
+            element.addEventListener('click', event => {
+                action();
+                // Pointer activation should not leave a focus ring after release.
+                // Keyboard clicks have detail 0 and retain their visible focus.
+                if (event.detail > 0) element.blur();
+            });
+            controls.appendChild(element);
+            return element;
+        };
+        this.zoomInButton = button(BlueprintStrings.zoomIn, 'M5 12h14M12 5v14', () => this.renderer?.zoomBy(1.25));
+        this.zoomOutButton = button(BlueprintStrings.zoomOut, 'M5 12h14', () => this.renderer?.zoomBy(1 / 1.25));
+        const reset = button(BlueprintStrings.fitToScreen, 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5', () => this.renderer?.fitToScreen());
+        reset.classList.add('blueprint-zoom-reset');
+        this.zoomControls = controls;
+        content.appendChild(controls);
+    }
+
     async open(session, field, initialSeats = []) {
         this.close?.();
         const previousFocus = document.activeElement;
@@ -28,40 +68,20 @@ export class BlueprintSelector {
         container.setAttribute('aria-label', BlueprintStrings.layoutTitle);
         const content = document.createElement('div');
         content.className = 'blueprint-content';
-        const legend = document.createElement('div');
-        legend.className = 'blueprint-state-legend';
         const status = document.createElement('div');
         status.className = 'blueprint-operation-status';
         status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
-        const actions = document.createElement('div');
-        actions.className = 'blueprint-modal-actions';
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn btn-secondary'; closeBtn.textContent = BlueprintStrings.close;
         const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'btn btn-primary btn-submit';
+        confirmBtn.className = 'btn btn-primary btn-submit blueprint-btn-confirm';
+        confirmBtn.type = 'button';
         confirmBtn.textContent = FormStrings.buttonContinue; confirmBtn.disabled = true;
-        actions.append(closeBtn, confirmBtn);
-        container.append(content, legend, status, actions); document.body.appendChild(container);
+        container.append(content, status, confirmBtn); document.body.appendChild(container);
         document.body.classList.add('blueprint-active'); document.documentElement.classList.add('blueprint-active');
         const stateId = `seat-selection-${Date.now()}`;
         window.history.pushState({ ...window.history.state, blueprintOverlay: stateId }, '', '#seat-selection');
         let closed = false, closing = false, loading = false, pending = 0;
         const assetAbort = new AbortController();
-        const refreshLegend = () => {
-            const states = ['empty', 'available', 'selected', 'selectedByMe', 'ordered', 'used', 'blocked'];
-            const counts = Object.fromEntries(states.map(state => [state, 0]));
-            for (const model of this.adapter?.models.values() || []) {
-                const state = ({selected_by_me: 'selectedByMe', black: 'blocked', taken: 'ordered'})[model.state] || model.state;
-                if (state in counts) counts[state]++;
-            }
-            legend.replaceChildren(...states.map(state => {
-                const label = document.createElement('span');
-                label.textContent = `${BlueprintStrings.seatState(state)}: ${counts[state]}`;
-                return label;
-            }));
-        };
         const refreshActions = () => {
-            closeBtn.disabled = pending > 0;
             confirmBtn.disabled = loading || pending > 0 || !this.adapter;
             status.textContent = pending > 0 ? CommonStrings.loading : '';
         };
@@ -94,9 +114,9 @@ export class BlueprintSelector {
             }
         };
         this.close = cleanup;
-        closeBtn.onclick = requestClose; confirmBtn.onclick = requestClose;
+        confirmBtn.onclick = requestClose;
         document.addEventListener('keydown', keyHandler); window.addEventListener('popstate', popHandler);
-        closeBtn.focus();
+        confirmBtn.focus();
 
         const load = async () => {
             if (closed || loading) return;
@@ -119,7 +139,13 @@ export class BlueprintSelector {
                 }
                 this.adapter = new BlueprintLayoutAdapter(data, { session, initialSeats });
                 content.replaceChildren();
+                this.createZoomControls(content);
                 const options = this.adapter.options();
+                options.minZoom = 1; options.maxZoom = 5;
+                options.onCameraChanged = state => {
+                    this.zoomInButton.disabled = !state.canZoomIn;
+                    this.zoomOutButton.disabled = !state.canZoomOut;
+                };
                 options.resources = await loadLayoutAssets(options.resources, { signal: assetAbort.signal });
                 if (closed) return;
                 options.messages = BlueprintStrings.viewerMessages;
@@ -137,12 +163,11 @@ export class BlueprintSelector {
                 };
                 options.accessibilityLabel = BlueprintStrings.layoutTitle;
                 this.renderer = mount(content, options);
-                refreshLegend();
                 this.adapter.onCapacityChanged = capacityPresentation => {
                     if (!closed) this.renderer.update({ capacityPresentation });
                 };
                 this.adapter.onPresentationChanged = seatPresentation => {
-                    if (!closed) { this.renderer.update({ seatPresentation }); refreshLegend(); }
+                    if (!closed) { this.renderer.update({ seatPresentation }); }
                 };
             } catch (error) {
                 if (closed) return;

@@ -1,5 +1,6 @@
 DO $$
 DECLARE org bigint; un bigint; oc bigint; fid bigint; bank bigint; pt bigint; prod bigint;
+ node_id uuid:=gen_random_uuid(); font public.ticket_font_assets;
  bp bigint; seat bigint; email_field bigint; name_field bigint; surname_field bigint;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Browser seat regression') RETURNING id INTO org;
@@ -31,7 +32,23 @@ BEGIN
  VALUES(fid,'spot','Výběr místa',true,false,true,4);
  INSERT INTO eshop.spots(title,product,occasion,blueprint)
  VALUES('A1',prod,oc,bp) RETURNING id INTO seat;
- UPDATE eshop.blueprints SET objects=jsonb_build_array(jsonb_build_object('id',seat,'type','spot','title','A1','x',2,'y',2)) WHERE id=bp;
- PERFORM set_config('festapp.browser_fixture',jsonb_build_object('form',fid,'seat',seat,'email',email_field,'name',name_field,'surname',surname_field)::text,true);
+ -- Synthetic outline resources keep this click/checkout fixture self-contained.
+ SELECT * INTO STRICT font FROM public.ticket_font_assets WHERE id LIKE 'builtin:%' ORDER BY id LIMIT 1;
+ UPDATE public.ticket_font_assets SET layout_outline=jsonb_build_object(
+  'id',font.id,'hash',font.metadata->>'sha256','family',font.metadata->>'family',
+  'unitsPerEm',1000,'ascent',800,'descent',-200,'glyphs',jsonb_build_object(
+    'A',jsonb_build_object('advance',600,'path','[["M",0,0],["L",300,700],["L",600,0],["Z"]]'::jsonb),
+    '1',jsonb_build_object('advance',600,'path','[["M",250,0],["L",250,700],["L",350,700],["L",350,0],["Z"]]'::jsonb))) WHERE id=font.id;
+ UPDATE eshop.blueprints SET objects='[]',layout_revision=1,layout=jsonb_build_object(
+  'schemaVersion',1,'symbolSetVersion',1,
+  'canvas',jsonb_build_object('x',0,'y',0,'width',400,'height',400,'fill','#ffffffff'),
+  'defaultTextStyle',jsonb_build_object('fontId',font.id,'size',12,'color','#222222FF'),
+  'nodes',jsonb_build_array(jsonb_build_object('id',node_id,'kind','seat','label','A1',
+    'width',48,'height',48,'shape','roundedRect','fill','#267329FF','cornerRadius',8,
+    'transform',jsonb_build_object('x',200,'y',200,'rotation',0))),
+  'selectionUnits','[]'::jsonb) WHERE id=bp;
+ PERFORM public.validate_blueprint_layout_internal((SELECT layout FROM eshop.blueprints WHERE id=bp));
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(bp,node_id,seat);
+ PERFORM set_config('festapp.browser_fixture',jsonb_build_object('form',fid,'seat',seat,'node',node_id,'email',email_field,'name',name_field,'surname',surname_field)::text,true);
 END $$;
 SELECT current_setting('festapp.browser_fixture')::jsonb AS fixture;

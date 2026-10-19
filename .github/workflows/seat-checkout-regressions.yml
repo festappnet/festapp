@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'database/functions/eshop/**'
+      - 'database/functions/blueprint/**'
+      - 'database/tests/blueprint/legacy_ticket_offer_test.sql'
       - 'database/functions/eshop_orders/**'
       - 'database/functions/eshop_waitlist/**'
       - 'database/functions/eshop_forms/**'
@@ -61,7 +63,7 @@ jobs:
           GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
       - name: Database contract and anonymous checkout
-        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test
       - name: Click a seat and complete checkout in a real browser
         run: npm --prefix web_client run test:seat-checkout-browser
 
