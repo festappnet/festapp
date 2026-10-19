@@ -7,6 +7,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  field jsonb; pt jsonb; products jsonb; product jsonb; result jsonb; source_id bigint;
  old_products jsonb := '[]'; old_types jsonb := '[]'; type_map jsonb := '{}'; final_features jsonb; new_products jsonb; product_map jsonb := '{}'; idx integer; j integer;
  intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
+ has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  blueprint_id bigint; objects jsonb := '[]'; obj jsonb; v_commit public.client_commits%ROWTYPE;
 BEGIN
@@ -70,7 +71,17 @@ BEGIN
   IF bank_fingerprint IS DISTINCT FROM payload->>'bankAccountFingerprint' THEN
    RAISE serialization_failure USING MESSAGE='Bank account details changed; confirm again'; END IF;
  END IF;
- IF payload->'ticketDraft' IS NOT NULL AND payload->'ticketDraft'<>'null'::jsonb THEN features := features || jsonb_build_array((payload->'ticketDraft')-'layout'); END IF;
+ -- Active form choices own enabled features, not whether an editor was visited.
+ has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(
+  SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f
+  WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false));
+ IF has_tickets THEN
+  features:=features||jsonb_build_array((coalesce(nullif(payload->'ticketDraft','null'::jsonb),'{}'::jsonb)-'layout')
+    ||'{"code":"ticket","is_enabled":true}'::jsonb);
+ END IF;
+ IF coalesce((payload->>'formEnabled')::boolean,true) AND payload->>'blueprintMode' IN ('Nový','Převzít')
+   AND jsonb_array_length(coalesce(payload->'blueprintObjects','[]'))=0 THEN
+  RAISE invalid_parameter_value USING MESSAGE='Selected blueprint has no places'; END IF;
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN
   features := features || jsonb_build_array(jsonb_build_object('code','form','is_enabled',true) ||
     CASE WHEN communication_new THEN jsonb_build_object(
@@ -174,7 +185,8 @@ BEGIN
     IF old_products->idx->>'id' IS NOT NULL THEN product_map := product_map || jsonb_build_object(old_products->idx->>'id',new_products->idx->'id'); END IF;
    END LOOP;
   END IF;
-  IF jsonb_array_length(coalesce(payload->'blueprintObjects','[]'))>0 THEN
+  IF coalesce(payload->>'blueprintMode','')<>'Bez plánku'
+    AND jsonb_array_length(coalesce(payload->'blueprintObjects','[]'))>0 THEN
    FOR obj IN SELECT value FROM jsonb_array_elements(payload->'blueprintObjects') LOOP
     obj := obj-'id'-'order_product_ticket'-'secret';
     IF obj->>'product' IS NOT NULL THEN obj := jsonb_set(obj,'{product}',coalesce(product_map->(obj->>'product'),'null'::jsonb)); END IF;
@@ -207,8 +219,8 @@ BEGIN
   END LOOP;
  END IF;
  -- Rebind ticket product-type references only after their new IDs exist.
- IF payload->'ticketDraft' ? 'layout' THEN
-  pt := payload->'ticketDraft';
+ IF has_tickets AND payload->'ticketDraft' ? 'layout' THEN
+  pt := payload->'ticketDraft'||'{"code":"ticket","is_enabled":true}'::jsonb;
   SELECT jsonb_set(pt,'{layout,templates}',jsonb_object_agg(t.key,
     jsonb_set(t.value,'{elements}',coalesce((SELECT jsonb_agg(CASE WHEN e->>'binding'='productType'
       THEN jsonb_set(e,'{productTypeId}',coalesce(type_map->(e->>'productTypeId'),'null'::jsonb)) ELSE e END ORDER BY n)

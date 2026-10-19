@@ -17,6 +17,7 @@ class OccasionSetupStrings {
   static String progress(int value) =>
       'OccasionSetup.progress'.tr(namedArgs: {'value': '$value'});
 
+  static String get withoutWizard => 'OccasionSetup.withoutWizard'.tr();
   static String get createStepByStep => 'OccasionSetup.createStepByStep'.tr();
   static String get createEvent => 'OccasionSetup.createEvent'.tr();
   static String get finalizeFailed => 'OccasionSetup.finalizeFailed'.tr();

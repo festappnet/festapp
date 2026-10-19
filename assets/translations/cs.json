@@ -2834,6 +2834,7 @@
     "cancelDraftConfirm": "Opravdu zrušit koncept „{title}“? Rozpracované nastavení bude trvale smazáno.",
     "progress": "Dokončeno {value} %",
     "createStepByStep": "Vytvořit krok za krokem",
+    "withoutWizard": "Bez průvodce",
     "drafts": "Rozpracované koncepty",
     "untitled": "Nová událost",
     "resume": "Pokračovat",

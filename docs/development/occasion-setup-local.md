@@ -7,7 +7,11 @@ python3 automation/run_occasion_setup_local.py --enable-wizard
 ```
 
 Otevři http://127.0.0.1:56880/unit/1/edit a přihlas se jako `t@t.com`, heslo `test`.
-Klikni na „Vytvořit novou událost“. Vyplň základ, počkej na „Uloženo“ nebo použij
+Při zapnutém průvodci otevře na vstupenky.online (`isAppSupported == false`)
+hlavní tlačítko „Vytvořit novou událost“ rovnou postup krok za krokem. Vedlejší
+nabídka obsahuje „Bez průvodce“ pro rychlé vyplnění názvu a termínu. U vlastních
+aplikací zůstává rychlé vytvoření hlavní volbou a průvodce je vedlejší možnost.
+Vyplň základ, počkej na „Uloženo“ nebo použij
 „Uložit a vrátit se do seznamu“. Koncept pokračuje ze samostatné sekce seznamu
 po obnovení stránky. Klávesa `r` v terminálu načte změny Flutter kódu.
 
@@ -88,8 +92,11 @@ Krok Obsah patří jen aplikacím s programem a informacemi; ve vstupenky.online
 se nezobrazuje ani nepřebírá a registrace/prodej je vždy zapnutá. Starší
 koncepty se při otevření přizpůsobí tomuto toku. Skutečné editory formuláře a plánku pracují s modelem konceptu a jejich
 uložení pokračuje přes verzovaný databázový autosave. Dokončený koncept může
-ukázat 100 %, ale samotná finalizace do nové události ještě není implementovaná.
-Tlačítko na konci ukládá dokončený koncept, nepředstírá vytvoření události.
+ukázat 100 %. Závěrečné vytvoření převádí potvrzený koncept na skutečnou,
+skrytou a uzavřenou akci přes idempotentní serverový příkaz. Aktivní viditelné
+pole vstupenky zapne funkci ticket i bez otevření jejího editoru; odstraněné nebo
+skryté pole nepřenáší neaktivní konfiguraci. Volba „Bez plánku“ nepřenáší dříve
+uložené objekty. Vybraný prázdný plánek server odmítne před vytvořením akce.
 Původní samostatný prototyp byl přesunut do `lib/components/occasion/setup/`.
 
 V lokální databázi jsou konfigurace šesti skutečných událostí z
@@ -111,8 +118,8 @@ node web_client/scripts/import_occasion_setup_sources.js ../festapp-wizard-local
 
 Koncepty jsou v `public.occasion_setup_drafts`, nikdy v `public.occasions`.
 Vývojový flag `FESTAPP_OCCASION_SETUP` je ve výchozím sestavení vypnutý a
-v produkčním sestavení se ignoruje. Lokální spouštěč bez `--enable-wizard`
-ponechává původní způsob vytvoření události.
+respektuje se také v produkčním sestavení. Lokální spouštěč bez `--enable-wizard`
+ponechává rychlé vytvoření bez průvodce.
 
 Backend patří výhradně projektu `festapp-wizard-local` v sourozenecké složce
 repozitáře. Porty API/DB jsou 56821/56822. Skript vytvoří čerstvý backend,

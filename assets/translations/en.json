@@ -2833,6 +2833,7 @@
     "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
     "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
+    "withoutWizard": "Without wizard",
     "drafts": "Drafts",
     "untitled": "New event",
     "resume": "Continue",

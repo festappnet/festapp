@@ -236,11 +236,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     });
   }
 
-  Future<void> _addNewEvent() async {
-    final newOccasion = await OccasionCreationHelper.createNewOccasion(
-        context, widget.unit, _allOccasions);
+  Future<void> _addNewEvent({bool withoutWizard = false}) async {
+    await OccasionCreationHelper.createNewOccasion(
+        context, widget.unit, _allOccasions,
+        withoutWizard: withoutWizard);
 
-    if (newOccasion != null && mounted) {
+    if (mounted) {
       await _loadOccasions();
     }
     if (mounted) await _loadDrafts();
@@ -420,6 +421,21 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                                   ),
                                 ),
                               ),
+                              if (AppConfig.occasionSetupEnabled &&
+                                  !AppConfig.isAppSupported)
+                                PopupMenuButton<String>(
+                                  tooltip: CommonStrings.moreOptions,
+                                  icon: const Icon(Icons.more_horiz),
+                                  onSelected: (_) =>
+                                      _addNewEvent(withoutWizard: true),
+                                  itemBuilder: (_) => [
+                                    PopupMenuItem(
+                                      value: 'withoutWizard',
+                                      child: Text(
+                                          OccasionSetupStrings.withoutWizard),
+                                    ),
+                                  ],
+                                ),
                             ],
                           )
                         : const SizedBox.shrink(key: ValueKey('empty-box')),
