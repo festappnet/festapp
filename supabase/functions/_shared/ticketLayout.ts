@@ -115,6 +115,46 @@ export function preset(type: 'wide'|'named', imageWidth=1600, imageHeight=800): 
   return {page:{width:595.28,height:841.89},ticketArea:area,elements};
 }
 
+// The unconfigured ticket is a complete, artwork-free admission. Keep this
+// separate from historical image-relative presets and never rewrite saved layouts.
+export function defaultTicketTemplate(type: TicketType): Template {
+  const named=type==='named';
+  const t=preset(type);
+  const make=(binding:Binding,x:number,y:number,width:number,height:number,fontSize:number,maxLines=1,bold=false,color='24343B',align:'left'|'center'='left'):Element=>({
+    id:binding,binding,box:{x,y,width,height},visible:true,locked:false,
+    style:{fontSize,minFontSize:8,maxLines,color,align,bold},
+  });
+  t.canvasColor='FFFFFF';
+  t.qrAppearance={background:'FFFFFF',opacity:1,margin:4};
+  if(named) {
+    t.elements=[
+      make('occasionTitle',16,20,168,68,24,2,true,'165C55'),
+      make('occasionDatePlace',16,98,168,36,11,2),
+      make('occasionStartTime',16,138,168,18,11),
+      make('orderName',16,174,168,36,17,2,true),
+      make('spotGroup',16,214,168,18,12,1,true),
+      make('qr',52,246,96,96,12,1,false,'000000'),
+      make('ticketSymbol',16,348,168,18,11,1,true,'24343B','center'),
+    ];
+  } else {
+    const w=t.ticketArea.width;
+    t.ticketArea.height=300;
+    t.elements=[
+      make('occasionTitle',28,24,w-180,72,30,2,true,'165C55'),
+      make('occasionDatePlace',28,108,w-196,38,13,2),
+      make('occasionStartTime',28,150,w-196,20,12),
+      make('orderName',28,188,w-196,24,18,1,true),
+      make('spotGroup',28,224,174,20,12,1,true),
+      make('price',210,224,w-378,20,11),
+      make('note',28,258,w-56,28,10,2),
+      make('qr',w-140,104,112,112,12,1,false,'000000'),
+      make('ticketSymbol',w-148,224,128,20,12,1,true,'24343B','center'),
+    ];
+  }
+  validateLayout({schemaVersion:3,templates:{[type]:t}});
+  return t;
+}
+
 // Portrait is a ticket-sized PDF, independently of the selected template slot.
 export function portraitPreset(): Template { const t=preset('named'),margin=3*72/25.4; return {...t,pageFit:'ticket',pageMargin:margin,page:{width:t.ticketArea.width+2*margin,height:t.ticketArea.height+2*margin},ticketArea:{...t.ticketArea,x:margin,y:margin}}; }
 

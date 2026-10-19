@@ -18,6 +18,16 @@ export interface PreviewDependencies {
   resources:typeof loadLayoutResources;
 }
 const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+// Draft text is independent of the authorized occasion and cannot select assets.
+function validPreviewOccasion(value:any):boolean {
+  const record=(v:any)=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+  const text=(v:any)=>v===null||(typeof v==='string'&&Array.from(v).length<=500);
+  const date=(v:any)=>v===null||(typeof v==='string'&&v.length<=35&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)&&Number.isFinite(Date.parse(v)));
+  return record(value)&&Object.keys(value).every(k=>['title','start_time','end_time','data'].includes(k))&&
+    typeof value.title==='string'&&text(value.title)&&
+    ['start_time','end_time'].every(k=>!(k in value)||date(value[k]))&&
+    (!('data' in value)||(record(value.data)&&Object.keys(value.data).every(k=>k==='place_name')&&(!('place_name' in value.data)||text(value.data.place_name))));
+}
 export async function handlePreview(req:Request,deps:PreviewDependencies):Promise<Response>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
   if(req.method!=='POST')return reply(405,{error:'Method not allowed'});
@@ -31,6 +41,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const {occasionId,mode,type,scenario='normal'}=body;
     if(!Number.isSafeInteger(occasionId)||occasionId<1||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
     const readOnly=body.readOnly===true;
+    if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
     const admission=await deps.authorize(auth,occasionId,count,readOnly);
     if(!admission)return reply(403,{error:'Forbidden'});
@@ -69,13 +80,20 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const initial=await resolveTicketTemplate({...occasion,features:[feature]},resources);
 
     if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')) {
-      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'&&!layout?[initial]:[])];
+      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'&&!layout&&resources.background?[initial]:[])];
       for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
     }
     template??=initial;
-    const data=sampleData(scenario,occasion,catalogError?undefined:products,template);
+    const previewOccasion=body.previewOccasion===undefined?occasion:{
+      ...occasion,
+      title:body.previewOccasion.title,
+      start_time:body.previewOccasion.start_time??null,
+      end_time:body.previewOccasion.end_time??null,
+      data:{...occasion.data,place_name:body.previewOccasion.data?.place_name??null},
+    };
+    const data=sampleData(scenario,previewOccasion,catalogError?undefined:products,template);
     const qr=QRCode.create(data[template.elements.find(e=>e.binding==='qr')!.id]!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return boundedReply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    if(mode==='resolve') return boundedReply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,previewOccasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
     boundDocumentOutput(result.bytes,1,limits);
     return boundedReply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});
