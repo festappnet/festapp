@@ -44,3 +44,19 @@ export function authoringPaymentAccounts(
     currencies: [...new Set(account.supported_currencies ?? [])].sort(),
   }));
 }
+
+/** The private eshop schema is deliberately not exposed through PostgREST. */
+export async function loadAuthoringPaymentAccounts(
+  client: { rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: any; error: unknown }> },
+  context: Record<string, number>,
+): Promise<AuthoringPaymentAccount[]> {
+  const { data, error } = await client.rpc("get_email_authoring_payment_accounts", {
+    p_unit_id: context.unit,
+    p_occasion_id: context.occasion ?? null,
+  });
+  if (error) throw error;
+  if (!Array.isArray(data?.linkedAccounts) || !Array.isArray(data?.formAccountIds)) {
+    throw new Error("Payment example metadata unavailable");
+  }
+  return authoringPaymentAccounts(data.linkedAccounts, data.formAccountIds);
+}

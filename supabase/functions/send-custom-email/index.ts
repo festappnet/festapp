@@ -9,7 +9,7 @@ import {
   getEmailTemplateAndWrapper,
 } from "../_shared/supabaseUtil.ts";
 import { authoringContextResponse } from "./authoringContext.ts";
-import { authoringPaymentAccounts, type LinkedAuthoringAccount } from "./authoringPaymentAccounts.ts";
+import { loadAuthoringPaymentAccounts } from "./authoringPaymentAccounts.ts";
 
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
 const corsHeaders = {
@@ -47,22 +47,7 @@ Deno.serve(async (req) => {
             return error ? null : data;
           },
           resolve: getEmailTemplateAndWrapper,
-          paymentAccounts: async (context) => {
-            const { data: linked, error: accountError } = await supabaseAdmin
-              .schema("eshop").from("unit_bank_accounts")
-              .select("priority,bank_accounts!inner(id,type,account_number,account_number_human_readable,supported_currencies)")
-              .eq("unit", context.unit).returns<LinkedAuthoringAccount[]>();
-            if (accountError) throw accountError;
-            let formAccountIds: number[] = [];
-            if (context.occasion) {
-              const { data: forms, error: formError } = await supabaseAdmin
-                .from("forms").select("bank_account").eq("occasion", context.occasion);
-              if (formError) throw formError;
-              formAccountIds = (forms ?? []).map((form) => form.bank_account)
-                .filter((id): id is number => Number.isSafeInteger(id) && id > 0);
-            }
-            return authoringPaymentAccounts(linked ?? [], formAccountIds);
-          },
+          paymentAccounts: (context) => loadAuthoringPaymentAccounts(supabaseAdmin, context),
         },
         corsHeaders,
       );
