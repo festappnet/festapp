@@ -14,10 +14,12 @@ class EmailPreviewProduct {
 
 class EmailPreviewContext {
   final String? occasionTitle, deadline;
+  final bool? ticketsEnabled;
   final List<EmailPreviewProduct> products;
   const EmailPreviewContext({
     this.occasionTitle,
     this.deadline,
+    this.ticketsEnabled,
     this.products = const [],
   });
 

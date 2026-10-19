@@ -59,6 +59,22 @@ void main() {
       );
     },
   );
+  test('occasion ticket mode selects canonical application or ticket markup', () {
+    for (final original in records.where((s) => s.values.containsKey('fullOrder'))) {
+      final application = original.withContext(const EmailPreviewContext(ticketsEnabled: false));
+      final ticket = original.withContext(const EmailPreviewContext(ticketsEnabled: true));
+      final label = original.locale == 'cs' ? 'Přihláška A001' : 'Application A001';
+      final ticketLabel = original.locale == 'cs' ? 'Vstupenka A001' : 'Ticket A001';
+      expect(application.values['fullOrder'], contains(label));
+      expect(application.values['fullOrder'], isNot(contains(ticketLabel)));
+      expect(ticket.values['fullOrder'], contains(ticketLabel));
+      expect(application.composeHtml('{{fullOrder}}'), contains(label));
+      expect(application.authoringCompletion('{{fullOrder}}').forToken('fullOrder', 0), contains(label));
+      final restricted = original.restrictTo({'fullOrder'}).withContext(const EmailPreviewContext(ticketsEnabled: false));
+      expect(restricted.values['fullOrder'], contains(label));
+      expect(application.restrictTo({'amount'}).applicationContextTemplates, isEmpty);
+    }
+  });
   test(
     'every generated contextual block resolves once with coherent totals',
     () {

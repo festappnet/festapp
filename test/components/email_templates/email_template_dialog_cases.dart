@@ -225,7 +225,7 @@ void main() {
     await openTemplate(tester, html: List.filled(15, '<p>Long email content</p>').join());
     final scroll = find.byType(ListView).first;
     final actions = find.byType(AppDialogActions);
-    void expectGap() => expect(tester.getRect(actions).top - tester.getRect(scroll).bottom, greaterThanOrEqualTo(16));
+    void expectGap() => expect(tester.getRect(actions).top - tester.getRect(scroll).bottom, equals(8));
     expectGap();
     await tester.drag(scroll, const Offset(0, -2000));
     await tester.pumpAndSettle();

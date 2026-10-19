@@ -7,6 +7,7 @@ import 'package:fstapp/components/email_templates/email_preview_examples.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
 
 ProductsEditBundle bundle(List<ProductModel> products) => ProductsEditBundle(
       products: products,
@@ -89,6 +90,25 @@ void main() {
     expect(scenario.values['amount'], contains('1\u00a0200'));
     expect(scenario.values['fullOrder'], isNot(contains('Jiná měna')));
   });
+  for (final enabled in [true, false]) {
+    test('occasion sampler preserves ticket feature $enabled even without catalog access', () async {
+      final occasion = OccasionModel(isOpen: true, isHidden: false, isPromoted: false,
+        id: 42, title: 'Kurz', link: 'course',
+        features: [TicketFeature(code: 'ticket', isEnabled: enabled)]);
+      for (final denied in [false, true]) {
+        final result = await loadEmailPreviewContext(occasion, loadProducts: (_) async {
+          if (denied) throw StateError('denied');
+          return bundle([ProductModel(id: 1, title: 'Účastnický poplatek', price: 1000, currencyCode: 'CZK')]);
+        });
+        expect(result.context.ticketsEnabled, enabled);
+        final examples = EmailPreviewExamples.fromJson(
+          jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()) as Map<String, dynamic>,
+          context: result.context);
+        final scenario = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
+        expect(scenario.values['fullOrder'], contains(enabled ? 'Vstupenka A001' : 'Přihláška A001'));
+      }
+    });
+  }
   test(
       'denied catalog yields a labelled model fallback retaining occasion title',
       () async {
@@ -103,6 +123,7 @@ void main() {
         loadProducts: (_) async => throw StateError('not permitted'));
     expect(result.unavailable, isTrue);
     expect(result.context.products, isEmpty);
+    expect(result.context.ticketsEnabled, isFalse);
     expect(result.context.occasionTitle, 'Ples');
   });
   test('unit templates never query an unrelated occasion', () async {
