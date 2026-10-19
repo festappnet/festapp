@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { createServer as createPortProbe } from 'node:net';
 import { createServer } from 'vite';
 const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
@@ -26,7 +27,15 @@ let server;
 try {
     const shell = (await readFile(path.join(root, 'index.html'), 'utf8'))
         .replace('src="/src/main.js"', 'src="/tests/fixtures/form_access/main.js"');
-    server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port: 0, strictPort: true },
+    // Vite treats port 0 as its default port; select a free positive port first.
+    const portProbe = createPortProbe();
+    await new Promise((resolve, reject) => {
+        portProbe.once('error', reject);
+        portProbe.listen(0, '127.0.0.1', resolve);
+    });
+    const { port } = portProbe.address();
+    await new Promise((resolve, reject) => portProbe.close(error => error ? reject(error) : resolve()));
+    server = await createServer({ root, configFile: false, logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true },
         plugins: [{ name: 'form-access-fixture', configureServer(server) {
             server.middlewares.use(async (req, res, next) => {
                 if (req.url.startsWith('/form/account-access') || req.url === '/' || req.url.startsWith('/?')) {
