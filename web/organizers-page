@@ -11,10 +11,11 @@
 .organizer-main .organizer-eyebrow{font-size:15px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:20px;color:var(--primary-color,#4465a6)}
 .organizer-hero{display:grid;grid-template-columns:1.35fr 1fr;gap:64px;align-items:center}
 .organizer-main .organizer-lead{font-size:22px;max-width:43ch;margin:24px 0 32px}
-.organizer-actions{display:flex;align-items:center;flex-wrap:wrap;gap:20px 24px}
+.organizer-actions{display:flex;align-items:stretch;flex-wrap:wrap;gap:16px}
 .organizer-actions>a{min-height:48px;display:inline-flex;align-items:center}
 .organizer-main .organizer-cta{background:var(--primary-color,#4465a6);color:var(--surface-color,#fff);border-radius:var(--radius-sm,10px);padding:14px 24px;gap:32px;font-weight:700;text-decoration:none}
 .organizer-main .organizer-cta:hover{filter:brightness(.92)}
+.organizer-actions .organizer-cta{justify-content:center;flex:1 1 200px}
 .organizer-main .organizer-note{font-size:16px;margin:16px 0 0;max-width:42ch}
 .organizer-overview{background:var(--surface-color,#fff);border-radius:24px;padding:32px}
 .organizer-overview h2{font-size:30px;max-width:18ch}
@@ -31,7 +32,8 @@
 .organizer-contact p:last-child{margin-bottom:0}
 .organizer-email{font-size:clamp(22px,2.6vw,32px);justify-self:end;overflow-wrap:anywhere;text-decoration:underline}
 .organizer-booking{margin-top:64px;scroll-margin-top:96px;min-width:0}
-.organizer-booking-frame{display:block;width:100%;height:850px;border:0;border-radius:var(--radius-sm,10px);background:var(--surface-color,#fff)}
+.organizer-booking-frame{color-scheme:light;display:block;width:100%;height:850px;border:0;border-radius:var(--radius-sm,10px);background:var(--surface-color,#fff)}
+body.dark-mode .organizer-booking-frame{color-scheme:dark}
 .organizer-faq{display:grid;grid-template-columns:1fr 1.6fr;gap:64px;margin-top:80px}
 .organizer-faq details{border-bottom:1px solid color-mix(in srgb,currentColor 18%,transparent)}
 .organizer-faq summary{cursor:pointer;font-weight:500;padding:20px 0;min-height:48px}
@@ -46,7 +48,7 @@
 <section class="organizer-hero" aria-labelledby="organizer-title">
 <div><p class="organizer-eyebrow">Pro pořadatele</p><h1 id="organizer-title">Prodej vstupenek<br>a registrace na akce</h1>
 <p class="organizer-lead">Od první přihlášky po kontrolu vstupenek u dveří. Připravte svou akci a mějte objednávky, platby i účastníky na jednom místě.</p>
-<div class="organizer-actions"><a class="organizer-cta" href="/?create=1">Založit akci <span aria-hidden="true">↗</span></a><a href="#schuzka">Domluvit ukázku</a></div><p class="organizer-note">Začněte vytvořením účtu, nebo pokračujte do správy svých akcí.</p></div>
+<div class="organizer-actions"><a class="organizer-cta" href="/?create=1">Založit akci <span aria-hidden="true">↗</span></a><a class="organizer-cta" href="#schuzka">Domluvit ukázku</a></div><p class="organizer-note">Začněte vytvořením účtu, nebo pokračujte do správy svých akcí.</p></div>
 <aside class="organizer-overview" aria-label="Co můžete připravit"><p class="organizer-eyebrow">Vaše akce. Přehledně.</p><h2>Jeden prostor pro celý průběh akce.</h2><ul><li><span>01</span><div><strong>Přihlášky a vstupenky</strong><p>Formulář podle potřeb vaší akce.</p></div></li><li><span>02</span><div><strong>Objednávky a platby</strong><p>Přehled od registrace po zaplacení.</p></div></li><li><span>03</span><div><strong>Účastníci a odbavení</strong><p>Vstupenky s QR kódem pro kontrolu u vstupu.</p></div></li></ul></aside>
 </section>
 <section class="organizer-process" aria-labelledby="steps-title"><div class="organizer-section-heading"><p class="organizer-eyebrow">Jak to funguje</p><h2 id="steps-title">Od nápadu k otevřeným dveřím</h2><p>Pro kulturní akce, tábory, kurzy i setkání. Vy připravujete program, systém vám pomůže s organizací.</p></div>
