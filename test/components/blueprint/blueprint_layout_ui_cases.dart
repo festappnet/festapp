@@ -144,6 +144,15 @@ void main() {
         revision: 1,
         document: VenueLayoutDocument(nodes: [
           LayoutNode(
+              id: '10000000-0000-4000-8000-000000000020',
+              kind: 'capacityArea',
+              label: 'Standing',
+              x: 800,
+              y: 400,
+              width: 200,
+              height: 200,
+              properties: {'capacity': 20}),
+          LayoutNode(
               id: id,
               kind: 'seat',
               parentId: '10000000-0000-4000-8000-000000000003',
@@ -160,6 +169,12 @@ void main() {
               kind: 'group',
               label: 'Group 10'),
           LayoutNode(
+              id: '10000000-0000-4000-8000-000000000011',
+              kind: 'table',
+              parentId: '10000000-0000-4000-8000-000000000010',
+              x: 400,
+              label: 'Physical table 10'),
+          LayoutNode(
               id: '10000000-0000-4000-8000-000000000002',
               kind: 'group',
               label: 'Group 2'),
@@ -172,14 +187,26 @@ void main() {
               title: 'A1',
               groupNodeId: '10000000-0000-4000-8000-000000000002')
         },
+        areaBindings: {
+          '10000000-0000-4000-8000-000000000020': const BlueprintAreaBinding(
+              nodeId: '10000000-0000-4000-8000-000000000020',
+              inventoryContextId: 7,
+              productId: 1)
+        },
         groupProducts: {
-          '10000000-0000-4000-8000-000000000002': 1
+          '10000000-0000-4000-8000-000000000002': 1,
+          '10000000-0000-4000-8000-000000000010': 1
         });
     final source = BlueprintModel(layoutSnapshot: snapshot, products: [
       ProductModel(
           id: 1,
           title: 'Standard',
           price: 100,
+          productTypeString: ProductModel.spotType),
+      ProductModel(
+          id: 2,
+          title: 'Premium',
+          price: 200,
           productTypeString: ProductModel.spotType)
     ], spots: [
       BlueprintObjectModel(id: 11, state: 'available')
@@ -193,7 +220,7 @@ void main() {
     void expectActionVisible(String key) {
       final action = find.byKey(ValueKey(key));
       expect(action.hitTestable(), findsOneWidget);
-      final badge = find.byKey(const ValueKey('blueprint-unsaved-plan'));
+      final badge = find.byType(EditorActionBar);
       if (badge.evaluate().isNotEmpty) {
         expect(tester.getRect(action).right,
             lessThanOrEqualTo(tester.getRect(badge).left));
@@ -205,12 +232,69 @@ void main() {
     final initialEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     expect(initialEditor.interactionEnabled, isFalse);
-    expect(find.byType(EditorActionBar), findsNothing);
+    expect(find.byType(EditorActionBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
+        findsOneWidget);
     expect(find.byKey(const ValueKey('layout-palette')), findsNothing);
     final canvasState = tester.state(find.byType(LayoutSceneSurface));
-    initialEditor.controller.select({id});
+    final originalDocument = initialEditor.controller.document;
+    final groupRow = find.byKey(const ValueKey(
+        'commercial-table-10000000-0000-4000-8000-000000000002'));
+    final secondRow = find.byKey(const ValueKey(
+        'commercial-table-10000000-0000-4000-8000-000000000010'));
+    final areaRow = find.byKey(
+        const ValueKey('commercial-area-10000000-0000-4000-8000-000000000020'));
+    expect(tester.getTopLeft(areaRow).dy,
+        lessThan(tester.getTopLeft(groupRow).dy));
+    await tester.tap(areaRow);
     await tester.pump();
-    expect(find.text(BlueprintStrings.selectProduct), findsNothing);
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('commercial-area-product')));
+    await tester.tap(find.byKey(const ValueKey('commercial-area-product')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<EditProductDialog>(find.byType(EditProductDialog))
+            .product
+            .id,
+        1);
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(groupRow);
+    await tester.tap(groupRow);
+    await tester.pump();
+    await tester.ensureVisible(secondRow);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.tap(secondRow);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    await tester.pumpAndSettle();
+    expect(initialEditor.controller.selection, isEmpty);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {
+          '10000000-0000-4000-8000-000000000002',
+          '10000000-0000-4000-8000-000000000010'
+        });
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('commercial-bulk-product')));
+    await tester.tap(find.byKey(const ValueKey('commercial-bulk-product')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Premium'));
+    await tester.pumpAndSettle();
+    expect(initialEditor.controller.document, same(originalDocument));
+    expect(initialEditor.controller.dirty, isTrue);
+    await tester.ensureVisible(find.byKey(const ValueKey('commercial-undo')));
+    await tester.tap(find.byKey(const ValueKey('commercial-undo')));
+    await tester.pumpAndSettle();
+    expect(initialEditor.controller.dirty, isFalse);
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({id});
+    await tester.pump();
+    expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
+    expect(initialEditor.controller.selection, isEmpty);
     expect(
         tester
             .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
@@ -242,20 +326,10 @@ void main() {
                 70));
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    final chooser = tester
-        .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
-    expect(chooser.items!.map((item) => (item.child as Text).data),
-        ['Group 2', 'Group 10']);
-    chooser.onChanged!('10000000-0000-4000-8000-000000000002');
-    await tester.pump();
-    expect(
-        editor.controller.selection, {'10000000-0000-4000-8000-000000000002'});
-    expect(editor.controller.dirty, isFalse);
-    editor.controller.select({'10000000-0000-4000-8000-000000000003'});
-    await tester.pump();
-    expect(find.text(BlueprintStrings.seatCount(1)), findsOneWidget);
-    expect(find.textContaining('${BlueprintStrings.groupDefault}: Standard'),
-        findsOneWidget);
+    expect(find.text(BlueprintStrings.selectProduct), findsNothing);
+    expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
+        findsNothing);
+    expect(editor.readOnlyLabelNodeIds, contains(id));
     editor.controller.beginGesture();
     editor.controller.apply(editor.controller.document.copyWith(
         canvas: {...editor.controller.document.canvas, 'width': 2600}));
@@ -265,9 +339,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.pumpAndSettle();
     expect(tester.state(find.byType(LayoutSceneSurface)), same(canvasState));
-    expect(find.byType(EditorActionBar), findsNothing);
+    expect(find.byType(EditorActionBar), findsOneWidget);
     expect(
-        find.byKey(const ValueKey('blueprint-unsaved-plan')), findsOneWidget);
+        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
+        isTrue);
     expectActionVisible('blueprint-start-order');
     expectActionVisible('blueprint-start-swap');
     final semantics = tester.ensureSemantics();
@@ -307,7 +382,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('blueprint-cancel-operation')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('blueprint-unsaved-plan')));
+    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.pumpAndSettle();
     expect(
         tester

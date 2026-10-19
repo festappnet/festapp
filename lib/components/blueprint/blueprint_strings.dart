@@ -1,6 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
+  static String get editAreaProduct => 'FeatureBlueprint.editAreaProduct'.tr();
+  static String get tablesTitle => 'FeatureBlueprint.tablesTitle'.tr();
+  static String get standingAreas => 'FeatureBlueprint.standingAreas'.tr();
+  static String get tableSelectionHint =>
+      'FeatureBlueprint.tableSelectionHint'.tr();
+  static String get noTables => 'FeatureBlueprint.noTables'.tr();
+  static String get selectTableOrSeat =>
+      'FeatureBlueprint.selectTableOrSeat'.tr();
+  static String get useTableDefault => 'FeatureBlueprint.useTableDefault'.tr();
+  static String get defaultProductHint =>
+      'FeatureBlueprint.defaultProductHint'.tr();
+
   static String get unsavedPlanShort =>
       'FeatureBlueprint.unsavedPlanShort'.tr();
   static String get orderAction => 'FeatureBlueprint.orderAction'.tr();

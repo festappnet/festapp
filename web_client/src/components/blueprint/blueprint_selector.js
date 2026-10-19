@@ -147,8 +147,8 @@ export class BlueprintSelector {
                 options.minZoom = 1; options.maxZoom = 5;
                 options.tooltipOffset = 15;
                 options.tooltipStyle = {
-                    zIndex: '3100', background: 'white', border: '2px solid black',
-                    borderRadius: '8px', padding: '6px 10px', color: 'black',
+                    zIndex: '3100', background: 'var(--card-bg, #fff)', border: '2px solid var(--text-color, #000)',
+                    borderRadius: '8px', padding: '6px 10px', color: 'var(--text-color, #000)',
                     font: 'inherit', fontSize: '14px', lineHeight: 'normal',
                     whiteSpace: 'pre-wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxWidth: '300px',
                 };

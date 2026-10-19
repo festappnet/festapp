@@ -67,6 +67,108 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
+      'table defaults preserve overrides, undo atomically and protect held seats',
+      () {
+    final groupA = newLayoutId(),
+        groupB = newLayoutId(),
+        tableA = newLayoutId();
+    final inheritedA = newLayoutId(),
+        overrideA = newLayoutId(),
+        inheritedB = newLayoutId();
+    final base = BlueprintLayoutSnapshot(
+        blueprintId: 4,
+        occasionId: 8,
+        title: 'Hall',
+        revision: 2,
+        document: VenueLayoutDocument(nodes: [
+          LayoutNode(id: groupA, kind: 'group', label: 'A', x: 300, y: 300),
+          LayoutNode(id: groupB, kind: 'group', label: 'B', x: 600, y: 300),
+          LayoutNode(id: tableA, kind: 'table', parentId: groupA, label: 'A'),
+          LayoutNode(
+              id: inheritedA, kind: 'seat', parentId: groupA, label: 'A1'),
+          LayoutNode(
+              id: overrideA,
+              kind: 'seat',
+              parentId: groupA,
+              x: 60,
+              label: 'A2'),
+          LayoutNode(
+              id: inheritedB, kind: 'seat', parentId: groupB, label: 'B1'),
+        ]),
+        groupProducts: {
+          groupA: 1,
+          groupB: 1
+        },
+        seatBindings: {
+          inheritedA: BlueprintSeatBinding(
+              nodeId: inheritedA,
+              spotId: 11,
+              groupNodeId: groupA,
+              productId: 1,
+              title: 'A1'),
+          overrideA: BlueprintSeatBinding(
+              nodeId: overrideA,
+              spotId: 12,
+              groupNodeId: groupA,
+              productId: 2,
+              title: 'A2'),
+          inheritedB: BlueprintSeatBinding(
+              nodeId: inheritedB,
+              spotId: 13,
+              groupNodeId: groupB,
+              productId: 1,
+              title: 'B1'),
+        });
+    final products = [
+      for (var id = 1; id <= 3; id++)
+        ProductModel(
+            id: id,
+            title: 'P$id',
+            price: id * 100.0,
+            productTypeString: ProductModel.spotType)
+    ];
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: base, products: products));
+    addTearDown(c.dispose);
+    c.applyGroupsProduct({groupA, groupB}, 3);
+    expect(c.snapshot.groupProducts, {groupA: 3, groupB: 3});
+    expect(c.snapshot.seatBindings[inheritedA]!.productId, 3);
+    expect(c.snapshot.seatBindings[inheritedB]!.productId, 3);
+    expect(c.snapshot.seatBindings[overrideA]!.productId, 2);
+    expect(c.layout.document, same(base.document));
+    final payload =
+        BlueprintLayoutSaveRequest(snapshot: c.snapshot, baseline: base)
+            .toJson();
+    expect((payload['groupProductChanges'] as List).length, 2);
+    c.layout.undo();
+    expect(c.snapshot.groupProducts, base.groupProducts);
+    expect(c.snapshot.seatBindings[inheritedA]!.productId, 1);
+    expect(c.isDirty, isFalse);
+    c.renameCommercialNode(groupA, 'Front table');
+    expect(c.layout.document.nodes.first.label, 'Front table');
+    expect(c.layout.document.nodes.firstWhere((n) => n.id == tableA).label,
+        'Front table');
+    expect(c.snapshot.seatBindings[inheritedA]!.title, 'A1');
+    c.layout.undo();
+    c.renameCommercialNode(inheritedA, 'A-special');
+    expect(c.snapshot.seatBindings[inheritedA]!.title, 'A-special');
+    expect(c.snapshot.seatBindings[inheritedA]!.spotId, 11);
+    c.layout.undo();
+    c.refreshLive(BlueprintModel(
+        layoutSnapshot: base,
+        products: products,
+        spots: [BlueprintObjectModel(id: 13, state: 'ordered')]));
+    expect(() => c.applyGroupsProduct({groupA, groupB}, 3), throwsStateError);
+    expect(c.snapshot.groupProducts, base.groupProducts);
+    expect(c.snapshot.seatBindings[inheritedA]!.productId, 1);
+    c.applyGroupsProduct({groupA, groupB}, 3, freeOnly: true);
+    expect(c.snapshot.seatBindings[inheritedA]!.productId, 3);
+    expect(c.snapshot.seatBindings[inheritedB]!.productId, 1);
+    expect(c.snapshot.seatBindings[overrideA]!.productId, 2);
+    expect(() => c.renameCommercialNode(inheritedB, 'Reserved rename'),
+        throwsStateError);
+  });
+  test(
       'new native table seats retain ancestor business group and existing lettering/default/overrides',
       () {
     const added = '10000000-0000-4000-8000-000000000003';

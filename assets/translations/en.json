@@ -1255,6 +1255,14 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "editAreaProduct": "Edit product and price",
+    "tablesTitle": "Tables",
+    "standingAreas": "Standing areas",
+    "tableSelectionHint": "Select a table. Shift adds another.",
+    "noTables": "This plan has no tables yet.",
+    "selectTableOrSeat": "Select a table or an individual seat.",
+    "useTableDefault": "Use the table default product",
+    "defaultProductHint": "The default applies to new and inherited seats. Individual product overrides are kept.",
     "unsavedPlanShort": "Unsaved",
     "orderAction": "Order",
     "editPlan": "Edit plan",

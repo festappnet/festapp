@@ -75,6 +75,9 @@ class BlueprintLayoutController extends ChangeNotifier
   void upsertCatalogProduct(ProductModel product) {
     if (product.id == null) throw ArgumentError('catalog_product_id_required');
     adapter.products = {...adapter.products, product.id!: product};
+    for (final spot in adapter.spots.values) {
+      if (spot.product?.id == product.id) spot.product = product;
+    }
     notifyListeners();
   }
 
@@ -157,22 +160,58 @@ class BlueprintLayoutController extends ChangeNotifier
   }
 
   void applyGroupProduct(String groupId, int productId,
-      {bool freeOnly = false}) {
+          {bool freeOnly = false}) =>
+      applyGroupsProduct({groupId}, productId, freeOnly: freeOnly);
+
+  /// Update defaults and inherited assignments in one undo step. A seat whose
+  /// product differs from its old table default keeps that explicit override.
+  void applyGroupsProduct(Set<String> groupIds, int productId,
+      {bool freeOnly = false, Set<String> additionalSeatIds = const {}}) {
     _requireProduct(productId);
+    if (groupIds.isEmpty) return;
     final members = _draft.seatBindings.values
-        .where((s) => s.groupNodeId == groupId)
+        .where((s) =>
+            additionalSeatIds.contains(s.nodeId) ||
+            (groupIds.contains(s.groupNodeId) &&
+                s.productId == _draft.groupProducts[s.groupNodeId]))
         .toList();
     if (!freeOnly && members.any(adapter.protected))
       throw StateError('protected_spot');
     _mutate(() => _draft = _draft.copyWith(groupProducts: {
           ..._draft.groupProducts,
-          groupId: productId
+          for (final id in groupIds) id: productId
         }, seatBindings: {
           ..._draft.seatBindings,
           for (final s in members)
             if (!adapter.protected(s))
               s.nodeId: s.copyWith(productId: productId)
         }));
+  }
+
+  void renameCommercialNode(String nodeId, String title) {
+    if (layout.readOnly || isBusy) throw StateError('blueprint_read_only');
+    final value = title.trim();
+    if (value.isEmpty) throw ArgumentError('name_required');
+    final node = layout.document.nodes.firstWhere((n) => n.id == nodeId);
+    if (!const {'seat', 'table', 'group', 'capacityArea'}.contains(node.kind))
+      throw ArgumentError('not_commercial_node');
+    if (node.kind == 'seat' && isProtected(nodeId))
+      throw StateError('protected_spot');
+    if (!layout.apply(
+        layout.document.copyWith(nodes: [
+          for (final n in layout.document.nodes)
+            n.id == nodeId ||
+                    (node.kind == 'group' &&
+                        n.kind == 'table' &&
+                        blueprintCommercialGroupFor(n, layout.document,
+                                groupProducts: _draft.groupProducts) ==
+                            nodeId)
+                ? n.copyWith(label: value)
+                : n
+        ]),
+        label: 'Rename commercial item')) {
+      throw StateError(layout.error ?? 'invalid_name');
+    }
   }
 
   void setBlocked(String nodeId, bool blocked) {

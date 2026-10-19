@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -41,6 +42,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   late BlueprintLayoutController controller;
   final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
+  Set<String> _commercialSelection = {};
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
   final _assets = BlueprintLayoutAssetResolver();
@@ -409,9 +411,13 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   Future<void> _bulkProduct() async {
-    final ids = controller.layout.selection
-        .where(controller.snapshot.seatBindings.containsKey)
-        .toSet();
+    final groups = _selectedCommercialGroups;
+    final ids = {
+      for (final seat in controller.snapshot.seatBindings.values)
+        if (groups.contains(seat.groupNodeId) ||
+            _commercialSelection.contains(seat.nodeId))
+          seat.nodeId,
+    };
     final blockers = ids.where(controller.isProtected).length;
     var freeOnly = false;
     if (blockers > 0) {
@@ -442,37 +448,22 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 .where((s) => s.productId == id)
                 .length));
     if (product != null && mounted)
-      await _run(() async =>
-          controller.assignProducts(ids, product.id!, freeOnly: freeOnly));
+      await _run(() async {
+        if (groups.isNotEmpty) {
+          controller.applyGroupsProduct(groups, product.id!,
+              freeOnly: freeOnly,
+              additionalSeatIds: _commercialSelection
+                  .where(controller.snapshot.seatBindings.containsKey)
+                  .toSet());
+        } else {
+          controller.assignProducts(ids, product.id!, freeOnly: freeOnly);
+        }
+      });
   }
 
   Widget _inspector(BuildContext context, LayoutNode node) {
     final snapshot = controller.snapshot;
     final binding = snapshot.seatBindings[node.id];
-    if (!_editingPlan) {
-      final spot =
-          binding == null ? null : controller.adapter.spots[binding.spotId];
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(binding?.title ?? node.label,
-                style: Theme.of(context).textTheme.titleMedium),
-            if (binding != null) ...[
-              const SizedBox(height: 8),
-              Text(BlueprintStrings.seatState(
-                  controller.adapter.state(binding).name)),
-              const SizedBox(height: 8),
-              if (_canOrder && spot != null)
-                SelectableText(spot.blueprintTooltip(context))
-              else
-                Text(_productText(binding.productId)),
-            ],
-          ],
-        ),
-      );
-    }
 
     final commercialGroupId = binding?.groupNodeId ??
         (node.kind == 'table'
@@ -501,6 +492,22 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(children: [
+              Expanded(
+                  child: Text(
+                      binding?.title ?? commercialGroup?.label ?? node.label,
+                      style: Theme.of(context).textTheme.titleMedium)),
+              if (_canEdit)
+                IconButton(
+                    tooltip: CommonStrings.rename,
+                    key: ValueKey(
+                        'rename-commercial-${binding != null ? node.id : commercialGroupId}'),
+                    onPressed: _busy || protected
+                        ? null
+                        : () => _renameCommercial(
+                            binding != null ? node : commercialGroup ?? node),
+                    icon: const Icon(Icons.edit_outlined, size: 18)),
+            ]),
             if (commercialGroupId != node.id && commercialGroup != null)
               Text(commercialGroup.label.isEmpty
                   ? commercialGroupId
@@ -518,6 +525,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               Text(
                   '${BlueprintStrings.groupDefault}: ${_productText(defaultId)}'),
             if (isGroup) Text(BlueprintStrings.seatCount(members.length)),
+            if (isGroup)
+              Text(BlueprintStrings.defaultProductHint,
+                  style: Theme.of(context).textTheme.bodySmall),
             if (isGroup && members.isEmpty) Text(BlueprintStrings.emptyGroup),
             if (binding != null && binding.groupNodeId != null)
               Text(binding.productId == defaultId
@@ -541,6 +551,16 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                         .blueprintTooltip(context))
                   ]),
             if (_canEdit) ...[
+              if (binding != null &&
+                  defaultId != null &&
+                  binding.productId != defaultId)
+                TextButton(
+                    key: const ValueKey('restore-table-product'),
+                    onPressed: _busy || protected
+                        ? null
+                        : () => _run(() async =>
+                            controller.assignSeatProduct(node.id, defaultId)),
+                    child: Text(BlueprintStrings.useTableDefault)),
               TextButton.icon(
                   onPressed: _busy || protected || (isGroup && blockers > 0)
                       ? null
@@ -576,55 +596,248 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       ListTile(
                           title: Text(seat.title),
                           subtitle: Text(_productText(seat.productId)),
-                          onTap: !_canEdit ||
-                                  _busy ||
-                                  controller.isProtected(seat.nodeId)
+                          selected: _commercialSelection.contains(seat.nodeId),
+                          onTap: _busy
                               ? null
-                              : () => _product(seat.nodeId))
+                              : () => _setCommercialSelection({seat.nodeId}))
                   ]),
           ],
         ));
   }
 
-  Widget _groupChooser() {
-    final groupIds = {
+  String _commercialId(LayoutNode node) {
+    final snapshot = controller.snapshot;
+    if (snapshot.groupProducts.containsKey(node.id) ||
+        snapshot.seatBindings.values.any((seat) => seat.groupNodeId == node.id))
+      return node.id;
+    return blueprintCommercialGroupFor(node, controller.layout.document,
+            groupProducts: snapshot.groupProducts) ??
+        node.id;
+  }
+
+  Map<String, LayoutNode> get _commercialTables {
+    final nodes = {for (final n in controller.layout.document.nodes) n.id: n};
+    final ids = {
       ...controller.snapshot.groupProducts.keys,
       ...controller.snapshot.seatBindings.values
           .map((seat) => seat.groupNodeId)
           .whereType<String>(),
+      for (final n in nodes.values)
+        if (n.kind == 'table') _commercialId(n),
     };
-    final groups = controller.layout.document.nodes
-        .where((node) => node.kind == 'group' || groupIds.contains(node.id))
-        .toList()
-      ..sort((a, b) => Utilities.naturalCompare(a.label, b.label));
-    if (groups.isEmpty) return const SizedBox.shrink();
-    final selected = controller.layout.selection;
-    final value =
-        selected.length == 1 && groups.any((g) => g.id == selected.first)
-            ? selected.first
-            : null;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 240),
-      child: DropdownButton<String>(
-        isExpanded: true,
-        value: value,
-        hint: Text(BlueprintStrings.groupsTitle),
-        items: groups
-            .map((group) => DropdownMenuItem(
-                  value: group.id,
-                  child: Text(
-                      group.label.isEmpty
-                          ? BlueprintStrings.groupsTitle
-                          : group.label,
-                      overflow: TextOverflow.ellipsis),
-                ))
-            .toList(),
-        onChanged: _busy
-            ? null
-            : (id) {
-                if (id != null) controller.layout.select({id});
-              },
-      ),
+    final tables = [
+      for (final id in ids)
+        if (nodes[id] != null) nodes[id]!
+    ]..sort((a, b) => Utilities.naturalCompare(a.label, b.label));
+    return {for (final n in tables) n.id: n};
+  }
+
+  Set<String> get _selectedCommercialGroups => {
+        for (final id in _commercialSelection)
+          if (_commercialTables.containsKey(id)) id,
+      };
+
+  String _viewSelectionTarget(String id) {
+    final node =
+        controller.layout.document.nodes.where((n) => n.id == id).firstOrNull;
+    return node?.kind == 'table' ? _commercialId(node!) : id;
+  }
+
+  void _setCommercialSelection(Set<String> selection) {
+    if (_busy || controller.mode != BlueprintLayoutMode.manage) return;
+    final nodes = {for (final n in controller.layout.document.nodes) n.id};
+    setState(() => _commercialSelection = {
+          for (final id in selection)
+            if (nodes.contains(id)) _viewSelectionTarget(id),
+        });
+  }
+
+  void _selectCommercialRow(String id) {
+    final next = HardwareKeyboard.instance.isShiftPressed
+        ? {..._commercialSelection}
+        : <String>{};
+    if (!next.add(id)) next.remove(id);
+    _setCommercialSelection(next);
+  }
+
+  Future<void> _renameCommercial(LayoutNode node) async {
+    var name = controller.snapshot.seatBindings[node.id]?.title ?? node.label;
+    final value = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AppAlertDialog(
+              title: Text(CommonStrings.rename),
+              content: TextFormField(
+                  initialValue: name,
+                  autofocus: true,
+                  onChanged: (value) => name = value,
+                  decoration: InputDecoration(labelText: CommonStrings.name),
+                  onFieldSubmitted: (value) {
+                    if (value.trim().isNotEmpty)
+                      Navigator.pop(dialogContext, value);
+                  }),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(CommonStrings.cancel)),
+                FilledButton(
+                    onPressed: () {
+                      if (name.trim().isNotEmpty)
+                        Navigator.pop(dialogContext, name);
+                    },
+                    child: Text(CommonStrings.save)),
+              ],
+            ));
+    if (!mounted || value == null) return;
+    await _run(() async => controller.renameCommercialNode(node.id, value));
+  }
+
+  Future<void> _editAreaProduct(LayoutNode area) async {
+    if (!_canEdit || _busy) return;
+    final product = controller
+        .products[controller.snapshot.areaBindings[area.id]?.productId];
+    if (product == null) return;
+    final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (_) =>
+            EditProductDialog(product: product.copyWith(), isCreating: false));
+    if (result == null || !mounted) return;
+    await _run(() async {
+      setState(() => _operationPending = true);
+      try {
+        final updated = product.copyWith(
+            title: result['title'] as String, price: result['price'] as double);
+        final id = await DbEshop.updateProduct(updated);
+        if (mounted) controller.upsertCatalogProduct(updated.copyWith(id: id));
+      } finally {
+        if (mounted) setState(() => _operationPending = false);
+      }
+    });
+  }
+
+  Widget _reservationsPanel(Map<String, LayoutNode> tables) {
+    final areas = controller.layout.document.nodes
+        .where((node) => node.kind == 'capacityArea')
+        .toList();
+    final selectedNodes = controller.layout.document.nodes
+        .where((node) => _commercialSelection.contains(node.id))
+        .toList();
+    final selectedGroups = _selectedCommercialGroups;
+    final tableRows = tables.values.toList();
+    return SingleChildScrollView(
+      key: const ValueKey('blueprint-reservations-panel'),
+      padding: const EdgeInsets.all(12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (areas.isNotEmpty) ...[
+          Text(BlueprintStrings.standingAreas,
+              style: Theme.of(context).textTheme.titleMedium),
+          for (final area in areas)
+            ListTile(
+              key: ValueKey('commercial-area-${area.id}'),
+              contentPadding: EdgeInsets.zero,
+              selected: _commercialSelection.contains(area.id),
+              title: Text(area.label.isEmpty
+                  ? BlueprintStrings.standingAreas
+                  : area.label),
+              subtitle: Text(_productText(
+                  controller.snapshot.areaBindings[area.id]?.productId)),
+              onTap: () => _selectCommercialRow(area.id),
+            ),
+          const Divider(),
+        ],
+        Row(children: [
+          Expanded(
+              child: Text(BlueprintStrings.tablesTitle,
+                  style: Theme.of(context).textTheme.titleMedium)),
+          if (_canEdit) ...[
+            IconButton(
+                key: const ValueKey('commercial-undo'),
+                tooltip: VenueLayoutStrings.text(context, 'Undo'),
+                onPressed: _busy || !controller.layout.canUndo
+                    ? null
+                    : controller.layout.undo,
+                icon: const Icon(Icons.undo, size: 18)),
+            IconButton(
+                key: const ValueKey('commercial-redo'),
+                tooltip: VenueLayoutStrings.text(context, 'Redo'),
+                onPressed: _busy || !controller.layout.canRedo
+                    ? null
+                    : controller.layout.redo,
+                icon: const Icon(Icons.redo, size: 18)),
+          ],
+        ]),
+        Text(BlueprintStrings.tableSelectionHint,
+            style: Theme.of(context).textTheme.bodySmall),
+        if (tables.isEmpty) Text(BlueprintStrings.noTables),
+        if (tables.isNotEmpty)
+          SizedBox(
+              height: (tables.length * 64.0).clamp(64, 220).toDouble(),
+              child: ListView.builder(
+                primary: false,
+                itemCount: tableRows.length,
+                itemBuilder: (context, index) {
+                  final table = tableRows[index];
+                  return ListTile(
+                    key: ValueKey('commercial-table-${table.id}'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    selected: selectedGroups.contains(table.id),
+                    leading: Icon(
+                        selectedGroups.contains(table.id)
+                            ? Icons.check_circle
+                            : Icons.table_restaurant_outlined,
+                        size: 20),
+                    title: Text(table.label.isEmpty
+                        ? BlueprintStrings.tablesTitle
+                        : table.label),
+                    subtitle: Text(
+                        _productText(
+                            controller.snapshot.groupProducts[table.id]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    onTap: () => _selectCommercialRow(table.id),
+                  );
+                },
+              )),
+        const Divider(),
+        if (selectedGroups.length > 1) ...[
+          Text(BlueprintStrings.selectedCount(selectedGroups.length)),
+          if (_canEdit)
+            FilledButton.icon(
+                key: const ValueKey('commercial-bulk-product'),
+                onPressed: _busy ? null : _bulkProduct,
+                icon: const Icon(Icons.sell_outlined),
+                label: Text(BlueprintStrings.assignProductToGroup)),
+        ] else if (selectedNodes.length == 1) ...[
+          if (selectedNodes.single.kind == 'capacityArea') ...[
+            Text(selectedNodes.single.label,
+                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+                '${selectedNodes.single.properties['capacity'] ?? 0} ${BlueprintStrings.standingAreas}'),
+            if (_canEdit &&
+                controller.products.containsKey(controller
+                    .snapshot.areaBindings[selectedNodes.single.id]?.productId))
+              TextButton.icon(
+                  key: const ValueKey('commercial-area-product'),
+                  onPressed: _busy
+                      ? null
+                      : () => _editAreaProduct(selectedNodes.single),
+                  icon: const Icon(Icons.sell_outlined),
+                  label: Text(BlueprintStrings.editAreaProduct)),
+            if (_canEdit)
+              Text(BlueprintStrings.catalogSaveNotice,
+                  style: Theme.of(context).textTheme.bodySmall),
+            if (_canEdit)
+              TextButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () => _renameCommercial(selectedNodes.single),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(CommonStrings.rename)),
+          ] else
+            _inspector(context, selectedNodes.single),
+        ] else
+          Text(BlueprintStrings.selectTableOrSeat),
+      ]),
     );
   }
 
@@ -674,20 +887,11 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 ),
               ),
           const SizedBox(width: 12),
-          if (_editingPlan) _groupChooser(),
           if (_editingPlan && _canEdit)
             IconButton(
                 onPressed: _busy ? null : _chooseFont,
                 tooltip: BlueprintStrings.fontFamily,
                 icon: const Icon(Icons.font_download_outlined)),
-          if (_canEdit &&
-              _editingPlan &&
-              controller.layout.selection.length > 1)
-            TextButton.icon(
-                onPressed: _busy ? null : _bulkProduct,
-                icon: const Icon(Icons.sell_outlined),
-                label: Text(BlueprintStrings.selectedCount(
-                    controller.layout.selection.length))),
           if (_canEdit && _editingPlan)
             IconButton(
                 tooltip: BlueprintStrings.background,
@@ -769,72 +973,92 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
       animation: controller,
-      builder: (context, _) => CallbackShortcuts(
-              bindings: {
-                const SingleActivator(LogicalKeyboardKey.escape): () {
-                  if (!_editingPlan) _cancelOperation();
-                }
-              },
-              child: Focus(
-                  focusNode: _hostFocus,
-                  autofocus: true,
-                  child: Scaffold(
-                    body: SafeArea(
-                        child: Column(children: [
-                      if (_busy) const LinearProgressIndicator(),
-                      if (_message != null)
-                        Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Semantics(
-                                liveRegion: true,
-                                child: Text(_message!,
-                                    style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .error)))),
-                      if (_assetsFailed)
-                        TextButton(
-                            onPressed: _assetsPending ? null : _loadAssets,
-                            child: Text(CommonStrings.retry)),
-                      Expanded(
-                          child: AbsorbPointer(
-                              absorbing: _busy || _assetsFailed,
-                              child: VenueLayoutEditor(
-                                  controller: controller.layout,
-                                  toolbarLeading: _toolbarActions(),
-                                  toolbarTrailing: _editingPlan
-                                      ? EditorActionBar(
-                                          inline: true,
-                                          hasChanges: controller.isDirty,
-                                          enabled: _canEdit && !_busy,
-                                          onSave: () => _run(_save),
-                                          onDiscard: () => _run(
-                                              () async => controller.cancel()),
-                                        )
-                                      : controller.isDirty
-                                          ? Tooltip(
-                                              message:
-                                                  BlueprintStrings.unsavedPlan,
-                                              child: TextButton.icon(
-                                                key: const ValueKey(
-                                                    'blueprint-unsaved-plan'),
-                                                onPressed: _busy || !_canEdit
-                                                    ? null
-                                                    : () => _setScreenMode(
-                                                        _BlueprintScreenMode
-                                                            .edit),
-                                                icon:
-                                                    const Icon(Icons.edit_note),
-                                                label: Text(BlueprintStrings
-                                                    .unsavedPlanShort),
-                                              ),
-                                            )
-                                          : null,
-                                  inspectorBuilder: _inspector,
-                                  seatPresentation: _presentations,
-                                  interactionEnabled: _editingPlan,
-                                  showGallery: _editingPlan && _canEdit,
-                                  onNodeActivated: controller.activateNode))),
-                    ])),
-                  ))));
+      builder: (context, _) {
+        final tables = _commercialTables;
+        return CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): () {
+                if (!_editingPlan) _cancelOperation();
+              }
+            },
+            child: Focus(
+                focusNode: _hostFocus,
+                autofocus: true,
+                child: Scaffold(
+                  body: SafeArea(
+                      child: Column(children: [
+                    if (_busy) const LinearProgressIndicator(),
+                    if (_message != null)
+                      Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Semantics(
+                              liveRegion: true,
+                              child: Text(_message!,
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error)))),
+                    if (_assetsFailed)
+                      TextButton(
+                          onPressed: _assetsPending ? null : _loadAssets,
+                          child: Text(CommonStrings.retry)),
+                    Expanded(
+                        child: AbsorbPointer(
+                            absorbing: _busy || _assetsFailed,
+                            child: VenueLayoutEditor(
+                                controller: controller.layout,
+                                toolbarLeading: _toolbarActions(),
+                                toolbarTrailing: _canEdit
+                                    ? EditorActionBar(
+                                        inline: true,
+                                        hasChanges: controller.isDirty,
+                                        enabled: !_busy,
+                                        onSave: () => _run(_save),
+                                        onDiscard: () => _run(
+                                            () async => controller.cancel()),
+                                      )
+                                    : null,
+                                inspectorOverride: _editingPlan
+                                    ? null
+                                    : _reservationsPanel(tables),
+                                viewSelection: _editingPlan
+                                    ? null
+                                    : controller.mode ==
+                                            BlueprintLayoutMode.manage
+                                        ? _commercialSelection
+                                        : controller.operationSelection,
+                                onViewSelectionChanged: _editingPlan
+                                    ? null
+                                    : _setCommercialSelection,
+                                viewSelectionTarget: _viewSelectionTarget,
+                                viewSelectableIds: _editingPlan
+                                    ? null
+                                    : {
+                                        for (final node
+                                            in controller.layout.document.nodes)
+                                          if (node.kind == 'seat' ||
+                                              node.kind == 'capacityArea' ||
+                                              (controller.mode ==
+                                                      BlueprintLayoutMode
+                                                          .manage &&
+                                                  (node.kind == 'table' ||
+                                                      tables.containsKey(
+                                                          node.id))))
+                                            node.id,
+                                      },
+                                readOnlyLabelNodeIds: {
+                                  for (final node
+                                      in controller.layout.document.nodes)
+                                    if (const {'seat', 'table', 'capacityArea'}
+                                            .contains(node.kind) ||
+                                        tables.containsKey(node.id))
+                                      node.id,
+                                },
+                                seatPresentation: _presentations,
+                                interactionEnabled: _editingPlan,
+                                showGallery: _editingPlan && _canEdit,
+                                onNodeActivated: controller.activateNode))),
+                  ])),
+                )));
+      });
 }

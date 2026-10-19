@@ -1255,6 +1255,14 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "editAreaProduct": "Upravit produkt a cenu",
+    "tablesTitle": "Stoly",
+    "standingAreas": "Stání",
+    "tableSelectionHint": "Klikni na stůl. Shift přidá další.",
+    "noTables": "V plánku zatím nejsou stoly.",
+    "selectTableOrSeat": "Vyber stůl nebo jednotlivé místo.",
+    "useTableDefault": "Použít výchozí produkt stolu",
+    "defaultProductHint": "Výchozí produkt platí pro nová a zděděná místa. Vlastní produkty jednotlivých míst zůstanou.",
     "unsavedPlanShort": "Neuloženo",
     "orderAction": "Objednávka",
     "editPlan": "Úprava plánku",

@@ -1,5 +1,13 @@
 {
   "FeatureBlueprint": {
+    "editAreaProduct": "Upraviť produkt a cenu",
+    "tablesTitle": "Stoly",
+    "standingAreas": "Státie",
+    "tableSelectionHint": "Klikni na stôl. Shift pridá ďalší.",
+    "noTables": "V plániku zatiaľ nie sú stoly.",
+    "selectTableOrSeat": "Vyber stôl alebo jednotlivé miesto.",
+    "useTableDefault": "Použiť predvolený produkt stola",
+    "defaultProductHint": "Predvolený produkt platí pre nové a zdedené miesta. Vlastné produkty jednotlivých miest zostanú.",
     "unsavedPlanShort": "Neuložené",
     "orderAction": "Objednávka",
     "editPlan": "Úprava plániku",
