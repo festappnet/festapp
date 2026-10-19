@@ -76,8 +76,10 @@ placeholder objects. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.
 The portable rules and preview composer live in `festapp_core/email_templates.dart`;
 localized authoring labels remain in the Flutter adapter. Required overview actions
-are also shown as read-only generated content inside the editor. They follow
-the same wrapper/body deduplication as delivery and never enter the saved draft.
+are also shown as read-only generated content inside the editor, in the
+component slot selected by delivery. Only genuine leading/trailing additions
+appear outside the authored document. They follow the same wrapper/body
+deduplication as delivery and never enter the saved draft.
 
 Payment-state presentation is owned by `_shared/orderEmailPresentation.ts`, used
 by both actual order email producers and the preview generator. Synthetic
@@ -114,8 +116,11 @@ issue capabilities. Metadata failures keep the draft and offer retry rather
 than presenting an invented sender or claiming an unwrapped body is complete.
 Deploy this backward-compatible function action before the web client.
 
-Preview composition follows delivery order: substitute authored content once,
-apply the resolved wrapper once, then complete required overview links. Email
+Preview composition follows delivery: substitute authored content once, reserve
+a missing fallback action inside that content, apply the resolved wrapper once,
+then fill its first explicit overview slot or the reserved fallback. Explicit
+links in either content or wrapper suppress automatic additions. Fallback
+actions inherit the wrapper content padding, including in cancellation mail. Email
 content uses its own typography rather than the application's font, and empty
 fixed-height spacers retain their canonical height. The current app theme only
 adapts presentation colors. The resolved wrapper's banners load through the

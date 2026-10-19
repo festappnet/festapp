@@ -19,30 +19,99 @@ String escapeEmailHtml(String value) => value
     .replaceAll('>', '&gt;');
 
 /// Mirrors the production pure finalizer; shared fixtures assert parity.
-String completeEmailContent(String html, List<EmailRequiredLink> links) =>
-    _completeEmailContent(html, links).html;
+String completeEmailContent(String html, List<EmailRequiredLink> links,
+        [String? wrapperHtml]) =>
+    _completeEmailContent(_wrapEmailContent(html, links, wrapperHtml), links);
 
-({String html, String automaticHtml}) _completeEmailContent(
-    String html, List<EmailRequiredLink> links) {
-  final automatic = StringBuffer();
+String _wrapEmailContent(String content, List<EmailRequiredLink> links, String? wrapperHtml) {
+  if (wrapperHtml == null || wrapperHtml.isEmpty) return content;
+  final wrapped = wrapperHtml.replaceFirst('{{content}}', content);
+  // An explicit card/wrapper slot wins. Otherwise reserve the end of content
+  // before wrapping, so the automatic action inherits the wrapper's padding.
+  if (!wrapperHtml.contains('{{content}}') || wrapped.contains(emailOverviewSlot) ||
+      !links.any((link) => _missingRequiredLink(wrapped, link))) return wrapped;
+  final bodyEnd = RegExp(r'</body>', caseSensitive: false);
+  final reserved = bodyEnd.hasMatch(content)
+      ? content.replaceFirst(bodyEnd, '$emailOverviewSlot</body>')
+      : '$content$emailOverviewSlot';
+  return wrapperHtml.replaceFirst('{{content}}', reserved);
+}
+
+bool _missingRequiredLink(String html, EmailRequiredLink link) =>
+    link.url.isNotEmpty && !html.contains('href="${escapeEmailHtml(link.url)}"');
+
+String _completeEmailContent(
+    String html, List<EmailRequiredLink> links,
+    {void Function(int offset, String html, int replacedLength)? onInsertion}) {
   for (final link in links) {
-    if (link.url.isEmpty ||
-        html.contains('href="${escapeEmailHtml(link.url)}"'))
-      continue;
-    automatic.write(link.html);
+    if (!_missingRequiredLink(html, link)) continue;
     if (html.contains(emailOverviewSlot)) {
+      onInsertion?.call(html.indexOf(emailOverviewSlot), link.html, emailOverviewSlot.length);
       html = html.replaceFirst(emailOverviewSlot, link.html);
     } else if (RegExp(r'</body>', caseSensitive: false).hasMatch(html)) {
+      onInsertion?.call(RegExp(r'</body>', caseSensitive: false).firstMatch(html)!.start, link.html, 0);
       html = html.replaceFirst(
         RegExp(r'</body>', caseSensitive: false),
         '${link.html}</body>',
       );
     } else {
+      onInsertion?.call(html.length, link.html, 0);
       html += link.html;
     }
   }
-  return (html: html.replaceAll(emailOverviewSlot, ''),
-      automaticHtml: automatic.toString());
+  return html.replaceAll(emailOverviewSlot, '');
+}
+
+/// Read-only presentation of delivery's automatic additions in editor order.
+class EmailAuthoringCompletion {
+  final Map<String, List<String>> tokenHtml;
+  final String leadingHtml, trailingHtml;
+  const EmailAuthoringCompletion({required this.tokenHtml,
+    required this.leadingHtml, required this.trailingHtml});
+  String? forToken(String code, int occurrence) {
+    final values = tokenHtml[code];
+    return values != null && occurrence < values.length ? values[occurrence] : null;
+  }
+}
+
+class _PreviewTokenSpan {
+  final String code;
+  int start, end;
+  String html;
+  _PreviewTokenSpan(this.code, this.start, this.end, this.html);
+}
+
+class _AuthoringCompletionCapture {
+  final spans = <_PreviewTokenSpan>[];
+  final leading = StringBuffer(), trailing = StringBuffer();
+  int bodyStart = 0;
+  void insert(int offset, String html, int replacedLength) {
+    final owner = spans.where((s) => offset >= s.start && offset < s.end).firstOrNull;
+    if (owner != null) {
+      final local = offset - owner.start;
+      owner.html = owner.html.replaceRange(local, local + replacedLength, html);
+    } else {
+      (offset < bodyStart ? leading : trailing).write(html);
+    }
+    final delta = html.length - replacedLength;
+    for (final span in spans) {
+      if (span == owner) {
+        span.end += delta;
+      } else if (span.start >= offset) {
+        span.start += delta;
+        span.end += delta;
+      }
+    }
+    if (offset < bodyStart) bodyStart += delta;
+  }
+  EmailAuthoringCompletion finish() {
+    final values = <String, List<String>>{};
+    for (final span in spans) {
+      values.putIfAbsent(span.code, () => []).add(span.html.replaceAll(emailOverviewSlot, ''));
+    }
+    return EmailAuthoringCompletion(tokenHtml: values,
+      leadingHtml: leading.toString(), trailingHtml: trailing.toString());
+  }
 }
 
 class EmailPreviewScenario {
@@ -155,15 +224,16 @@ class EmailPreviewScenario {
   /// One scan over authored HTML. Substituted fragments are never reprocessed.
   /// Rich content is admitted only in text context, never HTML attributes.
   String composeHtml(String html, {String? wrapperHtml}) =>
-      _compose(html, wrapperHtml: wrapperHtml).html;
+      _compose(html, wrapperHtml: wrapperHtml);
 
-  /// Generated completion only, after checking the substituted draft and wrapper.
-  /// For a read-only editor footer; never part of the authored document.
-  String automaticCompletionHtml(String html, {String? wrapperHtml}) =>
-      _compose(html, wrapperHtml: wrapperHtml).automaticHtml;
+  EmailAuthoringCompletion authoringCompletion(String html, {String? wrapperHtml}) {
+    final capture = _AuthoringCompletionCapture();
+    _compose(html, wrapperHtml: wrapperHtml, capture: capture);
+    return capture.finish();
+  }
 
-  ({String html, String automaticHtml}) _compose(
-      String html, {String? wrapperHtml}) {
+  String _compose(
+      String html, {String? wrapperHtml, _AuthoringCompletionCapture? capture}) {
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -202,6 +272,9 @@ class EmailPreviewScenario {
           final value = values[code];
           if (value != null &&
               (!inTag || (quote.isNotEmpty && !richCodes.contains(code)))) {
+            if (capture != null && richCodes.contains(code)) {
+              capture.spans.add(_PreviewTokenSpan(code, out.length, out.length + value.length, value));
+            }
             final escaped = escapeEmailHtml(value);
             out.write(
               richCodes.contains(code)
@@ -232,9 +305,21 @@ class EmailPreviewScenario {
     final content = out.toString();
     // Delivery substitutes the draft, wraps it once, then completes links.
     // Wrapper placeholders must never reprocess substituted customer text.
-    final wrapped = wrapperHtml == null
-        ? content
-        : wrapperHtml.replaceFirst('{{content}}', content);
-    return _completeEmailContent(wrapped, requiredLinks);
+    final wrapped = _wrapEmailContent(content, requiredLinks, wrapperHtml);
+    if (capture != null && wrapperHtml != null && wrapperHtml.isNotEmpty) {
+      final contentOffset = wrapperHtml.indexOf('{{content}}');
+      if (contentOffset < 0) {
+        capture.spans.clear();
+        capture.bodyStart = wrapped.length;
+      } else {
+        capture.bodyStart = contentOffset;
+        for (final span in capture.spans) {
+          span.start += contentOffset;
+          span.end += contentOffset;
+        }
+      }
+    }
+    return _completeEmailContent(wrapped, requiredLinks,
+        onInsertion: capture?.insert);
   }
 }

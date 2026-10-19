@@ -55,7 +55,8 @@ abstract class TemplateAuthoringProvider {
       {bool inLink = false, bool inCode = false, bool composing = false});
   bool canInsert(String text, int offset,
       {bool inLink = false, bool inCode = false, bool composing = false});
-  Widget? preview(BuildContext context, String code) => null;
+  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) => null;
+  Widget? header(BuildContext context) => null;
   Widget? footer(BuildContext context) => null;
   void selectionChanged() {}
 }

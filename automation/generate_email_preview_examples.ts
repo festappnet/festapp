@@ -357,6 +357,7 @@ for (const record of records) {
 
 const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
+const paddedWrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
 const compositionFixtures = [
   { name: "missing fragment", html: "<p>Hello</p>", requiredLinks },
   {
@@ -379,9 +380,51 @@ const compositionFixtures = [
     html: "<p>Hello</p><!-- customer-order-overview-link -->",
     requiredLinks: [],
   },
+  {
+    name: "full authored document in padded wrapper",
+    html: "<html><body><p>Signature</p></body></html>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "empty wrapper behaves as no wrapper",
+    html: "<p>Signature</p>",
+    wrapperHtml: "",
+    requiredLinks,
+  },
+  {
+    name: "fallback inside padded table wrapper",
+    html: "<p>Cancellation</p><p>Signature</p>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "card before signature inside padded wrapper",
+    html: "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "wrapper explicit link suppresses fallback",
+    html: "<p>Signature</p>",
+    wrapperHtml: `<main style="padding:24px">{{content}}<a href="${escapeEmailHtml(url)}">Status</a></main>`,
+    requiredLinks,
+  },
+  {
+    name: "wrapper first slot retains precedence",
+    html: "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+    wrapperHtml: '<main><!-- customer-order-overview-link --><section>{{content}}</section></main>',
+    requiredLinks,
+  },
+  {
+    name: "existing authored link inside padded wrapper",
+    html: `<a href="${escapeEmailHtml(url)}">Status</a><p>Signature</p>`,
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
 ].map((f) => ({
   ...f,
-  expected: completeEmailContent(f.html, f.requiredLinks),
+  expected: completeEmailContent(f.html, f.requiredLinks, "wrapperHtml" in f ? f.wrapperHtml : undefined),
 }));
 const output = JSON.stringify(
   { version: 1, sourceDigest, sources, records, compositionFixtures },

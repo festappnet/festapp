@@ -1,5 +1,5 @@
-import { waitlistActionLink } from './emailActionLink.ts';
-import { overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
+import { overviewRequiredLinks, waitlistActionLink } from './emailActionLink.ts';
+import { overviewEmailSubstitutions } from './orderEmailOverview.ts';
 import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import {
   type DeliverEmailInput,
@@ -234,9 +234,9 @@ export async function renderWaitlistEmail(
         unit: row.unit,
       },
       substitutions,
+      requiredLinks: overviewRequiredLinks(overviewUrl),
       replyTo: context.replyTo,
     });
-  if (overviewUrl) includeOrderOverview(prepared, overviewUrl);
   return {
     prepared,
     postAction: {

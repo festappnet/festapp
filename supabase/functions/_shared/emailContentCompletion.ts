@@ -4,11 +4,27 @@ export interface EmailRequiredLink {
   url: string;
   html: string;
 }
-/** Preserve delivery's slot, exact href detection and body/fragment fallback. */
+/** Complete authored content inside its wrapper, preserving explicit slots/links. */
 export function completeEmailContent(
   html: string,
   links: EmailRequiredLink[],
+  wrapperHtml?: string | null,
 ): string {
+  if (wrapperHtml) {
+    const wrapped = wrapperHtml.replace("{{content}}", html);
+    if (
+      wrapperHtml.includes("{{content}}") &&
+      !wrapped.includes(ORDER_OVERVIEW_LINK_SLOT) &&
+      links.some((link) => link.url &&
+        !wrapped.includes(`href="${escapeEmailHtml(link.url)}"`))
+    ) {
+      // A fallback action belongs to the padded content, never outside it.
+      html = /<\/body>/i.test(html)
+        ? html.replace(/<\/body>/i, `${ORDER_OVERVIEW_LINK_SLOT}</body>`)
+        : html + ORDER_OVERVIEW_LINK_SLOT;
+    }
+    html = wrapperHtml.replace("{{content}}", html);
+  }
   for (const link of links) {
     if (!link.url || html.includes(`href="${escapeEmailHtml(link.url)}"`)) {
       continue;

@@ -908,6 +908,8 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               ? null
                                               : const NeverScrollableScrollPhysics(),
                                           slivers: [
+                                            if (controller.authoring != null)
+                                              SliverToBoxAdapter(child: controller.authoring!.header(context) ?? const SizedBox.shrink()),
                                             SuperEditor(
                                               editor: controller.editor,
                                               inputRole:
@@ -989,6 +991,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                         680.0),
                                                                 child: _TemplateComponent(
                                                                     selected: _isSelectedToken(value.code),
+                                                                    occurrence: () => _templateOccurrence(controller, value.code, value),
                                                                     provider:
                                                                         provider,
                                                                     code: value
@@ -1331,6 +1334,25 @@ class _TemplateInlineTapDelegate extends ContentTapDelegate {
   }
 }
 
+// Occurrence is document identity/order, never widget build order.
+int _templateOccurrence(RichHtmlEditorController controller, String code, Object target) {
+  var occurrence = 0;
+  for (final node in controller.editor.document) {
+    if (target is DocumentNode && node.id == target.id) return occurrence;
+    if (node is TemplateTokenBlock && node.code == code) occurrence++;
+    if (node is TextNode) {
+      final placeholders = node.text.placeholders.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      for (final entry in placeholders) {
+        final value = entry.value;
+        if (identical(value, target)) return occurrence;
+        if (value is TemplateTokenPlaceholder && value.code == code) occurrence++;
+      }
+    }
+  }
+  return occurrence;
+}
+
 class _TemplateBlockBuilder extends ComponentBuilder {
   _TemplateBlockBuilder(this.controller);
   final RichHtmlEditorController controller;
@@ -1352,6 +1374,7 @@ class _TemplateBlockBuilder extends ComponentBuilder {
         child: _TemplateComponent(
             provider: provider,
             code: node.code,
+            occurrence: () => _templateOccurrence(controller, node.code, node),
             selected: (model as HorizontalRuleComponentViewModel).selection != null,
             onSelect: () {
               controller.focusNode.requestFocus();
@@ -1373,8 +1396,9 @@ class _TemplateBlockBuilder extends ComponentBuilder {
 /// Atomic document object: identity stays in the editor, content is only a sample.
 class _TemplateComponent extends StatefulWidget {
   const _TemplateComponent({required this.provider, required this.code,
-    this.selected = false, this.onSelect, this.onDelete});
+    this.selected = false, this.onSelect, this.onDelete, this.occurrence});
   final TemplateAuthoringProvider provider;
+  final ValueGetter<int>? occurrence;
   final String code;
   final bool selected;
   final VoidCallback? onSelect;
@@ -1411,7 +1435,7 @@ class _TemplateComponentState extends State<_TemplateComponent> {
           child: GestureDetector(behavior: HitTestBehavior.translucent,
             onTap: widget.onSelect ?? _focus.requestFocus,
             child: Stack(children: [
-              widget.provider.preview(context, widget.code) ?? Text(widget.provider.sampleLabel),
+              widget.provider.preview(context, widget.code, occurrence: widget.occurrence) ?? Text(widget.provider.sampleLabel),
               if (active) Positioned.fill(child: IgnorePointer(child: DecoratedBox(
                 decoration: BoxDecoration(border: Border.all(color: colors.primary.withValues(alpha: .6)))))),
               if (active) Positioned(top: 0, right: 0,

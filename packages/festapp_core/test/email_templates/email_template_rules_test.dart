@@ -173,40 +173,44 @@ void main() {
               ),
             )
             .toList();
-        final result = completeEmailContent(fixture['html'] as String, links);
+        final result = completeEmailContent(fixture['html'] as String, links, fixture['wrapperHtml'] as String?);
         expect(result, fixture['expected'], reason: fixture['name'] as String);
         expect(completeEmailContent(result, links), result);
       }
     },
   );
-  test('automatic completion uses delivery deduplication and wrapper placement', () {
-    for (final fixture in asset['compositionFixtures'] as List) {
-      final links = (fixture['requiredLinks'] as List)
-          .map((v) => EmailRequiredLink.fromJson(Map<String, dynamic>.from(v as Map)))
-          .toList();
-      final scenario = EmailPreviewScenario(templateCode: 'ORDER', scenario: 'test',
-          locale: 'cs', tone: 'neutral', values: const {}, richCodes: const {},
-          requiredLinks: links);
-      final html = fixture['html'] as String;
-      expect(scenario.composeHtml(html), fixture['expected']);
-      final automatic = scenario.automaticCompletionHtml(html);
-      expect(scenario.automaticCompletionHtml(scenario.composeHtml(html)), isEmpty);
-      if (automatic.isNotEmpty) expect(scenario.composeHtml(html), contains(automatic));
-    }
+  test('authoring completion preserves slot ownership, duplicates and wrapper padding', () {
     const action = '<a href="https://example.test/order">Order</a>';
+    const card = '<section>Card$emailOverviewSlot</section>';
     const scenario = EmailPreviewScenario(templateCode: 'ORDER', scenario: 'test',
         locale: 'cs', tone: 'neutral',
-        values: {'button': action, 'url': 'https://example.test/order'},
-        richCodes: {'button'},
+        values: {'fullOrder': card, 'button': action, 'url': 'https://example.test/order'},
+        richCodes: {'fullOrder', 'button'},
         requiredLinks: [EmailRequiredLink(url: 'https://example.test/order', html: action)]);
-    expect(scenario.automaticCompletionHtml('<p>Text</p>'), action);
-    expect(scenario.automaticCompletionHtml('{{button}}'), isEmpty);
-    expect(scenario.automaticCompletionHtml('<a href="{{url}}">Custom</a>'), isEmpty);
-    expect(scenario.automaticCompletionHtml('<p>Text</p>',
-        wrapperHtml: '<body>{{content}}$action</body>'), isEmpty);
-    expect(scenario.composeHtml('<p>Text</p>',
-        wrapperHtml: '<body>$emailOverviewSlot{{content}}</body>'),
-        '<body>$action<p>Text</p></body>');
+    const body = '{{fullOrder}}<p>Signature</p>{{fullOrder}}';
+    final plan = scenario.authoringCompletion(body);
+    expect(plan.forToken('fullOrder', 0), '<section>Card$action</section>');
+    expect(plan.forToken('fullOrder', 1), '<section>Card</section>');
+    expect(plan.trailingHtml, isEmpty);
+    expect(scenario.composeHtml(body), '${plan.forToken('fullOrder', 0)}<p>Signature</p>${plan.forToken('fullOrder', 1)}');
+    const wrapper = '<body><div style="padding:24px">{{content}}</div></body>';
+    expect(scenario.composeHtml('<p>Text</p>', wrapperHtml: wrapper),
+        '<body><div style="padding:24px"><p>Text</p>$action</div></body>');
+    expect(scenario.authoringCompletion('<p>Text</p>', wrapperHtml: wrapper).trailingHtml, action);
+    for (final explicit in ['{{button}}', '<a href="{{url}}">Custom</a>']) {
+      final plan = scenario.authoringCompletion('$body$explicit');
+      expect(plan.forToken('fullOrder', 0), '<section>Card</section>');
+      expect(plan.trailingHtml, isEmpty);
+    }
+    final leading = scenario.authoringCompletion(body,
+        wrapperHtml: '<body>$emailOverviewSlot{{content}}</body>');
+    expect(leading.leadingHtml, action);
+    expect(leading.forToken('fullOrder', 0), '<section>Card</section>');
+    final trailing = scenario.authoringCompletion('<p>Text</p>',
+        wrapperHtml: '<body>{{content}}$emailOverviewSlot</body>');
+    expect(trailing.trailingHtml, action);
+    expect(scenario.authoringCompletion(body,
+        wrapperHtml: '<body>{{content}}$action</body>').forToken('fullOrder', 0), '<section>Card</section>');
   });
   test(
     'composer escapes once by context, never recursively substitutes values',
@@ -292,7 +296,7 @@ void main() {
     expect(zero.values['amount'], startsWith('0'));
     expect(zero.values['fullOrder'], isNot(contains('450')));
   });
-  test('preview wraps before completing links, just like delivery', () {
+  test('preview reserves completion inside wrapper without reprocessing customer text', () {
     const scenario = EmailPreviewScenario(
       templateCode: 'test',
       scenario: 'standard',
@@ -311,7 +315,7 @@ void main() {
         '<html><body><main style="padding:24px">{{content}}</main></body></html>';
     expect(
       scenario.composeHtml('<p>{{name}}</p>', wrapperHtml: wrapper),
-      '<html><body><main style="padding:24px"><p>{{content}} &amp; Jana</p></main><a href="https://example.invalid/order">Current status</a></body></html>',
+      '<html><body><main style="padding:24px"><p>{{content}} &amp; Jana</p><a href="https://example.invalid/order">Current status</a></main></body></html>',
     );
     expect(
       scenario

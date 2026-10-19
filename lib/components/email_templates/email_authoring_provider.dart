@@ -13,6 +13,11 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   final EmailTargetField field;
   EmailPreviewScenario? scenario;
   WidgetBuilder? footerBuilder;
+  WidgetBuilder? headerBuilder;
+  Listenable? previewChanges;
+  EmailAuthoringCompletion? Function()? completion;
+  @override
+  Widget? header(BuildContext context) => headerBuilder?.call(context);
   VoidCallback? onSelectionChanged;
   @override
   void selectionChanged() => onSelectionChanged?.call();
@@ -114,10 +119,14 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   String get tokenLabel => EmailTemplatesStrings.variable;
   @override
-  Widget? preview(BuildContext context, String code) {
-    final value = scenario?.values[code];
-    return value == null
-        ? Text(EmailTemplatesStrings.previewUnavailable)
-        : EmailPreviewHtml(html: value);
+  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) {
+    Widget render() {
+      final value = completion?.call()?.forToken(code, occurrence?.call() ?? 0) ?? scenario?.values[code];
+      return value == null
+          ? Text(EmailTemplatesStrings.previewUnavailable)
+          : EmailPreviewHtml(html: value);
+    }
+    return previewChanges == null ? render() : ListenableBuilder(
+        listenable: previewChanges!, builder: (context, child) => render());
   }
 }

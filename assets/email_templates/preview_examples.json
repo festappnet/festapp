@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sourceDigest": "0e81e878851083764ca9d4e50b1dd24b05cd257029c08bd631fb20333217c48b",
+  "sourceDigest": "04694499e9774708cb917ed87b180e3fcc74e8dbb5aa60fc573084ff97eebe6a",
   "sources": [
     "automation/generate_email_preview_examples.ts",
     "automation/fixtures/email_preview/order.json",
@@ -3166,6 +3166,90 @@
       "html": "<p>Hello</p><!-- customer-order-overview-link -->",
       "requiredLinks": [],
       "expected": "<p>Hello</p>"
+    },
+    {
+      "name": "full authored document in padded wrapper",
+      "html": "<html><body><p>Signature</p></body></html>",
+      "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><html><body><p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></body></html></td></tr></table></body></html>"
+    },
+    {
+      "name": "empty wrapper behaves as no wrapper",
+      "html": "<p>Signature</p>",
+      "wrapperHtml": "",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+    },
+    {
+      "name": "fallback inside padded table wrapper",
+      "html": "<p>Cancellation</p><p>Signature</p>",
+      "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><p>Cancellation</p><p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></td></tr></table></body></html>"
+    },
+    {
+      "name": "card before signature inside padded wrapper",
+      "html": "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+      "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><div><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></div><p>Signature</p></td></tr></table></body></html>"
+    },
+    {
+      "name": "wrapper explicit link suppresses fallback",
+      "html": "<p>Signature</p>",
+      "wrapperHtml": "<main style=\"padding:24px\">{{content}}<a href=\"https://example.invalid/order?order_id=1&amp;preview=1\">Status</a></main>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<main style=\"padding:24px\"><p>Signature</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\">Status</a></main>"
+    },
+    {
+      "name": "wrapper first slot retains precedence",
+      "html": "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+      "wrapperHtml": "<main><!-- customer-order-overview-link --><section>{{content}}</section></main>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<main><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div><section><div></div><p>Signature</p></section></main>"
+    },
+    {
+      "name": "existing authored link inside padded wrapper",
+      "html": "<a href=\"https://example.invalid/order?order_id=1&amp;preview=1\">Status</a><p>Signature</p>",
+      "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
+      "requiredLinks": [
+        {
+          "url": "https://example.invalid/order?order_id=1&preview=1",
+          "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+        }
+      ],
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\">Status</a><p>Signature</p></td></tr></table></body></html>"
     }
   ]
 }

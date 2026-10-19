@@ -23,7 +23,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
+Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String html = '<p>Content</p>', Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
   RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       unitUser: OccasionUserModel(isEditor: true),
       occasionUser: OccasionUserModel(isEditor: true));
@@ -42,7 +42,7 @@ Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, Future<Em
                     ? 'SIGN_IN_CODE'
                     : 'TICKET_ORDER_CONFIRMATION',
                 subject: 'Subject',
-                html: '<p>Content</p>',
+                html: html,
               ),
               emailTemplatesResponse: EmailTemplatesResponse(
                 unit: UnitModel(id: 1, title: 'Unit'),
@@ -119,6 +119,117 @@ void main() {
         authoringContextLoader: () async => EmailAuthoringContext(
             senderAddress: 'sender@test.invalid', wrapperHtml: '<body>{{content}}$action</body>'));
     expect(find.byKey(const ValueKey('email-automatic-completion')), findsNothing);
+  });
+
+  for (final inline in [false, true]) {
+    testWidgets('card completion stays before signature, including legacy inline=$inline', (tester) async {
+      final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()));
+      final scenario = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
+      final source = inline ? '<p>Intro {{fullOrder}}</p><p>Signature after card</p><p>{{fullOrder}}</p>'
+          : '<p>{{fullOrder}}</p><p>Signature after card</p><p>{{fullOrder}}</p>';
+      await openTemplate(tester, occasionTitle: 'Festival', html: source,
+          previewExamplesLoader: () async => examples,
+          authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'sender@test.invalid',
+              wrapperHtml: '<body><div style="padding:24px">{{content}}</div></body>'));
+      final previews = tester.widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).toList();
+      expect(previews, hasLength(2));
+      expect(previews.first.html, contains(scenario.requiredLinks.single.html));
+      expect(previews.last.html, isNot(contains(scenario.requiredLinks.single.html)));
+      expect(find.byKey(const ValueKey('email-automatic-completion')), findsNothing);
+      final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+      expect(body.html, source);
+      expect(body.hasUserChanges, isFalse);
+      final node = body.editor.document.last;
+      body.editor.execute([ChangeSelectionRequest(
+          DocumentSelection.collapsed(position: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)),
+          SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+      expect(body.insertTemplateToken('order_overview_button'), isTrue);
+      await tester.pumpAndSettle();
+      final rendered = tester.widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml));
+      expect(rendered.where((v) => v.html == scenario.values['order_overview_button']), hasLength(1));
+      body.undo();
+      await tester.pumpAndSettle();
+      expect(tester.widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).first.html,
+          contains(scenario.requiredLinks.single.html));
+      if (!inline) {
+        body.editor.execute([DeleteNodeRequest(nodeId: body.editor.document.first.id)]);
+        await tester.pumpAndSettle();
+        expect(tester.widgetList<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).single.html,
+            contains(scenario.requiredLinks.single.html));
+      }
+    });
+  }
+  testWidgets('Escape closes mention menu before pristine parent', (tester) async {
+    await openTemplate(tester);
+    await tester.tap(find.byIcon(Icons.alternate_email).first);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(EmailTemplateSettingsPage), findsNothing);
+  });
+  testWidgets('Escape from fullscreen returns inline without losing body draft', (tester) async {
+    await openTemplate(tester);
+    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    final node = body.editor.document.first;
+    body.editor.execute([InsertTextRequest(
+        documentPosition: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
+        textToInsert: ' Draft', attributions: {})]);
+    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    body.focusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(RichHtmlEditorDialog), findsNothing);
+    expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
+    expect(body.plainText, 'Content Draft');
+  });
+
+  for (final editorIndex in [0, 1]) {
+    for (final dirty in [false, true]) {
+      testWidgets('Escape from focused editor $editorIndex preserves dirty=$dirty guard', (tester) async {
+        await openTemplate(tester);
+        final controller = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).elementAt(editorIndex).controller;
+        final node = controller.editor.document.first;
+        controller.editor.execute([ChangeSelectionRequest(
+            DocumentSelection.collapsed(position: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)),
+            SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+        controller.focusNode.requestFocus();
+        if (dirty) controller.editor.execute([InsertTextRequest(
+            documentPosition: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
+            textToInsert: ' Draft', attributions: {})]);
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        if (dirty) {
+          expect(find.text(HtmlStrings.discardDraft), findsOneWidget);
+          await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+          await tester.pumpAndSettle();
+          expect(find.byType(EmailTemplateSettingsPage), findsOneWidget);
+          expect(controller.plainText, contains('Draft'));
+        } else {
+          expect(find.byType(EmailTemplateSettingsPage), findsNothing);
+        }
+      });
+    }
+  }
+  testWidgets('action gap stays outside scroll viewport at its bottom', (tester) async {
+    tester.view.physicalSize = const Size(1000, 450);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await openTemplate(tester, html: List.filled(15, '<p>Long email content</p>').join());
+    final scroll = find.byType(ListView).first;
+    final actions = find.byType(AppDialogActions);
+    void expectGap() => expect(tester.getRect(actions).top - tester.getRect(scroll).bottom, greaterThanOrEqualTo(16));
+    expectGap();
+    await tester.drag(scroll, const Offset(0, -2000));
+    await tester.pumpAndSettle();
+    expectGap();
   });
 
   testWidgets('subject-only edit is protected when closing parent',
