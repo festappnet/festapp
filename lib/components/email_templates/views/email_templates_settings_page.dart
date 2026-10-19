@@ -73,6 +73,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       if (mounted) _authoringContext = null;
     } finally {
       _authoringContextLoading = false;
+      if (mounted) {
+        setState(() {});
+        _bodyDraft?.refreshAuthoringPresentation();
+      }
     }
   }
 
@@ -381,9 +385,15 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         _suggestion?.controller == _subjectEditor
             ? _suggestionView()
             : const SizedBox.shrink();
-    _bodyProvider.footerBuilder = (_) => _suggestion?.controller == _bodyDraft
-        ? _suggestionView()
-        : const SizedBox.shrink();
+    _bodyProvider.footerBuilder = (_) {
+      final draft = _bodyDraft;
+      return draft == null
+          ? _bodyFooter()
+          : ListenableBuilder(
+              listenable: draft,
+              builder: (context, _) => _bodyFooter(),
+            );
+    };
     _subjectEditor.addListener(() {
       _subject = _subjectEditor.plainText;
       _draftUpdated(_subjectEditor);
@@ -394,6 +404,31 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         acceptSave: () => _subjectEditor.reset(_subjectEditor.html));
     _loadExamples();
     _initialAuthoringContext = _loadAuthoringContext();
+  }
+
+  Widget _bodyFooter() {
+    // Wait for the authoritative wrapper before deciding whether delivery adds
+    // a link. This is presentation only, outside the editable document.
+    final automatic = _authoringContext == null
+        ? ''
+        : _scenario?.automaticCompletionHtml(
+              _bodyDraft?.html ?? _htmlContent ?? '',
+              wrapperHtml: _authoringContext!.wrapperHtml,
+            ) ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (automatic.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: EmailPreviewHtml(
+              key: const ValueKey('email-automatic-completion'),
+              html: automatic,
+            ),
+          ),
+        if (_suggestion?.controller == _bodyDraft) _suggestionView(),
+      ],
+    );
   }
 
   Future<void> _saveSettings() async {

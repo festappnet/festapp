@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -10,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/email_templates/email_preview_examples.dart';
+import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_settings_page.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
@@ -70,6 +74,53 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('automatic completion follows live draft and survives fullscreen without persistence',
+      (tester) async {
+    final metadata = Completer<EmailAuthoringContext>();
+    await openTemplate(tester, occasionTitle: 'Festival',
+        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
+        authoringContextLoader: () => metadata.future);
+    const footerKey = ValueKey('email-automatic-completion');
+    expect(find.byKey(footerKey), findsNothing);
+    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+    metadata.complete(const EmailAuthoringContext(senderAddress: 'sender@test.invalid'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(footerKey), findsOneWidget);
+    final automatic = tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html;
+    expect(automatic, contains('href='));
+    expect(body.html, '<p>Content</p>');
+    expect(body.hasUserChanges, isFalse);
+    final node = body.editor.document.first;
+    body.editor.execute([ChangeSelectionRequest(
+        DocumentSelection.collapsed(position: DocumentPosition(
+            nodeId: node.id, nodePosition: node.endPosition)),
+        SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+    expect(body.insertTemplateToken('order_overview_button'), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.byKey(footerKey), findsNothing);
+    expect(body.html, contains('{{order_overview_button}}'));
+    body.undo();
+    await tester.pumpAndSettle();
+    expect(find.byKey(footerKey), findsOneWidget);
+    expect(body.html, '<p>Content</p>');
+    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+    await tester.tap(find.byIcon(Icons.open_in_full));
+    await tester.pumpAndSettle();
+    expect(find.byKey(footerKey), findsOneWidget);
+    expect(tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html, automatic);
+    expect(body.html, '<p>Content</p>');
+  });
+
+  testWidgets('wrapper overview action suppresses automatic editor completion', (tester) async {
+    final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()));
+    final action = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first.requiredLinks.single.html;
+    await openTemplate(tester, occasionTitle: 'Festival',
+        previewExamplesLoader: () async => examples,
+        authoringContextLoader: () async => EmailAuthoringContext(
+            senderAddress: 'sender@test.invalid', wrapperHtml: '<body>{{content}}$action</body>'));
+    expect(find.byKey(const ValueKey('email-automatic-completion')), findsNothing);
+  });
+
   testWidgets('subject-only edit is protected when closing parent',
       (tester) async {
     await openTemplate(tester);

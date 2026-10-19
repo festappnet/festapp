@@ -19,11 +19,17 @@ String escapeEmailHtml(String value) => value
     .replaceAll('>', '&gt;');
 
 /// Mirrors the production pure finalizer; shared fixtures assert parity.
-String completeEmailContent(String html, List<EmailRequiredLink> links) {
+String completeEmailContent(String html, List<EmailRequiredLink> links) =>
+    _completeEmailContent(html, links).html;
+
+({String html, String automaticHtml}) _completeEmailContent(
+    String html, List<EmailRequiredLink> links) {
+  final automatic = StringBuffer();
   for (final link in links) {
     if (link.url.isEmpty ||
         html.contains('href="${escapeEmailHtml(link.url)}"'))
       continue;
+    automatic.write(link.html);
     if (html.contains(emailOverviewSlot)) {
       html = html.replaceFirst(emailOverviewSlot, link.html);
     } else if (RegExp(r'</body>', caseSensitive: false).hasMatch(html)) {
@@ -35,7 +41,8 @@ String completeEmailContent(String html, List<EmailRequiredLink> links) {
       html += link.html;
     }
   }
-  return html.replaceAll(emailOverviewSlot, '');
+  return (html: html.replaceAll(emailOverviewSlot, ''),
+      automaticHtml: automatic.toString());
 }
 
 class EmailPreviewScenario {
@@ -147,7 +154,16 @@ class EmailPreviewScenario {
 
   /// One scan over authored HTML. Substituted fragments are never reprocessed.
   /// Rich content is admitted only in text context, never HTML attributes.
-  String composeHtml(String html, {String? wrapperHtml}) {
+  String composeHtml(String html, {String? wrapperHtml}) =>
+      _compose(html, wrapperHtml: wrapperHtml).html;
+
+  /// Generated completion only, after checking the substituted draft and wrapper.
+  /// For a read-only editor footer; never part of the authored document.
+  String automaticCompletionHtml(String html, {String? wrapperHtml}) =>
+      _compose(html, wrapperHtml: wrapperHtml).automaticHtml;
+
+  ({String html, String automaticHtml}) _compose(
+      String html, {String? wrapperHtml}) {
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -219,6 +235,6 @@ class EmailPreviewScenario {
     final wrapped = wrapperHtml == null
         ? content
         : wrapperHtml.replaceFirst('{{content}}', content);
-    return completeEmailContent(wrapped, requiredLinks);
+    return _completeEmailContent(wrapped, requiredLinks);
   }
 }
