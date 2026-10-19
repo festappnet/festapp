@@ -20,6 +20,7 @@ class TemplateAuthoringEntry {
       this.example = '',
       this.description = '',
       this.rich = false,
+      this.repeatable = true,
       this.block = false,
       this.url = false});
   final String code;
@@ -27,6 +28,7 @@ class TemplateAuthoringEntry {
   final String example;
   final String description;
   final bool rich;
+  final bool repeatable;
   final bool block;
   final bool url;
 }
@@ -34,6 +36,7 @@ class TemplateAuthoringEntry {
 abstract class TemplateAuthoringProvider {
   Set<String> get codes;
   bool get singleLine => false;
+  TextStyle? get textStyle => null;
   String get helper;
   String get insertLabel;
   String get emptyLabel;
@@ -43,6 +46,7 @@ abstract class TemplateAuthoringProvider {
   String get unsupportedLabel => '';
   String get recommendedLabel => insertLabel;
   String get usedBlocksLabel => usedLabel;
+  String get uniqueUsedLabel => usedLabel;
   bool supports(String code) =>
       search('', const {}).any((entry) => entry.code == code);
   TemplateAuthoringEntry? entry(String code);
@@ -51,7 +55,8 @@ abstract class TemplateAuthoringProvider {
       {bool inLink = false, bool inCode = false, bool composing = false});
   bool canInsert(String text, int offset,
       {bool inLink = false, bool inCode = false, bool composing = false});
-  Widget? preview(BuildContext context, String code) => null;
+  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) => null;
+  Widget? header(BuildContext context) => null;
   Widget? footer(BuildContext context) => null;
   void selectionChanged() {}
 }

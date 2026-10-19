@@ -1,3 +1,4 @@
+import { confirmationPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../supabase/functions/_shared/orderOverview.ts";
 import { generateChangeOverview } from "../supabase/functions/_shared/changeOverview.ts";
 import { csTranslations } from "../supabase/functions/_shared/translations/translations.cs.ts";
@@ -14,7 +15,11 @@ import {
 } from "../supabase/functions/_shared/emailActionLink.ts";
 import { completeEmailContent } from "../supabase/functions/_shared/emailContentCompletion.ts";
 import { translatePlatformLinks } from "../supabase/functions/_shared/translatePlatformLinks.ts";
-import { formatCurrency } from "../supabase/functions/_shared/utilities.ts";
+import {
+  formatCurrency,
+  formatDatetime,
+  formatIBAN,
+} from "../supabase/functions/_shared/utilities.ts";
 
 const root = new URL("../", import.meta.url);
 const read = (path: string) => Deno.readTextFile(new URL(path, root));
@@ -26,6 +31,9 @@ const sources = [
   "automation/fixtures/email_preview/order.json",
   ...[
     "orderOverview.ts",
+    "orderEmailPresentation.ts",
+    "paymentPresentation.ts",
+    "translations/translations.ts",
     "metaSurcharge.ts",
     "utilities.ts",
     "changeOverview.ts",
@@ -65,13 +73,12 @@ const scalar = {
   occasionTitle: fixture.occasionTitle,
   orderSymbol: fixture.orderSymbol,
   accountNumber: fixture.accountNumber,
-  iban: fixture.iban,
+  iban: formatIBAN(fixture.iban),
   variableSymbol: fixture.variableSymbol,
   deadline: fixture.deadline,
 };
 for (const locale of ["cs", "en"] as const) {
   const tr = locale === "cs" ? csTranslations : enTranslations;
-  const onSite = locale === "cs" ? "na místě" : "on site";
   const money = (n: number) => formatCurrency(n, "CZK");
   for (const tone of ["formal", "informal"] as Tone[]) {
     for (
@@ -102,43 +109,37 @@ for (const locale of ["cs", "en"] as const) {
             products: t.products.map((p: any) => ({ ...p, price: 0 })),
           }))
           : fixture.tickets;
-        let balanceReasoning = zero
-          ? tr.zeroOrder("CZK", tone)
-          : templateCode === "TICKET_ORDER_PAYMENT_DONE"
-          ? paid
-            ? tr.depositFullyPaid(money(800), tone)
-            : tr.depositPaid(money(300), money(500), onSite, tone)
-          : templateCode === "TICKET_ORDER_REMINDER"
-          ? tr.reminder_before_deadline(
-            5,
-            money(800),
-            fixture.accountNumber,
-            null,
-            fixture.variableSymbol,
-            money(0),
-            tone,
-          )
-          : paid
-          ? tr.fullyPaid(tone)
-          : deposit
-          ? tr.depositRequired(
-            money(300),
-            money(500),
-            onSite,
-            fixture.accountNumber,
-            null,
-            fixture.variableSymbol,
-            tone,
-          )
-          : tr.unpaid(
-            money(800),
-            fixture.accountNumber,
-            null,
-            fixture.variableSymbol,
-            fixture.deadline,
-            tone,
-          );
-        if (templateCode === "TICKET_ORDER_STORNO") balanceReasoning = "";
+        // Fixtures select monetary facts; production presenters select the text.
+        const total = zero ? 0 : 800;
+        const amountPaid = paid ? total
+          : templateCode === "TICKET_ORDER_PAYMENT_DONE" && deposit ? 300 : 0;
+        const payment = {
+          amount: total, paid: amountPaid, deposit_amount: deposit ? 300 : 0,
+          currency_code: "CZK", account_number: fixture.iban,
+          account_number_human_readable: fixture.accountNumber,
+          variable_symbol: fixture.variableSymbol,
+          deadline: "2026-10-30T12:00:00",
+        };
+        let balanceReasoning = "";
+        let amount = money(total);
+        switch (templateCode) {
+          case "TICKET_ORDER_CONFIRMATION":
+            ({ balanceReasoning, amount } = confirmationPaymentSubstitutions(
+              payment, fixture.features, locale, tone));
+            break;
+          case "TICKET_ORDER_UPDATE":
+            balanceReasoning = updateBalanceReasoning(
+              total, amountPaid, "CZK", payment, payment, locale, tone);
+            break;
+          case "TICKET_ORDER_PAYMENT_DONE":
+            ({ balanceReasoning, amount } = paidPaymentSubstitutions(
+              total, amountPaid, "CZK", fixture.features, locale, tone));
+            break;
+          case "TICKET_ORDER_REMINDER":
+            balanceReasoning = reminderBalanceReasoning(
+              5 * 86400000, 5, total - amountPaid, amountPaid, "CZK", payment, payment, locale, tone);
+            break;
+        }
         records.push({
           templateCode,
           scenario,
@@ -146,7 +147,8 @@ for (const locale of ["cs", "en"] as const) {
           tone,
           values: {
             ...scalar,
-            amount: money(zero ? 0 : deposit ? 300 : 800),
+            deadline: formatDatetime(payment.deadline, locale),
+            amount,
             remainingTime: tr.days_remaining(5),
             ...overviewEmailSubstitutions(fixture.overviewUrl, locale),
             order_overview_url: fixture.overviewUrl,
@@ -172,8 +174,9 @@ for (const locale of ["cs", "en"] as const) {
             ),
             paymentDetails: generatePaymentDetails({
               accountNumber: fixture.accountNumber,
+              iban: formatIBAN(fixture.iban),
               variableSymbol: fixture.variableSymbol,
-              amount: money(zero ? 0 : deposit ? 300 : 800),
+              amount,
               lang: locale,
             }),
           },
@@ -337,7 +340,7 @@ for (const record of records) {
     preview_reference_total: formatCurrency(700),
     preview_zero: formatCurrency(0),
     preview_zero_explanation: "0 CZK",
-    preview_deadline: fixture.deadline,
+    preview_deadline: values.deadline || fixture.deadline,
     preview_currency: "CZK",
   };
   record.contextTemplates = Object.fromEntries(
@@ -346,7 +349,7 @@ for (const record of records) {
     ) => [
       code,
       html.replace(moneyPattern, (value) => moneySlots[value])
-        .replaceAll(fixture.deadline, "{{preview_deadline}}")
+        .replaceAll(values.deadline || fixture.deadline, "{{preview_deadline}}")
         .replace(/0 CZK/g, "{{preview_zero_explanation}}"),
     ]),
   );
@@ -354,6 +357,7 @@ for (const record of records) {
 
 const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
+const paddedWrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
 const compositionFixtures = [
   { name: "missing fragment", html: "<p>Hello</p>", requiredLinks },
   {
@@ -376,9 +380,51 @@ const compositionFixtures = [
     html: "<p>Hello</p><!-- customer-order-overview-link -->",
     requiredLinks: [],
   },
+  {
+    name: "full authored document in padded wrapper",
+    html: "<html><body><p>Signature</p></body></html>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "empty wrapper behaves as no wrapper",
+    html: "<p>Signature</p>",
+    wrapperHtml: "",
+    requiredLinks,
+  },
+  {
+    name: "fallback inside padded table wrapper",
+    html: "<p>Cancellation</p><p>Signature</p>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "card before signature inside padded wrapper",
+    html: "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
+  {
+    name: "wrapper explicit link suppresses fallback",
+    html: "<p>Signature</p>",
+    wrapperHtml: `<main style="padding:24px">{{content}}<a href="${escapeEmailHtml(url)}">Status</a></main>`,
+    requiredLinks,
+  },
+  {
+    name: "wrapper first slot retains precedence",
+    html: "<div><!-- customer-order-overview-link --></div><p>Signature</p>",
+    wrapperHtml: '<main><!-- customer-order-overview-link --><section>{{content}}</section></main>',
+    requiredLinks,
+  },
+  {
+    name: "existing authored link inside padded wrapper",
+    html: `<a href="${escapeEmailHtml(url)}">Status</a><p>Signature</p>`,
+    wrapperHtml: paddedWrapper,
+    requiredLinks,
+  },
 ].map((f) => ({
   ...f,
-  expected: completeEmailContent(f.html, f.requiredLinks),
+  expected: completeEmailContent(f.html, f.requiredLinks, "wrapperHtml" in f ? f.wrapperHtml : undefined),
 }));
 const output = JSON.stringify(
   { version: 1, sourceDigest, sources, records, compositionFixtures },

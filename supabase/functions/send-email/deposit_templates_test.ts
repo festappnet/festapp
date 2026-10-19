@@ -1,3 +1,4 @@
+import { paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 // Tests for deposit-related email translations + template branching logic.
 // Run with: deno test --allow-net --allow-read supabase/functions/send-email/deposit_templates_test.ts
 
@@ -102,64 +103,25 @@ Deno.test("EN depositReminder — contains all parts", () => {
   assertStringIncludes(html, "VS12345");
 });
 
-// =====================================================================
-// Template selector — isFullyPaid branching logic
-// =====================================================================
-// The getTicketOrderPaidTemplate branches purely on amount comparison:
-//   isFullyPaid = (amountPaid >= totalAmount)
-
-function isFullyPaidPredicate(amountPaid: number, totalAmount: number): boolean {
-  return amountPaid >= totalAmount;
+// Exercise the production presenter, rather than copies of its predicates.
+for (const paid of [0, 500, 1000, 1200]) {
+  Deno.test(`Paid presenter selects canonical text for ${paid}/1000`, () => {
+    const actual = paidPaymentSubstitutions(1000, paid, "CZK", [], "cs", "formal");
+    const expected = paid >= 1000
+      ? csTranslations.depositFullyPaid("1 000 Kč", "formal")
+      : csTranslations.depositPaid(`${paid} Kč`, `${1000 - paid === 1000 ? '1 000' : 1000 - paid} Kč`, "na místě", "formal");
+    assertEquals(actual.balanceReasoning, expected);
+  });
 }
-
-Deno.test("isFullyPaid predicate — deposit only paid", () => {
-  assertEquals(isFullyPaidPredicate(500, 1000), false);
-});
-
-Deno.test("isFullyPaid predicate — fully paid via amount", () => {
-  assertEquals(isFullyPaidPredicate(1000, 1000), true);
-});
-
-Deno.test("isFullyPaid predicate — overpaid still fully paid", () => {
-  assertEquals(isFullyPaidPredicate(1200, 1000), true);
-});
-
-Deno.test("isFullyPaid predicate — zero paid is not fully paid", () => {
-  assertEquals(isFullyPaidPredicate(0, 1000), false);
-});
-
-// =====================================================================
-// Deposit deadline interpretation in template
-// =====================================================================
-// Replicates the lookup logic in getTicketOrderPaidTemplate that translates
-// the deposit feature config into a human-readable deadline string.
-
-function depositDeadlineText(feature: any, lang: "cs" | "en"): string {
-  const deadlineType = feature?.deposit_deadline;
-  const deadlineDays = feature?.deposit_deadline_days;
-  if (deadlineType === "on_site") {
-    return lang === "cs" ? "na místě" : "on site";
-  }
-  if (deadlineDays) {
-    return lang === "cs"
-      ? `${deadlineDays} dní před akcí`
-      : `${deadlineDays} days before the event`;
-  }
-  return lang === "cs" ? "na místě" : "on site";
+for (const [feature, lang, deadline] of [
+  [{ deposit_deadline: "on_site" }, "cs", "na místě"],
+  [{ deposit_deadline_days: 7 }, "cs", "7 dní před akcí"],
+  [{ deposit_deadline_days: 7 }, "en", "7 days before the event"],
+  [{}, "cs", "na místě"],
+] as const) {
+  Deno.test(`Paid presenter deadline ${JSON.stringify(feature)} / ${lang}`, () => {
+    const actual = paidPaymentSubstitutions(1000, 500, "CZK", [{ code: "deposit", ...feature }], lang, "formal");
+    const tr = lang === "cs" ? csTranslations : enTranslations;
+    assertEquals(actual.balanceReasoning, tr.depositPaid("500 Kč", "500 Kč", deadline, "formal"));
+  });
 }
-
-Deno.test("Deadline interpretation — on_site → cs 'na místě'", () => {
-  assertEquals(depositDeadlineText({ deposit_deadline: "on_site" }, "cs"), "na místě");
-});
-
-Deno.test("Deadline interpretation — days_before → cs '7 dní před akcí'", () => {
-  assertEquals(depositDeadlineText({ deposit_deadline_days: 7 }, "cs"), "7 dní před akcí");
-});
-
-Deno.test("Deadline interpretation — days_before → en '7 days before the event'", () => {
-  assertEquals(depositDeadlineText({ deposit_deadline_days: 7 }, "en"), "7 days before the event");
-});
-
-Deno.test("Deadline interpretation — missing config → on_site default (cs)", () => {
-  assertEquals(depositDeadlineText({}, "cs"), "na místě");
-});

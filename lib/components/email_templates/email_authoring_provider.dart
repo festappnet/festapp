@@ -13,6 +13,11 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   final EmailTargetField field;
   EmailPreviewScenario? scenario;
   WidgetBuilder? footerBuilder;
+  WidgetBuilder? headerBuilder;
+  Listenable? previewChanges;
+  EmailAuthoringCompletion? Function()? completion;
+  @override
+  Widget? header(BuildContext context) => headerBuilder?.call(context);
   VoidCallback? onSelectionChanged;
   @override
   void selectionChanged() => onSelectionChanged?.call();
@@ -20,6 +25,8 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   Widget? footer(BuildContext context) => footerBuilder?.call(context);
   @override
   bool get singleLine => field == EmailTargetField.subject;
+  @override
+  TextStyle get textStyle => emailContentTextStyle;
   @override
   Set<String> get codes => _subs.map((s) => s.code).toSet();
   String _label(EmailTemplateSub sub) {
@@ -64,8 +71,9 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
         label: _label(sub),
         description: sub.description,
         rich: rich,
+        repeatable: sub.definition.repeatable,
         example:
-            rich ? sampleLabel : scenario?.values[code] ?? sub.defaultValue,
+            rich ? sub.description : scenario?.values[code] ?? sub.defaultValue,
         block: !singleLine && sub.kind == EmailValueKind.richBlock,
         url: sub.kind == EmailValueKind.url);
   }
@@ -105,14 +113,20 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   String get usedBlocksLabel => EmailTemplatesStrings.usedBlocks;
   @override
+  String get uniqueUsedLabel => EmailTemplatesStrings.uniqueAlreadyUsed;
+  @override
   String get unsupportedLabel => EmailTemplatesStrings.unknownVariable;
   @override
   String get tokenLabel => EmailTemplatesStrings.variable;
   @override
-  Widget? preview(BuildContext context, String code) {
-    final value = scenario?.values[code];
-    return value == null
-        ? Text(EmailTemplatesStrings.previewUnavailable)
-        : EmailPreviewHtml(html: value);
+  Widget? preview(BuildContext context, String code, {ValueGetter<int>? occurrence}) {
+    Widget render() {
+      final value = completion?.call()?.forToken(code, occurrence?.call() ?? 0) ?? scenario?.values[code];
+      return value == null
+          ? Text(EmailTemplatesStrings.previewUnavailable)
+          : EmailPreviewHtml(html: value);
+    }
+    return previewChanges == null ? render() : ListenableBuilder(
+        listenable: previewChanges!, builder: (context, child) => render());
   }
 }

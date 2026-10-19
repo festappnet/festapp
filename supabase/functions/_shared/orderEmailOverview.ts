@@ -1,6 +1,5 @@
 import { openOrderOverviewUrl } from './customerOrderAccess.ts';
 import { prepareOrderOverviewSource } from './waitlistEmail.ts';
-import type { PreparedEmail } from './emailDelivery.ts';
 
 export async function orderEmailOverviewUrl(
   row: { order_id: number; recipient: string; message_id: string },
@@ -17,9 +16,3 @@ export async function orderEmailOverviewUrl(
   return context?.source ? await openOrderOverviewUrl(context, context.source) : null;
 }
 export { overviewEmailSubstitutions } from './emailActionLink.ts';
-import { overviewRequiredLinks } from './emailActionLink.ts';
-import { completeEmailContent } from './emailContentCompletion.ts';
-export function includeOrderOverview(prepared: PreparedEmail, url: string | null, lang = 'cs') {
-  prepared.html = completeEmailContent(prepared.html, overviewRequiredLinks(url, lang));
-  return prepared;
-}

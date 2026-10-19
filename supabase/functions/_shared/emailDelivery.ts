@@ -1,3 +1,4 @@
+import { completeEmailContent, type EmailRequiredLink } from "./emailContentCompletion.ts";
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL") || "";
 export type EmailContext = {
   organization: number;
@@ -36,6 +37,8 @@ export type DeliverEmailInput = {
   templateCode?: string;
   context: EmailContext;
   substitutions: Record<string, unknown>;
+  /** Canonical automatic actions, composed within the resolved wrapper. */
+  requiredLinks?: EmailRequiredLink[];
   attachments?: EmailAttachment[];
   from?: string;
   replyTo?: string;
@@ -112,10 +115,11 @@ export async function renderEmail(
     typeof template.html !== "string"
   ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
   const subject = substitute(template.subject, input.substitutions);
-  let html = substitute(template.html, input.substitutions);
-  if (resolved?.wrapper?.html) {
-    html = resolved.wrapper.html.replace("{{content}}", html);
-  }
+  const html = completeEmailContent(
+    substitute(template.html, input.substitutions),
+    input.requiredLinks ?? [],
+    resolved?.wrapper?.html,
+  );
   return {
     from: input.from ?? _DEFAULT_EMAIL,
     to: input.to,

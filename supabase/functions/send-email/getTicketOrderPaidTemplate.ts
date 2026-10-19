@@ -1,9 +1,8 @@
-import { formatCurrency, formatIBAN } from "../_shared/utilities.ts";
+import { paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { getBaseOrderData } from "./shared.ts";
-import { translations } from "../_shared/translations/translations.ts";
 import type { Tone } from "../_shared/translations/translations.ts";
 
 /**
@@ -21,7 +20,6 @@ export async function getTicketOrderPaidTemplate(
   const { orderId, requestSecret, lang = "cs" } = reqData.data;
   const code = reqData.code;
 
-  const tr = translations[lang as keyof typeof translations] || translations.cs;
   const attachments: any[] = [];
 
   // 1. Fetch and authorize base order data
@@ -40,51 +38,16 @@ export async function getTicketOrderPaidTemplate(
     ? "informal"
     : "formal";
 
-  const depositAmount = Number(payment_info?.deposit_amount) || 0;
   const totalAmount = Number(payment_info?.amount) || 0;
   const amountPaid = Number(payment_info?.paid) || 0;
   const currency = order.currency_code || "CZK";
 
-  let balanceReasoning = "";
+  const paymentPresentation = paidPaymentSubstitutions(
+    totalAmount, amountPaid, currency, occasion.features || [], lang, tone,
+  );
 
-  // Determine if fully paid — based on amount comparison
-  const isFullyPaid = amountPaid >= totalAmount;
-
-  if (isFullyPaid) {
-    // Fully paid — no remaining balance shown
-    balanceReasoning = tr.depositFullyPaid(
-      formatCurrency(totalAmount, currency),
-      tone,
-    );
-    // No QR code needed — fully paid
-  } else {
-    // Deposit paid — show remaining amount
+  if (!(amountPaid >= totalAmount)) {
     const remainingAmount = totalAmount - amountPaid;
-
-    // Read deposit deadline from the deposit feature in occasion features
-    const features = occasion.features || [];
-    const depositFeature = features.find((f: any) => f.code === "deposit");
-    let depositDeadline: string;
-    const deadlineType = depositFeature?.deposit_deadline;
-    const deadlineDays = depositFeature?.deposit_deadline_days;
-
-    if (deadlineType === "on_site") {
-      depositDeadline = lang === "cs" ? "na místě" : "on site";
-    } else if (deadlineDays) {
-      depositDeadline = lang === "cs"
-        ? `${deadlineDays} dní před akcí`
-        : `${deadlineDays} days before the event`;
-    } else {
-      depositDeadline = lang === "cs" ? "na místě" : "on site";
-    }
-
-    balanceReasoning = tr.depositPaid(
-      formatCurrency(amountPaid, currency),
-      formatCurrency(remainingAmount, currency),
-      depositDeadline,
-      tone,
-    );
-
     // QR code for remaining amount
     try {
       const qrPaymentData = {
@@ -126,8 +89,8 @@ export async function getTicketOrderPaidTemplate(
       lang,
         order.order_symbol,
     ),
-    balanceReasoning: balanceReasoning,
-    amount: formatCurrency(amountPaid, currency),
+    balanceReasoning: paymentPresentation.balanceReasoning,
+    amount: paymentPresentation.amount,
   };
   const sender = occasion.title;
   const receiver = order.data.email;

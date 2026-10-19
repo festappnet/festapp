@@ -66,3 +66,29 @@ Deno.test("missing or malformed template fails preparation before any transport"
     EmailTemplateNotFoundError,
   );
 });
+
+Deno.test("automatic order action remains inside the wrapper content cell", async () => {
+  const url = "https://example.invalid/order?preview=1";
+  const action = `<a href="${url}">Status</a>`;
+  const wrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
+  const result = await renderEmail({
+    ...input,
+    template: { id: 1, subject: "Cancellation", html: "<p>Signature</p>" },
+    requiredLinks: [{ url, html: action }],
+  }, async () => ({ wrapper: { html: wrapper } }));
+  assertEquals(result.html, wrapper.replace("{{content}}", `<p>Signature</p>${action}`));
+  assertEquals(Object.keys(result).includes("requiredLinks"), false);
+});
+Deno.test("wrapper link and order card slot determine action placement before signature", async () => {
+  const url = "https://example.invalid/order?preview=1";
+  const action = `<a href="${url}">Status</a>`;
+  const html = '<section><!-- customer-order-overview-link --></section><p>Signature</p>';
+  const render = (wrapper: string) => renderEmail({
+    ...input, template: { id: 1, subject: "Order", html },
+    requiredLinks: [{ url, html: action }],
+  }, async () => ({ wrapper: { html: wrapper } }));
+  assertEquals((await render('<main style="padding:24px">{{content}}</main>')).html,
+    `<main style="padding:24px"><section>${action}</section><p>Signature</p></main>`);
+  assertEquals((await render(`<main>{{content}}${action}</main>`)).html,
+    `<main><section></section><p>Signature</p>${action}</main>`);
+});

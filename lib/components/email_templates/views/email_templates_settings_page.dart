@@ -24,11 +24,15 @@ import 'package:fstapp/widgets/info_tooltip_button.dart';
 class EmailTemplateSettingsPage extends StatefulWidget {
   final EmailTemplateModel template;
   final EmailTemplatesResponse emailTemplatesResponse;
+  final Future<EmailAuthoringContext> Function()? authoringContextLoader;
+  final Future<EmailPreviewExamples> Function()? previewExamplesLoader;
 
   const EmailTemplateSettingsPage({
     super.key,
     required this.template,
     required this.emailTemplatesResponse,
+    this.authoringContextLoader,
+    this.previewExamplesLoader,
   });
 
   @override
@@ -45,6 +49,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   List<EmailPreviewScenario> _scenarios = [];
   EmailPreviewScenario? _scenario;
   bool _previewError = false;
+  EmailAuthoringContext? _authoringContext;
+  late final Future<void> _initialAuthoringContext;
+  bool _authoringContextLoading = false;
   bool _contextUnavailable = false;
   bool _usesOccasionProducts = false;
   Timer? _suggestTimer;
@@ -56,10 +63,27 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     EmailTitleMatch match,
     String code
   })? _suggestion;
+  Future<void> _loadAuthoringContext() async {
+    _authoringContextLoading = true;
+    try {
+      final value = await (widget.authoringContextLoader?.call() ??
+          DbEmailTemplates.getAuthoringContext(widget.emailTemplatesResponse, widget.template.code ?? ''));
+      if (mounted) _authoringContext = value;
+    } catch (_) {
+      if (mounted) _authoringContext = null;
+    } finally {
+      _authoringContextLoading = false;
+      if (mounted) {
+        setState(() {});
+        _bodyDraft?.refreshAuthoringPresentation();
+      }
+    }
+  }
+
   Future<void> _loadExamples() async {
     try {
-      final examples = await EmailPreviewExamples.loadForOccasion(
-          widget.emailTemplatesResponse.occasion);
+      final examples = await (widget.previewExamplesLoader?.call() ??
+          EmailPreviewExamples.loadForOccasion(widget.emailTemplatesResponse.occasion));
       if (!mounted) return;
       setState(() {
         _scenarios = examples.scenariosFor(widget.template.code ?? '');
@@ -189,7 +213,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             IconButton(
                 tooltip: MaterialLocalizations.of(context)
                     .refreshIndicatorSemanticLabel,
-                onPressed: _loadExamples,
+                onPressed: () async { await _loadExamples(); onChanged?.call(); },
                 icon: const Icon(Icons.refresh)),
           ]),
         if (_scenarios.length > 1) const SizedBox(height: 8),
@@ -221,6 +245,20 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               }),
       ]);
 
+  String _scenarioLabel(EmailPreviewScenario scenario) =>
+      '${EmailTemplatesStrings.scenarioName(scenario.scenario)} · ${scenario.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(scenario.tone)}';
+
+  Future<void> _showSampleSettings() => showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(builder: (context, update) => AppAlertDialog(
+        title: Text(EmailTemplatesStrings.scenario),
+        onClose: () => Navigator.pop(context),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+        content: SizedBox(width: 440, child: _sampleControls(onChanged: () {
+          if (context.mounted) update(() {});
+        })),
+      )));
+
   Future<void> _showVariableHelp() => showDialog<void>(
       context: context,
       builder: (context) => AppAlertDialog(
@@ -234,6 +272,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                    Text(EmailTemplatesStrings.authoringHint),
+                    const SizedBox(height: 8),
                     Text(EmailTemplatesStrings.variableGuideHint),
                     const SizedBox(height: 12),
                     for (final entry in _bodyProvider.search('', const {}))
@@ -260,6 +300,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   ])))));
 
   Future<void> _showPreview() async {
+    await _initialAuthoringContext;
+    if (!mounted) return;
     if (_previewError || _scenario == null) {
       await _loadExamples();
       if (!mounted || _scenario == null) return;
@@ -274,24 +316,34 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   title: Text(EmailTemplatesStrings.preview),
                   content: SizedBox(
-                      width: 680,
+                      width: 480,
                       child: SingleChildScrollView(
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                            Text(EmailTemplatesStrings.previewScope),
+                            if (_authoringContext != null)
+                              Text(EmailTemplatesStrings.previewScope)
+                            else ...[
+                              Text(EmailTemplatesStrings.authoringContextUnavailable),
+                              if (_authoringContextLoading) const LinearProgressIndicator()
+                              else TextButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: Text(CommonStrings.retry),
+                                onPressed: () async {
+                                  final request = _loadAuthoringContext();
+                                  update(() {});
+                                  await request;
+                                  if (context.mounted) update(() {});
+                                }),
+                            ],
                             _sampleControls(onChanged: () => update(() {})),
                             const SizedBox(height: 16),
-                            Text(
-                                _scenario!
-                                    .composeSubject(_subjectEditor.plainText),
-                                style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 16),
-                            EmailPreviewHtml(
-                                html: _scenario!.composeHtml(
-                                    _bodyDraft?.html ?? _htmlContent ?? ''),
-                                imageBytesResolver:
-                                    _htmlSave.media.previewBytes),
+                            if (_authoringContext != null) EmailReceivedMessage(
+                                senderAddress: _authoringContext!.senderAddress,
+                                allowedRemoteImageSources: _authoringContext!.bannerImageSources,
+                                subject: _scenario!.composeSubject(_subjectEditor.plainText),
+                                html: _authoringContext!.composeHtml(_scenario!, _bodyDraft?.html ?? _htmlContent ?? ''),
+                                imageBytesResolver: _htmlSave.media.previewBytes),
                           ]))),
                 )));
   }
@@ -327,15 +379,23 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         initialHtml: '<p>${htmlEscape.convert(_subject ?? '')}</p>',
         owner: const HtmlMediaOwner.none(),
         authoring: _subjectProvider);
+    _bodyProvider.completion = _authoringCompletion;
+    _bodyProvider.headerBuilder = (_) => _bodyLeading();
     _subjectProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
     _bodyProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
     _subjectProvider.footerBuilder = (_) =>
         _suggestion?.controller == _subjectEditor
             ? _suggestionView()
             : const SizedBox.shrink();
-    _bodyProvider.footerBuilder = (_) => _suggestion?.controller == _bodyDraft
-        ? _suggestionView()
-        : const SizedBox.shrink();
+    _bodyProvider.footerBuilder = (_) {
+      final draft = _bodyDraft;
+      return draft == null
+          ? _bodyFooter()
+          : ListenableBuilder(
+              listenable: draft,
+              builder: (context, _) => _bodyFooter(),
+            );
+    };
     _subjectEditor.addListener(() {
       _subject = _subjectEditor.plainText;
       _draftUpdated(_subjectEditor);
@@ -345,6 +405,47 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         isDirty: () => _subjectEditor.hasUserChanges,
         acceptSave: () => _subjectEditor.reset(_subjectEditor.html));
     _loadExamples();
+    _initialAuthoringContext = _loadAuthoringContext();
+  }
+
+  EmailAuthoringCompletion? _authoringCompletion() => _authoringContext == null
+      ? null
+      : _scenario?.authoringCompletion(_bodyDraft?.html ?? _htmlContent ?? '',
+          wrapperHtml: _authoringContext!.wrapperHtml);
+
+  Widget _bodyLeading() {
+    Widget render() {
+      final html = _authoringCompletion()?.leadingHtml ?? '';
+      return html.isEmpty ? const SizedBox.shrink() : Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: EmailPreviewHtml(key: const ValueKey('email-automatic-leading'), html: html));
+    }
+    return _bodyProvider.previewChanges == null ? render() : ListenableBuilder(
+        listenable: _bodyProvider.previewChanges!, builder: (context, child) => render());
+  }
+
+  Future<void> _requestClose() async {
+    if (await confirmHtmlDiscard(context, _htmlSave) && mounted) Navigator.of(context).pop();
+  }
+
+  Widget _bodyFooter() {
+    // Wait for the authoritative wrapper before deciding whether delivery adds
+    // a link. This is presentation only, outside the editable document.
+    final automatic = _authoringCompletion()?.trailingHtml ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (automatic.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: EmailPreviewHtml(
+              key: const ValueKey('email-automatic-completion'),
+              html: automatic,
+            ),
+          ),
+        if (_suggestion?.controller == _bodyDraft) _suggestionView(),
+      ],
+    );
   }
 
   Future<void> _saveSettings() async {
@@ -385,10 +486,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
     return AppAlertDialog(
-      onClose: () async {
-        if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
-          Navigator.of(context).pop();
-      },
+      onClose: _requestClose,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -408,7 +506,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           16,
           MediaQuery.sizeOf(context).width < 600 ? 12 : 24,
           0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       content: SizedBox(
         width: 760,
         child: Form(
@@ -416,39 +514,62 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           child: ListView(
             shrinkWrap: true,
             children: [
-              Text(usageDetails['description'] ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 8),
-              Text(EmailTemplatesStrings.authoringHint,
-                  style: Theme.of(context).textTheme.bodySmall),
-              Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextButton.icon(
-                        onPressed: _showVariableHelp,
-                        icon: const Icon(Icons.info_outline),
-                        label: Text(EmailTemplatesStrings.variableGuide)),
-                    TextButton.icon(
-                        onPressed: _showPreview,
-                        icon: const Icon(Icons.preview_outlined),
-                        label: Text(EmailTemplatesStrings.preview)),
-                  ]),
-              _sampleControls(),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(Icons.info_outline, size: 20,
+                          color: Theme.of(context).colorScheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(EmailTemplatesStrings.whenSent,
+                            style: Theme.of(context).textTheme.labelLarge),
+                        const SizedBox(height: 4),
+                        Text(usageDetails['description'] ?? '',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    )),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
-              Text(EmailTemplatesStrings.subject,
-                  style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: Text(EmailTemplatesStrings.subject,
+                    style: Theme.of(context).textTheme.labelLarge)),
+                if (MediaQuery.sizeOf(context).width < 480)
+                  IconButton(onPressed: _showPreview,
+                    tooltip: EmailTemplatesStrings.preview,
+                    icon: const Icon(Icons.preview_outlined, size: 20))
+                else Tooltip(message: EmailTemplatesStrings.preview,
+                  child: TextButton.icon(onPressed: _showPreview,
+                    icon: const Icon(Icons.preview_outlined, size: 20),
+                    label: Text(EmailTemplatesStrings.previewShort))),
+              ]),
               // Subject text field.
               FormField<String>(
                   validator: (_) => _subjectEditor.plainText.trim().isEmpty
                       ? EmailTemplatesStrings.subjectRequired
                       : null,
-                  builder: (field) => InputDecorator(
+                  builder: (field) => ListenableBuilder(
+                    listenable: _subjectEditor.focusNode,
+                    builder: (context, _) => InputDecorator(
+                      isFocused: _subjectEditor.focusNode.hasFocus,
                       decoration: InputDecoration(
+                          isDense: true,
                           border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                          contentPadding: const EdgeInsets.only(left: 12, right: 4),
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surface,
                           errorText: field.errorText),
@@ -460,11 +581,21 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                               ? _subjectEditor.focusNode.requestFocus
                               : null,
                           child: RichHtmlEditor(
-                              controller: _subjectEditor, enabled: _canEdit)))),
+                              controller: _subjectEditor, enabled: _canEdit,
+                              onCancel: _requestClose,
+                              textStyle: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(height: 1.5)))))),
               const SizedBox(height: 16),
-              Text(EmailTemplatesStrings.emailTemplateContent,
-                  style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: Text(EmailTemplatesStrings.emailTemplateContent,
+                    style: Theme.of(context).textTheme.labelLarge)),
+                IconButton(onPressed: _showVariableHelp,
+                    tooltip: EmailTemplatesStrings.variableGuide,
+                    icon: const Icon(Icons.info_outline, size: 20)),
+                IconButton(onPressed: _showSampleSettings,
+                    tooltip: '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
+                    icon: Icon(_contextUnavailable || _previewError ? Icons.warning_amber_outlined : Icons.tune, size: 20)),
+              ]),
               DecoratedBox(
                   decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
@@ -476,7 +607,12 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       child: EditableHtmlField(
                           enabled: _canEdit,
                           authoring: _bodyProvider,
+                          onCancel: _requestClose,
                           onDraftChanged: (controller) {
+                            if (!identical(_bodyDraft, controller)) {
+                              _bodyProvider.previewChanges = controller == null ? null
+                                  : Listenable.merge([controller, controller.authoringChanges]);
+                            }
                             _bodyDraft = controller;
                             if (controller != null) _draftUpdated(controller);
                           },
@@ -549,10 +685,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 ),
           actions: [
             TextButton(
-              onPressed: () async {
-                if (await confirmHtmlDiscard(context, _htmlSave) &&
-                    context.mounted) Navigator.of(context).pop();
-              },
+              onPressed: _requestClose,
               child: Text(CommonStrings.storno),
             ),
             const SizedBox(width: 8),

@@ -4,7 +4,10 @@ import {
   getSupabaseUser,
   isUserEditor,
   isUserEditorOrder,
+  createUserClient,
+  getEmailTemplateAndWrapper,
 } from "../_shared/supabaseUtil.ts";
+import { authoringContextResponse } from "./authoringContext.ts";
 
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL")!;
 const corsHeaders = {
@@ -21,6 +24,31 @@ Deno.serve(async (req) => {
     }
 
     const reqData = await req.json();
+
+    if (reqData.action === "authoringContext") {
+      if (req.method !== "POST") {
+        return Response.json({ error: "Method not allowed" }, {
+          status: 405,
+          headers: corsHeaders,
+        });
+      }
+      return await authoringContextResponse(
+        reqData,
+        req.headers.get("Authorization") || "",
+        {
+          senderAddress: _DEFAULT_EMAIL || "",
+          catalog: async (authorization, entityType, entityId) => {
+            const { data, error } = await createUserClient(authorization).rpc(
+              "get_entity_email_templates",
+              { p_entity_type: entityType, p_entity_id: entityId },
+            );
+            return error ? null : data;
+          },
+          resolve: getEmailTemplateAndWrapper,
+        },
+        corsHeaders,
+      );
+    }
 
     // Expecting a request body with:
     // - template: a full email template model object (with html, subject, occasion, etc.)

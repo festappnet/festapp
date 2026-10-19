@@ -1,6 +1,8 @@
+import { overviewRequiredLinks } from "./emailActionLink.ts";
+import { completeEmailContent } from "./emailContentCompletion.ts";
 import { renderEmail } from './emailDelivery.ts';
 import assert from 'node:assert/strict';
-import { orderEmailOverviewUrl, includeOrderOverview } from './orderEmailOverview.ts';
+import { orderEmailOverviewUrl } from './orderEmailOverview.ts';
 import { generateFullOrder } from './orderOverview.ts';
 import { prepareOrderOverviewSource } from './waitlistEmail.ts';
 Deno.test('confirmation and subsequent emails reuse the root token, including split orders', async () => {
@@ -23,8 +25,8 @@ Deno.test('confirmation and subsequent emails reuse the root token, including sp
     }
     assert.equal(writes, 1);
     const email = { from: '', to: '', subject: '', html: '<html><body>Confirmation</body></html>', replyTo: '', attachments: [] };
-    includeOrderOverview(email, first);
-    includeOrderOverview(email, first);
+    email.html = completeEmailContent(email.html, overviewRequiredLinks(first));
+    email.html = completeEmailContent(email.html, overviewRequiredLinks(first));
     assert.equal((email.html.match(/<a /g) || []).length, 1);
     assert.match(email.html, /order_id=12&amp;token=/);
     assert.match(email.html, /<\/a><\/div><\/body>/);
@@ -38,7 +40,7 @@ Deno.test('status link belongs inside the order card, before the signature, exac
  const card=generateFullOrder({email:'customer@example.invalid',phone:'+420 731 140 198'},[],[],'cs','5W8H2U8I9W');
  const email={from:'',to:'',subject:'',html:`<html><head></head><body>${card}<p>Signature</p></body></html>`,replyTo:'',attachments:[]};
  const url='https://tickets.example.invalid/order?order_id=1&token='+ 'a'.repeat(64);
- includeOrderOverview(email,url);includeOrderOverview(email,url);
+ email.html = completeEmailContent(email.html, overviewRequiredLinks(url));email.html = completeEmailContent(email.html, overviewRequiredLinks(url));
  assert.equal((email.html.match(/href=/g)||[]).length,1);
  assert.ok(email.html.indexOf('Zobrazit aktuální stav objednávky')<email.html.indexOf('Signature'));
  assert.match(email.html,/platby a historii změn/);
@@ -50,10 +52,10 @@ Deno.test('custom links are not duplicated and English status copy is explicit',
  const url='https://tickets.example.invalid/order?order_id=1&token='+ 'a'.repeat(64);
  const make=(html:string)=>({from:'',to:'',subject:'',html,replyTo:'',attachments:[]});
  const custom=make('<a href="'+url.replaceAll('&','&amp;')+'">My overview</a>');
- includeOrderOverview(custom,url);assert.equal((custom.html.match(/href=/g)||[]).length,1);
+ custom.html = completeEmailContent(custom.html, overviewRequiredLinks(url));assert.equal((custom.html.match(/href=/g)||[]).length,1);
  const english=make(generateFullOrder({},[],[],'en'));
- includeOrderOverview(english,url,'en');assert.match(english.html,/View current order status/);
- const noLink=make(generateFullOrder({},[],[]));includeOrderOverview(noLink,null);
+ english.html = completeEmailContent(english.html, overviewRequiredLinks(url, 'en'));assert.match(english.html,/View current order status/);
+ const noLink=make(generateFullOrder({},[],[]));noLink.html = completeEmailContent(noLink.html, overviewRequiredLinks(null));
  assert.doesNotMatch(noLink.html,/href=|customer-order-overview-link/);
 });
 

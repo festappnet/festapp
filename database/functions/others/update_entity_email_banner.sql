@@ -12,28 +12,28 @@ declare
 begin
     -- 1. Validate Entity Type and Permissions
     if p_entity_type = 'occasion' then
-        if (public.get_is_editor_on_occasion(p_entity_id) IS NOT TRUE 
+        if (public.get_is_editor_on_occasion(p_entity_id) IS NOT TRUE
             AND public.get_is_editor_order_on_occasion(p_entity_id) IS NOT TRUE) then
             perform public.raise_error('permission_denied');
         end if;
-        
+
         -- Update Occasion Data
         update public.occasions
         set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', to_jsonb(p_banner_url))
         where id = p_entity_id
         returning organization, title into v_org_id, v_entity_title;
-        
+
     elsif p_entity_type = 'unit' then
         if (public.get_is_editor_on_unit(p_entity_id) IS NOT TRUE) then
             perform public.raise_error('permission_denied');
         end if;
-        
+
         -- Update Unit Data
         update public.units
         set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', to_jsonb(p_banner_url))
         where id = p_entity_id
         returning organization, title into v_org_id, v_entity_title;
-        
+
     else
         raise exception 'Invalid entity type: %', p_entity_type;
     end if;
@@ -45,7 +45,7 @@ begin
         v_new_html := v_new_html || '<div style="text-align: center;">';
         v_new_html := v_new_html || '<img src="' || p_banner_url || '" alt="' || coalesce(v_entity_title, 'Banner') || '" style="width: 100%; height: auto; display: block;">';
         v_new_html := v_new_html || '</div>';
-        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px;">';
+        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">';
         v_new_html := v_new_html || '{{content}}';
         v_new_html := v_new_html || '</div></div>';
 
