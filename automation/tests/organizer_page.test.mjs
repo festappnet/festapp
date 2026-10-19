@@ -27,10 +27,6 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
   assert.ok(html.includes('href="/?create=1"'));
   assert.ok(html.includes('info@festapp.net'));
-  assert.ok(html.includes('href="#schuzka"'));
-  assert.ok(html.includes('title="Výběr termínu online ukázky vstupenky.online"'));
-  assert.ok(html.includes('src="https://cal.com/michael-bujnovsky-5srszz/ukazka?embed=true&amp;layout=month_view"'));
-  assert.ok(html.includes('href="https://cal.com/michael-bujnovsky-5srszz/ukazka" target="_blank" rel="noopener noreferrer"'));
   assert.ok(!html.includes('{{'));
   assert.ok(!html.includes('fonts.googleapis.com'));
   render(); assert.equal(readFileSync(output, 'utf8'), html);

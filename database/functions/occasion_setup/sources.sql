@@ -28,14 +28,13 @@ BEGIN
         FROM public.form_fields ff WHERE ff.form=f.id),'[]'::jsonb)) ORDER BY f.id)
       FROM public.forms f WHERE f.occasion=o.id),'[]'::jsonb),
     'blueprints',COALESCE((SELECT jsonb_agg(jsonb_build_object(
-      'blueprintLayoutDraft',CASE WHEN b.layout IS NULL THEN NULL ELSE jsonb_build_object(
-        'layout',b.layout,
-        'seatBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',sb.node_id,'productId',spot.product,'title',spot.title,'groupNodeId',sb.group_node,'selectionUnitId',sb.selection_unit,'blocked',sb.blocked) ORDER BY sb.node_id)
-          FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots spot ON spot.id=sb.spot WHERE sb.blueprint=b.id),'[]'),
-        'groupProducts',coalesce((SELECT jsonb_agg(jsonb_build_object('groupNodeId',gp.group_node,'productId',gp.product) ORDER BY gp.group_node) FROM eshop.blueprint_group_products gp WHERE gp.blueprint=b.id),'[]'),
-        'areaBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',ab.node_id,'productId',ab.product,'inventoryContextId',ab.inventory_context) ORDER BY ab.node_id) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id),'[]')) END,
-      'id',b.id,'title',b.title) ORDER BY b.id)
-      FROM eshop.blueprints b WHERE b.occasion=o.id AND b.layout IS NOT NULL),'[]'::jsonb),
+      'id',b.id,'title',b.title,'configuration',b.configuration,'groups',b.groups,
+      'background_svg',b.background_svg,
+      'objects',COALESCE((SELECT jsonb_agg((obj - 'state' - 'order_product_ticket' - 'secret') ||
+        jsonb_build_object('state','available','product',s.product,'title',COALESCE(s.title,obj->>'title')))
+        FROM jsonb_array_elements(COALESCE(b.objects,'[]'::jsonb)) obj
+        LEFT JOIN eshop.spots s ON s.id=NULLIF(obj->>'id','')::bigint AND s.blueprint=b.id),'[]'::jsonb)) ORDER BY b.id)
+      FROM eshop.blueprints b WHERE b.occasion=o.id),'[]'::jsonb),
     'program',COALESCE((SELECT jsonb_agg(jsonb_build_object('title',e.title,
       'start_time',e.start_time,'end_time',e.end_time,'description',e.description))
       FROM public.events e WHERE e.occasion=o.id),'[]'::jsonb),

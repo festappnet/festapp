@@ -11,7 +11,7 @@ void main() {
         calls.add(name);
         return {
           'mutation': {
-            'commandId': params['p_command_id'],
+            'commandId': '00000000-0000-4000-8000-000000000001',
             'receiptId': '00000000-0000-4000-8000-000000000001',
             'commitId': null,
             'replayed': false,
@@ -19,8 +19,7 @@ void main() {
           },
           'status': 'applied',
           'code': 200,
-          'data': {'code': 200, 'formId': 8,
-            if(name=='update_blueprint_client_sync_v1') ...{'layout_revision':1,'seatBindings':<Object>[]}},
+          'data': {'code': 200, 'formId': 8},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -39,8 +38,7 @@ void main() {
     );
     await commands.delete(8);
     await commands.save({'id': 1, 'occasion': 7});
-    await commands.saveBlueprint({'id': 2, 'occasion': 7,'layout':<String,dynamic>{},'expected_layout_revision':0});
-    await expectLater(commands.saveBlueprint({'id':2,'objects':[]}),throwsStateError);
+    await commands.saveBlueprint({'id': 2, 'occasion': 7});
     expect(calls, [
       'create_form_client_sync_v1',
       'duplicate_form_to_occasion_client_sync_v1',

@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/form_commands.dart';
-import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 
 class SupabaseFormCommands implements FormCommands {
   SupabaseFormCommands(SupabaseClient client)
@@ -13,7 +11,6 @@ class SupabaseFormCommands implements FormCommands {
   SupabaseFormCommands.withTransport(this._transport);
 
   final ClientCommandTransport _transport;
-  final Map<String, ClientCommandResponse> _blueprintReceipts = {};
 
   @override
   Future<Map<String, dynamic>> create({
@@ -53,30 +50,11 @@ class SupabaseFormCommands implements FormCommands {
   @override
   Future<Map<String, dynamic>> saveBlueprint(
     Map<String, dynamic> blueprint,
-  ) async {
-    if (blueprint['layout'] is! Map || blueprint['expected_layout_revision'] is! int) {
-      throw StateError('BLUEPRINT_LAYOUT_REQUIRED');
-    }
-    final parameters = {'p_blueprint': blueprint};
-    final key = jsonEncode(blueprint);
-    final response = _blueprintReceipts[key] ??
-        ClientCommandResponse.from(
-          await _transport.invokeIntent('blueprint:${blueprint['id']}',
-                  'update_blueprint_client_sync_v1', parameters),
-        );
-    if (response.code != 200) {
-      _blueprintReceipts.remove(key);
-      throw BlueprintCommandRejection(response.code, response.data);
-    }
-    _blueprintReceipts[key] = response;
-    if (response.data['layout_revision'] is! num ||
-            response.data['seatBindings'] is! List) {
-      throw const FormatException('Invalid blueprint save acknowledgement');
-    }
-    await applyClientCommandReplacements(response);
-    _blueprintReceipts.remove(key);
-    return response.data;
-  }
+  ) =>
+      _invoke(
+        'update_blueprint_client_sync_v1',
+        {'p_blueprint': blueprint},
+      );
 
   Future<Map<String, dynamic>> _invoke(
     String functionName,

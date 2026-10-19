@@ -1,6 +1,6 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.291",
+  "version": "0.20.290",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
@@ -15,7 +15,6 @@
     "test:form-access-browser": "node scripts/test_form_access_browser.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.2.0.tgz",
     "@supabase/supabase-js": "^2.117.3",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",
