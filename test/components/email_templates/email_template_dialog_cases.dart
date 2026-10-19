@@ -74,42 +74,50 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  testWidgets('automatic completion follows live draft and survives fullscreen without persistence',
-      (tester) async {
-    final metadata = Completer<EmailAuthoringContext>();
-    await openTemplate(tester, occasionTitle: 'Festival',
-        previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
-        authoringContextLoader: () => metadata.future);
-    const footerKey = ValueKey('email-automatic-completion');
-    expect(find.byKey(footerKey), findsNothing);
-    final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
-    metadata.complete(const EmailAuthoringContext(senderAddress: 'sender@test.invalid'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    final automatic = tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html;
-    expect(automatic, contains('href='));
-    expect(body.html, '<p>Content</p>');
-    expect(body.hasUserChanges, isFalse);
-    final node = body.editor.document.first;
-    body.editor.execute([ChangeSelectionRequest(
-        DocumentSelection.collapsed(position: DocumentPosition(
-            nodeId: node.id, nodePosition: node.endPosition)),
-        SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
-    expect(body.insertTemplateToken('order_overview_button'), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsNothing);
-    expect(body.html, contains('{{order_overview_button}}'));
-    body.undo();
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    expect(body.html, '<p>Content</p>');
-    await tester.ensureVisible(find.byIcon(Icons.open_in_full));
-    await tester.tap(find.byIcon(Icons.open_in_full));
-    await tester.pumpAndSettle();
-    expect(find.byKey(footerKey), findsOneWidget);
-    expect(tester.widget<EmailPreviewHtml>(find.byKey(footerKey)).html, automatic);
-    expect(body.html, '<p>Content</p>');
-  });
+  for (final code in ['TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_STORNO']) {
+    testWidgets('custom $code body omits overview until author inserts it', (tester) async {
+      final metadata = Completer<EmailAuthoringContext>();
+      await openTemplate(tester, code: code, occasionTitle: 'Festival',
+          previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())),
+          authoringContextLoader: () => metadata.future);
+      final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+      metadata.complete(const EmailAuthoringContext(senderAddress: 'sender@test.invalid'));
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      expect(body.hasUserChanges, isFalse);
+      void insert(String code) {
+        final node = body.editor.document.first;
+        body.editor.execute([ChangeSelectionRequest(
+            DocumentSelection.collapsed(position: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition)),
+            SelectionChangeType.placeCaret, SelectionReason.userInteraction)]);
+        expect(body.insertTemplateToken(code), isTrue);
+      }
+      insert('order_overview_button');
+      await tester.pumpAndSettle();
+      expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains('href='));
+      body.undo();
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      await tester.ensureVisible(find.byIcon(Icons.open_in_full));
+      await tester.tap(find.byIcon(Icons.open_in_full));
+      await tester.pumpAndSettle();
+      expect(find.byType(EmailPreviewHtml), findsNothing);
+      expect(body.html, '<p>Content</p>');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      if (code == 'TICKET_ORDER_CONFIRMATION') {
+        insert('fullOrder');
+        await tester.pumpAndSettle();
+        expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains('href='));
+        body.undo();
+        await tester.pumpAndSettle();
+        expect(find.byType(EmailPreviewHtml), findsNothing);
+        expect(body.html, '<p>Content</p>');
+      }
+    });
+  }
 
   testWidgets('wrapper overview action suppresses automatic editor completion', (tester) async {
     final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()));

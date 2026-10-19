@@ -154,12 +154,44 @@ void main() {
     expect(find.text(scenario.values['occasionTitle']!), findsOneWidget);
     expect(tester.getSize(find.byType(RichHtmlEditor)).height,
         lessThanOrEqualTo(52));
-    expect(tester.getTopLeft(find.text(scenario.values['occasionTitle']!)).dx,
+    expect(tester.getTopLeft(find.text('@')).dx,
         lessThanOrEqualTo(16));
     expect(controller.plainText, '{{occasionTitle}}');
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
+  for (final field in [EmailTargetField.subject, EmailTargetField.body]) {
+    testWidgets('variable indicator shares baseline and preserves $field chip semantics', (tester) async {
+      tester.view.physicalSize = const Size(375, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const title = 'Podzimní slavnost a společné setkání všech přátel';
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'), field: field,
+          scenario: scenario.withContext(const EmailPreviewContext(occasionTitle: title)));
+      final controller = RichHtmlEditorController(initialHtml: '<p>{{occasionTitle}}</p>',
+          owner: const HtmlMediaOwner.none(), authoring: provider);
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Align(
+          alignment: Alignment.topLeft, child: RichHtmlEditor(controller: controller)))));
+      await tester.pumpAndSettle();
+      expect(find.text('@'), findsOneWidget);
+      final marker = tester.getRect(find.text('@'));
+      final sample = tester.getRect(find.text(title));
+      expect(sample.left - marker.right, closeTo(4, .1));
+      expect(sample.top, closeTo(marker.top, 1));
+      expect(sample.right, lessThanOrEqualTo(375));
+      final semantics = tester.widgetList<Semantics>(find.byType(Semantics))
+          .where((widget) => widget.properties.label?.contains(title) == true).single;
+      expect(semantics.excludeSemantics, isTrue);
+      expect(semantics.properties.label, isNot(contains('@')));
+      expect(controller.html, '<p>{{occasionTitle}}</p>');
+      expect(controller.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
+
   testWidgets(
       'used unique components stay visible while repeatable buttons remain insertable',
       (tester) async {

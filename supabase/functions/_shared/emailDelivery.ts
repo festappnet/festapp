@@ -37,7 +37,7 @@ export type DeliverEmailInput = {
   templateCode?: string;
   context: EmailContext;
   substitutions: Record<string, unknown>;
-  /** Canonical automatic actions, composed within the resolved wrapper. */
+  /** Candidate actions for authored slots; never appended to a custom body. */
   requiredLinks?: EmailRequiredLink[];
   attachments?: EmailAttachment[];
   from?: string;

@@ -1030,7 +1030,15 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                               .withValues(alpha: .45),
                                                                           border: Border.all(color: colors.primary.withValues(alpha: .5)),
                                                                           borderRadius: BorderRadius.circular(4)),
-                                                                      child: Text(sample, maxLines: provider.singleLine ? 1 : null, overflow: provider.singleLine ? TextOverflow.ellipsis : null, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface)))));
+                                                                      child: Row(mainAxisSize: MainAxisSize.min,
+                                                                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                                                                          textBaseline: TextBaseline.alphabetic,
+                                                                          children: [
+                                                                            Text('@', textScaler: TextScaler.noScaling,
+                                                                                style: style.copyWith(color: colors.primary)),
+                                                                            const SizedBox(width: 4),
+                                                                            Flexible(child: Text(sample, maxLines: provider.singleLine ? 1 : null, overflow: provider.singleLine ? TextOverflow.ellipsis : null, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface))),
+                                                                          ]))));
                                                         }
                                                       ],
                                                       inlineTextStyler:

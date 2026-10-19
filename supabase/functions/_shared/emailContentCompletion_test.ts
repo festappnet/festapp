@@ -15,7 +15,7 @@ Deno.test("pure completion matches generated shared fixtures and is idempotent",
     ),
   );
   for (const fixture of asset.compositionFixtures) {
-    const result = completeEmailContent(fixture.html, fixture.requiredLinks);
+    const result = completeEmailContent(fixture.html, fixture.requiredLinks, fixture.wrapperHtml);
     assert.equal(result, fixture.expected, fixture.name);
     assert.equal(completeEmailContent(result, fixture.requiredLinks), result);
   }

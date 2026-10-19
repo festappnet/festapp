@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sourceDigest": "9726cbd0f7185dd8a3214775203296a84112cec8a03b508fa965f2a312720f34",
+  "sourceDigest": "d6cbc0e48fb22db030bb79febe139bbb4f29e1b0be44a2feb94532a8925d6185",
   "sources": [
     "automation/generate_email_preview_examples.ts",
     "automation/fixtures/email_preview/order.json",
@@ -3238,7 +3238,7 @@
   ],
   "compositionFixtures": [
     {
-      "name": "missing fragment",
+      "name": "custom fragment omits overview",
       "html": "<p>Hello</p>",
       "requiredLinks": [
         {
@@ -3246,10 +3246,10 @@
           "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
         }
       ],
-      "expected": "<p>Hello</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+      "expected": "<p>Hello</p>"
     },
     {
-      "name": "full document",
+      "name": "custom document omits overview",
       "html": "<html><body><p>Hello</p></body></html>",
       "requiredLinks": [
         {
@@ -3257,7 +3257,7 @@
           "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
         }
       ],
-      "expected": "<html><body><p>Hello</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></body></html>"
+      "expected": "<html><body><p>Hello</p></body></html>"
     },
     {
       "name": "existing link",
@@ -3288,7 +3288,7 @@
       "expected": "<p>Hello</p>"
     },
     {
-      "name": "full authored document in padded wrapper",
+      "name": "custom full document in padded wrapper omits overview",
       "html": "<html><body><p>Signature</p></body></html>",
       "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
       "requiredLinks": [
@@ -3297,7 +3297,7 @@
           "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
         }
       ],
-      "expected": "<html><body><table><tr><td style=\"padding:24px\"><html><body><p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></body></html></td></tr></table></body></html>"
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><html><body><p>Signature</p></body></html></td></tr></table></body></html>"
     },
     {
       "name": "empty wrapper behaves as no wrapper",
@@ -3309,10 +3309,10 @@
           "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
         }
       ],
-      "expected": "<p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
+      "expected": "<p>Signature</p>"
     },
     {
-      "name": "fallback inside padded table wrapper",
+      "name": "custom cancellation in padded wrapper omits overview",
       "html": "<p>Cancellation</p><p>Signature</p>",
       "wrapperHtml": "<html><body><table><tr><td style=\"padding:24px\">{{content}}</td></tr></table></body></html>",
       "requiredLinks": [
@@ -3321,7 +3321,7 @@
           "html": "<div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div>"
         }
       ],
-      "expected": "<html><body><table><tr><td style=\"padding:24px\"><p>Cancellation</p><p>Signature</p><div style=\"margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:left\"><p style=\"margin:0 0 12px;color:#475569;font-size:14px;line-height:1.5\">V přehledu najdete aktuální stav objednávky, platby a historii změn.</p><a href=\"https://example.invalid/order?order_id=1&amp;preview=1\" rel=\"noreferrer noopener\" referrerpolicy=\"no-referrer\" style=\"display:inline-block;padding:12px 18px;border-radius:6px;background:#1565c0;color:#ffffff;text-decoration:none;font-weight:600;line-height:1.4\">Zobrazit aktuální stav objednávky</a></div></td></tr></table></body></html>"
+      "expected": "<html><body><table><tr><td style=\"padding:24px\"><p>Cancellation</p><p>Signature</p></td></tr></table></body></html>"
     },
     {
       "name": "card before signature inside padded wrapper",

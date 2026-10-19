@@ -195,8 +195,8 @@ void main() {
     expect(scenario.composeHtml(body), '${plan.forToken('fullOrder', 0)}<p>Signature</p>${plan.forToken('fullOrder', 1)}');
     const wrapper = '<body><div style="padding:24px">{{content}}</div></body>';
     expect(scenario.composeHtml('<p>Text</p>', wrapperHtml: wrapper),
-        '<body><div style="padding:24px"><p>Text</p>$action</div></body>');
-    expect(scenario.authoringCompletion('<p>Text</p>', wrapperHtml: wrapper).trailingHtml, action);
+        '<body><div style="padding:24px"><p>Text</p></div></body>');
+    expect(scenario.authoringCompletion('<p>Text</p>', wrapperHtml: wrapper).trailingHtml, isEmpty);
     for (final explicit in ['{{button}}', '<a href="{{url}}">Custom</a>']) {
       final plan = scenario.authoringCompletion('$body$explicit');
       expect(plan.forToken('fullOrder', 0), '<section>Card</section>');
@@ -296,7 +296,7 @@ void main() {
     expect(zero.values['amount'], startsWith('0'));
     expect(zero.values['fullOrder'], isNot(contains('450')));
   });
-  test('preview reserves completion inside wrapper without reprocessing customer text', () {
+  test('preview leaves custom content unchanged without reprocessing customer text', () {
     const scenario = EmailPreviewScenario(
       templateCode: 'test',
       scenario: 'standard',
@@ -315,7 +315,7 @@ void main() {
         '<html><body><main style="padding:24px">{{content}}</main></body></html>';
     expect(
       scenario.composeHtml('<p>{{name}}</p>', wrapperHtml: wrapper),
-      '<html><body><main style="padding:24px"><p>{{content}} &amp; Jana</p><a href="https://example.invalid/order">Current status</a></main></body></html>',
+      '<html><body><main style="padding:24px"><p>{{content}} &amp; Jana</p></main></body></html>',
     );
     expect(
       scenario

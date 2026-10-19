@@ -370,9 +370,9 @@ const url = "https://example.invalid/order?order_id=1&preview=1";
 const requiredLinks = overviewRequiredLinks(url);
 const paddedWrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
 const compositionFixtures = [
-  { name: "missing fragment", html: "<p>Hello</p>", requiredLinks },
+  { name: "custom fragment omits overview", html: "<p>Hello</p>", requiredLinks },
   {
-    name: "full document",
+    name: "custom document omits overview",
     html: "<html><body><p>Hello</p></body></html>",
     requiredLinks,
   },
@@ -392,7 +392,7 @@ const compositionFixtures = [
     requiredLinks: [],
   },
   {
-    name: "full authored document in padded wrapper",
+    name: "custom full document in padded wrapper omits overview",
     html: "<html><body><p>Signature</p></body></html>",
     wrapperHtml: paddedWrapper,
     requiredLinks,
@@ -404,7 +404,7 @@ const compositionFixtures = [
     requiredLinks,
   },
   {
-    name: "fallback inside padded table wrapper",
+    name: "custom cancellation in padded wrapper omits overview",
     html: "<p>Cancellation</p><p>Signature</p>",
     wrapperHtml: paddedWrapper,
     requiredLinks,

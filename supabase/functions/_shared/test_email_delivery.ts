@@ -67,7 +67,7 @@ Deno.test("missing or malformed template fails preparation before any transport"
   );
 });
 
-Deno.test("automatic order action remains inside the wrapper content cell", async () => {
+Deno.test("custom cancellation omits an overview action even inside a padded wrapper", async () => {
   const url = "https://example.invalid/order?preview=1";
   const action = `<a href="${url}">Status</a>`;
   const wrapper = '<html><body><table><tr><td style="padding:24px">{{content}}</td></tr></table></body></html>';
@@ -76,7 +76,7 @@ Deno.test("automatic order action remains inside the wrapper content cell", asyn
     template: { id: 1, subject: "Cancellation", html: "<p>Signature</p>" },
     requiredLinks: [{ url, html: action }],
   }, async () => ({ wrapper: { html: wrapper } }));
-  assertEquals(result.html, wrapper.replace("{{content}}", `<p>Signature</p>${action}`));
+  assertEquals(result.html, wrapper.replace("{{content}}", "<p>Signature</p>"));
   assertEquals(Object.keys(result).includes("requiredLinks"), false);
 });
 Deno.test("wrapper link and order card slot determine action placement before signature", async () => {
@@ -91,4 +91,16 @@ Deno.test("wrapper link and order card slot determine action placement before si
     `<main style="padding:24px"><section>${action}</section><p>Signature</p></main>`);
   assertEquals((await render(`<main>{{content}}${action}</main>`)).html,
     `<main><section></section><p>Signature</p>${action}</main>`);
+});
+
+Deno.test("an explicitly authored overview button remains inside its wrapper", async () => {
+  const url = "https://example.invalid/order?preview=1";
+  const action = `<a href="${url}">Status</a>`;
+  const wrapper = '<main style="padding:24px">{{content}}</main>';
+  const result = await renderEmail({
+    ...input, substitutions: { ...input.substitutions, order_overview_button: action },
+    template: { id: 1, subject: "Cancellation", html: "<p>Signature</p>{{order_overview_button}}" },
+    requiredLinks: [{ url, html: action }],
+  }, async () => ({ wrapper: { html: wrapper } }));
+  assertEquals(result.html, wrapper.replace("{{content}}", `<p>Signature</p>${action}`));
 });

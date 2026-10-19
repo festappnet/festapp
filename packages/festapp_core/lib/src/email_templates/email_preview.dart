@@ -21,21 +21,12 @@ String escapeEmailHtml(String value) => value
 /// Mirrors the production pure finalizer; shared fixtures assert parity.
 String completeEmailContent(String html, List<EmailRequiredLink> links,
         [String? wrapperHtml]) =>
-    _completeEmailContent(_wrapEmailContent(html, links, wrapperHtml), links);
+    _completeEmailContent(_wrapEmailContent(html, wrapperHtml), links);
 
-String _wrapEmailContent(String content, List<EmailRequiredLink> links, String? wrapperHtml) {
-  if (wrapperHtml == null || wrapperHtml.isEmpty) return content;
-  final wrapped = wrapperHtml.replaceFirst('{{content}}', content);
-  // An explicit card/wrapper slot wins. Otherwise reserve the end of content
-  // before wrapping, so the automatic action inherits the wrapper's padding.
-  if (!wrapperHtml.contains('{{content}}') || wrapped.contains(emailOverviewSlot) ||
-      !links.any((link) => _missingRequiredLink(wrapped, link))) return wrapped;
-  final bodyEnd = RegExp(r'</body>', caseSensitive: false);
-  final reserved = bodyEnd.hasMatch(content)
-      ? content.replaceFirst(bodyEnd, '$emailOverviewSlot</body>')
-      : '$content$emailOverviewSlot';
-  return wrapperHtml.replaceFirst('{{content}}', reserved);
-}
+String _wrapEmailContent(String content, String? wrapperHtml) =>
+    wrapperHtml == null || wrapperHtml.isEmpty
+        ? content
+        : wrapperHtml.replaceFirst('{{content}}', content);
 
 bool _missingRequiredLink(String html, EmailRequiredLink link) =>
     link.url.isNotEmpty && !html.contains('href="${escapeEmailHtml(link.url)}"');
@@ -48,15 +39,7 @@ String _completeEmailContent(
     if (html.contains(emailOverviewSlot)) {
       onInsertion?.call(html.indexOf(emailOverviewSlot), link.html, emailOverviewSlot.length);
       html = html.replaceFirst(emailOverviewSlot, link.html);
-    } else if (RegExp(r'</body>', caseSensitive: false).hasMatch(html)) {
-      onInsertion?.call(RegExp(r'</body>', caseSensitive: false).firstMatch(html)!.start, link.html, 0);
-      html = html.replaceFirst(
-        RegExp(r'</body>', caseSensitive: false),
-        '${link.html}</body>',
-      );
-    } else {
-      onInsertion?.call(html.length, link.html, 0);
-      html += link.html;
+
     }
   }
   return html.replaceAll(emailOverviewSlot, '');
@@ -319,7 +302,7 @@ class EmailPreviewScenario {
     final content = out.toString();
     // Delivery substitutes the draft, wraps it once, then completes links.
     // Wrapper placeholders must never reprocess substituted customer text.
-    final wrapped = _wrapEmailContent(content, requiredLinks, wrapperHtml);
+    final wrapped = _wrapEmailContent(content, wrapperHtml);
     if (capture != null && wrapperHtml != null && wrapperHtml.isNotEmpty) {
       final contentOffset = wrapperHtml.indexOf('{{content}}');
       if (contentOffset < 0) {
