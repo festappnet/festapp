@@ -230,7 +230,10 @@ class BlueprintLayoutController extends ChangeNotifier
         });
     if (metadataUnchanged) {
       _observedDocument = layout.document;
-      notifyListeners();
+      // The public editor listens to geometry directly. Keep commercial host
+      // controls stable during a gesture; commit notifies them once so dirty
+      // state and draft actions become current before the next interaction.
+      if (!layout.gestureActive) notifyListeners();
       return;
     }
     final bindings = <String, BlueprintSeatBinding>{};

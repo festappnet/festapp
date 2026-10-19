@@ -442,6 +442,30 @@ void main() {
     expect(controller.products[2]!.title, 'Updated');
     expect(controller.isDirty, isFalse);
   });
+  test('geometry preview notifications stay on the canvas until commit', () {
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: snapshot()),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    var hostUpdates = 0, canvasUpdates = 0;
+    c.addListener(() => hostUpdates++);
+    c.layout.addListener(() => canvasUpdates++);
+    c.layout.select({node});
+    hostUpdates = 0;
+    canvasUpdates = 0;
+    c.layout.beginGesture();
+    expect(
+        c.layout.previewMove(c.layout.document, {node}, dx: 40, dy: 0), isTrue);
+    expect(canvasUpdates, greaterThan(0));
+    expect(hostUpdates, 0,
+        reason:
+            'Pure geometry must not rebuild all commercial host controls on each pointer move');
+    expect(c.snapshot.seatBindings[node]!.spotId, 11);
+    c.layout.commitGesture();
+    expect(hostUpdates, 1);
+    expect(c.isDirty, isTrue);
+  });
   test('geometry previews retain commercial binding identities', () {
     final c = BlueprintLayoutController(
         source: BlueprintModel(layoutSnapshot: snapshot()),

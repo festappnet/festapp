@@ -578,6 +578,102 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           },
       };
 
+  Widget _toolbarActions() => Row(
+        key: const ValueKey('blueprint-toolbar-actions'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton<BlueprintLayoutMode>(
+              value: controller.mode,
+              onChanged: _busy
+                  ? null
+                  : (mode) {
+                      if (mode != null) controller.setMode(mode);
+                    },
+              items: [
+                for (final mode in BlueprintLayoutMode.values)
+                  if (mode == BlueprintLayoutMode.manage || _canOrder)
+                    DropdownMenuItem(
+                        value: mode,
+                        child: Text(switch (mode) {
+                          BlueprintLayoutMode.manage =>
+                            BlueprintStrings.manageSeats,
+                          BlueprintLayoutMode.order =>
+                            BlueprintStrings.legendCreateOrder,
+                          BlueprintLayoutMode.swap =>
+                            BlueprintStrings.legendSwapSeats,
+                        })),
+              ],
+            ),
+          ),
+          if (controller.mode == BlueprintLayoutMode.manage) _groupChooser(),
+          if (_canEdit)
+            IconButton(
+                onPressed: _busy ? null : _chooseFont,
+                tooltip: BlueprintStrings.fontFamily,
+                icon: const Icon(Icons.font_download_outlined)),
+          if (_canEdit &&
+              controller.mode == BlueprintLayoutMode.manage &&
+              controller.layout.selection.length > 1)
+            TextButton.icon(
+                onPressed: _busy ? null : _bulkProduct,
+                icon: const Icon(Icons.sell_outlined),
+                label: Text(BlueprintStrings.selectedCount(
+                    controller.layout.selection.length))),
+          if (_canEdit && controller.mode == BlueprintLayoutMode.manage)
+            IconButton(
+                tooltip: BlueprintStrings.background,
+                icon: const Icon(Icons.image_outlined),
+                onPressed: _busy ? null : _uploadBackground),
+          if (_canEdit &&
+              controller.mode == BlueprintLayoutMode.manage &&
+              controller.layout.document.background != null)
+            IconButton(
+                tooltip: BlueprintStrings.removeBackground,
+                icon: const Icon(Icons.hide_image_outlined),
+                onPressed: _busy
+                    ? null
+                    : () => controller.layout.apply(
+                        controller.layout.document
+                            .copyWith(clearBackground: true),
+                        label: BlueprintStrings.removeBackground)),
+          if (controller.mode != BlueprintLayoutMode.manage) ...[
+            Semantics(
+                liveRegion: true,
+                child: Text(BlueprintStrings.selectedCount(
+                    controller.operationSelection.length))),
+            TextButton(
+                onPressed:
+                    _busy ? null : () => controller.setMode(controller.mode),
+                child: Text(BlueprintStrings.clearSelection)),
+            FilledButton(
+                onPressed: _busy ||
+                        controller.selectedSpotIds.isEmpty ||
+                        (controller.mode == BlueprintLayoutMode.swap &&
+                            controller.selectedSpotIds.length != 2)
+                    ? null
+                    : controller.mode == BlueprintLayoutMode.order
+                        ? _order
+                        : _swap,
+                child: Text(controller.mode == BlueprintLayoutMode.order
+                    ? BlueprintStrings.confirmOrder
+                    : BlueprintStrings.legendSwapSeats)),
+          ],
+          IconButton(
+            tooltip: BlueprintStrings.manageSeats,
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (context) => AppAlertDialog(
+                content: BlueprintLayoutLegend(
+                    states: controller.snapshot.seatBindings.values
+                        .map(controller.adapter.state)),
+              ),
+            ),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
       animation: controller,
@@ -592,144 +688,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   child: Scaffold(
                     body: SafeArea(
                         child: Column(children: [
-                      Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: SizedBox(
-                              key: const ValueKey('blueprint-editor-toolbar'),
-                              height: 48,
-                              child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(children: [
-                                    if (controller.mode ==
-                                        BlueprintLayoutMode.manage)
-                                      _groupChooser(),
-                                    if (_canEdit)
-                                      IconButton(
-                                          onPressed: _busy ? null : _chooseFont,
-                                          tooltip: BlueprintStrings.fontFamily,
-                                          icon: const Icon(
-                                              Icons.font_download_outlined)),
-                                    if (_canEdit &&
-                                        controller.mode ==
-                                            BlueprintLayoutMode.manage &&
-                                        controller.layout.selection.length > 1)
-                                      TextButton.icon(
-                                          onPressed:
-                                              _busy ? null : _bulkProduct,
-                                          icon: const Icon(Icons.sell_outlined),
-                                          label: Text(
-                                              BlueprintStrings.selectedCount(
-                                                  controller.layout.selection
-                                                      .length))),
-                                    if (_canEdit &&
-                                        controller.mode ==
-                                            BlueprintLayoutMode.manage)
-                                      IconButton(
-                                          tooltip: BlueprintStrings.background,
-                                          icon:
-                                              const Icon(Icons.image_outlined),
-                                          onPressed:
-                                              _busy ? null : _uploadBackground),
-                                    if (_canEdit &&
-                                        controller.mode ==
-                                            BlueprintLayoutMode.manage &&
-                                        controller.layout.document.background !=
-                                            null)
-                                      IconButton(
-                                          tooltip:
-                                              BlueprintStrings.removeBackground,
-                                          icon: const Icon(
-                                              Icons.hide_image_outlined),
-                                          onPressed: _busy
-                                              ? null
-                                              : () => controller.layout.apply(
-                                                  controller.layout.document
-                                                      .copyWith(
-                                                          clearBackground:
-                                                              true),
-                                                  label: BlueprintStrings
-                                                      .removeBackground)),
-                                    for (final mode
-                                        in BlueprintLayoutMode.values)
-                                      if (mode == BlueprintLayoutMode.manage ||
-                                          _canOrder)
-                                        ChoiceChip(
-                                            label: Text(switch (mode) {
-                                              BlueprintLayoutMode.manage =>
-                                                BlueprintStrings.manageSeats,
-                                              BlueprintLayoutMode.order =>
-                                                BlueprintStrings
-                                                    .legendCreateOrder,
-                                              BlueprintLayoutMode.swap =>
-                                                BlueprintStrings.legendSwapSeats
-                                            }),
-                                            selected: controller.mode == mode,
-                                            onSelected: _busy
-                                                ? null
-                                                : (_) =>
-                                                    controller.setMode(mode)),
-                                    if (controller.mode !=
-                                        BlueprintLayoutMode.manage) ...[
-                                      Semantics(
-                                          liveRegion: true,
-                                          child: Text(
-                                              BlueprintStrings.selectedCount(
-                                                  controller.operationSelection
-                                                      .length))),
-                                      TextButton(
-                                          onPressed: _busy
-                                              ? null
-                                              : () => controller
-                                                  .setMode(controller.mode),
-                                          child: Text(
-                                              BlueprintStrings.clearSelection)),
-                                      FilledButton(
-                                          onPressed: _busy ||
-                                                  controller.selectedSpotIds
-                                                      .isEmpty ||
-                                                  (controller.mode ==
-                                                          BlueprintLayoutMode
-                                                              .swap &&
-                                                      controller.selectedSpotIds
-                                                              .length !=
-                                                          2)
-                                              ? null
-                                              : controller.mode ==
-                                                      BlueprintLayoutMode.order
-                                                  ? _order
-                                                  : _swap,
-                                          child: Text(controller.mode ==
-                                                  BlueprintLayoutMode.order
-                                              ? BlueprintStrings.confirmOrder
-                                              : BlueprintStrings
-                                                  .legendSwapSeats)),
-                                    ],
-                                    IconButton(
-                                      tooltip: BlueprintStrings.manageSeats,
-                                      icon: const Icon(Icons.info_outline),
-                                      onPressed: () => showDialog<void>(
-                                        context: context,
-                                        builder: (context) => AppAlertDialog(
-                                          content: BlueprintLayoutLegend(
-                                              states: controller
-                                                  .snapshot.seatBindings.values
-                                                  .map(controller
-                                                      .adapter.state)),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: 290,
-                                      height: 48,
-                                      child: EditorActionBar(
-                                        hasChanges: controller.isDirty,
-                                        enabled: _canEdit && !_busy,
-                                        onSave: () => _run(_save),
-                                        onDiscard: () => _run(
-                                            () async => controller.cancel()),
-                                      ),
-                                    ),
-                                  ])))),
                       if (_busy) const LinearProgressIndicator(),
                       if (_message != null)
                         Padding(
@@ -750,6 +708,15 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                               absorbing: _busy || _assetsFailed,
                               child: VenueLayoutEditor(
                                   controller: controller.layout,
+                                  toolbarLeading: _toolbarActions(),
+                                  toolbarTrailing: EditorActionBar(
+                                    inline: true,
+                                    hasChanges: controller.isDirty,
+                                    enabled: _canEdit && !_busy,
+                                    onSave: () => _run(_save),
+                                    onDiscard: () =>
+                                        _run(() async => controller.cancel()),
+                                  ),
                                   inspectorBuilder: _inspector,
                                   seatPresentation: _presentations,
                                   interactionEnabled: controller.mode ==

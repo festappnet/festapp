@@ -164,8 +164,14 @@ void main() {
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byKey(const ValueKey('blueprint-editor-toolbar'))).height, 48);
-    expect(find.byType(EditorActionBar), findsOneWidget);
+    final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));
+    expect(toolbar, findsOneWidget);
+    expect(tester.getSize(toolbar).height, lessThanOrEqualTo(56));
+    expect(find.descendant(of: toolbar, matching: find.byType(EditorActionBar)), findsOneWidget);
+    expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).inline, isTrue);
+    expect(find.byType(BottomAppBar), findsNothing);
+    expect(tester.getRect(toolbar).contains(tester.getCenter(
+        find.widgetWithText(FilledButton, CommonStrings.save))), isTrue);
     expect(tester.getSize(find.byType(VenueLayoutEditor)).height,
         greaterThan(tester.view.physicalSize.height / tester.view.devicePixelRatio - 70));
     final editor =
@@ -186,9 +192,10 @@ void main() {
     await tester.pump();
     editor.controller.commitGesture();
     final draft = editor.controller.document;
-    await tester.tap(
-        find.widgetWithText(ChoiceChip, BlueprintStrings.legendCreateOrder));
-    await tester.pump();
+    await tester.tap(find.byType(DropdownButton<BlueprintLayoutMode>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(BlueprintStrings.legendCreateOrder).last);
+    await tester.pumpAndSettle();
     final operationalEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     operationalEditor.onNodeActivated!(id);
@@ -200,9 +207,10 @@ void main() {
     expect(identical(editor.controller.document, draft), isTrue);
     operationalEditor.onNodeActivated!(id);
     await tester.pump();
-    await tester
-        .tap(find.widgetWithText(ChoiceChip, BlueprintStrings.legendSwapSeats));
-    await tester.pump();
+    await tester.tap(find.byType(DropdownButton<BlueprintLayoutMode>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(BlueprintStrings.legendSwapSeats).last);
+    await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.selectedCount(0)), findsOneWidget);
     expect(editor.controller.dirty, isTrue);
     expect(identical(editor.controller.document, draft), isTrue);
