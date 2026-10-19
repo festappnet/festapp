@@ -37,6 +37,10 @@ import 'package:fstapp/services/dialog_helper.dart';
 import 'occasion_setup_draft.dart';
 import 'package:fstapp/router_service.dart';
 import 'occasion_setup_strings.dart';
+import 'occasion_setup_story.dart';
+import 'occasion_setup_story_shell.dart';
+import 'package:fstapp/components/unit/verification/unit_legal_profile_section.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 List<String> get _steps => [
@@ -538,29 +542,53 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         .round();
   }
 
+  List<OccasionSetupQuestion> get _questions =>
+      OccasionSetupStory.questions(AppConfig.isAppSupported);
+
+  int _questionIndex(Map<String, dynamic> d) =>
+      OccasionSetupStory.index(d, AppConfig.isAppSupported);
+
+  void _goToQuestion(Map<String, dynamic> d, int index) {
+    final question = _questions[index];
+    d['step'] = question.step;
+    d['storyQuestion'] = question.key;
+  }
+
+  bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
+    if (q.optional) return true;
+    if (q.step != 1) return _stepReady(d, q.step);
+    switch (q.key) {
+      case 'name':
+        return (d['title'] as String).trim().isNotEmpty;
+      case 'start':
+        return DateTime.tryParse(d['start'] as String) != null;
+      case 'end':
+        final start = DateTime.tryParse(d['start'] as String);
+        final end = DateTime.tryParse(d['end'] as String);
+        return start != null && end != null && !end.isBefore(start);
+      default:
+        return isValidPublicSlug(d['link'] as String, allowEmpty: true);
+    }
+  }
+
   void _advance() {
     final d = _active!;
-    final step = d['step'] as int;
-    if (step == 5) return;
-    if (!_stepReady(d, step)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(step == 3
-              ? 'Založ nebo převezmi formulář a doplň jeho pole.'
-              : step == 6
-                  ? 'V editoru plánku přidej alespoň jedno místo.'
-                  : step == 4
-                      ? (AppConfig.isAppSupported
-                          ? 'V editoru plánku přidej alespoň jedno místo.'
-                          : 'Doplň splatnost jako kladný počet dní.')
-                      : 'Doplň povinné údaje tohoto kroku.')));
+    final index = _questionIndex(d);
+    final question = _questions[index];
+    if (index == _questions.length - 1) return;
+    if (!_questionReady(d, question)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(OccasionSetupStrings.story('incomplete'))));
       return;
     }
     _change((x) {
-      if (!(x['completed'] as List).contains(step)) {
-        (x['completed'] as List).add(step);
+      final next = _questions[index + 1];
+      if (!question.optional &&
+          next.step != question.step &&
+          !(x['completed'] as List).contains(question.step)) {
+        (x['completed'] as List).add(question.step);
       }
-      final steps = OccasionSetupDraft.supportedSteps;
-      x['step'] = steps[steps.indexOf(step) + 1];
+      _goToQuestion(x, index + 1);
     });
   }
 
@@ -654,12 +682,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     plan.assignAllSpotsWithBlueprint();
     return plan;
   }
-
-  Widget _card(Widget child) => Card(
-      semanticContainer: false,
-      margin: const EdgeInsets.only(bottom: 14),
-      elevation: 0,
-      child: Padding(padding: const EdgeInsets.all(18), child: child));
 
   Widget _textField(Map<String, dynamic> d, String keyName, String label,
           {TextInputType? keyboardType}) =>
@@ -788,10 +810,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _basics(Map<String, dynamic> d) {
-    final start = DateTime.tryParse(d['start'] as String);
-    final end = DateTime.tryParse(d['end'] as String);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      TextFormField(
+    final question = _questions[_questionIndex(d)].key;
+    if (question == 'name') {
+      return TextFormField(
         key: ValueKey('${d['id']}-title-$_editEpoch'),
         initialValue: d['title'] as String,
         decoration:
@@ -800,40 +821,54 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           x['title'] = value;
           x['copy_title_edited'] = true;
         }, changesConfiguration: true),
-      ),
-      const SizedBox(height: 14),
-      TextFormField(
-        key: ValueKey('${d['id']}-link-$_editEpoch'),
-        controller: _linkController,
-        decoration: InputDecoration(labelText: AdministrationStrings.linkLabel),
-        onChanged: (value) => _change((x) {
-          x['link'] = value;
-        }, changesConfiguration: true),
-      ),
-      const SizedBox(height: 18),
-      TimeDateRangePicker(
-        start: start,
-        end: end,
+      );
+    }
+    if (question == 'link') {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        TextFormField(
+          controller: _linkController,
+          decoration:
+              InputDecoration(labelText: AdministrationStrings.linkLabel),
+          onChanged: (value) =>
+              _change((x) => x['link'] = value, changesConfiguration: true),
+        ),
+        const SizedBox(height: 16),
+        PublicLink(link: d['link'] as String, isForm: false),
+      ]);
+    }
+    final isStart = question == 'start';
+    final value = DateTime.tryParse(d[question] as String);
+    void update(DateTime selected) => _change((x) {
+          x[question] = selected.toIso8601String();
+          final end = DateTime.tryParse(x['end'] as String);
+          if (isStart && end != null && selected.isAfter(end)) {
+            x['end'] = selected.toIso8601String();
+          }
+        }, changesConfiguration: true);
+    final start = DateTime.tryParse(d['start'] as String);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      TimeDatePicker(
+        date: value,
+        time: value == null ? null : TimeOfDay.fromDateTime(value),
+        dateLabel:
+            OccasionSetupStrings.story(isStart ? 'startDate' : 'endDate'),
+        timeLabel:
+            OccasionSetupStrings.story(isStart ? 'startTime' : 'endTime'),
         minDate: DateTime(2000),
         maxDate: DateTime(2101),
-        onStartChanged: (value) => _change((x) {
-          x['start'] = value?.toIso8601String() ?? '';
-          if (value != null && end != null && value.isAfter(end)) {
-            x['end'] = value.toIso8601String();
-          }
-        }, changesConfiguration: true),
-        onEndChanged: (value) => _change((x) {
-          x['end'] = value?.toIso8601String() ?? '';
-          if (value != null && start != null && value.isBefore(start)) {
-            x['start'] = value.toIso8601String();
-          }
-        }, changesConfiguration: true),
+        isValid: value != null &&
+            (isStart || start == null || !value.isBefore(start)),
+        onDateChanged: (day) => update(DateTime(day.year, day.month, day.day,
+            value?.hour ?? 0, value?.minute ?? 0)),
+        onTimeChanged: (time) {
+          final day = value ?? DateTime.now();
+          update(
+              DateTime(day.year, day.month, day.day, time.hour, time.minute));
+        },
       ),
-      const SizedBox(height: 16),
-      PublicLink(link: d['link'] as String, isForm: false),
-      const SizedBox(height: 14),
-      _card(const Text(
-          'Koncept zůstává skrytý a zavřený i po dokončení průvodce.')),
+      if (!isStart && value != null && start != null && value.isBefore(start))
+        Text(OccasionSetupStrings.story('endBeforeStart'),
+            style: TextStyle(color: Theme.of(context).colorScheme.error)),
     ]);
   }
 
@@ -1003,11 +1038,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           'Událost',
           [
             _reviewRow(AdministrationStrings.titleLabel, d['title'] as String),
-            _reviewRow(
-                AdministrationStrings.linkLabel,
-                (d['link'] as String).isEmpty
-                    ? FormStrings.automaticPublicLink
-                    : publicLinkUrl(d['link'] as String, isForm: false)),
+            if (AppConfig.isAppSupported)
+              _reviewRow(
+                  AdministrationStrings.linkLabel,
+                  (d['link'] as String).isEmpty
+                      ? FormStrings.automaticPublicLink
+                      : publicLinkUrl(d['link'] as String, isForm: false)),
             _reviewRow(
                 CommonStrings.start, _dateForReview(d['start'] as String)),
             _reviewRow(CommonStrings.end, _dateForReview(d['end'] as String)),
@@ -1152,42 +1188,32 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           title: const Text('Prošel/prošla jsem zobrazené nastavení.'),
           subtitle: const Text('Potvrzení zpřístupní dokončení kontroly.'),
         ),
-        ElevatedButton.icon(
-          onPressed:
-              issues.isEmpty && d['reviewConfirmed'] == true ? _review : null,
-          icon: const Icon(Icons.fact_check),
-          label: const Text('Potvrdit kontrolu'),
-        ),
       ] else ...[
         const Text(
             '100 % znamená dokončené nastavení. Koncept je stále neveřejný.'),
         const SizedBox(height: 10),
         OutlinedButton(
-            onPressed: () {
-              _leave();
-            },
-            child: const Text('Uložit dokončený koncept')),
-        const SizedBox(height: 10),
-        ElevatedButton.icon(
-            onPressed: _finalizing || issues.isNotEmpty ? null : _finalize,
-            icon: const Icon(Icons.check),
-            label: Text(_finalizing
-                ? OccasionSetupStrings.saving
-                : _finalizeCommand != null
-                    ? OccasionSetupStrings.retry
-                    : OccasionSetupStrings.createEvent)),
+            onPressed: _leave, child: const Text('Uložit dokončený koncept')),
         if (_finalizeError != null) Text(_finalizeError!),
       ],
     ]);
   }
 
   Widget _body(Map<String, dynamic> d) {
+    if (_questions[_questionIndex(d)].optional) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(OccasionSetupStrings.story('verificationHint')),
+        const SizedBox(height: 20),
+        UnitLegalProfileSection(
+          unitId: _stored.unit,
+          canEdit: RightsService.isUnitManager(),
+        ),
+      ]);
+    }
+
     switch (d['step'] as int) {
       case 0:
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Jak chceš začít?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
           if (_loadingSources) const LinearProgressIndicator(),
           if (_sourceError != null)
             TextButton(
@@ -1374,138 +1400,81 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     ]);
   }
 
-  Widget _stepSurface(int step, Widget child) => step == 3
-      ? Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 18),
-          child: child)
-      : _card(child);
-
   Widget _wizard(Map<String, dynamic> d) {
     final step = d['step'] as int;
-    return Stack(children: [
-      Column(children: [
-        Material(
-          color: Theme.of(context).cardColor,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Expanded(
-                    child: Text(
-                        'KONCEPT · ${d['title'].toString().isEmpty ? 'ActivitiesComponentStrings.textUntitledActivity'.tr() : d['title']}',
-                        style: Theme.of(context).textTheme.titleLarge)),
-                Text('${_progress(d)} %'),
-              ]),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: _progress(d) / 100, minHeight: 8),
-              const SizedBox(height: 9),
-              Text(_error ??
-                  (_pending != null || _dirty
-                      ? OccasionSetupStrings.saving
-                      : OccasionSetupStrings.saved)),
-              if (_error != null)
-                TextButton(
-                    onPressed: _pending != null
-                        ? null
-                        : (_conflict ? _reload : _flush),
-                    child: Text(_conflict
-                        ? OccasionSetupStrings.reload
-                        : OccasionSetupStrings.retry)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 40,
-                child: ListView(scrollDirection: Axis.horizontal, children: [
-                  for (final i in OccasionSetupDraft.supportedSteps)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 7),
-                      child: ChoiceChip(
-                        label: Text(
-                            '${OccasionSetupDraft.supportedSteps.indexOf(i) + 1}. ${_steps[i]}'),
-                        selected: i == step,
-                        onSelected: (_) => _change((x) => x['step'] = i),
-                      ),
-                    ),
-                ]),
+    final index = _questionIndex(d);
+    final question = _questions[index];
+    final isReview = question.key == 'review';
+    final reviewReady = isReview && _reviewIssues(d).isEmpty;
+    final isEditor = question.key == 'form' || question.key == 'ticket';
+    return OccasionSetupStoryShell(
+      questionTitles: [
+        for (final item in _questions)
+          OccasionSetupStrings.story('${item.key}Question'),
+      ],
+      currentIndex: index,
+      eventTitle:
+          '${OccasionSetupStrings.story('draft')} · ${(d['title'] as String).trim().isEmpty ? OccasionSetupStrings.untitled : d['title']}',
+      status: _error != null
+          ? OccasionSetupStrings.saveFailed
+          : _pending != null || _dirty
+              ? OccasionSetupStrings.saving
+              : OccasionSetupStrings.saved,
+      readiness: OccasionSetupStrings.readiness(_progress(d)),
+      questionCount:
+          OccasionSetupStrings.questionNumber(index + 1, _questions.length),
+      segmentStates: [
+        OccasionSetupStrings.story('completedQuestion'),
+        OccasionSetupStrings.story('currentQuestion'),
+        OccasionSetupStrings.story('upcomingQuestion'),
+      ],
+      leaveLabel: OccasionSetupStrings.story('leave'),
+      backLabel: CommonStrings.back,
+      onLeave: _pending != null ? null : _leave,
+      onBack: index == 0
+          ? null
+          : () => _change((x) => _goToQuestion(x, _questionIndex(x) - 1)),
+      maxContentWidth: step == 3 || question.key == 'ticket'
+          ? StylesConfig.formMaxWidth
+          : isReview || question.optional
+              ? 960
+              : 680,
+      centerQuestion: !isEditor && !isReview && !question.optional,
+      error: _error == null
+          ? null
+          : Row(children: [
+              Expanded(
+                  child: Text(_error!,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error))),
+              TextButton(
+                onPressed:
+                    _pending != null ? null : (_conflict ? _reload : _flush),
+                child: Text(_conflict
+                    ? OccasionSetupStrings.reload
+                    : OccasionSetupStrings.retry),
               ),
             ]),
-          ),
-        ),
-        Expanded(
-          child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-              children: [
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxWidth: step == 3
-                            ? StylesConfig.formMaxWidth
-                            : step == 5
-                                ? 960
-                                : 760),
-                    child: _stepSurface(
-                        step,
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                                '${OccasionSetupDraft.supportedSteps.indexOf(step) + 1}. ${_steps[step]}',
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall),
-                            const SizedBox(height: 18),
-                            _body(d),
-                          ],
-                        )),
-                  ),
-                ),
-              ]),
-        ),
-      ]),
-      Positioned(
-        left: 20,
-        right: 20,
-        bottom: 16,
-        child: SafeArea(
-          top: false,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Material(
-              elevation: 8,
-              shadowColor: Colors.black26,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              color: Theme.of(context).cardColor,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      TextButton.icon(
-                          onPressed: _pending != null ? null : _leave,
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('Odejít do seznamu')),
-                      if (step > 0)
-                        TextButton(
-                            onPressed: () => _change((x) {
-                                  final steps =
-                                      OccasionSetupDraft.supportedSteps;
-                                  x['step'] = steps[steps.indexOf(step) - 1];
-                                }),
-                            child: Text(CommonStrings.back)),
-                      if (step != 5)
-                        ElevatedButton(
-                            onPressed: _advance,
-                            child: Text(CommonStrings.continueAction)),
-                    ]),
-              ),
-            ),
-          ),
+      primaryAction: FilledButton(
+        style: FilledButton.styleFrom(minimumSize: const Size(160, 48)),
+        onPressed: isReview
+            ? d['reviewed'] == true
+                ? (_finalizing || !reviewReady ? null : _finalize)
+                : (reviewReady && d['reviewConfirmed'] == true ? _review : null)
+            : _advance,
+        child: Text(
+          isReview
+              ? d['reviewed'] == true
+                  ? OccasionSetupStrings.createEvent
+                  : 'Potvrdit kontrolu'
+              : question.optional
+                  ? OccasionSetupStrings.story('skipVerification')
+                  : CommonStrings.continueAction,
+          textAlign: TextAlign.center,
         ),
       ),
-    ]);
+      child: _body(d),
+    );
   }
 
   @override
@@ -1515,7 +1484,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           if (!didPop) _leave();
         },
         child: Scaffold(
-          appBar: AppBar(title: Text(AdministrationStrings.addNewEventTitle)),
           body: _finalizeCommand == null
               ? _wizard(_data)
               : Center(

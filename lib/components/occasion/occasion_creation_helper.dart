@@ -152,20 +152,21 @@ class OccasionCreationHelper {
                           ),
                           onChanged: handleTitleChange,
                         ),
-                        // Link field with validation
-                        TextFormField(
-                          controller: linkController,
-                          decoration: InputDecoration(
-                            labelText: AdministrationStrings.linkLabel,
-                            labelStyle: TextStyle(
-                              color: linkError != null
-                                  ? ThemeConfig.redColor(context)
-                                  : null,
+                        // Event URLs only apply to tenants with the app.
+                        if (AppConfig.isAppSupported)
+                          TextFormField(
+                            controller: linkController,
+                            decoration: InputDecoration(
+                              labelText: AdministrationStrings.linkLabel,
+                              labelStyle: TextStyle(
+                                color: linkError != null
+                                    ? ThemeConfig.redColor(context)
+                                    : null,
+                              ),
+                              errorText: linkError,
                             ),
-                            errorText: linkError,
+                            onChanged: handleLinkChange,
                           ),
-                          onChanged: handleLinkChange,
-                        ),
                         const SizedBox(height: 16),
                         TimeDateRangePicker(
                           start: startDate,
@@ -208,12 +209,13 @@ class OccasionCreationHelper {
                           maxDate: DateTime(2101),
                         ),
                         const SizedBox(height: 16),
-                        ValueListenableBuilder<String>(
-                          valueListenable: linkNotifier,
-                          builder: (context, draftLink, child) {
-                            return PublicLink(link: draftLink, isForm: false);
-                          },
-                        ),
+                        if (AppConfig.isAppSupported)
+                          ValueListenableBuilder<String>(
+                            valueListenable: linkNotifier,
+                            builder: (context, draftLink, child) {
+                              return PublicLink(link: draftLink, isForm: false);
+                            },
+                          ),
                       ],
                     ),
                   ),
