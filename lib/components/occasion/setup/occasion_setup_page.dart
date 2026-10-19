@@ -2014,6 +2014,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               _change((x) => _goToQuestion(x, _questionIndex(x) - 1));
               if (question.key == 'verification') _refreshVerification();
             },
+      onQuestionSelected: _presentationUploading
+          ? null
+          : (target) {
+              _change((x) => _goToQuestion(x, target));
+              if (question.key == 'verification') _refreshVerification();
+            },
       maxContentWidth: step == 3 || question.key == 'ticket'
           ? StylesConfig.formMaxWidth
           : isReview || question.optional
