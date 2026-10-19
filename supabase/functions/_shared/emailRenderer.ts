@@ -1,6 +1,5 @@
-import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
-import { orderEmailOverviewUrl, overviewEmailSubstitutions } from './orderEmailOverview.ts';
+import { orderEmailOverviewUrl, overviewEmailSubstitutions, includeOrderOverview } from './orderEmailOverview.ts';
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
@@ -75,10 +74,9 @@ export async function renderQueuedEmail(
     }
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
     return {
-      prepared: await renderEmail({
+      prepared: includeOrderOverview(await renderEmail({
         to: row.recipient,
         templateCode: row.code,
-        requiredLinks: overviewRequiredLinks(overviewUrl, row.data?.lang),
         context: {
           organization: row.organization,
           occasion: row.occasion,
@@ -88,7 +86,7 @@ export async function renderQueuedEmail(
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
         attachments,
-      }),
+      }), overviewUrl, row.data?.lang),
       postAction: { ...(overviewUrl ? { tracking_policy: "disabled" } : {}), ticket_ids: tickets.map((t: any) => t.id) },
     };
   }
@@ -110,10 +108,9 @@ export async function renderQueuedEmail(
   }, null);
   // Server context and snapshotted recipient are authoritative, never live replacement recipient.
   const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
-  const prepared = await renderEmail({
+  const prepared = includeOrderOverview(await renderEmail({
     to: row.recipient,
     templateCode: row.code,
-    requiredLinks: overviewRequiredLinks(overviewUrl, row.data?.lang),
     context: {
       organization: row.organization,
       occasion: row.occasion,
@@ -125,7 +122,7 @@ export async function renderQueuedEmail(
     from: `${rendered.sender || "Festapp"} | Festapp <${
       Deno.env.get("DEFAULT_EMAIL")
     }>`,
-  });
+  }), overviewUrl, row.data?.lang);
   return {
     prepared,
     postAction: {
