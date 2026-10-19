@@ -28,9 +28,11 @@ void main() {
     for (final scenario in examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: accounts)) {
       expect(scenario.values['accountNumber'], 'EUR account');
       expect(scenario.values['iban'], accounts[1].iban);
+      if (scenario.scenario == 'unpaid') expect(scenario.values['balanceReasoning'], contains(accounts[1].iban));
+    }
+    for (final scenario in examples.scenariosFor('TICKET_ORDER_REMINDER', paymentAccounts: accounts)) {
       expect(scenario.values['paymentDetails'], contains(accounts[1].iban));
       expect(scenario.values['paymentDetails'], isNot(contains('0000000000/0000')));
-      if (scenario.scenario == 'unpaid') expect(scenario.values['balanceReasoning'], contains(accounts[1].iban));
     }
     final noMatch = examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: [accounts.first]).first;
     expect(noMatch.values['accountNumber'], isNot(accounts.first.accountNumber));

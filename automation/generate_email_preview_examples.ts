@@ -65,7 +65,7 @@ const scalar = {
   appName: "Festapp",
   name: "Jana",
   surname: "Nováková",
-  email: "jana.novakova@example.invalid",
+  email: fixture.orderData.email,
   resetLink: "https://example.invalid/reset?preview=1",
   confirmationUrl: "https://example.invalid/delete?preview=1",
   expiresAt: "30. 10. 2026 18:00",

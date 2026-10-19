@@ -1,7 +1,7 @@
 {
   "occasionTitle": "Podzimní slavnost v Zahradě",
   "orderSymbol": "5W8H2U8I9W",
-  "orderData": {"name": "Jana", "surname": "Nováková", "email": "jana.novakova@example.invalid"},
+  "orderData": {"name": "Jana", "surname": "Nováková", "email": "jana.novakova@example.com"},
   "tickets": [
     {"ticket_symbol": "A001", "products": [{"title": "Dospělý vstup", "type_title": "Vstupné", "price": 450, "currency_code": "CZK"}]},
     {"ticket_symbol": "A002", "products": [{"title": "Studentský vstup", "type_title": "Vstupné", "price": 350, "currency_code": "CZK"}]}

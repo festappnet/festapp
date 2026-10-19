@@ -82,7 +82,7 @@ void main() {
       const account = EmailPreviewPaymentAccount(accountNumber: '123456789/2010',
         iban: 'CZ65 2010 0000 0012 3456 7890', currencies: ['CZK']);
       await openTemplate(tester, occasionTitle: 'Festival',
-        html: '<p>{{accountNumber}} - {{iban}}</p>{{paymentDetails}}',
+        html: '<p>{{accountNumber}} - {{iban}}</p>{{balanceReasoning}}',
         previewExamplesLoader: () => examples.future,
         authoringContextLoader: () => metadata.future);
       void completeMetadata() => metadata.complete(const EmailAuthoringContext(
@@ -97,7 +97,7 @@ void main() {
       expect(find.text(account.iban), findsOneWidget);
       expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains(account.iban));
       final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
-      expect(body.html, '<p>{{accountNumber}} - {{iban}}</p>{{paymentDetails}}');
+      expect(body.html, '<p>{{accountNumber}} - {{iban}}</p>{{balanceReasoning}}');
       expect(body.hasUserChanges, isFalse);
       await tester.pumpWidget(const SizedBox());
     });

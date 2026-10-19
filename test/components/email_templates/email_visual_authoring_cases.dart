@@ -254,7 +254,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('sender@organizer.test'), findsOneWidget);
     expect(
-        find.textContaining('jana.novakova@example.invalid'), findsOneWidget);
+        find.textContaining('jana.novakova@example.com'), findsOneWidget);
     expect(tester.getSize(find.byType(EmailPreviewHtml)).width,
         lessThanOrEqualTo(400));
     expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html,

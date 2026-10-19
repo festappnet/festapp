@@ -50,7 +50,7 @@ void main() {
       expect(html, contains('600'));
       expect(html, contains('200'));
       expect(html, contains('800'));
-      expect(html, contains('jana.novakova@example.invalid'));
+      expect(html, contains('jana.novakova@example.com'));
       expect(scenario.values['balanceReasoning'], contains('10. 11. 2026'));
       expect(html, isNot(contains('Dospělý vstup')));
       expect(
