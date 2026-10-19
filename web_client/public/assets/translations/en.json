@@ -2651,10 +2651,6 @@
     "includingCancelled": "Including cancelled"
   },
   "OccasionSetup": {
-    "stepByStep": "Step by step",
-    "recommendedForTickets": "Recommended for tickets",
-    "guidedCreationDescription": "The wizard guides you through setting up the event.",
-    "quickCreationDescription": "Enter a title, date and time. Configure the rest later.",
     "drafts": "Drafts",
     "untitled": "New event",
     "resume": "Continue",

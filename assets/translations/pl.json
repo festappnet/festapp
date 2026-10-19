@@ -1236,10 +1236,6 @@
     "cancelDraftConfirm": "Usunąć szkic „{title}”? Niedokończone ustawienia zostaną trwale usunięte.",
     "progress": "Ukończono {value} %",
     "createStepByStep": "Utwórz krok po kroku",
-    "stepByStep": "Krok po kroku",
-    "recommendedForTickets": "Zalecane przy sprzedaży biletów",
-    "guidedCreationDescription": "Kreator przeprowadzi Cię przez konfigurację wydarzenia.",
-    "quickCreationDescription": "Podaj nazwę, datę i godzinę. Pozostałe ustawienia uzupełnisz później.",
     "withoutWizard": "Bez kreatora",
     "createEvent": "Utwórz wydarzenie",
     "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."

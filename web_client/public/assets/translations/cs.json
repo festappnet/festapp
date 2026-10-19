@@ -2652,10 +2652,6 @@
     "includingCancelled": "Včetně stornovaných"
   },
   "OccasionSetup": {
-    "stepByStep": "Krok za krokem",
-    "recommendedForTickets": "Doporučeno pro vstupenky",
-    "guidedCreationDescription": "Průvodce vás provede nastavením akce.",
-    "quickCreationDescription": "Zadejte název, datum a čas. Další nastavení doplníte později.",
     "drafts": "Rozpracované koncepty",
     "untitled": "Nová událost",
     "resume": "Pokračovat",
