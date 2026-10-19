@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_result jsonb; v_before_users uuid[];
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   SELECT min(s.occasion) INTO v_occasion FROM eshop.spots s
     WHERE s.id=ANY(p_spot_ids);
   IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_spot_ids)=0
@@ -44,6 +45,7 @@ CREATE OR REPLACE FUNCTION public.replace_blueprint_order_client_sync_v1(
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_prepare jsonb; v_result jsonb; v_before_users uuid[];
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   SELECT min(s.occasion) INTO v_occasion FROM eshop.spots s
     WHERE s.id=ANY(p_spot_ids);
   IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_spot_ids)=0

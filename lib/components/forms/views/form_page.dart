@@ -80,6 +80,7 @@ class _FormPageState extends State<FormPage> {
   FormBundle? _changedCapacityForm;
   bool _isLoading = false;
   bool _formNotAvailable = false;
+  bool _formLoadFailed = false;
   FormFontCatalog? _fonts;
   bool _fontLoadFailed = false;
 
@@ -259,6 +260,13 @@ class _FormPageState extends State<FormPage> {
             demoSimulation: form!.demoSimulation,
             selectedSeats: formSession!.currentSeats,
             maxTickets: formHolder!.getTicket()?.maxTickets,
+            selectedAreaQuantity: (id) => formSession!.areaQuantity(id),
+            onQuantityRequested: (binding, quantity, available) async {
+              formSession!.setAreaQuantity(binding, quantity, available: available);
+            },
+            onSessionChanged: (secret, expiry) {
+              formHolder!.controller!.updateReservationSession(secret, expiry);
+            },
             onSelectionChanged: (sts) {
               formSession!.updateSeats(sts);
             },
@@ -471,7 +479,7 @@ class _FormPageState extends State<FormPage> {
 
     var data = FormHelper.getDataFromForm(formHolder!);
     data = FormHelper.replaceSpotWithId(data);
-    data[FormMetadata.metaSecret] = form!.definition.secret;
+    data[FormMetadata.metaSecret] = formHolder?.controller?.secret ?? form!.definition.secret;
     data[FormMetadata.metaForm] = form!.definition.key;
     if (formHolder!.paymentType != null) {
       data['payment_type'] = formHolder!.paymentType;
@@ -700,6 +708,20 @@ class _FormPageState extends State<FormPage> {
 
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_formLoadFailed) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(CommonStrings.unexpectedError, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              TextButton(onPressed: loadData, child: Text(CommonStrings.retry)),
+            ]),
+          ),
+        ),
+      );
     }
 
     if (_showOverview && _overviewScope != null) {
@@ -1304,6 +1326,7 @@ class _FormPageState extends State<FormPage> {
       _isLoading = true;
       _fontLoadFailed = false;
       _formNotAvailable = false; // Reset the message flag
+      _formLoadFailed = false;
       form = null;
       _terminalIdentity = null;
     });
@@ -1418,11 +1441,14 @@ class _FormPageState extends State<FormPage> {
       setState(() {
         _isLoading = false;
       });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _formNotAvailable = true;
-      });
+    } catch (error, stack) {
+      AppLogger.error('Form loading failed: $error\n$stack');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _formLoadFailed = true;
+        });
+      }
     }
   }
 }

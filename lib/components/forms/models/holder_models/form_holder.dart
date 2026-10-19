@@ -7,14 +7,19 @@ import 'field_holder.dart';
 import 'id_document_field_holder.dart';
 import 'birth_date_field_holder.dart';
 import 'package:festapp_core/forms.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
 
 import 'ticket_holder.dart';
 
 class FormHolderController {
   final bool demoSimulation;
-  final String? secret;
+  String? secret;
+  DateTime? reservationExpiresAt;
+  void updateReservationSession(String nextSecret, DateTime? expiresAt) {
+    secret = nextSecret;
+    reservationExpiresAt = expiresAt;
+  }
+
   final int? blueprintId;
   final GlobalKey<FormBuilderState> globalKey;
   final String? formKey;
@@ -90,6 +95,17 @@ class FormHolder {
         (f) => f.fieldType == FormMetadata.fieldTypeTicket) as TicketHolder?;
     if (ticket != null) {
       ticket.fields.addAll(ticketChildFields.map((f) => createFieldHolder(f)));
+      ticket.offeredProductFields = List.unmodifiable(formModel.isWaitlist
+          ? <OptionsFieldProductHolder>[]
+          : formModel.relatedFields
+              .where((field) =>
+                  field.isTicketField == true &&
+                  field.type == FormMetadata.fieldTypeProductType &&
+                  field.isHidden != true &&
+                  field.productType != null)
+              .map(createFieldHolder)
+              .whereType<OptionsFieldProductHolder>());
+
       if (formModel.registrationMode == 'regular' &&
           formModel.capacity?.remainingPublic != null) {
         ticket.maxTickets =

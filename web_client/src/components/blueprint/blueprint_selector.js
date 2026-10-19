@@ -1,257 +1,160 @@
-import { RouterService } from '../../services/router_service.js';
-
+import kernelUrl from '@festapp/venue-layout/kernel?url';
+import { loadKernel, loadLayoutAssets, mount } from '@festapp/venue-layout';
 import { FormStrings } from '../forms/form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
+import { BlueprintStrings } from './blueprint_strings.js';
 import { DbForms } from '../forms/db_forms.js';
-import { BlueprintRenderer } from './blueprint_renderer.js';
-import { SeatStates } from './blueprint_config.js';
+import { BlueprintLayoutAdapter } from './blueprint_layout_adapter.js';
 
-// Dynamically load CSS for non-bundler environments
-// Basic style injection
-// Only run if document is available
 if (typeof document !== 'undefined') {
     const cssUrl = new URL('./blueprint.css', import.meta.url).href;
     if (!document.querySelector(`link[href="${cssUrl}"]`)) {
         const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssUrl;
-        document.head.appendChild(link);
+        link.rel = 'stylesheet'; link.href = cssUrl; document.head.appendChild(link);
     }
 }
 
+/** Host modal lifecycle only. Shared viewer owns rendering, gestures and selection. */
 export class BlueprintSelector {
-    constructor() {
-        this.renderer = null;
-    }
+    constructor() { this.renderer = null; this.adapter = null; this.close = null; }
 
-    async open(session, field, initialSeats) {
-        // Extract from session
-        const formModel = session.formModel;
-        // --- Viewport Lock ---
-        // Removed global viewport modification which risks breaking host page
-
-
-        // --- Container Setup (Full Screen) ---
+    async open(session, field, initialSeats = []) {
+        this.close?.();
+        const previousFocus = document.activeElement;
         const container = document.createElement('div');
         container.className = 'blueprint-modal-container';
-        // Double enforce via inline style
-        container.style.touchAction = 'none';
-        
-        document.body.appendChild(container);
-
-        // --- Layout Mode ---
-        document.body.classList.add('blueprint-active'); 
-        document.documentElement.classList.add('blueprint-active'); 
-        
-        // Removed manual hack for #form-page-container and #floating-price-widget
-        // Handled by CSS: body.blueprint-active ...
-
-        // --- Back/Continue Button ---
-        const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'btn btn-primary btn-submit blueprint-btn-confirm'; 
-        confirmBtn.type = 'button';
-        confirmBtn.textContent = FormStrings.buttonContinue; 
-        
-        // --- Content Area ---
+        container.setAttribute('role', 'dialog');
+        container.setAttribute('aria-modal', 'true');
+        container.setAttribute('aria-label', BlueprintStrings.layoutTitle);
         const content = document.createElement('div');
         content.className = 'blueprint-content';
-        
-        container.appendChild(content);
-        container.appendChild(confirmBtn);
-
-        // --- API & State ---
-        let blueprintData = null;
-        this.selectedSeats = initialSeats ? [...initialSeats] : []; // Local state
-        
-        // --- History / Navigation ---
-        // Push a new state so the back button closes the modal instead of navigating away
-        const stateId = 'seat-selection';
-        RouterService.pushOverlayState(stateId);
-        let closed = false;
-        let closing = false;
-
-        // Global Event Killer removed in favor of CSS handling (touch-action: none on container)
-        // and targeted gesture handling in BlueprintRenderer/GestureController
-
-
-        const popHandler = (event) => {
-            // If we are popping state (back button), we clean up
-            // Check if we are back to expected state or just general back
-            cleanup();
+        const legend = document.createElement('div');
+        legend.className = 'blueprint-state-legend';
+        const status = document.createElement('div');
+        status.className = 'blueprint-operation-status';
+        status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+        const actions = document.createElement('div');
+        actions.className = 'blueprint-modal-actions';
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-secondary'; closeBtn.textContent = BlueprintStrings.close;
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-primary btn-submit';
+        confirmBtn.textContent = FormStrings.buttonContinue; confirmBtn.disabled = true;
+        actions.append(closeBtn, confirmBtn);
+        container.append(content, legend, status, actions); document.body.appendChild(container);
+        document.body.classList.add('blueprint-active'); document.documentElement.classList.add('blueprint-active');
+        const stateId = `seat-selection-${Date.now()}`;
+        window.history.pushState({ ...window.history.state, blueprintOverlay: stateId }, '', '#seat-selection');
+        let closed = false, closing = false, loading = false, pending = 0;
+        const assetAbort = new AbortController();
+        const refreshLegend = () => {
+            const states = ['empty', 'available', 'selected', 'selectedByMe', 'ordered', 'used', 'blocked'];
+            const counts = Object.fromEntries(states.map(state => [state, 0]));
+            for (const model of this.adapter?.models.values() || []) {
+                const state = ({selected_by_me: 'selectedByMe', black: 'blocked', taken: 'ordered'})[model.state] || model.state;
+                if (state in counts) counts[state]++;
+            }
+            legend.replaceChildren(...states.map(state => {
+                const label = document.createElement('span');
+                label.textContent = `${BlueprintStrings.seatState(state)}: ${counts[state]}`;
+                return label;
+            }));
         };
-
+        const refreshActions = () => {
+            closeBtn.disabled = pending > 0;
+            confirmBtn.disabled = loading || pending > 0 || !this.adapter;
+            status.textContent = pending > 0 ? CommonStrings.loading : '';
+        };
         const cleanup = () => {
-             if (closed) return;
-             closed = true;
-             // Restore Viewport - not needed as we didn't touch it
-
-
-             // 1. Collect selected seats before destroying if this was a valid exit?
-             // Actually, popstate means CANCEL usually, or just "Close".
-             // But in mobile app behavior, back button might mean "Done" if selection is immediate.
-             // Here we treat explicit "Continue" as confirm, and Back as "Cancel/Confirm" depending on logic.
-             // Flutter app: Back button confirms if not cancelled explicitly.
-             // Let's invoke callback with current selection on cleanup?
-             // Logic: If user clicks Back, they might expect their selection to be saved.
-             // Replicating Flutter: _hideSeatReservation completes with selectedSeats.
-             
-             // Replicating Flutter: _hideSeatReservation completes with selectedSeats.
-             // We no longer use callback. Session events drive the UI.
-
-             if (this.renderer) this.renderer.destroy();
-             
-             document.body.classList.remove('blueprint-active');
-             document.documentElement.classList.remove('blueprint-active');
-             container.remove();
-             window.removeEventListener('popstate', popHandler);
-             document.removeEventListener('keydown', escHandler);
+            if (closed) return;
+            closed = true;
+            assetAbort.abort();
+            this.selectedSeats = this.adapter?.selectedSeats ?? initialSeats;
+            this.adapter?.dispose(); this.renderer?.dispose();
+            this.adapter = null; this.renderer = null; this.close = null;
+            container.remove();
+            document.body.classList.remove('blueprint-active'); document.documentElement.classList.remove('blueprint-active');
+            window.removeEventListener('popstate', popHandler); document.removeEventListener('keydown', keyHandler);
+            if (previousFocus?.isConnected) previousFocus.focus();
         };
-
-        // When clicking continue/back explicitly
         const requestClose = () => {
-             if (closing || closed) return;
-             closing = true;
-             window.history.back();
+            if (closed || closing || pending > 0) return;
+            closing = true;
+            window.history.back();
         };
-        const escHandler = (event) => {
-             if (event.key !== 'Escape' || event.defaultPrevented) return;
-             event.preventDefault();
-             requestClose();
-        };
-        confirmBtn.onclick = requestClose;
-        document.addEventListener('keydown', escHandler);
-        
-        window.addEventListener('popstate', popHandler);
-
-        // --- Load Data ---
-        try {
-            content.innerHTML = `<div class="blueprint-loading"><div class="sp-loader"></div></div>`;
-
-            let blueprintId = null;
-            if (field && field.data && field.data.blueprintId) {
-                blueprintId = field.data.blueprintId;
-            } else if (formModel.blueprint) {
-                blueprintId = (typeof formModel.blueprint === 'object') ? formModel.blueprint.id : formModel.blueprint;
+        const popHandler = () => cleanup();
+        const keyHandler = event => {
+            if (event.defaultPrevented) return;
+            if (event.key === 'Escape') { event.preventDefault(); requestClose(); }
+            if (event.key === 'Tab') {
+                const focusable = [...container.querySelectorAll('button:not(:disabled), [tabindex="0"], input:not(:disabled)')];
+                const first = focusable[0], last = focusable.at(-1);
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
             }
+        };
+        this.close = cleanup;
+        closeBtn.onclick = requestClose; confirmBtn.onclick = requestClose;
+        document.addEventListener('keydown', keyHandler); window.addEventListener('popstate', popHandler);
+        closeBtn.focus();
 
-            if (!blueprintId) throw new Error("Blueprint ID missing");
-
-            blueprintData = await DbForms.getBlueprint(
-                formModel.secret,
-                formModel.key,
-                blueprintId
-            );
-
-            if (closed) return;
-
-            // --- Fix: Adoption of Blueprint Secret ---
-            // The backend may return a persistent secret if we sent a partial/empty one.
-            // We must adopt this secret for the session.
-            if (blueprintData && blueprintData.secret) {
-                formModel.secret = blueprintData.secret;
-                this.reservationSecret = blueprintData.secret;
-                
-                // Update Session Payload for submit
-                if (session && session.payload) {
-                    session.payload[DbForms.metaSecret] = blueprintData.secret;
+        const load = async () => {
+            if (closed || loading) return;
+            loading = true; refreshActions();
+            const loadingLabel = document.createElement('p'); loadingLabel.textContent = CommonStrings.loading;
+            content.replaceChildren(loadingLabel);
+            try {
+                if (session.formModel.demoSimulation) throw new Error(FormStrings.demoNotice);
+                const blueprint = field?.data?.blueprintId ?? session.formModel.blueprint;
+                const blueprintId = typeof blueprint === 'object' ? blueprint?.id : blueprint;
+                if (!blueprintId) throw new Error(BlueprintStrings.layoutUnavailable);
+                const data = await DbForms.getBlueprint(session.formModel.secret, session.formModel.key, blueprintId);
+                if (closed) return;
+                if (!data?.layout) throw new Error(BlueprintStrings.layoutUnavailable);
+                await loadKernel(kernelUrl);
+                if (closed) return;
+                if (data.secret) {
+                    session.formModel.secret = data.secret;
+                    if (session.payload) session.payload[DbForms.metaSecret] = data.secret;
                 }
-            } else {
-                 this.reservationSecret = formModel.secret; 
-            }
-
-            if (this.selectedSeats.length > 0) {
-                this.selectedSeats.forEach(initialSeat => {
-                    // Update Spots (Data Source for Renderer Merge)
-                    if (blueprintData.spots) {
-                        const spot = blueprintData.spots.find(s => String(s.id) === String(initialSeat.id));
-                        if (spot) {
-                            spot.state = SeatStates.SELECTED_BY_ME;
-                        }
-                    }
-                    
-                    // Update Objects (Direct Renderer Targets)
-                    if (blueprintData.objects) {
-                        const match = blueprintData.objects.find(obj => String(obj.id) === String(initialSeat.id));
-                        if (match) {
-                            match.state = SeatStates.SELECTED_BY_ME;
-                        }
-                    }
-                });
-            }
-
-            // --- Render ---
-            this.renderer = new BlueprintRenderer(content);
-            this.renderer.render(blueprintData, (obj) => this.handleSeatClick(obj, session));
-            
-        } catch (e) {
-            if (closed) return;
-            console.error(e);
-            const errorMessage = document.createElement('div');
-            errorMessage.className = 'blueprint-error';
-            errorMessage.textContent = `${CommonStrings.error}: ${e.message}`;
-            content.replaceChildren(errorMessage);
-            import('../ui/toast.js').then(({ Toast }) => {
-                new Toast(e.message, 'error').show();
-            });
-        }
-    }
-
-    async handleSeatClick(obj, session) {
-        // --- Fix: Prevent Double Click / Race Conditions ---
-        if (obj.processing) {
-            return;
-        }
-        // STRICTER CHECK: Only allow interaction with AVAILABLE or SELECTED_BY_ME
-        if (obj.state !== SeatStates.AVAILABLE && obj.state !== SeatStates.SELECTED_BY_ME) {
-            return;
-        }
-
-        obj.processing = true; // Lock
-
-        try {
-            const isSelecting = (obj.state !== SeatStates.SELECTED_BY_ME);
-            const oldState = obj.state;
-            const newState = isSelecting ? SeatStates.SELECTED_BY_ME : SeatStates.AVAILABLE; 
-            
-            // Update Local State (Optimistic)
-            obj.state = newState;
-            
-            if (isSelecting) {
-                this.selectedSeats.push(obj);
-            } else {
-                this.selectedSeats = this.selectedSeats.filter(s => s.id !== obj.id);
-            }
-
-            this.renderer.updateSeat(obj); 
-            
-            // API Call via Session
-            // Note: If this is the FIRST click, it might establish the secret.
-            // Rapid second clicks are now blocked by 'obj.processing'.
-            await session.toggleSpot(obj, isSelecting);
-        } catch (e) {
-            console.error("Spot selection failed", e);
-            // Revert State
-            // We need to fetch 'oldState' logic properly or just invert current logic
-            // But we have 'oldState' var.
-            // obj.state is now dirty.
-            
-            // Re-calculate toggle intent based on what we TRIED to do.
-            const attemptsSelect = (obj.state === SeatStates.SELECTED_BY_ME);
-            
-            // Revert
-            obj.state = attemptsSelect ? SeatStates.AVAILABLE : SeatStates.SELECTED_BY_ME;
-             if (!attemptsSelect) {
-                this.selectedSeats.push(obj);
-            } else {
-                this.selectedSeats = this.selectedSeats.filter(s => s.id !== obj.id);
-            }
-            this.renderer.updateSeat(obj);
-            
-            import('../ui/toast.js').then(({ Toast }) => {
-                new Toast(e.message, 'error').show();
-            });
-        } finally {
-            obj.processing = false; // Unlock
-        }
+                this.adapter = new BlueprintLayoutAdapter(data, { session, initialSeats });
+                content.replaceChildren();
+                const options = this.adapter.options();
+                options.resources = await loadLayoutAssets(options.resources, { signal: assetAbort.signal });
+                if (closed) return;
+                options.messages = BlueprintStrings.viewerMessages;
+                const select = options.onSelectionRequested;
+                options.onSelectionRequested = async (ids, selecting) => {
+                    pending++; refreshActions();
+                    try { return await select(ids, selecting); }
+                    finally { pending--; if (!closed) refreshActions(); }
+                };
+                const quantity = options.onQuantityRequested;
+                if (quantity) options.onQuantityRequested = async (id, count) => {
+                    pending++; refreshActions();
+                    try { return await quantity(id, count); }
+                    finally { pending--; if (!closed) refreshActions(); }
+                };
+                options.accessibilityLabel = BlueprintStrings.layoutTitle;
+                this.renderer = mount(content, options);
+                refreshLegend();
+                this.adapter.onCapacityChanged = capacityPresentation => {
+                    if (!closed) this.renderer.update({ capacityPresentation });
+                };
+                this.adapter.onPresentationChanged = seatPresentation => {
+                    if (!closed) { this.renderer.update({ seatPresentation }); refreshLegend(); }
+                };
+            } catch (error) {
+                if (closed) return;
+                this.adapter?.dispose(); this.renderer?.dispose();
+                this.adapter = null; this.renderer = null;
+                const label = document.createElement('p'); label.className = 'blueprint-error';
+                label.textContent = `${CommonStrings.error}: ${error.message}`;
+                const retry = document.createElement('button'); retry.className = 'btn btn-secondary';
+                retry.textContent = CommonStrings.retry; retry.onclick = load;
+                content.replaceChildren(label, retry);
+            } finally { loading = false; if (!closed) refreshActions(); }
+        };
+        await load();
     }
 }

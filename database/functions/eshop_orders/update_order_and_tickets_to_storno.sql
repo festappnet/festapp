@@ -7,6 +7,7 @@ DECLARE
     ticket_ids BIGINT[];
     updated_order_data jsonb;
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=order_id)]);
     PERFORM public.check_order_is_mutable(order_id);
     PERFORM public.cancel_order_email_intents(order_id);
     -- Retrieve all ticket ids associated with the order
