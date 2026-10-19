@@ -43,7 +43,8 @@ class OccasionSetupStory {
         if (product['is_hidden'] != true &&
             (num.tryParse('${product['price']}') ?? 0) > 0) {
           currencies.add(
-              (product['currency_code'] as String? ?? 'CZK').toUpperCase());
+            (product['currency_code'] as String? ?? 'CZK').toUpperCase(),
+          );
         }
       }
     }
@@ -79,8 +80,10 @@ class OccasionSetupStory {
       final targets =
           (wave['targets'] as List? ?? []).whereType<Map>().toList();
       if (targets.isEmpty) issues.add('pricingIncomplete');
-      if (targets.any((target) =>
-          target['product'] == null || !products.contains(target['product']))) {
+      if (targets.any(
+        (target) =>
+            target['product'] == null || !products.contains(target['product']),
+      )) {
         issues.add('pricingMissingProduct');
       }
     }
@@ -114,6 +117,7 @@ class OccasionSetupStory {
       if (form) const OccasionSetupQuestion(3, 'form'),
       if (paid) const OccasionSetupQuestion(3, 'pricing'),
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'payments'),
+      if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'paymentTiming'),
       if (form) const OccasionSetupQuestion(3, 'communication'),
       if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
       if (!appSupported) ...[
@@ -124,12 +128,15 @@ class OccasionSetupStory {
       const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),
+      const OccasionSetupQuestion(1, 'promotion'),
       const OccasionSetupQuestion(5, 'review'),
     ];
   }
 
   static bool completesRequiredStep(
-      List<OccasionSetupQuestion> pages, int index) {
+    List<OccasionSetupQuestion> pages,
+    int index,
+  ) {
     final current = pages[index];
     if (current.optional) return false;
     return !pages

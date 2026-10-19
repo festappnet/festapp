@@ -18,7 +18,8 @@ backend v debug režimu nepoužívá produkční aktivační dokument ani jeho m
 
 Průvodce zobrazuje jednu otázku najednou s neutrálními popisky. Název,
 společný termín (začátek i konec) a představení akce tvoří základ. Představení
-umožňuje místo konání, popis, úvodní obrázek a volbu propagace. Obrázky se
+umožňuje místo konání, popis a úvodní obrázek. Propagace má vlastní otázku
+těsně před závěrečným souhrnem a vysvětluje zvýraznění ve veřejném přehledu. Obrázky se
 nahrávají stávajícím unit-scoped image writerem; odebrání z konceptu je pouze
 odpojí a nemaže sdílený soubor. Finalizace ověří vlastnictví obrázku jednotkou.
 Propagace vyžaduje obrázek a sama akci nezveřejní ani neotevře prodej.
@@ -33,7 +34,13 @@ vstupenky. U placené akce má vlastní otázku potvrzení účtu pro příjem p
 Nabízejí se pouze účty připojené k jednotce, které podporují měny placených
 produktů. Správce může otevřít stávající správu účtů a účet vytvořit nebo
 připojit; editorovi bez těchto práv zůstává možnost uložit koncept. Potvrzený
-účet se připne k formuláři. Server při finalizaci znovu ověří jednotku, měny
+účet se připne k formuláři. Výběr používá stejnou kartu účtu jako jeho správa,
+včetně stavu propojení. Krok plateb obsahuje také kanonické nastavení variabilního
+symbolu (náhodný nebo číselná řada). Splatnost a upomínky mají samostatnou
+otázku. Prázdná splatnost přebírá nastavení formulářů události; nezaplacená
+objednávka se po splatnosti sama neruší ani neuvolňuje místa. Uložení výchozích
+upomínek organizace nemění e-mail pro odpovědi ani tón komunikace a naopak.
+Server při finalizaci znovu ověří jednotku, měny
 a fingerprint platebních instrukcí; změněný účet vyžaduje nové potvrzení.
 Legacy koncepty bez nového potvrzovacího pole zachovávají původní routování. Dřívější skryté volby se bez příslušné funkce neuplatňují.
 
@@ -44,6 +51,7 @@ horní segmenty popisují polohu v aktuálním průchodu.
 
 Adresa formuláře se navrhuje podle názvu a roku akce. Server konzultuje
 kanonické globální rezervace včetně historických adres a přidává čitelný suffix.
+Automatický návrh se obnoví podle názvu akce i při návratu ke staršímu konceptu.
 Ruční úpravu nepřepíše další změna názvu. Dostupnost je náhled; automatický
 návrh se při finalizaci znovu ověří a při kolizi přidělí další volný suffix.
 Ručně zvolenou adresu server nikdy bez souhlasu nepřejmenuje. URL akce se u

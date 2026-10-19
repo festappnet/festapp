@@ -193,7 +193,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/send-sign-in-code/teamAccessNotice_test.ts"
       ],
       "abusePolicy": [
         "email.auth"
@@ -398,6 +399,18 @@
         "supabase/functions/_shared/orderEmailOverview_test.ts"
       ],
       "abusePolicy": [
+        "email.ordinary"
+      ]
+    },
+    "send-occasion-team-invitations": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/send-occasion-team-invitations/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "email.actor",
         "email.ordinary"
       ]
     }

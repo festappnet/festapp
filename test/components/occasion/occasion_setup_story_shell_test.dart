@@ -141,4 +141,39 @@ void main() {
     expect(find.text('Required setup: 20 %'), findsOneWidget);
     semantics.dispose();
   });
+  testWidgets('segments navigate directly to upcoming and previous questions',
+      (tester) async {
+    var current = 1;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: StatefulBuilder(builder: (context, update) {
+          return OccasionSetupStoryShell(
+            questionTitles: const ['Source', 'Name', 'Review'],
+            currentIndex: current,
+            eventTitle: 'Draft',
+            status: 'Saved',
+            readiness: 'Required setup: 20 %',
+            questionCount: 'Question ${current + 1} of 3',
+            segmentStates: const ['Completed', 'Current', 'Upcoming'],
+            leaveLabel: 'Leave',
+            backLabel: 'Back',
+            onLeave: () {},
+            onBack: () {},
+            onQuestionSelected: (index) => update(() => current = index),
+            child: Text('Content $current'),
+          );
+        }),
+      ),
+    ));
+    await tester.tap(find.byTooltip('Review'));
+    await tester.pumpAndSettle();
+    expect(find.text('Content 2'), findsOneWidget);
+    expect(find.text('Required setup: 20 %'), findsOneWidget);
+    await tester.tap(find.byTooltip('Source'));
+    await tester.pumpAndSettle();
+    expect(find.text('Content 0'), findsOneWidget);
+    expect(tester.getSize(find.byTooltip('Source')).height,
+        greaterThanOrEqualTo(44));
+  });
+
 }

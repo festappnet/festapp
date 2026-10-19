@@ -67,6 +67,7 @@ const optionEntrypoints = [
   "request-account-deletion",
   "send-app-links",
   "send-custom-email",
+  "send-occasion-team-invitations",
   "send-email",
   "send-reset-password-link",
   "send-sign-in-code",
@@ -405,4 +406,15 @@ Deno.test("delete-order requires explicit invoice opt-in and valid command ident
     }));
     assertEquals(response.status, 400);
   }
+});
+
+Deno.test("send-occasion-team-invitations requires a bearer identity before privileged reads", async () => {
+  const handler = await loadHandler("send-occasion-team-invitations");
+  const response = await handler(
+    new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: JSON.stringify({ draftId: "b4d54cd6-865a-448a-b9da-f260ea7e9631" }),
+    }),
+  );
+  assertEquals(response.status, 401);
 });

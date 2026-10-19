@@ -17,7 +17,10 @@ BEGIN
  RETURN jsonb_build_object('canManage',public.get_is_manager_on_unit(d.unit),'accounts',coalesce((
   SELECT jsonb_agg(jsonb_build_object('id',b.id,'title',b.title,
     'display',coalesce(nullif(b.account_number_human_readable,''),b.account_number),
-    'currencies',b.supported_currencies,'priority',u.priority,
+    'currencies',b.supported_currencies,'priority',u.priority,'type',b.type,
+    'bank_sync',(SELECT jsonb_build_object('state',c.state,'mode',c.mode)
+      FROM eshop.bank_sync_connections c WHERE c.bank_account_id=b.id),
+    'bank_sync_warning',public.bank_sync_warning(b.id),
     'fingerprint',public.occasion_setup_bank_fingerprint_internal(b.id)) ORDER BY u.priority,b.id)
   FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
   WHERE u.unit=d.unit AND b.type<>'CASH'),'[]'::jsonb));

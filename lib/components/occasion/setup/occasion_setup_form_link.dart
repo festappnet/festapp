@@ -40,6 +40,7 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
   @override
   void initState() {
     super.initState();
+    _forceSuggestion = widget.automatic;
     _schedule();
   }
 

@@ -14,8 +14,8 @@ void main() {
           expect(
             basics,
             appSupported
-                ? ['name', 'dates', 'presentation', 'link']
-                : ['name', 'dates', 'presentation'],
+                ? ['name', 'dates', 'presentation', 'link', 'promotion']
+                : ['name', 'dates', 'presentation', 'promotion'],
           );
         },
       );
@@ -93,8 +93,10 @@ void main() {
         'optional verification does not introduce a required persisted step',
         () {
           final pages = OccasionSetupStory.questions(appSupported);
-          expect(pages.where((q) => q.optional).map((q) => q.key),
-              ['team', 'verification']);
+          expect(pages.where((q) => q.optional).map((q) => q.key), [
+            'team',
+            'verification',
+          ]);
           expect(pages.last.key, 'review');
           expect(
             pages.where((q) => !q.optional).map((q) => q.step).toSet(),
@@ -121,7 +123,7 @@ void main() {
               'is_hidden': hiddenField,
               'product_type_data': {
                 'products': [
-                  {'price': price, 'is_hidden': hiddenProduct}
+                  {'price': price, 'is_hidden': hiddenProduct},
                 ],
               },
             },
@@ -131,8 +133,11 @@ void main() {
 
   test('team invitations are optional for every journey', () {
     for (final appSupported in [false, true]) {
-      final pages = OccasionSetupStory.questions(appSupported,
-          data: {'formEnabled': false}, organizationVerified: true);
+      final pages = OccasionSetupStory.questions(
+        appSupported,
+        data: {'formEnabled': false},
+        organizationVerified: true,
+      );
       final index = pages.indexWhere((q) => q.key == 'team');
       expect(index, greaterThan(0));
       expect(pages[index].optional, isTrue);
@@ -143,11 +148,14 @@ void main() {
 
   test('dependent questions follow paid products and actual ticket field', () {
     List<String> keys(Map<String, dynamic> data) =>
-        OccasionSetupStory.questions(false, data: data)
-            .map((q) => q.key)
-            .toList();
-    expect(keys(formData()),
-        containsAll(['form', 'pricing', 'payments', 'ticket']));
+        OccasionSetupStory.questions(
+          false,
+          data: data,
+        ).map((q) => q.key).toList();
+    expect(
+      keys(formData()),
+      containsAll(['form', 'pricing', 'payments', 'ticket']),
+    );
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
     expect(keys(formData(price: 0)), contains('ticket'));
@@ -156,166 +164,236 @@ void main() {
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
     expect(keys(formData(hiddenField: true)), isNot(contains('ticket')));
     expect(
-        keys(formData(enabled: false)),
-        isNot(anyOf(contains('form'), contains('pricing'),
-            contains('blueprint'), contains('payments'), contains('ticket'))));
+      keys(formData(enabled: false)),
+      isNot(
+        anyOf(
+          contains('form'),
+          contains('pricing'),
+          contains('blueprint'),
+          contains('payments'),
+          contains('ticket'),
+        ),
+      ),
+    );
   });
 
-  test('dependent steps exclude dormant setup without changing persisted IDs',
-      () {
-    expect(OccasionSetupStory.applicableSteps(formData(enabled: false), false),
-        {0, 1, 5});
-    expect(OccasionSetupStory.applicableSteps(formData(enabled: false), true),
-        {0, 1, 2, 5});
-    expect(OccasionSetupStory.applicableSteps(formData(price: 0), false),
-        {0, 1, 2, 3, 5, 6});
-    final paid = formData();
-    final pages = OccasionSetupStory.questions(false, data: paid);
-    for (final question in pages) {
+  test(
+    'dependent steps exclude dormant setup without changing persisted IDs',
+    () {
       expect(
+        OccasionSetupStory.applicableSteps(formData(enabled: false), false),
+        {0, 1, 5},
+      );
+      expect(
+        OccasionSetupStory.applicableSteps(formData(enabled: false), true),
+        {0, 1, 2, 5},
+      );
+      expect(OccasionSetupStory.applicableSteps(formData(price: 0), false), {
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+      });
+      final paid = formData();
+      final pages = OccasionSetupStory.questions(false, data: paid);
+      for (final question in pages) {
+        expect(
           pages[OccasionSetupStory.index({
             ...paid,
             'step': question.step,
             'storyQuestion': question.key,
           }, false)]
               .key,
-          question.key);
-    }
-  });
+          question.key,
+        );
+      }
+    },
+  );
 
   test('disabled payments resume forward instead of restarting the wizard', () {
     final data = {
       ...formData(price: 0),
       'step': 4,
-      'storyQuestion': 'payments'
+      'storyQuestion': 'payments',
     };
     final pages = OccasionSetupStory.questions(false, data: data);
     expect(pages[OccasionSetupStory.index(data, false)].key, 'communication');
   });
 
-  test('active price waves require future dates and existing product targets',
-      () {
-    final data = formData();
-    final field = ((data['formDraft'] as Map)['fields'] as List).last as Map;
-    ((field['product_type_data'] as Map)['products'] as List).first['id'] = -7;
-    final now = DateTime.utc(2026, 10, 19);
-    data['priceWavesEnabled'] = true;
-    expect(
-        OccasionSetupStory.pricingIssueKeys(data, now), {'pricingIncomplete'});
-    data['priceWaves'] = [
-      {
-        'change_time': '2026-10-20T12:00:00Z',
-        'targets': [
-          {'product': -7, 'price': 120}
-        ],
-      }
-    ];
-    expect(OccasionSetupStory.pricingIssueKeys(data, now), isEmpty);
-    final wave = (data['priceWaves'] as List).first as Map;
-    wave['change_time'] = '2026-10-18T12:00:00Z';
-    (wave['targets'] as List).first['product'] = -99;
-    expect(OccasionSetupStory.pricingIssueKeys(data, now),
-        {'pricingExpired', 'pricingMissingProduct'});
-    data['formEnabled'] = false;
-    expect(OccasionSetupStory.pricingIssueKeys(data, now), isEmpty);
-  });
+  test(
+    'active price waves require future dates and existing product targets',
+    () {
+      final data = formData();
+      final field = ((data['formDraft'] as Map)['fields'] as List).last as Map;
+      ((field['product_type_data'] as Map)['products'] as List).first['id'] =
+          -7;
+      final now = DateTime.utc(2026, 10, 19);
+      data['priceWavesEnabled'] = true;
+      expect(OccasionSetupStory.pricingIssueKeys(data, now), {
+        'pricingIncomplete',
+      });
+      data['priceWaves'] = [
+        {
+          'change_time': '2026-10-20T12:00:00Z',
+          'targets': [
+            {'product': -7, 'price': 120},
+          ],
+        },
+      ];
+      expect(OccasionSetupStory.pricingIssueKeys(data, now), isEmpty);
+      final wave = (data['priceWaves'] as List).first as Map;
+      wave['change_time'] = '2026-10-18T12:00:00Z';
+      (wave['targets'] as List).first['product'] = -99;
+      expect(OccasionSetupStory.pricingIssueKeys(data, now), {
+        'pricingExpired',
+        'pricingMissingProduct',
+      });
+      data['formEnabled'] = false;
+      expect(OccasionSetupStory.pricingIssueKeys(data, now), isEmpty);
+    },
+  );
 
-  test('scanner is opt-in, requires tickets and adds no readiness requirement',
-      () {
-    final base = formData();
-    final defaults = OccasionSetupStory.questions(false, data: base);
-    expect(defaults.any((question) => question.key == 'scanner'), isFalse);
-    final configured = {...base, 'configureScanning': true};
-    final pages = OccasionSetupStory.questions(false, data: configured);
-    final index = pages.indexWhere((question) => question.key == 'scanner');
-    expect(index, greaterThan(0));
-    expect(pages[index].optional, isTrue);
-    expect(pages[index - 1].key, 'ticket');
-    expect(OccasionSetupStory.completesRequiredStep(pages, index - 1), isTrue);
-    expect(OccasionSetupStory.completesRequiredStep(pages, index), isFalse);
-    expect(OccasionSetupStory.applicableSteps(configured, false),
-        OccasionSetupStory.applicableSteps(base, false));
-    expect(
-        OccasionSetupStory.index(
-            {...configured, 'step': 2, 'storyQuestion': 'scanner'}, false),
-        index);
-    expect(
-        OccasionSetupStory.questions(false, data: {
-          ...formData(tickets: false),
-          'configureScanning': true,
-        }).any((question) => question.key == 'scanner'),
-        isFalse);
-  });
+  test(
+    'scanner is opt-in, requires tickets and adds no readiness requirement',
+    () {
+      final base = formData();
+      final defaults = OccasionSetupStory.questions(false, data: base);
+      expect(defaults.any((question) => question.key == 'scanner'), isFalse);
+      final configured = {...base, 'configureScanning': true};
+      final pages = OccasionSetupStory.questions(false, data: configured);
+      final index = pages.indexWhere((question) => question.key == 'scanner');
+      expect(index, greaterThan(0));
+      expect(pages[index].optional, isTrue);
+      expect(pages[index - 1].key, 'ticket');
+      expect(
+        OccasionSetupStory.completesRequiredStep(pages, index - 1),
+        isTrue,
+      );
+      expect(OccasionSetupStory.completesRequiredStep(pages, index), isFalse);
+      expect(
+        OccasionSetupStory.applicableSteps(configured, false),
+        OccasionSetupStory.applicableSteps(base, false),
+      );
+      expect(
+        OccasionSetupStory.index({
+          ...configured,
+          'step': 2,
+          'storyQuestion': 'scanner',
+        }, false),
+        index,
+      );
+      expect(
+        OccasionSetupStory.questions(
+          false,
+          data: {...formData(tickets: false), 'configureScanning': true},
+        ).any((question) => question.key == 'scanner'),
+        isFalse,
+      );
+    },
+  );
 
-  test('paid app events have a dedicated payments question before blueprint',
-      () {
-    final pages = OccasionSetupStory.questions(true, data: formData());
-    final payments = pages.indexWhere((q) => q.key == 'payments');
-    expect(payments, greaterThan(pages.indexWhere((q) => q.key == 'form')));
-    expect(pages[payments].step, 3);
-    expect(pages[payments + 1].key, 'communication');
-    expect(
-        OccasionSetupStory.completesRequiredStep(pages, payments - 1), isFalse);
-    expect(OccasionSetupStory.completesRequiredStep(pages, payments), isFalse);
-    expect(
-        OccasionSetupStory.completesRequiredStep(pages, payments + 1), isTrue);
-    expect(
-        OccasionSetupStory.questions(true, data: formData(price: 0))
-            .any((q) => q.key == 'payments'),
-        isFalse);
-  });
+  test(
+    'paid app events have a dedicated payments question before blueprint',
+    () {
+      final pages = OccasionSetupStory.questions(true, data: formData());
+      final payments = pages.indexWhere((q) => q.key == 'payments');
+      expect(payments, greaterThan(pages.indexWhere((q) => q.key == 'form')));
+      expect(pages[payments].step, 3);
+      expect(pages[payments + 1].key, 'paymentTiming');
+      expect(pages[pages.length - 2].key, 'promotion');
+      expect(
+        OccasionSetupStory.completesRequiredStep(pages, payments - 1),
+        isFalse,
+      );
+      expect(
+        OccasionSetupStory.completesRequiredStep(pages, payments),
+        isFalse,
+      );
+      expect(
+        OccasionSetupStory.completesRequiredStep(pages, payments + 2),
+        isTrue,
+      );
+      expect(
+        OccasionSetupStory.questions(
+          true,
+          data: formData(price: 0),
+        ).any((q) => q.key == 'payments'),
+        isFalse,
+      );
+    },
+  );
 
-  test('payment confirmation requires an account and derives currency context',
-      () {
-    expect(OccasionSetupStory.paymentAccountConfirmed({}), isFalse);
-    expect(OccasionSetupStory.paymentAccountConfirmed({'bankAccountId': 7}),
-        isFalse);
-    expect(
-        OccasionSetupStory.paymentAccountConfirmed(
-            {'bankAccountConfirmed': true}),
-        isFalse);
-    expect(
+  test(
+    'payment confirmation requires an account and derives currency context',
+    () {
+      expect(OccasionSetupStory.paymentAccountConfirmed({}), isFalse);
+      expect(
+        OccasionSetupStory.paymentAccountConfirmed({'bankAccountId': 7}),
+        isFalse,
+      );
+      expect(
+        OccasionSetupStory.paymentAccountConfirmed({
+          'bankAccountConfirmed': true,
+        }),
+        isFalse,
+      );
+      expect(
         OccasionSetupStory.paymentAccountConfirmed({
           'bankAccountId': 7,
           'bankAccountConfirmed': true,
         }),
-        isTrue);
-    final data = formData();
-    expect(OccasionSetupStory.paymentCurrencies(data), {'CZK'});
-    final product = (((data['formDraft'] as Map)['fields'] as List)
-            .last['product_type_data']['products'] as List)
-        .first as Map;
-    product['currency_code'] = 'eur';
-    expect(OccasionSetupStory.paymentCurrencies(data), {'EUR'});
-    product['price'] = 0;
-    expect(OccasionSetupStory.paymentCurrencies(data), isEmpty);
-  });
+        isTrue,
+      );
+      final data = formData();
+      expect(OccasionSetupStory.paymentCurrencies(data), {'CZK'});
+      final product = (((data['formDraft'] as Map)['fields'] as List)
+              .last['product_type_data']['products'] as List)
+          .first as Map;
+      product['currency_code'] = 'eur';
+      expect(OccasionSetupStory.paymentCurrencies(data), {'EUR'});
+      product['price'] = 0;
+      expect(OccasionSetupStory.paymentCurrencies(data), isEmpty);
+    },
+  );
 
-  test('communication applies to free forms and completes the shared form step',
-      () {
-    for (final supported in [false, true]) {
-      final pages = OccasionSetupStory.questions(supported, data: formData());
-      final communication = pages.indexWhere((q) => q.key == 'communication');
-      expect(pages[communication].step, 3);
-      expect(pages[communication - 1].key, 'payments');
-      expect(pages[communication + 1].key, 'blueprint');
-      final form = pages.indexWhere((q) => q.key == 'form');
-      final pricing = pages.indexWhere((q) => q.key == 'pricing');
-      expect(OccasionSetupStory.completesRequiredStep(pages, form), isFalse);
-      expect(OccasionSetupStory.completesRequiredStep(pages, pricing), isFalse);
-      expect(OccasionSetupStory.completesRequiredStep(pages, communication),
-          isTrue);
-      final free =
-          OccasionSetupStory.questions(supported, data: formData(price: 0));
-      expect(free.any((q) => q.key == 'communication'), isTrue);
-      expect(free.any((q) => q.key == 'payments'), isFalse);
-      expect(
-          OccasionSetupStory.questions(supported,
-                  data: formData(enabled: false))
-              .any((q) => q.key == 'communication'),
-          isFalse);
-    }
-  });
+  test(
+    'communication applies to free forms and completes the shared form step',
+    () {
+      for (final supported in [false, true]) {
+        final pages = OccasionSetupStory.questions(supported, data: formData());
+        final communication = pages.indexWhere((q) => q.key == 'communication');
+        expect(pages[communication].step, 3);
+        expect(pages[communication - 1].key, 'paymentTiming');
+        expect(pages[communication + 1].key, 'blueprint');
+        final form = pages.indexWhere((q) => q.key == 'form');
+        final pricing = pages.indexWhere((q) => q.key == 'pricing');
+        expect(OccasionSetupStory.completesRequiredStep(pages, form), isFalse);
+        expect(
+          OccasionSetupStory.completesRequiredStep(pages, pricing),
+          isFalse,
+        );
+        expect(
+          OccasionSetupStory.completesRequiredStep(pages, communication),
+          isTrue,
+        );
+        final free = OccasionSetupStory.questions(
+          supported,
+          data: formData(price: 0),
+        );
+        expect(free.any((q) => q.key == 'communication'), isTrue);
+        expect(free.any((q) => q.key == 'payments'), isFalse);
+        expect(
+          OccasionSetupStory.questions(
+            supported,
+            data: formData(enabled: false),
+          ).any((q) => q.key == 'communication'),
+          isFalse,
+        );
+      }
+    },
+  );
 
   test(
     'completed required steps reach 100% without organization verification',

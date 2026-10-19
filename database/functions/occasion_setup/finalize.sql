@@ -125,7 +125,7 @@ BEGIN
    FOR j IN 1..20 LOOP
     -- Preserve the preview where still free; re-suggest if another writer won.
     IF form_link IS NULL OR EXISTS(SELECT 1 FROM public.form_link_reservations WHERE slug=form_link AND form IS DISTINCT FROM form_id) THEN
-     form_link:=public.suggest_occasion_setup_form_link(p_id,coalesce(nullif(form_data->>'title',''),payload->>'title'),NULL)->>'suggestion';
+     form_link:=public.suggest_occasion_setup_form_link(p_id,payload->>'title',NULL)->>'suggestion';
     END IF;
     BEGIN
      form_link:=public.reserve_public_link_internal('form',form_id,form_link,false);

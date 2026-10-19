@@ -140,6 +140,29 @@ class _OccasionSetupInvitationsState extends State<OccasionSetupInvitations> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(t('optionalHint')),
       const SizedBox(height: 12),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey[850]
+              : Colors.white,
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t('sendTiming'),
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(t('reviewSendHint')),
+            const SizedBox(height: 8),
+            Text(t('draftOnlyHint')),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
       Text(t('noPassword')),
       if (_loading)
         const Padding(
@@ -241,6 +264,8 @@ class OccasionSetupInvitationsSummary extends StatelessWidget {
             value: data['sendTeamInvitations'] == true,
             onChanged: (value) => onSendChanged(value == true),
             title: Text(t('sendConfirmation'))),
+        Text(t('draftOnlyHint')),
+        const SizedBox(height: 8),
         Text(t('noPassword')),
       ],
       if (data['sendTeamInvitations'] != true) Text(t('notSending')),

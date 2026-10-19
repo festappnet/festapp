@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.dart';
+
 import 'occasion_setup_details_strings.dart';
 
 Set<String> setupPaidCurrencies(Map<String, dynamic> data) {
@@ -28,14 +31,15 @@ class OccasionSetupBankAccount extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onChanged;
   final Future<Map<String, dynamic>> Function()? loader;
   final Future<void> Function(BuildContext)? setup;
-  const OccasionSetupBankAccount(
-      {super.key,
-      required this.draftId,
-      required this.unitId,
-      required this.data,
-      required this.onChanged,
-      this.loader,
-      this.setup});
+  const OccasionSetupBankAccount({
+    super.key,
+    required this.draftId,
+    required this.unitId,
+    required this.data,
+    required this.onChanged,
+    this.loader,
+    this.setup,
+  });
   @override
   State<OccasionSetupBankAccount> createState() =>
       _OccasionSetupBankAccountState();
@@ -72,15 +76,20 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
     try {
       final result = widget.loader != null
           ? await widget.loader!()
-          : Map<String, dynamic>.from(await Supabase.instance.client.rpc(
-              'get_occasion_setup_bank_accounts',
-              params: {'p_id': widget.draftId}));
+          : Map<String, dynamic>.from(
+              await Supabase.instance.client.rpc(
+                'get_occasion_setup_bank_accounts',
+                params: {'p_id': widget.draftId},
+              ),
+            );
       if (!mounted) return;
       final required = setupPaidCurrencies(widget.data);
       final accounts = (result['accounts'] as List)
           .map((v) => Map<String, dynamic>.from(v as Map))
-          .where((a) => Set<String>.from(a['currencies'] as List? ?? [])
-              .containsAll(required))
+          .where(
+            (a) => Set<String>.from(a['currencies'] as List? ?? [])
+                .containsAll(required),
+          )
           .toList();
       final previous = widget.data['bankAccountId'];
       final selected = accounts.where((a) => a['id'] == previous).firstOrNull;
@@ -95,14 +104,14 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
           'bankAccountId': first?['id'],
           'bankAccountConfirmed': false,
           'bankAccountLabel': first == null ? '' : _label(first),
-          'bankAccountFingerprint': first?['fingerprint']
+          'bankAccountFingerprint': first?['fingerprint'],
         });
       } else if (widget.data['bankAccountLabel'] != _label(selected) ||
           widget.data['bankAccountFingerprint'] != selected['fingerprint']) {
         widget.onChanged({
           'bankAccountLabel': _label(selected),
           'bankAccountConfirmed': false,
-          'bankAccountFingerprint': selected['fingerprint']
+          'bankAccountFingerprint': selected['fingerprint'],
         });
       }
     } catch (_) {
@@ -120,74 +129,83 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
     if (widget.setup != null) {
       await widget.setup!(context);
     } else {
-      await Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => UnitBankAccountsScreen(unitId: widget.unitId)));
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => UnitBankAccountsScreen(unitId: widget.unitId),
+        ),
+      );
     }
     if (mounted) await _load();
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (_loading) const LinearProgressIndicator(),
-        if (_error != null) ...[
-          Text(_error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          TextButton(
-              onPressed: _load,
-              child: Text(OccasionSetupDetailsStrings.text('reloadAccounts'))),
-        ],
-        if (!_loading && _error == null) ...[
-          if (_accounts.isEmpty)
-            Text(OccasionSetupDetailsStrings.text('bankMissing'))
-          else ...[
-            DropdownButtonFormField<int>(
-              key: ValueKey(
-                  'account-${widget.data['bankAccountId']}-$_currencies'),
-              initialValue:
-                  _accounts.any((a) => a['id'] == widget.data['bankAccountId'])
-                      ? widget.data['bankAccountId'] as int?
-                      : null,
-              isExpanded: true,
-              decoration: InputDecoration(
-                  labelText:
-                      OccasionSetupDetailsStrings.text('paymentAccount')),
-              items: [
-                for (final a in _accounts)
-                  DropdownMenuItem(
-                      value: a['id'] as int,
-                      child: Text(_label(a), overflow: TextOverflow.ellipsis))
-              ],
-              onChanged: (id) {
-                final selected = _accounts.firstWhere((a) => a['id'] == id);
-                widget.onChanged({
-                  'bankAccountId': id,
-                  'bankAccountConfirmed': false,
-                  'bankAccountLabel': _label(selected),
-                  'bankAccountFingerprint': selected['fingerprint']
-                });
-              },
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_loading) const LinearProgressIndicator(),
+          if (_error != null) ...[
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: widget.data['bankAccountConfirmed'] == true,
-              onChanged: (v) =>
-                  widget.onChanged({'bankAccountConfirmed': v == true}),
-              title: Text(OccasionSetupDetailsStrings.text('confirmAccount')),
-              subtitle: Text(_currencies),
+            TextButton(
+              onPressed: _load,
+              child: Text(OccasionSetupDetailsStrings.text('reloadAccounts')),
             ),
           ],
-          const SizedBox(height: 8),
-          if (_canManage)
-            OutlinedButton.icon(
+          if (!_loading && _error == null) ...[
+            if (_accounts.isEmpty)
+              Text(OccasionSetupDetailsStrings.text('bankMissing'))
+            else ...[
+              for (final account in _accounts)
+                UnitBankAccountCard(
+                  account: BankAccountModel.fromJson({
+                    ...account,
+                    'account_number_human_readable': account['display'],
+                    'supported_currencies': account['currencies'],
+                  }),
+                  primaryCurrencies: const {},
+                  index: 0,
+                  selection: Semantics(
+                    label: _label(account),
+                    child: Radio<int>(
+                      value: account['id'] as int,
+                      groupValue: widget.data['bankAccountId'] as int?,
+                      onChanged: (id) => widget.onChanged({
+                        'bankAccountId': id,
+                        'bankAccountConfirmed': false,
+                        'bankAccountLabel': _label(account),
+                        'bankAccountFingerprint': account['fingerprint'],
+                      }),
+                    ),
+                  ),
+                ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: widget.data['bankAccountConfirmed'] == true,
+                onChanged: (v) =>
+                    widget.onChanged({'bankAccountConfirmed': v == true}),
+                title: Text(OccasionSetupDetailsStrings.text('confirmAccount')),
+                subtitle: Text(_currencies),
+              ),
+            ],
+            const SizedBox(height: 8),
+            if (_canManage)
+              OutlinedButton.icon(
                 onPressed: _setup,
                 icon: const Icon(Icons.account_balance_outlined),
-                label: Text(OccasionSetupDetailsStrings.text(_accounts.isEmpty
-                    ? 'setupBankAccount'
-                    : 'manageBankAccounts')))
-          else
-            Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
-          Text(OccasionSetupDetailsStrings.text('bankSetupHint')),
+                label: Text(
+                  OccasionSetupDetailsStrings.text(
+                    _accounts.isEmpty
+                        ? 'setupBankAccount'
+                        : 'manageBankAccounts',
+                  ),
+                ),
+              )
+            else
+              Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
+            Text(OccasionSetupDetailsStrings.text('bankSetupHint')),
+          ],
         ],
-      ]);
+      );
 }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 const read = p => fs.readFileSync(p, 'utf8');
 const inventory = JSON.parse(read('docs/security/abuse-surface-inventory.json'));
 const coverage = JSON.parse(read('supabase/functions/test-coverage.json'));
@@ -51,4 +51,22 @@ test('worker routes retain explicit admission or a reviewed compatibility bounda
   assert.ok(image.routes.some(r => r.path === '*public-read'));
   const sync = inventory.workers.find(w => w.name === 'sync-worker');
   assert.ok(read(sync.entrypoint).includes(sync.routeExpression), 'sync path contract changed; review the abuse inventory');
+});
+
+test('unmigrated canonical function changes still fail the immutable-history check', () => {
+  const result = spawnSync('python3', ['-c', `
+from pathlib import Path
+from unittest.mock import patch
+import runpy
+original = Path.read_text
+def changed(path, *args, **kwargs):
+    value = original(path, *args, **kwargs)
+    if str(path).endswith('/database/functions/occasion_setup/finalize.sql'):
+        value = value.replace('Draft review required', 'Unmigrated test-only drift')
+    return value
+with patch.object(Path, 'read_text', changed):
+    runpy.run_path('automation/assemble-abuse-migration.py', run_name='__main__')
+`], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Missing forward migration for finalize_occasion_setup_draft/);
 });
