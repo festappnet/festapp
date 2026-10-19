@@ -191,3 +191,38 @@ adaptivní detaily) a 5 SQL testovacích souborů prošlo na izolované databáz
 Cílený analyzátor nemá chyby ani warningy; zůstávají informační linty pro bloky
 podmínek. Překlady všech šesti jazyků jsou validní JSON. Produkce se při tomto
 ověření neměnila.
+
+## Pozvánky do týmu ve Wizardu
+
+Nepovinná otázka před souhrnem přijímá nejvýše 20 adres. U každé je role
+Editor nebo Pouze pro čtení. Manažerský náhled rozlišuje členy jednotky,
+existující účty aktuálního tenanta a nové adresy; běžný editor nemá přístup
+k vyhledávání účtů. Změna adresy nebo role zruší potvrzení odeslání.
+
+Souhrn vyžaduje samostatné potvrzení odeslání. Až po založení akce klient volá
+`send-occasion-team-invitations`. Založení akce a zařazení e-mailů jsou oddělené
+operace: při částečné chybě se zobrazuje, že akce už vznikla, a lze opakovat
+zařazení bez duplikace předchozích pozvánek. Úspěch znamená zařazení do fronty,
+nikoli doručení do schránky. Přijetí a poskytovatelem přijaté odeslání mají
+samostatné záznamy.
+
+Pozvánka platí 14 dní, ukládá pouze hash náhodného tokenu a šifrovaný e-mail.
+Kliknutí pouze zobrazí stránku. Existující účet přijímá po přihlášení pod
+pozvanou adresou; nový účet vznikne až po výslovném přijetí a zadání vlastního
+hesla. Přidají se pouze oprávnění dané akce. Obě role mohou akci zobrazit,
+pouze Editor ji může upravovat. Širší stávající oprávnění se nesnižují a nové
+členství ani manažerská role v jednotce nevznikají. Odkazy nelze přijmout po
+vypršení nebo odebrání oprávnění odesílateli. Sledování otevření/kliknutí je
+pro pozvánky vypnuté.
+
+Audit stávajícího `send-sign-in-code` odhalil, že běžná účastnická cesta mění
+heslo, přestože starší komentář hovořil o samostatném jednorázovém kódu.
+Členové týmu proto nyní dostanou `TEAM_ACCESS_NOTICE` s odkazem na akci, bez
+změny hesla. SQL zároveň odmítá reset hesla editora, čtenáře nebo manažera
+přes pozvánkový příkaz a zahazuje jejich staré čekající e-maily s heslem.
+Ruční obnova hesla má nadále vlastní samostatný příkaz.
+
+Lokální ověření: 33 Flutter testů (Wizard a přijetí pozvánky), 6 Deno testů,
+8 SQL testovacích souborů; cílené Dart/Deno kontroly bez chyb a warningů.
+Zůstávají informační Dart linty. Testy používají izolovanou databázi a
+simulované e-mailové rozhraní; žádné skutečné pozvánky se nerozesílaly.

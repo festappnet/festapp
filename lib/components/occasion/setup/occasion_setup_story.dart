@@ -121,6 +121,7 @@ class OccasionSetupStory {
         if (tickets && data?['configureScanning'] == true)
           const OccasionSetupQuestion(2, 'scanner', optional: true),
       ],
+      const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),
       const OccasionSetupQuestion(5, 'review'),

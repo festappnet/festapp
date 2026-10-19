@@ -25,7 +25,12 @@ BEGIN
       AND et.code = 'SIGN_IN_CODE'
     UNION ALL
     SELECT m.recipient_user,m.accepted_at FROM public.email_messages m
-    WHERE m.occasion=p_occasion AND m.message_kind='sign_in' AND m.recipient_user IS NOT NULL AND m.accepted_at IS NOT NULL
+    WHERE m.occasion=p_occasion AND (m.message_kind='sign_in' OR (m.message_kind='custom' AND m.code='TEAM_ACCESS_NOTICE'))
+      AND m.recipient_user IS NOT NULL AND m.accepted_at IS NOT NULL
+    UNION ALL
+    SELECT i.accepted_by,m.accepted_at FROM public.occasion_team_invitations i
+    JOIN public.email_messages m ON m.message_id=i.message_id
+    WHERE i.occasion=p_occasion AND i.accepted_by IS NOT NULL AND m.accepted_at IS NOT NULL
   ), accepted AS (
     SELECT "user",count(*)::integer send_count,min(sent_at) first_sent_at,max(sent_at) last_sent_at FROM evidence GROUP BY "user"
   )
