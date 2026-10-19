@@ -43,6 +43,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
   Set<String> _commercialSelection = {};
+  final _commercialDetailRevision = ValueNotifier(0);
+  bool _commercialDetailOpen = false;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
   final _assets = BlueprintLayoutAssetResolver();
@@ -73,16 +75,26 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _fontGeneration++;
     _assets.dispose();
     _hostFocus.dispose();
+    _commercialDetailRevision.dispose();
     controller.dispose();
     super.dispose();
   }
 
   void _setScreenMode(_BlueprintScreenMode mode) {
     if (_busy || (mode == _BlueprintScreenMode.edit && !_canEdit)) return;
+    if (_editingPlan &&
+        mode == _BlueprintScreenMode.reservations &&
+        !controller.validatePlacementForReservations()) {
+      setState(() => _message = BlueprintStrings.placementInvalid);
+      return;
+    }
     controller.layout.cancelGesture();
     controller.layout.select({});
     controller.setMode(BlueprintLayoutMode.manage);
-    setState(() => _screenMode = mode);
+    setState(() {
+      _screenMode = mode;
+      _message = null;
+    });
     _hostFocus.requestFocus();
   }
 
@@ -135,7 +147,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           occasionId: controller.snapshot.occasionId,
           isMounted: () => mounted);
     } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
+      if (mounted) {
+        setState(() => _message = BlueprintStrings.layoutErrorMessage(error));
+      }
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }
@@ -147,11 +161,19 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     try {
       await action();
     } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
+      if (mounted) {
+        setState(() => _message = BlueprintStrings.layoutErrorMessage(error));
+      }
+    } finally {
+      if (mounted) _commercialDetailRevision.value++;
     }
   }
 
   Future<void> _save() async {
+    if (controller.saver.pending == null &&
+        !controller.validatePlacementForReservations()) {
+      throw StateError('layout_placement_invalid');
+    }
     if (controller.saver.pending == null) await _prepareFonts();
     final result = await controller.save();
     if (!mounted) return;
@@ -650,6 +672,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           for (final id in selection)
             if (nodes.contains(id)) _viewSelectionTarget(id),
         });
+    _commercialDetailRevision.value++;
   }
 
   void _selectCommercialRow(String id) {
@@ -658,6 +681,76 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         : <String>{};
     if (!next.add(id)) next.remove(id);
     _setCommercialSelection(next);
+    if (!HardwareKeyboard.instance.isShiftPressed) _showCommercialDetail();
+  }
+
+  void _selectCommercialFromCanvas(Set<String> selection) {
+    _setCommercialSelection(selection);
+    if (!HardwareKeyboard.instance.isShiftPressed) _showCommercialDetail();
+  }
+
+  Future<void> _showCommercialDetail() async {
+    if (_busy ||
+        _commercialDetailOpen ||
+        _commercialSelection.length != 1 ||
+        controller.mode != BlueprintLayoutMode.manage) return;
+    _commercialDetailOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AnimatedBuilder(
+          animation: Listenable.merge([controller, _commercialDetailRevision]),
+          builder: (context, _) {
+            final node = controller.layout.document.nodes
+                .where((node) => _commercialSelection.contains(node.id))
+                .firstOrNull;
+            final groupId = node == null
+                ? null
+                : controller.snapshot.seatBindings[node.id]?.groupNodeId;
+            return AppAlertDialog(
+              key: const ValueKey('commercial-detail-dialog'),
+              title: Text(BlueprintStrings.manageSeats),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_message != null)
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(_message!,
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error)),
+                        ),
+                      if (groupId != null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            key: const ValueKey('commercial-detail-back'),
+                            onPressed: _busy
+                                ? null
+                                : () => _setCommercialSelection({groupId}),
+                            icon: const Icon(Icons.arrow_back),
+                            label: Text(BlueprintStrings.tablesTitle),
+                          ),
+                        ),
+                      if (node != null)
+                        node.kind == 'capacityArea'
+                            ? _areaDetail(node)
+                            : _inspector(context, node),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } finally {
+      _commercialDetailOpen = false;
+    }
   }
 
   Future<void> _renameCommercial(LayoutNode node) async {
@@ -714,78 +807,108 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     });
   }
 
+  Widget _areaDetail(LayoutNode area) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(area.label, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+              '${area.properties['capacity'] ?? 0} ${BlueprintStrings.standingAreas}'),
+          if (_canEdit &&
+              controller.products.containsKey(
+                  controller.snapshot.areaBindings[area.id]?.productId))
+            TextButton.icon(
+                key: const ValueKey('commercial-area-product'),
+                onPressed: _busy ? null : () => _editAreaProduct(area),
+                icon: const Icon(Icons.sell_outlined),
+                label: Text(BlueprintStrings.editAreaProduct)),
+          if (_canEdit)
+            Text(BlueprintStrings.catalogSaveNotice,
+                style: Theme.of(context).textTheme.bodySmall),
+          if (_canEdit)
+            TextButton.icon(
+                onPressed: _busy ? null : () => _renameCommercial(area),
+                icon: const Icon(Icons.edit_outlined),
+                label: Text(CommonStrings.rename)),
+        ],
+      );
+
   Widget _reservationsPanel(Map<String, LayoutNode> tables) {
     final areas = controller.layout.document.nodes
         .where((node) => node.kind == 'capacityArea')
         .toList();
-    final selectedNodes = controller.layout.document.nodes
-        .where((node) => _commercialSelection.contains(node.id))
-        .toList();
     final selectedGroups = _selectedCommercialGroups;
-    final tableRows = tables.values.toList();
-    return SingleChildScrollView(
+    return Column(
       key: const ValueKey('blueprint-reservations-panel'),
-      padding: const EdgeInsets.all(12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (areas.isNotEmpty) ...[
-          Text(BlueprintStrings.standingAreas,
-              style: Theme.of(context).textTheme.titleMedium),
-          for (final area in areas)
-            ListTile(
-              key: ValueKey('commercial-area-${area.id}'),
-              contentPadding: EdgeInsets.zero,
-              selected: _commercialSelection.contains(area.id),
-              title: Text(area.label.isEmpty
-                  ? BlueprintStrings.standingAreas
-                  : area.label),
-              subtitle: Text(_productText(
-                  controller.snapshot.areaBindings[area.id]?.productId)),
-              onTap: () => _selectCommercialRow(area.id),
-            ),
-          const Divider(),
-        ],
-        Row(children: [
-          Expanded(
-              child: Text(BlueprintStrings.tablesTitle,
-                  style: Theme.of(context).textTheme.titleMedium)),
-          if (_canEdit) ...[
-            IconButton(
-                key: const ValueKey('commercial-undo'),
-                tooltip: VenueLayoutStrings.text(context, 'Undo'),
-                onPressed: _busy || !controller.layout.canUndo
-                    ? null
-                    : controller.layout.undo,
-                icon: const Icon(Icons.undo, size: 18)),
-            IconButton(
-                key: const ValueKey('commercial-redo'),
-                tooltip: VenueLayoutStrings.text(context, 'Redo'),
-                onPressed: _busy || !controller.layout.canRedo
-                    ? null
-                    : controller.layout.redo,
-                icon: const Icon(Icons.redo, size: 18)),
-          ],
-        ]),
-        Text(BlueprintStrings.tableSelectionHint,
-            style: Theme.of(context).textTheme.bodySmall),
-        if (tables.isEmpty) Text(BlueprintStrings.noTables),
-        if (tables.isNotEmpty)
-          SizedBox(
-              height: (tables.length * 64.0).clamp(64, 220).toDouble(),
-              child: ListView.builder(
-                primary: false,
-                itemCount: tableRows.length,
-                itemBuilder: (context, index) {
-                  final table = tableRows[index];
-                  return ListTile(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (areas.isNotEmpty) ...[
+                  Text(BlueprintStrings.standingAreas,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  for (final area in areas)
+                    ListTile(
+                      key: ValueKey('commercial-area-${area.id}'),
+                      contentPadding: EdgeInsets.zero,
+                      selected: _commercialSelection.contains(area.id),
+                      title: Text(area.label.isEmpty
+                          ? BlueprintStrings.standingAreas
+                          : area.label),
+                      subtitle: Text(_productText(controller
+                          .snapshot.areaBindings[area.id]?.productId)),
+                      onTap: _busy ? null : () => _selectCommercialRow(area.id),
+                    ),
+                  const Divider(),
+                ],
+                Row(children: [
+                  Expanded(
+                      child: Text(BlueprintStrings.tablesTitle,
+                          style: Theme.of(context).textTheme.titleMedium)),
+                  if (_canEdit) ...[
+                    IconButton(
+                        key: const ValueKey('commercial-undo'),
+                        tooltip: VenueLayoutStrings.text(context, 'Undo'),
+                        onPressed: _busy || !controller.layout.canUndo
+                            ? null
+                            : controller.layout.undo,
+                        icon: const Icon(Icons.undo, size: 18)),
+                    IconButton(
+                        key: const ValueKey('commercial-redo'),
+                        tooltip: VenueLayoutStrings.text(context, 'Redo'),
+                        onPressed: _busy || !controller.layout.canRedo
+                            ? null
+                            : controller.layout.redo,
+                        icon: const Icon(Icons.redo, size: 18)),
+                  ],
+                ]),
+                Text(BlueprintStrings.tableSelectionHint,
+                    style: Theme.of(context).textTheme.bodySmall),
+                if (tables.isEmpty) Text(BlueprintStrings.noTables),
+                for (final table in tables.values)
+                  ListTile(
                     key: ValueKey('commercial-table-${table.id}'),
-                    dense: true,
                     contentPadding: EdgeInsets.zero,
                     selected: selectedGroups.contains(table.id),
-                    leading: Icon(
-                        selectedGroups.contains(table.id)
-                            ? Icons.check_circle
-                            : Icons.table_restaurant_outlined,
-                        size: 20),
+                    leading: Checkbox(
+                      key: ValueKey('commercial-select-${table.id}'),
+                      value: selectedGroups.contains(table.id),
+                      onChanged: _busy
+                          ? null
+                          : (selected) {
+                              final next = {..._commercialSelection};
+                              if (selected == true) {
+                                next.add(table.id);
+                              } else {
+                                next.remove(table.id);
+                              }
+                              _setCommercialSelection(next);
+                            },
+                    ),
                     title: Text(table.label.isEmpty
                         ? BlueprintStrings.tablesTitle
                         : table.label),
@@ -794,50 +917,29 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                             controller.snapshot.groupProducts[table.id]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
-                    onTap: () => _selectCommercialRow(table.id),
-                  );
-                },
-              )),
-        const Divider(),
-        if (selectedGroups.length > 1) ...[
-          Text(BlueprintStrings.selectedCount(selectedGroups.length)),
-          if (_canEdit)
-            FilledButton.icon(
-                key: const ValueKey('commercial-bulk-product'),
-                onPressed: _busy ? null : _bulkProduct,
-                icon: const Icon(Icons.sell_outlined),
-                label: Text(BlueprintStrings.assignProductToGroup)),
-        ] else if (selectedNodes.length == 1) ...[
-          if (selectedNodes.single.kind == 'capacityArea') ...[
-            Text(selectedNodes.single.label,
-                style: Theme.of(context).textTheme.titleMedium),
-            Text(
-                '${selectedNodes.single.properties['capacity'] ?? 0} ${BlueprintStrings.standingAreas}'),
-            if (_canEdit &&
-                controller.products.containsKey(controller
-                    .snapshot.areaBindings[selectedNodes.single.id]?.productId))
-              TextButton.icon(
-                  key: const ValueKey('commercial-area-product'),
-                  onPressed: _busy
-                      ? null
-                      : () => _editAreaProduct(selectedNodes.single),
-                  icon: const Icon(Icons.sell_outlined),
-                  label: Text(BlueprintStrings.editAreaProduct)),
-            if (_canEdit)
-              Text(BlueprintStrings.catalogSaveNotice,
-                  style: Theme.of(context).textTheme.bodySmall),
-            if (_canEdit)
-              TextButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () => _renameCommercial(selectedNodes.single),
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(CommonStrings.rename)),
-          ] else
-            _inspector(context, selectedNodes.single),
-        ] else
-          Text(BlueprintStrings.selectTableOrSeat),
-      ]),
+                    onTap: _busy ? null : () => _selectCommercialRow(table.id),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (selectedGroups.length > 1)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(BlueprintStrings.selectedCount(selectedGroups.length)),
+                if (_canEdit)
+                  FilledButton.icon(
+                      key: const ValueKey('commercial-bulk-product'),
+                      onPressed: _busy ? null : _bulkProduct,
+                      icon: const Icon(Icons.sell_outlined),
+                      label: Text(BlueprintStrings.assignProductToGroup)),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -1029,7 +1131,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                         : controller.operationSelection,
                                 onViewSelectionChanged: _editingPlan
                                     ? null
-                                    : _setCommercialSelection,
+                                    : _selectCommercialFromCanvas,
                                 viewSelectionTarget: _viewSelectionTarget,
                                 viewSelectableIds: _editingPlan
                                     ? null

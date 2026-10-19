@@ -1,4 +1,8 @@
 {
+  "FeatureBlueprint": {
+    "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
+    "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień."
+  },
   "OrganizationVerification": {
     "verifiedDescription": "Dane prawne organizacji zostały zatwierdzone i są widoczne pod Twoimi formularzami.",
     "pendingDescription": "Wniosek o weryfikację danych prawnych oczekuje na zatwierdzenie przez administratora.",

@@ -1255,6 +1255,8 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "placementInvalid": "The plan contains overlapping objects or objects outside the canvas. Fix the items highlighted in red.",
+    "seatProductRequired": "New seats need a priced product. Assign it in Reservations and orders.",
     "editAreaProduct": "Edit product and price",
     "tablesTitle": "Tables",
     "standingAreas": "Standing areas",

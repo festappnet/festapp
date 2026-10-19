@@ -1,4 +1,8 @@
 {
+  "FeatureBlueprint": {
+    "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
+    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu."
+  },
   "OrganizationVerification": {
     "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",
     "pendingDescription": "Ihr Antrag auf Prüfung der rechtlichen Angaben wartet auf die Freigabe durch einen Administrator.",

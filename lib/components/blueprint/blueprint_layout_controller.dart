@@ -379,14 +379,17 @@ class BlueprintLayoutController extends ChangeNotifier
     notifyListeners();
   }
 
+  bool validatePlacementForReservations() =>
+      layout.showPlacementWarnings().isEmpty;
+
   Future<BlueprintLayoutSaveResult> save() async {
     if (isBusy) throw StateError('save_in_progress');
     final submitted = saver.pending?.snapshot ?? snapshot;
+    if (!validatePlacementForReservations())
+      throw StateError('layout_placement_invalid');
     if (submitted.seatBindings.values
         .any((s) => s.spotId == null && !s.blocked && s.productId == null))
       throw StateError('seat_product_required');
-    if (layout.showPlacementWarnings().isNotEmpty)
-      throw StateError('layout_placement_invalid');
     final request = saver.pending ??
         BlueprintLayoutSaveRequest(snapshot: submitted, baseline: _baseline);
     isBusy = true;

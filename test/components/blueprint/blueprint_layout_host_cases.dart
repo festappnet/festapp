@@ -66,6 +66,34 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
     };
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('save highlights overlap before reporting missing products', () async {
+    final other = newLayoutId();
+    final base = snapshot();
+    final draft = base.copyWith(
+        document: base.document.copyWith(nodes: [
+          ...base.document.nodes,
+          LayoutNode(id: other, kind: 'seat', x: 100, y: 100),
+        ]),
+        seatBindings: {
+          ...base.seatBindings,
+          other: BlueprintSeatBinding(nodeId: other, title: 'New'),
+        });
+    var calls = 0;
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: draft),
+        saver: BlueprintLayoutSaver(Commands((input) async {
+          calls++;
+          return accepted(input);
+        })));
+    addTearDown(c.dispose);
+    await expectLater(
+        c.save(),
+        throwsA(isA<StateError>()
+            .having((e) => e.message, 'reason', 'layout_placement_invalid')));
+    expect(c.layout.placementWarningIds, containsAll([node, other]));
+    expect(calls, 0);
+  });
+
   test(
       'table defaults preserve overrides, undo atomically and protect held seats',
       () {

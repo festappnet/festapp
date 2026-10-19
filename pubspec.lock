@@ -2268,8 +2268,8 @@ packages:
     dependency: "direct overridden"
     description:
       path: "packages/venue_layout_core"
-      ref: f8c571ac80dc4f45cb8e94e4f987658614e4352d
-      resolved-ref: f8c571ac80dc4f45cb8e94e4f987658614e4352d
+      ref: "107b1e477a16d32e99ea184e4ce40d279d6545e2"
+      resolved-ref: "107b1e477a16d32e99ea184e4ce40d279d6545e2"
       url: "https://github.com/festappnet/venue_seat_picker.git"
     source: git
     version: "0.1.0"
@@ -2277,8 +2277,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: f8c571ac80dc4f45cb8e94e4f987658614e4352d
-      resolved-ref: f8c571ac80dc4f45cb8e94e4f987658614e4352d
+      ref: "107b1e477a16d32e99ea184e4ce40d279d6545e2"
+      resolved-ref: "107b1e477a16d32e99ea184e4ce40d279d6545e2"
       url: "https://github.com/festappnet/venue_seat_picker.git"
     source: git
     version: "0.2.0"

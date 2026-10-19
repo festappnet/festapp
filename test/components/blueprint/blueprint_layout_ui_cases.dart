@@ -167,6 +167,8 @@ void main() {
           LayoutNode(
               id: '10000000-0000-4000-8000-000000000010',
               kind: 'group',
+              x: 100,
+              y: 100,
               label: 'Group 10'),
           LayoutNode(
               id: '10000000-0000-4000-8000-000000000011',
@@ -177,6 +179,8 @@ void main() {
           LayoutNode(
               id: '10000000-0000-4000-8000-000000000002',
               kind: 'group',
+              x: 100,
+              y: 100,
               label: 'Group 2'),
         ]),
         seatBindings: {
@@ -232,10 +236,16 @@ void main() {
     final initialEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     expect(initialEditor.interactionEnabled, isFalse);
+    expect(initialEditor.controller.placementIssues, isEmpty);
     expect(find.byType(EditorActionBar), findsOneWidget);
     expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
         findsOneWidget);
     expect(find.byKey(const ValueKey('layout-palette')), findsNothing);
+    final reservationScroll = find.descendant(
+        of: find.byKey(const ValueKey('blueprint-reservations-panel')),
+        matching: find.byType(SingleChildScrollView));
+    expect(tester.getSize(reservationScroll).height, greaterThan(500));
+    expect(find.text(BlueprintStrings.selectTableOrSeat), findsNothing);
     final canvasState = tester.state(find.byType(LayoutSceneSurface));
     final originalDocument = initialEditor.controller.document;
     final groupRow = find.byKey(const ValueKey(
@@ -247,7 +257,9 @@ void main() {
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget);
     await tester
         .ensureVisible(find.byKey(const ValueKey('commercial-area-product')));
     await tester.tap(find.byKey(const ValueKey('commercial-area-product')));
@@ -260,14 +272,35 @@ void main() {
         1);
     await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
     await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(groupRow);
     await tester.tap(groupRow);
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget);
+    await tester.tap(find.text(BlueprintStrings.individualAssignments));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'A1'));
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {id});
+    await tester.tap(find.byKey(const ValueKey('commercial-detail-back')));
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.assignProductToGroup), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(secondRow);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
     await tester.tap(secondRow);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
     await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey('commercial-detail-dialog')), findsNothing);
     expect(initialEditor.controller.selection, isEmpty);
     expect(
         tester
@@ -292,7 +325,7 @@ void main() {
     tester
         .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
         .onViewSelectionChanged!({id});
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
     expect(initialEditor.controller.selection, isEmpty);
     expect(
@@ -300,6 +333,8 @@ void main() {
             .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
             .onDragStart,
         isNull);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.pumpAndSettle();
     expect(
@@ -330,6 +365,28 @@ void main() {
     expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
         findsNothing);
     expect(editor.readOnlyLabelNodeIds, contains(id));
+    final overlappingSeatId = newLayoutId();
+    final originalSeat =
+        editor.controller.document.nodes.singleWhere((node) => node.id == id);
+    editor.controller.beginGesture();
+    editor.controller.apply(editor.controller.document.copyWith(nodes: [
+      ...editor.controller.document.nodes,
+      LayoutNode.fromJson({...originalSeat.toJson(), 'id': overlappingSeatId}),
+    ]));
+    editor.controller.commitGesture();
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
+    expect(find.text(BlueprintStrings.placementInvalid), findsOneWidget);
+    expect(editor.controller.placementWarningIds,
+        containsAll([id, overlappingSeatId]));
+    editor.controller.undo();
+    await tester.pump();
     editor.controller.beginGesture();
     editor.controller.apply(editor.controller.document.copyWith(
         canvas: {...editor.controller.document.canvas, 'width': 2600}));

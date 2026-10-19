@@ -1,6 +1,22 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
+  static String get placementInvalid =>
+      'FeatureBlueprint.placementInvalid'.tr();
+  static String get seatProductRequired =>
+      'FeatureBlueprint.seatProductRequired'.tr();
+  static String layoutErrorMessage(Object error) {
+    if (error is StateError) {
+      switch (error.message) {
+        case 'layout_placement_invalid':
+          return placementInvalid;
+        case 'seat_product_required':
+          return seatProductRequired;
+      }
+    }
+    return error.toString();
+  }
+
   static String get editAreaProduct => 'FeatureBlueprint.editAreaProduct'.tr();
   static String get tablesTitle => 'FeatureBlueprint.tablesTitle'.tr();
   static String get standingAreas => 'FeatureBlueprint.standingAreas'.tr();

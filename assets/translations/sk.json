@@ -1,5 +1,7 @@
 {
   "FeatureBlueprint": {
+    "placementInvalid": "Plán obsahuje prekrývajúce sa objekty alebo objekty mimo plátna. Oprav červeno označené miesta.",
+    "seatProductRequired": "Novým miestam chýba produkt s cenou. Priraď ho v režime Rezervácie a objednávky.",
     "editAreaProduct": "Upraviť produkt a cenu",
     "tablesTitle": "Stoly",
     "standingAreas": "Státie",
