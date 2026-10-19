@@ -61,7 +61,6 @@ class OccasionCreationButton extends StatelessWidget {
           context,
           onPressed: onGuided,
           title: OccasionSetupStrings.stepByStep,
-          description: OccasionSetupStrings.guidedCreationDescription,
           background: colors.primaryContainer,
           foreground: colors.onPrimaryContainer,
         ),
@@ -70,7 +69,6 @@ class OccasionCreationButton extends StatelessWidget {
           context,
           onPressed: onQuick,
           title: OccasionSetupStrings.withoutWizard,
-          description: OccasionSetupStrings.quickCreationDescription,
           foreground: colors.onSurface,
         ),
       ],
@@ -84,7 +82,6 @@ class OccasionCreationButton extends StatelessWidget {
     BuildContext context, {
     required VoidCallback onPressed,
     required String title,
-    required String description,
     required Color foreground,
     Color? background,
   }) {
@@ -102,18 +99,9 @@ class OccasionCreationButton extends StatelessWidget {
       child: SizedBox(
         width:
             math.min(270, math.max(80, MediaQuery.sizeOf(context).width - 112)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title,
-                style: textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700, color: foreground)),
-            const SizedBox(height: 4),
-            Text(description,
-                style: textTheme.bodySmall?.copyWith(color: foreground)),
-          ],
-        ),
+        child: Text(title,
+            style: textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700, color: foreground)),
       ),
     );
   }
