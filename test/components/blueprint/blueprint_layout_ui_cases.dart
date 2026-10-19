@@ -124,6 +124,72 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
+      'blueprint inspector renames native table and commercial group together',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final group = LayoutNode(id: newLayoutId(), kind: 'group', label: 'S7');
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        parentId: group.id,
+        x: 400,
+        y: 400,
+        width: 200,
+        height: 100,
+        label: 'S7');
+    final original = VenueLayoutDocument(nodes: [group, table]);
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'Rename',
+            revision: 1,
+            document: original,
+            seatBindings: {},
+            groupProducts: {group.id: 1}));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    final select =
+        tester.getRect(find.byKey(const ValueKey('layout-tool-Select')));
+    final pan = tester.getRect(find.byKey(const ValueKey('layout-tool-Pan')));
+    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byKey(const ValueKey('layout-tool-Select'))),
+        select);
+    expect(tester.getRect(find.byKey(const ValueKey('layout-tool-Pan'))), pan);
+    final editor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    // The physical tabletop and its wrapper must use the same business rename.
+    editor.controller.select({table.id});
+    await tester.pumpAndSettle();
+    final name = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Name');
+    await tester.enterText(name, '  Front table  ');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(editor.controller.document.nodes.map((n) => n.label),
+        everyElement('Front table'));
+    await tester.enterText(name, '   ');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(editor.controller.document.nodes.map((n) => n.label),
+        everyElement('Front table'));
+    editor.controller.undo();
+    await tester.pump();
+    expect(editor.controller.document, same(original));
+  });
+  testWidgetsWithEnvironment(() => environment,
       'blueprint host history shortcuts survive semantic inspector activation',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 900);

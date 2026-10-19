@@ -867,6 +867,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     await _run(() async => controller.renameCommercialNode(node.id, value));
   }
 
+  void _renameFromInspector(LayoutNode node, String name) {
+    if (!_editingPlan || !_canEdit || _busy) {
+      throw StateError('blueprint_read_only');
+    }
+    controller.renameCommercialNode(
+        node.kind == 'table' ? _commercialId(node) : node.id, name);
+  }
+
   Future<void> _editAreaProduct(LayoutNode area) async {
     if (!_canEdit || _busy) return;
     final product = controller
@@ -1233,8 +1241,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           },
       };
 
-  Widget _toolbarActions() => Row(
-        key: const ValueKey('blueprint-toolbar-actions'),
+  Widget _modeSelector() => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Each mode takes only its label width; equal-width segments would
@@ -1257,6 +1264,13 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 ),
               ),
           const SizedBox(width: 12),
+        ],
+      );
+
+  Widget _toolbarActions() => Row(
+        key: const ValueKey('blueprint-toolbar-actions'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
           if (_editingPlan && _canEdit)
             IconButton(
                 onPressed: _busy ? null : _chooseFont,
@@ -1378,7 +1392,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                             absorbing: _busy || _assetsFailed,
                             child: VenueLayoutEditor(
                                 controller: controller.layout,
+                                toolbarPrefix: _modeSelector(),
                                 toolbarLeading: _toolbarActions(),
+                                onRenameNode: _renameFromInspector,
                                 toolbarTrailing: _canEdit
                                     ? EditorActionBar(
                                         inline: true,
