@@ -4,6 +4,7 @@ import 'package:festapp_core/eshop.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_context_loader.dart';
 import 'package:fstapp/components/email_templates/email_preview_examples.dart';
+import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import 'package:fstapp/components/eshop/models/product_edit_bundle.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 
@@ -15,6 +16,27 @@ ProductsEditBundle bundle(List<ProductModel> products) => ProductsEditBundle(
       forms: [],
     );
 void main() {
+  test('remote banner preview uses only canonical images from resolved wrapper',
+      () {
+    const context = EmailAuthoringContext(
+        senderAddress: 'info@festapp.net',
+        wrapperHtml:
+            '<div><img src="https://img.festapp.net/images/banner.png">'
+            '<img src="https://a.img.festapp.net/assets/banner.svg">'
+            '<img src="https://tracker.invalid/pixel.png">'
+            '<img src="https://img.festapp.net:8443/images/banner.png">'
+            '<img src="https://user@img.festapp.net/images/banner.png">'
+            '<img src="https://img.festapp.net/images/%2e%2e/pixel.png">'
+            '<img src="cid:payment-qr">{{content}}</div>');
+    expect(context.bannerImageSources, {
+      'https://img.festapp.net/images/banner.png',
+      'https://a.img.festapp.net/assets/banner.svg',
+    });
+    expect(
+        const EmailAuthoringContext(senderAddress: 'info@festapp.net')
+            .bannerImageSources,
+        isEmpty);
+  });
   test(
       'occasion sampler uses scoped catalog with actual prices in one currency',
       () async {

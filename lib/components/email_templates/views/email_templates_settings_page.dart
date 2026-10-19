@@ -24,11 +24,15 @@ import 'package:fstapp/widgets/info_tooltip_button.dart';
 class EmailTemplateSettingsPage extends StatefulWidget {
   final EmailTemplateModel template;
   final EmailTemplatesResponse emailTemplatesResponse;
+  final Future<EmailAuthoringContext> Function()? authoringContextLoader;
+  final Future<EmailPreviewExamples> Function()? previewExamplesLoader;
 
   const EmailTemplateSettingsPage({
     super.key,
     required this.template,
     required this.emailTemplatesResponse,
+    this.authoringContextLoader,
+    this.previewExamplesLoader,
   });
 
   @override
@@ -45,6 +49,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   List<EmailPreviewScenario> _scenarios = [];
   EmailPreviewScenario? _scenario;
   bool _previewError = false;
+  EmailAuthoringContext? _authoringContext;
+  late final Future<void> _initialAuthoringContext;
+  bool _authoringContextLoading = false;
   bool _contextUnavailable = false;
   bool _usesOccasionProducts = false;
   Timer? _suggestTimer;
@@ -56,10 +63,23 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     EmailTitleMatch match,
     String code
   })? _suggestion;
+  Future<void> _loadAuthoringContext() async {
+    _authoringContextLoading = true;
+    try {
+      final value = await (widget.authoringContextLoader?.call() ??
+          DbEmailTemplates.getAuthoringContext(widget.emailTemplatesResponse, widget.template.code ?? ''));
+      if (mounted) _authoringContext = value;
+    } catch (_) {
+      if (mounted) _authoringContext = null;
+    } finally {
+      _authoringContextLoading = false;
+    }
+  }
+
   Future<void> _loadExamples() async {
     try {
-      final examples = await EmailPreviewExamples.loadForOccasion(
-          widget.emailTemplatesResponse.occasion);
+      final examples = await (widget.previewExamplesLoader?.call() ??
+          EmailPreviewExamples.loadForOccasion(widget.emailTemplatesResponse.occasion));
       if (!mounted) return;
       setState(() {
         _scenarios = examples.scenariosFor(widget.template.code ?? '');
@@ -189,7 +209,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             IconButton(
                 tooltip: MaterialLocalizations.of(context)
                     .refreshIndicatorSemanticLabel,
-                onPressed: _loadExamples,
+                onPressed: () async { await _loadExamples(); onChanged?.call(); },
                 icon: const Icon(Icons.refresh)),
           ]),
         if (_scenarios.length > 1) const SizedBox(height: 8),
@@ -221,6 +241,20 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               }),
       ]);
 
+  String _scenarioLabel(EmailPreviewScenario scenario) =>
+      '${EmailTemplatesStrings.scenarioName(scenario.scenario)} · ${scenario.locale == 'cs' ? 'Čeština' : 'English'} · ${EmailTemplatesStrings.toneName(scenario.tone)}';
+
+  Future<void> _showSampleSettings() => showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(builder: (context, update) => AppAlertDialog(
+        title: Text(EmailTemplatesStrings.scenario),
+        onClose: () => Navigator.pop(context),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+        content: SizedBox(width: 440, child: _sampleControls(onChanged: () {
+          if (context.mounted) update(() {});
+        })),
+      )));
+
   Future<void> _showVariableHelp() => showDialog<void>(
       context: context,
       builder: (context) => AppAlertDialog(
@@ -234,6 +268,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                    Text(EmailTemplatesStrings.authoringHint),
+                    const SizedBox(height: 8),
                     Text(EmailTemplatesStrings.variableGuideHint),
                     const SizedBox(height: 12),
                     for (final entry in _bodyProvider.search('', const {}))
@@ -260,6 +296,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   ])))));
 
   Future<void> _showPreview() async {
+    await _initialAuthoringContext;
+    if (!mounted) return;
     if (_previewError || _scenario == null) {
       await _loadExamples();
       if (!mounted || _scenario == null) return;
@@ -279,12 +317,28 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                            Text(EmailTemplatesStrings.previewScope),
+                            if (_authoringContext != null)
+                              Text(EmailTemplatesStrings.previewScope)
+                            else ...[
+                              Text(EmailTemplatesStrings.authoringContextUnavailable),
+                              if (_authoringContextLoading) const LinearProgressIndicator()
+                              else TextButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: Text(CommonStrings.retry),
+                                onPressed: () async {
+                                  final request = _loadAuthoringContext();
+                                  update(() {});
+                                  await request;
+                                  if (context.mounted) update(() {});
+                                }),
+                            ],
                             _sampleControls(onChanged: () => update(() {})),
                             const SizedBox(height: 16),
-                            EmailReceivedMessage(
+                            if (_authoringContext != null) EmailReceivedMessage(
+                                senderAddress: _authoringContext!.senderAddress,
+                                allowedRemoteImageSources: _authoringContext!.bannerImageSources,
                                 subject: _scenario!.composeSubject(_subjectEditor.plainText),
-                                html: _scenario!.composeHtml(_bodyDraft?.html ?? _htmlContent ?? ''),
+                                html: _authoringContext!.composeHtml(_scenario!, _bodyDraft?.html ?? _htmlContent ?? ''),
                                 imageBytesResolver: _htmlSave.media.previewBytes),
                           ]))),
                 )));
@@ -339,6 +393,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         isDirty: () => _subjectEditor.hasUserChanges,
         acceptSave: () => _subjectEditor.reset(_subjectEditor.html));
     _loadExamples();
+    _initialAuthoringContext = _loadAuthoringContext();
   }
 
   Future<void> _saveSettings() async {
@@ -413,26 +468,18 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               Text(usageDetails['description'] ?? '',
                   style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 8),
-              Text(EmailTemplatesStrings.authoringHint,
-                  style: Theme.of(context).textTheme.bodySmall),
-              Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    TextButton.icon(
-                        onPressed: _showVariableHelp,
-                        icon: const Icon(Icons.info_outline),
-                        label: Text(EmailTemplatesStrings.variableGuide)),
-                    TextButton.icon(
-                        onPressed: _showPreview,
-                        icon: const Icon(Icons.preview_outlined),
-                        label: Text(EmailTemplatesStrings.preview)),
-                  ]),
-              _sampleControls(),
-              const SizedBox(height: 16),
-              Text(EmailTemplatesStrings.subject,
-                  style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: Text(EmailTemplatesStrings.subject,
+                    style: Theme.of(context).textTheme.labelLarge)),
+                if (MediaQuery.sizeOf(context).width < 480)
+                  IconButton(onPressed: _showPreview,
+                    tooltip: EmailTemplatesStrings.preview,
+                    icon: const Icon(Icons.preview_outlined, size: 20))
+                else Tooltip(message: EmailTemplatesStrings.preview,
+                  child: TextButton.icon(onPressed: _showPreview,
+                    icon: const Icon(Icons.preview_outlined, size: 20),
+                    label: Text(EmailTemplatesStrings.previewShort))),
+              ]),
               // Subject text field.
               FormField<String>(
                   validator: (_) => _subjectEditor.plainText.trim().isEmpty
@@ -457,9 +504,16 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           child: RichHtmlEditor(
                               controller: _subjectEditor, enabled: _canEdit)))),
               const SizedBox(height: 16),
-              Text(EmailTemplatesStrings.emailTemplateContent,
-                  style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: Text(EmailTemplatesStrings.emailTemplateContent,
+                    style: Theme.of(context).textTheme.labelLarge)),
+                IconButton(onPressed: _showVariableHelp,
+                    tooltip: EmailTemplatesStrings.variableGuide,
+                    icon: const Icon(Icons.info_outline, size: 20)),
+                IconButton(onPressed: _showSampleSettings,
+                    tooltip: '${EmailTemplatesStrings.scenario}: $_sampleOrigin${_scenario == null ? '' : ' · ${_scenarioLabel(_scenario!)}'}',
+                    icon: Icon(_contextUnavailable || _previewError ? Icons.warning_amber_outlined : Icons.tune, size: 20)),
+              ]),
               DecoratedBox(
                   decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,

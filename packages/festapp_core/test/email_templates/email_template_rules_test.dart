@@ -263,4 +263,50 @@ void main() {
     expect(zero.values['amount'], startsWith('0'));
     expect(zero.values['fullOrder'], isNot(contains('450')));
   });
+  test('preview wraps before completing links, just like delivery', () {
+    const scenario = EmailPreviewScenario(
+      templateCode: 'test',
+      scenario: 'standard',
+      locale: 'cs',
+      tone: 'formal',
+      values: {'name': '{{content}} & Jana'},
+      richCodes: {},
+      requiredLinks: [
+        EmailRequiredLink(
+          url: 'https://example.invalid/order',
+          html: '<a href="https://example.invalid/order">Current status</a>',
+        ),
+      ],
+    );
+    const wrapper =
+        '<html><body><main style="padding:24px">{{content}}</main></body></html>';
+    expect(
+      scenario.composeHtml('<p>{{name}}</p>', wrapperHtml: wrapper),
+      '<html><body><main style="padding:24px"><p>{{content}} &amp; Jana</p></main><a href="https://example.invalid/order">Current status</a></body></html>',
+    );
+    expect(
+      scenario
+          .composeHtml(
+            '<a href="https://example.invalid/order">Existing</a>',
+            wrapperHtml: wrapper,
+          )
+          .split('href='),
+      hasLength(2),
+    );
+  });
+  test('generated payment examples include the same IBAN rows as delivery', () {
+    final records = asset['records'] as List;
+    final reminders = records.where(
+      (r) => r['templateCode'] == 'TICKET_ORDER_REMINDER',
+    );
+    expect(reminders, isNotEmpty);
+    for (final record in reminders) {
+      final values = record['values'] as Map;
+      expect(values['iban'], startsWith('CZ00 '));
+      expect(values['paymentDetails'], contains('IBAN:'));
+      if (record['scenario'] != 'zero') {
+        expect(values['balanceReasoning'], contains('IBAN:'));
+      }
+    }
+  });
 }

@@ -2,9 +2,28 @@ import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:festapp_core/email_templates.dart';
+import 'package:html/parser.dart' as html_parser;
 
 class DbEmailTemplates {
   static final _supabase = Supabase.instance.client;
+
+  static Future<EmailAuthoringContext> getAuthoringContext(
+      EmailTemplatesResponse scope, String templateCode) async {
+    final occasionId = scope.occasion?.id;
+    final response =
+        await _supabase.functions.invoke('send-custom-email', body: {
+      'action': 'authoringContext',
+      'entityType': occasionId != null ? 'occasion' : 'unit',
+      'entityId': occasionId ?? scope.unit.id,
+      'templateCode': templateCode,
+    });
+    if (response.status != 200 || response.data is! Map) {
+      throw StateError('Email authoring metadata unavailable');
+    }
+    return EmailAuthoringContext.fromJson(
+        Map<String, dynamic>.from(response.data as Map));
+  }
 
   static Future<EmailTemplatesResponse> getAllEmailTemplatesViaOccasionLink(
       String link) async {
@@ -71,6 +90,45 @@ class DbEmailTemplates {
         "p_code": code
       });
     }
+  }
+}
+
+class EmailAuthoringContext {
+  final String senderAddress;
+  final String? wrapperHtml;
+  const EmailAuthoringContext({required this.senderAddress, this.wrapperHtml});
+
+  factory EmailAuthoringContext.fromJson(Map<String, dynamic> json) {
+    final sender = json['senderAddress'];
+    if (sender is! String || sender.trim().isEmpty) {
+      throw const FormatException('Missing canonical sender');
+    }
+    return EmailAuthoringContext(
+        senderAddress: sender, wrapperHtml: json['wrapperHtml'] as String?);
+  }
+
+  String composeHtml(EmailPreviewScenario scenario, String body) =>
+      scenario.composeHtml(body, wrapperHtml: wrapperHtml);
+
+  /// Only images from the resolved wrapper can opt into remote preview.
+  /// Other email images, including tracking pixels, remain inert.
+  Set<String> get bannerImageSources => {
+        for (final image
+            in html_parser.parse(wrapperHtml ?? '').querySelectorAll('img'))
+          if (_isCanonicalBanner(image.attributes['src'] ?? ''))
+            image.attributes['src']!,
+      };
+
+  static bool _isCanonicalBanner(String source) {
+    final uri = Uri.tryParse(source);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        !uri.hasPort &&
+        uri.userInfo.isEmpty &&
+        const {'img.festapp.net', 'a.img.festapp.net'}.contains(uri.host) &&
+        (uri.path.startsWith('/images/') || uri.path.startsWith('/assets/')) &&
+        !source.split(RegExp(r'[?#]')).first.contains('%') &&
+        !uri.pathSegments.contains('..');
   }
 }
 

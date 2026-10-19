@@ -973,7 +973,7 @@
       "variable": "Zmienna",
       "previewUnavailable": "Nie można wczytać podglądu. Spróbuj ponownie.",
       "preview": "Podgląd treści e-maila",
-      "previewScope": "Dane przykładowe bez banera. Linki są nieaktywne.",
+      "previewScope": "Podgląd z aktualnym układem wiadomości. Dane klienta i płatności są przykładowe. Linki są nieaktywne.",
       "scenario": "Przykład",
       "suggestTitle": "Użyć zmiennej nazwy wydarzenia zamiast „{}”?",
       "replaceVariable": "Zastąp zmienną",
@@ -1005,7 +1005,10 @@
       "previewFrom": "Od",
       "previewTo": "Do",
       "previewReceivedMessage": "Odebrana wiadomość",
-      "uniqueAlreadyUsed": "Ta sekcja została już wstawiona. Może wystąpić tylko raz w wiadomości."
+      "uniqueAlreadyUsed": "Ta sekcja została już wstawiona. Może wystąpić tylko raz w wiadomości.",
+      "authoringContextUnavailable": "Nie udało się wczytać wyglądu wiadomości i nadawcy. Spróbuj ponownie.",
+      "previewSenderUnavailable": "Nadawca niedostępny",
+      "previewShort": "Podgląd"
     },
     "subject": "Temat",
     "emailTemplateContent": "Treść e-maila"

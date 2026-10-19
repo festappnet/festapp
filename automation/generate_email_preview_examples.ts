@@ -14,7 +14,10 @@ import {
 } from "../supabase/functions/_shared/emailActionLink.ts";
 import { completeEmailContent } from "../supabase/functions/_shared/emailContentCompletion.ts";
 import { translatePlatformLinks } from "../supabase/functions/_shared/translatePlatformLinks.ts";
-import { formatCurrency } from "../supabase/functions/_shared/utilities.ts";
+import {
+  formatCurrency,
+  formatIBAN,
+} from "../supabase/functions/_shared/utilities.ts";
 
 const root = new URL("../", import.meta.url);
 const read = (path: string) => Deno.readTextFile(new URL(path, root));
@@ -65,7 +68,7 @@ const scalar = {
   occasionTitle: fixture.occasionTitle,
   orderSymbol: fixture.orderSymbol,
   accountNumber: fixture.accountNumber,
-  iban: fixture.iban,
+  iban: formatIBAN(fixture.iban),
   variableSymbol: fixture.variableSymbol,
   deadline: fixture.deadline,
 };
@@ -113,7 +116,7 @@ for (const locale of ["cs", "en"] as const) {
             5,
             money(800),
             fixture.accountNumber,
-            null,
+            formatIBAN(fixture.iban),
             fixture.variableSymbol,
             money(0),
             tone,
@@ -126,14 +129,14 @@ for (const locale of ["cs", "en"] as const) {
             money(500),
             onSite,
             fixture.accountNumber,
-            null,
+            formatIBAN(fixture.iban),
             fixture.variableSymbol,
             tone,
           )
           : tr.unpaid(
             money(800),
             fixture.accountNumber,
-            null,
+            formatIBAN(fixture.iban),
             fixture.variableSymbol,
             fixture.deadline,
             tone,
@@ -172,6 +175,7 @@ for (const locale of ["cs", "en"] as const) {
             ),
             paymentDetails: generatePaymentDetails({
               accountNumber: fixture.accountNumber,
+              iban: formatIBAN(fixture.iban),
               variableSymbol: fixture.variableSymbol,
               amount: money(zero ? 0 : deposit ? 300 : 800),
               lang: locale,

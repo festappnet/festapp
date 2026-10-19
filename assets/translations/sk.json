@@ -979,7 +979,7 @@
       "variable": "Premenný údaj",
       "previewUnavailable": "Ukážku nemožno načítať. Skúste to znova.",
       "preview": "Náhľad obsahu e-mailu",
-      "previewScope": "Ukážkové údaje bez bannera. Odkazy nie sú aktívne.",
+      "previewScope": "Ukážka s aktuálnym obalom e-mailu. Údaje zákazníka a platby sú modelové. Odkazy nie sú aktívne.",
       "scenario": "Ukážka",
       "suggestTitle": "Použiť premenný názov akcie namiesto „{}“?",
       "replaceVariable": "Nahradiť údajom",
@@ -1011,7 +1011,10 @@
       "previewFrom": "Od",
       "previewTo": "Komu",
       "previewReceivedMessage": "Prijatá správa",
-      "uniqueAlreadyUsed": "Táto sekcia je už vložená. V jednom e-maile môže byť iba raz."
+      "uniqueAlreadyUsed": "Táto sekcia je už vložená. V jednom e-maile môže byť iba raz.",
+      "authoringContextUnavailable": "Vzhľad e-mailu a odosielateľa sa nepodarilo načítať. Skúste to znova.",
+      "previewSenderUnavailable": "Odosielateľ nie je dostupný",
+      "previewShort": "Náhľad"
     },
     "subject": "Predmet",
     "emailTemplateContent": "Obsah e-mailu"

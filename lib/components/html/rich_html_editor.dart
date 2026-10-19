@@ -134,6 +134,19 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
     _mentionsChanged();
   }
 
+  bool _isSelectedToken(String code) {
+    final selection = controller.editor.composer.selection;
+    if (selection == null || selection.isCollapsed || selection.base.nodeId != selection.extent.nodeId) return false;
+    final node = controller.editor.document.getNodeById(selection.extent.nodeId);
+    final base = selection.base.nodePosition;
+    final extent = selection.extent.nodePosition;
+    if (node is! TextNode || base is! TextNodePosition || extent is! TextNodePosition) return false;
+    final start = base.offset < extent.offset ? base.offset : extent.offset;
+    final end = base.offset > extent.offset ? base.offset : extent.offset;
+    return node.text.placeholders.entries.any((entry) => entry.key >= start && entry.key < end &&
+      entry.value is TemplateTokenPlaceholder && (entry.value as TemplateTokenPlaceholder).code == code);
+  }
+
   Widget _mentionMenu(BuildContext context) {
     final provider = controller.authoring!;
     final width = (MediaQuery.sizeOf(context).width - 24).clamp(0.0, 380.0);
@@ -970,6 +983,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                     .clamp(80.0,
                                                                         680.0),
                                                                 child: _TemplateComponent(
+                                                                    selected: _isSelectedToken(value.code),
                                                                     provider:
                                                                         provider,
                                                                     code: value
@@ -1030,9 +1044,9 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                   Styles.textStyle:
                                                                       htmlBlockTextStyler(
                                                                           node,
-                                                                          (widget.textStyle ?? htmlTextStyle(context))
+                                                                          (widget.textStyle ?? controller.authoring?.textStyle?.copyWith(color: htmlTextStyle(context).color) ?? htmlTextStyle(context))
                                                                               .copyWith(
-                                                                            fontSize: (widget.textStyle ?? htmlTextStyle(context)).fontSize! *
+                                                                            fontSize: (widget.textStyle ?? controller.authoring?.textStyle?.copyWith(color: htmlTextStyle(context).color) ?? htmlTextStyle(context)).fontSize! *
                                                                                 switch (node.getMetadataValue('blockType')) {
                                                                                   final type when type == header1Attribution => 2.0,
                                                                                   final type when type == header2Attribution => 1.5,
@@ -1050,7 +1064,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                       ? CascadingPadding.symmetric(
                                                                           horizontal:
                                                                               0,
-                                                                          vertical: controller.authoring!.singleLine
+                                                                          vertical: controller.authoring!.singleLine || node is TemplateTokenBlock
                                                                               ? 0
                                                                               : 8)
                                                                       : const CascadingPadding
@@ -1301,62 +1315,66 @@ class _TemplateBlockBuilder extends ComponentBuilder {
         child: _TemplateComponent(
             provider: provider,
             code: node.code,
+            selected: (model as HorizontalRuleComponentViewModel).selection != null,
             onDelete: () => controller.editor
                 .execute([DeleteNodeRequest(nodeId: node.id)])));
   }
 }
 
 /// Atomic document object: identity stays in the editor, content is only a sample.
-class _TemplateComponent extends StatelessWidget {
-  const _TemplateComponent(
-      {required this.provider, required this.code, this.onDelete});
+class _TemplateComponent extends StatefulWidget {
+  const _TemplateComponent({required this.provider, required this.code,
+    this.selected = false, this.onDelete});
   final TemplateAuthoringProvider provider;
   final String code;
+  final bool selected;
   final VoidCallback? onDelete;
   @override
+  State<_TemplateComponent> createState() => _TemplateComponentState();
+}
+
+class _TemplateComponentState extends State<_TemplateComponent> {
+  bool _hovered = false;
+  bool _focused = false;
+  final _focus = FocusNode();
+  @override
+  void dispose() { _focus.dispose(); super.dispose(); }
+  void _showInfo() {
+    final entry = widget.provider.entry(widget.code);
+    showDialog<void>(context: context, builder: (context) => AppAlertDialog(
+      title: Text(entry?.label ?? widget.code),
+      content: Text('${entry?.description ?? ''}\n\n${widget.provider.sampleLabel} · {{${widget.code}}}'),
+      onClose: () => Navigator.pop(context)));
+  }
+  @override
   Widget build(BuildContext context) {
-    final entry = provider.entry(code);
+    final entry = widget.provider.entry(widget.code);
     final colors = Theme.of(context).colorScheme;
-    return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-            color: colors.surface,
-            border: Border(left: BorderSide(width: 2, color: colors.primary.withValues(alpha: .45)))),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Container(
-              padding: const EdgeInsets.only(left: 8, right: 4),
-              decoration: BoxDecoration(
-                  color: colors.surface),
-              child: Row(children: [
-                Expanded(
-                    child: Text(entry?.label ?? code,
-                        style: Theme.of(context).textTheme.labelMedium)),
-                Tooltip(
-                    message:
-                        '${entry?.description ?? ''}\n${provider.sampleLabel} · {{$code}}',
-                    child: IconButton(
-                        tooltip: entry?.description,
-                        onPressed: () => showDialog<void>(
-                            context: context,
-                            builder: (context) => AppAlertDialog(
-                                title: Text(entry?.label ?? code),
-                                content: Text(
-                                    '${entry?.description ?? ''}\n\n${provider.sampleLabel} · {{$code}}'),
-                                onClose: () => Navigator.pop(context))),
-                        icon: const Icon(Icons.info_outline, size: 18))),
-                if (onDelete != null)
-                  IconButton(
-                      tooltip:
-                          MaterialLocalizations.of(context).deleteButtonTooltip,
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.close, size: 18)),
-              ])),
-          Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 8),
-              child: provider.preview(context, code) ??
-                  Text(provider.sampleLabel)),
-        ]));
+    final active = _hovered || _focused || widget.selected;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Focus(focusNode: _focus,
+        onFocusChange: (value) => setState(() => _focused = value),
+        child: Semantics(label: '${entry?.label ?? widget.code}. ${entry?.description ?? ''}',
+          onLongPress: _showInfo,
+          child: GestureDetector(behavior: HitTestBehavior.translucent,
+            onTap: _focus.requestFocus,
+            child: Stack(children: [
+              widget.provider.preview(context, widget.code) ?? Text(widget.provider.sampleLabel),
+              if (active) Positioned.fill(child: IgnorePointer(child: DecoratedBox(
+                decoration: BoxDecoration(border: Border.all(color: colors.primary.withValues(alpha: .6)))))),
+              if (active) Positioned(top: 0, right: 0,
+                child: Material(color: colors.surfaceContainerHigh, elevation: 2,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    IconButton(tooltip: '${entry?.label ?? widget.code}: ${entry?.description ?? ''}',
+                      onPressed: _showInfo, icon: const Icon(Icons.info_outline, size: 18)),
+                    if (widget.onDelete != null) IconButton(
+                      tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+                      onPressed: widget.onDelete, icon: const Icon(Icons.close, size: 18)),
+                  ]))),
+            ])))));
   }
 }
 
