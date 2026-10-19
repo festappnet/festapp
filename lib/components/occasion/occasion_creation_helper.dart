@@ -68,7 +68,9 @@ class OccasionCreationHelper {
 
   static Future<OccasionModel?> createNewOccasion(BuildContext context,
       UnitModel unit, List<OccasionModel> existingOccasions,
-      {OccasionModel? source, String? copyLocale}) async {
+      {OccasionModel? source,
+      String? copyLocale,
+      bool withoutWizard = false}) async {
     final intentLocale = copyLocale ?? context.locale.languageCode;
     if (source != null && AppConfig.occasionSetupEnabled) {
       await _openSetup(context, unit, {
@@ -78,6 +80,12 @@ class OccasionCreationHelper {
         'copy_locale': intentLocale,
         'copy_title_edited': false,
       });
+      return null;
+    }
+    if (AppConfig.occasionSetupEnabled &&
+        !AppConfig.isAppSupported &&
+        !withoutWizard) {
+      await _openSetup(context, unit, const {});
       return null;
     }
     final formKey = GlobalKey<FormState>();
