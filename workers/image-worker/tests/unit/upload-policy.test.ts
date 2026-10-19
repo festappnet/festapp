@@ -7,7 +7,7 @@ function fixture(format = 'image/jpeg', width = 4662, height = 3108, outputs = [
   let index = 0;
   const output = vi.fn().mockImplementation(async () => ({ response: () => new Response(new Uint8Array(outputs[Math.min(index++, outputs.length - 1)])) }));
   const transform = vi.fn().mockReturnValue({ output });
-  const images = { info: vi.fn().mockResolvedValue({ format, fileSize: 100, width: Math.min(width,3000), height: Math.min(height,3000) }).mockResolvedValueOnce({ format, fileSize: 100, width, height }), input: vi.fn().mockReturnValue({ transform }) };
+  const images = { info: vi.fn().mockResolvedValue({ format, fileSize: 100, width, height }), input: vi.fn().mockReturnValue({ transform }) };
   return { env: { IMAGES: images } as unknown as Env, images, transform, output };
 }
 function policy(profile: string) { const form = new FormData(); form.set('profile', profile); return resolveUploadPolicy(form); }
@@ -40,11 +40,6 @@ describe('one server-owned image upload policy', () => {
     expect(f.output).toHaveBeenCalledWith(expect.objectContaining({ format, anim: true }));
     await processUploadImage(file, policy('ticket-background'), f.env);
     expect(f.output).toHaveBeenLastCalledWith({ format: 'image/png', anim: false });
-    const blueprint = fixture(format);
-    blueprint.images.info.mockResolvedValue({ format: 'image/png', fileSize: 100, width: 2, height: 2 });
-    const staticResult = await processUploadImage(file, policy('blueprint-background'), blueprint.env);
-    expect(blueprint.output).toHaveBeenLastCalledWith({ format: 'image/png', anim: false });
-    expect(staticResult.contentType).toBe('image/png');
   });
   it('does not silently store the original when modern processing fails', async () => {
     const f = fixture(); f.output.mockRejectedValue(new Error('transform failed'));

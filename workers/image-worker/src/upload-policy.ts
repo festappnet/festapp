@@ -72,23 +72,21 @@ export async function readUploadForm(request: Request): Promise<FormData> {
   }
 }
 
-export async function processUploadImage(file: File, policy: UploadPolicy, env: Env): Promise<{ body: ReadableStream | ArrayBuffer; contentType: string; extension?: string; width?: number; height?: number }> {
+export async function processUploadImage(file: File, policy: UploadPolicy, env: Env): Promise<{ body: ReadableStream | ArrayBuffer; contentType: string; extension?: string }> {
   const original = () => ({ body: file.stream(), contentType: file.type || 'application/octet-stream' });
   // Required compatibility for deployed apps and independent AKH consumers.
   if (!policy.profile && (file.size <= policy.maxBytes || !env.IMAGES)) return original();
   if (!env.IMAGES) throw new ImageProcessingError(503, 'IMAGE_PROCESSOR_UNAVAILABLE', 'Image processing unavailable', true);
   try {
     const info = await env.IMAGES.info(file.stream());
-    const svg = info.format === 'image/svg+xml' && policy.profile === 'blueprint-background';
-    if (svg) validateBlueprintSvg(await file.text());
-    if ((!svg && !('width' in info)) || !['image/jpeg', 'image/png', 'image/gif', 'image/webp', ...(svg ? ['image/svg+xml'] : [])].includes(info.format)) {
+    if (!('width' in info) || !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(info.format)) {
       throw new ImageProcessingError(400, 'UNSUPPORTED_IMAGE', 'Unsupported image format');
     }
-    if (!svg && (info.width <= 0 || info.height <= 0 || info.width * info.height > MAX_IMAGE_PIXELS)) {
+    if (info.width <= 0 || info.height <= 0 || info.width * info.height > MAX_IMAGE_PIXELS) {
       throw new ImageProcessingError(413, 'IMAGE_TOO_LARGE', 'Image exceeds 40 MP');
     }
-    const printArtwork = policy.profile === 'ticket-background' || policy.profile === 'blueprint-background';
-    const format = svg || printArtwork && ['image/gif', 'image/webp'].includes(info.format) ? 'image/png' : info.format;
+    const printArtwork = policy.profile === 'ticket-background';
+    const format = printArtwork && ['image/gif', 'image/webp'].includes(info.format) ? 'image/png' : info.format;
     const outputBudget = policy.profile ? policy.maxBytes : MAX_IMAGE_INPUT_BYTES;
     let edge = policy.maxEdge;
     for (let attempt = 0; attempt < 6; attempt++) {
@@ -98,12 +96,7 @@ export async function processUploadImage(file: File, policy: UploadPolicy, env: 
       const response = output.response();
       const bytes = await response.arrayBuffer();
       if (bytes.byteLength <= outputBudget) {
-        const dimensions = policy.profile === 'blueprint-background' ? await env.IMAGES.info(new Response(bytes).body!) : undefined;
-        if (dimensions && (!('width' in dimensions) || dimensions.width < 1 || dimensions.height < 1 || dimensions.width > policy.maxEdge || dimensions.height > policy.maxEdge || dimensions.format !== format)) {
-          throw new ImageProcessingError(502, 'INVALID_IMAGE_OUTPUT', 'Image processor returned invalid output', true);
-        }
-        return { body: bytes, contentType: format, extension: format.split('/')[1].replace('jpeg', 'jpg'),
-          ...(dimensions ? { width: dimensions.width, height: dimensions.height } : {}) };
+        return { body: bytes, contentType: format, extension: format.split('/')[1].replace('jpeg', 'jpg') };
       }
       const next = Math.max(1, Math.floor(edge * Math.sqrt(outputBudget / bytes.byteLength) * .9));
       if (next >= edge) break;
@@ -116,24 +109,4 @@ export async function processUploadImage(file: File, policy: UploadPolicy, env: 
     console.error('Image transform failed', error instanceof Error ? error.message : String(error));
     throw new ImageProcessingError(502, 'IMAGE_TRANSFORM_FAILED', 'Image processing failed', true);
   }
-}
-
-/** Blueprint SVG is rasterized by the same Images binding, never served as XML.
- * Reject active/external constructs before passing bytes to the native decoder.
- */
-export function validateBlueprintSvg(svg: string): void {
-  const root = /<svg\b([^>]*)>/i.exec(svg);
-  const forbidden = /<!\s*(?:DOCTYPE|ENTITY)|<\?xml-stylesheet|<\s*(?:script|foreignObject|iframe|object|embed|audio|video|image)\b|\s+on[a-z]+\s*=|@(?:import|font-face)|\b(?:javascript|data|https?|file):/i;
-  if (!root || svg.includes('\\') || forbidden.test(svg.replace(/\s+xmlns(?::[\w-]+)?\s*=\s*(["']).*?\1/gi, ''))) throw new ImageProcessingError(400, 'UNSAFE_SVG', 'SVG must contain only self-contained artwork');
-  for (const match of svg.matchAll(/(?:[\w-]+:)?href\s*=\s*(["'])(.*?)\1/gi)) {
-    if (!/^#[A-Za-z_][A-Za-z0-9_.:-]*$/.test(match[2])) throw new ImageProcessingError(400, 'UNSAFE_SVG', 'External SVG references are not allowed');
-  }
-  for (const match of svg.matchAll(/url\s*\(\s*["']?([^)]*)\)/gi)) {
-    if (!/^#[A-Za-z_][A-Za-z0-9_.:-]*["']?\s*$/.test(match[1])) throw new ImageProcessingError(400, 'UNSAFE_SVG', 'External SVG references are not allowed');
-  }
-  const viewBox = /\bviewBox\s*=\s*["']\s*([-+\d.e]+)[,\s]+([-+\d.e]+)[,\s]+([-+\d.e]+)[,\s]+([-+\d.e]+)\s*["']/i.exec(root[1]);
-  const width = /\bwidth\s*=\s*["']([\d.]+)(?:px)?["']/i.exec(root[1]);
-  const height = /\bheight\s*=\s*["']([\d.]+)(?:px)?["']/i.exec(root[1]);
-  const w = Number(width?.[1] ?? viewBox?.[3]); const h = Number(height?.[1] ?? viewBox?.[4]);
-  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0 || w * h > MAX_IMAGE_PIXELS) throw new ImageProcessingError(413, 'IMAGE_TOO_LARGE', 'SVG dimensions are invalid or exceed 40 MP');
 }

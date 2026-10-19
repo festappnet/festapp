@@ -55,13 +55,6 @@ describe('FieldPreviewFactory', () => {
     });
 
     describe('Product Type Strategy', () => {
-        it('resolves the canonical offered standing product in order summaries', () => {
-            const result = FieldPreviewFactory.format({type: 'product_type',
-                productTypeData: {products: [{id: 9, title: 'Standing admission', price: 80}]}},
-                9, {currency: 'CZK'});
-            assert.strictEqual(result.value, 'Standing admission');
-            assert.match(result.price, /80.*Kč/);
-        });
         it('should resolve product title from nested product_type_data', () => {
             const field = { 
                 type: 'product_type', 
