@@ -1236,6 +1236,7 @@
     "cancelDraftConfirm": "Usunąć szkic „{title}”? Niedokończone ustawienia zostaną trwale usunięte.",
     "progress": "Ukończono {value} %",
     "createStepByStep": "Utwórz krok po kroku",
+    "withoutWizard": "Bez kreatora",
     "createEvent": "Utwórz wydarzenie",
     "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."
   },

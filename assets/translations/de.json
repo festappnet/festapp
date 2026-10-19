@@ -1236,6 +1236,7 @@
     "cancelDraftConfirm": "Entwurf „{title}“ verwerfen? Die unfertigen Einstellungen werden dauerhaft gelöscht.",
     "progress": "{value} % abgeschlossen",
     "createStepByStep": "Schritt für Schritt erstellen",
+    "withoutWizard": "Ohne Assistenten",
     "createEvent": "Veranstaltung erstellen",
     "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage."
   },

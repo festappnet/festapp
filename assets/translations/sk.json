@@ -1243,6 +1243,7 @@
     "cancelDraftConfirm": "Naozaj zrušiť koncept „{title}“? Rozpracované nastavenia budú trvalo zmazané.",
     "progress": "Dokončené {value} %",
     "createStepByStep": "Vytvoriť krok za krokom",
+    "withoutWizard": "Bez sprievodcu",
     "createEvent": "Vytvoriť udalosť",
     "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."
   },
