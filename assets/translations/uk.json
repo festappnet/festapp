@@ -1410,7 +1410,6 @@
     "cancelDraftConfirm": "Видалити чернетку «{title}»? Незавершені налаштування буде видалено назавжди.",
     "progress": "Завершено {value} %",
     "createStepByStep": "Створити крок за кроком",
-    "chooseCreation": "Як ви хочете створити подію?",
     "stepByStep": "Крок за кроком",
     "recommendedForTickets": "Рекомендовано для квитків",
     "guidedCreationDescription": "Майстер допоможе налаштувати подію, квитки та продаж.",

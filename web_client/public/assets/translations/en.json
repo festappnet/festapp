@@ -2651,7 +2651,6 @@
     "includingCancelled": "Including cancelled"
   },
   "OccasionSetup": {
-    "chooseCreation": "How would you like to create your event?",
     "stepByStep": "Step by step",
     "recommendedForTickets": "Recommended for tickets",
     "guidedCreationDescription": "A guided setup for your event, tickets and sales.",

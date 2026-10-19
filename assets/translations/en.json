@@ -2833,7 +2833,6 @@
     "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
     "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
-    "chooseCreation": "How would you like to create your event?",
     "stepByStep": "Step by step",
     "recommendedForTickets": "Recommended for tickets",
     "guidedCreationDescription": "A guided setup for your event, tickets and sales.",
