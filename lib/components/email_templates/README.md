@@ -16,6 +16,15 @@ Most specific wins. This applies to both template content AND banners/wrappers.
 
 Banner upload auto-regenerates wrapper HTML via `update_entity_email_banner` RPC.
 
+## Editor visibility
+
+`get_all_email_templates` explicitly lists editor-supported codes. Order templates
+are always eligible; waitlist templates additionally require an enabled waitlist
+on a capacity-limited form in the requested scope. App/account templates require
+organization `IS_APP_SUPPORTED=true`. The standalone `ORDER_OVERVIEW` template,
+internal team messages and unknown codes stay hidden. Adding a stored template
+alone never enables it. Sender resolution and stored content are unchanged.
+
 ## Sending Emails
 
 `send-custom-email` validates the editor, resolves content through
