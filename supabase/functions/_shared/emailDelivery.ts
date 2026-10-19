@@ -1,3 +1,4 @@
+import { styleEmailPlainValues } from "./emailPlainValueStyles.ts";
 import { completeEmailContent, type EmailRequiredLink } from "./emailContentCompletion.ts";
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL") || "";
 export type EmailContext = {
@@ -115,11 +116,11 @@ export async function renderEmail(
     typeof template.html !== "string"
   ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
   const subject = substitute(template.subject, input.substitutions);
-  const html = completeEmailContent(
+  const html = styleEmailPlainValues(completeEmailContent(
     substitute(template.html, input.substitutions),
     input.requiredLinks ?? [],
     resolved?.wrapper?.html,
-  );
+  ));
   return {
     from: input.from ?? _DEFAULT_EMAIL,
     to: input.to,
