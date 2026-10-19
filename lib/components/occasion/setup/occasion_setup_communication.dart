@@ -5,11 +5,14 @@ import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'occasion_setup_story.dart';
 import 'occasion_setup_details_strings.dart';
 
-void initializeCommunicationDraft(Map<String, dynamic> data,
-    {bool reset = false}) {
+void initializeCommunicationDraft(
+  Map<String, dynamic> data, {
+  bool reset = false,
+}) {
   final form = (data['formDraft'] as Map?)?['data'] as Map? ?? {};
   final values = <String, dynamic>{
     'communicationTone':
@@ -33,15 +36,22 @@ void initializeCommunicationDraft(Map<String, dynamic> data,
   }
 }
 
-bool communicationDraftValid(Map<String, dynamic> data) {
+bool communicationDraftValid(
+  Map<String, dynamic> data, {
+  bool includeReply = true,
+  bool includeReminders = true,
+}) {
   final email = (data['replyToEmail'] as String? ?? '').trim();
-  if (data['replyToMode'] == 'custom' &&
+  if (includeReply &&
+      data['replyToMode'] == 'custom' &&
       (email.isEmpty ||
           email.length > 254 ||
           FormBuilderValidators.email(errorText: 'invalid')(email) != null))
     return false;
   final lead = (data['reminderLeadDays'] as String? ?? '').trim();
-  if (OccasionSetupStory.hasPaidProducts(data) && lead.isNotEmpty) {
+  if (includeReminders &&
+      OccasionSetupStory.hasPaidProducts(data) &&
+      lead.isNotEmpty) {
     final days = double.tryParse(lead.replaceAll(',', '.'));
     if (days == null || !days.isFinite || days < 0) return false;
   }
@@ -66,7 +76,8 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
     meta.remove('is_reminder_enabled');
   }
   final days = double.tryParse(
-      (data['reminderLeadDays'] as String? ?? '').replaceAll(',', '.'));
+    (data['reminderLeadDays'] as String? ?? '').replaceAll(',', '.'),
+  );
   if (OccasionSetupStory.hasPaidProducts(data) &&
       days != null &&
       days.isFinite &&
@@ -80,17 +91,20 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
 
 class OccasionSetupCommunication extends StatefulWidget {
   final String draftId;
+  final bool paymentTiming;
   final Map<String, dynamic> data;
   final ValueChanged<Map<String, dynamic>> onChanged;
   final Future<Map<String, dynamic>> Function()? loader;
   final Future<UnitModel> Function(UnitModel)? saveDefaults;
-  const OccasionSetupCommunication(
-      {super.key,
-      required this.draftId,
-      required this.data,
-      required this.onChanged,
-      this.loader,
-      this.saveDefaults});
+  const OccasionSetupCommunication({
+    super.key,
+    required this.draftId,
+    this.paymentTiming = false,
+    required this.data,
+    required this.onChanged,
+    this.loader,
+    this.saveDefaults,
+  });
   @override
   State<OccasionSetupCommunication> createState() =>
       _OccasionSetupCommunicationState();
@@ -113,9 +127,12 @@ class _OccasionSetupCommunicationState
     try {
       final result = widget.loader != null
           ? await widget.loader!()
-          : Map<String, dynamic>.from(await Supabase.instance.client.rpc(
-              'get_occasion_setup_communication',
-              params: {'p_id': widget.draftId}));
+          : Map<String, dynamic>.from(
+              await Supabase.instance.client.rpc(
+                'get_occasion_setup_communication',
+                params: {'p_id': widget.draftId},
+              ),
+            );
       if (!mounted) return;
       setState(() {
         _response = result;
@@ -134,32 +151,41 @@ class _OccasionSetupCommunicationState
 
   Map<String, dynamic> get defaults =>
       Map<String, dynamic>.from(_response?['defaults'] as Map? ?? {});
-  bool get _hasOverrides =>
-      widget.data['replyToMode'] == 'custom' ||
-      ['formal', 'informal'].contains(widget.data['communicationTone']) ||
-      (OccasionSetupStory.hasPaidProducts(widget.data) &&
+  bool get _valid => communicationDraftValid(
+        widget.data,
+        includeReply: !widget.paymentTiming,
+        includeReminders: widget.paymentTiming,
+      );
+  bool get _hasOverrides => widget.paymentTiming
+      ? OccasionSetupStory.hasPaidProducts(widget.data) &&
           (['enabled', 'disabled'].contains(widget.data['remindersMode']) ||
-              (widget.data['reminderLeadDays'] as String? ?? '').isNotEmpty));
+              (widget.data['reminderLeadDays'] as String? ?? '').isNotEmpty)
+      : widget.data['replyToMode'] == 'custom' ||
+          ['formal', 'informal'].contains(widget.data['communicationTone']);
   Future<void> _save() async {
-    if (_saving ||
-        _response?['canManage'] != true ||
-        !communicationDraftValid(widget.data)) return;
+    if (_saving || _response?['canManage'] != true || !_valid) return;
     setState(() => _saving = true);
     try {
       final unit = UnitModel.fromJson(
-          Map<String, dynamic>.from(_response!['unit'] as Map));
+        Map<String, dynamic>.from(_response!['unit'] as Map),
+      );
       final patch = Map<String, dynamic>.from(unit.data ?? {});
-      if (widget.data['replyToMode'] == 'custom')
+      if (!widget.paymentTiming && widget.data['replyToMode'] == 'custom')
         patch['reply_to'] = (widget.data['replyToEmail'] as String).trim();
-      if (['formal', 'informal'].contains(widget.data['communicationTone']))
+      if (!widget.paymentTiming &&
+          ['formal', 'informal'].contains(widget.data['communicationTone']))
         patch['communication_tone'] = widget.data['communicationTone'];
-      if (OccasionSetupStory.hasPaidProducts(widget.data)) {
+      if (widget.paymentTiming &&
+          OccasionSetupStory.hasPaidProducts(widget.data)) {
         if (['enabled', 'disabled'].contains(widget.data['remindersMode']))
           patch['is_reminder_enabled'] =
               widget.data['remindersMode'] == 'enabled';
         final days = double.tryParse(
-            (widget.data['reminderLeadDays'] as String? ?? '')
-                .replaceAll(',', '.'));
+          (widget.data['reminderLeadDays'] as String? ?? '').replaceAll(
+            ',',
+            '.',
+          ),
+        );
         if (days != null)
           patch['reminder_interval_seconds'] = (days * 86400).round();
       }
@@ -174,16 +200,16 @@ class _OccasionSetupCommunicationState
         current.aggregateVersion = saved.aggregateVersion;
       }
       _fieldRevision++;
-      widget.onChanged({
-        'replyToMode': 'inherit',
-        'communicationTone': 'inherit',
-        'remindersMode': 'inherit',
-        'reminderLeadDays': ''
-      });
+      widget.onChanged(
+        widget.paymentTiming
+            ? {'remindersMode': 'inherit', 'reminderLeadDays': ''}
+            : {'replyToMode': 'inherit', 'communicationTone': 'inherit'},
+      );
       await _load();
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t('organizationDefaultsSaved'))));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t('organizationDefaultsSaved'))));
     } catch (_) {
       if (mounted) setState(() => _error = t('organizationDefaultsFailed'));
     } finally {
@@ -200,8 +226,9 @@ class _OccasionSetupCommunicationState
         items: [
           for (final e in items.entries)
             DropdownMenuItem(
-                value: e.key,
-                child: Text(e.value, overflow: TextOverflow.ellipsis))
+              value: e.key,
+              child: Text(e.value, overflow: TextOverflow.ellipsis),
+            ),
         ],
         onChanged: _saving ? null : (v) => widget.onChanged({key: v}),
       );
@@ -211,83 +238,108 @@ class _OccasionSetupCommunicationState
     final tone = defaults['tone'] == 'informal'
         ? FormStrings.toneInformal
         : FormStrings.toneFormal;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (_loading || _saving) const LinearProgressIndicator(),
-      if (_error != null) ...[
-        Text(_error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        TextButton(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_loading || _saving) const LinearProgressIndicator(),
+        if (_error != null) ...[
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          TextButton(
             onPressed: _saving ? null : _load,
-            child: Text(t('reloadCommunication')))
-      ],
-      Text(t('inheritCommunicationHint')),
-      const SizedBox(height: 20),
-      _choice('replyToMode', t('replyToEmail'), {
-        'inherit':
-            '${t('inheritOrganization')}: ${defaults['replyTo'] ?? t('systemSender')}',
-        'custom': t('customForEvent')
-      }),
-      if (widget.data['replyToMode'] == 'custom')
-        TextFormField(
-          key: const ValueKey('communication-reply'),
-          initialValue: widget.data['replyToEmail'] as String? ?? '',
-          enabled: !_saving,
-          keyboardType: TextInputType.emailAddress,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          decoration: InputDecoration(labelText: t('replyToEmail')),
-          validator: (value) {
-            final email = (value ?? '').trim();
-            return email.isEmpty || email.length > 254
-                ? t('invalidReplyEmail')
-                : FormBuilderValidators.email(
-                    errorText: t('invalidReplyEmail'))(email);
-          },
-          onChanged: (v) => widget.onChanged({'replyToEmail': v}),
-        ),
-      const SizedBox(height: 20),
-      _choice('communicationTone', FormStrings.labelCommunicationTone, {
-        'inherit': FormStrings.toneInherit(tone),
-        'formal': FormStrings.toneFormal,
-        'informal': FormStrings.toneInformal
-      }),
-      if (paid) ...[
-        const SizedBox(height: 20),
-        _choice('remindersMode', t('paymentReminders'), {
-          'inherit':
-              '${t('inheritOrganization')}: ${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn}',
-          'enabled': FormStrings.remindersOn,
-          'disabled': FormStrings.remindersOff
-        }),
-        if (widget.data['remindersMode'] == 'enabled' ||
-            (widget.data['remindersMode'] == 'inherit' &&
-                defaults['remindersEnabled'] != false))
+            child: Text(t('reloadCommunication')),
+          ),
+        ],
+        if (!widget.paymentTiming) ...[
+          Text(t('inheritCommunicationHint')),
+          const SizedBox(height: 20),
+          _choice('replyToMode', t('replyToEmail'), {
+            'inherit':
+                '${t('inheritOrganization')}: ${defaults['replyTo'] ?? t('systemSender')}',
+            'custom': t('customForEvent'),
+          }),
+          if (!widget.paymentTiming && widget.data['replyToMode'] == 'custom')
+            TextFormField(
+              key: const ValueKey('communication-reply'),
+              initialValue: widget.data['replyToEmail'] as String? ?? '',
+              enabled: !_saving,
+              keyboardType: TextInputType.emailAddress,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              decoration: InputDecoration(labelText: t('replyToEmail')),
+              validator: (value) {
+                final email = (value ?? '').trim();
+                return email.isEmpty || email.length > 254
+                    ? t('invalidReplyEmail')
+                    : FormBuilderValidators.email(
+                        errorText: t('invalidReplyEmail'),
+                      )(email);
+              },
+              onChanged: (v) => widget.onChanged({'replyToEmail': v}),
+            ),
+          const SizedBox(height: 20),
+          _choice('communicationTone', FormStrings.labelCommunicationTone, {
+            'inherit': FormStrings.toneInherit(tone),
+            'formal': FormStrings.toneFormal,
+            'informal': FormStrings.toneInformal,
+          }),
+        ],
+        if (paid && widget.paymentTiming) ...[
+          Text(t('paymentTimingHint')),
+          const SizedBox(height: 20),
           TextFormField(
-            key: ValueKey('communication-lead-$_fieldRevision'),
-            initialValue: widget.data['reminderLeadDays'] as String? ?? '',
-            enabled: !_saving,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            initialValue: widget.data['deadline'] as String? ?? '',
+            keyboardType: TextInputType.number,
             decoration: InputDecoration(
+              labelText: FormStrings.labelDeadlineDays,
+              helperText: t('deadlineInheritance'),
+              helperMaxLines: 3,
+            ),
+            onChanged: (v) => widget.onChanged({'deadline': v}),
+          ),
+          const SizedBox(height: 20),
+          _choice('remindersMode', t('paymentReminders'), {
+            'inherit':
+                '${t('inheritOrganization')}: ${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn}',
+            'enabled': FormStrings.remindersOn,
+            'disabled': FormStrings.remindersOff,
+          }),
+          if (widget.data['remindersMode'] == 'enabled' ||
+              (widget.data['remindersMode'] == 'inherit' &&
+                  defaults['remindersEnabled'] != false))
+            TextFormField(
+              key: ValueKey('communication-lead-$_fieldRevision'),
+              initialValue: widget.data['reminderLeadDays'] as String? ?? '',
+              enabled: !_saving,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
                 labelText: t('reminderLeadDays'),
                 helperText:
-                    '${t('blankInherits')}: ${(defaults['leadSeconds'] as num? ?? 86400) / 86400}'),
-            onChanged: (v) => widget.onChanged({'reminderLeadDays': v}),
+                    '${t('blankInherits')}: ${(defaults['leadSeconds'] as num? ?? 86400) / 86400}',
+              ),
+              onChanged: (v) => widget.onChanged({'reminderLeadDays': v}),
+            ),
+        ],
+        if (_response?['canManage'] == true) ...[
+          const SizedBox(height: 24),
+          Text(
+            t(
+              _response?['firstEvent'] == true
+                  ? 'firstEventDefaultsHint'
+                  : 'organizationDefaultsHint',
+            ),
           ),
-      ],
-      if (_response?['canManage'] == true) ...[
-        const SizedBox(height: 24),
-        Text(t(_response?['firstEvent'] == true
-            ? 'firstEventDefaultsHint'
-            : 'organizationDefaultsHint')),
-        OutlinedButton.icon(
-            onPressed: _saving ||
-                    !_hasOverrides ||
-                    !communicationDraftValid(widget.data)
-                ? null
-                : _save,
+          OutlinedButton.icon(
+            onPressed: _saving || !_hasOverrides || !_valid ? null : _save,
             icon: const Icon(Icons.domain_outlined),
-            label: Text(t('saveOrganizationDefaults'))),
+            label: Text(t('saveOrganizationDefaults')),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 }
 
@@ -303,17 +355,24 @@ class OccasionSetupCommunicationSummary extends StatelessWidget {
     final remindersEnabled = data['remindersMode'] == 'enabled' ||
         (data['remindersMode'] == 'inherit' &&
             defaults['remindersEnabled'] != false);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(
-          '${t('replyToEmail')}: ${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? t('systemSender')})'}'),
-      Text(
-          '${FormStrings.labelCommunicationTone}: ${data['communicationTone'] == 'inherit' ? '$inherited (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})' : data['communicationTone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal}'),
-      if (OccasionSetupStory.hasPaidProducts(data))
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Text(
-            '${t('paymentReminders')}: ${data['remindersMode'] == 'inherit' ? '$inherited (${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn})' : data['remindersMode'] == 'enabled' ? FormStrings.remindersOn : FormStrings.remindersOff}'),
-      if (OccasionSetupStory.hasPaidProducts(data) && remindersEnabled)
+          '${t('replyToEmail')}: ${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? t('systemSender')})'}',
+        ),
         Text(
-            '${t('reminderLeadDays')}: ${lead.isEmpty ? '$inherited (${(defaults['leadSeconds'] as num? ?? 86400) / 86400})' : lead}'),
-    ]);
+          '${FormStrings.labelCommunicationTone}: ${data['communicationTone'] == 'inherit' ? '$inherited (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})' : data['communicationTone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal}',
+        ),
+        if (OccasionSetupStory.hasPaidProducts(data))
+          Text(
+            '${t('paymentReminders')}: ${data['remindersMode'] == 'inherit' ? '$inherited (${defaults['remindersEnabled'] == false ? FormStrings.remindersOff : FormStrings.remindersOn})' : data['remindersMode'] == 'enabled' ? FormStrings.remindersOn : FormStrings.remindersOff}',
+          ),
+        if (OccasionSetupStory.hasPaidProducts(data) && remindersEnabled)
+          Text(
+            '${t('reminderLeadDays')}: ${lead.isEmpty ? '$inherited (${(defaults['leadSeconds'] as num? ?? 86400) / 86400})' : lead}',
+          ),
+      ],
+    );
   }
 }
