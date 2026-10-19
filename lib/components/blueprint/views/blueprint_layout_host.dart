@@ -12,6 +12,7 @@ import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../blueprint_layout_contract.dart';
 import '../blueprint_group_binding.dart';
@@ -45,6 +46,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   Set<String> _commercialSelection = {};
   final _commercialDetailRevision = ValueNotifier(0);
   bool _commercialDetailOpen = false;
+  bool _showIndividualCommercialSeats = false;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
   final _assets = BlueprintLayoutAssetResolver();
@@ -406,7 +408,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final p = controller.products[id];
     if (p == null) return BlueprintStrings.noProductAssigned;
     final price = p.price;
-    return '${p.title ?? ""}${price == null ? "" : " · ${Utilities.formatPrice(context, price, currencyCode: p.currencyCode)}"}';
+    return '${p.title ?? ""}${price == null ? "" : " (${Utilities.formatPrice(context, price, currencyCode: p.currencyCode)})"}';
   }
 
   Future<void> _product(String nodeId,
@@ -695,6 +697,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         _commercialSelection.length != 1 ||
         controller.mode != BlueprintLayoutMode.manage) return;
     _commercialDetailOpen = true;
+    _showIndividualCommercialSeats = false;
     try {
       await showDialog<void>(
         context: context,
@@ -709,7 +712,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 : controller.snapshot.seatBindings[node.id]?.groupNodeId;
             return AppAlertDialog(
               key: const ValueKey('commercial-detail-dialog'),
-              title: Text(BlueprintStrings.manageSeats),
+              title: Text(node != null && _commercialTables.containsKey(node.id)
+                  ? '${BlueprintStrings.manageGroupProducts}: ${node.label}'
+                  : BlueprintStrings.manageSeats),
               content: SizedBox(
                 width: 520,
                 child: SingleChildScrollView(
@@ -739,7 +744,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       if (node != null)
                         node.kind == 'capacityArea'
                             ? _areaDetail(node)
-                            : _inspector(context, node),
+                            : _commercialTables.containsKey(node.id)
+                                ? _groupProductDetail(node)
+                                : _inspector(context, node),
                     ],
                   ),
                 ),
@@ -833,6 +840,211 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         ],
       );
 
+  Widget _commercialTableRow(LayoutNode table, bool selected) {
+    final members = controller.snapshot.seatBindings.values
+        .where((seat) => seat.groupNodeId == table.id)
+        .toList();
+    final products = members.map((seat) => seat.productId).toSet();
+    final summary = products.length > 1
+        ? BlueprintStrings.mixedProducts
+        : _productText(products.isEmpty
+            ? controller.snapshot.groupProducts[table.id]
+            : products.single);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Ink(
+        decoration: BoxDecoration(
+          border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(8),
+          color: selected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: .12)
+              : null,
+        ),
+        child: ListTile(
+          key: ValueKey('commercial-table-${table.id}'),
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          minLeadingWidth: 18,
+          horizontalTitleGap: 8,
+          selected: selected,
+          leading: const Icon(Icons.table_restaurant_outlined, size: 18),
+          title: Text(
+              table.label.isEmpty ? BlueprintStrings.tablesTitle : table.label),
+          subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text('(${members.length})',
+                style: Theme.of(context).textTheme.bodySmall),
+            IconButton(
+              key: ValueKey('commercial-table-detail-${table.id}'),
+              icon: const Icon(Icons.category_outlined, size: 20),
+              tooltip: BlueprintStrings.manageGroupProducts,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
+              padding: const EdgeInsets.all(4),
+              onPressed: _busy
+                  ? null
+                  : () {
+                      _setCommercialSelection({table.id});
+                      _showCommercialDetail();
+                    },
+            ),
+          ]),
+          onTap: _busy ? null : () => _selectCommercialRow(table.id),
+        ),
+      ),
+    );
+  }
+
+  Widget _groupProductDetail(LayoutNode table) {
+    final members = controller.snapshot.seatBindings.values
+        .where((seat) => seat.groupNodeId == table.id)
+        .toList()
+      ..sort((a, b) => Utilities.naturalCompare(a.title, b.title));
+    final defaultId = controller.snapshot.groupProducts[table.id];
+    final mixed = members.any((seat) => seat.productId != defaultId);
+    final blockers =
+        members.where((seat) => controller.isProtected(seat.nodeId)).length;
+    final statusColor = mixed
+        ? (ThemeConfig.isDarkMode(context)
+            ? Colors.orangeAccent
+            : Colors.orange)
+        : defaultId == null
+            ? Theme.of(context).colorScheme.onSurfaceVariant
+            : ThemeConfig.greenColor(context);
+    final showSeats = _showIndividualCommercialSeats || mixed;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Ink(
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: .3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.category_outlined),
+            title: Text(BlueprintStrings.groupDefaultProduct,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    '${BlueprintStrings.currentProductPrefix}${_productText(defaultId)}'),
+                const SizedBox(height: 4),
+                Row(children: [
+                  Icon(
+                      mixed
+                          ? Icons.warning_amber_rounded
+                          : defaultId == null
+                              ? Icons.info_outline
+                              : Icons.check_circle_outline,
+                      size: 14,
+                      color: statusColor),
+                  const SizedBox(width: 4),
+                  Expanded(
+                      child: Text(
+                          mixed
+                              ? BlueprintStrings.statusMixed
+                              : defaultId == null
+                                  ? BlueprintStrings.noProductAssigned
+                                  : BlueprintStrings.statusUniform,
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor))),
+                ]),
+              ],
+            ),
+            trailing:
+                _canEdit ? const Icon(Icons.edit_outlined, size: 20) : null,
+            onTap: !_canEdit || _busy || blockers > 0
+                ? null
+                : () => _product(table.id, group: true),
+          ),
+        ),
+        if (blockers > 0) ...[
+          Text(BlueprintStrings.protectedCount(blockers),
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          if (_canEdit)
+            TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => _product(table.id, group: true, freeOnly: true),
+                child: Text(BlueprintStrings.onlyFreeSeats)),
+        ],
+        const SizedBox(height: 12),
+        SwitchListTile(
+          key: const ValueKey('commercial-individual-seats'),
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: Text(BlueprintStrings.customizeIndividualSeats),
+          value: showSeats,
+          onChanged: mixed
+              ? null
+              : (value) {
+                  _showIndividualCommercialSeats = value;
+                  _commercialDetailRevision.value++;
+                },
+        ),
+        const Divider(),
+        if (showSeats)
+          for (final seat in members)
+            ListTile(
+              key: ValueKey('commercial-seat-${seat.nodeId}'),
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              leading: Icon(
+                  controller.isProtected(seat.nodeId)
+                      ? Icons.lock_clock
+                      : Icons.event_seat,
+                  size: 20),
+              title: Text(seat.title),
+              subtitle: Text(_productText(seat.productId),
+                  overflow: TextOverflow.ellipsis),
+              trailing: _canEdit
+                  ? IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      tooltip: BlueprintStrings.editProduct,
+                      onPressed: _busy || controller.isProtected(seat.nodeId)
+                          ? null
+                          : () => _product(seat.nodeId, group: false),
+                    )
+                  : null,
+              onTap:
+                  _busy ? null : () => _setCommercialSelection({seat.nodeId}),
+            )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+            child: Column(children: [
+              Icon(Icons.format_list_bulleted,
+                  size: 48, color: Theme.of(context).disabledColor),
+              const SizedBox(height: 16),
+              Text(BlueprintStrings.uniformViewHelp,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall),
+            ]),
+          ),
+        if (members.isEmpty) Text(BlueprintStrings.emptyGroup),
+        if (_canEdit)
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                key: ValueKey('rename-commercial-${table.id}'),
+                onPressed: _busy ? null : () => _renameCommercial(table),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(CommonStrings.rename),
+              )),
+      ],
+    );
+  }
+
   Widget _reservationsPanel(Map<String, LayoutNode> tables) {
     final areas = controller.layout.document.nodes
         .where((node) => node.kind == 'capacityArea')
@@ -890,35 +1102,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                     style: Theme.of(context).textTheme.bodySmall),
                 if (tables.isEmpty) Text(BlueprintStrings.noTables),
                 for (final table in tables.values)
-                  ListTile(
-                    key: ValueKey('commercial-table-${table.id}'),
-                    contentPadding: EdgeInsets.zero,
-                    selected: selectedGroups.contains(table.id),
-                    leading: Checkbox(
-                      key: ValueKey('commercial-select-${table.id}'),
-                      value: selectedGroups.contains(table.id),
-                      onChanged: _busy
-                          ? null
-                          : (selected) {
-                              final next = {..._commercialSelection};
-                              if (selected == true) {
-                                next.add(table.id);
-                              } else {
-                                next.remove(table.id);
-                              }
-                              _setCommercialSelection(next);
-                            },
-                    ),
-                    title: Text(table.label.isEmpty
-                        ? BlueprintStrings.tablesTitle
-                        : table.label),
-                    subtitle: Text(
-                        _productText(
-                            controller.snapshot.groupProducts[table.id]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    onTap: _busy ? null : () => _selectCommercialRow(table.id),
-                  ),
+                  _commercialTableRow(table, selectedGroups.contains(table.id)),
               ],
             ),
           ),

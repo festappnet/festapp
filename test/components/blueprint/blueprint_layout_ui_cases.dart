@@ -246,6 +246,8 @@ void main() {
         matching: find.byType(SingleChildScrollView));
     expect(tester.getSize(reservationScroll).height, greaterThan(500));
     expect(find.text(BlueprintStrings.selectTableOrSeat), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
+    expect(find.byIcon(Icons.table_restaurant_outlined), findsNWidgets(2));
     final canvasState = tester.state(find.byType(LayoutSceneSurface));
     final originalDocument = initialEditor.controller.document;
     final groupRow = find.byKey(const ValueKey(
@@ -279,9 +281,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget);
-    await tester.tap(find.text(BlueprintStrings.individualAssignments));
+    expect(find.text(BlueprintStrings.groupDefaultProduct), findsOneWidget);
+    expect(find.text(BlueprintStrings.statusUniform), findsOneWidget);
+    expect(find.text(BlueprintStrings.uniformViewHelp), findsOneWidget);
+    expect(find.byKey(ValueKey('commercial-seat-$id')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('commercial-individual-seats')));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ListTile, 'A1'));
+    expect(find.byIcon(Icons.event_seat), findsOneWidget);
+    final seatRow = find.byKey(ValueKey('commercial-seat-$id'));
+    await tester
+        .tap(find.descendant(of: seatRow, matching: find.byType(IconButton)));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectProductDialog), findsOneWidget);
+    expect(
+        tester
+            .widget<SelectProductDialog>(find.byType(SelectProductDialog))
+            .currentProductId,
+        1);
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
+    await tester.pumpAndSettle();
+    await tester.tap(seatRow);
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
     expect(
@@ -291,7 +310,7 @@ void main() {
         {id});
     await tester.tap(find.byKey(const ValueKey('commercial-detail-back')));
     await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.assignProductToGroup), findsOneWidget);
+    expect(find.text(BlueprintStrings.groupDefaultProduct), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     await tester.ensureVisible(secondRow);

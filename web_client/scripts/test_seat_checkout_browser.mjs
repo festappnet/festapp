@@ -114,7 +114,16 @@ try {
     await browser('click', '.blueprint-zoom-button:first-child');
     assert.notEqual((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
     await browser('click', '.blueprint-zoom-reset');
-    assert.equal((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
+    const reset = (await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
+    const fitBounds = fit.trim().split(/\s+/).map(Number);
+    const resetBounds = reset.trim().split(/\s+/).map(Number);
+    assert.equal(fitBounds.length, 4);
+    assert.equal(resetBounds.length, 4);
+    // Equivalent fitted bounds can differ by floating-point rounding after zoom.
+    resetBounds.forEach((value, index) => assert.ok(
+        Number.isFinite(value) && Number.isFinite(fitBounds[index]) && Math.abs(value - fitBounds[index]) < 1e-6,
+        `Reset restores fitted viewBox component ${index}: ${value} vs ${fitBounds[index]}`,
+    ));
     const viewport="(() => {const s=document.querySelector('.venue-layout-viewer svg'),r=s.getBoundingClientRect();return JSON.stringify({x:r.x,y:r.y,width:r.width,height:r.height,camera:s.getAttribute('viewBox')})})()";
     const beforeClick=(await browser('eval',viewport)).result;
     await browser('snapshot', '-i');
