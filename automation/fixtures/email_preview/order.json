@@ -3,8 +3,8 @@
   "orderSymbol": "5W8H2U8I9W",
   "orderData": {"name": "Jana", "surname": "Nováková", "email": "jana.novakova@example.com"},
   "tickets": [
-    {"ticket_symbol": "A001", "products": [{"title": "Dospělý vstup", "type_title": "Vstupné", "price": 450, "currency_code": "CZK"}]},
-    {"ticket_symbol": "A002", "products": [{"title": "Studentský vstup", "type_title": "Vstupné", "price": 350, "currency_code": "CZK"}]}
+    {"ticket_symbol": "X3425W8H2U", "products": [{"title": "Dospělý vstup", "type_title": "Vstupné", "price": 450, "currency_code": "CZK"}]},
+    {"ticket_symbol": "X3427M4R9K", "products": [{"title": "Studentský vstup", "type_title": "Vstupné", "price": 350, "currency_code": "CZK"}]}
   ],
   "features": [{"code": "ticket", "is_enabled": true}],
   "accountNumber": "0000000000/0000",
@@ -16,7 +16,7 @@
   "offerUrl": "https://example.invalid/order?waitlist=1&offer_id=preview",
   "changes": {
     "version": 1, "cancelledTickets": [], "removedTickets": [], "addedTickets": [],
-    "productChanges": [{"ticket_symbol": "A002", "changed": [{"from": {"title": "Studentský vstup", "price": 250, "currency_code": "CZK"}, "to": {"title": "Studentský vstup", "price": 350, "currency_code": "CZK"}}]}],
+    "productChanges": [{"ticket_symbol": "X3427M4R9K", "changed": [{"from": {"title": "Studentský vstup", "price": 250, "currency_code": "CZK"}, "to": {"title": "Studentský vstup", "price": 350, "currency_code": "CZK"}}]}],
     "referenceTotal": 700, "currentTotal": 800, "currencyCode": "CZK", "hasChanges": true
   }
 }
