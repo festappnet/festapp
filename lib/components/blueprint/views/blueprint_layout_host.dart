@@ -694,10 +694,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _setCommercialSelection(selection);
     final selectedId =
         _commercialSelection.length == 1 ? _commercialSelection.single : null;
-    // Table clicks on the canvas select/reveal; the sidebar opens their detail.
-    final openDetail = !HardwareKeyboard.instance.isShiftPressed &&
-        (controller.snapshot.seatBindings.containsKey(selectedId) ||
-            controller.snapshot.areaBindings.containsKey(selectedId));
+    final openDetail = !HardwareKeyboard.instance.isShiftPressed;
     final tableId = selectedId == null
         ? null
         : controller.snapshot.seatBindings[selectedId]?.groupNodeId ??
@@ -1264,7 +1261,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             TextButton(
                 key: const ValueKey('blueprint-cancel-operation'),
                 onPressed: _busy ? null : _cancelOperation,
-                child: Text(CommonStrings.cancel)),
+                child: Text(CommonStrings.storno)),
             FilledButton(
                 onPressed: _busy ||
                         controller.selectedSpotIds.isEmpty ||
