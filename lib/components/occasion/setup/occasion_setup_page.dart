@@ -27,6 +27,8 @@ import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 import 'occasion_form_draft.dart';
 
+import 'package:fstapp/components/forms/views/form_variable_symbol_settings.dart';
+
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -50,6 +52,7 @@ import 'occasion_setup_pricing.dart';
 import 'occasion_setup_bank_account.dart';
 import 'occasion_setup_communication.dart';
 import 'occasion_setup_invitations.dart';
+
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
@@ -146,7 +149,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'formEnabled': true,
       'formOrigin': null,
       'formDraft': null,
-      'deadline': '7',
+      'deadline': '',
       'blueprintMode': 'Bez plánku',
       'blueprintObjects': <Map<String, dynamic>>[],
       'blueprintGroups': <Map<String, dynamic>>[],
@@ -365,7 +368,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (form == null) return;
     final seconds = form['deadline_duration_seconds'] as num?;
     draft['deadline'] =
-        seconds == null ? '7' : (seconds / 86400).round().toString();
+        seconds == null ? '' : (seconds / 86400).round().toString();
     initializeCommunicationDraft(draft, reset: true);
   }
 
@@ -373,9 +376,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final form = draft['formDraft'];
     if (form is! Map) return;
     final days = int.tryParse(draft['deadline'] as String? ?? '');
-    if (days != null && days > 0) {
-      form['deadline_duration_seconds'] = days * 86400;
-    }
+    form['deadline_duration_seconds'] = days == null ? null : days * 86400;
     serializeCommunicationDraft(draft);
   }
 
@@ -408,6 +409,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       final oldFormLink = (_data['formDraft'] as Map?)?['link'];
       final oldCurrencies = OccasionSetupStory.paymentCurrencies(_data);
       update(_data);
+      if (_data['title'] != oldTitle &&
+          _data['formLinkAutomatic'] != false &&
+          _data['formDraft'] is Map) {
+        (_data['formDraft'] as Map)['link'] = '';
+        _inlineFormBundle?.form.definition =
+            _inlineFormBundle!.form.definition.copyWith(link: '');
+      }
       final newCurrencies = OccasionSetupStory.paymentCurrencies(_data);
       if (oldCurrencies.length != newCurrencies.length ||
           !oldCurrencies.containsAll(newCurrencies)) {
@@ -502,14 +510,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       if (_finalizeDraft!.data['sendTeamInvitations'] == true &&
           occasionSetupInviteEmails(_finalizeDraft!.data).isNotEmpty) {
         final result = await Supabase.instance.client.functions.invoke(
-            'send-occasion-team-invitations',
-            body: {'draftId': _finalizeDraft!.id});
+          'send-occasion-team-invitations',
+          body: {'draftId': _finalizeDraft!.id},
+        );
         if (result.status != 200 ||
             result.data is! Map ||
             result.data['complete'] != true) {
           if (mounted)
-            setState(() => _finalizeError =
-                OccasionTeamInvitationStrings.text('sendFailed'));
+            setState(
+              () => _finalizeError = OccasionTeamInvitationStrings.text(
+                'sendFailed',
+              ),
+            );
           return;
         }
       }
@@ -518,9 +530,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       Navigator.of(context).pop(link);
     } catch (_) {
       if (mounted)
-        setState(() => _finalizeError = eventCreated
-            ? OccasionTeamInvitationStrings.text('sendFailed')
-            : OccasionSetupStrings.finalizeFailed);
+        setState(
+          () => _finalizeError = eventCreated
+              ? OccasionTeamInvitationStrings.text('sendFailed')
+              : OccasionSetupStrings.finalizeFailed,
+        );
     } finally {
       if (mounted) setState(() => _finalizing = false);
     }
@@ -557,9 +571,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _data = Map.of(current.data);
         _formLinkAvailable = null;
         _data.putIfAbsent(
-            'formLinkAutomatic',
-            () => ((_data['formDraft'] as Map?)?['link'] as String? ?? '')
-                .isEmpty);
+          'formLinkAutomatic',
+          () =>
+              ((_data['formDraft'] as Map?)?['link'] as String? ?? '').isEmpty,
+        );
         _inlineFormBundle = null;
         _ensureDefaultForm(_data);
         initializeCommunicationDraft(_data);
@@ -584,10 +599,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     super.dispose();
   }
 
-  bool _stepReady(Map<String, dynamic> d, int step,
-      {bool includePricing = true,
-      bool includePayments = true,
-      bool includeCommunication = true}) {
+  bool _stepReady(
+    Map<String, dynamic> d,
+    int step, {
+    bool includePricing = true,
+    bool includePayments = true,
+    bool includeCommunication = true,
+  }) {
     if (!OccasionSetupStory.applicableSteps(
       d,
       AppConfig.isAppSupported,
@@ -612,8 +630,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         if (includeCommunication && !communicationDraftValid(d)) return false;
         if (_formLinkAvailable == false ||
             (includePricing &&
-                OccasionSetupStory.pricingIssueKeys(d, DateTime.now())
-                    .isNotEmpty)) return false;
+                OccasionSetupStory.pricingIssueKeys(
+                  d,
+                  DateTime.now(),
+                ).isNotEmpty)) return false;
         if (includePayments &&
             AppConfig.isAppSupported &&
             OccasionSetupStory.hasPaidProducts(d) &&
@@ -642,9 +662,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       (d['formEnabled'] == true && (d['blueprintObjects'] as List).isNotEmpty);
 
   bool _paymentsReady(Map<String, dynamic> d) =>
-      (int.tryParse(d['deadline'] as String? ?? '') ?? 0) > 0 &&
+      _deadlineReady(d) &&
       (!OccasionSetupStory.hasPaidProducts(d) ||
           OccasionSetupStory.paymentAccountConfirmed(d));
+
+  bool _deadlineReady(Map<String, dynamic> d) =>
+      (d['deadline'] as String? ?? '').trim().isEmpty ||
+      (int.tryParse(d['deadline'] as String? ?? '') ?? -1) >= 0;
 
   int _progress(Map<String, dynamic> d) {
     return ((OccasionSetupDraft.completedCount(d) /
@@ -677,19 +701,33 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
     if (q.optional) return true;
     if (q.key == 'form')
-      return _stepReady(d, 3,
-          includePricing: false,
-          includePayments: false,
-          includeCommunication: false);
+      return _stepReady(
+        d,
+        3,
+        includePricing: false,
+        includePayments: false,
+        includeCommunication: false,
+      );
     if (q.key == 'pricing')
-      return _stepReady(d, 3,
-          includePayments: false, includeCommunication: false);
+      return _stepReady(
+        d,
+        3,
+        includePayments: false,
+        includeCommunication: false,
+      );
     if (q.key == 'payments')
-      return _stepReady(d, q.step, includeCommunication: false);
+      return OccasionSetupStory.paymentAccountConfirmed(d);
+    if (q.key == 'paymentTiming')
+      return _deadlineReady(d) &&
+          communicationDraftValid(d, includeReply: false);
+    if (q.key == 'communication')
+      return communicationDraftValid(d, includeReminders: false) &&
+          _stepReady(d, q.step, includeCommunication: false);
     if (q.step != 1) return _stepReady(d, q.step);
     switch (q.key) {
       case 'name':
         return (d['title'] as String).trim().isNotEmpty;
+      case 'promotion':
       case 'presentation':
         return d['isPromoted'] != true ||
             (d['introImage'] as String? ?? '').trim().isNotEmpty;
@@ -824,24 +862,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     plan.assignAllSpotsWithBlueprint();
     return plan;
   }
-
-  Widget _textField(
-    Map<String, dynamic> d,
-    String keyName,
-    String label, {
-    TextInputType? keyboardType,
-  }) =>
-      TextFormField(
-        key: ValueKey('${d['id']}-$keyName'),
-        initialValue: d[keyName] as String? ?? '',
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        keyboardType: keyboardType,
-        onChanged: (v) =>
-            _change((x) => x[keyName] = v, changesConfiguration: true),
-      );
 
   Widget _choice(
     Map<String, dynamic> d,
@@ -1095,12 +1115,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (d['formEnabled'] == true) {
       if (!communicationDraftValid(d))
         issues.add(
-            MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')));
+          MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')),
+        );
       if (_formLinkAvailable == false)
         issues.add(
-            MapEntry(3, OccasionSetupStrings.story('formLinkUnavailable')));
-      for (final key
-          in OccasionSetupStory.pricingIssueKeys(d, DateTime.now())) {
+          MapEntry(3, OccasionSetupStrings.story('formLinkUnavailable')),
+        );
+      for (final key in OccasionSetupStory.pricingIssueKeys(
+        d,
+        DateTime.now(),
+      )) {
         issues.add(MapEntry(3, OccasionSetupStrings.story(key)));
       }
       final formData = d['formDraft'];
@@ -1158,15 +1182,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
         !OccasionSetupStory.paymentAccountConfirmed(d)) {
-      issues.add(MapEntry(AppConfig.isAppSupported ? 3 : 4,
-          OccasionSetupStrings.story('bankAccountRequired')));
-    }
-    if (OccasionSetupStory.hasPaidProducts(d) &&
-        (int.tryParse(d['deadline'] as String? ?? '') ?? 0) <= 0) {
       issues.add(
         MapEntry(
           AppConfig.isAppSupported ? 3 : 4,
-          'Splatnost musí být kladný počet dní.',
+          OccasionSetupStrings.story('bankAccountRequired'),
+        ),
+      );
+    }
+    if (OccasionSetupStory.hasPaidProducts(d) && !_deadlineReady(d)) {
+      issues.add(
+        MapEntry(
+          AppConfig.isAppSupported ? 3 : 4,
+          'Splatnost musí být nezáporný počet dní, nebo pole ponechte prázdné.',
         ),
       );
     }
@@ -1223,11 +1250,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         (step == 5 && d['reviewed'] != true);
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border.all(
-          color: hasIssue ? const Color(0xffd59a39) : Colors.black12,
+          color: hasIssue
+              ? Theme.of(context).colorScheme.error
+              : Theme.of(context).colorScheme.outlineVariant,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -1238,7 +1268,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             children: [
               Icon(
                 hasIssue ? Icons.error_outline : Icons.check_circle_outline,
-                color: hasIssue ? const Color(0xffad721b) : Colors.green,
+                color: hasIssue
+                    ? Theme.of(context).colorScheme.error
+                    : Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 9),
               Expanded(
@@ -1450,11 +1482,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 if (AppConfig.isAppSupported &&
                     OccasionSetupStory.hasPaidProducts(d)) ...[
                   _reviewRow(
-                      'BankAccount.bankAccount'.tr(),
-                      OccasionSetupStory.paymentAccountConfirmed(d)
-                          ? (d['bankAccountLabel'] as String? ?? '')
-                          : OccasionSetupStrings.story(
-                              'bankAccountNotConfirmed')),
+                    'BankAccount.bankAccount'.tr(),
+                    OccasionSetupStory.paymentAccountConfirmed(d)
+                        ? (d['bankAccountLabel'] as String? ?? '')
+                        : OccasionSetupStrings.story('bankAccountNotConfirmed'),
+                  ),
                   _reviewRow(
                     'FeatureFormSettings.labelDeadlineDays'.tr(),
                     '${d['deadline']}',
@@ -1464,26 +1496,30 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ],
             issues),
         _reviewSection(
-            d,
-            5,
-            OccasionTeamInvitationStrings.text('question'),
-            [
-              OccasionSetupInvitationsSummary(
-                  data: d,
-                  onSendChanged: (value) => _change(
-                      (x) => x['sendTeamInvitations'] = value,
-                      changesConfiguration: true))
-            ],
-            issues,
-            questionKey: 'team'),
+          d,
+          5,
+          OccasionTeamInvitationStrings.text('question'),
+          [
+            OccasionSetupInvitationsSummary(
+              data: d,
+              onSendChanged: (value) => _change(
+                (x) => x['sendTeamInvitations'] = value,
+                changesConfiguration: true,
+              ),
+            ),
+          ],
+          issues,
+          questionKey: 'team',
+        ),
         if (OccasionSetupStory.formEnabled(d))
           _reviewSection(
-              d,
-              3,
-              OccasionSetupStrings.story('communicationQuestion'),
-              [OccasionSetupCommunicationSummary(data: d)],
-              issues,
-              questionKey: 'communication'),
+            d,
+            3,
+            OccasionSetupStrings.story('communicationQuestion'),
+            [OccasionSetupCommunicationSummary(data: d)],
+            issues,
+            questionKey: 'communication',
+          ),
         if (!AppConfig.isAppSupported && OccasionSetupStory.hasTickets(d))
           _reviewSection(
               d,
@@ -1505,11 +1541,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               'Nastavení plateb',
               [
                 _reviewRow(
-                    'BankAccount.bankAccount'.tr(),
-                    OccasionSetupStory.paymentAccountConfirmed(d)
-                        ? (d['bankAccountLabel'] as String? ?? '')
-                        : OccasionSetupStrings.story(
-                            'bankAccountNotConfirmed')),
+                  'BankAccount.bankAccount'.tr(),
+                  OccasionSetupStory.paymentAccountConfirmed(d)
+                      ? (d['bankAccountLabel'] as String? ?? '')
+                      : OccasionSetupStrings.story('bankAccountNotConfirmed'),
+                ),
                 _reviewRow(
                   'FeatureFormSettings.labelDeadlineDays'.tr(),
                   '${d['deadline']}',
@@ -1591,19 +1627,39 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _body(Map<String, dynamic> d) {
+    if (_questions[_questionIndex(d)].key == 'promotion') {
+      return OccasionSetupPromotion(
+        data: d,
+        onChanged: (patch) =>
+            _change((x) => x.addAll(patch), changesConfiguration: true),
+      );
+    }
+    if (_questions[_questionIndex(d)].key == 'paymentTiming') {
+      return OccasionSetupCommunication(
+        key: const ValueKey('payment-timing'),
+        paymentTiming: true,
+        draftId: _stored.id,
+        data: d,
+        onChanged: (patch) =>
+            _change((x) => x.addAll(patch), changesConfiguration: true),
+      );
+    }
     if (_questions[_questionIndex(d)].key == 'team') {
       return OccasionSetupInvitations(
-          draftId: _stored.id,
-          data: d,
-          onChanged: (patch) =>
-              _change((x) => x.addAll(patch), changesConfiguration: true));
+        draftId: _stored.id,
+        data: d,
+        onChanged: (patch) =>
+            _change((x) => x.addAll(patch), changesConfiguration: true),
+      );
     }
     if (_questions[_questionIndex(d)].key == 'communication') {
       return OccasionSetupCommunication(
-          draftId: _stored.id,
-          data: d,
-          onChanged: (patch) =>
-              _change((x) => x.addAll(patch), changesConfiguration: true));
+        key: const ValueKey('communication'),
+        draftId: _stored.id,
+        data: d,
+        onChanged: (patch) =>
+            _change((x) => x.addAll(patch), changesConfiguration: true),
+      );
     }
     if (_questions[_questionIndex(d)].key == 'payments')
       return _paymentSettings(d);
@@ -1617,8 +1673,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (_questions[_questionIndex(d)].key == 'scanner') {
       final feature = _ticketDraftFeature(d);
       return EditorDraftScope(
-        onChanged: () => _change((x) => x['ticketDraft'] = feature.toJson(),
-            changesConfiguration: true),
+        onChanged: () => _change(
+          (x) => x['ticketDraft'] = feature.toJson(),
+          changesConfiguration: true,
+        ),
         child: TicketScanningSettings(feature: feature),
       );
     }
@@ -1750,7 +1808,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               OccasionSetupFormLink(
                 key: ValueKey('${d['id']}-form-link-$_formEpoch'),
                 draftId: _stored.id,
-                title: formBundle.form.definition.title ?? d['title'] as String,
+                title: d['title'] as String,
                 value: formBundle.form.definition.link ?? '',
                 automatic: d['formLinkAutomatic'] != false,
                 onValidityChanged: (value) {
@@ -1803,9 +1861,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   TicketFeature _ticketDraftFeature(Map<String, dynamic> d) =>
-      _ticketFeature ??= TicketFeature.fromJson(Map<String, dynamic>.from(
+      _ticketFeature ??= TicketFeature.fromJson(
+        Map<String, dynamic>.from(
           d['ticketDraft'] as Map? ??
-              {'code': FeatureConstants.ticket, 'is_enabled': true}));
+              {'code': FeatureConstants.ticket, 'is_enabled': true},
+        ),
+      );
 
   Widget _ticketSettings(Map<String, dynamic> d) {
     final feature = _ticketDraftFeature(d);
@@ -1820,33 +1881,37 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         (x) => x['ticketDraft'] = feature.toJson(),
         changesConfiguration: true,
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (previewId == null)
-          const Text('Pro náhled vstupenky zatím není dostupná předloha.')
-        else
-          TicketSettings(
-            key: ValueKey('${d['id']}-ticket-$previewId-$_editEpoch'),
-            feature: feature,
-            occasionId: previewId,
-            productEditing: false,
-            showScanningSettings: false,
-            borrowResourcesOnly: d['sourceId'] == null,
-            previewOccasion: TicketPreviewOccasion(
-              title: d['title'] as String,
-              startTime: DateTime.tryParse(d['start'] as String),
-              endTime: DateTime.tryParse(d['end'] as String),
-              placeName: d['placeName'] as String?,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (previewId == null)
+            const Text('Pro náhled vstupenky zatím není dostupná předloha.')
+          else
+            TicketSettings(
+              key: ValueKey('${d['id']}-ticket-$previewId-$_editEpoch'),
+              feature: feature,
+              occasionId: previewId,
+              productEditing: false,
+              showScanningSettings: false,
+              borrowResourcesOnly: d['sourceId'] == null,
+              previewOccasion: TicketPreviewOccasion(
+                title: d['title'] as String,
+                startTime: DateTime.tryParse(d['start'] as String),
+                endTime: DateTime.tryParse(d['end'] as String),
+                placeName: d['placeName'] as String?,
+              ),
             ),
+          const SizedBox(height: 24),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: Text(OccasionSetupStrings.story('configureScanning')),
+            subtitle: Text(OccasionSetupStrings.story('configureScanningHint')),
+            value: d['configureScanning'] == true,
+            onChanged: (value) =>
+                _change((x) => x['configureScanning'] = value),
           ),
-        const SizedBox(height: 24),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          title: Text(OccasionSetupStrings.story('configureScanning')),
-          subtitle: Text(OccasionSetupStrings.story('configureScanningHint')),
-          value: d['configureScanning'] == true,
-          onChanged: (value) => _change((x) => x['configureScanning'] = value),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -1861,9 +1926,22 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 _change((x) => x.addAll(patch), changesConfiguration: true),
           ),
           const SizedBox(height: 24),
-          _textField(
-              d, 'deadline', 'FeatureFormSettings.labelDeadlineDays'.tr(),
-              keyboardType: TextInputType.number),
+          FormVariableSymbolSettings(
+            value: Map<String, dynamic>.from(
+              ((d['formDraft'] as Map?)?['data']
+                      as Map?)?[FormDefinition.metaVariableSymbol] as Map? ??
+                  {},
+            ),
+            onChanged: (value) => _change((x) {
+              final form = x['formDraft'] as Map;
+              final meta =
+                  Map<String, dynamic>.from(form['data'] as Map? ?? {});
+              meta[FormDefinition.metaVariableSymbol] = value;
+              form['data'] = meta;
+              _inlineFormBundle?.form.definition =
+                  _inlineFormBundle!.form.definition.copyWith(data: meta);
+            }, changesConfiguration: true),
+          ),
         ],
       );
 

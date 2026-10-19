@@ -20,10 +20,12 @@ BEGIN
  d:=public.create_occasion_setup_draft(draft,unit_id);
  bank_info:=public.get_occasion_setup_bank_accounts(draft);
  PERFORM assert_eq((bank_info->'accounts'->0->>'id')::bigint,bank_id,'Draft editor sees linked receiving account');
- PERFORM assert_false(bank_info->'accounts'->0 ? 'bank_sync','Draft read excludes connection credentials');
+ PERFORM assert_false((bank_info->'accounts'->0) ?| ARRAY['token_masked','pairing_code','token_expiry_date'],'Draft read excludes connection credentials');
+ PERFORM assert_true(coalesce(bank_info#>'{accounts,0,bank_sync}','null'::jsonb)='null'::jsonb OR ((bank_info#>'{accounts,0,bank_sync}')-'state'-'mode')='{}'::jsonb,'Draft connection exposes only state and mode');
  payload:=d->'data'||jsonb_build_object('title','Žluťoučký ples','start','2090-05-01T18:00:00Z','end','2090-05-02T02:00:00Z',
    'link','','reviewConfirmed',true,'formEnabled',true);
- payload:=jsonb_set(payload,'{formDraft,title}',to_jsonb('Žluťoučký ples'::text));
+ payload:=jsonb_set(payload,'{title}',to_jsonb('Žluťoučký ples'::text));
+ payload:=jsonb_set(payload,'{formDraft,title}',to_jsonb('Registration'::text));
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,1);
  suggestion:=public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples',NULL);
  PERFORM assert_eq(suggestion->>'suggestion','zlutoucky-ples-2090','Title normalization and event year');
