@@ -184,3 +184,38 @@ for (const deferred of ['cooldown','busy'] as const) {
     } finally {requestHandler=undefined;}
   });
 }
+
+for (const provider of ['CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS']) {
+  Deno.test(`${provider} can provision email connection but cannot provision API`, async () => {
+    let remoteCreates=0;
+    requestHandler=(async (input: string | URL | Request, init?: RequestInit) => {
+      const url=new URL(input instanceof Request ? input.url : String(input));
+      const body=init?.body ? JSON.parse(String(init.body)) : {};
+      const response=(value:unknown)=>new Response(JSON.stringify(value),{headers:{'content-type':'application/json'}});
+      if(url.hostname==='127.0.0.1') {
+        const name=url.pathname.split('/').pop();
+        if(name==='claim_bank_sync_operation') return response({provider,account_number:'123456/0800',title:'Fixture',lease_token:'lease'});
+        if(name==='save_bank_sync_connection') return response(1);
+        return response(null);
+      }
+      if(url.pathname==='/bank-accounts') {
+        remoteCreates++;
+        assertEquals(body.account_type,provider);
+        assertEquals(body.ingest_mode,'email');
+        assertEquals(body.ingest_enabled,false);
+        return response({id:9,pairing_code:'fixture-pairing'});
+      }
+      if(url.pathname==='/subscriptions') return response([{consumer_app_id:'festapp'}]);
+      if(url.pathname==='/bank-accounts/9/ingest-state') return response({});
+      throw new Error(`Unexpected request ${url.pathname}`);
+    }) as typeof fetch;
+    try {
+      const result=await runBankSyncOperation({operation_id:'fixture',operation:'create',mode:'email'},'fixture-hash');
+      assertEquals(result.state,'connected');
+      assertEquals(result.receiving_address,'fixture-pairing@banksync.festapp.net');
+      assertEquals(remoteCreates,1);
+      await assertRejects(()=>runBankSyncOperation({operation_id:'fixture',operation:'create',mode:'api'},'fixture-hash'),Error,'unsupported_bank_capability');
+      assertEquals(remoteCreates,1);
+    } finally {requestHandler=undefined;}
+  });
+}

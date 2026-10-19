@@ -16,7 +16,7 @@ export async function runBankSyncOperation(input: Record<string, any>, fingerpri
   try {
     let result;
     if (input.operation === "create") {
-      if (!["FIO", "AIRBANK"].includes(context.provider) || (input.mode === "api" && context.provider !== "FIO")) {
+      if (!["FIO", "AIRBANK", "CSOB", "MONETA", "CREDITAS", "RAIFFEISENBANK", "UNICREDIT", "CSAS"].includes(context.provider) || (input.mode === "api" && context.provider !== "FIO")) {
         throw new Error("unsupported_bank_capability");
       }
       // A remote account is paused and tokenless until mapping and subscription

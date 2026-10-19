@@ -50,7 +50,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_BUSY'; END IF;
   SELECT * INTO STRICT v_account FROM eshop.bank_accounts WHERE id=v_op.bank_account_id;
   SELECT * INTO v_conn FROM eshop.bank_sync_connections WHERE bank_account_id=v_op.bank_account_id;
-  RETURN jsonb_build_object('lease_token',v_op.lease_token,'account_number',v_account.account_number,'provider',COALESCE(v_conn.provider,CASE WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}2010' OR v_account.account_number ~ '/2010$' THEN 'FIO' WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}3030' OR v_account.account_number ~ '/3030$' THEN 'AIRBANK' ELSE v_account.type END),'title',v_account.title,
+  RETURN jsonb_build_object('lease_token',v_op.lease_token,'account_number',v_account.account_number,'provider',COALESCE(v_conn.provider,public.bank_sync_provider_for_account(v_account.account_number)),'title',v_account.title,
     'connection_id',v_conn.id,'remote_id',v_conn.remote_bank_account_id,'pairing_code',v_conn.pairing_code,
     'state',v_conn.state,'mode',v_conn.mode,'barrier',v_conn.legacy_blocked_at,'manifest_sha256',v_conn.manifest_sha256,'request',v_op.request,'token_cipher',v_op.token_cipher);
 END;
@@ -84,7 +84,7 @@ BEGIN
   INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
     provider,mode,state,pairing_code,manifest_sha256)
     VALUES(p_instance_id,'festapp',p_remote_id,v_account.id,upper(regexp_replace(v_account.account_number,'\s','','g')),
-      CASE WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}2010' OR v_account.account_number ~ '/2010$' THEN 'FIO' WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}3030' OR v_account.account_number ~ '/3030$' THEN 'AIRBANK' ELSE v_account.type END,p_mode,'provisioning',p_pairing_code,v_op.payload_sha256)
+      public.bank_sync_provider_for_account(v_account.account_number),p_mode,'provisioning',p_pairing_code,v_op.payload_sha256)
     ON CONFLICT(bank_account_id) DO UPDATE SET pairing_code=EXCLUDED.pairing_code
     WHERE eshop.bank_sync_connections.remote_bank_account_id=EXCLUDED.remote_bank_account_id
       AND eshop.bank_sync_connections.instance_id=EXCLUDED.instance_id RETURNING id INTO v_id;

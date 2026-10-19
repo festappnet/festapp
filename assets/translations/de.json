@@ -100,7 +100,7 @@
     "synchronizationEnabled": "Ein",
     "synchronizationPaused": "Aus",
     "synchronizationChanging": "Synchronisierung wird aktualisiert",
-    "emailBankUnsupported": "Die Bank-E-Mail-Anbindung ist derzeit nur für Fio banka und Air Bank verfügbar. Für dieses Konto können Sie Zahlungen manuell erfassen."
+    "emailBankUnsupported": "Die Verbindung für Bank-E-Mails wird für diese Bank noch nicht unterstützt. Sie können Zahlungen für dieses Konto manuell erfassen."
   },
   "EmailDelivery": {
     "title": "Email",
