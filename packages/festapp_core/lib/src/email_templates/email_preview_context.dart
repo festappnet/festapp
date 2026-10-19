@@ -12,20 +12,48 @@ class EmailPreviewProduct {
   });
 }
 
+/// Configured payment destination used only as a display example.
+class EmailPreviewPaymentAccount {
+  final String accountNumber, iban;
+  final List<String> currencies;
+  const EmailPreviewPaymentAccount({
+    required this.accountNumber,
+    required this.iban,
+    required this.currencies,
+  });
+}
+
 class EmailPreviewContext {
   final String? occasionTitle, deadline;
+  final EmailPreviewPaymentAccount? paymentAccount;
   final bool? ticketsEnabled;
   final List<EmailPreviewProduct> products;
   const EmailPreviewContext({
     this.occasionTitle,
     this.deadline,
     this.ticketsEnabled,
+    this.paymentAccount,
     this.products = const [],
   });
 
+  EmailPreviewContext withPaymentAccount(EmailPreviewPaymentAccount? account) =>
+      EmailPreviewContext(
+        occasionTitle: occasionTitle,
+        deadline: deadline,
+        ticketsEnabled: ticketsEnabled,
+        products: products,
+        paymentAccount: account ?? paymentAccount,
+      );
+
   Map<String, String> bindings({required bool zero}) {
+    final paymentBindings = {
+      if (paymentAccount != null)
+        'preview_account_number': paymentAccount!.accountNumber,
+      if (paymentAccount != null) 'preview_iban': paymentAccount!.iban,
+    };
     if (products.isEmpty)
       return {
+        ...paymentBindings,
         if (occasionTitle != null) 'preview_occasion': occasionTitle!,
         if (deadline != null) 'preview_deadline': deadline!,
       };
@@ -43,6 +71,7 @@ class EmailPreviewContext {
       decimalDigits: value == value.roundToDouble() ? 0 : 2,
     ).format(value);
     return {
+      ...paymentBindings,
       if (occasionTitle != null) 'preview_occasion': occasionTitle!,
       if (deadline != null) 'preview_deadline': deadline!,
       'preview_product_0_title': first.title,

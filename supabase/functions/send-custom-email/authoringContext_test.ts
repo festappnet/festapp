@@ -32,6 +32,14 @@ function fixture(overrides: Partial<AuthoringContextDependencies> = {}) {
         wrapper: { html: '<div style="padding:24px">{{content}}</div>' },
       };
     },
+    paymentAccounts: async (...args) => {
+      calls.push(["paymentAccounts", ...args]);
+      return [{
+        accountNumber: "123/0100",
+        iban: "CZ65 0800 0000 1920 0014 5399",
+        currencies: ["CZK"],
+      }];
+    },
     ...overrides,
   };
   return { dependencies, calls };
@@ -84,11 +92,15 @@ Deno.test("authoring metadata derives hierarchy only from authorized catalog", a
     "resolve",
     input.templateCode,
     { organization: 3, unit: 8, occasion: 42 },
-  ]]);
+  ], ["paymentAccounts", { organization: 3, unit: 8, occasion: 42 }]]);
   const result = await response.json();
   assertEquals(result.senderAddress, "info@festapp.net");
   assertStringIncludes(result.wrapperHtml, "padding:24px");
-  assertEquals(Object.keys(result).sort(), ["senderAddress", "wrapperHtml"]);
+  assertEquals(Object.keys(result).sort(), [
+    "paymentAccounts",
+    "senderAddress",
+    "wrapperHtml",
+  ]);
 });
 Deno.test("missing or mismatched template scope never resolves a wrapper", async () => {
   for (
@@ -135,5 +147,25 @@ Deno.test("unavailable runtime sender or resolver fails without a fabricated sen
     );
     assertEquals(response.status, 503);
     assertEquals((await response.json()).senderAddress, undefined);
+  }
+});
+
+Deno.test("bank metadata failure retains sender and wrapper without invented accounts", async () => {
+  for (
+    const paymentAccounts of [undefined, async () => {
+      throw new Error("offline");
+    }]
+  ) {
+    const { dependencies } = fixture({ paymentAccounts });
+    const response = await authoringContextResponse(
+      input,
+      "Bearer caller",
+      dependencies,
+    );
+    assertEquals(response.status, 200);
+    const result = await response.json();
+    assertEquals(result.senderAddress, "info@festapp.net");
+    assertStringIncludes(result.wrapperHtml, "padding:24px");
+    assertEquals(result.paymentAccounts, []);
   }
 });

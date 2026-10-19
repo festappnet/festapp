@@ -16,24 +16,54 @@ událostí a RPC konceptů. Jediná nahrazená externí hranice jsou push callba
 Vývojový entrypoint odmítá backend mimo `127.0.0.1:56821`; explicitní loopback
 backend v debug režimu nepoužívá produkční aktivační dokument ani jeho marker.
 
-Průvodce zobrazuje jednu otázku najednou. Pro vstupenky.online je tok
-Zdroj, Název, Začátek akce (datum a čas), Konec akce (datum a čas), Formulář,
-Plánek, Nastavení plateb, Vstupenka, nepovinné Ověření organizace a Kontrola.
-Tenant s aplikací má navíc otázku na odkaz akce a obsah. Bez podpory aplikace
-se odkaz akce nezobrazuje ani v běžném vytvářecím dialogu; prázdný odkaz při
-vytvoření přidělí kanonický serverový generátor náhodných veřejných odkazů.
-Veřejný odkaz formuláře se nastavuje samostatně.
+Průvodce zobrazuje jednu otázku najednou s neutrálními popisky. Název,
+společný termín (začátek i konec) a představení akce tvoří základ. Představení
+umožňuje místo konání, popis, úvodní obrázek a volbu propagace. Obrázky se
+nahrávají stávajícím unit-scoped image writerem; odebrání z konceptu je pouze
+odpojí a nemaže sdílený soubor. Finalizace ověří vlastnictví obrázku jednotkou.
+Propagace vyžaduje obrázek a sama akci nezveřejní ani neotevře prodej.
+
+Další otázky se odvozují od aktuální konfigurace: vypnutý formulář odstraní
+související editory, nulové ceny vynechají platby a cenové vlny, chybějící pole
+vstupenky vynechá její vzhled a odbavení. Cenové vlny jsou volitelné; používají
+stávající editor s draftovým adaptérem. Do databázové fronty se zapíší až při
+finalizaci přes existující price-wave příkazy a nově mapovaná ID produktů.
+Odbavení je samostatná otázka pouze po výslovném zapnutí doplňující volby u
+vstupenky. U placené akce má vlastní otázku potvrzení účtu pro příjem plateb.
+Nabízejí se pouze účty připojené k jednotce, které podporují měny placených
+produktů. Správce může otevřít stávající správu účtů a účet vytvořit nebo
+připojit; editorovi bez těchto práv zůstává možnost uložit koncept. Potvrzený
+účet se připne k formuláři. Server při finalizaci znovu ověří jednotku, měny
+a fingerprint platebních instrukcí; změněný účet vyžaduje nové potvrzení.
+Legacy koncepty bez nového potvrzovacího pole zachovávají původní routování. Dřívější skryté volby se bez příslušné funkce neuplatňují.
+
+Ověřená organizace otázku na ověření přeskočí; její stav je v souhrnu. Při
+neznámém stavu nebo chybě načtení zůstává nepovinná otázka dostupná. Ověření
+nemění podmínky dokončení. Procenta počítají pouze použitelné povinné kroky;
+horní segmenty popisují polohu v aktuálním průchodu.
+
+Adresa formuláře se navrhuje podle názvu a roku akce. Server konzultuje
+kanonické globální rezervace včetně historických adres a přidává čitelný suffix.
+Ruční úpravu nepřepíše další změna názvu. Dostupnost je náhled; automatický
+návrh se při finalizaci znovu ověří a při kolizi přidělí další volný suffix.
+Ručně zvolenou adresu server nikdy bez souhlasu nepřejmenuje. URL akce se u
+tenantů bez aplikace nevyplňuje; URL formuláře zůstává samostatná.
 
 Otázka se ukládá do `data.storyQuestion` uvnitř původního stabilního kroku;
-`current_step` a databázový kontrakt se nemění. Starší koncepty otevřou
-první otázku příslušného kroku, starší Kontrola otevře přímo kontrolu.
-Ověření organizace používá existující editor organizace a jeho samostatné
-ukládání; neblokuje pokračování ani dosažení 100 %. Přeskočení nemění stav
-ověření organizace.
+`current_step` se nemění. Historické otázky `start`/`end` se obnoví do společného
+termínu. Pokud se dříve uložená otázka přestane používat, pokračuje průvodce
+následující použitelnou otázkou. Navigace Zpět / Pokračovat je mimo posouvaný
+obsah a zůstává dostupná i u editorů. Nahrávání obrázku dočasně blokuje odchod.
 
-Horní segmenty ukazují pozici v průchodu otázkami. Procenta u spodní navigace
-vyjadřují dokončené nastavení nezávisle na nepovinném ověření. Navigace
-Zpět / Pokračovat je mimo posouvaný obsah a zůstává dostupná i u editorů.
+Výchozí vstupenka bez uloženého layoutu používá společnou novou bílou šablonu
+s hierarchií názvu, data, místa, účastníka a QR. Vlastní uložené šablony se
+nemění. Draftový náhled doplní aktuální název, termín a místo, ale nadále
+ověřuje práva a načítá zdroje pomocí skutečné autorizované předlohy.
+
+Pro nové RPC a rozšířenou finalizaci je třeba migrace
+`20261019123000_occasion_setup_adaptive_details.sql`; pouhý restart staršího
+lokálního backendu ji automaticky nenainstaluje.
+
 Nový koncept vzniká přes stejný SQL algoritmus jako běžná událost
 (update_occasion_internal_v1, včetně vytvoření formuláře a produktů).
 Algoritmus běží v podtransakci, jejíž zápisy se vrátí zpět; zachová se pouze
@@ -140,3 +170,24 @@ Poslední browser kontrola ověřila i vstup „Vytvořit kopii“ ze skutečné
 Skautského plesu: Wizard předvolil správný zdroj a skutečný editor plánku zobrazil
 182 volných sedadel, původní fotografický podklad z lokálního Storage a ceny
 přiřazených produktů (například Místo 450 Kč). Screenshot byl vizuálně posouzen.
+
+## Komunikace a výchozí hodnoty organizace
+
+Wizard nabízí zděděnou adresu pro odpovědi a tón, případně vlastní hodnoty pro
+akci. Bez přepsání zůstávají adresa a tón navázané na organizaci. Připomínky a
+jejich předstih se zobrazují jen u placeného formuláře. Jejich organizační
+výchozí hodnoty se při založení uloží do konfigurace akce; změna výchozích hodnot
+nepřepisuje připomínky existujících akcí ani jejich frontu.
+
+Správce může vlastní hodnoty samostatným tlačítkem uložit jako výchozí pro
+organizaci, také při první akci. Používá se existující verzovaný příkaz pro
+uložení organizace, který při souběžné změně vrátí konflikt. Editor smí změnit
+komunikaci konceptu, nikoli organizační výchozí hodnoty. Dokončení akce
+nadále vyžaduje správce podle existujícího příkazu pro založení. Samotné dokončení Wizardu
+organizaci nemění. Souhrn ukazuje zděděné i vlastní hodnoty.
+
+Ověření komunikace: 33 cílených Flutter testů (komunikace, příběh průvodce a
+adaptivní detaily) a 5 SQL testovacích souborů prošlo na izolované databázi.
+Cílený analyzátor nemá chyby ani warningy; zůstávají informační linty pro bloky
+podmínek. Překlady všech šesti jazyků jsou validní JSON. Produkce se při tomto
+ověření neměnila.

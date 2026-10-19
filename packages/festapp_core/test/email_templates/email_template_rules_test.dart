@@ -280,7 +280,7 @@ void main() {
     );
     expect(
       unpaid.values['fullOrder'],
-      contains('jana.novakova@example.invalid'),
+      contains('jana.novakova@example.com'),
     );
     expect(unpaid.values['fullOrder'], contains('450'));
     expect(unpaid.values['fullOrder'], contains('350'));

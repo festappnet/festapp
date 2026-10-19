@@ -38,15 +38,23 @@ class EmailPreviewExamples {
         context: result.context, contextUnavailable: result.unavailable);
   }
 
-  List<EmailPreviewScenario> scenariosFor(String templateCode) {
+  List<EmailPreviewScenario> scenariosFor(String templateCode,
+      {List<EmailPreviewPaymentAccount> paymentAccounts = const []}) {
     final codes = (EmailTemplateModel.substitutionDefinitions[templateCode] ??
             const <EmailTemplateSub>[])
         .map((entry) => entry.code)
         .toSet();
-    return records
-        .where((r) => r.templateCode == templateCode)
-        .map((r) =>
-            (context == null ? r : r.withContext(context!)).restrictTo(codes))
-        .toList(growable: false);
+    return records.where((r) => r.templateCode == templateCode).map((r) {
+      final currency = context?.products.firstOrNull?.currency ??
+          r.contextDefaults['preview_currency'] ??
+          'CZK';
+      final account = paymentAccounts
+          .where((a) => a.currencies.contains(currency))
+          .firstOrNull;
+      final effective =
+          (context ?? const EmailPreviewContext()).withPaymentAccount(account);
+      return (context == null && account == null ? r : r.withContext(effective))
+          .restrictTo(codes);
+    }).toList(growable: false);
   }
 }

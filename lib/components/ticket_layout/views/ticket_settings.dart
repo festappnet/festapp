@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
-import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import '../models/ticket_layout.dart';
@@ -15,6 +14,7 @@ import '../ticket_layout_service.dart';
 import '../ticket_layout_strings.dart';
 import 'ticket_layout_editor.dart';
 import 'ticket_layout_canvas.dart';
+import 'ticket_scanning_settings.dart';
 
 class TicketSettings extends StatefulWidget {
   final TicketFeature feature;
@@ -22,6 +22,8 @@ class TicketSettings extends StatefulWidget {
   final bool productEditing, borrowResourcesOnly, readOnly;
   final Future<void> Function(TicketFeature)? onSave;
   final TicketLayoutService service;
+  final TicketPreviewOccasion? previewOccasion;
+  final bool showScanningSettings;
   TicketSettings(
       {super.key,
       required this.feature,
@@ -30,6 +32,8 @@ class TicketSettings extends StatefulWidget {
       this.productEditing = true,
       this.readOnly = false,
       this.borrowResourcesOnly = false,
+      this.previewOccasion,
+      this.showScanningSettings = true,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -42,7 +46,19 @@ class _TicketSettingsState extends State<TicketSettings> {
     EditorDraftScope.changed(context);
   }
 
-  TicketLayoutService get service => widget.service;
+  TicketLayoutService get service => widget.previewOccasion == null
+      ? widget.service
+      : widget.service.withPreviewOccasion(widget.previewOccasion!);
+
+  @override
+  void didUpdateWidget(covariant TicketSettings oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (jsonEncode(oldWidget.previewOccasion?.toJson()) !=
+        jsonEncode(widget.previewOccasion?.toJson())) {
+      refresh();
+    }
+  }
+
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
   bool busy = false;
@@ -211,21 +227,11 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        CheckboxListTile(
-            value: widget.feature.canScanManually ?? false,
-            title: Text(FeaturesStrings.enableManualTicketScan),
-            subtitle: Text(FeaturesStrings.enableManualTicketScanDescription),
-            onChanged: widget.readOnly
-                ? null
-                : (v) => _refresh(() => widget.feature.canScanManually = v)),
-        CheckboxListTile(
-            value: widget.feature.showHiddenNote ?? false,
-            title: Text(FeaturesStrings.labelShowHiddenNote),
-            subtitle: Text(FeaturesStrings.descriptionShowHiddenNote),
-            onChanged: widget.readOnly
-                ? null
-                : (v) => _refresh(() => widget.feature.showHiddenNote = v)),
-        const SizedBox(height: 12),
+        if (widget.showScanningSettings) ...[
+          TicketScanningSettings(
+              feature: widget.feature, readOnly: widget.readOnly),
+          const SizedBox(height: 12),
+        ],
         if (unsupported) Text(TicketLayoutStrings.unsupported),
         if (thumbnail?.missingBackground == true)
           Padding(
