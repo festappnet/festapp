@@ -1,12 +1,8 @@
-import 'form_variable_symbol_settings.dart';
-
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
-
 import '../waitlist_strings.dart';
-
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
@@ -21,6 +17,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
+import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -29,7 +26,6 @@ import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-
 import 'form_public_link.dart';
 
 import '../form_strings.dart';
@@ -45,15 +41,14 @@ class FormSettingsContent extends StatefulWidget {
   final Future<void> Function(FormEditorDraft)? saveForm;
   final VoidCallback? onActionCompleted;
   final VoidCallback? onDataUpdated;
-  const FormSettingsContent({
-    super.key,
-    this.formLink,
-    this.bankConnectionChanges,
-    this.onActionCompleted,
-    this.onDataUpdated,
-    this.loadBundle,
-    this.saveForm,
-  });
+  const FormSettingsContent(
+      {super.key,
+      this.formLink,
+      this.bankConnectionChanges,
+      this.onActionCompleted,
+      this.onDataUpdated,
+      this.loadBundle,
+      this.saveForm});
 
   @override
   State<FormSettingsContent> createState() => _FormSettingsContentState();
@@ -119,7 +114,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _linkController,
       _deadlineDaysController,
       _reminderDaysController,
-      _startingNumberController,
+      _startingNumberController
     ]) {
       controller.addListener(_changed);
     }
@@ -177,8 +172,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (mounted && identical(_form, form) && bundle != null) {
         // Refresh operational facts only; preserve the form editor's draft.
         setState(
-          () => form.availableBankAccounts = bundle.availableBankAccounts,
-        );
+            () => form.availableBankAccounts = bundle.availableBankAccounts);
       }
     } catch (error) {
       AppLogger.error('Could not refresh form bank account cards: $error');
@@ -193,9 +187,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       setState(() => _isLoading = true);
     }
     final requestedLink = _formLink!;
-    final bundle = await (widget.loadBundle ?? DbForms.getFormForEdit)(
-      requestedLink,
-    );
+    final bundle =
+        await (widget.loadBundle ?? DbForms.getFormForEdit)(requestedLink);
     if (!mounted || requestedLink != _formLink) return;
 
     if (bundle != null) {
@@ -269,31 +262,23 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (!_canEdit) return;
     _validateLink(_linkController.text);
     if (!_formKey.currentState!.validate() || _linkError != null) {
-      ToastHelper.Show(
-        currentContext,
-        FormStrings.errorFixBeforeSave,
-        severity: ToastSeverity.NotOk,
-      );
+      ToastHelper.Show(currentContext, FormStrings.errorFixBeforeSave,
+          severity: ToastSeverity.NotOk);
       return;
     }
     if (_form == null) return;
-    final reminderDays = double.tryParse(
-      _reminderDaysController.text.replaceAll(',', '.'),
-    );
+    final reminderDays =
+        double.tryParse(_reminderDaysController.text.replaceAll(',', '.'));
     if (_reminderDaysController.text.isNotEmpty &&
         (reminderDays == null || !reminderDays.isFinite || reminderDays < 0)) {
-      ToastHelper.Show(
-        currentContext,
-        FormStrings.nonNegativeDays,
-        severity: ToastSeverity.NotOk,
-      );
+      ToastHelper.Show(currentContext, FormStrings.nonNegativeDays,
+          severity: ToastSeverity.NotOk);
       return;
     }
 
     final trimmedTitle = _titleController.text.trim();
-    _form!.definition = _form!.definition.copyWith(
-      title: trimmedTitle.isEmpty ? null : trimmedTitle,
-    );
+    _form!.definition = _form!.definition
+        .copyWith(title: trimmedTitle.isEmpty ? null : trimmedTitle);
     _form!.definition = _form!.definition.copyWith(link: _linkController.text);
     final metadata = <String, dynamic>{...?_form!.definition.data};
     if (_reminderMode == 'inherit') {
@@ -345,11 +330,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       }
       _savedLink = _form!.definition.link;
       if (!mounted) return;
-      ToastHelper.Show(
-        currentContext,
-        "${CommonStrings.saved}: ${_form?.definition.title ?? ""}",
-        severity: ToastSeverity.Ok,
-      );
+      ToastHelper.Show(currentContext,
+          "${CommonStrings.saved}: ${_form?.definition.title ?? ""}",
+          severity: ToastSeverity.Ok);
       final renamed = _formLink != _form!.definition.link;
       if (renamed) {
         setState(() {
@@ -360,13 +343,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (renamed && mounted) {
         context.router.markUrlStateForReplace();
         await context.router.navigate(
-          FormDetailRoute(
-            formLink: _form!.definition.link!,
-            children: [
-              const FormTabsRoute(children: [FormSettingsRoute()]),
-            ],
-          ),
-        );
+            FormDetailRoute(formLink: _form!.definition.link!, children: [
+          const FormTabsRoute(children: [FormSettingsRoute()])
+        ]));
       } else {
         widget.onDataUpdated?.call();
       }
@@ -377,7 +356,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       for (final code in [
         'CAPACITY_BELOW_COMMITTED',
         'WAITLIST_HAS_ACTIVE_ENTRIES',
-        'BLUEPRINT_CONFLICT',
+        'BLUEPRINT_CONFLICT'
       ]) {
         if (errorMessage.contains(code)) {
           errorMessage = WaitlistStrings.text(code);
@@ -387,11 +366,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       if (errorMessage.toLowerCase().contains("link")) {
         setState(() => _linkError = errorMessage);
       } else {
-        ToastHelper.Show(
-          currentContext,
-          errorMessage,
-          severity: ToastSeverity.NotOk,
-        );
+        ToastHelper.Show(currentContext, errorMessage,
+            severity: ToastSeverity.NotOk);
       }
     }
   }
@@ -403,18 +379,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     try {
       await DbForms.deleteForm(_form!.definition.id!);
       if (!mounted) return;
-      ToastHelper.Show(
-        currentContext,
-        "${CommonStrings.deleted}: ${_form!.definition.title ?? _form!.definition.link}",
-      );
+      ToastHelper.Show(currentContext,
+          "${CommonStrings.deleted}: ${_form!.definition.title ?? _form!.definition.link}");
       widget.onActionCompleted?.call();
     } catch (e) {
       if (!mounted) return;
       ToastHelper.Show(
-        currentContext,
-        e.toString().replaceFirst("Exception: ", ""),
-        severity: ToastSeverity.NotOk,
-      );
+          currentContext, e.toString().replaceFirst("Exception: ", ""),
+          severity: ToastSeverity.NotOk);
     }
   }
 
@@ -433,10 +405,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              CommonStrings.delete,
-              style: TextStyle(color: ThemeConfig.redColor(context)),
-            ),
+            child: Text(CommonStrings.delete,
+                style: TextStyle(color: ThemeConfig.redColor(context))),
           ),
         ],
       ),
@@ -492,11 +462,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     final usedAccounts = _getUsedBankAccounts();
     final missingCurrencies = usedCurrencies
-        .where(
-          (currency) => !usedAccounts.any(
-            (account) => account.supportedCurrencies.contains(currency),
-          ),
-        )
+        .where((currency) => !usedAccounts
+            .any((account) => account.supportedCurrencies.contains(currency)))
         .toList()
       ..sort();
     final unitId = RightsService.currentUnit()?.id;
@@ -511,9 +478,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     final linkStart = guidance.indexOf(settingsLabel);
     _bankSettingsLink.onTap = canManageAccounts
         ? () => pushRootPath(
-              context.router.root,
-              '/unit/$unitId/edit/bank-accounts',
-            )
+            context.router.root, '/unit/$unitId/edit/bank-accounts')
         : null;
 
     return SelectionArea(
@@ -521,11 +486,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (missingCurrencies.isNotEmpty) ...[
-            Text(
-              BankAccountStrings.missingAccountForCurrencies(
-                missingCurrencies.join(', '),
-              ),
-            ),
+            Text(BankAccountStrings.missingAccountForCurrencies(
+                missingCurrencies.join(', '))),
             const SizedBox(height: 4),
           ],
           Text.rich(
@@ -543,18 +505,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                         recognizer: _bankSettingsLink,
                       ),
                       TextSpan(
-                        text: guidance.substring(
-                          linkStart + settingsLabel.length,
-                        ),
-                      ),
+                          text: guidance
+                              .substring(linkStart + settingsLabel.length)),
                     ]
                   : [TextSpan(text: guidance)],
             ),
             style: missingCurrencies.isNotEmpty
                 ? null
                 : Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -579,9 +538,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                           Text(
                             account.title ?? BankAccountStrings.bankAccount,
                             style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -597,28 +554,21 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                               spacing: 4,
                               runSpacing: 4,
                               children: account.supportedCurrencies
-                                  .map(
-                                    (c) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 1,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: ThemeConfig.grey200(context),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                          color: Colors.grey.shade400,
+                                  .map((c) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: ThemeConfig.grey200(context),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                              color: Colors.grey.shade400),
                                         ),
-                                      ),
-                                      child: Text(
-                                        c,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  )
+                                        child: Text(c,
+                                            style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600)),
+                                      ))
                                   .toList(),
                             ),
                           ],
@@ -637,9 +587,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   @override
   Widget build(BuildContext context) => NavigationDraftBoundary(
-        isDirty: () => _hasChanges,
-        child: _buildContent(context),
-      );
+      isDirty: () => _hasChanges, child: _buildContent(context));
 
   Widget _buildContent(BuildContext context) {
     final defaultReminders = _formFeature.reminderIsEnabled ?? true;
@@ -657,9 +605,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                   : Align(
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: StylesConfig.formMaxWidth,
-                        ),
+                        constraints:
+                            BoxConstraints(maxWidth: StylesConfig.formMaxWidth),
                         child: SingleChildScrollView(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -669,12 +616,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                 key: ObjectKey(_form),
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    FormStrings.formSettingsTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .headlineSmall,
-                                  ),
+                                  Text(FormStrings.formSettingsTitle,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .headlineSmall),
                                   const SizedBox(height: 24),
                                   Text(FormStrings.formPaymentDefaultsHelp),
                                   const SizedBox(height: 16),
@@ -688,21 +633,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
-                                        value: 'inherit',
-                                        child: Text(
-                                          FormStrings.inheritReminder(
-                                            defaultReminders,
-                                          ),
-                                        ),
-                                      ),
+                                          value: 'inherit',
+                                          child: Text(
+                                              FormStrings.inheritReminder(
+                                                  defaultReminders))),
                                       DropdownMenuItem(
-                                        value: 'enabled',
-                                        child: Text(FormStrings.remindersOn),
-                                      ),
+                                          value: 'enabled',
+                                          child: Text(FormStrings.remindersOn)),
                                       DropdownMenuItem(
-                                        value: 'disabled',
-                                        child: Text(FormStrings.remindersOff),
-                                      ),
+                                          value: 'disabled',
+                                          child:
+                                              Text(FormStrings.remindersOff)),
                                     ],
                                     onChanged: _canEdit
                                         ? (value) => setState(
@@ -719,24 +660,21 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                             FormStrings.labelReminderInterval,
                                         border: const OutlineInputBorder(),
                                         helperText: FormStrings.inheritDays(
-                                          (_formFeature
-                                                      .reminderIntervalSeconds ??
-                                                  86400) /
-                                              86400,
-                                        ),
+                                            (_formFeature
+                                                        .reminderIntervalSeconds ??
+                                                    86400) /
+                                                86400),
                                         helperMaxLines: 4,
                                       ),
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
+                                              decimal: true),
                                       validator: (value) {
                                         if (value == null || value.isEmpty) {
                                           return null;
                                         }
                                         final days = double.tryParse(
-                                          value.replaceAll(',', '.'),
-                                        );
+                                            value.replaceAll(',', '.'));
                                         return days == null ||
                                                 !days.isFinite ||
                                                 days < 0
@@ -777,12 +715,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     builder: (context, formLink, child) {
                                       return Padding(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12.0,
-                                        ),
+                                            horizontal: 12.0),
                                         child: FormPublicLink(
-                                          link: formLink,
-                                          savedLink: _savedLink,
-                                        ),
+                                            link: formLink,
+                                            savedLink: _savedLink),
                                       );
                                     },
                                   ),
@@ -794,48 +730,82 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       labelText: FormStrings.labelDeadlineDays,
                                       border: const OutlineInputBorder(),
                                       helperText: FormStrings.inheritDays(
-                                        (_formFeature.deadlineDurationSeconds ??
-                                                604800) /
-                                            86400,
-                                      ),
+                                          (_formFeature
+                                                      .deadlineDurationSeconds ??
+                                                  604800) /
+                                              86400),
                                       helperMaxLines: 5,
                                     ),
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
+                                      FilteringTextInputFormatter.digitsOnly
                                     ],
                                   ),
                                   const SizedBox(height: 24),
                                   const Divider(),
                                   const SizedBox(height: 16),
-                                  Text(
-                                    FormStrings.paymentDetailsTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
+                                  Text(FormStrings.paymentDetailsTitle,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .titleLarge),
                                   const SizedBox(height: 24),
                                   _buildUsedBankAccounts(innerContext),
                                   const SizedBox(height: 16),
-                                  FormVariableSymbolSettings(
-                                    value: {
-                                      FormDefinition.metaType:
-                                          _variableSymbolType,
-                                      FormDefinition.metaStartingNumber:
-                                          int.tryParse(
-                                        _startingNumberController.text,
-                                      ),
-                                    },
-                                    enabled: _canEdit,
-                                    onChanged: (value) => setState(() {
-                                      _variableSymbolType =
-                                          value[FormDefinition.metaType]
-                                              as String;
-                                      _startingNumberController.text =
-                                          '${value[FormDefinition.metaStartingNumber] ?? ''}';
-                                    }),
+                                  DropdownButtonFormField<String>(
+                                    isExpanded: true,
+                                    value: _variableSymbolType,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          FormStrings.labelVariableSymbol,
+                                      border: const OutlineInputBorder(),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem(
+                                          value: 'random',
+                                          child:
+                                              Text(FormStrings.vsTypeRandom)),
+                                      DropdownMenuItem(
+                                          value: 'sequence',
+                                          child:
+                                              Text(FormStrings.vsTypeSequence)),
+                                    ],
+                                    onChanged: _canEdit
+                                        ? (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                _variableSymbolType = value;
+                                              });
+                                            }
+                                          }
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
+                                  Visibility(
+                                    visible: _variableSymbolType == 'sequence',
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 24.0),
+                                      child: TextFormField(
+                                        enabled: _canEdit,
+                                        controller: _startingNumberController,
+                                        decoration: InputDecoration(
+                                          labelText:
+                                              FormStrings.labelStartingNumber,
+                                          border: const OutlineInputBorder(),
+                                          helperText:
+                                              FormStrings.helperStartingNumber,
+                                          counterText: "",
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 10,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                          LengthLimitingTextInputFormatter(10),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                   DropdownButtonFormField<String>(
                                     isExpanded: true,
                                     value: _paymentMessageType,
@@ -846,20 +816,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
-                                        value: 'name_surname',
-                                        child: Text(
-                                            FormStrings.msgTypeNameSurname),
-                                      ),
+                                          value: 'name_surname',
+                                          child: Text(
+                                              FormStrings.msgTypeNameSurname)),
                                       DropdownMenuItem(
-                                        value: 'none',
-                                        child: Text(FormStrings.msgTypeNone),
-                                      ),
+                                          value: 'none',
+                                          child: Text(FormStrings.msgTypeNone)),
                                       DropdownMenuItem(
-                                        value: 'occasion_title',
-                                        child: Text(
-                                          FormStrings.msgTypeOccasionTitle,
-                                        ),
-                                      ),
+                                          value: 'occasion_title',
+                                          child: Text(FormStrings
+                                              .msgTypeOccasionTitle)),
                                     ],
                                     onChanged: _canEdit
                                         ? (value) {
@@ -874,12 +840,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   const SizedBox(height: 24),
                                   const Divider(),
                                   const SizedBox(height: 16),
-                                  Text(
-                                    FormStrings.communicationToneTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
+                                  Text(FormStrings.communicationToneTitle,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .titleLarge),
                                   const SizedBox(height: 8),
                                   Text(
                                     FormStrings.helperCommunicationTone,
@@ -897,23 +861,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                     ),
                                     items: [
                                       DropdownMenuItem(
-                                        value: 'inherit',
-                                        child: Text(
-                                          FormStrings.toneInherit(
-                                            _unitTone == 'informal'
-                                                ? FormStrings.toneInformal
-                                                : FormStrings.toneFormal,
-                                          ),
-                                        ),
-                                      ),
+                                          value: 'inherit',
+                                          child: Text(FormStrings.toneInherit(
+                                              _unitTone == 'informal'
+                                                  ? FormStrings.toneInformal
+                                                  : FormStrings.toneFormal))),
                                       DropdownMenuItem(
-                                        value: 'formal',
-                                        child: Text(FormStrings.toneFormal),
-                                      ),
+                                          value: 'formal',
+                                          child: Text(FormStrings.toneFormal)),
                                       DropdownMenuItem(
-                                        value: 'informal',
-                                        child: Text(FormStrings.toneInformal),
-                                      ),
+                                          value: 'informal',
+                                          child:
+                                              Text(FormStrings.toneInformal)),
                                     ],
                                     onChanged: _canEdit
                                         ? (value) {
@@ -944,14 +903,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           child: Text(
                                             FormStrings.deleteFormTitle,
                                             style: TextStyle(
-                                              color: (_form?.definition
-                                                          .canDelete ??
-                                                      true)
-                                                  ? ThemeConfig.redColor(
-                                                      innerContext,
-                                                    )
-                                                  : Colors.grey,
-                                            ),
+                                                color: (_form?.definition
+                                                            .canDelete ??
+                                                        true)
+                                                    ? ThemeConfig.redColor(
+                                                        innerContext)
+                                                    : Colors.grey),
                                           ),
                                         ),
                                       ),

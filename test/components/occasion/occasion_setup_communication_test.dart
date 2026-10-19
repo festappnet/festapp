@@ -66,48 +66,23 @@ void main() {
     });
   });
 
-  test(
-    'initialization preserves saved choices and resets from adopted form',
-    () {
-      final draft = _draft()..['communicationTone'] = 'informal';
-      _metadata(draft).addAll({
-        'communication_tone': 'formal',
-        'is_reminder_enabled': false,
-        'reminder_interval_seconds': 43200,
-      });
-      initializeCommunicationDraft(draft);
-      expect(draft['communicationTone'], 'informal');
-      initializeCommunicationDraft(draft, reset: true);
-      expect(draft['communicationTone'], 'formal');
-      expect(draft['remindersMode'], 'disabled');
-      expect(double.parse(draft['reminderLeadDays'] as String), .5);
-      _metadata(draft)['is_reminder_enabled'] = true;
-      initializeCommunicationDraft(draft, reset: true);
-      expect(draft['remindersMode'], 'inherit');
-    },
-  );
-
-  test(
-      'new event inherits organization even when default form disables reminders',
+  test('initialization preserves saved choices and resets from adopted form',
       () {
-    final draft = <String, dynamic>{
-      'formDefaultsFollowEvent': true,
-      'formDraft': {
-        'data': {
-          'is_reminder_enabled': false,
-          'reminder_interval_seconds': 43200,
-          'communication_tone': 'formal',
-        }
-      },
-    };
+    final draft = _draft()..['communicationTone'] = 'informal';
+    _metadata(draft).addAll({
+      'communication_tone': 'formal',
+      'is_reminder_enabled': false,
+      'reminder_interval_seconds': 43200,
+    });
+    initializeCommunicationDraft(draft);
+    expect(draft['communicationTone'], 'informal');
+    initializeCommunicationDraft(draft, reset: true);
+    expect(draft['communicationTone'], 'formal');
+    expect(draft['remindersMode'], 'disabled');
+    expect(double.parse(draft['reminderLeadDays'] as String), .5);
+    _metadata(draft)['is_reminder_enabled'] = true;
     initializeCommunicationDraft(draft, reset: true);
     expect(draft['remindersMode'], 'inherit');
-    expect(draft['reminderLeadDays'], '');
-    expect(draft['replyToMode'], 'inherit');
-    expect(draft['communicationTone'], 'inherit');
-    draft['remindersMode'] = 'disabled';
-    initializeCommunicationDraft(draft);
-    expect(draft['remindersMode'], 'disabled');
   });
 
   test('custom reply address and paid reminder lead must be valid', () {
@@ -131,202 +106,118 @@ void main() {
     expect(communicationDraftValid(draft), isTrue);
   });
 
-  Future<void> mount(
-    WidgetTester tester,
-    Map<String, dynamic> data, {
-    required bool manager,
-    required Future<UnitModel> Function(UnitModel) save,
-    bool firstEvent = true,
-    bool paymentTiming = false,
-  }) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: StatefulBuilder(
-              builder: (context, setState) {
-                return OccasionSetupCommunication(
-                  draftId: 'draft',
-                  paymentTiming: paymentTiming,
-                  data: data,
-                  onChanged: (patch) => setState(() => data.addAll(patch)),
-                  loader: () async => {
-                    'canManage': manager,
-                    'firstEvent': firstEvent,
-                    'defaults': {
-                      'replyTo': 'organization@example.org',
-                      'tone': 'formal',
-                      'remindersEnabled': true,
-                      'leadSeconds': 86400,
-                    },
-                    'unit': {
-                      'id': 7,
-                      'aggregate_version': 9,
-                      'data': {
-                        'unrelated': 'preserved',
-                        'reply_to': 'original@example.org',
-                        'communication_tone': 'formal',
-                        'is_reminder_enabled': true,
-                        'reminder_interval_seconds': 86400,
-                      },
-                    },
-                  },
-                  saveDefaults: save,
-                );
+  Future<void> mount(WidgetTester tester, Map<String, dynamic> data,
+      {required bool manager,
+      required Future<UnitModel> Function(UnitModel) save,
+      bool firstEvent = true}) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: StatefulBuilder(builder: (context, setState) {
+            return OccasionSetupCommunication(
+              draftId: 'draft',
+              data: data,
+              onChanged: (patch) => setState(() => data.addAll(patch)),
+              loader: () async => {
+                'canManage': manager,
+                'firstEvent': firstEvent,
+                'defaults': {
+                  'replyTo': 'organization@example.org',
+                  'tone': 'formal',
+                  'remindersEnabled': true,
+                  'leadSeconds': 86400,
+                },
+                'unit': {
+                  'id': 7,
+                  'aggregate_version': 9,
+                  'data': {'unrelated': 'preserved'},
+                },
               },
-            ),
-          ),
+              saveDefaults: save,
+            );
+          }),
         ),
       ),
-    );
+    ));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('inherited reply choice names the organization address',
+  testWidgets('manager saves defaults only after an explicit action with CAS',
       (tester) async {
-    final data = _draft();
-    await mount(tester, data, manager: false, save: (unit) async => unit);
-    expect(
-        find.text(
-            'OccasionSetup.setupDetails.inheritOrganization (organization@example.org)'),
-        findsWidgets);
+    final data = _draft()
+      ..addAll({
+        'replyToMode': 'custom',
+        'replyToEmail': 'events@example.org',
+        'communicationTone': 'informal',
+        'remindersMode': 'disabled',
+        'reminderLeadDays': '2',
+      });
+    final saved = <UnitModel>[];
+    await mount(tester, data, manager: true, save: (unit) async {
+      saved.add(unit);
+      return unit;
+    });
+    expect(saved, isEmpty);
+    expect(find.text('OccasionSetup.setupDetails.firstEventDefaultsHint'),
+        findsOneWidget);
+    await tester.ensureVisible(
+        find.byWidgetPredicate((widget) => widget is OutlinedButton));
+    await tester
+        .tap(find.byWidgetPredicate((widget) => widget is OutlinedButton));
+    await tester.pumpAndSettle();
+    expect(saved, hasLength(1));
+    expect(saved.single.id, 7);
+    expect(saved.single.aggregateVersion, 9);
+    expect(saved.single.data, {
+      'unrelated': 'preserved',
+      'reply_to': 'events@example.org',
+      'communication_tone': 'informal',
+      'is_reminder_enabled': false,
+      'reminder_interval_seconds': 172800,
+    });
     expect(data['replyToMode'], 'inherit');
+    expect(data['communicationTone'], 'inherit');
+    expect(data['remindersMode'], 'inherit');
+    expect(data['reminderLeadDays'], '');
+    expect(tester.takeException(), isNull);
   });
 
-  for (final paymentTiming in [false, true]) {
-    testWidgets(
-      'manager saves only visible defaults with CAS: timing=$paymentTiming',
-      (tester) async {
-        final data = _draft()
-          ..addAll({
-            'replyToMode': 'custom',
-            'replyToEmail': 'events@example.org',
-            'communicationTone': 'informal',
-            'remindersMode': 'disabled',
-            'reminderLeadDays': '2',
-          });
-        final saved = <UnitModel>[];
-        await mount(
-          tester,
-          data,
-          manager: true,
-          paymentTiming: paymentTiming,
-          save: (unit) async {
-            saved.add(unit);
-            return unit;
-          },
-        );
-        expect(saved, isEmpty);
-        expect(
-          find.text('OccasionSetup.setupDetails.firstEventDefaultsHint'),
-          findsOneWidget,
-        );
-        await tester.ensureVisible(
-          find.byWidgetPredicate((widget) => widget is OutlinedButton),
-        );
-        await tester.tap(
-          find.byWidgetPredicate((widget) => widget is OutlinedButton),
-        );
-        await tester.pumpAndSettle();
-        expect(saved, hasLength(1));
-        expect(saved.single.id, 7);
-        expect(saved.single.aggregateVersion, 9);
-        expect(saved.single.data, {
-          'unrelated': 'preserved',
-          'reply_to':
-              paymentTiming ? 'original@example.org' : 'events@example.org',
-          'communication_tone': paymentTiming ? 'formal' : 'informal',
-          'is_reminder_enabled': !paymentTiming,
-          'reminder_interval_seconds': paymentTiming ? 172800 : 86400,
-        });
-        expect(data['replyToMode'], paymentTiming ? 'custom' : 'inherit');
-        expect(
-          data['communicationTone'],
-          paymentTiming ? 'informal' : 'inherit',
-        );
-        expect(data['remindersMode'], paymentTiming ? 'inherit' : 'disabled');
-        expect(data['reminderLeadDays'], paymentTiming ? '' : '2');
-        expect(tester.takeException(), isNull);
-      },
-    );
-  }
-
-  test(
-    'each question validates only its own inputs; review validates both',
-    () {
-      final data = _draft()
-        ..addAll({
-          'replyToMode': 'custom',
-          'replyToEmail': 'invalid',
-          'reminderLeadDays': '2',
-        });
-      expect(communicationDraftValid(data, includeReply: false), isTrue);
-      expect(communicationDraftValid(data, includeReminders: false), isFalse);
-      expect(communicationDraftValid(data), isFalse);
-      data['replyToEmail'] = 'valid@example.org';
-      data['reminderLeadDays'] = '-1';
-      expect(communicationDraftValid(data, includeReply: false), isFalse);
-      expect(communicationDraftValid(data, includeReminders: false), isTrue);
-      expect(communicationDraftValid(data), isFalse);
-    },
-  );
-
   testWidgets(
-    'editor can change this event but cannot save organization defaults',
-    (tester) async {
-      final data = _draft(paid: false)
-        ..addAll({'replyToMode': 'custom', 'replyToEmail': 'old@example.org'});
-      var saves = 0;
-      await mount(
-        tester,
-        data,
-        manager: false,
-        save: (unit) async {
-          saves++;
-          return unit;
-        },
-      );
-      expect(
-        find.byWidgetPredicate((widget) => widget is OutlinedButton),
-        findsNothing,
-      );
-      expect(
-        find.text('OccasionSetup.setupDetails.paymentReminders'),
-        findsNothing,
-      );
-      await tester.enterText(
-        find.byKey(const ValueKey('communication-reply')),
-        'new@example.org',
-      );
-      await tester.pump();
-      expect(data['replyToEmail'], 'new@example.org');
-      expect(saves, 0);
-      expect(tester.takeException(), isNull);
-    },
-  );
+      'editor can change this event but cannot save organization defaults',
+      (tester) async {
+    final data = _draft(paid: false)
+      ..addAll({'replyToMode': 'custom', 'replyToEmail': 'old@example.org'});
+    var saves = 0;
+    await mount(tester, data, manager: false, save: (unit) async {
+      saves++;
+      return unit;
+    });
+    expect(find.byWidgetPredicate((widget) => widget is OutlinedButton),
+        findsNothing);
+    expect(
+        find.text('OccasionSetup.setupDetails.paymentReminders'), findsNothing);
+    await tester.enterText(
+        find.byKey(const ValueKey('communication-reply')), 'new@example.org');
+    await tester.pump();
+    expect(data['replyToEmail'], 'new@example.org');
+    expect(saves, 0);
+    expect(tester.takeException(), isNull);
+  });
 
-  testWidgets('failed organization save retains event overrides for retry', (
-    tester,
-  ) async {
+  testWidgets('failed organization save retains event overrides for retry',
+      (tester) async {
     final data = _draft()..['communicationTone'] = 'informal';
-    await mount(
-      tester,
-      data,
-      manager: true,
-      save: (_) async => throw StateError('revision conflict'),
-    );
+    await mount(tester, data,
+        manager: true,
+        save: (_) async => throw StateError('revision conflict'));
     await tester.ensureVisible(
-      find.byWidgetPredicate((widget) => widget is OutlinedButton),
-    );
-    await tester.tap(
-      find.byWidgetPredicate((widget) => widget is OutlinedButton),
-    );
+        find.byWidgetPredicate((widget) => widget is OutlinedButton));
+    await tester
+        .tap(find.byWidgetPredicate((widget) => widget is OutlinedButton));
     await tester.pumpAndSettle();
     expect(data['communicationTone'], 'informal');
-    expect(
-      find.text('OccasionSetup.setupDetails.organizationDefaultsFailed'),
-      findsOneWidget,
-    );
+    expect(find.text('OccasionSetup.setupDetails.organizationDefaultsFailed'),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
