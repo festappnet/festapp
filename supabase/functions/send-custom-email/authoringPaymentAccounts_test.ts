@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   authoringPaymentAccounts,
+  loadAuthoringPaymentAccounts,
   type LinkedAuthoringAccount,
 } from "./authoringPaymentAccounts.ts";
 
@@ -64,4 +65,36 @@ Deno.test("missing display metadata is not replaced by invented account or curre
     iban: "",
     currencies: [],
   }]);
+});
+
+Deno.test("bank examples use public RPC through the actual Supabase transport", async () => {
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.58.0");
+  const requests: Request[] = [];
+  const client = createClient("https://backend.test.invalid", "service-key", {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: async (input, init) => {
+      const req = new Request(input, init);
+      requests.push(req);
+      return Response.json({ linkedAccounts: [account(1, 0, ["CZK"])], formAccountIds: [1] });
+    } },
+  });
+  const result = await loadAuthoringPaymentAccounts(client, { unit: 8, occasion: 42, organization: 3 });
+  assertEquals(result.length, 1);
+  assertEquals(requests.length, 1);
+  assertEquals(new URL(requests[0].url).pathname, "/rest/v1/rpc/get_email_authoring_payment_accounts");
+  assertEquals(requests[0].headers.get("content-profile"), "public");
+  assertEquals(await requests[0].json(), { p_unit_id: 8, p_occasion_id: 42 });
+});
+Deno.test("unit-only bank examples pass no invented occasion and reject unavailable metadata", async () => {
+  let args: unknown;
+  const client = { rpc: async (_: string, value: unknown) => {
+    args = value;
+    return { data: { linkedAccounts: [], formAccountIds: [] }, error: null };
+  } };
+  assertEquals(await loadAuthoringPaymentAccounts(client, { unit: 8, organization: 3 }), []);
+  assertEquals(args, { p_unit_id: 8, p_occasion_id: null });
+  let failed = false;
+  try { await loadAuthoringPaymentAccounts({ rpc: async () => ({ data: null, error: { code: "PGRST202" } }) }, { unit: 8 }); }
+  catch (_) { failed = true; }
+  assertEquals(failed, true);
 });
