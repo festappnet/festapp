@@ -39,6 +39,7 @@ class BlueprintLayoutHost extends StatefulWidget {
 
 class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   late BlueprintLayoutController controller;
+  final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
@@ -69,6 +70,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   void dispose() {
     _fontGeneration++;
     _assets.dispose();
+    _hostFocus.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -79,11 +81,21 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     controller.layout.select({});
     controller.setMode(BlueprintLayoutMode.manage);
     setState(() => _screenMode = mode);
+    _hostFocus.requestFocus();
+  }
+
+  void _startOperation(BlueprintLayoutMode mode) {
+    if (_busy || _editingPlan || !_canOrder) return;
+    controller.setMode(mode);
+    // Semantics activation need not focus the button. Keep Escape available
+    // even when the new operation replaces that button before any canvas click.
+    _hostFocus.requestFocus();
   }
 
   void _cancelOperation() {
     if (_busy) return;
     controller.setMode(BlueprintLayoutMode.manage);
+    _hostFocus.requestFocus();
   }
 
   Future<void> _loadAssets() async {
@@ -702,7 +714,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 key: const ValueKey('blueprint-start-order'),
                 onPressed: _busy
                     ? null
-                    : () => controller.setMode(BlueprintLayoutMode.order),
+                    : () => _startOperation(BlueprintLayoutMode.order),
                 icon: const Icon(Icons.add_shopping_cart, size: 18),
                 label: Text(BlueprintStrings.orderAction),
               ),
@@ -711,7 +723,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               key: const ValueKey('blueprint-start-swap'),
               onPressed: _busy
                   ? null
-                  : () => controller.setMode(BlueprintLayoutMode.swap),
+                  : () => _startOperation(BlueprintLayoutMode.swap),
               icon: const Icon(Icons.swap_horiz, size: 18),
               label: Text(BlueprintStrings.legendSwapSeats),
             ),
@@ -764,6 +776,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 }
               },
               child: Focus(
+                  focusNode: _hostFocus,
                   autofocus: true,
                   child: Scaffold(
                     body: SafeArea(

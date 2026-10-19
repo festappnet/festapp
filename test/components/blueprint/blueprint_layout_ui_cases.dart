@@ -1,3 +1,4 @@
+import 'dart:ui' show SemanticsAction;
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_layout_demo.dart';
 import 'dart:async';
@@ -269,6 +270,22 @@ void main() {
         find.byKey(const ValueKey('blueprint-unsaved-plan')), findsOneWidget);
     expectActionVisible('blueprint-start-order');
     expectActionVisible('blueprint-start-swap');
+    final semantics = tester.ensureSemantics();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    tester.binding.renderViews.single.owner!.semanticsOwner!.performAction(
+        tester
+            .getSemantics(find.byKey(const ValueKey('blueprint-start-order')))
+            .id,
+        SemanticsAction.tap);
+    await tester.pump();
+    expect(find.text(BlueprintStrings.confirmOrder), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget,
+        reason:
+            'Assistive activation must focus the operation so Escape works before a canvas click');
+    semantics.dispose();
     await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.pumpAndSettle();
     final operationalEditor =
