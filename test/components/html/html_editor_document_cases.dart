@@ -12,6 +12,33 @@ String fixture(String name) =>
     File('test/components/html/fixtures/$name.html').readAsStringSync();
 
 void main() {
+  test('rich-only source formatting is projected without changing stored HTML', () {
+    for (final source in ['{{fullOrder}}', '\n  {{fullOrder}}\n',
+      '\n{{balanceReasoning}}\n{{fullOrder}}\n']) {
+      final codec = HtmlEditorDocument('$source<p>Signature</p>',
+          tokenCodes: {'fullOrder', 'balanceReasoning'},
+          blockCodes: {'fullOrder', 'balanceReasoning'});
+      expect(codec.encode(), '$source<p>Signature</p>');
+      expect(codec.isUnchanged, isTrue);
+      for (final node in codec.document.whereType<TextNode>()) {
+        expect(node.text.toPlainText(), isNot(contains('\n')));
+      }
+    }
+  });
+
+  test('projection retains meaningful text, NBSP, explicit breaks and preserved whitespace', () {
+    for (final source in [
+      '{{fullOrder}}&nbsp;\n', '{{fullOrder}} meaningful\n',
+      '<p>{{fullOrder}}<br></p>', '<pre>{{fullOrder}}\n</pre>',
+      '<div style="white-space:pre-wrap">{{fullOrder}}\n</div>',
+    ]) {
+      final codec = HtmlEditorDocument('$source<p>Signature</p>',
+          tokenCodes: {'fullOrder'}, blockCodes: {'fullOrder'});
+      expect(codec.document.whereType<TextNode>().first.text.toPlainText(), contains('\n'));
+      expect(codec.encode(), '$source<p>Signature</p>');
+    }
+  });
+
   test('moving live blocks respects retained HTML table boundaries', () {
     const html = '<table><tr><td><p>Cell</p></td></tr></table>'
         '<div class="html-editor-block form-countdown"></div><p>After</p>';

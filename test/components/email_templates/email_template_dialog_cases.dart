@@ -23,7 +23,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String html = '<p>Content</p>', Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
+Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String? code, String html = '<p>Content</p>', Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
   RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       unitUser: OccasionUserModel(isEditor: true),
       occasionUser: OccasionUserModel(isEditor: true));
@@ -38,9 +38,9 @@ Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, String ht
               authoringContextLoader: authoringContextLoader,
               previewExamplesLoader: previewExamplesLoader,
               template: EmailTemplateModel(
-                code: occasionTitle == null
+                code: code ?? (occasionTitle == null
                     ? 'SIGN_IN_CODE'
-                    : 'TICKET_ORDER_CONFIRMATION',
+                    : 'TICKET_ORDER_CONFIRMATION'),
                 subject: 'Subject',
                 html: html,
               ),
@@ -217,6 +217,49 @@ void main() {
       });
     }
   }
+  for (final width in [1000.0, 375.0]) {
+    for (final source in [
+      '{{fullOrder}}\n<p>Přejeme pěkný den</p>',
+      '<p>Ahoj,</p>\n{{balanceReasoning}}{{fullOrder}}\n'
+          '<p>Přejeme pěkný den</p>\n<p>Organizační tým {{occasionTitle}}</p>',
+    ]) {
+      testWidgets('bare rich blocks have no phantom line before signature $width ${source.length}', (tester) async {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await openTemplate(tester, code: 'TICKET_ORDER_REMINDER', html: source,
+            occasionTitle: 'Sample event',
+            previewExamplesLoader: () async => EmailPreviewExamples.fromJson(jsonDecode(
+                File('assets/email_templates/preview_examples.json').readAsStringSync())),
+            authoringContextLoader: () async => const EmailAuthoringContext(senderAddress: 'info@example.invalid'));
+        final controller = tester.widget<RichHtmlEditor>(find.byType(RichHtmlEditor).last).controller;
+        expect(controller.html, source);
+        expect(controller.hasUserChanges, isFalse);
+        Future<void> expectSignatureGap(String signature) async {
+          await tester.drag(find.byType(ListView).first, const Offset(0, -10000));
+          await tester.pumpAndSettle();
+          final signoff = tester.getRect(find.text(signature, findRichText: true));
+          final blocks = find.byType(EmailPreviewHtml).evaluate()
+              .map((element) => tester.getRect(find.byWidget(element.widget)))
+              .where((rect) => rect.top < signoff.top).toList()
+            ..sort((a, b) => a.bottom.compareTo(b.bottom));
+          expect(signoff.top - blocks.last.bottom, inInclusiveRange(0, 80));
+        }
+        await expectSignatureGap('Přejeme pěkný den');
+        final signature = controller.editor.document.whereType<TextNode>()
+            .firstWhere((node) => node.text.toPlainText() == 'Přejeme pěkný den');
+        controller.editor.execute([InsertTextRequest(
+            documentPosition: DocumentPosition(nodeId: signature.id,
+                nodePosition: const TextNodePosition(offset: 0)),
+            textToInsert: 'Test ', attributions: {})]);
+        await tester.pumpAndSettle();
+        await expectSignatureGap('Test Přejeme pěkný den');
+        expect(controller.html, source.replaceFirst('Přejeme pěkný den', 'Test Přejeme pěkný den'));
+      });
+    }
+  }
+
   testWidgets('action gap stays outside scroll viewport at its bottom', (tester) async {
     tester.view.physicalSize = const Size(1000, 450);
     tester.view.devicePixelRatio = 1;
