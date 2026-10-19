@@ -56,9 +56,9 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   const report = evaluateRuntimeWriterPolicy(policy);
   assert.equal(report.status, 'pass');
   assert.deepEqual(report.blockers, []);
-  assert.equal(report.edge_functions, 34);
+  assert.equal(report.edge_functions, 33);
   assert.equal(report.worker_entrypoints, 5);
-  assert.equal(report.mutating_surfaces, 29);
+  assert.equal(report.mutating_surfaces, 28);
   for (const name of ['bank-sync-webhook', 'bank-sync-manage', 'bank-sync-reconcile']) {
     assert.equal(policy.edge_functions[name].mutates_authority, true);
   }
@@ -68,6 +68,8 @@ test('every Edge Function and Worker entrypoint has a fail-closed cutover classi
   }
   assert.equal(report.canonical_security_blockers.length, 0);
   assert.match(report.canonical_exclusions[0], /instance-install/);
+  assert.equal(policy.edge_functions['instance-install'], undefined);
+  assert.equal(fs.existsSync(path.join(REPOSITORY_ROOT, 'supabase/functions/instance-install/index.ts')), false);
   assert.equal(report.activation_requirements.length, 7);
 
   const incomplete = structuredClone(policy);

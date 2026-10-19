@@ -269,21 +269,12 @@ class FeaturesStrings {
   static String get mapBaseModeDescription =>
       'FeatureMap.mapBaseModeDescription'.tr();
   static String get mapBaseModeOnline => 'FeatureMap.mapBaseModeOnline'.tr();
-  static String get mapBaseModeLegacy => 'FeatureMap.mapBaseModeLegacy'.tr();
   static String get mapBaseModeMapLibre =>
       'FeatureMap.mapBaseModeMapLibre'.tr();
   static String get offlineMapBundleManifestUrl =>
       'FeatureMap.offlineMapBundleManifestUrl'.tr();
   static String get mapLibreBundleManifestRequired =>
       'FeatureMap.mapLibreBundleManifestRequired'.tr();
-  static String get offlineMapRendererFieldRequired =>
-      'FeatureMap.offlineMapRendererFieldRequired'.tr();
   static String get offlineMapHttpsUrlRequired =>
       'FeatureMap.offlineMapHttpsUrlRequired'.tr();
-  static String get offlineMapPackageUrl =>
-      'FeatureMap.offlineMapPackageUrl'.tr(); // "Offline Map Package URL"
-  static String get offlineMapStyleUrl =>
-      'FeatureMap.offlineMapStyleUrl'.tr(); // "Offline Map Style URL"
-  static String get offlineMapLayerName =>
-      'FeatureMap.offlineMapLayerName'.tr(); // "Offline Map Layer Name"
 }

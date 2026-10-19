@@ -26,8 +26,9 @@ and writes.
 
 Deno-based edge functions for privileged operations, external API calls, and
 email delivery. Functions deployed with `--no-verify-jwt` must enforce their
-own user, system-secret or verified-provider boundary. `instance-install` is a
-bootstrap-only remote-SQL tool and must not be deployed to canonical production.
+own user, system-secret or verified-provider boundary. The obsolete remote-SQL
+`instance-install` source and its `instanceInstall` UI have been removed.
+Production packaging still rejects that directory if reintroduced.
 
 ## Function Inventory
 
@@ -36,7 +37,7 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `cancel-reception-registration` | Cancels reception membership first, then revokes the user's refresh sessions. |
 | `confirm-account-deletion` | Inspects a deletion token and performs the confirmed Auth, Storage and notification cleanup. |
 | `exchange-login-qr` | Exchanges a bounded one-time reception QR/manual code for a normal user session. |
-| `notify` | Push notifications via OneSignal, triggered by DB webhook. Supports targeted and broadcast sends. |
+| `notify` | Push notifications via OneSignal. Existing SQL domain commands explicitly schedule its signed request through pg_net after admission; no application row trigger. Supports targeted and broadcast sends. |
 | `register` | User registration: creates user via RPC, sends welcome email with sign-in code and platform links. |
 | `request-account-deletion` | Creates an opaque deletion request and sends its confirmation link to the resolved delivery address. |
 | `send-app-links` | Sends CSM application links and records their delivery state idempotently. |
@@ -53,7 +54,6 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `delete-order` | Unit manager/editor or organization admin deletion with optional Fakturoid invoice removal before the canonical order command. |
 | `download-ticket` | Returns a single ticket PDF as Base64 JSON. Customer access requires the order capability and an issued ticket in that journey; editor/system access retains its existing authorization. Responses are not cached. |
 | `fetch-transactions` | Occasion-editor adapter that requests a pull from BankSync; no direct bank access. |
-| `instance-install` | Operator-only bootstrap SQL tool; explicitly excluded from canonical production. |
 | `fetch-http-data` | Authenticated occasion-editor image fetch. Rejects private/local DNS and redirect targets, non-images and responses over 10 MiB. |
 | `generate-order-agreement` | Generates the tenant-configured PDF order agreement using `pdf-lib`; tenant identity is supplied through the canonical configuration boundary. |
 | `google-auth-start` | Begins an exact-client/origin Google OIDC attempt; anonymous proof boundary. |
@@ -64,17 +64,19 @@ bootstrap-only remote-SQL tool and must not be deployed to canonical production.
 | `bank-sync-webhook` | Raw-body HMAC v2 verification followed by atomic inbox/identity/ledger/matcher receipt. |
 | `email-provider-events` | Exact-topic SNS v2 provider feedback and durable redacted journal. |
 | `email-confirmation-status` | Bounded expiring opaque-capability lookup for confirmation status. |
+| `waitlist-commands` | Capability-scoped waitlist offer acceptance, decline and withdrawal commands. |
+| `customer-order-access` | Read-only order overview capability lookup, bootstrap and authorized reissue. |
 
 The inventory follows
 [`runtime-writer-policy.json`](../../automation/hetzner-supabase/merge/runtime-writer-policy.json).
-`instance-install` is listed for exclusion visibility, not as a deployable route.
+The removed `instance-install` name remains on the explicit denylist.
 
 ## Test coverage contract
 
 `supabase/functions/test-coverage.json` maps every Function in the production
-runtime policy to executable smoke and behavior tests. The sole excluded
-Function is operator-only `instance-install`; its exclusion is proven by the
-production bundle tests. The repository preflight fails when a Function is
+runtime policy to executable smoke and behavior tests. The removed
+`instance-install` remains forbidden; production bundle tests prove this
+exclusion even though its source no longer exists. The repository preflight fails when a Function is
 missing from the matrix, a mapped test does not exist, or runtime policy and
 test scope diverge.
 

@@ -1,37 +1,44 @@
 # Canonical self-hosted Supabase architecture
 
-The final production authority is one pinned Supabase stack, one PostgreSQL/Auth/
-Storage authority and one public endpoint: `https://api.festapp.net`.
+Production uses one PostgreSQL/Auth/Storage authority at `https://api.festapp.net`.
+Resolve the tenant's published activation, generation and canonical organization
+before reading event/user data; see [AI context](../../architecture/ai_context.md).
+A compiled legacy cloud URL does not select the live database.
 
-`default` (`kjdpmixlnhntmxjedpxh`) is the canonical data base. Source `a`
-(`lwfpdjxsdmkfyrzqbrlk`) is imported only through staging and versioned mapping
-rules. An organization is identified by `(source_project, organization_id)`.
+## Runtime boundaries
 
-Production cutover uses one coordinated full freeze across `default`, `a` and
-`slunovrat`. Application, Auth refresh, Storage, Functions, cron, webhook,
-worker and operator writes stop before the fresh snapshots and remain stopped
-until either canonical activation or rollback. Journal hybrid is not authorized
-and is not a production fallback. Client dual-write, reverse sync and persistent
-application migration triggers are forbidden.
+Typed domain RPCs own authorization, business writes, idempotency and audit in
+one database transaction. The selected Client Sync v1 adapters call those
+explicit commands. Retained legacy adapters do not authorize a return to cloud
+writes or a second persistence authority.
 
-The canonical application write seam is the existing typed `client_sync_v1`
-command module. A Flutter call reaches one explicit domain RPC that owns
-authorization, durable business DML, idempotency and audit evidence in one
-PostgreSQL transaction. This seam improves normal operation but is not treated
-as proof that every already-released client write is journaled; the full freeze
-is therefore mandatory.
+Cloudflare fronts the public API and hosts the web, image and sync services.
+Workers may orchestrate authorized RPCs; relational rules and commits remain in
+PostgreSQL. R2/object writes are separately reconciled side effects, with their
+own admission, object ownership, checksums/receipts and failure recovery. A
+Worker/Hyperdrive hop would not make an R2 write atomic with SQL.
 
-Cloudflare does not own relational writes. It fronts the public endpoint and
-continues to own the existing image/R2 adapter, where globally distributed
-object delivery provides actual leverage. A Worker/Hyperdrive database adapter
-would be a shallow second interface over the same regional PostgreSQL and could
-not make an R2/object write atomic with a relational transaction. Object
-storage remains a separately reconciled side effect with checksums and receipts.
+The public front door uses proxied DNS and strict origin TLS. The tracked
+Terraform foundation admits ports 80/443 only from listed Cloudflare ranges;
+Caddy forwards allowed API paths to the loopback gateway. Existing operations
+use the [protected access channel](../../../.agents/skills/festapp-backend-access/SKILL.md),
+not an assumed public SSH rule. Studio has its separate
+[Access/Tunnel boundary](admin-dashboard-security.md).
 
-The public front door is proxied DNS/WAF with hostname-specific strict origin
-TLS. Hetzner ports 80 and 443 accept only Cloudflare's published proxy ranges;
-Caddy terminates TLS and forwards to the loopback-only Supabase gateway. No
-Cloudflare Worker, Hyperdrive or D1 hop is used for ordinary Supabase traffic.
+## Migration history
 
-Production cloud projects remain read-only for the approved retention period.
-Deleting them always requires a separate explicit approval.
+The 2026 consolidation used the `default` cloud source as its base and staged
+`a` and `slunovrat` through versioned mappings. Source organization identities
+were scoped by `(source_project, organization_id)` during import; runtime
+clients use the assigned canonical organization IDs. Preserve mapping/provenance
+where it supplies authorization or audit identity.
+
+The migration required a coordinated full freeze of application, Auth, Storage,
+Function, cron, webhook, Worker and operator writes. That was the original
+cutover procedure, completed on 2026-09-10, not a freeze prerequisite for each
+ordinary release. Journal hybrid, client dual-write and reverse sync were not
+approved fallback paths. Persistent application triggers remain prohibited.
+
+Former cloud sources are retained history/reconciliation targets. Routine writes
+and migrations stay on the canonical backend; retention and cleanup are recorded
+in [the completed disposition](../work-items/completed/legacy-supabase-decommission-2026-09-23.md).

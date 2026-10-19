@@ -1,5 +1,3 @@
-import 'package:fstapp/services/app_logger.dart';
-
 import 'feature.dart';
 import 'feature_constants.dart';
 
@@ -60,8 +58,6 @@ class MapFeature extends Feature {
       FeatureConstants.offlineMapLayer: offlineMapLayer.toJson(),
     };
   }
-
-  /// Builds the form field for this feature in FeatureForm.
 }
 
 /// Helper class representing a map location.
@@ -89,30 +85,8 @@ class MapLocation {
   }
 }
 
-enum OfflineMapRenderer {
-  maplibre('maplibre'),
-  legacy('legacy');
-
-  final String wireValue;
-
-  const OfflineMapRenderer(this.wireValue);
-
-  static OfflineMapRenderer parse(Object? value) {
-    if (value == null) return OfflineMapRenderer.maplibre;
-    for (final renderer in OfflineMapRenderer.values) {
-      if (renderer.wireValue == value) return renderer;
-    }
-    AppLogger.error('Invalid offlineMapRenderer configuration: $value');
-    throw FormatException('Unknown offline map renderer: $value');
-  }
-}
-
 /// The occasion-wide base map shown by native clients.
-///
-/// This is the settings-facing interface. It deliberately maps onto the
-/// existing wire-compatible `forceOfflineMap` + `offlineMapRenderer` fields so
-/// older clients and the configured offline fallback keep working.
-enum MapBaseMode { online, legacy, maplibre }
+enum MapBaseMode { online, maplibre }
 
 /// Helper class representing a map layer.
 class MapLayer {
@@ -121,12 +95,6 @@ class MapLayer {
   String? logoLink;
   String? textLink;
   String? layerLink;
-  // Offline extra fields (for offline map layer)
-  String? offlineMapPackageURL;
-  String? offlineMapStyleURL;
-  String? offlineMapLayerName;
-  OfflineMapRenderer offlineMapRenderer;
-  bool hasExplicitOfflineMapRenderer;
   String? offlineMapBundleManifestURL;
   bool forceOfflineMap;
 
@@ -136,55 +104,18 @@ class MapLayer {
     this.logoLink,
     this.textLink,
     this.layerLink = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    this.offlineMapPackageURL,
-    this.offlineMapStyleURL,
-    this.offlineMapLayerName,
-    OfflineMapRenderer? offlineMapRenderer,
-    bool? hasExplicitOfflineMapRenderer,
     this.offlineMapBundleManifestURL,
     this.forceOfflineMap = false,
-  })  : offlineMapRenderer = offlineMapRenderer ?? OfflineMapRenderer.maplibre,
-        hasExplicitOfflineMapRenderer =
-            hasExplicitOfflineMapRenderer ?? offlineMapRenderer != null;
+  });
 
-  MapBaseMode get mapBaseMode {
-    if (!forceOfflineMap) return MapBaseMode.online;
-    return switch (offlineMapRenderer) {
-      OfflineMapRenderer.legacy => MapBaseMode.legacy,
-      OfflineMapRenderer.maplibre => MapBaseMode.maplibre,
-    };
-  }
+  MapBaseMode get mapBaseMode =>
+      forceOfflineMap ? MapBaseMode.maplibre : MapBaseMode.online;
 
   set mapBaseMode(MapBaseMode mode) {
-    switch (mode) {
-      case MapBaseMode.online:
-        forceOfflineMap = false;
-        break;
-      case MapBaseMode.legacy:
-        forceOfflineMap = true;
-        offlineMapRenderer = OfflineMapRenderer.legacy;
-        hasExplicitOfflineMapRenderer = true;
-        break;
-      case MapBaseMode.maplibre:
-        forceOfflineMap = true;
-        offlineMapRenderer = OfflineMapRenderer.maplibre;
-        hasExplicitOfflineMapRenderer = true;
-        break;
-    }
+    forceOfflineMap = mode == MapBaseMode.maplibre;
   }
 
   factory MapLayer.fromJson(Map<String, dynamic> json) {
-    final hasExplicitRenderer =
-        json.containsKey(FeatureConstants.offlineMapRenderer);
-    final hasLegacyContract =
-        _hasText(json[FeatureConstants.offlineMapPackageURL]) &&
-            _hasText(json[FeatureConstants.offlineMapStyleURL]) &&
-            _hasText(json[FeatureConstants.offlineMapLayerName]);
-    final renderer = hasExplicitRenderer
-        ? OfflineMapRenderer.parse(json[FeatureConstants.offlineMapRenderer])
-        : hasLegacyContract
-            ? OfflineMapRenderer.legacy
-            : OfflineMapRenderer.maplibre;
     return MapLayer(
       logo: json[FeatureConstants.mapLogo] as String?,
       text: json[FeatureConstants.mapText] as String?,
@@ -192,13 +123,6 @@ class MapLayer {
       textLink: json[FeatureConstants.mapTextLink] as String?,
       layerLink: json[FeatureConstants.mapLayerLink] as String? ??
           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      offlineMapPackageURL:
-          json[FeatureConstants.offlineMapPackageURL] as String?,
-      offlineMapStyleURL: json[FeatureConstants.offlineMapStyleURL] as String?,
-      offlineMapLayerName:
-          json[FeatureConstants.offlineMapLayerName] as String?,
-      offlineMapRenderer: renderer,
-      hasExplicitOfflineMapRenderer: hasExplicitRenderer,
       offlineMapBundleManifestURL:
           json[FeatureConstants.offlineMapBundleManifestURL] as String?,
       forceOfflineMap: json[FeatureConstants.forceOfflineMap] as bool? ?? false,
@@ -214,16 +138,6 @@ class MapLayer {
       FeatureConstants.mapLayerLink: layerLink,
       FeatureConstants.forceOfflineMap: forceOfflineMap,
     };
-    if (offlineMapPackageURL != null) {
-      data[FeatureConstants.offlineMapPackageURL] = offlineMapPackageURL!;
-    }
-    if (offlineMapStyleURL != null) {
-      data[FeatureConstants.offlineMapStyleURL] = offlineMapStyleURL!;
-    }
-    if (offlineMapLayerName != null) {
-      data[FeatureConstants.offlineMapLayerName] = offlineMapLayerName!;
-    }
-    data[FeatureConstants.offlineMapRenderer] = offlineMapRenderer.wireValue;
     if (offlineMapBundleManifestURL != null) {
       data[FeatureConstants.offlineMapBundleManifestURL] =
           offlineMapBundleManifestURL!;
@@ -231,5 +145,3 @@ class MapLayer {
     return data;
   }
 }
-
-bool _hasText(Object? value) => value is String && value.trim().isNotEmpty;

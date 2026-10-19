@@ -1,38 +1,30 @@
-# Shared Functions (`_shared`)
+# Shared Edge Function boundaries
 
-Utility modules shared across Supabase Edge Functions.
+Endpoint-specific authorization stays at the request boundary. `auth.ts`
+supports the established system-secret or user-token contract; importing a
+service-role client never authorizes the caller. The full route inventory and
+release procedure are in the [Edge reference](../../../docs/backend/edge_functions.md).
 
-## Modules
+## Email ownership
 
-### `auth.ts`
-Request authorization via shared secret (system/admin) or user token + editor role check. Exports `authorizeRequest` and `AuthError`.
+Producers render/enqueue through the shared email adapters and durable SQL
+intents. `process-email-queue` alone sends through `emailSender.ts` after the
+fenced global send permit. `emailWorkerEnvironment.ts` restricts transport
+credentials to that worker. Keep encryption, retry state and post-actions on the
+same queue boundary; see [SES delivery](../../../docs/setup/aws_ses.md).
 
-### `emailDelivery.ts`
-Canonical email delivery renders existing templates into encrypted immutable snapshots. Domain producers enqueue in PostgreSQL; `process-email-queue` prepares and sends through the shared `emailSender` module with the fenced send permit; the host router passes SES credentials only to that queue worker. Acceptance, feedback, retries and post-actions are persisted by canonical SQL. There is no SMTP fallback or production `log_emails` writer.
+Template and wrapper inheritance belongs to the existing
+[template resolver](../../../lib/components/email_templates/README.md).
+Provider acceptance is distinct from delivery feedback.
 
-### `supabaseUtil.ts`
-`supabaseAdmin` (service-role client), `createUserClient` (RLS-scoped client from a Bearer token), `getSupabaseUser`, `isUserEditor`, `isUserEditorOrder`, `getEmailTemplateAndWrapper` (resolves templates via Occasion > Unit > Organization hierarchy).
+## One ticket renderer
 
-### `utilities.ts`
-`formatCurrency`, `formatDatetime`, `formatIBAN` -- number/string/date formatting helpers.
+`ticketGeneration.ts` resolves saved layouts/resources and normalizes order
+content. `drawLayoutTicket` in `generateTicket.ts` renders PDFs for download,
+email and preview. Fonts come from the pinned catalog under `ticket-assets/`;
+never fetch a font from a client-supplied URL. Preserve identical font metrics,
+QR rules and product bindings across the Flutter canvas and PDF output.
 
-### `orderOverview.ts`
-`generateFullOrder` -- HTML summary of ordered items for confirmation emails.
-
-### `qrCodePayment.ts`
-`generateQrCode` -- SPAYD QR codes for Czech bank payments.
-
-### `changeOverview.ts`
-Order change diff/summary helpers (used in `TICKET_ORDER_UPDATE` emails).
-
-### `generateTicket.ts`
-Standard PDF ticket generation using `pdf-lib`, `fontkit`, and `qrcode`. Exports `fetchTicketResources` (downloads background, font, and product data) and `generateTicketImage` (renders the PDF).
-
-### `generateNamedTicket.ts`
-Personalized/named PDF ticket generation using `pdf-lib`, `fontkit`, and `qrcode`. Exports `fetchNamedTicketResources` (downloads occasion logo, font) and `generateNamedTicketImage` (renders a mobile-sized ticket with attendee name, event details, and QR code).
-
-### `translatePlatformLinks.ts`
-Converts `{platform, link}` objects to localized HTML anchors for emails (Czech/English).
-
-### `translations/`
-Localized strings for backend-generated content. Contains `translations.ts` (aggregator that re-exports all), `translations.cs.ts` (Czech), `translations.en.ts` (English), and `payment-details.helpers.ts` (shared HTML builders for payment detail blocks, spacing, and bold helpers).
+The [ticket layout contract](../../../lib/components/ticket_layout/README.md)
+explains schema, persistence and preview lifecycles. Historical geometry readers
+belong only to the offline product-type converter, not the runtime import graph.

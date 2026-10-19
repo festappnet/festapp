@@ -39,7 +39,7 @@ still wins, and countdown completion reloads the current server bundle.
 
 - `get_form_by_link` -- complete form bundle for user rendering (includes session secret)
 - `get_form_for_edit` -- form + fields + products + bank accounts for admin
-- `create_form_ws` -- creates form / submits registration
+- `create_form_ws` -- creates an administrative form; participant registration uses the order endpoint
 - `update_form` -- updates form metadata
 - `duplicate_form_to_occasion` -- copies form to target occasion
 - `get_blueprint` -- loads blueprint seat map for form session

@@ -1,4 +1,13 @@
-# Merge runbook
+# Historical backend merge runbook
+
+This sequence belongs to the completed 2026 consolidation of former cloud sources.
+Its Wave 0 permissions and source-import steps are not current installation or
+upgrade instructions. Some standalone merge helpers were later removed; preserve
+the [cleanup receipt](../work-items/completed/preactivation-and-migration-tool-cleanup-2026-10-07.md)
+and recover historical source from its recorded Git revision only for a separately
+scoped replay. Current operations start with
+[server deployment](../../setup/server_deployment.md) and
+[protected backend access](../../../.agents/skills/festapp-backend-access/SKILL.md).
 
 ## Wave 0: read-only inventory
 

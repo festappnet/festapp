@@ -4,6 +4,16 @@ This directory contains the central automation logic for the Festapp project. It
 is the command center for configuration management, deployment, testing, and AI
 integration.
 
+## Configuration dependencies
+
+Run scripts from the repository root unless a guide says otherwise.
+`apply_config.sh` needs Bash, Node.js, Python 3, `jq` and the usual Unix text/file
+tools. The font generator also needs the tenant's configured font sources.
+Flutter builds need FVM/the pinned SDK; JS builds use the locked npm dependencies.
+Docker, Supabase CLI and `psql` are needed for the isolated local database, not
+for a Pages-only release. The backend host has its own
+[server requirements](../docs/setup/server_deployment.md).
+
 ## Central Configuration (`project.conf`)
 
 The `project.conf` file is the **Single Source of Truth** for the project. It
@@ -75,11 +85,21 @@ routing, build steps, env vars).
   by `deploy_direct.sh`. Emits `build/web/_worker.js` (single routing source).
 - **`deploy_direct.sh`**: Builds, uploads, and verifies the configured
   Cloudflare Pages production release without a git push.
-- **`test_all.sh`**: The master test runner. Executes Web Client, database,
-  Flutter, Deno Edge Function, image-worker integration and automation tests.
+- **`test_all.sh`**: Broad test wrapper. Executes Web Client, database,
+  all client roots (core Dart, VM adapters, Flutter), Deno Edge Function,
+  image-worker integration and automation tests.
   Environment-dependent suites are skipped when their required local tools or
   credentials are absent; pass a scope such as `web`, `db`, `flutter`,
-  `integration`, or `automation` for a targeted run.
+  `integration`, or `automation` for a targeted run. Web failures/timeouts and
+  image integration failures currently produce warnings without setting a final
+  failure status; inspect those lane results or run their commands directly.
+  The `db` and `integration` scopes also select Deno tests. The automation scope
+  runs its explicit list, not every file in `automation/tests/`.
+- **`test_client.sh`**: Complete offline client entrypoint. Runs all three roots,
+  validates purity, test registration/classification and semantic inventory, and
+  propagates every failure. `core` and `flutter` are explicit partial modes.
+- **`benchmark_client.py`**: One full warm-up plus three identical-input warm runs;
+  records lane/whole timings, counts, source digest and sampled memory.
 - **`bootstrap_local_db.sh`**: Rebuilds the isolated local PostgreSQL test
   instance from the versioned production-compatible schema baseline, records
   the baseline migration cutoff, applies newer forward migrations, and seeds
@@ -91,6 +111,12 @@ routing, build steps, env vars).
   idempotence and cross-tenant identity test using synthetic public fixtures.
 - **`check_tenant_branch_drift.sh`**: Rebuilds the expected tenant tree from a
   recorded main SHA and rejects shared, generated-content and policy drift.
-- **`sync_db.js`**: Synchronizes local and remote database schemas.
-- **`apply_sql.js`**: Applies a single SQL file to the database. Usage:
-  `node automation/apply_sql.js path/to/file.sql`.
+- **`apply_sql.js`**: Low-level SQL helper using `DATABASE_URL`; it does not
+  verify production identity and is not a production installer or migration
+  workflow. Use the isolated local database for development and the protected
+  backend access path for authorized production changes.
+
+The old `sync_db.js` migration applicator and `instanceInstall` UI/Edge installer
+were removed. Never install or upgrade a tenant through `supabase db push`, cloud
+Function deploy commands, or browser-submitted SQL. Supabase CLI remains a local
+development dependency of `bootstrap_local_db.sh`.

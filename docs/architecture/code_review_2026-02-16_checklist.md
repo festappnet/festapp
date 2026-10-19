@@ -1,5 +1,11 @@
 # Code Review Checklist — Flutter/Backend — 2026-02-16
 
+> Historical review snapshot. Checkboxes describe the February 2026 review,
+> not current defects or deployment instructions. The obsolete remote SQL
+> installer was removed on 2026-10-19. Use the [documentation map](../README.md)
+> for active procedures.
+
+
 Checklist vychází z `code_review_2026-02-16.md`. Zaškrtnout po opravě.
 
 ---

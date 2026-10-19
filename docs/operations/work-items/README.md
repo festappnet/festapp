@@ -38,7 +38,7 @@ proven when they are part of the outcome.
 | Work item | Status | Fixed point | Next action |
 |---|---|---|---|
 | [Image delivery cost cutover](open/image-delivery-cost-cutover-2026-08-24.md) | blocked | Public image hosts still on Worker; R2 domains absent; recent rejected `/private/` traffic | Resolve installed-client adoption and legacy traffic before P3/P4; no mobile publication now. |
-| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | blocked | Both migrations live; account details are owner-managed; no active EUR form | Pilot EUR order/QR/pairing when an account owner enables an EUR form. |
+| [EUR payment reference rollout](open/eur-payment-reference-rollout-2026-08-24.md) | in progress | Recorded QR/order pilot complete; incoming bank transfer and pairing remain unverified | Observe a real authorized incoming EUR transfer and verify pairing against the stored RF. |
 | [Exposed runtime credential rotation](open/runtime-credential-rotation-2026-08-24.md) | blocked | No former env files in `main` or 11 active tenant branches; revocations unverified | Inventory provider credentials and record non-secret rotation/revocation receipts. |
 
 ## Maintenance rules

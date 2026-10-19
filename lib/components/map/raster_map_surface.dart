@@ -13,43 +13,34 @@ import 'package:fstapp/components/map/map_scene.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_surface_model.dart';
 import 'package:fstapp/components/map/map_viewport_controller.dart';
-import 'package:fstapp/components/map/legacy_map_resources.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 
-export 'package:fstapp/components/map/legacy_map_resources.dart';
-
 /// All flutter_map knowledge is localized in this adapter. It consumes the
 /// same immutable [MapSurfaceModel] as the MapLibre adapter.
-class LegacyMapSurface extends StatefulWidget {
-  final bool offline;
+class RasterMapSurface extends StatefulWidget {
   final MapLayer layer;
   final MapSurfaceModel model;
-  final LegacyMapResources? offlineResources;
-  final String? offlineSourceName;
 
-  const LegacyMapSurface({
-    required this.offline,
+  const RasterMapSurface({
     required this.layer,
     required this.model,
-    this.offlineResources,
-    this.offlineSourceName,
     super.key,
   });
 
   @override
-  State<LegacyMapSurface> createState() => _LegacyMapSurfaceState();
+  State<RasterMapSurface> createState() => _RasterMapSurfaceState();
 }
 
-class _LegacyMapSurfaceState extends State<LegacyMapSurface>
+class _RasterMapSurfaceState extends State<RasterMapSurface>
     with TickerProviderStateMixin {
   static const _openStreetMapTiles =
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const _tileUserAgent = 'Festapp/Flutter (+${AppConfig.supportUrl})';
   late final AnimatedMapController _animatedController =
       AnimatedMapController(vsync: this);
-  late final LegacyMapViewportController _viewportAdapter =
-      LegacyMapViewportController(_animatedController);
+  late final RasterMapViewportController _viewportAdapter =
+      RasterMapViewportController(_animatedController);
   bool _usingOpenStreetMapFallback = false;
 
   @override
@@ -59,10 +50,9 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
   }
 
   @override
-  void didUpdateWidget(covariant LegacyMapSurface oldWidget) {
+  void didUpdateWidget(covariant RasterMapSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.offline != widget.offline ||
-        oldWidget.layer.layerLink != widget.layer.layerLink) {
+    if (oldWidget.layer.layerLink != widget.layer.layerLink) {
       _usingOpenStreetMapFallback = false;
     }
     if (!identical(oldWidget.model.viewport, widget.model.viewport)) {
@@ -80,9 +70,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
 
   @override
   Widget build(BuildContext context) {
-    final baseLayers = widget.offline
-        ? <Widget>[_buildOfflineBaseLayer()]
-        : _buildOnlineBaseLayers();
+    final baseLayers = _buildOnlineBaseLayers();
     return fm.FlutterMap(
       mapController: _animatedController.mapController,
       options: fm.MapOptions(
@@ -123,7 +111,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
                 width: MapLocationStyle.onMapMarkerSize,
                 height: MapLocationStyle.onMapMarkerSize,
                 child: const _CurrentLocationMarker(
-                  key: Key('legacy-current-location-marker'),
+                  key: Key('raster-current-location-marker'),
                 ),
               ),
             ],
@@ -166,28 +154,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
     setState(() => _usingOpenStreetMapFallback = true);
   }
 
-  Widget _buildOfflineBaseLayer() {
-    final resources = widget.offlineResources;
-    final sourceName = widget.offlineSourceName;
-    if (resources == null || sourceName == null) {
-      return const SizedBox.shrink();
-    }
-    return resources.buildBaseLayer(
-      sourceName: sourceName,
-      maximumZoom: MapZoomLimits.interactionMaximum,
-    );
-  }
-
   Widget _buildAttribution() {
-    if (widget.offline) {
-      final text = widget.layer.text;
-      if (text == null || text.isEmpty) return const SizedBox.shrink();
-      return fm.RichAttributionWidget(
-        showFlutterMapAttribution: false,
-        animationConfig: const fm.ScaleRAWA(),
-        attributions: [fm.TextSourceAttribution(text)],
-      );
-    }
     final configured = widget.layer.layerLink?.trim();
     final usesOpenStreetMap = _usingOpenStreetMapFallback ||
         configured == null ||
@@ -245,7 +212,7 @@ class _LegacyMapSurfaceState extends State<LegacyMapSurface>
               onLongPress: widget.model.onPlaceLongPress == null
                   ? null
                   : () => widget.model.onPlaceLongPress!(presentation.placeId),
-              child: _LegacyPlaceMarker(
+              child: _RasterPlaceMarker(
                 presentation: presentation,
                 icons: widget.model.icons,
               ),
@@ -322,11 +289,11 @@ class _CurrentLocationMarker extends StatelessWidget {
       );
 }
 
-class _LegacyPlaceMarker extends StatelessWidget {
+class _RasterPlaceMarker extends StatelessWidget {
   final MapPlacePresentation presentation;
   final List<IconModel> icons;
 
-  const _LegacyPlaceMarker({
+  const _RasterPlaceMarker({
     required this.presentation,
     required this.icons,
   });
@@ -375,10 +342,10 @@ class _LegacyPlaceMarker extends StatelessWidget {
   }
 }
 
-class LegacyMapViewportController implements MapViewportController {
+class RasterMapViewportController implements MapViewportController {
   final AnimatedMapController controller;
 
-  LegacyMapViewportController(this.controller);
+  RasterMapViewportController(this.controller);
 
   @override
   MapCameraState get camera => MapCameraState(

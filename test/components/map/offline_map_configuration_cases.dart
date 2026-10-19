@@ -18,64 +18,41 @@ void main() {
     );
   });
 
-  test('exposes only the selected renderer contract', () {
-    final configuration = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.maplibre,
-        offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
-        offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/v1/style.json',
-        offlineMapLayerName: 'versatiles-shortbread',
-      ),
-    );
-
-    expect(
-      configuration.selectedContract,
-      isA<MapLibreOfflineMapContract>(),
-    );
-    expect(
-      (configuration.selectedContract as MapLibreOfflineMapContract)
-          .manifestUrl,
-      'https://maps.test/v2/manifest.json',
-    );
+  test('only a manifest configures the offline map', () {
+    final configuration = OfflineMapConfiguration.fromLayer(MapLayer.fromJson({
+      'offlineMapRenderer': 'legacy',
+      'offlineMapPackageURL': 'https://maps.test/old.mbtiles',
+      'offlineMapStyleURL': 'https://maps.test/old.json',
+      'offlineMapLayerName': 'openmaptiles',
+    }));
+    expect(configuration.selectedContract, isNull);
+    expect(configuration.shouldInitialize, isFalse);
   });
 
-  test('disconnected explicit invalid configuration surfaces an error', () {
+  test('forced offline without a manifest fails for either connectivity state',
+      () {
     final configuration = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.maplibre,
-        hasExplicitOfflineMapRenderer: true,
-      ),
+      MapLayer(forceOfflineMap: true),
     );
-
-    expect(
-      configuration.resolveStartup(hasConnection: false),
-      isA<InvalidOfflineMapStartup>(),
-    );
+    for (final connected in [true, false]) {
+      expect(configuration.resolveStartup(hasConnection: connected),
+          isA<InvalidOfflineMapStartup>());
+    }
   });
 
   test('configured renderer uses offline mode only when required', () {
     OfflineMapConfiguration configuration({bool forceOffline = false}) =>
-        OfflineMapConfiguration.fromLayer(
-          MapLayer(
-            offlineMapRenderer: OfflineMapRenderer.maplibre,
-            offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
-            forceOfflineMap: forceOffline,
-          ),
-        );
-
+        OfflineMapConfiguration.fromLayer(MapLayer(
+          offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
+          forceOfflineMap: forceOffline,
+        ));
+    expect(configuration().resolveStartup(hasConnection: true),
+        isA<OnlineMapStartup>());
+    expect(configuration().resolveStartup(hasConnection: false),
+        isA<ReadyOfflineMapStartup>());
     expect(
-      configuration().resolveStartup(hasConnection: true),
-      isA<OnlineMapStartup>(),
-    );
-    expect(
-      configuration().resolveStartup(hasConnection: false),
-      isA<ReadyOfflineMapStartup>(),
-    );
-    expect(
-      configuration(forceOffline: true).resolveStartup(hasConnection: true),
-      isA<ReadyOfflineMapStartup>(),
-    );
+        configuration(forceOffline: true).resolveStartup(hasConnection: true),
+        isA<ReadyOfflineMapStartup>());
   });
 
   test(
@@ -83,7 +60,6 @@ void main() {
       () {
     final configuration = OfflineMapConfiguration.fromLayer(
       MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.maplibre,
         offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
         forceOfflineMap: true,
       ),
@@ -99,12 +75,7 @@ void main() {
       'known offline startup never exposes the online renderer while probing connectivity',
       () {
     final configuration = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.legacy,
-        offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/v1/style.json',
-        offlineMapLayerName: 'versatiles-shortbread',
-      ),
+      MapLayer(),
     );
 
     expect(
@@ -126,96 +97,32 @@ void main() {
     );
   });
 
-  test('initialization is skipped only for an untouched online-only layer', () {
-    final untouched = OfflineMapConfiguration.fromLayer(MapLayer());
-    final explicit = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.maplibre,
-        hasExplicitOfflineMapRenderer: true,
-      ),
-    );
-
-    expect(untouched.shouldInitialize, isFalse);
-    expect(explicit.shouldInitialize, isTrue);
-  });
-
-  test('online startup retains the selected Legacy contract for instant switch',
-      () {
-    final configuration = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.legacy,
-        offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/v1/style.json',
-        offlineMapLayerName: 'versatiles-shortbread',
-      ),
-    );
-
-    final startup = configuration.resolveStartup(hasConnection: true);
-
-    expect(startup, isA<OnlineMapStartup>());
+  test('initializes configured or forced bundles only', () {
+    expect(OfflineMapConfiguration.fromLayer(MapLayer()).shouldInitialize,
+        isFalse);
     expect(
-      (startup as OnlineMapStartup).availableOfflineContract,
-      isA<LegacyOfflineMapContract>(),
-    );
-  });
-
-  test('both renderers follow the same force-offline and connectivity policy',
-      () {
-    for (final renderer in OfflineMapRenderer.values) {
-      OfflineMapConfiguration configuration({required bool forceOffline}) =>
-          OfflineMapConfiguration.fromLayer(
-            MapLayer(
-              offlineMapRenderer: renderer,
-              offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
-              offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-              offlineMapStyleURL: 'https://maps.test/v1/style.json',
-              offlineMapLayerName: 'versatiles-shortbread',
-              forceOfflineMap: forceOffline,
-            ),
-          );
-
-      expect(
-        configuration(forceOffline: false).resolveStartup(hasConnection: true),
-        isA<OnlineMapStartup>(),
-        reason: '$renderer stays online when offline mode is not forced',
-      );
-      expect(
-        configuration(forceOffline: false).resolveStartup(hasConnection: false),
-        isA<ReadyOfflineMapStartup>(),
-        reason: '$renderer activates offline when disconnected',
-      );
-      expect(
-        configuration(forceOffline: true).resolveStartup(hasConnection: true),
-        isA<ReadyOfflineMapStartup>(),
-        reason: '$renderer honors forceOfflineMap while connected',
-      );
-    }
-  });
-
-  test('Legacy uses the shared manifest when present and keeps old URLs valid',
-      () {
-    final bundled = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.legacy,
-        offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
-        offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/v1/style.json',
-        offlineMapLayerName: 'versatiles-shortbread',
-      ),
-    );
-    final legacyOnly = OfflineMapConfiguration.fromLayer(
-      MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.legacy,
-        offlineMapPackageURL: 'https://maps.test/v1/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/v1/style.json',
-        offlineMapLayerName: 'versatiles-shortbread',
-      ),
-    );
-
+        OfflineMapConfiguration.fromLayer(MapLayer(forceOfflineMap: true))
+            .shouldInitialize,
+        isTrue);
     expect(
-      bundled.bundleFor(bundled.selectedContract!),
-      isA<MapLibreOfflineMapContract>(),
-    );
-    expect(legacyOnly.bundleFor(legacyOnly.selectedContract!), isNull);
+        OfflineMapConfiguration.fromLayer(MapLayer(
+          offlineMapBundleManifestURL: 'https://maps.test/v2/manifest.json',
+        )).shouldInitialize,
+        isTrue);
+    expect(
+        OfflineMapConfiguration.fromLayer(MapLayer(
+          offlineMapBundleManifestURL: '  ',
+        )).shouldInitialize,
+        isFalse);
+  });
+
+  test('online startup retains its manifest for an offline switch', () {
+    final configuration = OfflineMapConfiguration.fromLayer(MapLayer(
+      offlineMapBundleManifestURL: ' https://maps.test/v2/manifest.json ',
+    ));
+    final startup =
+        configuration.resolveStartup(hasConnection: true) as OnlineMapStartup;
+    expect(startup.availableOfflineContract?.manifestUrl,
+        'https://maps.test/v2/manifest.json');
   });
 }

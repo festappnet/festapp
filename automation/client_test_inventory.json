@@ -28,7 +28,6 @@
     },
     "test_dart/adapters/android_system_bar_theme_test.dart": "test/android_system_bar_theme_test.dart",
     "test_dart/adapters/public_link_path_test.dart": "test/public_link_path_test.dart",
-    "test_dart/adapters/web_map_import_boundary_test.dart": "test/components/map/map_unit_test.dart",
     "test_dart/adapters/async_reload_coordinator_test.dart": "test/components/schedule/schedule_unit_test.dart",
     "packages/festapp_core/test/map/maplibre_style_load_guard_test.dart": "test/components/map/map_unit_test.dart",
     "test/components/news/news_form_page_layout_cases.dart": {
@@ -310,11 +309,6 @@
       "added_group": "default_locale_3 map_surface_widget map_renderer_host",
       "entrypoint": "test/sessions/shared_default_2_test.dart"
     },
-    "test/components/map/legacy_map_focus_contract_cases.dart": {
-      "source": "test/components/map/legacy_map_focus_contract_test.dart",
-      "added_group": "default_locale_3 map_surface_widget legacy_map_focus_contract",
-      "entrypoint": "test/sessions/shared_default_2_test.dart"
-    },
     "test/components/map/path_node_cases.dart": {
       "source": "test/components/map/path_node_test.dart",
       "added_group": "default_locale_3 map_surface_widget path_node",
@@ -488,11 +482,6 @@
     "test/components/ticket_layout/ticket_layout_unit_cases.dart": {
       "source": "test/components/ticket_layout/ticket_layout_unit_test.dart",
       "added_group": "default_locale_1 ticket_layout_unit",
-      "entrypoint": "test/sessions/shared_default_1_test.dart"
-    },
-    "test/components/map/mbtiles_vector_tile_provider_cases.dart": {
-      "source": "test/components/map/mbtiles_vector_tile_provider_test.dart",
-      "added_group": "default_locale_1 mbtiles_vector_tile_provider",
       "entrypoint": "test/sessions/shared_default_1_test.dart"
     },
     "test/components/single_data_grid/single_data_grid_widget_cases.dart": {
@@ -870,7 +859,12 @@
       "added_group": "google_login_panel",
       "entrypoint": "test/sessions/shared_locale_matrix_test.dart"
     },
-    "packages/festapp_core/test/sync/client_command_response_test.dart": "test/data_services/client_sync/client_sync_unit_test.dart"
+    "packages/festapp_core/test/sync/client_command_response_test.dart": "test/data_services/client_sync/client_sync_unit_test.dart",
+    "test/components/map/raster_map_focus_contract_cases.dart": {
+      "source": "test/components/map/legacy_map_focus_contract_test.dart",
+      "added_group": "default_locale_3 map_surface_widget raster_map_focus_contract",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    }
   },
   "cases": [
     [
@@ -1073,37 +1067,37 @@
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating admin (without the crew flag) \u2192 NOT crew",
+      "RightsService.isCleaningCrew gating admin (without the crew flag) → NOT crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating editor (without the crew flag) \u2192 NOT crew",
+      "RightsService.isCleaningCrew gating editor (without the crew flag) → NOT crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating is_cleaning_crew flag \u2192 crew",
+      "RightsService.isCleaningCrew gating is_cleaning_crew flag → crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating no occasion context \u2192 not crew",
+      "RightsService.isCleaningCrew gating no occasion context → not crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating occasion user missing \u2192 not crew",
+      "RightsService.isCleaningCrew gating occasion user missing → not crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating plain participant (no flags) \u2192 not crew",
+      "RightsService.isCleaningCrew gating plain participant (no flags) → not crew",
       false,
       1
     ],
@@ -1990,72 +1984,6 @@
       1
     ],
     [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer Legacy cannot be saved without its complete map contract",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer MapLibre cannot be saved without a bundle manifest",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer Online base mode does not require an offline contract",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer complete pre-migration offline contract stays on Legacy",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer explicit Legacy survives an empty-configuration round trip",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer missing configuration defaults to MapLibre",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer occasion settings selects an explicit base map mode",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer parses and serializes both renderer values",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer rejects unknown renderer instead of falling back",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer renderer switch preserves both rollback configurations",
-      false,
-      1
-    ],
-    [
-      "test/components/features/map_feature_test.dart",
-      "OfflineMapRenderer three base modes map onto the compatible wire fields",
-      false,
-      1
-    ],
-    [
       "test/components/fonts/font_family_picker_test.dart",
       "compact picker and searchable sheet fit mobile with keyboard and large text",
       false,
@@ -2747,7 +2675,7 @@
     ],
     [
       "test/components/html/html_unit_test.dart",
-      "html_contact_links links 731\u00a0140\u00a0198 in existing and edited app content",
+      "html_contact_links links 731 140 198 in existing and edited app content",
       false,
       1
     ],
@@ -3370,12 +3298,6 @@
       1
     ],
     [
-      "test/components/map/legacy_map_focus_contract_test.dart",
-      "Legacy confirms first and warm second focus from actual camera",
-      false,
-      1
-    ],
-    [
       "test/components/map/map_admin_grid_version_test.dart",
       "map admin grids preserve optimistic versions",
       false,
@@ -3617,24 +3539,6 @@
     ],
     [
       "test/components/map/map_renderer_host_test.dart",
-      "Legacy hides a retained location while its scene is inactive",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "Legacy place long press uses the shared navigation callback",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "Legacy renders the location supplied by the shared map scene",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
       "configured provider failure switches layer and attribution to OSM",
       false,
       1
@@ -3647,12 +3551,6 @@
     ],
     [
       "test/components/map/map_renderer_host_test.dart",
-      "keeps offline Legacy as an explicit supported renderer",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
       "keeps the concrete surface warm while its tab is inactive",
       false,
       1
@@ -3660,30 +3558,6 @@
     [
       "test/components/map/map_renderer_host_test.dart",
       "map renderers allow the maximum supported interaction zoom",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "online Legacy overzooms without requesting deeper raster tiles",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "online maps resolve to the legacy Live View renderer",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "selects exactly the configured renderer",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_renderer_host_test.dart",
-      "web always resolves to the legacy Live View renderer",
       false,
       1
     ],
@@ -4007,24 +3881,6 @@
     ],
     [
       "test/components/map/map_unit_test.dart",
-      "map_renderer_benchmark_override benchmark override can select the retained legacy renderer",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "map_renderer_benchmark_override release builds always preserve the configured renderer",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "map_renderer_benchmark_override unknown benchmark renderer is rejected",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
       "map_viewport_coordinator readiness belongs to the currently attached map surface",
       false,
       1
@@ -4163,43 +4019,13 @@
     ],
     [
       "test/components/map/map_unit_test.dart",
-      "offline_map_configuration Legacy uses the shared manifest when present and keeps old URLs valid",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "offline_map_configuration both renderers follow the same force-offline and connectivity policy",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
       "offline_map_configuration configured renderer uses offline mode only when required",
       false,
       1
     ],
     [
       "test/components/map/map_unit_test.dart",
-      "offline_map_configuration disconnected explicit invalid configuration surfaces an error",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "offline_map_configuration exposes only the selected renderer contract",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
       "offline_map_configuration forced offline map never exposes the online renderer while probing connectivity",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "offline_map_configuration initialization is skipped only for an untouched online-only layer",
       false,
       1
     ],
@@ -4212,12 +4038,6 @@
     [
       "test/components/map/map_unit_test.dart",
       "offline_map_configuration missing authoritative map settings never fall back to public tiles",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "offline_map_configuration online startup retains the selected Legacy contract for instant switch",
       false,
       1
     ],
@@ -4314,24 +4134,6 @@
     [
       "test/components/map/map_unit_test.dart",
       "warm_map_lifecycle first and second visits retain one surface and complete on Back",
-      false,
-      1
-    ],
-    [
-      "test/components/map/map_unit_test.dart",
-      "web_map_import_boundary web map graph excludes native MBTiles implementation",
-      false,
-      1
-    ],
-    [
-      "test/components/map/mbtiles_vector_tile_provider_test.dart",
-      "reads an XYZ request from the TMS MBTiles row",
-      false,
-      1
-    ],
-    [
-      "test/components/map/mbtiles_vector_tile_provider_test.dart",
-      "reports a missing tile as a non-retryable provider error",
       false,
       1
     ],
@@ -6239,7 +6041,7 @@
     ],
     [
       "test/components/speakers/speakers_unit_test.dart",
-      "speakers_mapping CounselingFeature config legacy \"speakers\" code has no special class \u2192 SimpleFeature",
+      "speakers_mapping CounselingFeature config legacy \"speakers\" code has no special class → SimpleFeature",
       false,
       1
     ],
@@ -8348,6 +8150,102 @@
       "loading is visible and disposed response cannot update picker",
       false,
       1
+    ],
+    [
+      "test/components/features/map_feature_test.dart",
+      "Map bundle configuration MapLibre cannot be saved without a bundle manifest",
+      false,
+      1
+    ],
+    [
+      "test/components/features/map_feature_test.dart",
+      "Map bundle configuration Online base mode does not require an offline contract",
+      false,
+      1
+    ],
+    [
+      "test/components/features/map_feature_test.dart",
+      "Map bundle configuration occasion settings selects an explicit base map mode",
+      false,
+      1
+    ],
+    [
+      "test/components/map/legacy_map_focus_contract_test.dart",
+      "Raster confirms first and warm second focus from actual camera",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "Raster hides a retained location while its scene is inactive",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "Raster place long press uses the shared navigation callback",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "Raster renders the location supplied by the shared map scene",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "online raster supports the shared maximum zoom",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "online raster overzooms without requesting deeper raster tiles",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "online maps resolve to the raster renderer",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "native offline maps use MapLibre",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_renderer_host_test.dart",
+      "web always resolves to the online raster renderer",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_unit_test.dart",
+      "offline_map_configuration forced offline without a manifest fails for either connectivity state",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_unit_test.dart",
+      "offline_map_configuration only a manifest configures the offline map",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_unit_test.dart",
+      "offline_map_configuration initializes configured or forced bundles only",
+      false,
+      1
+    ],
+    [
+      "test/components/map/map_unit_test.dart",
+      "offline_map_configuration online startup retains its manifest for an offline switch",
+      false,
+      1
     ]
   ],
   "migrations": [
@@ -9581,6 +9479,390 @@
       ],
       "reason": "The historical test recreated an unused order-insensitive algorithm. Production before this migration already compares the ordered (id, price) sequence. The same reversed-order scenario now asserts the actual existing dirty-state contract; the other eight scenarios remain intact and use the extracted production function.",
       "evidence": "ProductsDialog._hasUnsavedChanges before wave 3b: ListEquality<(int?, double?)> over _orig/_current in sequence. New sameProductSelection is called by that real production getter. The unused test-only extension is deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer Legacy cannot be saved without its complete map contract",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer MapLibre cannot be saved without a bundle manifest",
+        false
+      ],
+      "to": [
+        "test/components/features/map_feature_test.dart",
+        "Map bundle configuration MapLibre cannot be saved without a bundle manifest",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer Online base mode does not require an offline contract",
+        false
+      ],
+      "to": [
+        "test/components/features/map_feature_test.dart",
+        "Map bundle configuration Online base mode does not require an offline contract",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer complete pre-migration offline contract stays on Legacy",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer explicit Legacy survives an empty-configuration round trip",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer missing configuration defaults to MapLibre",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer occasion settings selects an explicit base map mode",
+        false
+      ],
+      "to": [
+        "test/components/features/map_feature_test.dart",
+        "Map bundle configuration occasion settings selects an explicit base map mode",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer parses and serializes both renderer values",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer rejects unknown renderer instead of falling back",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer renderer switch preserves both rollback configurations",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/features/map_feature_test.dart",
+        "OfflineMapRenderer three base modes map onto the compatible wire fields",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/legacy_map_focus_contract_test.dart",
+        "Legacy confirms first and warm second focus from actual camera",
+        false
+      ],
+      "to": [
+        "test/components/map/legacy_map_focus_contract_test.dart",
+        "Raster confirms first and warm second focus from actual camera",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Legacy hides a retained location while its scene is inactive",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Raster hides a retained location while its scene is inactive",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Legacy place long press uses the shared navigation callback",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Raster place long press uses the shared navigation callback",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Legacy renders the location supplied by the shared map scene",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "Raster renders the location supplied by the shared map scene",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "keeps offline Legacy as an explicit supported renderer",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "online raster supports the shared maximum zoom",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "online Legacy overzooms without requesting deeper raster tiles",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "online raster overzooms without requesting deeper raster tiles",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "online maps resolve to the legacy Live View renderer",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "online maps resolve to the raster renderer",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "selects exactly the configured renderer",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "native offline maps use MapLibre",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_renderer_host_test.dart",
+        "web always resolves to the legacy Live View renderer",
+        false
+      ],
+      "to": [
+        "test/components/map/map_renderer_host_test.dart",
+        "web always resolves to the online raster renderer",
+        false
+      ],
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/mbtiles_vector_tile_provider_test.dart",
+        "reads an XYZ request from the TMS MBTiles row",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/mbtiles_vector_tile_provider_test.dart",
+        "reports a missing tile as a non-retryable provider error",
+        false
+      ],
+      "to": null,
+      "reason": "Native offline maps now use the verified manifest and MapLibre exclusively. Retire obsolete renderer/standalone-download cases; retain raster online behavior and canonical configuration/UI regressions.",
+      "evidence": "lib/components/map/offline_map_configuration.dart, map_renderer_host.dart; test/components/features/map_feature_cases.dart and test/components/map/map_renderer_host_cases.dart. Old resource implementation and renderer override are deleted."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "map_renderer_benchmark_override benchmark override can select the retained legacy renderer",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "map_renderer_benchmark_override release builds always preserve the configured renderer",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "map_renderer_benchmark_override unknown benchmark renderer is rejected",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration Legacy uses the shared manifest when present and keeps old URLs valid",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration both renderers follow the same force-offline and connectivity policy",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration disconnected explicit invalid configuration surfaces an error",
+        false
+      ],
+      "to": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration forced offline without a manifest fails for either connectivity state",
+        false
+      ],
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration exposes only the selected renderer contract",
+        false
+      ],
+      "to": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration only a manifest configures the offline map",
+        false
+      ],
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration initialization is skipped only for an untouched online-only layer",
+        false
+      ],
+      "to": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration initializes configured or forced bundles only",
+        false
+      ],
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration online startup retains the selected Legacy contract for instant switch",
+        false
+      ],
+      "to": [
+        "test/components/map/map_unit_test.dart",
+        "offline_map_configuration online startup retains its manifest for an offline switch",
+        false
+      ],
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/map/map_unit_test.dart",
+        "web_map_import_boundary web map graph excludes native MBTiles implementation",
+        false
+      ],
+      "to": null,
+      "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
+      "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
     }
   ],
   "baseline_inventory_corrections": [

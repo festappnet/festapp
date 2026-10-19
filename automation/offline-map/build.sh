@@ -46,7 +46,7 @@ MAX_ZOOM=""
 SOURCE_URL="$DEFAULT_SOURCE_URL"
 STYLE_MANIFEST=""
 RESUME_EXISTING=false
-BUNDLE_MODE="dual_renderer"
+BUNDLE_MODE="mbtiles"
 GLYPH_PROFILE="audited"
 MAX_BUNDLE_BYTES=0
 
@@ -186,12 +186,6 @@ jq -e --argjson allowed "$ALLOWED_SOURCE_LAYERS" '
 
 SUPABASE_ENDPOINT="${SUPABASE_URL:-}"
 SUPABASE_PUBLIC_KEY="${SUPABASE_ANON_KEY:-}"
-if [[ -z "$SUPABASE_ENDPOINT" ]]; then
-  SUPABASE_ENDPOINT="$(sed -n 's/^SUPABASE_URL=//p' "$REPO_ROOT/automation/project.conf")"
-fi
-if [[ -z "$SUPABASE_PUBLIC_KEY" ]]; then
-  SUPABASE_PUBLIC_KEY="$(sed -n 's/^SUPABASE_ANON_KEY=//p' "$REPO_ROOT/automation/project.conf")"
-fi
 if [[ -z "$SUPABASE_ENDPOINT" || -z "$SUPABASE_PUBLIC_KEY" ]]; then
   echo "SUPABASE_URL and SUPABASE_ANON_KEY are required for the live bounds gate" >&2
   exit 1
@@ -318,7 +312,7 @@ sprite_json_1x|sprites/sprites.json|application/json
 sprite_png_1x|sprites/sprites.png|image/png
 sprite_json_2x|sprites/sprites@2x.json|application/json
 sprite_png_2x|sprites/sprites@2x.png|image/png"
-if [[ "$BUNDLE_MODE" == "dual_renderer" ]]; then
+if [[ "$BUNDLE_MODE" == "mbtiles" ]]; then
   CORE_ASSETS="mbtiles|$MBTILES_NAME|application/vnd.sqlite3
 $CORE_ASSETS"
 fi

@@ -1,350 +1,102 @@
 # Festapp
 
-Festapp is a cross-platform mobile and web app for festivals, conferences, and
-events. It provides organizers and attendees with powerful tools like schedules,
-maps, notifications, tickets, forms, and much more.
+Festapp is an event platform for festivals, conferences and community events.
+Organizers manage registration, tickets, payments and staffing; attendees use
+schedules, maps, news and their personal program on Android, iOS and the web.
 
-Festapp powers [**vstupenky.online**](https://vstupenky.online) — a full-featured
-ticketing and eshop platform for event organizers to sell tickets, manage orders,
-and handle payments.
+It also powers [vstupenky.online](https://vstupenky.online), the ticketing and
+registration service. Try the event app at [live.festapp.net](https://live.festapp.net)
+or visit [festapp.net](https://festapp.net).
 
-- Try now on [live.festapp.net](https://live.festapp.net) or install to your
-  phone [here](https://live.festapp.net/#/install).
-- Visit us on website: [festapp.net](https://festapp.net)</br></br>
-  ![Alt text](repo-data/festapp-showcase.png?raw=true "Showcase")
+![Festapp app screens](repo-data/festapp-showcase.png?raw=true)
 
----
+## What it does
 
-## Features
+- Event schedules, workshops, maps, news, songbooks and group games
+- Registration forms, seat selection, ticket PDFs and QR scanning
+- Order administration, bank payment matching and email communication
+- Volunteer shifts, participant groups, accommodation and reception
+- Tenant branding and feature settings for each occasion
 
-- Available on Android, iOS, and Web.
-- Previously synchronized event data is available offline (Android, iOS, Web/PWA);
-  availability depends on the selected sync capability and populated local cache.
-- Dark and light modes are available.
-- **Volunteer Management**: Dedicated staffing system for managing tasks,
-  shifts, and assignments.
+Previously synchronized data can be read offline. Authentication, payments and
+server-confirmed writes need a connection; native offline maps require a prepared
+map bundle. See [features and screenshots](docs/overview/features.md) for more.
 
----
+## Start here
 
-- Schedule
-  - Timeline – Schedule overview by time and day.
-  - Event detail – Includes: Time, Place (with link), Content, Subevents, Sign
-    In/Sign Out button.
-  - Timetable – View event entries on the axes of Time and Place.
-  - My schedule – Attendee can add event entries to their own list.
+| I want to... | Read |
+|---|---|
+| Develop the app locally | [Developer and tenant setup](docs/setup/howto.md) |
+| Run an isolated test database | [Local database development](docs/setup/local_development.md) |
+| Prepare a backend server | [Server deployment](docs/setup/server_deployment.md) |
+| Publish a tenant web release | [Cloudflare deployment](automation/cloudflare/README.md) |
+| Configure Cloudflare services | [Cloudflare infrastructure](docs/setup/cloudflare.md) |
+| Build or publish mobile apps | [Android](automation/release/android_play_release.md), [iOS](automation/release/ios_howto.md) |
+| Change code and run checks | [Contributing](CONTRIBUTING.md) |
 
-<p align="center">
-  <img src="repo-data/screenshots/schedule2.png?raw=true" alt="schedule2" title="schedule2" width="200" />
-  <img src="repo-data/screenshots/schedule1.png?raw=true" alt="schedule1" title="schedule1" width="200" />
-  <img src="repo-data/screenshots/schedule5.png?raw=true" alt="schedule5" title="schedule5" width="200" />
-  <img src="repo-data/screenshots/schedule3.png?raw=true" alt="schedule3" title="schedule3" width="200" />
-</p>
+## How it fits together
 
-- Map
-  - Map with current user location, places, and paths with custom icons and
-    descriptions. It is also possible to set up an offline map (Android, iOS).
+Flutter handles the mobile app and web administration. A separate vanilla
+JavaScript client handles public forms, checkout and the browser scanner.
+PostgreSQL RPCs own business rules and permissions. Deno Edge Functions connect
+those commands to email, ticket generation and external services.
 
-<p align="center">
-  <img src="repo-data/screenshots/map1.png?raw=true" alt="map1" title="map1" width="220" />
-  <img src="repo-data/screenshots/map2.png?raw=true" alt="map2" title="map2" width="220" />
-  <img src="repo-data/screenshots/map4.png?raw=true" alt="map4" title="map4" width="220" />
-</p>
+Production uses self-hosted Supabase at `https://api.festapp.net`. Cloudflare
+Pages hosts the combined web bundle; Workers and R2 provide image and sync
+services. Server setup, application configuration and web publication are
+separate steps.
 
-- News/Notifications
-  - Receive news and push notifications relevant to the event.
-  - Push notifications are supported on all platforms – Android, iOS, and Web.
+| Path | Contents |
+|---|---|
+| `lib/` | Flutter application and feature modules |
+| `packages/festapp_core/` | Portable Dart domain and sync contracts |
+| `web_client/` | Public JavaScript client |
+| `database/` | Canonical SQL functions, schema sources and tests |
+| `supabase/` | Local baseline, forward migrations and Deno functions |
+| `workers/` | Cloudflare image, sync and monitoring services |
+| `automation/` | Configuration, builds, deployments and backend operations |
+| `docs/` | Setup guides, architecture, runbooks and historical records |
 
-<p align="center">
-  <img src="repo-data/screenshots/news3.png?raw=true" alt="news3" title="news3" width="220" />
-  <img src="repo-data/screenshots/news2.png?raw=true" alt="news2" title="news2" width="220" />
-</p>
+Shared code lives on `main`. Production branches carry approved tenant overlays.
+`automation/project.conf` supplies public configuration; `apply_config.sh`
+generates the corresponding app and platform files. Private credentials stay
+outside Git and browser assets. A tenant's activation document identifies its
+live backend, organization and generation.
 
-- Info/Songbook/Game
-  - Various information about the event, a Songbook with font-size
-    increase/decrease, and a groups-based code-guessing game.
+For details, use the [documentation map](docs/README.md),
+[architecture context](docs/architecture/ai_context.md) and
+[tenant overlay policy](docs/architecture/tenant_overlays.md).
 
-- Administration/Feature settings
-  - Overview of all event data, map, groups, users, rights, and other settings.
-  - Setup of multiple events.
+## Local development
 
-- User/Companions/Workshops
-  - User profile with personal data.
-  - Ability to import users from a table.
-  - Creation of events with limited capacity (workshops) and creation of
-    companions.
-  - QR code for workshop entry verification.
-
-<p align="center">
-  <img src="repo-data/screenshots/user1.png?raw=true" alt="user1" title="user1" width="200" />
-  <img src="repo-data/screenshots/user3.png?raw=true" alt="user3" title="user3" width="200" />
-  <img src="repo-data/screenshots/user4.png?raw=true" alt="user4" title="user4" width="200" />
-  <img src="repo-data/screenshots/user5.png?raw=true" alt="user5" title="user5" width="200" />
-</p>
-
-- Ticket/Form/Seat reservation
-  - Support for creation of custom forms (similar to Google Forms) with priced
-    products.
-  - Creation of custom tickets with custom graphics.
-  - Creation of a seat reservation component.
-
-<p align="center">
-  <img src="repo-data/screenshots/form1.png?raw=true" alt="form1" title="form1" width="200" />
-  <img src="repo-data/screenshots/form3.png?raw=true" alt="form3" title="form3" width="200" />
-  <img src="repo-data/screenshots/form4.png?raw=true" alt="form4" title="form4" width="200" />
-  <img src="repo-data/screenshots/form5.png?raw=true" alt="form5" title="form5" width="200" />
-</p>
-
-- Orders/Transactions
-  - Order management, bank payment synchronization, automated sending, and
-    creation of paid tickets.
-
-- Email Templates
-  - Customization of all email templates.
-
-<p align="center">
-  <img src="repo-data/screenshots/email1.png?raw=true" alt="email1" title="email1" width="220" />
-  <img src="repo-data/screenshots/email2.png?raw=true" alt="email2" title="email2" width="220" />
-  <img src="repo-data/screenshots/email3.png?raw=true" alt="email3" title="email3" width="220" />
-</p>
-
-- Ticket scanning
-  - QR-code-based ticket verification.
-
-Developer references for current features:
-[Google sign-in](docs/operations/auth/google-sign-in.md),
-[ticket layout editor](lib/components/ticket_layout/README.md),
-[occasion reports](lib/components/eshop/README.md#occasion-report-snapshot), and
-[BankSync account management](lib/components/bank_accounts/README.md).
-
----
-
-## Architecture
-
-This project is built using the [Flutter](https://github.com/flutter/flutter)
-framework and the Dart programming language.
-
-The backend uses the self-hosted [Supabase](https://github.com/supabase/supabase)
-stack at `https://api.festapp.net`. The production switch completed on
-2026-09-10; former cloud sources are retained for history and reconciliation,
-not routine application writes or migrations. See the
-[cutover record](docs/operations/work-items/completed/canonical-self-hosted-cutover-2026-09-02.md).
-It includes:
-
-- Deno functions written in TypeScript
-- PostgreSQL scripts for database operations
-
-```mermaid
-graph TD
-    A["Flutter App<br/>(Android / iOS / Web)"] -->|Supabase SDK| S
-    B["Web Client<br/>(Vanilla JS)<br/>Forms, Blueprint"] -->|REST API / RPC| S
-    C["Cloudflare Pages Worker<br/>routing, SEO, sitemap"] -->|REST API / RPC| S
-    W["Cloudflare Workers<br/>client sync, image control"] -->|RPC| S
-    W --> R2["Cloudflare R2<br/>sync and image objects"]
-    A -->|immutable sync artifacts| W
-
-    S["Supabase Platform"]
-    S --- Auth
-    S --- Storage
-    S --- EF["Edge Functions (Deno)"]
-    S --- RT[Realtime]
-    S --- PG["PostgreSQL<br/>SQL functions (RPC) · RLS · SECURITY DEFINER"]
-```
-
-**Key Architectural Highlights**:
-
-- **Offline data**: Client Sync v1 uses versioned projections in `ClientSyncStore`;
-  the legacy path populates `OfflineDataService`. Cached content can be read
-  offline after synchronization. Initial loading, authentication, payments and
-  server-confirmed writes require a connection. See the
-  [service flows](docs/architecture/SERVICES.md).
-- **SQL-Centric Logic**: A significant portion of business logic (orders, games,
-  permissions) resides in **PostgreSQL Functions (RPC)** rather than Dart code.
-- **Multi-Tenant**: Supports multiple organizations, units, and occasions with
-  role-based access control managed by `RightsService`.
-- **Dual Frontend**: The Flutter app serves mobile/web, while a standalone
-  vanilla JS web client (`web_client/`) handles public-facing forms, blueprints,
-  and ticket ordering.
-
-> [!TIP] **For Developers & AI Agents**:\
-> Please consult these architectural documents:
->
-> - **[docs/architecture/ai_context.md](docs/architecture/ai_context.md)** -
->   Architecture overview, directory structure, and component patterns
-> - **[docs/architecture/SERVICES.md](docs/architecture/SERVICES.md)** -
->   Critical data services (RightsService, OfflineDataService, SynchroService)
-> - **[docs/architecture/database.md](docs/architecture/database.md)** -
->   Database structure, SQL functions, and security patterns
-> - **[docs/backend/edge_functions.md](docs/backend/edge_functions.md)** -
->   Supabase Edge Functions reference
->
-> Also see: **[CONTRIBUTING.md](CONTRIBUTING.md)** for testing, security
-> checklist, and commit workflow.
-
----
-
-## Configuration
-
-The project uses a **centralized configuration system** driven by
-`automation/project.conf`. This file is the single source of truth for:
-
-- **Deployment**: Domain settings (`DOMAIN`, `CNAME`).
-- **Application**: Public Supabase client settings (`SUPABASE_URL`, `SUPABASE_ANON_KEY`),
-  Organization ID, and integration links.
-- **Theme**: Brand colors (`THEME_SEED_1`...`4`) which are automatically applied
-  to both Flutter (`app_config.dart`) and Web Client (`theme_config.css`).
-- **Fonts**: Font family configuration (`FONT_FAMILY_BASE`) and form scaling.
-- **Version**: Application version (`VERSION`), propagating to `pubspec.yaml`,
-  `package.json`, and the app.
-
-For a production tenant, require `BACKEND_ACTIVATION_PHASE=canonical` in
-its `automation/project.conf` and verify the published
-`WEB_LINK/backend-activation.json`: tenant ID, canonical generation and endpoint
-must match the selected configuration. Verify
-`BACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID` and any `FORCE_OCCASION_LINK`
-in that same canonical database before reading event or user data. Stop on a
-mismatch. `SUPABASE_URL` can be a compiled legacy mobile fallback; neither it
-nor a project ref in `.env.local` selects the live database. The shared main
-configuration is a development template, not evidence of a tenant's activation.
-
-Private credentials stay outside `project.conf` and generated client assets.
-See [tenant setup](docs/setup/howto.md) for private-input boundaries.
-
-### Applying Configuration
-
-After editing `automation/project.conf`, apply changes by running:
+Install Git, Node.js/npm and FVM. Use the Flutter version specified by
+`FLUTTER_VERSION` in `automation/project.conf`. From the repository root:
 
 ```bash
-./automation/apply_config.sh
-```
-
-This script automatically:
-
-1. Updates all relevant configuration files.
-2. Auto-detects and installs fonts from `automation/fonts/`.
-3. Synchronizes version numbers.
-
----
-
-## Setup
-
-For a helpful step-by-step guide on creating your own app, see
-[docs/setup/howto.md](docs/setup/howto.md).
-
----
-
-## Deployments
-
-Festapp deployments are tenant-specific. Shared application and release tooling
-live on `main`; each `prod/*` branch contains only its approved configuration
-and brand overlay. Web releases use direct Cloudflare Pages upload and are never
-triggered by a branch push alone. See
-[tenant overlays](docs/architecture/tenant_overlays.md) and the
-[Cloudflare deployment guide](automation/cloudflare/README.md).
-
----
-
-## Latest Development
-
-See **[CHANGELOG.md](CHANGELOG.md)** for the full development history.
-
-Follow updates on the [Festapp WhatsApp Channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R) (in Czech).
-
----
-
-## Testing
-
-Run the full test suite with a single command:
-
-```bash
-./automation/test_all.sh
-```
-
-This runs Web Client, database, Flutter, Edge Function, integration and
-automation tests. Environment-dependent suites report when required local tools
-or credentials are absent. Database tests execute inside transactions and
-auto-rollback, so no fixture data is retained.
-
-For more details on testing, deployment, and the security audit checklist, see
-**[CONTRIBUTING.md](CONTRIBUTING.md)**.
-
----
-
-## Development
-
-### Prerequisites
-
-- **FVM** (Flutter Version Management): `FLUTTER_VERSION` in
-  `automation/project.conf` is the canonical SDK pin; `apply_config.sh`
-  propagates it to FVM and editor configuration.
-  - Install FVM: `dart pub global activate fvm`
-  - Install project SDK: `fvm install`
-
-### Running the Flutter App
-
-Always prefix flutter/dart commands with `fvm`:
-
-```bash
-# Get dependencies
+fvm install
 fvm flutter pub get
-
-# Run on Chrome
-fvm flutter run -d chrome
-
-# Run code generation
-fvm dart run build_runner build --delete-conflicting-outputs
+(cd packages/festapp_core && fvm dart pub get)
+npm ci --prefix web_client
 ```
 
-### Running the Web Client
-
-The standalone web client (forms, blueprints, ticket ordering) lives in `web_client/`:
+Complete the [configuration and backend setup](docs/setup/howto.md) before
+running against event data. Then choose a frontend:
 
 ```bash
-cd web_client
-npm install
-npm run dev    # Development server
-npm test       # Run tests
+fvm flutter run -d chrome
+# Or, in another terminal:
+npm run dev --prefix web_client
 ```
 
-### Project Structure
+For client checks, run `./automation/test_client.sh`. JavaScript checks use
+`npm test --prefix web_client`; SQL tests require the isolated local database.
+The wider `test_all.sh` wrapper has environment-dependent skips and warning-only
+lanes, so its exit status alone is not an all-suite pass. The exact commands and
+limits are in [Contributing](CONTRIBUTING.md#1-testing-workflow).
 
-```
-festapp/
-├── lib/                    # Flutter app (Dart)
-│   ├── components/         # Feature modules
-│   ├── data_services/      # Business logic & data access
-│   ├── services/           # Helper services (time, toast, notifications)
-│   └── database_tables/    # Table name constants (Tb class)
-├── database/               # PostgreSQL logic
-│   ├── functions/          # SQL functions (organized by domain)
-│   ├── migrations_legacy/  # Historical pre-Supabase upgrade fragments
-│   ├── policies/           # Row Level Security policies
-│   ├── tables/             # Table definitions
-│   ├── tests/              # SQL regression tests
-│   └── seed/               # Initial data
-├── supabase/
-│   ├── baseline/           # Versioned schema-only local bootstrap
-│   ├── migrations/         # Active forward migrations
-│   └── functions/          # Deno Edge Functions (TypeScript)
-├── workers/                # Cloudflare Workers (sync, images, monitoring)
-├── web_client/             # Standalone JS web client
-│   ├── src/components/     # UI components (forms, blueprint, ticket ordering)
-│   ├── src/services/       # Client services (auth, router, supabase, theme, localization, etc.)
-│   ├── scripts/            # Build & test utilities
-│   └── tests/              # Unit and integration tests
-├── automation/             # Config, build, deploy scripts
-│   ├── project.conf        # Single source of truth for configuration
-│   ├── apply_config.sh     # Propagates config to all targets
-│   └── hetzner-supabase/   # Self-hosted Supabase tooling and runbooks
-└── netlify/                # Legacy retirement adapters and regression tests
-```
+## Project history
 
-For detailed project architecture and internal documentation, please refer to
-the **[documentation map](docs/README.md)** and
-**[AI context](docs/architecture/ai_context.md)**.
-
----
-
-## About
-
-The app was originally developed by a team of volunteers for
-[Absolventský Velehrad](https://absolventskyvelehrad.cz) event in 2023.
+Festapp began with volunteers building an app for
+[Absolventský Velehrad](https://absolventskyvelehrad.cz) in 2023.
+[CHANGELOG.md](CHANGELOG.md) records development history. Updates are also
+shared in the [Czech WhatsApp channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R).

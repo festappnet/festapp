@@ -1,39 +1,19 @@
-# Information Component
+# Information, songbook and game boundaries
 
-**Purpose**: A CMS (Content Management System) for static pages AND the "Game"
-logic.
+Ordinary information and songs can read previously synchronized content through
+`OfflineDataService`, which delegates to Client Sync projections when selected.
+A cached page does not make a game guess an offline operation.
 
-## Core Concepts
+`DbInformation.gameGuess` selects `game_guess_client_sync_v1` or the legacy
+`game_guess` RPC. SQL validates guesses and membership; the client renders the
+returned domain result. Keep guesses on that command boundary.
 
-### 1. CMS Pages (`InformationModel`)
+Answers live in `information_hidden`. Public participant projections must not
+include them. Authorized editing does load hidden configuration, so "no client
+can read answers" is not the security contract. Check both the editor boundary
+and public/private projections when changing this data flow.
 
-- **Type**: Standard info pages.
-- **Offline**: Content is cached via `OfflineDataService`.
-
-### 2. The Game (`game_guess`)
-
-If `type == "game"`, the page becomes a game checkpoint.
-
-- **RPC**: `game_guess`
-  (`database/functions/others/game_guess.sql`)
-- **Logic**:
-  - Users enter a code/password.
-  - SQL validates it against the hidden answer.
-  - Returns specific error codes (4031: Not in occasion, 4001: Wrong answer).
-  - **Anti-Cheat**: Logic is entirely server-side to prevent inspecting the app
-    for answers.
-
-### 3. Songbook Mode (`type == "song"`)
-
-A specialized view for song lyrics and chords.
-
-- **Location**: `lib/components/information/song/`
-- **Offline**: Heavily relies on `OfflineDataService` so it works at campfires
-  without signal.
-- **UI**: Features a dedicated **Dark Mode** toggle and font-size scalers
-  (`SongDialog`) independent of the main app theme.
-
-## Critical Implementation Details
-
-- **Hidden Data**: Game answers are stored in `information_hidden` table, _not_
-  sent to the client. Only the `game_guess` RPC can access them.
+Song display uses the specialized `SongDialog` for its own reading theme,
+font size and scrolling. Shared dialog/editor changes must preserve those
+controls. Cache behavior is documented in
+[Services](../../../docs/architecture/SERVICES.md).

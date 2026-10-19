@@ -7,7 +7,7 @@ Public image bytes and authenticated image operations are separate contracts.
 | Plane | Host | Checked-in route | Conditional target |
 |---|---|---|---|
 | Default public data | `img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images` | Direct public R2 domain after P3 |
-| Project A public data | `a.img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images-a` | Direct public R2 domain after P3 |
+| Project A public data | `a.img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images` | Direct public R2 domain after P3 |
 | AKH public data | `akh.img.festapp.net` | `festapp-image-worker` -> R2 `festapp-images-akhweb` | No direct-domain completion claimed |
 | Authenticated control | `image-api.festapp.net` | `festapp-image-worker` | Worker control plane |
 
@@ -37,7 +37,7 @@ AKH project's authenticated-only `get_can_manage_images()` RPC, accepts only
 
 Slunovrat uses its explicit canonical `https://api.festapp.net` configuration,
 the Festapp public bucket `festapp-images` and `img.festapp.net` for new assets.
-Existing canonical Storage URLs are unchanged. Its public uploads retain the
+Old API Storage URLs are retired. Its public uploads retain the
 owner-scoped `check_upload_permission` and `add_image_record` RPCs; private
 operations are disabled. Both `slunovrat.festapp.net` and
 `app.festivalslunovrat.cz` are exact allowed control origins. See the
@@ -45,8 +45,8 @@ operations are disabled. Both `slunovrat.festapp.net` and
 
 ## Required bindings and secrets
 
-- R2: `IMAGES_BUCKET`, `IMAGES_BUCKET_A`, `IMAGES_BUCKET_AKHWEB`, `IMAGES_PRIVATE_BUCKET`,
-  `IMAGES_PRIVATE_BUCKET_A`.
+- R2: `IMAGES_BUCKET`, `IMAGES_BUCKET_AKHWEB`, `IMAGES_PRIVATE_BUCKET`.
+  Default, A and Slunovrat share the canonical Festapp bucket pair; AKH remains separate.
 - Registry: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_URL_A`,
   `SUPABASE_ANON_KEY_A`, `SUPABASE_URL_AKHWEB`, `SUPABASE_ANON_KEY_AKHWEB`.
 - Slunovrat public canonical configuration: `SUPABASE_URL_SLUNOVRAT`,
@@ -57,9 +57,19 @@ operations are disabled. Both `slunovrat.festapp.net` and
   only for the `festapp.net` zone.
 - Browser control CORS: `CONTROL_ALLOWED_ORIGINS`, an exact comma-separated list.
 
-`PRIVATE_MIGRATION_FALLBACK=enabled` is a temporary P1 reader only. It reads the
-new private bucket first and instruments an old-public-bucket fallback. Remove it
-after copy parity and zero-source proof.
+Private reads use only the selected private bucket. The disabled P1 migration
+fallback and its configuration were removed from source on 2026-10-16; the
+existing cutover receipts recorded zero private source objects. A missing private
+object returns 404 and never reads the public bucket.
+
+New Flutter image copies and uploads use the image control Worker and its SQL
+admission. The production reference rewrite, canonical bucket pair and scoped
+adapters are active; the old Storage runtime, source volume and redundant
+buckets have been retired. Old API Storage URLs return 410; they are not a
+fallback reader or writer. Existing canonical R2 `a` URLs translate at the Worker
+boundary. AKH keeps its independent bucket/Auth/DB contract. Follow the current
+[storage authority and cleanup receipts](../operations/supabase-self-hosted/storage-authority.md)
+for production evidence rather than replaying the former copy/adoption gates.
 
 ## Canonical upload processing
 
@@ -102,8 +112,7 @@ must remain disabled until the source allowlist and negative P2 probes succeed.
 
 ```bash
 cd workers/image-worker
-npm run typecheck
-npm test
+npm ci
 ./deploy.sh --check
 ```
 

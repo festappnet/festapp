@@ -1,25 +1,10 @@
 import 'package:fstapp/components/features/map_feature.dart';
 
-sealed class OfflineMapContract {
-  const OfflineMapContract();
-}
-
-final class MapLibreOfflineMapContract extends OfflineMapContract {
+/// The only supported offline map source: an integrity-checked bundle manifest.
+final class MapLibreOfflineMapContract {
   final String manifestUrl;
 
   const MapLibreOfflineMapContract({required this.manifestUrl});
-}
-
-final class LegacyOfflineMapContract extends OfflineMapContract {
-  final String packageUrl;
-  final String styleUrl;
-  final String sourceName;
-
-  const LegacyOfflineMapContract({
-    required this.packageUrl,
-    required this.styleUrl,
-    required this.sourceName,
-  });
 }
 
 sealed class OfflineMapStartupDecision {
@@ -27,88 +12,42 @@ sealed class OfflineMapStartupDecision {
 }
 
 final class OnlineMapStartup extends OfflineMapStartupDecision {
-  final OfflineMapContract? availableOfflineContract;
+  final MapLibreOfflineMapContract? availableOfflineContract;
 
   const OnlineMapStartup({required this.availableOfflineContract});
 }
 
 final class ReadyOfflineMapStartup extends OfflineMapStartupDecision {
-  final OfflineMapContract contract;
+  final MapLibreOfflineMapContract contract;
 
   const ReadyOfflineMapStartup({required this.contract});
 }
 
 final class InvalidOfflineMapStartup extends OfflineMapStartupDecision {
-  final OfflineMapRenderer renderer;
-
-  const InvalidOfflineMapStartup({required this.renderer});
+  const InvalidOfflineMapStartup();
 }
 
-/// Typed snapshot of the offline portion of a map feature configuration.
-///
-/// It is the sole policy seam between raw occasion JSON and map startup. Both
-/// renderer contracts can be retained for rollback, while callers only receive
-/// the currently selected contract.
+/// Canonical policy between occasion configuration and offline map startup.
 final class OfflineMapConfiguration {
-  final OfflineMapRenderer renderer;
-  final bool hasExplicitRenderer;
   final bool forceOffline;
-  final MapLibreOfflineMapContract? mapLibre;
-  final LegacyOfflineMapContract? legacy;
+  final MapLibreOfflineMapContract? selectedContract;
 
   const OfflineMapConfiguration._({
-    required this.renderer,
-    required this.hasExplicitRenderer,
     required this.forceOffline,
-    required this.mapLibre,
-    required this.legacy,
+    required this.selectedContract,
   });
 
-  factory OfflineMapConfiguration.fromLayer(
-    MapLayer layer, {
-    OfflineMapRenderer? renderer,
-  }) {
+  factory OfflineMapConfiguration.fromLayer(MapLayer layer) {
     final manifestUrl = _nonEmpty(layer.offlineMapBundleManifestURL);
     return OfflineMapConfiguration._(
-      renderer: renderer ?? layer.offlineMapRenderer,
-      hasExplicitRenderer: layer.hasExplicitOfflineMapRenderer,
       forceOffline: layer.forceOfflineMap,
-      mapLibre: manifestUrl != null
-          ? MapLibreOfflineMapContract(manifestUrl: manifestUrl)
-          : null,
-      legacy: switch ((
-        _nonEmpty(layer.offlineMapPackageURL),
-        _nonEmpty(layer.offlineMapStyleURL),
-        _nonEmpty(layer.offlineMapLayerName),
-      )) {
-        (final packageUrl?, final styleUrl?, final sourceName?) =>
-          LegacyOfflineMapContract(
-            packageUrl: packageUrl,
-            styleUrl: styleUrl,
-            sourceName: sourceName,
-          ),
-        _ => null,
-      },
+      selectedContract: manifestUrl == null
+          ? null
+          : MapLibreOfflineMapContract(manifestUrl: manifestUrl),
     );
   }
 
-  OfflineMapContract? get selectedContract => switch (renderer) {
-        OfflineMapRenderer.maplibre => mapLibre,
-        OfflineMapRenderer.legacy => legacy,
-      };
-
-  /// Immutable bundle used by the selected renderer when one is configured.
-  /// MapLibre requires it; Legacy consumes the same MBTiles/style assets but
-  /// retains its URL-based contract as a compatibility boundary for occasions
-  /// that predate bundle manifests.
-  MapLibreOfflineMapContract? bundleFor(OfflineMapContract contract) =>
-      switch (contract) {
-        final MapLibreOfflineMapContract mapLibre => mapLibre,
-        LegacyOfflineMapContract() => mapLibre,
-      };
-
-  bool get shouldInitialize =>
-      selectedContract != null || forceOffline || hasExplicitRenderer;
+  bool get shouldInitialize => selectedContract != null || forceOffline;
 
   /// Whether the first frame must avoid the online renderer while the
   /// asynchronous connectivity check is still pending.
@@ -123,8 +62,8 @@ final class OfflineMapConfiguration {
   OfflineMapStartupDecision resolveStartup({required bool hasConnection}) {
     final contract = selectedContract;
     if (contract == null) {
-      return forceOffline || (hasExplicitRenderer && !hasConnection)
-          ? InvalidOfflineMapStartup(renderer: renderer)
+      return forceOffline
+          ? const InvalidOfflineMapStartup()
           : const OnlineMapStartup(availableOfflineContract: null);
     }
     return forceOffline || !hasConnection

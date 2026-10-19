@@ -12,105 +12,51 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  group('OfflineMapRenderer', () {
-    test('missing configuration defaults to MapLibre', () {
-      final layer = MapLayer.fromJson(const {});
-
-      expect(layer.offlineMapRenderer, OfflineMapRenderer.maplibre);
-      expect(layer.hasExplicitOfflineMapRenderer, isFalse);
+  group('Map bundle configuration', () {
+    test('online is the default base mode', () {
+      expect(MapLayer.fromJson(const {}).mapBaseMode, MapBaseMode.online);
     });
 
-    test('complete pre-migration offline contract stays on Legacy', () {
+    test('obsolete renderer and standalone URLs cannot survive a save', () {
       final layer = MapLayer.fromJson({
+        'offlineMapRenderer': 'legacy',
+        'offlineMapPackageURL': 'https://maps.test/old.mbtiles',
+        'offlineMapStyleURL': 'https://maps.test/old-style.json',
+        'offlineMapLayerName': 'openmaptiles',
+        FeatureConstants.offlineMapBundleManifestURL:
+            'https://maps.test/csmostrava2026/manifest.json',
         FeatureConstants.forceOfflineMap: true,
-        FeatureConstants.offlineMapPackageURL: 'https://maps.test/map.mbtiles',
-        FeatureConstants.offlineMapStyleURL: 'https://maps.test/style.json',
-        FeatureConstants.offlineMapLayerName: 'openmaptiles',
       });
-
-      expect(layer.offlineMapRenderer, OfflineMapRenderer.legacy);
-      expect(layer.hasExplicitOfflineMapRenderer, isFalse);
-      expect(layer.mapBaseMode, MapBaseMode.legacy);
-    });
-
-    test('parses and serializes both renderer values', () {
-      for (final renderer in OfflineMapRenderer.values) {
-        final layer = MapLayer.fromJson({
-          FeatureConstants.offlineMapRenderer: renderer.wireValue,
-          FeatureConstants.offlineMapPackageURL:
-              'https://maps.test/map.mbtiles',
-        });
-
-        expect(layer.offlineMapRenderer, renderer);
-        expect(layer.hasExplicitOfflineMapRenderer, isTrue);
-        expect(
-          layer.toJson()[FeatureConstants.offlineMapRenderer],
-          renderer.wireValue,
-        );
+      final serialized = layer.toJson();
+      for (final obsoleteKey in [
+        'offlineMapRenderer',
+        'offlineMapPackageURL',
+        'offlineMapStyleURL',
+        'offlineMapLayerName',
+      ]) {
+        expect(serialized.containsKey(obsoleteKey), isFalse);
       }
+      final restored = MapLayer.fromJson(serialized);
+      expect(restored.mapBaseMode, MapBaseMode.maplibre);
+      expect(restored.offlineMapBundleManifestURL,
+          'https://maps.test/csmostrava2026/manifest.json');
     });
 
-    test('explicit Legacy survives an empty-configuration round trip', () {
-      final layer = MapLayer(offlineMapRenderer: OfflineMapRenderer.legacy);
-
-      final restored = MapLayer.fromJson(layer.toJson());
-
-      expect(restored.offlineMapRenderer, OfflineMapRenderer.legacy);
-    });
-
-    test('rejects unknown renderer instead of falling back', () {
-      expect(
-        () => MapLayer.fromJson(const {
-          FeatureConstants.offlineMapRenderer: 'automatic',
-        }),
-        throwsFormatException,
-      );
-    });
-
-    test('renderer switch preserves both rollback configurations', () {
+    test('switching base mode preserves the canonical offline bundle', () {
       final layer = MapLayer(
-        offlineMapRenderer: OfflineMapRenderer.maplibre,
         offlineMapBundleManifestURL: 'https://maps.test/manifest.json',
-        offlineMapPackageURL: 'https://maps.test/map.mbtiles',
-        offlineMapStyleURL: 'https://maps.test/style.json',
-        offlineMapLayerName: 'openmaptiles',
       );
-
-      layer.offlineMapRenderer = OfflineMapRenderer.legacy;
-      final restored = MapLayer.fromJson(layer.toJson());
-
-      expect(restored.offlineMapRenderer, OfflineMapRenderer.legacy);
-      expect(
-        restored.offlineMapBundleManifestURL,
-        'https://maps.test/manifest.json',
-      );
-      expect(restored.offlineMapPackageURL, 'https://maps.test/map.mbtiles');
-      expect(restored.offlineMapStyleURL, 'https://maps.test/style.json');
-      expect(restored.offlineMapLayerName, 'openmaptiles');
-    });
-
-    test('three base modes map onto the compatible wire fields', () {
-      final layer = MapLayer(offlineMapRenderer: OfflineMapRenderer.legacy);
-
-      expect(layer.mapBaseMode, MapBaseMode.online);
-
       layer.mapBaseMode = MapBaseMode.maplibre;
       expect(layer.forceOfflineMap, isTrue);
-      expect(layer.offlineMapRenderer, OfflineMapRenderer.maplibre);
-
-      layer.mapBaseMode = MapBaseMode.legacy;
-      expect(layer.forceOfflineMap, isTrue);
-      expect(layer.offlineMapRenderer, OfflineMapRenderer.legacy);
-
       layer.mapBaseMode = MapBaseMode.online;
       expect(layer.forceOfflineMap, isFalse);
-      expect(layer.offlineMapRenderer, OfflineMapRenderer.legacy);
+      expect(MapLayer.fromJson(layer.toJson()).offlineMapBundleManifestURL,
+          'https://maps.test/manifest.json');
     });
 
     testWidgets('occasion settings selects an explicit base map mode',
         (tester) async {
       final feature = MapFeature.getDefault();
-      feature.offlineMapLayer.offlineMapRenderer = OfflineMapRenderer.legacy;
 
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(
@@ -135,8 +81,8 @@ void main() {
 
       expect(feature.offlineMapLayer.forceOfflineMap, isTrue);
       expect(
-        feature.offlineMapLayer.offlineMapRenderer,
-        OfflineMapRenderer.maplibre,
+        feature.offlineMapLayer.mapBaseMode,
+        MapBaseMode.maplibre,
       );
     });
 
@@ -177,55 +123,6 @@ void main() {
       expect(formKey.currentState!.validate(), isTrue);
     });
 
-    testWidgets('Legacy cannot be saved without its complete map contract',
-        (tester) async {
-      final formKey = GlobalKey<FormState>();
-      final feature = MapFeature.getDefault();
-
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Builder(
-                  builder: (context) => buildFeatureSettingsEditor(
-                      context, feature,
-                      occasionId: 1)),
-            ),
-          ),
-        ),
-      ));
-      await tester.tap(find.byType(ExpansionTile).last);
-      await tester.pumpAndSettle();
-      await _selectBaseMode(tester, MapBaseMode.legacy);
-
-      expect(formKey.currentState!.validate(), isFalse);
-
-      await tester.enterText(
-        find.widgetWithText(
-          TextFormField,
-          FeaturesStrings.offlineMapPackageUrl,
-        ),
-        'https://maps.test/map.mbtiles',
-      );
-      await tester.enterText(
-        find.widgetWithText(
-          TextFormField,
-          FeaturesStrings.offlineMapStyleUrl,
-        ),
-        'https://maps.test/style.json',
-      );
-      await tester.enterText(
-        find.widgetWithText(
-          TextFormField,
-          FeaturesStrings.offlineMapLayerName,
-        ),
-        'openmaptiles',
-      );
-
-      expect(formKey.currentState!.validate(), isTrue);
-    });
-
     testWidgets('Online base mode does not require an offline contract',
         (tester) async {
       final formKey = GlobalKey<FormState>();
@@ -249,13 +146,19 @@ void main() {
 
       expect(feature.offlineMapLayer.mapBaseMode, MapBaseMode.online);
       expect(formKey.currentState!.validate(), isTrue);
-      expect(
-        find.widgetWithText(
-          TextFormField,
-          FeaturesStrings.offlineMapBundleManifestUrl,
-        ),
-        findsNothing,
+      final manifestField = find.widgetWithText(
+        TextFormField,
+        FeaturesStrings.offlineMapBundleManifestUrl,
       );
+      expect(manifestField, findsOneWidget);
+      await tester.enterText(manifestField, 'http://maps.test/manifest.json');
+      expect(formKey.currentState!.validate(), isFalse);
+      await tester.enterText(manifestField, 'https://maps.test/manifest.json');
+      expect(formKey.currentState!.validate(), isTrue);
+      formKey.currentState!.save();
+      expect(feature.offlineMapLayer.offlineMapBundleManifestURL,
+          'https://maps.test/manifest.json');
+      expect(feature.offlineMapLayer.forceOfflineMap, isFalse);
     });
   });
 }
@@ -266,7 +169,6 @@ Future<void> _selectBaseMode(
 ) async {
   final label = switch (mode) {
     MapBaseMode.online => FeaturesStrings.mapBaseModeOnline,
-    MapBaseMode.legacy => FeaturesStrings.mapBaseModeLegacy,
     MapBaseMode.maplibre => FeaturesStrings.mapBaseModeMapLibre,
   };
   final dropdown = find.byType(DropdownButtonFormField<MapBaseMode>);

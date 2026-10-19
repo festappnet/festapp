@@ -7,7 +7,7 @@ Read `docs/architecture/ai_context.md` first — it has the architecture, critic
 ```bash
 fvm flutter run -d chrome                                          # Always use fvm prefix
 fvm dart run build_runner build --delete-conflicting-outputs       # Regenerate AutoRoute, JSON models
-./automation/test_all.sh                                           # All tests (JS + SQL + Flutter)
+./automation/test_all.sh                                           # Broad wrapper; lane caveats in CONTRIBUTING.md
 ./automation/test_client.sh                                        # All client roots (Dart + Flutter)
 ./automation/apply_config.sh                                       # Propagate project.conf changes
 node web_client/scripts/run_db_tests.js database/tests/my_test.sql # Specific DB test

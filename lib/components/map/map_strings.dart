@@ -57,8 +57,6 @@ class MapStrings {
   static String get mapLibreNotDownloaded =>
       'FeatureMap.mapLibreNotDownloaded'.tr();
   static String get downloadMapAgain => 'FeatureMap.downloadMapAgain'.tr();
-  static String get legacyMapOpenFailed =>
-      'FeatureMap.legacyMapOpenFailed'.tr();
   static String get mapLibreBundleDownloadFailed =>
       'FeatureMap.mapLibreBundleDownloadFailed'.tr();
   static const openStreetMapAttribution = '© OpenStreetMap contributors';

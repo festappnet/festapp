@@ -84,14 +84,6 @@
       ],
       "mutates_authority": false
     },
-    "instance-install": {
-      "trigger": "operator-http",
-      "effects": [
-        "direct-sql",
-        "github-api"
-      ],
-      "mutates_authority": true
-    },
     "notify": {
       "trigger": "database-webhook",
       "effects": [

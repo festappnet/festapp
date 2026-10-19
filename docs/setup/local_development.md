@@ -11,7 +11,9 @@ The baseline contains no production rows or secrets. It is a schema dump of the
 
 ## First-time setup and reset
 
-1. Start Docker Desktop, Colima, or another Docker-compatible runtime.
+1. Install Supabase CLI and `psql`, then start Docker Desktop, Colima, or
+   another Docker-compatible runtime. The CLI is used only for this isolated
+   development database, never to install the production system.
 2. Rebuild the dedicated local database:
 
    ```bash
@@ -39,16 +41,21 @@ Stop and remove the isolated database with:
 ## Running tests
 
 ```bash
-# The test runner detects the isolated DB when it is running.
-./automation/test_all.sh db
+# Override any DATABASE_URL supplied by .env.local.
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
+  ./automation/test_all.sh db
 
 # Run one SQL contract directly.
 DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
   node web_client/scripts/run_db_tests.js database/tests/companion_contract_test.sql
 
-# Flutter unit tests do not require the database.
-fvm flutter test
+# Complete client suite (core + native Dart adapters + Flutter), no database.
+./automation/test_client.sh
 ```
+
+First resolve root dependencies with `fvm flutter pub get`, then run
+`fvm dart pub get` inside `packages/festapp_core`. For a partial run use
+`./automation/test_client.sh core` or `./automation/test_client.sh flutter`.
 
 Each SQL test runs in a transaction and rolls back its fixture data. The runner
 may reset sequences, which is why it must target the dedicated local database,

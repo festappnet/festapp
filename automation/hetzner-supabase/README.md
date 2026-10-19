@@ -1,124 +1,51 @@
-# Festapp canonical self-hosted Supabase tooling
+# Self-hosted backend tooling
 
-This directory owns runtime, release, backup, rehearsal and historical merge
-tooling. The canonical production endpoint is `https://api.festapp.net` following
-the 2026-09-10 switch. See the
-[completed cutover](../../docs/operations/work-items/completed/canonical-self-hosted-cutover-2026-09-02.md)
-and [retained legacy resources](../../docs/operations/work-items/completed/legacy-supabase-decommission-2026-09-23.md).
-Former cloud sources are frozen retention/reconciliation targets, not routine
-migration or write targets.
-The [2026-10-07 cleanup receipt](../../docs/operations/work-items/completed/preactivation-and-migration-tool-cleanup-2026-10-07.md)
-records removal of the absent preactivation Worker and unused standalone migration
-tools. Remaining backup, restore and referenced rehearsal tooling is retained.
+The canonical Festapp backend is `https://api.festapp.net`. This directory
+contains its host configuration, Function packaging, backups and retained
+migration/recovery tools.
 
-## Current runtime boundary
+For a new host, start with [server deployment](../../docs/setup/server_deployment.md).
+For a tenant on the existing backend, use [tenant setup](../../docs/setup/howto.md).
+The host scripts retain original migration-specific constraints; the directory
+is not a portable one-command production installer.
 
-Resolve each tenant from its published activation and canonical organization,
-as described in [AI context](../../docs/architecture/ai_context.md). Author SQL
-in the repository and apply it through the canonical release path. Edge releases
-use `runtime/build-production-function-bundle.sh` and
-`runtime/install-production-function-bundle.sh`; staging a bundle does not
-restart the runtime or activate clients. Follow
-[Edge deployment](../../docs/backend/edge_functions.md#deployment) and the
-[protected backend-access skill](../../.agents/skills/festapp-backend-access/SKILL.md).
+## Current operations
 
-The migration was designed in
-`docs/plans/festapp-self-hosted-supabase-hetzner-plan-2026-08-27.md`.
-The Wave 0 tools below remain for reproducibility and specifically authorized
-reconciliation. Their original gates do not describe an unfinished production
-cutover and do not authorize querying or reopening former sources.
+| Task | Reference |
+|---|---|
+| Provision host resources | [Terraform](terraform/README.md) |
+| Prepare runtime, schema, secrets and recovery | [Server deployment](../../docs/setup/server_deployment.md) |
+| Reach the canonical backend | [Protected backend access](../../.agents/skills/festapp-backend-access/SKILL.md) |
+| Configure Studio and SQL fallback | [Dashboard boundary](../../docs/operations/supabase-self-hosted/admin-dashboard-security.md) |
+| Build and stage Edge Functions | [Function bundle release](../../docs/backend/edge_functions.md#deployment) |
+| Verify backups and retention | [Encrypted backups](backup/README.md) |
+| Configure DNS, Workers and R2 | [Cloudflare infrastructure](../../docs/setup/cloudflare.md) |
 
-Production exports, identity mappings, access tokens, database credentials and
-raw inventory results must never be stored here. Real runs require an output
-directory outside the repository.
+Resolve the selected tenant's activation, organization and any forced occasion
+before reading live data. Staging a Function bundle does not restart services;
+a web release does not apply SQL. Record exact source, schema and artifact
+revisions for each authorized operation.
 
-## Historical Wave 0 inventory boundary
+Production exports, identity mappings, credentials and raw evidence belong in
+protected locations outside this repository. Public input schemas declare the
+interface; private configuration supplies the values.
 
-The Wave 0 inventory foundation and its fail-closed decision gate are
-implemented. Provider history, collision scans, all-writer classification and
-manual decisions remain required before Wave 0 can pass. Run both source
-catalog inventories into one private directory:
+## Migration and recovery records
 
-```bash
-export FESTAPP_MIGRATION_OUTPUT=/absolute/private/path/wave-0
-node automation/hetzner-supabase/merge/inventory.mjs \
-  --source default --output "$FESTAPP_MIGRATION_OUTPUT/default.json"
-node automation/hetzner-supabase/merge/inventory.mjs \
-  --source a --output "$FESTAPP_MIGRATION_OUTPUT/a.json"
-node automation/hetzner-supabase/merge/schema-fingerprint.mjs \
-  "$FESTAPP_MIGRATION_OUTPUT/default.json" \
-  "$FESTAPP_MIGRATION_OUTPUT/a.json"
-node automation/hetzner-supabase/merge/collision-inventory.mjs \
-  --output "$FESTAPP_MIGRATION_OUTPUT/collisions.json"
-node automation/hetzner-supabase/merge/resolve-auth-collisions.mjs \
-  --input "$FESTAPP_MIGRATION_OUTPUT/collisions.json" \
-  --output "$FESTAPP_MIGRATION_OUTPUT/identity-decisions.json"
-node automation/hetzner-supabase/merge/write-authority-inventory.mjs \
-  --output "$FESTAPP_MIGRATION_OUTPUT/write-authority.json"
-node automation/hetzner-supabase/runtime/validate-operational-readiness.mjs \
-  --evidence="$FESTAPP_MIGRATION_OUTPUT/operational-readiness.json" \
-  --output="$FESTAPP_MIGRATION_OUTPUT/operational-readiness-decision.json"
-node automation/hetzner-supabase/merge/hybrid-readiness.mjs \
-  --output "$FESTAPP_MIGRATION_OUTPUT/hybrid-readiness.json"
-node automation/hetzner-supabase/merge/tenant-config-inventory.mjs \
-  --output "$FESTAPP_MIGRATION_OUTPUT/tenant-configs.json"
-node automation/hetzner-supabase/merge/migration-history-inventory.mjs \
-  --output "$FESTAPP_MIGRATION_OUTPUT/migration-history.json"
-```
+The [completed cutover](../../docs/operations/work-items/completed/canonical-self-hosted-cutover-2026-09-02.md)
+records the switch. Former cloud sources remain retention/reconciliation targets,
+with no routine application writes or migrations. The
+[retention record](../../docs/operations/work-items/completed/legacy-supabase-decommission-2026-09-23.md)
+and [cleanup receipt](../../docs/operations/work-items/completed/preactivation-and-migration-tool-cleanup-2026-10-07.md)
+describe retained resources and removed tools.
 
-Each source catalog inventory also writes a sibling `*.manifest.json`. It
-deliberately remains `blocked` and unsigned until all Wave 0 evidence is
-attached and signed by the approved evidence process. The collision,
-write-authority, hybrid-readiness and tenant-config passes are immutable
-supporting evidence files rather than source snapshot manifests.
-The operational readiness decision is also append-only private evidence. It
-expires after 30 minutes and is required in addition to repository readiness;
-it performs no production mutation.
+[Historical Wave 0 instructions](../../docs/operations/supabase-self-hosted/historical-wave-0-tooling.md)
+and the [original cutover runbook](../../docs/operations/supabase-self-hosted/cutover-runbook.md)
+preserve migration gates. They are not current tenant installation procedures.
 
-The collision pass reads Auth e-mails and Storage object keys only in memory.
-Its evidence file contains source UUIDs plus one-run HMAC identifiers; the HMAC
-key and raw identifiers are not persisted. It never resolves a collision.
-The separate resolver applies only the approved, verified-email/default-UUID
-rule and blocks every ambiguous input.
-The write-authority inventory is deliberately blocking: regex discovery creates
-a candidate list, and every entry needs a human-reviewed owner/contract before
-the hybrid design may proceed.
+## Completed cleanup
 
-`hybrid-readiness.mjs` associates the nine known Flutter direct-DML candidates
-with their existing typed `client_sync_v1` command modules, then compares that
-partial seam evidence with read-only evidence from source `a`. It resolves the
-source from production `project.conf` files and verifies configured forced
-occasions before reading live occasion aggregates. Every overload is checked
-independently for `SECURITY DEFINER` and the exact approved `search_path`. The
-report never authorizes the global hybrid gate: it does not prove operation
-completeness, permission checks, deployed traffic or non-Flutter writers. It
-never enables a cohort, changes a grant or deploys a function.
-
-`tenant-config-inventory.mjs` reads only `automation/project.conf` from remote
-`origin/prod/*` refs. Its allowlist excludes anon keys and other configuration.
-An app without `FORCE_OCCASION_LINK` is conservatively classified as able to
-reach every visible occasion in its source organization until deployment and
-traffic evidence proves a narrower contract.
-
-The checked-in RPC search-path hardening migration is a prepared artifact, not
-permission to deploy. It requires the complete 41-signature client-sync
-expansion to exist first and intentionally aborts on missing or additional
-overloads. Apply it only inside the ordered expansion/rehearsal workflow; never
-as an isolated hotfix to the current drifted `default` cloud project.
-
-`migration-history-inventory.mjs` compares the immutable repository migration
-set with the read-only `supabase_migrations.schema_migrations` history of both
-approved sources. A missing history row is not proof that the SQL effect is
-absent, and a recorded row is not proof that its current effect matches the
-repository. The report never emits deployment permission; use it to identify
-history divergence that must be reconciled by catalog comparison in a rehearsal
-database.
-
-`SUPABASE_ACCESS_TOKEN` may be supplied in the environment or in the repository
-root `.env.local`. The scripts never print it. Source aliases are pinned to the
-two approved project refs and cannot be redirected with `.env.local` project
-metadata.
-
-For a separately authorized replay or reconciliation of this historical workflow,
-retain its original Wave 0 gates. Do not use these commands to resume the completed
-cutover or to apply routine production changes to retained cloud sources.
+The [October 7 cleanup receipt](../../docs/operations/work-items/completed/preactivation-and-migration-tool-cleanup-2026-10-07.md)
+records removal of the preactivation Worker and unused standalone migration tools.
+Former cloud sources remain frozen retention/reconciliation targets; routine writes
+and migrations belong only to the canonical backend.

@@ -7,15 +7,16 @@ also read [tenant_overlays.md](../architecture/tenant_overlays.md).
 
 ## Prerequisites
 
-- Git, Node.js/npm and FVM
+- Git, Node.js/npm, Python 3, `jq`, Bash and FVM
 - the Flutter SDK pinned by `FLUTTER_VERSION` in `automation/project.conf`
-- Docker-compatible runtime and Supabase CLI for local database work
+- Docker-compatible runtime, Supabase CLI and `psql` for local database work
 - platform tooling only when building Android or iOS
 
 ```bash
 fvm install
 fvm flutter pub get
-npm install --prefix web_client
+(cd packages/festapp_core && fvm dart pub get)
+npm ci --prefix web_client
 ```
 
 ## Configuration
@@ -29,8 +30,11 @@ branding and version pins. Apply it with:
 ```
 
 The command validates required values and generates the corresponding Flutter,
-web, Android and iOS leaves. Fonts come from `automation/fonts/`; tenant-owned
-brand assets and legal Markdown must be listed by the tenant overlay policy.
+web, Android and iOS leaves. Tenant `FONT_FILES` lists explicit `.ttf`/`.otf`
+sources directly under `fonts/`; without it the generator uses the shared
+`automation/fonts/` fallback. `FONT_FAMILY_BASE` selects a family name, not the
+source files. Brand/font inputs and legal Markdown must be allowed by the
+tenant overlay policy.
 Never put private credentials in `project.conf`.
 
 Private local values belong in the ignored `.env.local`. Production secrets
@@ -44,12 +48,15 @@ Build the isolated local database from the checked-in schema baseline:
 
 ```bash
 ./automation/bootstrap_local_db.sh
-./automation/test_all.sh db
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
+  ./automation/test_all.sh db
 ```
 
 Active forward migrations live in `supabase/migrations/`; canonical function
 sources live in `database/functions/`. Do not edit an applied migration or use
-the operator-only `instance-install` function as a production deployment path.
+a browser installer, `supabase db push`, cloud Function deploy commands or
+the removed `instance-install` function to install or upgrade the system.
+Supabase CLI is used only for isolated local development in this guide.
 
 Production schema, function and contract changes target only the canonical
 self-hosted backend at `https://api.festapp.net`. Former cloud sources remain
@@ -100,12 +107,21 @@ steps and the checker command are in
 ```bash
 fvm flutter run -d chrome
 npm run dev --prefix web_client
-./automation/test_all.sh
+./automation/test_client.sh
+npm test --prefix web_client
 ```
 
-The full runner reports environment-dependent skips. Use the targeted scopes
+The broad runner has skips and warning-only lanes documented in Contributing.
+For broader validation, use the targeted scopes
 `web`, `db`, `flutter`, `integration`, or `automation` while developing, and
 follow [CONTRIBUTING.md](../../CONTRIBUTING.md) for the security checklist.
+
+## Server and infrastructure
+
+An existing tenant uses the shared canonical backend. A new host needs its own
+runtime, schema/data, secrets, recovery and activation preparation; follow
+[server deployment](server_deployment.md). Cloudflare Pages, Workers, R2, DNS
+and protected administration are covered by [Cloudflare infrastructure](cloudflare.md).
 
 ## Publishing
 

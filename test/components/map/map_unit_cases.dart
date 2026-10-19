@@ -4,7 +4,6 @@ import 'external_map_navigation_cases.dart' as suite0;
 import 'map_commands_cases.dart' as suite3;
 import 'map_deep_link_route_identity_cases.dart' as suite4;
 import 'map_path_direction_layout_cases.dart' as suite5;
-import 'map_renderer_benchmark_override_cases.dart' as suite6;
 import 'map_viewport_coordinator_cases.dart' as suite7;
 import 'maplibre_place_icon_rasterizer_cases.dart' as suite8;
 import 'maplibre_scene_controller_cases.dart' as suite9;
@@ -26,7 +25,6 @@ void main() {
   group('map_commands', suite3.main);
   group('map_deep_link_route_identity', suite4.main);
   group('map_path_direction_layout', suite5.main);
-  group('map_renderer_benchmark_override', suite6.main);
   group('map_viewport_coordinator', suite7.main);
   group('maplibre_place_icon_rasterizer', suite8.main);
   group('maplibre_scene_controller', suite9.main);

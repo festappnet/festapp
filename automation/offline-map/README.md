@@ -1,12 +1,15 @@
 # Offline map assets
 
-This directory reproducibly builds one native offline bundle from a single
-source. Dual-renderer bundles use MBTiles in both the legacy and MapLibre
-renderers; MapLibre-only bundles use PMTiles. Keeping MapLibre on MBTiles for
-dual bundles avoids the still-unproven gzip-directory path in MapLibre Native
-without changing the renderer or the vector data. It does not add offline map support to Festapp
-Web/PWA. The browser step below is a local VersaTiles/MapLibre content preview,
-not a Festapp Web acceptance test.
+This directory builds verified bundles for native offline maps. MapLibre is the
+only offline renderer. The client installs the manifest through
+`OfflineMapBundleManager` and assembles local resources with
+`MapLibreStyleAssembler`; standalone package/style URLs are no longer supported.
+
+CSM Ostrava's schema 2 bundles use MBTiles in MapLibre to avoid the unproven
+gzip-directory path for PMTiles. Schema 3 bundles use PMTiles. Both manifest
+formats remain supported. Schema 2 keeps its existing `mbtiles` asset role and
+absent/null `bundle_mode`; its data contract does not select another renderer. Festapp Web/PWA uses online raster tiles; the local preview below is a
+separate content inspection tool.
 
 ## Source and license
 
@@ -24,10 +27,32 @@ the CSM v2 MVT region and style, plus the variation-selector/private-use ranges
 requested during the native force-offline probe. Text layers
 that previously requested only `name_en` use `coalesce(name, name_en)` so
 Shortbread's local Czech names render first and English remains the fallback.
-This expression is supported by the pinned `vector_tile_renderer 5.2.1`
-([upstream PR #16](https://github.com/greensopinion/dart-vector-tile-renderer/pull/16)).
 
-## Build CSM Ostrava v1
+## Resolve the canonical live bounds target
+
+The builder does not resolve `backend-activation.json`. Its bounds gate requires
+explicit `SUPABASE_URL` / `SUPABASE_ANON_KEY` environment variables and fails if
+either is missing. For current Festapp events,
+verify the selected tenant's canonical activation, organization, occasion ID and
+current link before starting. Then explicitly supply the verified canonical
+public endpoint/key; never rely on the compiled legacy fields:
+
+```bash
+export SUPABASE_URL=https://api.festapp.net
+export SUPABASE_ANON_KEY="${BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY:?load the verified tenant public key first}"
+```
+
+The key above is public configuration, not a service-role credential. The builder
+checks link-to-ID equality but does not establish tenant organization/generation
+by itself. Follow [backend authority](../../docs/architecture/ai_context.md).
+
+## Build a selected event bundle
+
+The CSM and Slunovrat commands below preserve previously used examples. Their
+numeric IDs, links, bounds and versions are not a fresh canonical inventory;
+replace them with the verified current scope and a new unused version before a
+real build. Existing tracked versions intentionally fail the overwrite gate.
+
 
 Install `versatiles`, `sqlite3`, `jq`, `shasum`, and `curl`, then run:
 
@@ -52,7 +77,7 @@ least 1 km of margin inside the requested bbox. It refuses to overwrite an
 existing local or tracked version, validates the style/source-layer contract,
 builds MBTiles and PMTiles from the remote VersaTiles container, downloads both
 font stacks for every audited 256-codepoint range, runs
-SQLite/PMTiles/metadata/live-point checks, enforces the approved 45 MiB legacy
+SQLite/PMTiles/metadata/live-point checks, enforces the approved 45 MiB MBTiles
 package limit, creates asset checksums, and downloads the official preview
 frontend archive. Vector tiles are explicitly recompressed
 from upstream Brotli to gzip because MBTiles supports gzipped PBF and the native
@@ -97,17 +122,19 @@ sprites and both font stacks for Latin, Latin Extended and General Punctuation.
 The verified MBTiles file remains a local conversion intermediate and is
 removed before the asset manifest is assembled, so clients do not download a
 second copy of the tiles. The explicit byte budget fails closed. Schema 2 and
-the default audited glyph profile remain unchanged for existing dual-renderer
-rollback bundles.
+the default audited glyph profile remain available for CSM-compatible MBTiles
+bundles.
 
 `--style-manifest` is the reproducible bootstrap path when the large style and
 sprite inputs are not checked out locally. It accepts only `assets.festapp.net`
 URLs and verifies every downloaded style/sprite against the SHA-256 recorded in
 the tracked immutable manifest before the new bundle is built.
 
-To rebuild the same published version locally, first move the existing ignored
-output and tracked manifest aside. Never do this for an already published R2
-key: corrected content must use the next `vN` directory.
+The builder has no rebuild override for an already tracked version. Preserve
+its manifest and recorded hashes; do not move them aside to bypass the immutable
+version gate. Corrections use the next unused `vN`. A separately scoped historical
+reproduction needs isolated inputs and comparison with the preserved original,
+not permission to overwrite its published key.
 
 ## Validate and preview
 
@@ -118,7 +145,7 @@ versatiles probe -ddd --sample 10 \
   automation/offline-map/out/csmostrava2026/v1/map-z0-14.mbtiles
 
 versatiles probe -ddd --sample 10 \
-  automation/offline-map/out/csmostrava2026/v2/map-z0-14.pmtiles
+  automation/offline-map/out/csmostrava2026/v1/map-z0-14.pmtiles
 
 sqlite3 automation/offline-map/out/csmostrava2026/v1/map-z0-14.mbtiles \
   'pragma integrity_check; select name,value from metadata order by name;'
@@ -131,7 +158,9 @@ automation/offline-map/preview.sh \
   csmostrava2026 v1 map-z0-14.mbtiles
 ```
 
-Open `http://localhost:8080`, inspect central Ostrava and all four bbox edges,
+This preview starts a tile server; stop it when inspection ends. Use a background/headless
+isolated browser for automated checks; do not navigate the user's existing tab.
+Open `http://localhost:8080`, inspect the selected event area and all four bbox edges,
 and verify labels, roads, expected map content, and empty space beyond the
 extract. Save one full-extract screenshot and one centre-detail screenshot in
 `automation/offline-map/out/csmostrava2026/v1/rollout/`. Upload must not start
@@ -144,56 +173,38 @@ offline support.
 
 The native feasibility probe must be relaunched after network access is removed
 and after the MapLibre ambient cache is cleared. Its style source must be
-`mbtiles:///...` for a dual-renderer bundle or `pmtiles://file:///...` for a
+`mbtiles:///...` for a schema 2 bundle or `pmtiles://file:///...` for a
 MapLibre-only bundle; sprite and glyph templates must be `file:///...`.
 Capture native network logs and reject any map resource HTTP(S) request.
 
 ## Publish and roll back
 
 Production steps require separate user authority. Publish to the general public
-`festapp-public` R2 bucket under `csmostrava2026/vN/`, with the content types from
+`festapp-public` R2 bucket under the approved `<occasion>/vN/` namespace, with the content types from
 the manifest and `Cache-Control: public, max-age=31536000, immutable`. Upload
 all manifest assets plus `manifest.json`. Refuse an existing key; changes use a
 new `vN`. Validate every `https://assets.festapp.net/...` URL with HEAD and full
-GET, then compare the downloaded MBTiles SHA-256 and SQLite integrity.
+GET. Compare every downloaded asset's byte count and SHA-256 with the manifest;
+for a schema 2 bundle additionally verify the MBTiles SQLite integrity.
+A MapLibre-only bundle has no published MBTiles file.
 
-Only after public validation, use Occasion Settings (never direct SQL) to set
-the complete offline package URL, style URL, source name
-`versatiles-shortbread`, OSM attribution, and initially
-`forceOfflineMap=false`. Preserve the whole pre-change map feature JSON in the
-rollout record. Roll back through Occasion Settings by restoring that snapshot;
-do not delete immutable R2 objects. Set `forceOfflineMap=true` only after both
-Android and iOS pass the documented cold-start airplane-mode acceptance.
+Only after public validation, use Occasion Settings (never direct SQL) to select
+MapLibre offline mode and save `offlineMapBundleManifestURL` plus OSM attribution.
+This mode sets `forceOfflineMap=true`; select Online mode to set it false.
+`offlineMapRenderer`, `offlineMapPackageURL`, `offlineMapStyleURL`, and
+`offlineMapLayerName` are obsolete and are discarded when this client saves map
+settings. They cannot select another renderer or download source.
 
-### Renderer rollout contract
+The client stages and verifies every asset before publishing its ready cache.
+A forced offline map without a manifest, a failed download or a failed style
+load shows an error with retry instead of silently selecting another renderer.
+Online mode accepts an optional manifest for use when disconnected; the settings
+form validates its HTTPS URL when supplied. Offline mode requires it.
 
-Before releasing a client where an absent renderer means `maplibre`, inventory
-every live occasion with an offline map. In Occasion Settings, save
-`offlineMapRenderer=legacy` for each existing occasion and verify a readback of
-the complete map feature JSON. Keep the before/after snapshots in the rollout
-record; do not update selected JSON keys independently.
-
-For a MapLibre canary, publish a new immutable `vN` bundle first, verify every
-asset GET, byte count, and SHA-256, then set both
-`offlineMapBundleManifestURL` and `offlineMapRenderer=maplibre` through Occasion
-Settings. The bundle must include style, PMTiles, legacy MBTiles, both sprite
-scales, and every declared regular/bold glyph range. The client downloads into
-staging files, verifies the complete bundle, and only then publishes its ready
-directory; it never falls back silently after a MapLibre failure.
-
-Rollback is the single Occasion Settings change
-`offlineMapRenderer=maplibre` → `legacy`. Preserve the legacy package/style/
-source fields and all immutable bundle versions for at least one stable release
-cycle so rollback requires neither an app deploy nor another asset upload.
-
-For CSM Ostrava, the user explicitly overrode the staged canary on 2026-08-01
-and requested immediate JM2025-equivalent forced-offline behavior. Occasion
-643 was first protected with an explicit `legacy` renderer and then atomically
-activated with `forceOfflineMap=true`, `offlineMapRenderer=maplibre`, and the
-immutable `csmostrava2026/v2/manifest.json` after all 131 bundle assets had been
-downloaded from the public CDN and SHA-256 verified. Public RPC readback, iOS
-automatic download/render, and an iOS cold restart from the ready local bundle
-passed. The legacy v1 fields remain configured for one-setting rollback.
-Physical lower-end Android release/profile performance and cold airplane-mode
-acceptance remain follow-up release gates; the immediate production activation
-was an explicit user-approved exception to the normal ordering above.
+Keep the complete previous map feature JSON and manifest URL in the rollout
+record. Revert through Occasion Settings to a previously verified compatible
+bundle or use Online mode. Do not delete immutable R2 objects. A renderer switch
+to `legacy` is no longer a recovery option. Before activating forced offline
+mode, verify Android and iOS cold starts in airplane mode, bundle recovery,
+and performance on the supported lower-end device. This repository edit does
+not change a live occasion or establish fresh physical-device acceptance.

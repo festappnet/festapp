@@ -18,7 +18,7 @@ enum OfflineMapAssetRole {
   glyph,
 }
 
-enum OfflineMapBundleMode { dualRenderer, mapLibreOnly }
+enum OfflineMapBundleMode { mbtiles, mapLibreOnly }
 
 class OfflineMapBundleAsset {
   const OfflineMapBundleAsset({
@@ -74,7 +74,7 @@ class OfflineMapBundleManifest {
   factory OfflineMapBundleManifest.parse(Map<String, dynamic> json) {
     final schemaVersion = json['schema_version'];
     final bundleMode = switch (schemaVersion) {
-      2 when json['bundle_mode'] == null => OfflineMapBundleMode.dualRenderer,
+      2 when json['bundle_mode'] == null => OfflineMapBundleMode.mbtiles,
       3 when json['bundle_mode'] == 'maplibre_only' =>
         OfflineMapBundleMode.mapLibreOnly,
       _ => throw OfflineMapBundleException(
@@ -147,7 +147,7 @@ class OfflineMapBundleManifest {
 
     final requiredRoles = <OfflineMapAssetRole>{
       ..._mapLibreRoles,
-      if (bundleMode == OfflineMapBundleMode.dualRenderer)
+      if (bundleMode == OfflineMapBundleMode.mbtiles)
         OfflineMapAssetRole.mbtiles,
     };
     final missing = requiredRoles.difference(singleRoles);

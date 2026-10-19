@@ -92,7 +92,7 @@ export function evaluateRuntimeWriterPolicy(
     if (!reason) blockers.push(`security blocker has no reason: ${name}`);
   }
   for (const [name, reason] of Object.entries(security.excluded ?? {})) {
-    if (!declaredFunctions.includes(name)) blockers.push(`production exclusion names unknown function: ${name}`);
+    // Denylist entries survive source removal so retired installers stay forbidden.
     if (!reason) blockers.push(`production exclusion has no reason: ${name}`);
   }
   for (const [name, evidence] of Object.entries(security.resolved ?? {})) {

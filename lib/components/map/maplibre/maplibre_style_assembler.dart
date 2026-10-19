@@ -40,7 +40,7 @@ class MapLibreStyleAssembler {
     // Compact MapLibre-only bundles have no MBTiles asset and keep using
     // PMTiles.
     final tileSource = switch (manifest.bundleMode) {
-      OfflineMapBundleMode.dualRenderer => 'mbtiles://${_absoluteAssetPath(
+      OfflineMapBundleMode.mbtiles => 'mbtiles://${_absoluteAssetPath(
           bundleDirectory,
           manifest.assetFor(OfflineMapAssetRole.mbtiles).path,
         )}',

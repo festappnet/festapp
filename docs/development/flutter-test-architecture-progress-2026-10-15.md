@@ -246,7 +246,7 @@ matching). Analyze has no errors/warnings; the existing ROUTE naming lint remain
 The targeted run took 8.83 s with 2,386,640,896 B peak owned RSS, below the 3 GB
 watchdog budget. Input SHA stayed unchanged during the run. No full benchmark or
 release build was repeated; previous timings remain receipts for their own SHA.
-See the [follow-up receipt](flutter-app-config-router-cut-results-2026-10-15.json) for full graphs and evidence.
+The detailed app-config/router follow-up receipt is not checked in; this section records the available summary, not a reproducible full-graph artifact.
 No backend operation, commit, push or deployment.
 
 
