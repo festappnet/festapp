@@ -1,5 +1,5 @@
 import 'occasion_setup_draft_card.dart';
-import 'package:fstapp/components/occasion/occasion_creation_choice_dialog.dart';
+import 'package:fstapp/components/occasion/occasion_creation_button.dart';
 import 'package:fstapp/components/occasion/past_occasion_years.dart';
 import 'package:fstapp/components/unit/app_landing.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
@@ -237,16 +237,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     });
   }
 
-  Future<void> _addNewEvent() async {
-    var withoutWizard = false;
-    if (AppConfig.occasionSetupEnabled && !AppConfig.isAppSupported) {
-      final choice = await showDialog<OccasionCreationChoice>(
-        context: context,
-        builder: (_) => const OccasionCreationChoiceDialog(),
-      );
-      if (!mounted || choice == null) return;
-      withoutWizard = choice == OccasionCreationChoice.quick;
-    }
+  Future<void> _addNewEvent({bool withoutWizard = false}) async {
     await OccasionCreationHelper.createNewOccasion(
         context, widget.unit, _allOccasions,
         withoutWizard: withoutWizard);
@@ -414,22 +405,12 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                             key: const ValueKey('add-button'),
                             children: [
                               const SizedBox(width: 16),
-                              FilledButton.icon(
-                                onPressed: _addNewEvent,
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text(UnitStrings.addNewEvent),
-                                style: FilledButton.styleFrom(
-                                  // This will force the button to be at least 48px tall.
-                                  minimumSize: const Size(0, 48),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0, vertical: 10.0),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        StylesConfig.commonRoundness),
-                                  ),
-                                ),
+                              OccasionCreationButton(
+                                showChoices: AppConfig.occasionSetupEnabled &&
+                                    !AppConfig.isAppSupported,
+                                onGuided: _addNewEvent,
+                                onQuick: () =>
+                                    _addNewEvent(withoutWizard: true),
                               ),
                             ],
                           )
