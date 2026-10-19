@@ -60,10 +60,7 @@ class OccasionCreationButton extends StatelessWidget {
         _option(
           context,
           onPressed: onGuided,
-          icon: Icons.confirmation_number_outlined,
           title: OccasionSetupStrings.stepByStep,
-          description: OccasionSetupStrings.guidedCreationDescription,
-          recommendation: OccasionSetupStrings.recommendedForTickets,
           background: colors.primaryContainer,
           foreground: colors.onPrimaryContainer,
         ),
@@ -71,9 +68,7 @@ class OccasionCreationButton extends StatelessWidget {
         _option(
           context,
           onPressed: onQuick,
-          icon: Icons.edit_calendar_outlined,
           title: OccasionSetupStrings.withoutWizard,
-          description: OccasionSetupStrings.quickCreationDescription,
           foreground: colors.onSurface,
         ),
       ],
@@ -86,46 +81,27 @@ class OccasionCreationButton extends StatelessWidget {
   Widget _option(
     BuildContext context, {
     required VoidCallback onPressed,
-    required IconData icon,
     required String title,
-    required String description,
     required Color foreground,
     Color? background,
-    String? recommendation,
   }) {
     final textTheme = Theme.of(context).textTheme;
     return MenuItemButton(
       onPressed: onPressed,
       // MenuItemButton closes the menu before invoking the selected flow.
       closeOnActivate: true,
-      leadingIcon: ExcludeSemantics(child: Icon(icon, size: 22)),
       style: MenuItemButton.styleFrom(
         backgroundColor: background,
         foregroundColor: foreground,
-        iconColor: foreground,
         padding: const EdgeInsets.all(12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: SizedBox(
         width:
             math.min(270, math.max(80, MediaQuery.sizeOf(context).width - 112)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title,
-                style: textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700, color: foreground)),
-            if (recommendation != null) ...[
-              const SizedBox(height: 2),
-              Text(recommendation,
-                  style: textTheme.labelSmall?.copyWith(color: foreground)),
-            ],
-            const SizedBox(height: 4),
-            Text(description,
-                style: textTheme.bodySmall?.copyWith(color: foreground)),
-          ],
-        ),
+        child: Text(title,
+            style: textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700, color: foreground)),
       ),
     );
   }
