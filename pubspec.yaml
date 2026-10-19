@@ -97,7 +97,7 @@ dependencies:
   venue_seat_picker:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: ff050f60e0dc020a42f0f7f97e7e868bb8ec4446
+      ref: 98c606d9b85db5b4847c95066dcd3827e84880c7
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -136,7 +136,7 @@ dependency_overrides:
   venue_layout_core:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: ff050f60e0dc020a42f0f7f97e7e868bb8ec4446
+      ref: 98c606d9b85db5b4847c95066dcd3827e84880c7
       path: packages/venue_layout_core
   maplibre_android:
     path: packages/maplibre_android
