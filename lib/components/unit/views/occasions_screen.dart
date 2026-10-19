@@ -1,4 +1,5 @@
 import 'occasion_setup_draft_card.dart';
+import 'package:fstapp/components/occasion/occasion_creation_choice_dialog.dart';
 import 'package:fstapp/components/occasion/past_occasion_years.dart';
 import 'package:fstapp/components/unit/app_landing.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
@@ -236,7 +237,16 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     });
   }
 
-  Future<void> _addNewEvent({bool withoutWizard = false}) async {
+  Future<void> _addNewEvent() async {
+    var withoutWizard = false;
+    if (AppConfig.occasionSetupEnabled && !AppConfig.isAppSupported) {
+      final choice = await showDialog<OccasionCreationChoice>(
+        context: context,
+        builder: (_) => const OccasionCreationChoiceDialog(),
+      );
+      if (!mounted || choice == null) return;
+      withoutWizard = choice == OccasionCreationChoice.quick;
+    }
     await OccasionCreationHelper.createNewOccasion(
         context, widget.unit, _allOccasions,
         withoutWizard: withoutWizard);
@@ -421,21 +431,6 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                                   ),
                                 ),
                               ),
-                              if (AppConfig.occasionSetupEnabled &&
-                                  !AppConfig.isAppSupported)
-                                PopupMenuButton<String>(
-                                  tooltip: CommonStrings.moreOptions,
-                                  icon: const Icon(Icons.more_horiz),
-                                  onSelected: (_) =>
-                                      _addNewEvent(withoutWizard: true),
-                                  itemBuilder: (_) => [
-                                    PopupMenuItem(
-                                      value: 'withoutWizard',
-                                      child: Text(
-                                          OccasionSetupStrings.withoutWizard),
-                                    ),
-                                  ],
-                                ),
                             ],
                           )
                         : const SizedBox.shrink(key: ValueKey('empty-box')),

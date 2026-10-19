@@ -17,6 +17,15 @@ class OccasionSetupStrings {
   static String progress(int value) =>
       'OccasionSetup.progress'.tr(namedArgs: {'value': '$value'});
 
+  static String get chooseCreation => 'OccasionSetup.chooseCreation'.tr();
+  static String get stepByStep => 'OccasionSetup.stepByStep'.tr();
+  static String get recommendedForTickets =>
+      'OccasionSetup.recommendedForTickets'.tr();
+  static String get guidedCreationDescription =>
+      'OccasionSetup.guidedCreationDescription'.tr();
+  static String get quickCreationDescription =>
+      'OccasionSetup.quickCreationDescription'.tr();
+
   static String get withoutWizard => 'OccasionSetup.withoutWizard'.tr();
   static String get createStepByStep => 'OccasionSetup.createStepByStep'.tr();
   static String get createEvent => 'OccasionSetup.createEvent'.tr();
