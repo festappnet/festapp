@@ -65,6 +65,7 @@ Production packaging still rejects that directory if reintroduced.
 | `email-provider-events` | Exact-topic SNS v2 provider feedback and durable redacted journal. |
 | `email-confirmation-status` | Bounded expiring opaque-capability lookup for confirmation status. |
 | `waitlist-commands` | Capability-scoped waitlist offer acceptance, decline and withdrawal commands. |
+| `send-occasion-team-invitations` | Confirmed event-team invitations queued by a unit manager, with editor/read-only roles and no password reset. |
 | `customer-order-access` | Read-only order overview capability lookup, bootstrap and authorized reissue. |
 
 The inventory follows
