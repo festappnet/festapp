@@ -1033,6 +1033,7 @@
     "subjectRequired": "Předmět je povinný",
     "template": "Šablona",
     "authoring": {
+      "whenSent": "Kdy se e-mail odesílá",
       "authoringHint": "Napište @ a vyberte údaj, který se doplní při odeslání.",
       "insertVariable": "Vložit údaj",
       "noVariable": "Žádný odpovídající údaj",

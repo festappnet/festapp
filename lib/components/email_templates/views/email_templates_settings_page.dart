@@ -465,9 +465,37 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           child: ListView(
             shrinkWrap: true,
             children: [
-              Text(usageDetails['description'] ?? '',
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(Icons.info_outline, size: 20,
+                          color: Theme.of(context).colorScheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(EmailTemplatesStrings.whenSent,
+                            style: Theme.of(context).textTheme.labelLarge),
+                        const SizedBox(height: 4),
+                        Text(usageDetails['description'] ?? '',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(children: [
                 Expanded(child: Text(EmailTemplatesStrings.subject,
                     style: Theme.of(context).textTheme.labelLarge)),
@@ -485,12 +513,14 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                   validator: (_) => _subjectEditor.plainText.trim().isEmpty
                       ? EmailTemplatesStrings.subjectRequired
                       : null,
-                  builder: (field) => InputDecorator(
+                  builder: (field) => ListenableBuilder(
+                    listenable: _subjectEditor.focusNode,
+                    builder: (context, _) => InputDecorator(
+                      isFocused: _subjectEditor.focusNode.hasFocus,
                       decoration: InputDecoration(
                           isDense: true,
                           border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                          contentPadding: const EdgeInsets.only(left: 12, right: 4),
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surface,
                           errorText: field.errorText),
@@ -502,7 +532,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                               ? _subjectEditor.focusNode.requestFocus
                               : null,
                           child: RichHtmlEditor(
-                              controller: _subjectEditor, enabled: _canEdit)))),
+                              controller: _subjectEditor, enabled: _canEdit,
+                              textStyle: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(height: 1.5)))))),
               const SizedBox(height: 16),
               Row(children: [
                 Expanded(child: Text(EmailTemplatesStrings.emailTemplateContent,
