@@ -973,7 +973,7 @@
       "variable": "Variable",
       "previewUnavailable": "Vorschau konnte nicht geladen werden. Erneut versuchen.",
       "preview": "Vorschau des E-Mail-Inhalts",
-      "previewScope": "Beispieldaten ohne Banner. Links sind inaktiv.",
+      "previewScope": "Vorschau mit dem aktuellen E-Mail-Layout. Kunden- und Zahlungsdaten sind Beispieldaten. Links sind inaktiv.",
       "scenario": "Beispiel",
       "suggestTitle": "Den Veranstaltungsnamen als Variable statt „{}“ verwenden?",
       "replaceVariable": "Durch Variable ersetzen",
@@ -1005,7 +1005,10 @@
       "previewFrom": "Von",
       "previewTo": "An",
       "previewReceivedMessage": "Empfangene Nachricht",
-      "uniqueAlreadyUsed": "Dieser Abschnitt ist bereits eingefügt. Er kann nur einmal pro E-Mail erscheinen."
+      "uniqueAlreadyUsed": "Dieser Abschnitt ist bereits eingefügt. Er kann nur einmal pro E-Mail erscheinen.",
+      "authoringContextUnavailable": "E-Mail-Layout und Absender konnten nicht geladen werden. Bitte erneut versuchen.",
+      "previewSenderUnavailable": "Absender nicht verfügbar",
+      "previewShort": "Vorschau"
     },
     "subject": "Betreff",
     "emailTemplateContent": "E-Mail-Inhalt"

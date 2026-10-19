@@ -21,6 +21,8 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   @override
   bool get singleLine => field == EmailTargetField.subject;
   @override
+  TextStyle get textStyle => emailContentTextStyle;
+  @override
   Set<String> get codes => _subs.map((s) => s.code).toSet();
   String _label(EmailTemplateSub sub) {
     if (const {

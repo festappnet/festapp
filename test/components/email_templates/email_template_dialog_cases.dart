@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
+import 'package:fstapp/components/email_templates/email_preview_examples.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/email_templates/views/email_templates_settings_page.dart';
 import 'package:fstapp/components/html/rich_html_editor_dialog.dart';
@@ -18,7 +19,7 @@ import 'package:super_editor/super_editor.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
-Future<void> openTemplate(WidgetTester tester, {String? occasionTitle}) async {
+Future<void> openTemplate(WidgetTester tester, {String? occasionTitle, Future<EmailAuthoringContext> Function()? authoringContextLoader, Future<EmailPreviewExamples> Function()? previewExamplesLoader}) async {
   RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       unitUser: OccasionUserModel(isEditor: true),
       occasionUser: OccasionUserModel(isEditor: true));
@@ -30,6 +31,8 @@ Future<void> openTemplate(WidgetTester tester, {String? occasionTitle}) async {
           onPressed: () => showDialog<void>(
             context: context,
             builder: (_) => EmailTemplateSettingsPage(
+              authoringContextLoader: authoringContextLoader,
+              previewExamplesLoader: previewExamplesLoader,
               template: EmailTemplateModel(
                 code: occasionTitle == null
                     ? 'SIGN_IN_CODE'

@@ -147,7 +147,7 @@ class EmailPreviewScenario {
 
   /// One scan over authored HTML. Substituted fragments are never reprocessed.
   /// Rich content is admitted only in text context, never HTML attributes.
-  String composeHtml(String html) {
+  String composeHtml(String html, {String? wrapperHtml}) {
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -213,6 +213,12 @@ class EmailPreviewScenario {
         }
       }
     }
-    return completeEmailContent(out.toString(), requiredLinks);
+    final content = out.toString();
+    // Delivery substitutes the draft, wraps it once, then completes links.
+    // Wrapper placeholders must never reprocess substituted customer text.
+    final wrapped = wrapperHtml == null
+        ? content
+        : wrapperHtml.replaceFirst('{{content}}', content);
+    return completeEmailContent(wrapped, requiredLinks);
   }
 }

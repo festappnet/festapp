@@ -36,6 +36,7 @@ class TemplateAuthoringEntry {
 abstract class TemplateAuthoringProvider {
   Set<String> get codes;
   bool get singleLine => false;
+  TextStyle? get textStyle => null;
   String get helper;
   String get insertLabel;
   String get emptyLabel;

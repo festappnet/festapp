@@ -1041,7 +1041,7 @@
       "variable": "Variable",
       "previewUnavailable": "Preview could not load. Try again.",
       "preview": "Email content preview",
-      "previewScope": "Sample data without a banner. Links are inactive.",
+      "previewScope": "Preview with the current email wrapper. Customer and payment details are illustrative. Links are inactive.",
       "scenario": "Example",
       "suggestTitle": "Use the event name variable instead of “{}”?",
       "replaceVariable": "Replace with variable",
@@ -1073,7 +1073,10 @@
       "previewFrom": "From",
       "previewTo": "To",
       "previewReceivedMessage": "Received message",
-      "uniqueAlreadyUsed": "This section is already inserted. It can appear only once in an email."
+      "uniqueAlreadyUsed": "This section is already inserted. It can appear only once in an email.",
+      "authoringContextUnavailable": "The email layout and sender could not be loaded. Please retry.",
+      "previewSenderUnavailable": "Sender unavailable",
+      "previewShort": "Preview"
     }
   },
   "Inventory": {

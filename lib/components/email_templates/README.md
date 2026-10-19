@@ -91,8 +91,28 @@ The versioned asset records a deterministic source digest, not a generation time
 The small scenario matrix uses actual email languages (cs/en orders and cs waitlist)
 and relevant producer scenarios. Order amounts, product groups and payment text
 come from one fixture. No remote preview endpoint, runtime JS, live QR or customer
-data is used. Content preview excludes inherited wrappers/banners; Flutter and
-mail clients may differ in rendering unsupported CSS.
+data is used. Payment examples include a deliberately nonpayable model IBAN,
+passed through the same formatter and payment renderer as delivery.
+
+The received-message preview loads the actual inherited wrapper and runtime
+sender address through the read-only `authoringContext` action of the existing
+`send-custom-email` function. The caller's JWT must first pass the existing
+`get_entity_email_templates` catalog permission gate; wrapper resolution uses
+only the returned hierarchy. This action cannot enqueue mail, read orders or
+issue capabilities. Metadata failures keep the draft and offer retry rather
+than presenting an invented sender or claiming an unwrapped body is complete.
+Deploy this backward-compatible function action before the web client.
+
+Preview composition follows delivery order: substitute authored content once,
+apply the resolved wrapper once, then complete required overview links. Email
+content uses its own typography rather than the application's font, and empty
+fixed-height spacers retain their canonical height. The current app theme only
+adapts presentation colors. The resolved wrapper's banners load through the
+existing canonical image delivery path, including inherited banners. Only
+exact wrapper image sources on approved canonical asset hosts opt into this;
+other remote images, tracking pixels and CID attachments remain inert
+placeholders. Flutter and individual mail clients may differ in unsupported
+CSS or available fonts.
 
 Production action HTML belongs to `_shared/emailActionLink.ts`; completion belongs
 to `_shared/emailContentCompletion.ts`, including the current order-card slot.
