@@ -1,4 +1,6 @@
 import '../support/register_client_suites.dart';
+import '../components/blueprint/blueprint_background_picker_cases.dart'
+    as blueprint_background_picker;
 import '../components/blueprint/blueprint_layout_assets_cases.dart'
     as blueprintAssets;
 import '../components/blueprint/blueprint_image_upload_cases.dart'
@@ -20,6 +22,7 @@ void main() {
     'czech_catalog_2': suite1.main,
     'czech_catalog_1': suite2.main,
     'blueprint_layout_ui': blueprintLayoutUi.main,
+    'blueprint_background_picker': blueprint_background_picker.main,
     'blueprint_layout_host': blueprintHost.main,
     'blueprint_layout_assets': blueprintAssets.main,
     'blueprint_image_upload': blueprintImageUpload.main,

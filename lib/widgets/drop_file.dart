@@ -31,6 +31,9 @@ class DropFile extends StatefulWidget {
   /// Height of the drop area.
   final double height;
 
+  /// Optional picker used by hosts that need custom file loading on every platform.
+  final Future<XFile?> Function()? pickFile;
+
   const DropFile({
     super.key,
     required this.onFilePathChanged,
@@ -38,6 +41,7 @@ class DropFile extends StatefulWidget {
     this.hint,
     this.allowedExtensions,
     this.height = 250,
+    this.pickFile,
   });
 
   @override
@@ -81,6 +85,16 @@ class _DropFileState extends State<DropFile> {
   }
 
   Future<void> _pickFile() async {
+    if (widget.pickFile != null) {
+      final picked = await widget.pickFile!();
+      if (!mounted || picked == null) return;
+      setState(() {
+        file = picked;
+        _fileCount = 1;
+      });
+      widget.onFilePathChanged(picked);
+      return;
+    }
     if (!PlatformHelper.isWeb) return;
 
     FilePickerResult? result = await FilePicker.pickFiles(
@@ -115,7 +129,7 @@ class _DropFileState extends State<DropFile> {
 
   @override
   Widget build(BuildContext context) {
-    bool isClickable = PlatformHelper.isWeb;
+    bool isClickable = widget.pickFile != null || PlatformHelper.isWeb;
     bool isCompact = widget.height < 160;
     double iconSize = isCompact ? 32 : 50;
     double iconSpacing = isCompact ? 6 : 12;

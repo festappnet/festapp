@@ -93,7 +93,7 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
               onPressed: _pending ? null : () async {
                 setState(() { _pending = true; _error = null; });
                 try {
-                  await pickBlueprintBackground(controller: controller, assets: _assets,
+                  await pickBlueprintBackground(context: context,controller: controller, assets: _assets,
                     unitId: widget.unitId, isMounted: () => mounted);
                 } catch (error) {
                   if (mounted) setState(() => _error = error.toString());

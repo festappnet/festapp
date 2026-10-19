@@ -19,6 +19,7 @@ import '../blueprint_group_binding.dart';
 import '../blueprint_layout_resources.dart';
 import '../../fonts/font_family_picker.dart';
 import '../../fonts/ticket_font_ids.dart';
+import '../../ticket_layout/ticket_layout_service.dart';
 import '../blueprint_layout_controller.dart';
 import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
@@ -145,6 +146,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     });
     try {
       await pickBlueprintBackground(
+          context: context,
           controller: controller.layout,
           assets: _assets,
           occasionId: controller.snapshot.occasionId,
@@ -297,15 +299,26 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final provider = await _fonts;
     if (!mounted) return;
     await FontFamilyPicker.showChoices(context,
-        families: provider.catalog.map((e) => e['family'] as String).toList(),
+        families:
+            provider.catalog.map((e) => e['family'] as String).toSet().toList(),
+        previewStyle: (family) async {
+          final entry =
+              provider.catalog.firstWhere((e) => e['family'] == family);
+          final font = await TicketLayoutService()
+              .font(controller.snapshot.occasionId, entry['id'] as String);
+          return TextStyle(
+              fontFamily: font.loaderName, fontWeight: FontWeight.w400);
+        },
         extraFamilies: provider.catalog
             .where((e) => e['source'] == 'bundled')
             .map((e) => e['family'] as String)
-            .toList(), onSelected: (family) async {
-      if (family == null) return;
-      final entry = provider.catalog.firstWhere((e) => e['family'] == family);
-      await _run(() => _prepareFonts(selectedFont: entry['id'] as String));
-    });
+            .toList(),
+        onSelected: (family) async {
+          if (family == null) return;
+          final entry =
+              provider.catalog.firstWhere((e) => e['family'] == family);
+          await _run(() => _prepareFonts(selectedFont: entry['id'] as String));
+        });
   }
 
   Future<void> _refresh() async {
