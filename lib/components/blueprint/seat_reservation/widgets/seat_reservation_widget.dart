@@ -11,7 +11,6 @@ import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
-import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -266,7 +265,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
   Widget build(BuildContext context) => SafeArea(
           child: Center(
               child: Container(
-        constraints: const BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
+        width: double.infinity,
         child: Column(children: [
           Expanded(
               child: _loading
