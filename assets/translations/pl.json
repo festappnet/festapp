@@ -1,5 +1,7 @@
 {
   "FeatureBlueprint": {
+    "blockSeat": "Zablokuj miejsce",
+    "blockSeatHint": "Zablokowanego miejsca nie można wybrać do nowego zamówienia.",
     "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
     "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień."
   },

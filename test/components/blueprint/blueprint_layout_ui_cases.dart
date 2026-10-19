@@ -475,6 +475,89 @@ void main() {
         isTrue);
   });
   testWidgetsWithEnvironment(() => environment,
+      'canvas table selection reveals its sidebar row and seats keep their own detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true,
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final tables = [
+      for (var i = 0; i < 18; i++)
+        LayoutNode(
+            id: newLayoutId(),
+            kind: 'table',
+            label: 'T${i + 1}',
+            x: 100.0 + i % 5 * 100,
+            y: 100.0 + i ~/ 5 * 100)
+    ];
+    final lastId = tables.last.id;
+    final seatId = newLayoutId();
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'Scroll fixture',
+            revision: 1,
+            document: VenueLayoutDocument(nodes: [
+              ...tables,
+              LayoutNode(
+                  id: seatId,
+                  kind: 'seat',
+                  parentId: lastId,
+                  x: 80,
+                  label: 'T18A'),
+            ]),
+            seatBindings: {
+              seatId: BlueprintSeatBinding(
+                  nodeId: seatId, title: 'T18A', groupNodeId: lastId)
+            },
+            groupProducts: {},
+            areaBindings: {}),
+        products: [],
+        spots: []);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    final editor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    final row = find.byKey(ValueKey('commercial-table-$lastId'));
+    final scroll = find.descendant(
+        of: find.byKey(const ValueKey('blueprint-reservations-panel')),
+        matching: find.byType(SingleChildScrollView));
+    expect(tester.getRect(row).top, greaterThan(tester.getRect(scroll).bottom));
+    expect(find.descendant(of: row, matching: find.byType(IconButton)),
+        findsNothing);
+    expect(editor.viewSelectionTarget!(seatId), seatId);
+    editor.onViewSelectionChanged!({lastId});
+    await tester.pumpAndSettle();
+    expect(tester.getRect(scroll).contains(tester.getCenter(row)), isTrue);
+    expect(tester.widget<ListTile>(row).selected, isTrue);
+    expect(find.text('${BlueprintStrings.manageGroupProducts}: T18'),
+        findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    editor.onViewSelectionChanged!({seatId});
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {seatId});
+    expect(find.text(BlueprintStrings.blockSeat), findsOneWidget);
+    expect(find.text(BlueprintStrings.blockSeatHint), findsOneWidget);
+    expect(find.text(BlueprintStrings.legendBlackArea), findsNothing);
+    expect(
+        find.byKey(const ValueKey('commercial-detail-back')), findsOneWidget);
+  });
+  testWidgetsWithEnvironment(() => environment,
       'empty blueprint chooses a template and stays in explicit editing after creation',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 900);

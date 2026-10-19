@@ -1255,6 +1255,8 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "blockSeat": "Blokovat místo",
+    "blockSeatHint": "Blokované místo nelze vybrat do nové objednávky.",
     "placementInvalid": "Plánek obsahuje překrývající se objekty nebo objekty mimo plátno. Oprav červeně označená místa.",
     "seatProductRequired": "Novým místům chybí produkt s cenou. Přiřaď ho v režimu Rezervace a objednávky.",
     "editAreaProduct": "Upravit produkt a cenu",

@@ -1,5 +1,7 @@
 {
   "FeatureBlueprint": {
+    "blockSeat": "Blokovať miesto",
+    "blockSeatHint": "Blokované miesto nemožno vybrať do novej objednávky.",
     "placementInvalid": "Plán obsahuje prekrývajúce sa objekty alebo objekty mimo plátna. Oprav červeno označené miesta.",
     "seatProductRequired": "Novým miestam chýba produkt s cenou. Priraď ho v režime Rezervácie a objednávky.",
     "editAreaProduct": "Upraviť produkt a cenu",

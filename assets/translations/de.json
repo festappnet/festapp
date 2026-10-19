@@ -1,5 +1,7 @@
 {
   "FeatureBlueprint": {
+    "blockSeat": "Platz sperren",
+    "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
     "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
     "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu."
   },

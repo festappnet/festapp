@@ -44,6 +44,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   final _hostFocus = FocusNode(debugLabel: 'Blueprint host actions');
   late _BlueprintScreenMode _screenMode;
   Set<String> _commercialSelection = {};
+  final Map<String, GlobalKey> _commercialRowKeys = {};
   final _commercialDetailRevision = ValueNotifier(0);
   bool _commercialDetailOpen = false;
   bool _showIndividualCommercialSeats = false;
@@ -604,7 +605,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               if (binding != null)
                 SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(BlueprintStrings.legendBlackArea),
+                    title: Text(BlueprintStrings.blockSeat),
+                    subtitle: Text(BlueprintStrings.blockSeatHint),
                     value: binding.blocked,
                     onChanged: _busy || protected
                         ? null
@@ -687,8 +689,28 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   void _selectCommercialFromCanvas(Set<String> selection) {
+    if (_editingPlan || _busy || controller.mode != BlueprintLayoutMode.manage)
+      return;
     _setCommercialSelection(selection);
-    if (!HardwareKeyboard.instance.isShiftPressed) _showCommercialDetail();
+    final openDetail = !HardwareKeyboard.instance.isShiftPressed;
+    final selectedId =
+        _commercialSelection.length == 1 ? _commercialSelection.single : null;
+    final tableId = selectedId == null
+        ? null
+        : controller.snapshot.seatBindings[selectedId]?.groupNodeId ??
+            selectedId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _editingPlan ||
+          controller.mode != BlueprintLayoutMode.manage) return;
+      if (selectedId != null && !_commercialSelection.contains(selectedId))
+        return;
+      final rowContext = _commercialRowKeys[tableId]?.currentContext;
+      if (rowContext != null) {
+        Scrollable.ensureVisible(rowContext, alignment: .5);
+      }
+      if (openDetail) _showCommercialDetail();
+    });
   }
 
   Future<void> _showCommercialDetail() async {
@@ -851,6 +873,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             ? controller.snapshot.groupProducts[table.id]
             : products.single);
     return Padding(
+      key: _commercialRowKeys.putIfAbsent(table.id, () => GlobalKey()),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Ink(
         decoration: BoxDecoration(
@@ -874,23 +897,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           title: Text(
               table.label.isEmpty ? BlueprintStrings.tablesTitle : table.label),
           subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text('(${members.length})',
-                style: Theme.of(context).textTheme.bodySmall),
-            IconButton(
-              key: ValueKey('commercial-table-detail-${table.id}'),
-              icon: const Icon(Icons.category_outlined, size: 20),
-              tooltip: BlueprintStrings.manageGroupProducts,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 40),
-              padding: const EdgeInsets.all(4),
-              onPressed: _busy
-                  ? null
-                  : () {
-                      _setCommercialSelection({table.id});
-                      _showCommercialDetail();
-                    },
-            ),
-          ]),
+          trailing: Text('(${members.length})',
+              style: Theme.of(context).textTheme.bodySmall),
           onTap: _busy ? null : () => _selectCommercialRow(table.id),
         ),
       ),
@@ -1127,7 +1135,27 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     );
   }
 
+  String _tableTooltip(LayoutNode table) {
+    final id = _commercialId(table);
+    final members = controller.snapshot.seatBindings.values
+        .where((seat) => seat.groupNodeId == id)
+        .toList();
+    final products = members.map((seat) => seat.productId).toSet();
+    return [
+      table.label,
+      BlueprintStrings.seatCount(members.length),
+      products.length > 1
+          ? BlueprintStrings.mixedProducts
+          : _productText(products.isEmpty
+              ? controller.snapshot.groupProducts[id]
+              : products.single),
+    ].join('\n');
+  }
+
   Map<String, dynamic> get _presentations => {
+        if (!_editingPlan)
+          for (final node in controller.layout.document.nodes)
+            if (node.kind == 'table') node.id: {'tooltip': _tableTooltip(node)},
         for (final binding in controller.snapshot.seatBindings.values)
           binding.nodeId: {
             'label': binding.title,

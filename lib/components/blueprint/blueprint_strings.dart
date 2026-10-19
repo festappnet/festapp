@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
+  static String get blockSeat => 'FeatureBlueprint.blockSeat'.tr();
+  static String get blockSeatHint => 'FeatureBlueprint.blockSeatHint'.tr();
   static String get placementInvalid =>
       'FeatureBlueprint.placementInvalid'.tr();
   static String get seatProductRequired =>
