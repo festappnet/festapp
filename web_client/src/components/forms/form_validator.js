@@ -211,8 +211,6 @@ export class FormValidator {
                     // Iterate tickets in payload
                     tickets.forEach((ticketItem, tIdx) => {
                          subFields.forEach(sub => {
-                             const stateIndex = ticketItem._ticketIndex ?? tIdx;
-                             if (sub.type === 'spot' && session?.state.tickets[stateIndex]?._blueprintArea) return;
                              // Handle Model (camelCase) or Raw Data (snake_case)
                              const isRequired = sub.isRequired !== undefined ? sub.isRequired : sub.is_required;
                              

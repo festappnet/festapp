@@ -33,4 +33,45 @@ class BlueprintGroupModel {
 
   Map<String, dynamic> toJson() => {metaId: id, metaTitle: title};
 
+  List<String> alphabet = [
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z'
+  ];
+
+  String getNextBoxName() {
+    String getAlphabetName(int index) {
+      String name = "";
+      while (index >= 0) {
+        name = alphabet[index % 26] + name;
+        index = (index ~/ 26) - 1;
+      }
+      return name;
+    }
+
+    return "$title${getAlphabetName(objects.length)}";
+  }
 }

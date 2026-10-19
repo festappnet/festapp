@@ -7,7 +7,6 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_before_users uuid[];
 BEGIN
-  PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=p_order)]);
   SELECT o.occasion INTO v_occasion FROM eshop.orders o WHERE o.id=p_order;
   IF v_actor IS NULL OR v_occasion IS NULL
     OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN

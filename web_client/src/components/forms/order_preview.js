@@ -305,7 +305,6 @@ export class OrderPreview {
         }
 
 
-
         // 2. Process Payload Tickets
         // We need to reconstruct the "ticket rows" structure expected by _render
         const tickets = [];
@@ -320,14 +319,6 @@ export class OrderPreview {
                     allSubFieldsOrdered.push(...subs);
                 }
             });
-        }
-
-        // Layout-bound admissions are offered ticket products even when their
-        // ordinary product selectors are hidden by the addressed-seat UI.
-        for (const offered of formModel.offeredTicketProductFields || []) {
-            if (!allSubFieldsOrdered.some(field => String(field.id) === String(offered.id))) {
-                allSubFieldsOrdered.push(offered);
-            }
         }
 
         payloadTickets.forEach((ticketData, index) => {

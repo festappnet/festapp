@@ -2264,24 +2264,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.2"
-  venue_layout_core:
-    dependency: "direct overridden"
-    description:
-      path: "packages/venue_layout_core"
-      ref: "277d65ec4c1cfd190c1859dbcc8ee6004a163f06"
-      resolved-ref: "277d65ec4c1cfd190c1859dbcc8ee6004a163f06"
-      url: "https://github.com/festappnet/venue_seat_picker.git"
-    source: git
-    version: "0.1.0"
   venue_seat_picker:
     dependency: "direct main"
     description:
       path: "."
-      ref: "277d65ec4c1cfd190c1859dbcc8ee6004a163f06"
-      resolved-ref: "277d65ec4c1cfd190c1859dbcc8ee6004a163f06"
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
+      resolved-ref: c829a33d07de9a8fa376b407658875d22abd246e
       url: "https://github.com/festappnet/venue_seat_picker.git"
     source: git
-    version: "0.2.0"
+    version: "0.1.2"
   video_player:
     dependency: transitive
     description:

@@ -1,4 +1,3 @@
-import 'package:venue_seat_picker/venue_seat_picker.dart' show VenueLayoutLocalizations;
 import 'package:fstapp/startup/startup_language.dart';
 import 'package:fstapp/services/bounded_database_opener.dart';
 import 'package:fstapp/startup/startup_failure_screen.dart';
@@ -569,7 +568,6 @@ class _MyAppState extends State<MyApp> {
         localizationsDelegates: [
           ...context.localizationDelegates,
           FormBuilderLocalizations.delegate,
-          VenueLayoutLocalizations.delegate,
         ],
         supportedLocales: context.supportedLocales,
         locale: context.locale,
