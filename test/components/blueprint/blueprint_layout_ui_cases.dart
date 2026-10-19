@@ -124,6 +124,116 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
+      'blueprint host history shortcuts survive semantic inspector activation',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        x: 400,
+        y: 400,
+        width: 200,
+        height: 100,
+        label: 'S7',
+        properties: {'bold': true});
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'History',
+            revision: 1,
+            document: VenueLayoutDocument(nodes: [table]),
+            seatBindings: {},
+            groupProducts: {}));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+    await tester.pumpAndSettle();
+    final editor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    editor.controller.select({table.id});
+    await tester.pumpAndSettle();
+    final hostFocus = tester
+        .widgetList<Focus>(find.byType(Focus))
+        .singleWhere(
+            (focus) => focus.focusNode?.debugLabel == 'Blueprint host actions')
+        .focusNode!;
+    expect(hostFocus.hasPrimaryFocus, isTrue);
+    final bold = find.widgetWithIcon(IconButton, Icons.format_bold);
+    await tester.ensureVisible(bold);
+    final semantics = tester.ensureSemantics();
+    try {
+      tester.binding.renderViews.single.owner!.semanticsOwner!
+          .performAction(tester.getSemantics(bold).id, SemanticsAction.tap);
+      await tester.pump();
+    } finally {
+      semantics.dispose();
+    }
+    bool isBold() =>
+        editor.controller.document.nodes.single.properties['bold'] == true;
+    expect(isBold(), isFalse);
+    expect(hostFocus.hasPrimaryFocus, isTrue);
+    Future<void> shortcut(
+        {bool meta = false,
+        bool shift = false,
+        LogicalKeyboardKey key = LogicalKeyboardKey.keyZ}) async {
+      final modifier =
+          meta ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+      await tester.sendKeyDownEvent(modifier);
+      if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(key);
+      if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pump();
+    }
+
+    await shortcut();
+    expect(isBold(), isTrue);
+    await shortcut(meta: true, shift: true);
+    expect(isBold(), isFalse);
+    await shortcut(meta: true);
+    expect(isBold(), isTrue);
+    await shortcut(key: LogicalKeyboardKey.keyY);
+    expect(isBold(), isFalse);
+    await tester.tap(find.byTooltip(BlueprintStrings.background));
+    await tester.pumpAndSettle();
+    await shortcut();
+    expect(isBold(), isFalse, reason: 'An open modal owns its keyboard scope');
+    await tester.tap(find.descendant(
+        of: find.byKey(const ValueKey('blueprint-background-picker')),
+        matching: find.byIcon(Icons.close)));
+    await tester.pumpAndSettle();
+    hostFocus.requestFocus();
+    await tester.pump();
+    await shortcut();
+    expect(isBold(), isTrue);
+    await shortcut(key: LogicalKeyboardKey.keyY);
+    final textInput = tester.widget<EditableText>(find
+        .descendant(
+            of: find.byType(VenueLayoutEditor),
+            matching: find.byType(EditableText))
+        .first);
+    textInput.focusNode.requestFocus();
+    await tester.pump();
+    await shortcut();
+    expect(isBold(), isFalse, reason: 'Active text input keeps native undo');
+    await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
+    await tester.pumpAndSettle();
+    await shortcut();
+    expect(isBold(), isFalse, reason: 'Reservations must not undo plan edits');
+  });
+  testWidgetsWithEnvironment(() => environment,
       'blueprint V2 operational Escape and mode switch preserve geometry draft',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 900);

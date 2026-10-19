@@ -102,6 +102,37 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _hostFocus.requestFocus();
   }
 
+  KeyEventResult _hostHistoryKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        !_editingPlan ||
+        !_canEdit ||
+        _busy ||
+        controller.layout.readOnly ||
+        controller.layout.saving ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      return KeyEventResult.ignored;
+    }
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused?.widget is EditableText ||
+        focused?.findAncestorStateOfType<EditableTextState>() != null) {
+      return KeyEventResult.ignored;
+    }
+    final keyboard = HardwareKeyboard.instance;
+    if (!keyboard.isControlPressed && !keyboard.isMetaPressed) {
+      return KeyEventResult.ignored;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyZ) {
+      keyboard.isShiftPressed
+          ? controller.layout.redo()
+          : controller.layout.undo();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyY) {
+      controller.layout.redo();
+    } else {
+      return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
   void _startOperation(BlueprintLayoutMode mode) {
     if (_busy || _editingPlan || !_canOrder) return;
     controller.setMode(mode);
@@ -1323,6 +1354,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             child: Focus(
                 focusNode: _hostFocus,
                 autofocus: true,
+                onKeyEvent: _hostHistoryKey,
                 child: Scaffold(
                   body: SafeArea(
                       child: Column(children: [
