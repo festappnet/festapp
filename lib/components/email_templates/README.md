@@ -75,20 +75,7 @@ Email authoring uses native Super Editor action-tag composition and atomic
 placeholder objects. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.
 The portable rules and preview composer live in `festapp_core/email_templates.dart`;
-localized authoring labels remain in the Flutter adapter. Required overview actions
-are also shown as read-only generated content inside the editor, in the
-component slot selected by delivery. Only genuine leading/trailing additions
-appear outside the authored document. They follow the same wrapper/body
-deduplication as delivery and never enter the saved draft.
-
-Payment-state presentation is owned by `_shared/orderEmailPresentation.ts`, used
-by both actual order email producers and the preview generator. Synthetic
-scenarios select payment facts, not separate wording or payment-state branches.
-A zero-price scenario uses the canonical zero-order explanation. Authored fixed
-text is preserved verbatim; templates that need conditional payment instructions
-should use `balanceReasoning` (Stav platby). The confirmation `amount` is the full
-order total even when a deposit is requested; payment-received `amount` is the
-received amount.
+localized authoring labels remain in the Flutter adapter.
 
 Preview HTML is generated from production pure renderers, using synthetic inputs
 in `automation/fixtures/email_preview/order.json`. Regenerate from the repository
@@ -116,11 +103,8 @@ issue capabilities. Metadata failures keep the draft and offer retry rather
 than presenting an invented sender or claiming an unwrapped body is complete.
 Deploy this backward-compatible function action before the web client.
 
-Preview composition follows delivery: substitute authored content once, reserve
-a missing fallback action inside that content, apply the resolved wrapper once,
-then fill its first explicit overview slot or the reserved fallback. Explicit
-links in either content or wrapper suppress automatic additions. Fallback
-actions inherit the wrapper content padding, including in cancellation mail. Email
+Preview composition follows delivery order: substitute authored content once,
+apply the resolved wrapper once, then complete required overview links. Email
 content uses its own typography rather than the application's font, and empty
 fixed-height spacers retain their canonical height. The current app theme only
 adapts presentation colors. The resolved wrapper's banners load through the
