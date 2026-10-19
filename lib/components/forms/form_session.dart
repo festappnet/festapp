@@ -1,5 +1,3 @@
-import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
-import 'package:fstapp/components/forms/models/holder_models/field_holder.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
@@ -66,75 +64,6 @@ class FormSession extends ChangeNotifier {
       ticketHolder.updateTickets(seats);
       recalculateTotals();
     }
-  }
-
-  int areaQuantity(String nodeId) =>
-      formHolder
-          .getTicket()
-          ?.tickets
-          .where((ticket) => ticket.blueprintAreaNodeId == nodeId)
-          .length ??
-      0;
-
-  void setAreaQuantity(BlueprintAreaBinding binding, int quantity,
-      {required int available}) {
-    final holder = formHolder.getTicket();
-    if (holder == null || quantity < 0 || quantity > available)
-      throw StateError('area_quantity_unavailable');
-    if (quantity == 0) {
-      holder.tickets = holder.tickets
-          .where((ticket) => ticket.blueprintAreaNodeId != binding.nodeId)
-          .toList();
-      recalculateTotals();
-      return;
-    }
-    final choices = (holder.offeredProductFields.isEmpty
-            ? holder.fields.whereType<OptionsFieldProductHolder>()
-            : holder.offeredProductFields)
-        .expand((field) => field.options
-            .whereType<FormOptionProductModel>()
-            .where((product) =>
-                product.id.toString() == binding.productId.toString() &&
-                product.isAvailable)
-            .map((product) => (field: field, product: product)));
-    final choice = choices.firstOrNull;
-    if (choice == null) throw StateError('area_product_not_offered');
-    final other = holder.tickets
-        .where((ticket) => ticket.blueprintAreaNodeId != binding.nodeId)
-        .toList();
-    final existing = holder.tickets
-        .where((ticket) => ticket.blueprintAreaNodeId == binding.nodeId)
-        .toList();
-    if (other.length + quantity > holder.maxTickets)
-      throw StateError('max_tickets_reached');
-    holder.tickets = [
-      ...other,
-      for (var index = 0; index < quantity; index++)
-        index < existing.length
-            ? existing[index]
-            : FormTicketModel(
-                ticketValues: [
-                  for (final field in holder.fields)
-                    if (field.fieldType != FormMetadata.fieldTypeSpot &&
-                        field.id != choice.field.id)
-                      field,
-                  OptionsFieldProductHolder(
-                      fieldType: choice.field.fieldType,
-                      value: choice.product,
-                      productOptions: choice.field.options
-                          .whereType<FormOptionProductModel>()
-                          .toList(),
-                      selectionType: choice.field.selectionType,
-                      id: choice.field.id,
-                      title: choice.field.title ?? '',
-                      isRequired: choice.field.isRequired,
-                      description: choice.field.description),
-                ],
-                ticketKey: GlobalKey<FormBuilderState>(),
-                blueprintAreaNodeId: binding.nodeId,
-                productDefaults: {choice.field.id: choice.product})
-    ];
-    recalculateTotals();
   }
 
   void confirmSeatSelection() {

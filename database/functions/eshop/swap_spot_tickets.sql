@@ -79,16 +79,16 @@ DECLARE
     now_time TIMESTAMP WITH TIME ZONE := NOW();
 BEGIN
     -- 1. Get current ticket and order data
-    SELECT * INTO opt FROM eshop.order_product_ticket WHERE id = p_opt_id FOR UPDATE;
+    SELECT * INTO opt FROM eshop.order_product_ticket WHERE id = p_opt_id;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order Product Ticket % not found', p_opt_id; END IF;
 
     PERFORM public.check_ticket_is_mutable(opt.ticket);
-    SELECT * INTO ord FROM eshop.orders WHERE id = opt."order" FOR UPDATE;
+    SELECT * INTO ord FROM eshop.orders WHERE id = opt."order";
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
     original_product_id := opt.product;
 
-    -- 2. Find the *original* product JSON and price from the order_ids.data
+    -- 2. Find the *original* product JSON and price from the orders.data
     SELECT prod, (prod->>'price')::numeric
     INTO original_product_json, original_price
     FROM jsonb_array_elements(ord.data->'tickets') tckt,
@@ -103,8 +103,6 @@ BEGIN
     -- 3. Generate the *new* product JSON
     new_product_json := public._swap_spots_generate_product_json(p_new_product_id, p_new_spot_id);
     new_price := (new_product_json->>'price')::numeric;
-    IF new_product_json->>'currency_code' IS DISTINCT FROM ord.currency_code THEN
-      RAISE EXCEPTION 'BLUEPRINT_CURRENCY_MISMATCH'; END IF;
 
     -- 4. Check if an update is even needed.
     -- If the new JSON is identical to the old, nothing needs to be done.
@@ -123,9 +121,9 @@ BEGIN
         WHEN new_order_price <= 0 THEN 'paid'
         ELSE 'ordered'
     END INTO new_state
-    FROM (SELECT COALESCE((SELECT paid FROM eshop.payment_info WHERE id=ord.payment_info),0) AS paid) pi;
+    FROM eshop.payment_info pi WHERE pi.id = ord.payment_info;
 
-    -- 6. Build the new order_ids.data JSON
+    -- 6. Build the new orders.data JSON
     new_data := jsonb_set(
         ord.data,
         '{tickets}',
@@ -181,7 +179,7 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION public.swap_spot_pair_internal_v1(spot_id_1 BIGINT, spot_id_2 BIGINT)
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 BIGINT, spot_id_2 BIGINT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -203,9 +201,9 @@ BEGIN
     END IF;
 
     -- 2. Fetch Spot Data
-    SELECT * INTO spot1 FROM eshop.spots WHERE id = spot_id_1 FOR UPDATE;
+    SELECT * INTO spot1 FROM eshop.spots WHERE id = spot_id_1;
     IF NOT FOUND THEN RAISE EXCEPTION 'Spot 1 not found (ID: %)', spot_id_1 USING ERRCODE = 'P0002'; END IF;
-    SELECT * INTO spot2 FROM eshop.spots WHERE id = spot_id_2 FOR UPDATE;
+    SELECT * INTO spot2 FROM eshop.spots WHERE id = spot_id_2;
     IF NOT FOUND THEN RAISE EXCEPTION 'Spot 2 not found (ID: %)', spot_id_2 USING ERRCODE = 'P0002'; END IF;
 
     -- 3. Permission and Occasion Check
@@ -225,7 +223,7 @@ BEGIN
         WHEN OTHERS THEN RAISE EXCEPTION 'Error during permission check: %', SQLERRM;
     END;
     IF has_permission <> TRUE THEN
-        RAISE EXCEPTION 'User is not authorized to edit order_ids for this occasion' USING ERRCODE = '42501';
+        RAISE EXCEPTION 'User is not authorized to edit orders for this occasion' USING ERRCODE = '42501';
     END IF;
 
     -- 4. Main Swap Logic: Branch based on assignment status
@@ -279,36 +277,8 @@ BEGIN
 
 END;
 $$;
-REVOKE ALL ON FUNCTION public.swap_spot_pair_internal_v1(bigint,bigint)
+REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint)
   FROM PUBLIC,anon,authenticated;
-
-CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 bigint,spot_id_2 bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE ids1 bigint[]; ids2 bigint[]; order_ids bigint[]; occ bigint; i integer;
-BEGIN
- SELECT min(occasion) INTO occ FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2);
- IF occ IS NULL OR (SELECT count(*) FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2) AND occasion=occ)<>2 THEN
-  RAISE EXCEPTION 'BLUEPRINT_SPOT_SCOPE_MISMATCH'; END IF;
- IF public.get_is_editor_order_on_occasion(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
- PERFORM public.check_occasion_writable(occ);
- PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
- ids1:=public.blueprint_selection_unit_spots_internal(spot_id_1);
- ids2:=public.blueprint_selection_unit_spots_internal(spot_id_2);
- IF cardinality(ids1)<>cardinality(ids2) OR ids1 && ids2 THEN RAISE EXCEPTION 'BLUEPRINT_UNIT_SIZE_MISMATCH'; END IF;
- PERFORM public.check_blueprint_selection_units_internal(ids1||ids2);
- SELECT array_agg(DISTINCT opt."order") INTO order_ids FROM eshop.spots s JOIN eshop.order_product_ticket opt ON opt.id=s.order_product_ticket WHERE s.id=ANY(ids1||ids2);
- PERFORM public.lock_order_capacity_scope_internal(order_ids);
- PERFORM public.lock_ticket_order_products_internal(o.id) FROM eshop.orders o WHERE id=ANY(order_ids) ORDER BY id;
- -- Destination products may differ from products currently held by those order_ids.
- PERFORM 1 FROM eshop.products WHERE id IN(SELECT product FROM eshop.spots WHERE id=ANY(ids1||ids2)) ORDER BY id FOR UPDATE;
- PERFORM 1 FROM eshop.payment_info WHERE id IN(SELECT payment_info FROM eshop.orders WHERE id=ANY(order_ids)) ORDER BY id FOR UPDATE;
- PERFORM 1 FROM eshop.spots WHERE id=ANY(ids1||ids2) ORDER BY id FOR UPDATE;
- IF EXISTS(SELECT 1 FROM eshop.spots s LEFT JOIN eshop.blueprint_seat_bindings b ON b.spot=s.id
-  WHERE s.id=ANY(ids1||ids2) AND (b.blocked OR s.product IS NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()))) THEN
-  RAISE EXCEPTION 'BLUEPRINT_SEAT_PROTECTED'; END IF;
- FOR i IN 1..cardinality(ids1) LOOP PERFORM public.swap_spot_pair_internal_v1(ids1[i],ids2[i]); END LOOP;
-END $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 bigint,spot_id_2 bigint)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER

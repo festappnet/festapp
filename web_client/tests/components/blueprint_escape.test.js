@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
-import { emptyLayout } from '../helpers/venue_layout_kernel.js';
 const bootstrap = new JSDOM('<body></body>', { url: 'https://tickets.invalid/' });
 globalThis.window = bootstrap.window;
 globalThis.document = bootstrap.window.document;
@@ -9,6 +8,7 @@ const { BlueprintSelector } = await import('../../src/components/blueprint/bluep
 bootstrap.window.close();
 delete globalThis.window;
 delete globalThis.document;
+import { BlueprintRenderer } from '../../src/components/blueprint/blueprint_renderer.js';
 import { DbForms } from '../../src/components/forms/db_forms.js';
 
 function fixture(t) {
@@ -19,16 +19,16 @@ function fixture(t) {
         t.after(() => original ? Object.defineProperty(globalThis, key, original) : delete globalThis[key]);
     }
     t.after(() => dom.window.close());
-    dom.window.SVGElement.prototype.getScreenCTM = () => null;
+    t.mock.method(BlueprintRenderer.prototype, 'render', () => {});
+    t.mock.method(BlueprintRenderer.prototype, 'destroy', () => {});
     return { selector: new BlueprintSelector(), session: { formModel: { blueprint: 87 } }, dom };
 }
 
 test('Escape uses browser Back once and removes its listener after the selector closes', async t => {
     const { selector, session, dom } = fixture(t);
-    t.mock.method(DbForms, 'getBlueprint', async () => ({ layout: emptyLayout, spots: [], products: [], seatBindings: [] }));
+    t.mock.method(DbForms, 'getBlueprint', async () => ({ objects: [], spots: [] }));
     const back = t.mock.method(window.history, 'back', () => {});
     await selector.open(session, null, []);
-    assert.ok(document.querySelector('.venue-layout-viewer'));
     const escape = () => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
     assert.equal(escape(), false);
     escape();
@@ -47,7 +47,7 @@ test('closing while seats load cannot create a renderer after the overlay has go
     t.mock.method(window.history, 'back', () => window.dispatchEvent(new dom.window.PopStateEvent('popstate')));
     const pending = selector.open(session, null, []);
     document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
-    deliver({ layout: emptyLayout, spots: [], products: [], seatBindings: [] });
+    deliver({ objects: [], spots: [] });
     await pending;
     assert.equal(selector.renderer, null);
     assert.equal(document.querySelector('.blueprint-modal-container'), null);

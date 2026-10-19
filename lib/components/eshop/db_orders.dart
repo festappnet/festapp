@@ -37,26 +37,6 @@ class OrderHistoryBundle {
   OrderHistoryBundle({required this.order, required this.history});
 }
 
-class SpotSelectionResult {
-  SpotSelectionResult.fromJson(Map<String, dynamic> json,
-      {required String previousSecret, required int requestedSpotId})
-      : code = (json['code'] as num).toInt(),
-        message = json['message']?.toString(),
-        reason = json['reason']?.toString(),
-        secret =
-            (json['secret'] ?? json['secretId'] ?? previousSecret).toString(),
-        expiresAt = DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
-        spotIds = List.unmodifiable(
-            (json['spotIds'] as List? ?? [requestedSpotId])
-                .map((v) => (v as num).toInt()));
-  final int code;
-  final String? message, reason;
-  final String secret;
-  final DateTime? expiresAt;
-  final List<int> spotIds;
-  bool get accepted => code == 200;
-}
-
 class DbOrders {
   static final _supabase = Supabase.instance.client;
   static OrderCommands get _commands => SupabaseOrderCommands(_supabase);
@@ -129,29 +109,27 @@ class DbOrders {
     await sendStornoTicketOrderEmail(orderId: id);
   }
 
-  static Future<SpotSelectionResult> selectSpotResult(
-      String formKey, String secret, int spotId, bool selecting) async {
-    final response = await _supabase.rpc('select_spot', params: {
-      'form_key': formKey,
-      'secret_id': secret,
-      'spot_id': spotId,
-      'selecting': selecting,
-    });
-    return SpotSelectionResult.fromJson(
-        Map<String, dynamic>.from(response as Map),
-        previousSecret: secret,
-        requestedSpotId: spotId);
-  }
-
   static Future<bool> selectSpot(BuildContext context, String formKey,
       String secret, int spotId, bool selecting) async {
-    final result = await selectSpotResult(formKey, secret, spotId, selecting);
-    if (!result.accepted && context.mounted) {
-      ToastHelper.Show(
-          context, result.message ?? result.reason ?? 'Reservation rejected',
+    final response = await _supabase.rpc(
+      'select_spot',
+      params: {
+        'form_key': formKey,
+        'secret_id': secret,
+        'spot_id': spotId,
+        'selecting': selecting,
+      },
+    );
+
+    var code = response["code"];
+    var message = response["message"];
+
+    if (code != 200) {
+      ToastHelper.Show(context, message.toString(),
           severity: ToastSeverity.NotOk);
+      return false;
     }
-    return result.accepted;
+    return true;
   }
 
   static Future<ReservationsBundle> getAllOrdersBundle({

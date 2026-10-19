@@ -25,12 +25,6 @@ void main() {
           title: 'Q',
         );
 
-    test('selected product objects resolve to the current offered option', () {
-      final selected = FormOptionDefinition('1', 'Previous title');
-      expect(RadioFieldBuilder.resolveDefault(holderWith(selected), options), same(options[1]));
-      expect(RadioFieldBuilder.resolveDefault(holderWith(FormOptionDefinition('gone', 'No')), options), isNull);
-    });
-
     test('returns matching FormOptionModel when default matches option title',
         () {
       final resolved =

@@ -103,18 +103,12 @@ BEGIN
         OR (et.organization IS NULL AND et.unit IS NULL AND et.occasion IS NULL)
       )
       AND et.code <> 'ORDER_OVERVIEW'
-      -- Explicit editor catalog: internal and unknown codes are never enabled
-      -- merely by adding a global default. Keep feature visibility below.
+      -- B. Filter based on App Support (New Logic)
       AND (
-        et.code IN (
-          'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_PAYMENT_DONE',
-          'TICKET_ORDER_REMINDER', 'TICKET_ORDER_STORNO', 'TICKET_ORDER_UPDATE',
-          'waitlist_confirmation', 'waitlist_offer'
-        )
-        OR (is_app_supported IS TRUE AND et.code IN (
-          'SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
-          'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE'
-        ))
+        is_app_supported IS TRUE
+        OR
+        et.code NOT IN ('SIGN_IN_CODE', 'RESET_PASSWORD', 'APP_LINKS',
+                        'ACCOUNT_DELETION_CONFIRM', 'ACCOUNT_DELETION_COMPLETE')
       )
       AND (show_waitlist_templates OR et.code NOT IN
         ('waitlist_confirmation', 'waitlist_offer'))

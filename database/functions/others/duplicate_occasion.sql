@@ -18,7 +18,6 @@ DECLARE
   v_target_unit bigint;
   v_organization bigint;
   v_demo boolean;
-  v_layout_ids jsonb; v_copied_layout jsonb; v_resource_copy jsonb;
 BEGIN
   SELECT unit, organization INTO v_source_unit, v_organization
   FROM public.occasions WHERE id = oc;
@@ -31,10 +30,6 @@ BEGIN
      OR NOT EXISTS (SELECT 1 FROM public.units
        WHERE id = v_target_unit AND organization = v_organization) THEN
     RAISE insufficient_privilege USING MESSAGE = 'source and target unit manager required within one organization';
-  END IF;
-
-  IF EXISTS(SELECT 1 FROM eshop.blueprints WHERE occasion=oc AND layout IS NULL) THEN
-    RAISE check_violation USING MESSAGE='BLUEPRINT_LAYOUT_MIGRATION_REQUIRED';
   END IF;
 
   ------------------------------------------------------------------
@@ -60,7 +55,6 @@ BEGIN
   CREATE TEMP TABLE tmp_events (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_exclusive_groups (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_blueprints (old_id bigint, new_id bigint) ON COMMIT DROP;
-  CREATE TEMP TABLE tmp_blueprint_layout_ids (blueprint bigint,old_id uuid,new_id uuid,PRIMARY KEY(blueprint,old_id)) ON COMMIT DROP;
   PERFORM 1 FROM public.occasions WHERE id=oc FOR UPDATE;
   CREATE TEMP TABLE tmp_product_types (old_id bigint, new_id bigint) ON COMMIT DROP;
   CREATE TEMP TABLE tmp_products (old_id bigint, new_id bigint) ON COMMIT DROP;
@@ -199,31 +193,13 @@ BEGIN
 
   -- 5a. Blueprints
   FOR rec IN
-    SELECT id, data, title, organization, layout
+    SELECT id, data, title, organization, configuration, objects, groups, background_svg
     FROM eshop.blueprints
     WHERE occasion = oc
   LOOP
-    PERFORM public.copy_blueprint_image_resources_internal(oc,new_occ,rec.layout);
-    v_layout_ids:='{}';v_copied_layout:=rec.layout;
-    IF rec.layout IS NOT NULL THEN
-      -- Collect every declared record UUID, including nested preset documents.
-      WITH RECURSIVE records(value) AS (
-        SELECT rec.layout UNION ALL SELECT child.value FROM records CROSS JOIN LATERAL (
-          SELECT item.value FROM jsonb_each(CASE WHEN jsonb_typeof(records.value)='object' THEN records.value ELSE '{}'::jsonb END) item
-          UNION ALL SELECT item.value FROM jsonb_array_elements(CASE WHEN jsonb_typeof(records.value)='array' THEN records.value ELSE '[]'::jsonb END) item
-        ) child
-      )
-      INSERT INTO tmp_blueprint_layout_ids(blueprint,old_id,new_id)
-      SELECT rec.id,(value->>'id')::uuid,extensions.gen_random_uuid() FROM records WHERE jsonb_typeof(value)='object' AND value ? 'id'
-      ON CONFLICT(blueprint,old_id) DO NOTHING;
-      SELECT coalesce(jsonb_object_agg(old_id::text,new_id),'{}') INTO v_layout_ids FROM tmp_blueprint_layout_ids WHERE blueprint=rec.id;
-      v_copied_layout:=public.remap_blueprint_layout_ids_internal(rec.layout,v_layout_ids);
-      PERFORM public.validate_blueprint_layout_internal(v_copied_layout);
-      PERFORM public.check_blueprint_image_resource_internal(v_copied_layout,new_occ);
-    END IF;
     INSERT INTO eshop.blueprints
-      (created_at, data, title, organization, occasion, updated_at,layout,layout_revision)
-    VALUES (now(), rec.data, rec.title, v_organization, new_occ, now(),v_copied_layout,0)
+      (created_at, data, title, organization, configuration, objects, groups, occasion, updated_at, background_svg)
+    VALUES (now(), rec.data, rec.title, v_organization, rec.configuration, rec.objects, rec.groups, new_occ, now(), rec.background_svg)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_blueprints (old_id, new_id)
@@ -281,12 +257,18 @@ BEGIN
   END LOOP;
   FOR rec IN SELECT r.* FROM public.resources r
     JOIN tmp_inventory_pools m ON m.old_id=r.inventory_pool LOOP
-    v_resource_copy:=public.copy_inventory_resource_configuration_internal(rec.id,
+    INSERT INTO public.resources(title,description,capacity,booking_rules,inventory_pool,place,occasion,unit,data)
+    VALUES(rec.title,rec.description,rec.capacity,rec.booking_rules,
       (SELECT new_id FROM tmp_inventory_pools WHERE old_id=rec.inventory_pool),
-      (SELECT new_id FROM tmp_places WHERE old_id=rec.place));
-    INSERT INTO tmp_resources VALUES(rec.id,(v_resource_copy->>'resourceId')::bigint);
-    INSERT INTO tmp_resource_slots(old_id,new_id)
-      SELECT key::bigint,value::text::bigint FROM jsonb_each(v_resource_copy->'slotMap');
+      (SELECT new_id FROM tmp_places WHERE old_id=rec.place),new_occ,v_target_unit,rec.data)
+    RETURNING id INTO v_new_id;
+    INSERT INTO tmp_resources VALUES(rec.id,v_new_id);
+  END LOOP;
+  FOR rec IN SELECT r.* FROM public.resource_slots r JOIN tmp_resources m ON m.old_id=r.resource LOOP
+    INSERT INTO public.resource_slots(resource,title,data)
+    VALUES((SELECT new_id FROM tmp_resources WHERE old_id=rec.resource),rec.title,rec.data)
+    RETURNING id INTO v_new_id;
+    INSERT INTO tmp_resource_slots VALUES(rec.id,v_new_id);
   END LOOP;
   INSERT INTO eshop.product_inventory_contexts(product,inventory_context,quantity)
     SELECT p.new_id,c.new_id,x.quantity FROM eshop.product_inventory_contexts x
@@ -307,33 +289,52 @@ BEGIN
       FROM tmp_blueprints AS t
       WHERE t.old_id = rec.blueprint;
 
-    v_new_id:=public.copy_empty_inventory_spot_internal(rec.id,new_occ,COALESCE(new_product_id, rec.product),COALESCE(new_bp_id, rec.blueprint),
+    INSERT INTO eshop.spots
+      (created_at, occasion, product, updated_at, secret, secret_expiration_time, title, order_product_ticket, blueprint, inventory_context, resource, resource_slot)
+    VALUES (now(), new_occ, COALESCE(new_product_id, rec.product), now(), null, null, rec.title, null, COALESCE(new_bp_id, rec.blueprint),
       (SELECT new_id FROM tmp_inventory_contexts WHERE old_id=rec.inventory_context),
       (SELECT new_id FROM tmp_resources WHERE old_id=rec.resource),
-      (SELECT new_id FROM tmp_resource_slots WHERE old_id=rec.resource_slot));
+      (SELECT new_id FROM tmp_resource_slots WHERE old_id=rec.resource_slot))
+    RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_spots (old_id, new_id)
     VALUES (rec.id, v_new_id);
   END LOOP;
 
   ------------------------------------------------------------------
-  -- Copied geometry and commercial state share the same new UUID mapping.
-  -- Holds/orders are deliberately absent and numeric spots/products remap too.
-  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,selection_unit,group_node,blocked)
-  SELECT bp.new_id,node_map.new_id,sp.new_id,unit_map.new_id,group_map.new_id,sb.blocked
-  FROM eshop.blueprint_seat_bindings sb JOIN tmp_blueprints bp ON bp.old_id=sb.blueprint JOIN tmp_spots sp ON sp.old_id=sb.spot
-  JOIN tmp_blueprint_layout_ids node_map ON node_map.blueprint=sb.blueprint AND node_map.old_id=sb.node_id
-  LEFT JOIN tmp_blueprint_layout_ids unit_map ON unit_map.blueprint=sb.blueprint AND unit_map.old_id=sb.selection_unit
-  LEFT JOIN tmp_blueprint_layout_ids group_map ON group_map.blueprint=sb.blueprint AND group_map.old_id=sb.group_node;
-  INSERT INTO eshop.blueprint_group_products(blueprint,group_node,product)
-  SELECT bp.new_id,node_map.new_id,p.new_id FROM eshop.blueprint_group_products gp
-  JOIN tmp_blueprints bp ON bp.old_id=gp.blueprint JOIN tmp_products p ON p.old_id=gp.product
-  JOIN tmp_blueprint_layout_ids node_map ON node_map.blueprint=gp.blueprint AND node_map.old_id=gp.group_node;
-  INSERT INTO eshop.blueprint_area_bindings(blueprint,node_id,inventory_context,product)
-  SELECT bp.new_id,node_map.new_id,c.new_id,p.new_id FROM eshop.blueprint_area_bindings ab JOIN tmp_blueprints bp ON bp.old_id=ab.blueprint
-  JOIN tmp_inventory_contexts c ON c.old_id=ab.inventory_context JOIN tmp_products p ON p.old_id=ab.product
-  JOIN tmp_blueprint_layout_ids node_map ON node_map.blueprint=ab.blueprint AND node_map.old_id=ab.node_id;
+  -- 6. Update blueprints “objects” JSON column if it contains spot objects.
+  --    For each blueprint, if its "objects" JSON array contains an object with "type" = 'spot',
+  --    replace its "id" with the corresponding new spot id.
+  ------------------------------------------------------------------
+  FOR rec IN
+    SELECT tb.old_id AS old_bp, tb.new_id AS new_bp, b.objects
+    FROM tmp_blueprints tb
+    JOIN eshop.blueprints b ON b.id = tb.new_id
+  LOOP
+    IF rec.objects IS NOT NULL THEN
+      UPDATE eshop.blueprints
+      SET objects = (
+        SELECT jsonb_agg(
+          CASE
+            WHEN obj->>'type' = 'spot' THEN
+              obj || jsonb_build_object(
+                'id',
+                COALESCE(
+                  (SELECT ts.new_id FROM tmp_spots ts WHERE ts.old_id = (obj->>'id')::bigint),
+                  (obj->>'id')::int
+                )
+              )
+            ELSE obj
+          END
+        )
+        FROM jsonb_array_elements(rec.objects) AS obj
+      )
+      WHERE id = rec.new_bp;
+    END IF;
+  END LOOP;
 
+
+  ------------------------------------------------------------------
   -- 7. Duplicate Forms and Form Fields
   ------------------------------------------------------------------
 
@@ -400,7 +401,7 @@ BEGIN
        FROM jsonb_array_elements(t.value->'elements') WITH ORDINALITY x(e,n)))) FROM jsonb_each(f->'layout'->'templates') t)) ELSE f END ORDER BY n)
     FROM jsonb_array_elements(o.features) WITH ORDINALITY x(f,n)) WHERE o.id=new_occ;
   PERFORM public.validate_ticket_layout_references(new_occ,f->'layout') FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=new_occ AND f->>'code'='ticket' AND f ? 'layout';
-  DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,tmp_blueprint_layout_ids,
+  DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,
     tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden,
     tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots,tmp_scanner_fields;
   RETURN new_occ;
