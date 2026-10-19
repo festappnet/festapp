@@ -1253,7 +1253,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey[850]
+            : Colors.white,
         border: Border.all(
           color: hasIssue
               ? Theme.of(context).colorScheme.error
@@ -1887,18 +1889,20 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           if (previewId == null)
             const Text('Pro náhled vstupenky zatím není dostupná předloha.')
           else
-            TicketSettings(
-              key: ValueKey('${d['id']}-ticket-$previewId-$_editEpoch'),
-              feature: feature,
-              occasionId: previewId,
-              productEditing: false,
-              showScanningSettings: false,
-              borrowResourcesOnly: d['sourceId'] == null,
-              previewOccasion: TicketPreviewOccasion(
-                title: d['title'] as String,
-                startTime: DateTime.tryParse(d['start'] as String),
-                endTime: DateTime.tryParse(d['end'] as String),
-                placeName: d['placeName'] as String?,
+            Center(
+              child: TicketSettings(
+                key: ValueKey('${d['id']}-ticket-$previewId-$_editEpoch'),
+                feature: feature,
+                occasionId: previewId,
+                productEditing: false,
+                showScanningSettings: false,
+                borrowResourcesOnly: d['sourceId'] == null,
+                previewOccasion: TicketPreviewOccasion(
+                  title: d['title'] as String,
+                  startTime: DateTime.tryParse(d['start'] as String),
+                  endTime: DateTime.tryParse(d['end'] as String),
+                  placeName: d['placeName'] as String?,
+                ),
               ),
             ),
           const SizedBox(height: 24),

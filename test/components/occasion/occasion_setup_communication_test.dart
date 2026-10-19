@@ -87,6 +87,29 @@ void main() {
     },
   );
 
+  test(
+      'new event inherits organization even when default form disables reminders',
+      () {
+    final draft = <String, dynamic>{
+      'formDefaultsFollowEvent': true,
+      'formDraft': {
+        'data': {
+          'is_reminder_enabled': false,
+          'reminder_interval_seconds': 43200,
+          'communication_tone': 'formal',
+        }
+      },
+    };
+    initializeCommunicationDraft(draft, reset: true);
+    expect(draft['remindersMode'], 'inherit');
+    expect(draft['reminderLeadDays'], '');
+    expect(draft['replyToMode'], 'inherit');
+    expect(draft['communicationTone'], 'inherit');
+    draft['remindersMode'] = 'disabled';
+    initializeCommunicationDraft(draft);
+    expect(draft['remindersMode'], 'disabled');
+  });
+
   test('custom reply address and paid reminder lead must be valid', () {
     final draft = _draft()..['replyToMode'] = 'custom';
     for (final email in ['', '   ', 'invalid', 'missing@']) {
@@ -158,6 +181,17 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('inherited reply choice names the organization address',
+      (tester) async {
+    final data = _draft();
+    await mount(tester, data, manager: false, save: (unit) async => unit);
+    expect(
+        find.text(
+            'OccasionSetup.setupDetails.inheritOrganization (organization@example.org)'),
+        findsWidgets);
+    expect(data['replyToMode'], 'inherit');
+  });
 
   for (final paymentTiming in [false, true]) {
     testWidgets(

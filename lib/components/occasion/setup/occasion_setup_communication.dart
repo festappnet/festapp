@@ -13,7 +13,10 @@ void initializeCommunicationDraft(
   Map<String, dynamic> data, {
   bool reset = false,
 }) {
-  final form = (data['formDraft'] as Map?)?['data'] as Map? ?? {};
+  // A generated starter form is not an explicit communication override.
+  final form = data['formDefaultsFollowEvent'] == true
+      ? const <String, dynamic>{}
+      : (data['formDraft'] as Map?)?['data'] as Map? ?? {};
   final values = <String, dynamic>{
     'communicationTone':
         ['formal', 'informal'].contains(form['communication_tone'])
@@ -222,12 +225,13 @@ class _OccasionSetupCommunicationState
         key: ValueKey('comm-$key-${widget.data[key]}'),
         initialValue: widget.data[key] as String? ?? 'inherit',
         isExpanded: true,
+        itemHeight: null,
         decoration: InputDecoration(labelText: label),
         items: [
           for (final e in items.entries)
             DropdownMenuItem(
               value: e.key,
-              child: Text(e.value, overflow: TextOverflow.ellipsis),
+              child: Text(e.value),
             ),
         ],
         onChanged: _saving ? null : (v) => widget.onChanged({key: v}),
@@ -257,7 +261,7 @@ class _OccasionSetupCommunicationState
           const SizedBox(height: 20),
           _choice('replyToMode', t('replyToEmail'), {
             'inherit':
-                '${t('inheritOrganization')}: ${defaults['replyTo'] ?? t('systemSender')}',
+                '${t('inheritOrganization')} (${defaults['replyTo'] ?? t('systemSender')})',
             'custom': t('customForEvent'),
           }),
           if (!widget.paymentTiming && widget.data['replyToMode'] == 'custom')
