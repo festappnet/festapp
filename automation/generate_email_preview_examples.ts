@@ -343,7 +343,7 @@ for (const record of records) {
     preview_deadline: values.deadline || fixture.deadline,
     preview_currency: "CZK",
   };
-  record.contextTemplates = Object.fromEntries(
+  const contextualize = (templates: Record<string, string>) => Object.fromEntries(
     Object.entries(templates).map((
       [code, html],
     ) => [
@@ -353,6 +353,17 @@ for (const record of records) {
         .replace(/0 CZK/g, "{{preview_zero_explanation}}"),
     ]),
   );
+  record.contextTemplates = contextualize(templates);
+  record.applicationContextTemplates = contextualize({
+    fullOrder: generateFullOrder(
+      fixture.orderData,
+      tickets,
+      fixture.features.map((feature: any) => feature.code === "ticket"
+        ? { ...feature, is_enabled: false } : feature),
+      record.locale as "cs" | "en",
+      fixture.orderSymbol,
+    ),
+  });
 }
 
 const url = "https://example.invalid/order?order_id=1&preview=1";

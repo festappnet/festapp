@@ -81,49 +81,62 @@ void main() {
         tester.getRect(find.text('Second sentence', findRichText: true));
     expect(second.top - first.bottom, closeTo(40, 1));
   });
-  testWidgets('fidelity component chrome is transient without content movement',
-      (tester) async {
-    final controller = RichHtmlEditorController(
-        initialHtml: '<p>{{fullOrder}}</p>',
-        owner: const HtmlMediaOwner.none(),
-        authoring: EmailAuthoringProvider(
-            EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
-            field: EmailTargetField.body,
-            scenario: scenario));
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: SingleChildScrollView(
-                child: RichHtmlEditor(controller: controller)))));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.info_outline), findsNothing);
-    final before = tester.getRect(find.byType(EmailPreviewHtml));
-    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await mouse.addPointer(location: Offset.zero);
-    await mouse.moveTo(before.topLeft + const Offset(20, 20));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.info_outline), findsOneWidget);
-    expect(tester.getRect(find.byType(EmailPreviewHtml)), before);
-    await mouse.moveTo(Offset.zero);
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.info_outline), findsNothing);
-    expect(controller.focusNode.hasFocus, isFalse);
-    await tester.tapAt(before.topLeft + const Offset(20, 20));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.info_outline), findsOneWidget);
-    expect(controller.html, '<p>{{fullOrder}}</p>');
-    final node = controller.editor.document.first;
-    expect(controller.editor.composer.selection, DocumentSelection(
-      base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
-      extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
-    ));
-    expect(controller.focusNode.hasFocus, isTrue);
-    expect(controller.hasUserChanges, isFalse);
-    controller.undo();
-    await tester.pumpAndSettle();
-    expect(controller.html, '<p>{{fullOrder}}</p>');
-    await tester.pumpWidget(const SizedBox());
-    controller.dispose();
-  });
+  for (final brightness in Brightness.values) {
+    testWidgets('fidelity component chrome is transient without content movement $brightness',
+        (tester) async {
+      final controller = RichHtmlEditorController(
+          initialHtml: '<p>{{fullOrder}}</p>',
+          owner: const HtmlMediaOwner.none(),
+          authoring: EmailAuthoringProvider(
+              EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+              field: EmailTargetField.body,
+              scenario: scenario));
+      await tester.pumpWidget(MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: Scaffold(
+              body: SingleChildScrollView(
+                  child: RichHtmlEditor(controller: controller)))));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline), findsNothing);
+      final before = tester.getRect(find.byType(EmailPreviewHtml));
+      final primary = Theme.of(tester.element(find.byType(RichHtmlEditor))).colorScheme.primary;
+      Finder outline(Color color, double width) => find.byWidgetPredicate((widget) {
+        if (widget is! DecoratedBox || widget.decoration is! BoxDecoration) return false;
+        final border = (widget.decoration as BoxDecoration).border;
+        return border is Border && border.top.color == color && border.top.width == width;
+      });
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: Offset.zero);
+      await mouse.moveTo(before.topLeft + const Offset(20, 20));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+      expect(tester.getRect(find.byType(EmailPreviewHtml)), before);
+      expect(outline(primary.withValues(alpha: .7), 1.5), findsOneWidget);
+      await mouse.moveTo(Offset.zero);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline), findsNothing);
+      expect(controller.focusNode.hasFocus, isFalse);
+      await tester.tapAt(before.topLeft + const Offset(20, 20));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+      expect(tester.getRect(find.byType(EmailPreviewHtml)), before);
+      expect(outline(primary, 2), findsOneWidget);
+      expect(outline(primary.withValues(alpha: .7), 1.5), findsNothing);
+      expect(controller.html, '<p>{{fullOrder}}</p>');
+      final node = controller.editor.document.first;
+      expect(controller.editor.composer.selection, DocumentSelection(
+        base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
+        extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
+      ));
+      expect(controller.focusNode.hasFocus, isTrue);
+      expect(controller.hasUserChanges, isFalse);
+      controller.undo();
+      await tester.pumpAndSettle();
+      expect(controller.html, '<p>{{fullOrder}}</p>');
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   testWidgets('subject displays actual sample value in a compact atomic field',
       (tester) async {
     final controller = RichHtmlEditorController(

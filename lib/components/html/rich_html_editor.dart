@@ -1424,7 +1424,8 @@ class _TemplateComponentState extends State<_TemplateComponent> {
   Widget build(BuildContext context) {
     final entry = widget.provider.entry(widget.code);
     final colors = Theme.of(context).colorScheme;
-    final active = _hovered || _focused || widget.selected;
+    final selected = _focused || widget.selected;
+    final active = _hovered || selected;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -1437,7 +1438,9 @@ class _TemplateComponentState extends State<_TemplateComponent> {
             child: Stack(children: [
               widget.provider.preview(context, widget.code, occurrence: widget.occurrence) ?? Text(widget.provider.sampleLabel),
               if (active) Positioned.fill(child: IgnorePointer(child: DecoratedBox(
-                decoration: BoxDecoration(border: Border.all(color: colors.primary.withValues(alpha: .6)))))),
+                decoration: BoxDecoration(border: Border.all(
+                  color: selected ? colors.primary : colors.primary.withValues(alpha: .7),
+                  width: selected ? 2 : 1.5))))),
               if (active) Positioned(top: 0, right: 0,
                 child: Material(color: colors.surfaceContainerHigh, elevation: 2,
                   borderRadius: BorderRadius.circular(6),

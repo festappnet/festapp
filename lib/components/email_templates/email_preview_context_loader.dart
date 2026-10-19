@@ -1,6 +1,7 @@
 import 'package:festapp_core/email_templates.dart';
 import 'package:intl/intl.dart';
 import '../occasion/occasion_model.dart';
+import '../features/feature_constants.dart';
 import '../eshop/db_eshop.dart';
 import '../eshop/models/product_edit_bundle.dart';
 import '../../data_services/rights_service.dart';
@@ -24,10 +25,14 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
       start != null && start.isAfter(now.add(const Duration(days: 14)))
           ? start.subtract(const Duration(days: 7))
           : now.add(const Duration(days: 7));
+  final current = RightsService.currentOccasion();
+  final features = occasion.features.isNotEmpty
+      ? occasion.features
+      : current?.id == occasion.id ? current!.features : occasion.features;
   final base = EmailPreviewContext(
       occasionTitle: occasion.title,
+      ticketsEnabled: features.any((f) => f.code == FeatureConstants.ticket && f.isEnabled),
       deadline: DateFormat('d. M. y').format(deadline));
-  final current = RightsService.currentOccasion();
   final link = occasion.link?.isNotEmpty == true
       ? occasion.link
       : current?.id == occasion.id
@@ -59,6 +64,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
     return EmailPreviewContextResult(EmailPreviewContext(
       occasionTitle: occasion.title,
       deadline: base.deadline,
+      ticketsEnabled: base.ticketsEnabled,
       products: selected
           .map((p) => EmailPreviewProduct(
               title: p.title!,
