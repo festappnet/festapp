@@ -781,6 +781,23 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
         "supabase/functions/exchange-sign-in-code/exchange_test.ts"
       ]
+    },
+    {
+      "name": "send-occasion-team-invitations",
+      "path": "supabase/functions/send-occasion-team-invitations/index.ts",
+      "policies": [
+        "email.actor",
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-19",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/send-occasion-team-invitations/handler_test.ts",
+        "database/tests/occasion_setup/invitations_test.sql"
+      ],
+      "reason": "Manager-scoped draft confirmation gates invitation preparation and canonical SQL email admission. Stable retries retain the original proof; local tests do not certify live activation."
     }
   ],
   "workers": [

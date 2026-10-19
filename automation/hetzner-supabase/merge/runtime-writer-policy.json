@@ -269,6 +269,14 @@
         "canonical-email-enqueue"
       ],
       "mutates_authority": true
+    },
+    "send-occasion-team-invitations": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
