@@ -106,9 +106,20 @@ void main() {
     await mouse.moveTo(Offset.zero);
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.info_outline), findsNothing);
+    expect(controller.focusNode.hasFocus, isFalse);
     await tester.tapAt(before.topLeft + const Offset(20, 20));
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    expect(controller.html, '<p>{{fullOrder}}</p>');
+    final node = controller.editor.document.first;
+    expect(controller.editor.composer.selection, DocumentSelection(
+      base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
+      extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
+    ));
+    expect(controller.focusNode.hasFocus, isTrue);
+    expect(controller.hasUserChanges, isFalse);
+    controller.undo();
+    await tester.pumpAndSettle();
     expect(controller.html, '<p>{{fullOrder}}</p>');
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
@@ -221,6 +232,17 @@ void main() {
                 child: RichHtmlEditor(controller: controller)))));
     await tester.pumpAndSettle();
     expect(find.byType(EmailPreviewHtml), findsOneWidget);
+    expect(controller.focusNode.hasFocus, isFalse);
+    await tester.tapAt(tester.getTopLeft(find.byType(EmailPreviewHtml)) + const Offset(20, 20));
+    await tester.pumpAndSettle();
+    final node = controller.editor.document.first as TextNode;
+    final offset = node.text.placeholders.keys.single;
+    expect(controller.editor.composer.selection, DocumentSelection(
+      base: DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: offset)),
+      extent: DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: offset + 1)),
+    ));
+    expect(controller.focusNode.hasFocus, isTrue);
+    expect(controller.hasUserChanges, isFalse);
     expect(controller.html, source);
     await tester.pumpWidget(const SizedBox());
     controller.dispose();

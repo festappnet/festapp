@@ -943,6 +943,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                   else
                                                     overlay,
                                               ],
+                                              contentTapDelegateFactories: [
+                                                if (controller.authoring != null)
+                                                  (_) => _TemplateInlineTapDelegate(controller),
+                                                superEditorLaunchLinkTapHandlerFactory,
+                                              ],
                                               autofocus: widget.fullscreen,
                                               focusNode: controller.focusNode,
                                               documentLayoutKey:
@@ -1294,6 +1299,33 @@ class _PreservedBuilder implements ComponentBuilder {
   }
 }
 
+/// Text components ignore child gestures; use the editor's native tap boundary.
+class _TemplateInlineTapDelegate extends ContentTapDelegate {
+  _TemplateInlineTapDelegate(this.controller);
+  final RichHtmlEditorController controller;
+  @override
+  TapHandlingInstruction onTap(DocumentTapDetails details) {
+    final position = details.documentLayout.getDocumentPositionAtOffset(details.layoutOffset);
+    final node = position == null ? null : controller.editor.document.getNodeById(position.nodeId);
+    if (node is! TextNode) return TapHandlingInstruction.continueHandling;
+    for (final entry in node.text.placeholders.entries) {
+      final token = entry.value;
+      if (token is! TemplateTokenPlaceholder || controller.authoring?.entry(token.code)?.rich != true) continue;
+      final base = DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: entry.key));
+      final extent = DocumentPosition(nodeId: node.id, nodePosition: TextNodePosition(offset: entry.key + 1));
+      final bounds = details.documentLayout.getRectForSelection(base, extent);
+      if (bounds?.contains(details.layoutOffset) != true) continue;
+      controller.focusNode.requestFocus();
+      controller.editor.execute([
+        ChangeSelectionRequest(DocumentSelection(base: base, extent: extent),
+            SelectionChangeType.placeCaret, SelectionReason.userInteraction),
+      ]);
+      return TapHandlingInstruction.halt;
+    }
+    return TapHandlingInstruction.continueHandling;
+  }
+}
+
 class _TemplateBlockBuilder extends ComponentBuilder {
   _TemplateBlockBuilder(this.controller);
   final RichHtmlEditorController controller;
@@ -1316,6 +1348,18 @@ class _TemplateBlockBuilder extends ComponentBuilder {
             provider: provider,
             code: node.code,
             selected: (model as HorizontalRuleComponentViewModel).selection != null,
+            onSelect: () {
+              controller.focusNode.requestFocus();
+              controller.editor.execute([
+                ChangeSelectionRequest(
+                    DocumentSelection(
+                      base: DocumentPosition(nodeId: node.id, nodePosition: node.beginningPosition),
+                      extent: DocumentPosition(nodeId: node.id, nodePosition: node.endPosition),
+                    ),
+                    SelectionChangeType.placeCaret,
+                    SelectionReason.userInteraction),
+              ]);
+            },
             onDelete: () => controller.editor
                 .execute([DeleteNodeRequest(nodeId: node.id)])));
   }
@@ -1324,10 +1368,11 @@ class _TemplateBlockBuilder extends ComponentBuilder {
 /// Atomic document object: identity stays in the editor, content is only a sample.
 class _TemplateComponent extends StatefulWidget {
   const _TemplateComponent({required this.provider, required this.code,
-    this.selected = false, this.onDelete});
+    this.selected = false, this.onSelect, this.onDelete});
   final TemplateAuthoringProvider provider;
   final String code;
   final bool selected;
+  final VoidCallback? onSelect;
   final VoidCallback? onDelete;
   @override
   State<_TemplateComponent> createState() => _TemplateComponentState();
@@ -1359,7 +1404,7 @@ class _TemplateComponentState extends State<_TemplateComponent> {
         child: Semantics(label: '${entry?.label ?? widget.code}. ${entry?.description ?? ''}',
           onLongPress: _showInfo,
           child: GestureDetector(behavior: HitTestBehavior.translucent,
-            onTap: _focus.requestFocus,
+            onTap: widget.onSelect ?? _focus.requestFocus,
             child: Stack(children: [
               widget.provider.preview(context, widget.code) ?? Text(widget.provider.sampleLabel),
               if (active) Positioned.fill(child: IgnorePointer(child: DecoratedBox(
