@@ -392,7 +392,7 @@ Deno.test("informal communication setting does not rewrite an authored formal te
   assert.equal(result.prepared.subject, "Vlastní předmět pořadatele");
 });
 
-Deno.test("new inherited email receives overview link while immutable v1 stays unchanged", async () => {
+Deno.test("overview remains optional in inherited waitlist mail and explicit insertion works", async () => {
   const { prepareOrderOverviewSource } = await import("./waitlistEmail.ts");
   const previous = Deno.env.get("EMAIL_PAYLOAD_KEY");
   Deno.env.set("EMAIL_PAYLOAD_KEY", btoa(String.fromCharCode(...new Uint8Array(32).fill(23))));
@@ -404,7 +404,15 @@ Deno.test("new inherited email receives overview link while immutable v1 stays u
     f.row.data.content_hash = await sha256Text(JSON.stringify(selected));
     f.context.overviewSource = await prepareOrderOverviewSource(source);
     const rendered = await renderWaitlistEmail(f.row, { ...f.dependencies, open: async () => selected });
-    assert.match(rendered.prepared.html, /\?order_id=101&amp;token=[a-f0-9]{64}/);
+    assert.doesNotMatch(rendered.prepared.html, /Zobrazit aktuální stav objednávky/);
+    const explicit = await renderWaitlistEmail(f.row, {
+      ...f.dependencies, open: async () => selected,
+      render: (input) => renderEmail(input, async () => ({
+        template: { id: 1, subject: "Waitlist", html: "{{order_overview_button}}" },
+        wrapper: { html: '<main style="padding:24px">{{content}}</main>' },
+      })),
+    });
+    assert.match(explicit.prepared.html, /\?order_id=101&amp;token=[a-f0-9]{64}/);
     assert.equal(rendered.postAction.tracking_policy, "disabled");
   } finally {
     if (previous === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY"); else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);

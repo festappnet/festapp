@@ -66,8 +66,10 @@ have no public form route and omit the link.
 There is no standalone `ORDER_OVERVIEW` email. Its historical rows remain for
 history, but the template catalog excludes the code, its enqueue RPC is retired,
 and the send-time intent gate rejects old queued messages. The access endpoint
-never sends mail or rotates the link. Existing templates can position
-`order_overview_button` themselves; otherwise rendering appends it once.
+never sends mail or rotates the link. The overview action belongs to the
+`fullOrder` component, or can be inserted explicitly with `order_overview_button`. A custom template without either does
+not receive an appended link, including cancellation templates. Authored wrapper
+slots and links remain part of the chosen wrapper design.
 
 ## Authoring and generated examples
 
@@ -118,11 +120,11 @@ issue capabilities. Metadata failures keep the draft and offer retry rather
 than presenting an invented sender or claiming an unwrapped body is complete.
 Deploy this backward-compatible function action before the web client.
 
-Preview composition follows delivery: substitute authored content once, reserve
-a missing fallback action inside that content, apply the resolved wrapper once,
-then fill its first explicit overview slot or the reserved fallback. Explicit
-links in either content or wrapper suppress automatic additions. Fallback
-actions inherit the wrapper content padding, including in cancellation mail. Email
+Preview composition follows delivery: substitute authored content once, apply
+the resolved wrapper once, then fill its first explicit overview slot. Explicit
+links in either content or wrapper suppress duplicate additions. Completion
+never reserves a fallback or appends an action to an otherwise complete custom
+body. Inserted actions inherit the surrounding card or wrapper padding. Email
 content uses its own typography rather than the application's font, and empty
 fixed-height spacers retain their canonical height. The current app theme only
 adapts presentation colors. The resolved wrapper's banners load through the
@@ -135,4 +137,4 @@ CSS or available fonts.
 Production action HTML belongs to `_shared/emailActionLink.ts`; completion belongs
 to `_shared/emailContentCompletion.ts`, including the current order-card slot.
 TS and Dart completion use identical generated fixtures to prevent missing or
-duplicate required overview links. There is no standalone ORDER_OVERVIEW template.
+duplicate opted-in overview links. There is no standalone ORDER_OVERVIEW template.
