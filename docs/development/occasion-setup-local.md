@@ -16,7 +16,24 @@ událostí a RPC konceptů. Jediná nahrazená externí hranice jsou push callba
 Vývojový entrypoint odmítá backend mimo `127.0.0.1:56821`; explicitní loopback
 backend v debug režimu nepoužívá produkční aktivační dokument ani jeho marker.
 
-Pro vstupenky.online je tok Zdroj, Základ, Formulář, Plánek, Nastavení plateb, Vstupenka, Kontrola.
+Průvodce zobrazuje jednu otázku najednou. Pro vstupenky.online je tok
+Zdroj, Název, Začátek akce (datum a čas), Konec akce (datum a čas), Formulář,
+Plánek, Nastavení plateb, Vstupenka, nepovinné Ověření organizace a Kontrola.
+Tenant s aplikací má navíc otázku na odkaz akce a obsah. Bez podpory aplikace
+se odkaz akce nezobrazuje ani v běžném vytvářecím dialogu; prázdný odkaz při
+vytvoření přidělí kanonický serverový generátor náhodných veřejných odkazů.
+Veřejný odkaz formuláře se nastavuje samostatně.
+
+Otázka se ukládá do `data.storyQuestion` uvnitř původního stabilního kroku;
+`current_step` a databázový kontrakt se nemění. Starší koncepty otevřou
+první otázku příslušného kroku, starší Kontrola otevře přímo kontrolu.
+Ověření organizace používá existující editor organizace a jeho samostatné
+ukládání; neblokuje pokračování ani dosažení 100 %. Přeskočení nemění stav
+ověření organizace.
+
+Horní segmenty ukazují pozici v průchodu otázkami. Procenta u spodní navigace
+vyjadřují dokončené nastavení nezávisle na nepovinném ověření. Navigace
+Zpět / Pokračovat je mimo posouvaný obsah a zůstává dostupná i u editorů.
 Nový koncept vzniká přes stejný SQL algoritmus jako běžná událost
 (update_occasion_internal_v1, včetně vytvoření formuláře a produktů).
 Algoritmus běží v podtransakci, jejíž zápisy se vrátí zpět; zachová se pouze

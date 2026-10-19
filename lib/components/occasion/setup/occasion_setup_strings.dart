@@ -1,6 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OccasionSetupStrings {
+  static String story(String key) => 'OccasionSetup.story.$key'.tr();
+  static String readiness(int percent) =>
+      'OccasionSetup.story.readiness'.tr(namedArgs: {'percent': '$percent'});
+  static String questionNumber(int current, int total) =>
+      'OccasionSetup.story.questionNumber'.tr(
+        namedArgs: {'current': '$current', 'total': '$total'},
+      );
+
   static String get draft => 'OccasionSetup.draft'.tr();
   static String get cancelDraft => 'OccasionSetup.cancelDraft'.tr();
   static String get cancellingDraft => 'OccasionSetup.cancellingDraft'.tr();
