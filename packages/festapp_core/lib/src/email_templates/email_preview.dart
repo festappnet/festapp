@@ -176,6 +176,10 @@ class EmailPreviewScenario {
       if (result.containsKey(code) && context.occasionTitle?.isNotEmpty == true)
         result[code] = context.occasionTitle!;
     }
+    if (context.paymentAccount != null) {
+      if (result.containsKey('accountNumber')) result['accountNumber'] = context.paymentAccount!.accountNumber;
+      if (result.containsKey('iban')) result['iban'] = context.paymentAccount!.iban;
+    }
     if (context.deadline != null && result.containsKey('deadline'))
       result['deadline'] = context.deadline!;
     if (context.deadline != null && result.containsKey('offer_expires_at'))

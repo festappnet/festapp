@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -74,6 +75,33 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  for (final metadataFirst in [true, false]) {
+    testWidgets('bank metadata updates authoring examples independent of load order $metadataFirst', (tester) async {
+      final metadata = Completer<EmailAuthoringContext>();
+      final examples = Completer<EmailPreviewExamples>();
+      const account = EmailPreviewPaymentAccount(accountNumber: '123456789/2010',
+        iban: 'CZ65 2010 0000 0012 3456 7890', currencies: ['CZK']);
+      await openTemplate(tester, occasionTitle: 'Festival',
+        html: '<p>{{accountNumber}} - {{iban}}</p>{{paymentDetails}}',
+        previewExamplesLoader: () => examples.future,
+        authoringContextLoader: () => metadata.future);
+      void completeMetadata() => metadata.complete(const EmailAuthoringContext(
+        senderAddress: 'sender@test.invalid', paymentAccounts: [account]));
+      void completeExamples() => examples.complete(EmailPreviewExamples.fromJson(
+        jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync())));
+      if (metadataFirst) { completeMetadata(); } else { completeExamples(); }
+      await tester.pumpAndSettle();
+      if (metadataFirst) { completeExamples(); } else { completeMetadata(); }
+      await tester.pumpAndSettle();
+      expect(find.text(account.accountNumber), findsOneWidget);
+      expect(find.text(account.iban), findsOneWidget);
+      expect(tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html, contains(account.iban));
+      final body = tester.widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor)).last.controller;
+      expect(body.html, '<p>{{accountNumber}} - {{iban}}</p>{{paymentDetails}}');
+      expect(body.hasUserChanges, isFalse);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   for (final code in ['TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_STORNO']) {
     testWidgets('custom $code body omits overview until author inserts it', (tester) async {
       final metadata = Completer<EmailAuthoringContext>();

@@ -1028,14 +1028,14 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                           color: colors
                                                                               .primaryContainer
                                                                               .withValues(alpha: .45),
-                                                                          border: Border.all(color: colors.primary.withValues(alpha: .5)),
+                                                                          border: Border.all(color: colors.outline, width: 1.5),
                                                                           borderRadius: BorderRadius.circular(4)),
                                                                       child: Row(mainAxisSize: MainAxisSize.min,
                                                                           crossAxisAlignment: CrossAxisAlignment.baseline,
                                                                           textBaseline: TextBaseline.alphabetic,
                                                                           children: [
                                                                             Text('@', textScaler: TextScaler.noScaling,
-                                                                                style: style.copyWith(color: colors.primary)),
+                                                                                style: style.copyWith(color: colors.primary, fontWeight: FontWeight.normal)),
                                                                             const SizedBox(width: 4),
                                                                             Flexible(child: Text(sample, maxLines: provider.singleLine ? 1 : null, overflow: provider.singleLine ? TextOverflow.ellipsis : null, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface))),
                                                                           ]))));
