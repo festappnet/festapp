@@ -113,10 +113,10 @@ class OccasionSetupStory {
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
       if (form) const OccasionSetupQuestion(3, 'form'),
       if (paid) const OccasionSetupQuestion(3, 'pricing'),
-      if (appSupported && paid) const OccasionSetupQuestion(3, 'payments'),
+      if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'payments'),
+      if (form) const OccasionSetupQuestion(3, 'communication'),
       if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
       if (!appSupported) ...[
-        if (paid) const OccasionSetupQuestion(4, 'payments'),
         if (tickets) const OccasionSetupQuestion(2, 'ticket'),
         if (tickets && data?['configureScanning'] == true)
           const OccasionSetupQuestion(2, 'scanner', optional: true),
@@ -131,10 +131,9 @@ class OccasionSetupStory {
       List<OccasionSetupQuestion> pages, int index) {
     final current = pages[index];
     if (current.optional) return false;
-    for (final next in pages.skip(index + 1)) {
-      if (!next.optional) return next.step != current.step;
-    }
-    return true;
+    return !pages
+        .skip(index + 1)
+        .any((next) => !next.optional && next.step == current.step);
   }
 
   static int index(

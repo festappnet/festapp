@@ -2729,6 +2729,22 @@
   },
   "OccasionSetup": {
     "setupDetails": {
+      "systemSender": "System sender",
+      "saveOrganizationDefaults": "Save as organization defaults",
+      "replyToEmail": "Reply-to email",
+      "reminderLeadDays": "Remind before payment is due (days)",
+      "reloadCommunication": "Reload settings",
+      "paymentReminders": "Payment reminders",
+      "organizationDefaultsSaved": "Organization defaults saved.",
+      "organizationDefaultsHint": "Saving defaults affects future events and settings inherited from the organization.",
+      "organizationDefaultsFailed": "The organization’s defaults could not be saved.",
+      "invalidReplyEmail": "A valid reply-to email address is required.",
+      "inheritOrganization": "Organization default",
+      "inheritCommunicationHint": "Communication starts with the organization’s defaults. Individual choices can be changed for this event only.",
+      "firstEventDefaultsHint": "This is the organization’s first event. The current choices can be saved as defaults for future events.",
+      "customForEvent": "Custom settings for this event",
+      "communicationLoadFailed": "Communication defaults could not be loaded.",
+      "blankInherits": "Leave blank to use the default",
       "bankLoadFailed": "Bank accounts could not be loaded.",
       "reloadAccounts": "Reload accounts",
       "bankMissing": "No suitable bank account is configured for the form currencies.",
@@ -2756,6 +2772,8 @@
       "editPriceWaves": "Configure price waves"
     },
     "story": {
+      "communicationIncomplete": "Communication settings are incomplete. Check the reply-to email and reminder lead time.",
+      "communicationQuestion": "How should participant communication be configured?",
       "bankAccountNotConfirmed": "Bank account not confirmed",
       "bankAccountRequired": "A paid event requires a selected and confirmed bank account.",
       "configureScanningHint": "Optional ticket scanning settings. These do not change the ticket design and can be adjusted later.",

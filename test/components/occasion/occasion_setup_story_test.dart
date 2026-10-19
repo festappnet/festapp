@@ -177,7 +177,7 @@ void main() {
       'storyQuestion': 'payments'
     };
     final pages = OccasionSetupStory.questions(false, data: data);
-    expect(pages[OccasionSetupStory.index(data, false)].key, 'ticket');
+    expect(pages[OccasionSetupStory.index(data, false)].key, 'communication');
   });
 
   test('active price waves require future dates and existing product targets',
@@ -240,10 +240,12 @@ void main() {
     final payments = pages.indexWhere((q) => q.key == 'payments');
     expect(payments, greaterThan(pages.indexWhere((q) => q.key == 'form')));
     expect(pages[payments].step, 3);
-    expect(pages[payments + 1].key, 'blueprint');
+    expect(pages[payments + 1].key, 'communication');
     expect(
         OccasionSetupStory.completesRequiredStep(pages, payments - 1), isFalse);
-    expect(OccasionSetupStory.completesRequiredStep(pages, payments), isTrue);
+    expect(OccasionSetupStory.completesRequiredStep(pages, payments), isFalse);
+    expect(
+        OccasionSetupStory.completesRequiredStep(pages, payments + 1), isTrue);
     expect(
         OccasionSetupStory.questions(true, data: formData(price: 0))
             .any((q) => q.key == 'payments'),
@@ -274,6 +276,32 @@ void main() {
     expect(OccasionSetupStory.paymentCurrencies(data), {'EUR'});
     product['price'] = 0;
     expect(OccasionSetupStory.paymentCurrencies(data), isEmpty);
+  });
+
+  test('communication applies to free forms and completes the shared form step',
+      () {
+    for (final supported in [false, true]) {
+      final pages = OccasionSetupStory.questions(supported, data: formData());
+      final communication = pages.indexWhere((q) => q.key == 'communication');
+      expect(pages[communication].step, 3);
+      expect(pages[communication - 1].key, 'payments');
+      expect(pages[communication + 1].key, 'blueprint');
+      final form = pages.indexWhere((q) => q.key == 'form');
+      final pricing = pages.indexWhere((q) => q.key == 'pricing');
+      expect(OccasionSetupStory.completesRequiredStep(pages, form), isFalse);
+      expect(OccasionSetupStory.completesRequiredStep(pages, pricing), isFalse);
+      expect(OccasionSetupStory.completesRequiredStep(pages, communication),
+          isTrue);
+      final free =
+          OccasionSetupStory.questions(supported, data: formData(price: 0));
+      expect(free.any((q) => q.key == 'communication'), isTrue);
+      expect(free.any((q) => q.key == 'payments'), isFalse);
+      expect(
+          OccasionSetupStory.questions(supported,
+                  data: formData(enabled: false))
+              .any((q) => q.key == 'communication'),
+          isFalse);
+    }
   });
 
   test(

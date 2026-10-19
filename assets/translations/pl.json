@@ -1132,6 +1132,22 @@
   },
   "OccasionSetup": {
     "setupDetails": {
+      "systemSender": "Nadawca systemowy",
+      "saveOrganizationDefaults": "Zapisz jako domyślne dla organizacji",
+      "replyToEmail": "E-mail do odpowiedzi",
+      "reminderLeadDays": "Przypomnienie przed terminem płatności (dni)",
+      "reloadCommunication": "Wczytaj ustawienia ponownie",
+      "paymentReminders": "Przypomnienia o płatności",
+      "organizationDefaultsSaved": "Zapisano domyślne ustawienia organizacji.",
+      "organizationDefaultsHint": "Zapisanie ustawień domyślnych wpłynie na przyszłe wydarzenia i ustawienia dziedziczone po organizacji.",
+      "organizationDefaultsFailed": "Nie udało się zapisać domyślnych ustawień organizacji.",
+      "invalidReplyEmail": "Wymagany jest prawidłowy adres e-mail do odpowiedzi.",
+      "inheritOrganization": "Domyślne organizacji",
+      "inheritCommunicationHint": "Komunikacja korzysta z domyślnych ustawień organizacji. Poszczególne opcje można zmienić tylko dla tego wydarzenia.",
+      "firstEventDefaultsHint": "To pierwsze wydarzenie organizacji. Bieżące opcje można zapisać jako domyślne dla przyszłych wydarzeń.",
+      "customForEvent": "Własne ustawienia dla tego wydarzenia",
+      "communicationLoadFailed": "Nie udało się wczytać domyślnych ustawień komunikacji.",
+      "blankInherits": "Pusta wartość oznacza ustawienie domyślne",
       "bankLoadFailed": "Nie udało się wczytać kont bankowych.",
       "reloadAccounts": "Wczytaj konta ponownie",
       "bankMissing": "Dla walut formularza nie skonfigurowano odpowiedniego konta bankowego.",
@@ -1159,6 +1175,8 @@
       "editPriceWaves": "Skonfiguruj fale cenowe"
     },
     "story": {
+      "communicationIncomplete": "Ustawienia komunikacji są niepełne. Należy sprawdzić adres do odpowiedzi i wyprzedzenie przypomnienia.",
+      "communicationQuestion": "Jak ma być skonfigurowana komunikacja z uczestnikami?",
       "bankAccountNotConfirmed": "Rachunek bankowy niepotwierdzony",
       "bankAccountRequired": "Płatne wydarzenie wymaga wybrania i potwierdzenia rachunku bankowego.",
       "configureScanningHint": "Opcjonalne ustawienia skanowania biletów. Nie zmieniają wyglądu biletu i można je dostosować później.",

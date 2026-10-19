@@ -1139,6 +1139,22 @@
   },
   "OccasionSetup": {
     "setupDetails": {
+      "systemSender": "Systémový odosielateľ",
+      "saveOrganizationDefaults": "Uložiť ako predvolené pre organizáciu",
+      "replyToEmail": "E-mail pre odpovede",
+      "reminderLeadDays": "Pripomenúť pred splatnosťou (dni)",
+      "reloadCommunication": "Načítať nastavenia znova",
+      "paymentReminders": "Pripomenutia platby",
+      "organizationDefaultsSaved": "Predvolené nastavenie organizácie bolo uložené.",
+      "organizationDefaultsHint": "Uloženie predvoleného nastavenia ovplyvní budúce udalosti a nastavenia preberané z organizácie.",
+      "organizationDefaultsFailed": "Predvolené nastavenie organizácie sa nepodarilo uložiť.",
+      "invalidReplyEmail": "Je potrebné zadať platný e-mail pre odpovede.",
+      "inheritOrganization": "Podľa organizácie",
+      "inheritCommunicationHint": "Komunikácia vychádza z predvoleného nastavenia organizácie. Jednotlivé voľby možno zmeniť iba pre túto udalosť.",
+      "firstEventDefaultsHint": "Ide o prvú udalosť organizácie. Aktuálne voľby možno uložiť ako predvolené pre ďalšie udalosti.",
+      "customForEvent": "Vlastné nastavenie pre túto udalosť",
+      "communicationLoadFailed": "Predvolené nastavenie komunikácie sa nepodarilo načítať.",
+      "blankInherits": "Prázdna hodnota prevezme predvolené nastavenie",
       "bankLoadFailed": "Bankové účty sa nepodarilo načítať.",
       "reloadAccounts": "Znova načítať účty",
       "bankMissing": "Pre meny formulára zatiaľ nie je nastavený vhodný bankový účet.",
@@ -1166,6 +1182,8 @@
       "editPriceWaves": "Nastaviť cenové vlny"
     },
     "story": {
+      "communicationIncomplete": "Nastavenie komunikácie nie je úplné. Je potrebné skontrolovať e-mail pre odpovede a predstih pripomenutia.",
+      "communicationQuestion": "Ako bude nastavená komunikácia s účastníkmi?",
       "bankAccountNotConfirmed": "Bankový účet nie je potvrdený",
       "bankAccountRequired": "Pre platenú udalosť je potrebné vybrať a potvrdiť bankový účet.",
       "configureScanningHint": "Nepovinné nastavenie skenovania vstupeniek. Nemení vzhľad vstupenky a možno ho upraviť neskôr.",

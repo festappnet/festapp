@@ -7,6 +7,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  field jsonb; pt jsonb; products jsonb; product jsonb; result jsonb; source_id bigint;
  old_products jsonb := '[]'; old_types jsonb := '[]'; type_map jsonb := '{}'; final_features jsonb; new_products jsonb; product_map jsonb := '{}'; idx integer; j integer;
  intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
+ unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  blueprint_id bigint; objects jsonb := '[]'; obj jsonb; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
@@ -19,6 +20,19 @@ BEGIN
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
  payload := d.data;
+ communication_new:=payload ? 'communicationTone';
+ IF communication_new THEN
+  IF coalesce(payload->>'communicationTone','') NOT IN ('inherit','formal','informal')
+    OR coalesce(payload->>'replyToMode','') NOT IN ('inherit','custom')
+    OR coalesce(payload->>'remindersMode','') NOT IN ('inherit','enabled','disabled') THEN
+   RAISE invalid_parameter_value USING MESSAGE='Invalid communication options'; END IF;
+  IF payload->>'replyToMode'='custom' THEN
+   reply_email:=btrim(payload->>'replyToEmail');
+   IF reply_email IS NULL OR length(reply_email)>254 OR reply_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$' THEN
+    RAISE invalid_parameter_value USING MESSAGE='Invalid reply email'; END IF;
+  END IF;
+  SELECT coalesce(u.data,'{}'::jsonb) INTO unit_defaults FROM public.units u WHERE u.id=d.unit;
+ END IF;
  source_id := (payload->>'sourceId')::bigint;
  intro_image:=nullif(payload->>'introImage','');
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN
@@ -57,7 +71,12 @@ BEGIN
    RAISE serialization_failure USING MESSAGE='Bank account details changed; confirm again'; END IF;
  END IF;
  IF payload->'ticketDraft' IS NOT NULL AND payload->'ticketDraft'<>'null'::jsonb THEN features := features || jsonb_build_array((payload->'ticketDraft')-'layout'); END IF;
- IF coalesce((payload->>'formEnabled')::boolean,true) THEN features := features || '[{"code":"form","is_enabled":true}]'; END IF;
+ IF coalesce((payload->>'formEnabled')::boolean,true) THEN
+  features := features || jsonb_build_array(jsonb_build_object('code','form','is_enabled',true) ||
+    CASE WHEN communication_new THEN jsonb_build_object(
+      'reminder_is_enabled',coalesce((unit_defaults->>'is_reminder_enabled')::boolean,true),
+      'reminder_interval_seconds',coalesce((unit_defaults->>'reminder_interval_seconds')::bigint,86400)) ELSE '{}'::jsonb END);
+ END IF;
  IF coalesce((payload->>'copyProgram')::boolean,false) THEN features := features || '[{"code":"schedule","is_enabled":true}]'; END IF;
  IF coalesce((payload->>'copyInformation')::boolean,false) THEN features := features || '[{"code":"information","is_enabled":true}]'; END IF;
  config := jsonb_build_object('unit',d.unit,'organization',d.organization,
@@ -65,7 +84,7 @@ BEGIN
   'start_time',payload->>'start','end_time',payload->>'end','is_hidden',true,'is_open',false,
   'is_promoted',coalesce((payload->>'isPromoted')::boolean,false),
   'features',features,'data',jsonb_strip_nulls(jsonb_build_object('client_sync_v1',false,
-   'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''))));
+   'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''),'reply_to',reply_email)));
  policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],d.unit,d.organization);
  IF source_id IS NOT NULL AND (coalesce((payload->>'copyProgram')::boolean,false) OR coalesce((payload->>'copyInformation')::boolean,false) OR coalesce((payload->>'copyEmails')::boolean,false)) THEN
   PERFORM public.admit_occasion_copy_v1(source_id,d.unit,d.organization,policies->'occasion.copy'); END IF;
@@ -77,6 +96,26 @@ BEGIN
  VALUES(new_id,auth.uid(),true,true,true,true,true);
  form_data := payload->'formDraft';
  IF form_data IS NOT NULL AND form_data<>'null'::jsonb AND coalesce((payload->>'formEnabled')::boolean,true) THEN
+  IF communication_new THEN
+   -- Semantic choices override legacy source metadata. Inherited values stay
+   -- absent so reply/tone remain live unit defaults; reminder defaults above
+   -- are a creation snapshot and never requeue existing events.
+   form_meta:=coalesce(nullif(form_data->'data','null'::jsonb),'{}'::jsonb)
+     -'communication_tone'-'is_reminder_enabled'-'reminder_interval_seconds';
+   IF payload->>'communicationTone'<>'inherit' THEN
+    form_meta:=form_meta||jsonb_build_object('communication_tone',payload->>'communicationTone'); END IF;
+   IF required_currencies IS NOT NULL THEN
+    IF payload->>'remindersMode'<>'inherit' THEN
+     form_meta:=form_meta||jsonb_build_object('is_reminder_enabled',payload->>'remindersMode'='enabled'); END IF;
+    IF nullif(btrim(payload->>'reminderLeadDays'),'') IS NOT NULL THEN
+     reminder_days:=replace(payload->>'reminderLeadDays',',','.')::numeric;
+     IF reminder_days<0 OR reminder_days::text IN ('NaN','Infinity','-Infinity') THEN
+      RAISE invalid_parameter_value USING MESSAGE='Invalid reminder interval'; END IF;
+     form_meta:=form_meta||jsonb_build_object('reminder_interval_seconds',round(reminder_days*86400)::bigint);
+    END IF;
+   END IF;
+   form_data:=jsonb_set(form_data,'{data}',form_meta);
+  END IF;
   SELECT id INTO form_id FROM public.forms WHERE occasion=new_id ORDER BY id LIMIT 1;
   IF form_id IS NULL THEN
    result := public.create_form_internal_v1(new_id,NULL,form_data->>'title'); form_id := (result->>'id')::bigint;

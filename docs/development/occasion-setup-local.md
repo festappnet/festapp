@@ -170,3 +170,24 @@ Poslední browser kontrola ověřila i vstup „Vytvořit kopii“ ze skutečné
 Skautského plesu: Wizard předvolil správný zdroj a skutečný editor plánku zobrazil
 182 volných sedadel, původní fotografický podklad z lokálního Storage a ceny
 přiřazených produktů (například Místo 450 Kč). Screenshot byl vizuálně posouzen.
+
+## Komunikace a výchozí hodnoty organizace
+
+Wizard nabízí zděděnou adresu pro odpovědi a tón, případně vlastní hodnoty pro
+akci. Bez přepsání zůstávají adresa a tón navázané na organizaci. Připomínky a
+jejich předstih se zobrazují jen u placeného formuláře. Jejich organizační
+výchozí hodnoty se při založení uloží do konfigurace akce; změna výchozích hodnot
+nepřepisuje připomínky existujících akcí ani jejich frontu.
+
+Správce může vlastní hodnoty samostatným tlačítkem uložit jako výchozí pro
+organizaci, také při první akci. Používá se existující verzovaný příkaz pro
+uložení organizace, který při souběžné změně vrátí konflikt. Editor smí změnit
+komunikaci konceptu, nikoli organizační výchozí hodnoty. Dokončení akce
+nadále vyžaduje správce podle existujícího příkazu pro založení. Samotné dokončení Wizardu
+organizaci nemění. Souhrn ukazuje zděděné i vlastní hodnoty.
+
+Ověření komunikace: 33 cílených Flutter testů (komunikace, příběh průvodce a
+adaptivní detaily) a 5 SQL testovacích souborů prošlo na izolované databázi.
+Cílený analyzátor nemá chyby ani warningy; zůstávají informační linty pro bloky
+podmínek. Překlady všech šesti jazyků jsou validní JSON. Produkce se při tomto
+ověření neměnila.

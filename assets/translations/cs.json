@@ -2730,6 +2730,22 @@
   },
   "OccasionSetup": {
     "setupDetails": {
+      "systemSender": "Systémový odesílatel",
+      "saveOrganizationDefaults": "Uložit jako výchozí pro organizaci",
+      "replyToEmail": "E-mail pro odpovědi",
+      "reminderLeadDays": "Připomenout před splatností (dny)",
+      "reloadCommunication": "Načíst nastavení znovu",
+      "paymentReminders": "Připomenutí platby",
+      "organizationDefaultsSaved": "Výchozí nastavení organizace bylo uloženo.",
+      "organizationDefaultsHint": "Uložení výchozího nastavení ovlivní budoucí události a nastavení, která se přebírají z organizace.",
+      "organizationDefaultsFailed": "Výchozí nastavení organizace se nepodařilo uložit.",
+      "invalidReplyEmail": "Je nutné zadat platný e-mail pro odpovědi.",
+      "inheritOrganization": "Podle organizace",
+      "inheritCommunicationHint": "Komunikace vychází z výchozího nastavení organizace. Jednotlivé volby lze změnit pouze pro tuto událost.",
+      "firstEventDefaultsHint": "Jde o první událost organizace. Aktuální volby lze uložit jako výchozí pro další události.",
+      "customForEvent": "Vlastní nastavení pro tuto událost",
+      "communicationLoadFailed": "Výchozí nastavení komunikace se nepodařilo načíst.",
+      "blankInherits": "Prázdná hodnota převezme výchozí nastavení",
       "bankLoadFailed": "Bankovní účty se nepodařilo načíst.",
       "reloadAccounts": "Načíst účty znovu",
       "bankMissing": "Pro měny formuláře zatím není nastavený vhodný bankovní účet.",
@@ -2757,6 +2773,8 @@
       "editPriceWaves": "Nastavit cenové vlny"
     },
     "story": {
+      "communicationIncomplete": "Nastavení komunikace není úplné. Je nutné zkontrolovat e-mail pro odpovědi a předstih připomenutí.",
+      "communicationQuestion": "Jak bude nastavena komunikace s účastníky?",
       "bankAccountNotConfirmed": "Bankovní účet není potvrzený",
       "bankAccountRequired": "Pro placenou událost je nutné vybrat a potvrdit bankovní účet.",
       "configureScanningHint": "Nepovinné nastavení skenování vstupenek. Nemění vzhled vstupenky a lze jej upravit později.",

@@ -1132,6 +1132,22 @@
   },
   "OccasionSetup": {
     "setupDetails": {
+      "systemSender": "Systemabsender",
+      "saveOrganizationDefaults": "Als Organisationsstandard speichern",
+      "replyToEmail": "Antwortadresse",
+      "reminderLeadDays": "Erinnerung vor Fälligkeit (Tage)",
+      "reloadCommunication": "Einstellungen neu laden",
+      "paymentReminders": "Zahlungserinnerungen",
+      "organizationDefaultsSaved": "Standards der Organisation gespeichert.",
+      "organizationDefaultsHint": "Gespeicherte Standards gelten für künftige Veranstaltungen und von der Organisation übernommene Einstellungen.",
+      "organizationDefaultsFailed": "Die Standards der Organisation konnten nicht gespeichert werden.",
+      "invalidReplyEmail": "Eine gültige Antwortadresse ist erforderlich.",
+      "inheritOrganization": "Standard der Organisation",
+      "inheritCommunicationHint": "Die Kommunikation verwendet zunächst die Standards der Organisation. Einzelne Optionen können nur für diese Veranstaltung geändert werden.",
+      "firstEventDefaultsHint": "Dies ist die erste Veranstaltung der Organisation. Die aktuelle Auswahl kann als Standard für künftige Veranstaltungen gespeichert werden.",
+      "customForEvent": "Eigene Einstellungen für diese Veranstaltung",
+      "communicationLoadFailed": "Die Kommunikationseinstellungen konnten nicht geladen werden.",
+      "blankInherits": "Leer lassen, um den Standard zu übernehmen",
       "bankLoadFailed": "Bankkonten konnten nicht geladen werden.",
       "reloadAccounts": "Konten neu laden",
       "bankMissing": "Für die Währungen des Formulars ist kein geeignetes Bankkonto eingerichtet.",
@@ -1159,6 +1175,8 @@
       "editPriceWaves": "Preisphasen einrichten"
     },
     "story": {
+      "communicationIncomplete": "Die Kommunikationseinstellungen sind unvollständig. Bitte Antwortadresse und Vorlaufzeit der Erinnerung prüfen.",
+      "communicationQuestion": "Wie soll die Kommunikation mit Teilnehmenden gestaltet werden?",
       "bankAccountNotConfirmed": "Bankkonto nicht bestätigt",
       "bankAccountRequired": "Für eine kostenpflichtige Veranstaltung muss ein Bankkonto ausgewählt und bestätigt werden.",
       "configureScanningHint": "Optionale Einstellungen zum Scannen von Tickets. Sie ändern das Ticketdesign nicht und können später angepasst werden.",

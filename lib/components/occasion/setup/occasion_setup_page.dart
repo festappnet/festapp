@@ -48,6 +48,7 @@ import 'occasion_setup_presentation.dart';
 import 'occasion_setup_form_link.dart';
 import 'occasion_setup_pricing.dart';
 import 'occasion_setup_bank_account.dart';
+import 'occasion_setup_communication.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 
@@ -144,10 +145,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'formOrigin': null,
       'formDraft': null,
       'deadline': '7',
-      'reminders': false,
-      'tone': 'FeatureFormSettings.toneInherit'.tr(
-        namedArgs: {'tone': 'FeatureFormSettings.toneFormal'.tr()},
-      ),
       'blueprintMode': 'Bez plánku',
       'blueprintObjects': <Map<String, dynamic>>[],
       'blueprintGroups': <Map<String, dynamic>>[],
@@ -164,6 +161,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       () => ((_data['formDraft'] as Map?)?['link'] as String? ?? '').isEmpty,
     );
     _ensureDefaultForm(_data);
+    initializeCommunicationDraft(_data);
     _restrictToSupportedFeatures(_data);
     _linkController = TextEditingController(text: _data['link'] as String);
     _loadSources();
@@ -366,16 +364,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final seconds = form['deadline_duration_seconds'] as num?;
     draft['deadline'] =
         seconds == null ? '7' : (seconds / 86400).round().toString();
-    final data = form['data'] as Map? ?? {};
-    draft['reminders'] = data[FormDefinition.metaIsReminderEnabled] == true;
-    final tone = data[FormMetadata.metaCommunicationTone];
-    draft['tone'] = tone == 'formal'
-        ? 'FeatureFormSettings.toneFormal'.tr()
-        : tone == 'informal'
-            ? 'FeatureFormSettings.toneInformal'.tr()
-            : 'FeatureFormSettings.toneInherit'.tr(
-                namedArgs: {'tone': 'FeatureFormSettings.toneFormal'.tr()},
-              );
+    initializeCommunicationDraft(draft, reset: true);
   }
 
   void _persistFormControls(Map<String, dynamic> draft) {
@@ -385,17 +374,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (days != null && days > 0) {
       form['deadline_duration_seconds'] = days * 86400;
     }
-    final data = Map<String, dynamic>.from(form['data'] as Map? ?? {});
-    data[FormDefinition.metaIsReminderEnabled] = draft['reminders'] == true;
-    final tone = draft['tone'];
-    if (tone == 'FeatureFormSettings.toneFormal'.tr()) {
-      data[FormMetadata.metaCommunicationTone] = 'formal';
-    } else if (tone == 'FeatureFormSettings.toneInformal'.tr()) {
-      data[FormMetadata.metaCommunicationTone] = 'informal';
-    } else {
-      data.remove(FormMetadata.metaCommunicationTone);
-    }
-    form['data'] = data;
+    serializeCommunicationDraft(draft);
   }
 
   void _applyBlueprint(Map<String, dynamic> draft, Map plan) {
@@ -563,6 +542,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 .isEmpty);
         _inlineFormBundle = null;
         _ensureDefaultForm(_data);
+        initializeCommunicationDraft(_data);
         _restrictToSupportedFeatures(_data);
         _linkController.text = _data['link'] as String? ?? '';
         _editEpoch++;
@@ -585,7 +565,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _stepReady(Map<String, dynamic> d, int step,
-      {bool includePricing = true, bool includePayments = true}) {
+      {bool includePricing = true,
+      bool includePayments = true,
+      bool includeCommunication = true}) {
     if (!OccasionSetupStory.applicableSteps(
       d,
       AppConfig.isAppSupported,
@@ -607,6 +589,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return true;
       case 3:
         if (d['formEnabled'] == false) return true;
+        if (includeCommunication && !communicationDraftValid(d)) return false;
         if (_formLinkAvailable == false ||
             (includePricing &&
                 OccasionSetupStory.pricingIssueKeys(d, DateTime.now())
@@ -674,8 +657,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
     if (q.optional) return true;
     if (q.key == 'form')
-      return _stepReady(d, 3, includePricing: false, includePayments: false);
-    if (q.key == 'pricing') return _stepReady(d, 3, includePayments: false);
+      return _stepReady(d, 3,
+          includePricing: false,
+          includePayments: false,
+          includeCommunication: false);
+    if (q.key == 'pricing')
+      return _stepReady(d, 3,
+          includePayments: false, includeCommunication: false);
+    if (q.key == 'payments')
+      return _stepReady(d, q.step, includeCommunication: false);
     if (q.step != 1) return _stepReady(d, q.step);
     switch (q.key) {
       case 'name':
@@ -1083,6 +1073,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(const MapEntry(1, 'Začátek a konec události nejsou platné.'));
     }
     if (d['formEnabled'] == true) {
+      if (!communicationDraftValid(d))
+        issues.add(
+            MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')));
       if (_formLinkAvailable == false)
         issues.add(
             MapEntry(3, OccasionSetupStrings.story('formLinkUnavailable')));
@@ -1203,8 +1196,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     int step,
     String title,
     List<Widget> children,
-    List<MapEntry<int, String>> issues,
-  ) {
+    List<MapEntry<int, String>> issues, {
+    String? questionKey,
+  }) {
     final hasIssue = issues.any((issue) => issue.key == step) ||
         (step == 5 && d['reviewed'] != true);
     return Container(
@@ -1239,7 +1233,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     AppConfig.isAppSupported,
                   ).contains(step))
                 TextButton.icon(
-                  onPressed: () => _change((x) => x['step'] = step),
+                  onPressed: () => _change((x) {
+                    x['step'] = step;
+                    if (questionKey != null) x['storyQuestion'] = questionKey;
+                  }),
                   icon: const Icon(Icons.edit_outlined, size: 17),
                   label: Text(CommonStrings.edit),
                 ),
@@ -1442,18 +1439,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     'FeatureFormSettings.labelDeadlineDays'.tr(),
                     '${d['deadline']}',
                   ),
-                  _reviewRow(
-                    'FeatureFormSettings.labelEnableReminders'.tr(),
-                    d['reminders'] == true ? 'Zapnuto' : 'Vypnuto',
-                  ),
-                  _reviewRow(
-                    'FeatureFormSettings.labelCommunicationTone'.tr(),
-                    d['tone'] as String,
-                  ),
                 ],
               ],
             ],
             issues),
+        if (OccasionSetupStory.formEnabled(d))
+          _reviewSection(
+              d,
+              3,
+              OccasionSetupStrings.story('communicationQuestion'),
+              [OccasionSetupCommunicationSummary(data: d)],
+              issues,
+              questionKey: 'communication'),
         if (!AppConfig.isAppSupported && OccasionSetupStory.hasTickets(d))
           _reviewSection(
               d,
@@ -1483,14 +1480,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 _reviewRow(
                   'FeatureFormSettings.labelDeadlineDays'.tr(),
                   '${d['deadline']}',
-                ),
-                _reviewRow(
-                  'FeatureFormSettings.labelEnableReminders'.tr(),
-                  d['reminders'] == true ? 'Zapnuto' : 'Vypnuto',
-                ),
-                _reviewRow(
-                  'FeatureFormSettings.labelCommunicationTone'.tr(),
-                  d['tone'] as String,
                 ),
               ],
               issues),
@@ -1569,6 +1558,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _body(Map<String, dynamic> d) {
+    if (_questions[_questionIndex(d)].key == 'communication') {
+      return OccasionSetupCommunication(
+          draftId: _stored.id,
+          data: d,
+          onChanged: (patch) =>
+              _change((x) => x.addAll(patch), changesConfiguration: true));
+    }
     if (_questions[_questionIndex(d)].key == 'payments')
       return _paymentSettings(d);
     if (_questions[_questionIndex(d)].key == 'pricing') {
@@ -1824,28 +1820,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             onChanged: (patch) =>
                 _change((x) => x.addAll(patch), changesConfiguration: true),
           ),
-          const SizedBox(height: 10),
-          ...[
-            _textField(
-              d,
-              'deadline',
-              'FeatureFormSettings.labelDeadlineDays'.tr(),
-              keyboardType: TextInputType.number,
-            ),
-            _switch(
-              d,
-              'reminders',
-              'FeatureFormSettings.labelEnableReminders'.tr(),
-            ),
-            _choice(
-                d, 'tone', 'FeatureFormSettings.labelCommunicationTone'.tr(), [
-              'FeatureFormSettings.toneInherit'.tr(
-                namedArgs: {'tone': 'FeatureFormSettings.toneFormal'.tr()},
-              ),
-              'FeatureFormSettings.toneFormal'.tr(),
-              'FeatureFormSettings.toneInformal'.tr(),
-            ]),
-          ],
+          const SizedBox(height: 24),
+          _textField(
+              d, 'deadline', 'FeatureFormSettings.labelDeadlineDays'.tr(),
+              keyboardType: TextInputType.number),
         ],
       );
 
