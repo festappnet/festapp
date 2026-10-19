@@ -119,6 +119,7 @@ class EmailPreviewScenario {
   final Map<String, String> values;
   final Set<String> richCodes;
   final Map<String, String> contextTemplates;
+  final Map<String, String> applicationContextTemplates;
   final Map<String, String> contextDefaults;
   final List<EmailRequiredLink> requiredLinks;
   const EmailPreviewScenario({
@@ -129,11 +130,15 @@ class EmailPreviewScenario {
     required this.values,
     required this.richCodes,
     this.contextTemplates = const {},
+    this.applicationContextTemplates = const {},
     this.contextDefaults = const {},
     required this.requiredLinks,
   });
   factory EmailPreviewScenario.fromJson(Map<String, dynamic> json) =>
       EmailPreviewScenario(
+        applicationContextTemplates: Map<String, String>.from(
+          json['applicationContextTemplates'] as Map? ?? const {},
+        ),
         contextDefaults: Map<String, String>.from(
           json['contextDefaults'] as Map? ?? const {},
         ),
@@ -171,6 +176,10 @@ class EmailPreviewScenario {
       for (final entry in contextTemplates.entries)
         if (codes.contains(entry.key)) entry.key: entry.value,
     },
+    applicationContextTemplates: {
+      for (final entry in applicationContextTemplates.entries)
+        if (codes.contains(entry.key)) entry.key: entry.value,
+    },
     requiredLinks: requiredLinks,
   );
 
@@ -188,7 +197,11 @@ class EmailPreviewScenario {
       result['deadline'] = context.deadline!;
     if (context.deadline != null && result.containsKey('offer_expires_at'))
       result['offer_expires_at'] = '${context.deadline} 18:00';
-    for (final entry in contextTemplates.entries) {
+    final templates = {
+      ...contextTemplates,
+      if (context.ticketsEnabled == false) ...applicationContextTemplates,
+    };
+    for (final entry in templates.entries) {
       if (!result.containsKey(entry.key)) continue;
       result[entry.key] = entry.value.replaceAllMapped(
         EmailTemplateRules.tokenPattern,
@@ -212,6 +225,7 @@ class EmailPreviewScenario {
       richCodes: richCodes,
       requiredLinks: requiredLinks,
       contextTemplates: contextTemplates,
+      applicationContextTemplates: applicationContextTemplates,
       contextDefaults: contextDefaults,
     );
   }

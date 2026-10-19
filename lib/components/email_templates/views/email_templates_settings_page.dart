@@ -506,7 +506,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           16,
           MediaQuery.sizeOf(context).width < 600 ? 12 : 24,
           0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       content: SizedBox(
         width: 760,
         child: Form(
