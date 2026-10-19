@@ -520,11 +520,23 @@ void main() {
             areaBindings: {}),
         products: [],
         spots: []);
+    final outerScroll = ScrollController(initialScrollOffset: 1280);
+    addTearDown(outerScroll.dispose);
     await environment.pumpWidget(
         tester,
         MaterialApp(
-            home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
+            home: Scaffold(
+                body: SingleChildScrollView(
+          controller: outerScroll,
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            const SizedBox(width: 1280),
+            SizedBox(
+                width: 1280,
+                child: BlueprintLayoutHost(
+                    source: source, reload: () async => source)),
+          ]),
+        ))));
     await tester.pumpAndSettle();
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
@@ -536,7 +548,16 @@ void main() {
     expect(find.descendant(of: row, matching: find.byType(IconButton)),
         findsNothing);
     expect(editor.viewSelectionTarget!(seatId), seatId);
-    editor.onViewSelectionChanged!({lastId});
+    final pageOrigin = tester.getTopLeft(find.byType(BlueprintLayoutHost));
+    tester
+        .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
+        .onTap!(Offset(tables.last.x, tables.last.y));
+    for (var frame = 0; frame < 20; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getTopLeft(find.byType(BlueprintLayoutHost)), pageOrigin,
+          reason:
+              'Revealing a sidebar row must not scroll the parent tab page');
+    }
     await tester.pumpAndSettle();
     expect(tester.getRect(scroll).contains(tester.getCenter(row)), isTrue);
     expect(tester.widget<ListTile>(row).selected, isTrue);

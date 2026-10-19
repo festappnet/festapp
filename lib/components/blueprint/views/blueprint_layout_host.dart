@@ -710,7 +710,12 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         return;
       final rowContext = _commercialRowKeys[tableId]?.currentContext;
       if (rowContext != null) {
-        Scrollable.ensureVisible(rowContext, alignment: .5);
+        // Reveal only inside the table list. The static helper also scrolls
+        // ancestor viewports, including the administration tab's PageView.
+        Scrollable.of(rowContext).position.ensureVisible(
+              rowContext.findRenderObject()!,
+              alignment: .5,
+            );
       }
       if (openDetail) _showCommercialDetail();
     });
