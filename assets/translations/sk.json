@@ -971,6 +971,7 @@
       "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia."
     },
     "authoring": {
+      "whenSent": "Kedy sa e-mail odosiela",
       "authoringHint": "Napíšte @ a vyberte údaj, ktorý sa doplní pri odoslaní.",
       "insertVariable": "Vložiť údaj",
       "noVariable": "Žiadny zodpovedajúci údaj",

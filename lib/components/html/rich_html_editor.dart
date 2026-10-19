@@ -896,7 +896,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                               constraints: BoxConstraints(
                                   minHeight:
                                       controller.authoring?.singleLine == true
-                                          ? 40
+                                          ? 0
                                           : 180),
                               child: SuperEditorAndroidControlsScope(
                                   controller: _android,
@@ -1033,7 +1033,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                       inlineTextStyler:
                                                           htmlInlineTextStyler,
                                                       documentPadding: controller.authoring?.singleLine == true
-                                                          ? const EdgeInsets.symmetric(horizontal: 4, vertical: 4)
+                                                          ? const EdgeInsets.symmetric(vertical: 8)
                                                           : const EdgeInsets.all(8),
                                                       addRulesAfter: [
                                                         StyleRule(
@@ -1131,13 +1131,18 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
 
   Widget _documentViewport(Widget document) {
     if (controller.authoring?.singleLine == true) {
-      return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      return ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(child: document),
         IconButton(
             tooltip: controller.authoring!.insertLabel,
             onPressed: _openMentions,
-            icon: const Icon(Icons.alternate_email)),
-      ]);
+            style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant),
+            icon: const Icon(Icons.alternate_email, size: 20)),
+      ]));
     }
     return widget.fullscreen ? Expanded(child: document) : document;
   }

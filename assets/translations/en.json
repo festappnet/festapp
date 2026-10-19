@@ -1033,6 +1033,7 @@
     "subjectRequired": "Subject is required",
     "template": "Template",
     "authoring": {
+      "whenSent": "When this email is sent",
       "authoringHint": "Type @ to choose information filled in when sending.",
       "insertVariable": "Insert information",
       "noVariable": "No matching information",

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class EmailTemplatesStrings {
+  static String get whenSent => 'EmailTemplates.authoring.whenSent'.tr();
   static String get previewShort => 'EmailTemplates.authoring.previewShort'.tr();
   static String get authoringContextUnavailable =>
       'EmailTemplates.authoring.authoringContextUnavailable'.tr();
