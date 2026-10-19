@@ -34,8 +34,7 @@ const Map<String, String> czBanks = {
   "6810": "Volksbank Raiffeisenbank Nordoberpfalz eG pobočka Cheb",
   "7910": "Deutsche Bank Aktiengesellschaft Filiale Prag, organizační složka",
   "7940": "Waldviertler Sparkasse Bank AG",
-  "7950":
-      "Raiffeisenlandesbank Oberösterreich Aktiengesellschaft, pobočka Česká republika",
+  "7950": "Raiffeisenlandesbank Oberösterreich Aktiengesellschaft, pobočka Česká republika",
   "7960": "J&T BANKA, a.s.",
   "7970": "Oberbank AG pobočka Česká republika",
   "7980": "Wüstenrot - stavební spořitelna a.s. (merged with MONETA)",
@@ -70,4 +69,26 @@ bool isFioBank(String? input) {
   }
 
   return false;
+}
+
+/// BankSync notification providers. API synchronization remains Fio-only.
+const bankSyncEmailProviders = <String, String>{
+  '2010': 'FIO',
+  '3030': 'AIRBANK',
+  '0300': 'CSOB',
+  '0600': 'MONETA',
+  '2250': 'CREDITAS',
+  '5500': 'RAIFFEISENBANK',
+  '2700': 'UNICREDIT',
+  '0800': 'CSAS',
+};
+
+String? bankSyncProviderForAccount(String? accountNumber) {
+  final account = (accountNumber ?? '')
+      .replaceAll(RegExp(r'\s'), '')
+      .toUpperCase();
+  final bankCode = RegExp(r'^CZ[0-9]{22}$').hasMatch(account)
+      ? account.substring(4, 8)
+      : RegExp(r'/([0-9]{4})$').firstMatch(account)?.group(1);
+  return bankSyncEmailProviders[bankCode];
 }

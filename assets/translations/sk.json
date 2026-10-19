@@ -100,7 +100,7 @@
     "synchronizationEnabled": "Zapnuté",
     "synchronizationPaused": "Vypnuté",
     "synchronizationChanging": "Mením nastavenie synchronizácie",
-    "emailBankUnsupported": "Prepojenie bankových e-mailov je zatiaľ dostupné iba pre Fio banku a Air Bank. Tento účet môžete používať na ručnú evidenciu platieb."
+    "emailBankUnsupported": "Pre banku tohto účtu zatiaľ nie je dostupné prepojenie bankových e-mailov. Účet môžete používať na ručnú evidenciu platieb."
   },
   "EmailDelivery": {
     "title": "Email",

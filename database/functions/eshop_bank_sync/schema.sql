@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_connections (
   remote_bank_account_id text NOT NULL,
   bank_account_id bigint NOT NULL UNIQUE REFERENCES eshop.bank_accounts(id),
   physical_account text NOT NULL,
-  provider text NOT NULL CHECK(provider IN ('FIO','AIRBANK')),
+  provider text NOT NULL CHECK(provider IN ('FIO','AIRBANK','CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS')),
   mode text NOT NULL CHECK(mode IN ('api','email')),
   state text NOT NULL CHECK(state IN ('provisioning','shadow','connected','degraded','suspended')),
   pairing_code text CHECK(pairing_code ~ '^[0-9a-f]{10}$'),
@@ -79,3 +79,7 @@ ALTER TABLE eshop.bank_transaction_identities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE eshop.bank_sync_operations ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.bank_sync_connections,eshop.bank_sync_account_aliases,eshop.bank_sync_inbox,
   eshop.bank_transaction_identities,eshop.bank_sync_operations FROM PUBLIC,anon,authenticated;
+
+-- Supported notification providers; existing connection identities remain unchanged.
+ALTER TABLE eshop.bank_sync_connections DROP CONSTRAINT IF EXISTS bank_sync_connections_provider_check;
+ALTER TABLE eshop.bank_sync_connections ADD CONSTRAINT bank_sync_connections_provider_check CHECK(provider IN ('FIO','AIRBANK','CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS'));
