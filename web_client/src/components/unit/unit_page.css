@@ -5,5 +5,5 @@
 .unit-introduction{max-width:960px;margin:8px auto 28px;padding:24px 0;border-bottom:1px solid var(--divider-color,rgba(128,128,128,.25))}.unit-introduction h1{margin:0 0 10px;font-size:clamp(28px,4vw,40px);line-height:1.2;overflow-wrap:anywhere;color:var(--text-color)}.unit-introduction p{margin:0;line-height:1.6;color:var(--text-secondary-color,var(--text-color))}@media(max-width:600px){.unit-introduction{padding:16px 0;margin-bottom:20px}}
 
 .catalog-navigation[hidden]{display:none}
-.catalog-navigation a{justify-content:center;box-sizing:border-box;height:40px;min-height:40px;padding:8px 20px;border:1px solid color-mix(in srgb,var(--text-color) 14%,transparent);border-radius:28px;background:color-mix(in srgb,var(--text-color) 8%,var(--surface-color,#fff));color:var(--text-color);font-size:15px;font-weight:600;line-height:1.2;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:background .2s ease}
-.catalog-navigation a:hover{background:color-mix(in srgb,var(--text-color) 14%,var(--surface-color,#fff))}
+.catalog-navigation a{justify-content:center;box-sizing:border-box;height:40px;min-height:40px;padding:8px 20px;border:1px solid var(--primary-color);border-radius:28px;background:var(--primary-color);color:var(--surface-color,#fff);font-size:15px;font-weight:600;line-height:1.2;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:filter .2s ease}
+.catalog-navigation a:hover{filter:brightness(.94)}
