@@ -130,7 +130,7 @@ class EmailPreviewScenario {
     }
     if (context.products.isNotEmpty && result.containsKey('amount'))
       result['amount'] =
-          bindings[scenario == 'deposit'
+          bindings[templateCode == 'TICKET_ORDER_PAYMENT_DONE' && scenario == 'deposit'
               ? 'preview_deposit'
               : 'preview_total']!;
 

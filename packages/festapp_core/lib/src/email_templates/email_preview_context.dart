@@ -42,7 +42,7 @@ class EmailPreviewContext {
     ).format(value);
     return {
       if (occasionTitle != null) 'preview_occasion': occasionTitle!,
-      'preview_deadline': deadline ?? '30. 10. 2026',
+      if (deadline != null) 'preview_deadline': deadline!,
       'preview_product_0_title': first.title,
       'preview_product_0_type': first.typeTitle,
       'preview_product_1_title': second.title,

@@ -1,8 +1,4 @@
-import {
-  formatCurrency,
-  formatDatetime,
-  formatIBAN,
-} from "../_shared/utilities.ts";
+import { updateBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
@@ -24,8 +20,6 @@ export async function getTicketOrderUpdateTemplate(
     ? requestedLanguage as keyof typeof translations
     : "cs";
 
-  // Select the correct language object (csTranslations or enTranslations)
-  const tr = translations[lang] || translations.cs;
   const attachments: any[] = [];
 
   // 1. Fetch and authorize base order data using the shared function
@@ -50,38 +44,11 @@ export async function getTicketOrderUpdateTemplate(
   const amountPaid = Number(payment_info?.paid) || 0;
   const balance = orderPrice - amountPaid;
   const currency = order.currency_code || "CZK";
-  let balanceReasoning = "";
+  const balanceReasoning = updateBalanceReasoning(
+    orderPrice, amountPaid, currency, bank_account, payment_info, lang, tone,
+  );
 
-  if (orderPrice === 0) {
-    balanceReasoning = tr.zeroOrder(currency, tone);
-  } else if (balance < 0) {
-    balanceReasoning = tr.overpaid(
-      formatCurrency(Math.abs(balance), currency),
-      tone,
-    );
-  } else if (balance > 0) {
-    const iban = formatIBAN(bank_account.account_number);
-    if (amountPaid === 0) {
-      balanceReasoning = tr.unpaid(
-        formatCurrency(orderPrice, currency),
-        bank_account.account_number_human_readable,
-        iban,
-        paymentReferenceValue(payment_info),
-        formatDatetime(payment_info.deadline, lang),
-        tone, // Pass tone
-      );
-    } else {
-      balanceReasoning = tr.underpaid(
-        formatCurrency(amountPaid, currency),
-        formatCurrency(balance, currency),
-        bank_account.account_number_human_readable,
-        iban,
-        paymentReferenceValue(payment_info),
-        formatDatetime(payment_info.deadline, lang),
-        tone, // Pass tone
-      );
-    }
-
+  if (orderPrice !== 0 && balance > 0) {
     // 4. Generate Payment QR Code if there is a balance
     try {
       const qrPaymentData = {
@@ -111,9 +78,6 @@ export async function getTicketOrderUpdateTemplate(
         error instanceof Error ? error.message : "unknown error",
       );
     }
-  } else {
-    // Pass tone to the translation function
-    balanceReasoning = tr.fullyPaid(tone);
   }
 
   // 5. Generate Change Overview

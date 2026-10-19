@@ -1,10 +1,10 @@
+import { confirmationPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
 import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import {
-  formatCurrency,
   formatDatetime,
   formatIBAN,
 } from "../_shared/utilities.ts";
@@ -66,7 +66,6 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const lang = requestedLanguage in translations
     ? requestedLanguage as keyof typeof translations
     : "cs";
-  const tr = translations[lang];
   const order = await withOrderIdentity(ticketOrder.order, async (params) => {
     const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
     if (error) throw error;
@@ -121,53 +120,18 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const tone: Tone = order.form?.data?.communication_tone === "informal"
     ? "informal"
     : "formal";
-  let balanceReasoning: string;
-  if (paymentInfo.amount <= 0) {
-    balanceReasoning = tr.zeroOrder(paymentInfo.currency_code, tone);
-  } else if (
-    paymentInfo.deposit_amount &&
-    paymentInfo.deposit_amount < paymentInfo.amount
-  ) {
-    const deposit = Number(paymentInfo.deposit_amount);
-    const remaining = paymentInfo.amount - deposit;
-    const feature = (occasion.features ?? []).find((item: any) =>
-      item.code === "deposit"
-    );
-    const deadline = feature?.deposit_deadline === "on_site"
-      ? (lang === "cs" ? "na místě" : "on site")
-      : feature?.deposit_deadline_days
-      ? `${feature.deposit_deadline_days} ${
-        lang === "cs" ? "dní před akcí" : "days before the event"
-      }`
-      : (lang === "cs" ? "na místě" : "on site");
-    balanceReasoning = tr.depositRequired(
-      formatCurrency(deposit, paymentInfo.currency_code),
-      formatCurrency(remaining, paymentInfo.currency_code),
-      deadline,
-      paymentInfo.account_number_human_readable,
-      formatIBAN(paymentInfo.account_number),
-      paymentReferenceValue(paymentInfo),
-      tone,
-    );
-  } else {
-    balanceReasoning = tr.unpaid(
-      formatCurrency(paymentInfo.amount, paymentInfo.currency_code),
-      paymentInfo.account_number_human_readable,
-      formatIBAN(paymentInfo.account_number),
-      paymentReferenceValue(paymentInfo),
-      formatDatetime(paymentInfo.deadline, lang) ?? "",
-      tone,
-    );
-  }
+  const paymentPresentation = confirmationPaymentSubstitutions(
+    paymentInfo, occasion.features ?? [], lang, tone,
+  );
 
   return {
     subs: {
       occasionTitle: occasion.title,
       orderSymbol: order.order_symbol,
-      balanceReasoning,
+      balanceReasoning: paymentPresentation.balanceReasoning,
       price: paymentInfo.amount,
       currencyCode: paymentInfo.currency_code,
-      amount: formatCurrency(paymentInfo.amount, paymentInfo.currency_code),
+      amount: paymentPresentation.amount,
       accountNumber: paymentInfo.account_number_human_readable,
       iban: formatIBAN(paymentInfo.account_number),
       variableSymbol: paymentReferenceValue(paymentInfo),
