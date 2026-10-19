@@ -2835,7 +2835,7 @@
     "createStepByStep": "Create step by step",
     "stepByStep": "Step by step",
     "recommendedForTickets": "Recommended for tickets",
-    "guidedCreationDescription": "A guided setup for your event, tickets and sales.",
+    "guidedCreationDescription": "The wizard guides you through setting up the event.",
     "quickCreationDescription": "Enter a title, date and time. Configure the rest later.",
     "withoutWizard": "Without wizard",
     "drafts": "Drafts",
