@@ -193,3 +193,25 @@ Deno.test('canvas opacity validates and is emitted as PDF graphics state',async(
  assert(states.includes('/ca 0.4'));
  for(const canvasOpacity of [-.1,1.1,null,'0.5'])assertThrows(()=>parseLayout({schemaVersion:3,templates:{wide:{...t,canvasOpacity}}}));
 });
+
+Deno.test('default admissions render actual event details and preserve saved layouts',async()=>{
+  const {defaultTicketTemplate}=await import('./ticketLayout.ts');
+  const {resolveTicketTemplate}=await import('./ticketGeneration.ts');
+  const resources={...r,background:undefined,logo:undefined};
+  for(const type of ['wide','named'] as const) {
+    const occasion={id:7,title:'Slavnostní večer v kulturním domě',start_time:'2026-11-07T18:00:00Z',data:{place_name:'Kulturní dům, Brno'},features:[{code:'ticket',ticket_type:type}]};
+    const template=await resolveTicketTemplate(occasion,resources);
+    assertEquals(template,defaultTicketTemplate(type));
+    assertEquals(template.canvasColor,'FFFFFF');
+    assertEquals(template.qrAppearance,{background:'FFFFFF',opacity:1,margin:4});
+    const data=normalizeTicketData({ticket_symbol:'X3827K6M8R',price:350,currency_code:'CZK',note:'Vstup od 18:30',order_product_ticket:[]},occasion,{name:'Jana',surname:'Nováková'},undefined,template);
+    assertEquals(data.occasionTitle,occasion.title);
+    assert(data.occasionDatePlace?.includes('Kulturní dům'));
+    assertEquals(data.orderName,'Jana Nováková');
+    const result=await generateTicketPdf(data,resources,template,type);
+    assertEquals(result.warnings,[]);
+    assertEquals((await PDFDocument.load(result.bytes)).getPageCount(),1);
+    const saved=preset(type);
+    assertEquals(await resolveTicketTemplate({...occasion,features:[{code:'ticket',ticket_type:type,layout:{schemaVersion:3,templates:{[type]:saved}}}]},resources),saved);
+  }
+});

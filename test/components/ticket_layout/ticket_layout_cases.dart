@@ -33,6 +33,8 @@ import 'package:fstapp/components/ticket_layout/views/ticket_layout_editor.dart'
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_properties.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
+import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 
 late WidgetEnvironmentFixture _environment;
 
@@ -109,6 +111,32 @@ class FakeService extends TicketLayoutService {
 }
 
 void main() {
+  test('draft ticket preview context scopes resolve and PDF but not catalog or saved previews', () async {
+    final calls = <Map<String, dynamic>>[];
+    final service = TicketLayoutService(transport: (body) async {
+      calls.add(body);
+      if (body['mode'] == 'pdf') return {'file': '', 'warnings': <String>[]};
+      if (body['mode'] == 'catalog') return {'catalog': <dynamic>[]};
+      throw StateError('captured resolve');
+    }).withPreviewOccasion(TicketPreviewOccasion(
+        title: 'Podzimní ples',
+        startTime: DateTime.utc(2026, 11, 7, 18),
+        placeName: 'Sokolovna'));
+    await expectLater(service.resolve(7, 'wide', null, null), throwsStateError);
+    await service.preview(7, 'wide', {}, 'normal', null);
+    await service.catalog(7);
+    await expectLater(service.resolve(7, 'wide', null, null, readOnly: true), throwsStateError);
+    expect(calls.map((c) => c['occasionId']), everyElement(7));
+    expect(calls[0]['previewOccasion'], {
+      'title': 'Podzimní ples',
+      'start_time': '2026-11-07T18:00:00.000Z',
+      'end_time': null,
+      'data': {'place_name': 'Sokolovna'},
+    });
+    expect(calls[1]['previewOccasion'], calls[0]['previewOccasion']);
+    expect(calls[2].containsKey('previewOccasion'), isFalse);
+    expect(calls[3].containsKey('previewOccasion'), isFalse);
+  });
   WidgetEnvironmentFixture.register();
   final localizationWarnings = <String>[];
   late LocalizationLogFixture localizationLogs;
@@ -1129,6 +1157,55 @@ void main() {
     expect(layout.page, const Size(595.28, 841.89));
     expect(layout.validate('named'), isEmpty);
     expect(layout.fitPageToTicket, isFalse);
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
+      'optional scanner settings stay separate and notify the shared draft',
+      (tester) async {
+    final feature = TicketFeature(code: 'ticket');
+    final original = feature.toJson();
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: TicketSettings(
+                    feature: feature,
+                    occasionId: 7,
+                    service: SettingsService(),
+                    showScanningSettings: false))));
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketScanningSettings), findsNothing);
+    expect(find.byType(CheckboxListTile), findsNothing);
+    expect(feature.toJson(), original);
+    var notifications = 0;
+    var callbacks = 0;
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: EditorDraftScope(
+                    onChanged: () => notifications++,
+                    child: TicketScanningSettings(
+                        feature: feature,
+                        onChanged: () => callbacks++)))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(CheckboxListTile).first);
+    await tester.pump();
+    await tester.tap(find.byType(CheckboxListTile).last);
+    await tester.pump();
+    expect(feature.canScanManually, isTrue);
+    expect(feature.showHiddenNote, isTrue);
+    expect(notifications, 2);
+    expect(callbacks, 2);
+    await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: TicketScanningSettings(
+                    feature: feature, readOnly: true))));
+    await tester.pumpAndSettle();
+    expect(tester.widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+        .every((tile) => tile.onChanged == null), isTrue);
   });
 
   testWidgetsWithEnvironment(() => _environment,

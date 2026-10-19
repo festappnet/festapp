@@ -6,6 +6,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  started jsonb; receipt jsonb; new_id bigint; form_id bigint; form_data jsonb; fields jsonb := '[]';
  field jsonb; pt jsonb; products jsonb; product jsonb; result jsonb; source_id bigint;
  old_products jsonb := '[]'; old_types jsonb := '[]'; type_map jsonb := '{}'; final_features jsonb; new_products jsonb; product_map jsonb := '{}'; idx integer; j integer;
+ intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
  blueprint_id bigint; objects jsonb := '[]'; obj jsonb; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
@@ -19,12 +20,42 @@ BEGIN
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
  payload := d.data;
  source_id := (payload->>'sourceId')::bigint;
+ intro_image:=nullif(payload->>'introImage','');
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN
   RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
  IF nullif(btrim(payload->>'title'),'') IS NULL OR (payload->>'reviewConfirmed')::boolean IS DISTINCT FROM true THEN
   RAISE invalid_parameter_value USING MESSAGE='Draft review required'; END IF;
  IF (payload->>'end')::timestamptz < (payload->>'start')::timestamptz THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid event dates'; END IF;
+ -- Draft uploads use the existing unit-scoped image writer. Never trust an
+ -- arbitrary URL supplied by a client, or adopt another unit's image.
+ IF intro_image IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.images WHERE link=intro_image AND unit=d.unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Draft image access denied'; END IF;
+ IF coalesce((payload->>'isPromoted')::boolean,false) AND intro_image IS NULL THEN
+  RAISE invalid_parameter_value USING MESSAGE='Promotion requires an intro image'; END IF;
+ -- New setup clients explicitly confirm receiving instructions. Old drafts
+ -- without this field retain the existing canonical automatic routing contract.
+ SELECT array_agg(DISTINCT coalesce(nullif(p->>'currency_code',''),'CZK')) INTO required_currencies
+ FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f
+ CROSS JOIN LATERAL jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p
+ WHERE coalesce((payload->>'formEnabled')::boolean,true) AND NOT coalesce((f->>'is_hidden')::boolean,false)
+   AND NOT coalesce((p->>'is_hidden')::boolean,false) AND (p->>'price')::numeric>0;
+ IF required_currencies IS NOT NULL AND payload ? 'bankAccountConfirmed' THEN
+  IF (payload->>'bankAccountConfirmed')::boolean IS DISTINCT FROM true OR nullif(payload->>'bankAccountId','') IS NULL THEN
+   RAISE invalid_parameter_value USING MESSAGE='Bank account confirmation required'; END IF;
+  selected_bank:=(payload->>'bankAccountId')::bigint;
+  PERFORM 1 FROM eshop.bank_accounts ba JOIN eshop.unit_bank_accounts u ON u.bank_account=ba.id
+   WHERE u.unit=d.unit AND ba.id=selected_bank AND ba.type<>'CASH' FOR SHARE OF ba,u;
+  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='Bank account access denied'; END IF;
+  -- Take a fresh statement snapshot after acquiring locks: a concurrent account
+  -- update may have committed while the locking statement was waiting.
+  SELECT ba.supported_currencies,public.occasion_setup_bank_fingerprint_internal(ba.id)
+   INTO bank_currencies,bank_fingerprint FROM eshop.bank_accounts ba WHERE ba.id=selected_bank;
+  IF bank_currencies IS NULL OR NOT required_currencies <@ bank_currencies THEN
+   RAISE invalid_parameter_value USING MESSAGE='Bank account currency mismatch'; END IF;
+  IF bank_fingerprint IS DISTINCT FROM payload->>'bankAccountFingerprint' THEN
+   RAISE serialization_failure USING MESSAGE='Bank account details changed; confirm again'; END IF;
+ END IF;
  IF payload->'ticketDraft' IS NOT NULL AND payload->'ticketDraft'<>'null'::jsonb THEN features := features || jsonb_build_array((payload->'ticketDraft')-'layout'); END IF;
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN features := features || '[{"code":"form","is_enabled":true}]'; END IF;
  IF coalesce((payload->>'copyProgram')::boolean,false) THEN features := features || '[{"code":"schedule","is_enabled":true}]'; END IF;
@@ -32,7 +63,9 @@ BEGIN
  config := jsonb_build_object('unit',d.unit,'organization',d.organization,
   'title',payload->>'title','link',payload->>'link','description',coalesce(payload->>'description',''),
   'start_time',payload->>'start','end_time',payload->>'end','is_hidden',true,'is_open',false,
-  'features',features,'data',jsonb_build_object('client_sync_v1',false));
+  'is_promoted',coalesce((payload->>'isPromoted')::boolean,false),
+  'features',features,'data',jsonb_strip_nulls(jsonb_build_object('client_sync_v1',false,
+   'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''))));
  policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],d.unit,d.organization);
  IF source_id IS NOT NULL AND (coalesce((payload->>'copyProgram')::boolean,false) OR coalesce((payload->>'copyInformation')::boolean,false) OR coalesce((payload->>'copyEmails')::boolean,false)) THEN
   PERFORM public.admit_occasion_copy_v1(source_id,d.unit,d.organization,policies->'occasion.copy'); END IF;
@@ -47,6 +80,22 @@ BEGIN
   SELECT id INTO form_id FROM public.forms WHERE occasion=new_id ORDER BY id LIMIT 1;
   IF form_id IS NULL THEN
    result := public.create_form_internal_v1(new_id,NULL,form_data->>'title'); form_id := (result->>'id')::bigint;
+  END IF;
+  form_link:=nullif(form_data->>'link','');
+  IF coalesce((payload->>'formLinkAutomatic')::boolean,false) THEN
+   FOR j IN 1..20 LOOP
+    -- Preserve the preview where still free; re-suggest if another writer won.
+    IF form_link IS NULL OR EXISTS(SELECT 1 FROM public.form_link_reservations WHERE slug=form_link AND form IS DISTINCT FROM form_id) THEN
+     form_link:=public.suggest_occasion_setup_form_link(p_id,coalesce(nullif(form_data->>'title',''),payload->>'title'),NULL)->>'suggestion';
+    END IF;
+    BEGIN
+     form_link:=public.reserve_public_link_internal('form',form_id,form_link,false);
+     EXIT;
+    EXCEPTION WHEN unique_violation THEN
+     IF j=20 THEN RAISE; END IF;
+     form_link:=NULL;
+    END;
+   END LOOP;
   END IF;
   DELETE FROM public.form_fields WHERE form=form_id;
   DELETE FROM eshop.products WHERE occasion=new_id;
@@ -69,8 +118,8 @@ BEGIN
    fields := fields || jsonb_build_array(field);
   END LOOP;
   result := public.update_form_internal_v1((form_data-'id'-'fields'-'blueprint'-'bank_account') || jsonb_build_object(
-   'id',form_id,'occasion',new_id,'link',coalesce(nullif(form_data->>'link',''),(SELECT link FROM public.forms WHERE id=form_id)),
-   'is_open',false,'form_fields',fields));
+   'id',form_id,'occasion',new_id,'link',coalesce(form_link,(SELECT link FROM public.forms WHERE id=form_id)),
+   'is_open',false,'bank_account',selected_bank,'form_fields',fields));
   IF result->>'code'<>'200' THEN RAISE EXCEPTION '%',result; END IF;
   IF jsonb_array_length(old_types)>0 THEN
    FOR idx IN 0..jsonb_array_length(old_types)-1 LOOP
@@ -101,6 +150,22 @@ BEGIN
    UPDATE public.forms SET blueprint=blueprint_id WHERE id=form_id;
    features := features || '[{"code":"blueprint","is_enabled":true}]';
   END IF;
+ END IF;
+ -- Plans are materialized through the existing price-wave commands, using
+ -- newly mapped product IDs. No source IDs or second scheduler escape.
+ IF coalesce((payload->>'priceWavesEnabled')::boolean,false) AND coalesce((payload->>'formEnabled')::boolean,true)
+   AND EXISTS(SELECT 1 FROM eshop.products p JOIN public.form_fields ff ON ff.product_type=p.product_type
+     WHERE p.occasion=new_id AND ff.form=form_id AND NOT coalesce(ff.is_hidden,false)
+       AND p.price>0 AND NOT coalesce(p.is_hidden,false)) THEN
+  FOR wave IN SELECT value FROM jsonb_array_elements(coalesce(payload->'priceWaves','[]')) LOOP
+   saved_wave:=public.create_product_price_wave((SELECT link FROM public.occasions WHERE id=new_id),(wave->>'change_time')::timestamptz);
+   FOR target IN SELECT value FROM jsonb_array_elements(coalesce(wave->'targets','[]')) LOOP
+    wave_product:=(product_map->>(target->>'product'))::bigint;
+    IF wave_product IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='Price wave product missing'; END IF;
+    PERFORM public.save_product_wave_target((saved_wave->>'id')::bigint,wave_product,(saved_wave->>'revision')::bigint,
+      (target->>'price')::numeric,(target->>'is_hidden')::boolean,NULL,NULL);
+   END LOOP;
+  END LOOP;
  END IF;
  -- Rebind ticket product-type references only after their new IDs exist.
  IF payload->'ticketDraft' ? 'layout' THEN
