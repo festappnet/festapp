@@ -16,6 +16,7 @@ class OccasionSetupStoryShell extends StatelessWidget {
     required this.backLabel,
     required this.onLeave,
     required this.onBack,
+    this.onQuestionSelected,
     required this.child,
     this.primaryAction,
     this.error,
@@ -36,6 +37,7 @@ class OccasionSetupStoryShell extends StatelessWidget {
   final String backLabel;
   final VoidCallback? onLeave;
   final VoidCallback? onBack;
+  final ValueChanged<int>? onQuestionSelected;
   final Widget child;
   final Widget? primaryAction;
   final Widget? error;
@@ -62,16 +64,32 @@ class OccasionSetupStoryShell extends StatelessWidget {
                           ? 1
                           : 2],
                   selected: index == currentIndex,
-                  child: SizedBox(
-                    height: 8,
-                    child: Center(
-                      child: Container(
-                        height: index == currentIndex ? 6 : 3,
-                        decoration: BoxDecoration(
-                          color: index <= currentIndex
-                              ? colors.primary
-                              : colors.outline,
-                          borderRadius: BorderRadius.circular(4),
+                  button: onQuestionSelected != null,
+                  enabled: onQuestionSelected != null,
+                  onTap: onQuestionSelected == null
+                      ? null
+                      : () => onQuestionSelected!(index),
+                  child: Tooltip(
+                    message: questionTitles[index],
+                    excludeFromSemantics: true,
+                    child: InkWell(
+                      excludeFromSemantics: true,
+                      onTap: onQuestionSelected == null
+                          ? null
+                          : () => onQuestionSelected!(index),
+                      borderRadius: BorderRadius.circular(4),
+                      child: SizedBox(
+                        height: 44,
+                        child: Center(
+                          child: Container(
+                            height: index == currentIndex ? 6 : 3,
+                            decoration: BoxDecoration(
+                              color: index <= currentIndex
+                                  ? colors.primary
+                                  : colors.outline,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       ),
                     ),
