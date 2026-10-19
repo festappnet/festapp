@@ -1243,6 +1243,11 @@
     "cancelDraftConfirm": "Naozaj zrušiť koncept „{title}“? Rozpracované nastavenia budú trvalo zmazané.",
     "progress": "Dokončené {value} %",
     "createStepByStep": "Vytvoriť krok za krokom",
+    "chooseCreation": "Ako chcete vytvoriť podujatie?",
+    "stepByStep": "Krok za krokom",
+    "recommendedForTickets": "Odporúčané pre vstupenky",
+    "guidedCreationDescription": "Sprievodca vás prevedie nastavením podujatia, vstupeniek a predaja.",
+    "quickCreationDescription": "Zadajte názov, dátum a čas. Ďalšie nastavenia doplníte neskôr.",
     "withoutWizard": "Bez sprievodcu",
     "createEvent": "Vytvoriť udalosť",
     "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."
