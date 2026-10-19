@@ -126,7 +126,7 @@ void main() {
           jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()) as Map<String, dynamic>,
           context: result.context);
         final scenario = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
-        expect(scenario.values['fullOrder'], contains(enabled ? 'Vstupenka A001' : 'Přihláška A001'));
+        expect(scenario.values['fullOrder'], contains(enabled ? 'Vstupenka X3425W8H2U' : 'Přihláška X3425W8H2U'));
       }
     });
   }

@@ -63,8 +63,8 @@ void main() {
     for (final original in records.where((s) => s.values.containsKey('fullOrder'))) {
       final application = original.withContext(const EmailPreviewContext(ticketsEnabled: false));
       final ticket = original.withContext(const EmailPreviewContext(ticketsEnabled: true));
-      final label = original.locale == 'cs' ? 'Přihláška A001' : 'Application A001';
-      final ticketLabel = original.locale == 'cs' ? 'Vstupenka A001' : 'Ticket A001';
+      final label = original.locale == 'cs' ? 'Přihláška X3425W8H2U' : 'Application X3425W8H2U';
+      final ticketLabel = original.locale == 'cs' ? 'Vstupenka X3425W8H2U' : 'Ticket X3425W8H2U';
       expect(application.values['fullOrder'], contains(label));
       expect(application.values['fullOrder'], isNot(contains(ticketLabel)));
       expect(ticket.values['fullOrder'], contains(ticketLabel));
