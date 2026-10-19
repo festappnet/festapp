@@ -13,7 +13,7 @@ DECLARE
   resolved jsonb;
   payload jsonb;
   selected_id bigint;
-  template_code text := 'ROUNDTRIP_' || gen_random_uuid()::text;
+  template_code text := 'TICKET_ORDER_CONFIRMATION';
 BEGIN
   INSERT INTO public.organizations(title) VALUES ('Template roundtrip') RETURNING id INTO org_id;
   INSERT INTO public.units(title,organization) VALUES ('Old unit',org_id) RETURNING id INTO old_unit;
@@ -29,6 +29,8 @@ BEGIN
   PERFORM assert_true(NOT has_function_privilege('authenticated',
     'public.get_resolved_email_template(text,jsonb)','EXECUTE'),
     'Internal selector is not exposed as an authenticated RPC');
+  DELETE FROM public.email_templates WHERE code=template_code
+    AND occasion IS NULL AND unit IS NULL AND organization IS NULL;
   INSERT INTO public.email_templates(code,subject,html) VALUES (template_code,'Global subject','Global body');
   INSERT INTO public.email_templates(code,subject,html,occasion,unit,organization)
     VALUES (template_code,'Old subject','Old body',oc,old_unit,org_id),
