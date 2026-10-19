@@ -21,6 +21,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
+import 'package:fstapp/components/fonts/font_family_picker.dart';
+import 'package:fstapp/components/fonts/ticket_font_catalog.dart';
+import 'package:fstapp/components/blueprint/blueprint_layout_resources.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_create_order_dialog.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_product_dialogs.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -126,6 +129,7 @@ void main() {
   testWidgetsWithEnvironment(() => environment,
       'blueprint inspector renames native table and commercial group together',
       (tester) async {
+    await tester.runAsync(TicketFontCatalog.load);
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -162,6 +166,7 @@ void main() {
     await tester.pumpAndSettle();
     final select =
         tester.getRect(find.byKey(const ValueKey('layout-tool-Select')));
+    expect(find.byType(FontFamilyPicker), findsNothing);
     final pan = tester.getRect(find.byKey(const ValueKey('layout-tool-Pan')));
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.pumpAndSettle();
@@ -173,6 +178,14 @@ void main() {
     // The physical tabletop and its wrapper must use the same business rename.
     editor.controller.select({table.id});
     await tester.pumpAndSettle();
+    final catalog = tester.widget<FutureBuilder<BlueprintLayoutFontProvider>>(
+        find.byType(FutureBuilder<BlueprintLayoutFontProvider>));
+    await tester.runAsync(() => catalog.future!);
+    await tester.pumpAndSettle();
+    final fonts =
+        tester.widget<FontFamilyPicker>(find.byType(FontFamilyPicker));
+    expect(fonts.families, containsAll(['Zeyada', 'Roboto Slab', 'Futura PT']));
+    expect(fonts.families.length, greaterThan(1000));
     final name = find.byWidgetPredicate(
         (w) => w is TextField && w.decoration?.labelText == 'Name');
     await tester.enterText(name, '  Front table  ');

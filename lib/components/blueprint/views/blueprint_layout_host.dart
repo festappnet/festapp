@@ -55,7 +55,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   bool _assetsPending = false;
   bool _assetsFailed = false;
   bool _operationPending = false;
-  late final Future<BlueprintLayoutFontProvider> _fonts;
+  Future<BlueprintLayoutFontProvider>? _fontCatalog;
+  // Viewing uses persisted outlines; even the editor catalog loads only on demand.
+  Future<BlueprintLayoutFontProvider> get _fonts => _fontCatalog ??=
+      BlueprintLayoutFontProvider.load(controller.snapshot.occasionId);
   int _fontGeneration = 0;
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _canOrder => RightsService.canUpdateOrders();
@@ -70,7 +73,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _screenMode = _canEdit && controller.layout.document.nodes.isEmpty
         ? _BlueprintScreenMode.edit
         : _BlueprintScreenMode.reservations;
-    _fonts = BlueprintLayoutFontProvider.load(controller.snapshot.occasionId);
     _loadAssets();
   }
 
@@ -262,11 +264,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             ));
   }
 
-  Future<void> _prepareFonts({String? selectedFont}) async {
+  Future<void> _prepareFonts({String? selectedFont, String? nodeId}) async {
     final generation = ++_fontGeneration;
     final provider = await _fonts;
     if (!mounted || generation != _fontGeneration) return;
     final document = controller.layout.document;
+    if (nodeId != null && !document.nodes.any((node) => node.id == nodeId)) {
+      throw StateError(BlueprintStrings.draftChanged);
+    }
     provider.characters = document.nodes
         .map((node) => '${node.label} ${node.properties['text'] ?? ''}')
         .join(' ');
@@ -277,15 +282,20 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           'fixture:serif' => legacyTicketFontIds['robotoSlab']!,
           _ => id,
         };
-    final defaultId =
-        selectedFont ?? realId(document.defaultTextStyle['fontId'] as String);
+    final defaultId = (nodeId == null ? selectedFont : null) ??
+        realId(document.defaultTextStyle['fontId'] as String);
     final nodes = document.nodes
-        .map((node) => node.properties['fontId'] is String
+        .map((node) => node.id == nodeId
             ? node.copyWith(properties: {
-                ...node.properties,
-                'fontId': realId(node.properties['fontId'] as String)
+                ...({...node.properties}..remove('fontId')),
+                if (selectedFont != null) 'fontId': selectedFont,
               })
-            : node)
+            : node.properties['fontId'] is String
+                ? node.copyWith(properties: {
+                    ...node.properties,
+                    'fontId': realId(node.properties['fontId'] as String)
+                  })
+                : node)
         .toList();
     final ids = {
       defaultId,
@@ -330,20 +340,56 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     }
   }
 
+  Future<TextStyle> _fontPreviewStyle(
+      BlueprintLayoutFontProvider provider, String family) async {
+    final entry = provider.catalog.firstWhere((e) => e['family'] == family);
+    final font = await TicketLayoutService()
+        .font(controller.snapshot.occasionId, entry['id'] as String);
+    return TextStyle(fontFamily: font.loaderName, fontWeight: FontWeight.w400);
+  }
+
+  Widget _objectFontPicker(BuildContext context, LayoutNode node) =>
+      FutureBuilder<BlueprintLayoutFontProvider>(
+        future: _fonts,
+        builder: (context, snapshot) {
+          final provider = snapshot.data;
+          if (provider == null) {
+            return const SizedBox(height: 48);
+          }
+          final id = node.properties['fontId'];
+          final selected = provider.catalog.where((font) => font['id'] == id);
+          return FontFamilyPicker(
+            value: selected.isEmpty ? null : selected.first['family'] as String,
+            label: BlueprintStrings.fontFamily,
+            enabled: !_busy && !controller.layout.readOnly && !node.locked,
+            families: provider.catalog
+                .map((font) => font['family'] as String)
+                .toList(),
+            extraFamilies: provider.catalog
+                .where((font) => font['source'] == 'bundled')
+                .map((font) => font['family'] as String)
+                .toList(),
+            previewStyle: (family) => _fontPreviewStyle(provider, family),
+            onSelected: (family) async {
+              final selectedId = family == null
+                  ? null
+                  : provider.catalog
+                          .firstWhere((font) => font['family'] == family)['id']
+                      as String;
+              await _run(() =>
+                  _prepareFonts(selectedFont: selectedId, nodeId: node.id));
+            },
+          );
+        },
+      );
+
   Future<void> _chooseFont() async {
     final provider = await _fonts;
     if (!mounted) return;
     await FontFamilyPicker.showChoices(context,
         families:
             provider.catalog.map((e) => e['family'] as String).toSet().toList(),
-        previewStyle: (family) async {
-          final entry =
-              provider.catalog.firstWhere((e) => e['family'] == family);
-          final font = await TicketLayoutService()
-              .font(controller.snapshot.occasionId, entry['id'] as String);
-          return TextStyle(
-              fontFamily: font.loaderName, fontWeight: FontWeight.w400);
-        },
+        previewStyle: (family) => _fontPreviewStyle(provider, family),
         extraFamilies: provider.catalog
             .where((e) => e['source'] == 'bundled')
             .map((e) => e['family'] as String)
@@ -1395,6 +1441,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                 toolbarPrefix: _modeSelector(),
                                 toolbarLeading: _toolbarActions(),
                                 onRenameNode: _renameFromInspector,
+                                fontPickerBuilder: _objectFontPicker,
                                 toolbarTrailing: _canEdit
                                     ? EditorActionBar(
                                         inline: true,
