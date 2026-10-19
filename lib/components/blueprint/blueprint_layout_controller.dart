@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -33,10 +34,11 @@ class BlueprintLayoutController extends ChangeNotifier
             isProtected(n.id)) return ['protected_spot'];
         if (previous.containsKey(n.id) &&
             previous[n.id]?.parentId != n.parentId &&
-            _commercialGroupFor(n,after) != null &&
-            _commercialGroupFor(n,after) != _draft.seatBindings[n.id]?.groupNodeId) {
+            _commercialGroupFor(n, after) != null &&
+            _commercialGroupFor(n, after) !=
+                _draft.seatBindings[n.id]?.groupNodeId) {
           if (isProtected(n.id)) return ['protected_spot'];
-          if (!_draft.groupProducts.containsKey(_commercialGroupFor(n,after)))
+          if (!_draft.groupProducts.containsKey(_commercialGroupFor(n, after)))
             return ['group_product_required'];
         }
       }
@@ -196,8 +198,9 @@ class BlueprintLayoutController extends ChangeNotifier
   }
 
   String? _commercialGroupFor(LayoutNode seat, VenueLayoutDocument document) =>
-      blueprintCommercialGroupFor(seat,document,groupProducts:_draft.groupProducts,
-        currentGroupId:_draft.seatBindings[seat.id]?.groupNodeId);
+      blueprintCommercialGroupFor(seat, document,
+          groupProducts: _draft.groupProducts,
+          currentGroupId: _draft.seatBindings[seat.id]?.groupNodeId);
 
   void _geometryChanged() {
     // Selection/live presentation notifications do not reconcile draft metadata.
@@ -212,11 +215,30 @@ class BlueprintLayoutController extends ChangeNotifier
       for (final n in layout.document.nodes)
         if (n.kind == 'seat') n.id: n
     };
+    // Geometry previews retain commercial identities. Reconcile only when the
+    // seat membership, naming, ancestry or paired-selection contract changes.
+    final metadataUnchanged = seats.length == _draft.seatBindings.length &&
+        const DeepCollectionEquality().equals(
+            _observedDocument.selectionUnits, layout.document.selectionUnits) &&
+        layout.document.nodes.length == _observedDocument.nodes.length &&
+        layout.document.nodes.every((node) {
+          final old = previous[node.id];
+          return old != null &&
+              old.kind == node.kind &&
+              old.parentId == node.parentId &&
+              (node.kind != 'seat' || old.label == node.label);
+        });
+    if (metadataUnchanged) {
+      _observedDocument = layout.document;
+      notifyListeners();
+      return;
+    }
     final bindings = <String, BlueprintSeatBinding>{};
     final groupCounts = <String, int>{};
     for (final binding in _draft.seatBindings.values) {
       final id = binding.groupNodeId;
-      if (id != null && seats.containsKey(binding.nodeId)) groupCounts[id] = (groupCounts[id] ?? 0) + 1;
+      if (id != null && seats.containsKey(binding.nodeId))
+        groupCounts[id] = (groupCounts[id] ?? 0) + 1;
     }
     for (final entry in seats.entries) {
       final current = _draft.seatBindings[entry.key];
@@ -225,14 +247,17 @@ class BlueprintLayoutController extends ChangeNotifier
           previous[entry.key]!.parentId != parent;
       final labelChanged = previous.containsKey(entry.key) &&
           previous[entry.key]!.label != entry.value.label;
-      final commercialGroup = _commercialGroupFor(entry.value,layout.document);
-      final groupChanged = parentChanged && commercialGroup != null && commercialGroup != current?.groupNodeId;
+      final commercialGroup = _commercialGroupFor(entry.value, layout.document);
+      final groupChanged = parentChanged &&
+          commercialGroup != null &&
+          commercialGroup != current?.groupNodeId;
       final unit = layout.document.selectionUnits.where(
           (u) => (u['nodeIds'] as List? ?? const []).contains(entry.key));
       final unitId = unit.isEmpty ? null : unit.first['id'] as String?;
       var newTitle = entry.value.label;
       if (current == null && commercialGroup != null) {
-        final groupNode = layout.document.nodes.firstWhere((node) => node.id == commercialGroup);
+        final groupNode = layout.document.nodes
+            .firstWhere((node) => node.id == commercialGroup);
         final nextIndex = groupCounts[commercialGroup] ?? 0;
         newTitle = blueprintSeatTitle(groupNode.label, nextIndex);
         groupCounts[commercialGroup] = nextIndex + 1;
@@ -248,9 +273,7 @@ class BlueprintLayoutController extends ChangeNotifier
               title: labelChanged ? entry.value.label : current.title,
               // Visual detach preserves commercial membership. Explicit attach
               // adopts the target default, guarded before geometry is committed.
-              groupNodeId: groupChanged
-                  ? commercialGroup
-                  : current.groupNodeId,
+              groupNodeId: groupChanged ? commercialGroup : current.groupNodeId,
               productId: groupChanged
                   ? _draft.groupProducts[commercialGroup]
                   : current.productId,

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_layout_demo.dart';
 import 'dart:async';
 import '../../support/fixtures/root_supabase_fixture.dart';
@@ -163,6 +164,10 @@ void main() {
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pumpAndSettle();
+    expect(tester.getSize(find.byKey(const ValueKey('blueprint-editor-toolbar'))).height, 48);
+    expect(find.byType(EditorActionBar), findsOneWidget);
+    expect(tester.getSize(find.byType(VenueLayoutEditor)).height,
+        greaterThan(tester.view.physicalSize.height / tester.view.devicePixelRatio - 70));
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     final chooser = tester.widget<DropdownButton<String>>(find.byType(DropdownButton<String>));

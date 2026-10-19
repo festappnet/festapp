@@ -66,45 +66,105 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
     };
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('new native table seats retain ancestor business group and existing lettering/default/overrides', () {
-    const added='10000000-0000-4000-8000-000000000003';
-    const table='10000000-0000-4000-8000-000000000004';
-    final source=snapshot().copyWith(document:VenueLayoutDocument(nodes:[
-      LayoutNode(id:group,kind:'group',label:'G',width:400,height:400),
-      LayoutNode(id:table,kind:'table',parentId:group,x:100,y:100,width:200,height:100,label:'Editable table'),
-      LayoutNode(id:node,kind:'seat',parentId:table,x:24,y:24,label:'Custom'),
-    ]),seatBindings:{node:const BlueprintSeatBinding(nodeId:node,spotId:11,
-      groupNodeId:group,productId:99,title:'Custom')},groupProducts:{group:42});
-    final controller=BlueprintLayoutController(source:BlueprintModel(layoutSnapshot:source),
-      saver:BlueprintLayoutSaver(Commands((input)async=>accepted(input))));
+  test(
+      'new native table seats retain ancestor business group and existing lettering/default/overrides',
+      () {
+    const added = '10000000-0000-4000-8000-000000000003';
+    const table = '10000000-0000-4000-8000-000000000004';
+    final source = snapshot().copyWith(
+        document: VenueLayoutDocument(nodes: [
+          LayoutNode(
+              id: group, kind: 'group', label: 'G', width: 400, height: 400),
+          LayoutNode(
+              id: table,
+              kind: 'table',
+              parentId: group,
+              x: 100,
+              y: 100,
+              width: 200,
+              height: 100,
+              label: 'Editable table'),
+          LayoutNode(
+              id: node,
+              kind: 'seat',
+              parentId: table,
+              x: 24,
+              y: 24,
+              label: 'Custom'),
+        ]),
+        seatBindings: {
+          node: const BlueprintSeatBinding(
+              nodeId: node,
+              spotId: 11,
+              groupNodeId: group,
+              productId: 99,
+              title: 'Custom')
+        },
+        groupProducts: {
+          group: 42
+        });
+    final controller = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: source),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
     addTearDown(controller.dispose);
-    controller.layout.apply(source.document.copyWith(nodes:[...source.document.nodes,
-      LayoutNode(id:added,kind:'seat',parentId:table,x:72,y:24,label:'1')]));
-    expect(controller.snapshot.seatBindings[added]!.title,'GB');
-    expect(controller.snapshot.seatBindings[added]!.productId,42);
-    expect(controller.snapshot.seatBindings[added]!.groupNodeId,group);
-    expect(controller.snapshot.seatBindings[node]!.title,'Custom');
-    expect(controller.snapshot.seatBindings[node]!.productId,99);
+    controller.layout.apply(source.document.copyWith(nodes: [
+      ...source.document.nodes,
+      LayoutNode(
+          id: added, kind: 'seat', parentId: table, x: 72, y: 24, label: '1')
+    ]));
+    expect(controller.snapshot.seatBindings[added]!.title, 'GB');
+    expect(controller.snapshot.seatBindings[added]!.productId, 42);
+    expect(controller.snapshot.seatBindings[added]!.groupNodeId, group);
+    expect(controller.snapshot.seatBindings[node]!.title, 'Custom');
+    expect(controller.snapshot.seatBindings[node]!.productId, 99);
   });
-  test('persisted empty seats save while new unassigned seats require a choice', () async {
-    var calls=0;
-    final existing=snapshot().copyWith(seatBindings:{node:snapshot().seatBindings[node]!.copyWith(clearProduct:true)});
-    final controller=BlueprintLayoutController(source:BlueprintModel(layoutSnapshot:existing),saver:BlueprintLayoutSaver(Commands((input)async{calls++;return accepted(input);})));
+  test('persisted empty seats save while new unassigned seats require a choice',
+      () async {
+    var calls = 0;
+    final existing = snapshot().copyWith(seatBindings: {
+      node: snapshot().seatBindings[node]!.copyWith(clearProduct: true)
+    });
+    final controller = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: existing),
+        saver: BlueprintLayoutSaver(Commands((input) async {
+          calls++;
+          return accepted(input);
+        })));
     addTearDown(controller.dispose);
-    expect(controller.adapter.state(existing.seatBindings[node]!),BlueprintSeatState.empty);
-    expect(controller.adapter.publicPresentation(existing.seatBindings[node]!)['selectable'],false);
-    expect(controller.adapter.publicPresentation(existing.seatBindings[node]!)['fill'],'#267329FF');
-    expect((await controller.save()).accepted,true);
-    expect(calls,1);
-    final draft=existing.copyWith(seatBindings:{node:const BlueprintSeatBinding(nodeId:node,title:'New')});
-    final created=BlueprintLayoutController(source:BlueprintModel(layoutSnapshot:draft),saver:BlueprintLayoutSaver(Commands((input)async{calls++;return accepted(input);})));
+    expect(controller.adapter.state(existing.seatBindings[node]!),
+        BlueprintSeatState.empty);
+    expect(
+        controller.adapter
+            .publicPresentation(existing.seatBindings[node]!)['selectable'],
+        false);
+    expect(
+        controller.adapter
+            .publicPresentation(existing.seatBindings[node]!)['fill'],
+        '#267329FF');
+    expect((await controller.save()).accepted, true);
+    expect(calls, 1);
+    final draft = existing.copyWith(seatBindings: {
+      node: const BlueprintSeatBinding(nodeId: node, title: 'New')
+    });
+    final created = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: draft),
+        saver: BlueprintLayoutSaver(Commands((input) async {
+          calls++;
+          return accepted(input);
+        })));
     addTearDown(created.dispose);
-    await expectLater(created.save(),throwsStateError);
-    expect(calls,1);
-    controller.refreshLive(BlueprintModel(spots:[BlueprintObjectModel(id:11,type:'spot',state:'used')]));
-    expect(controller.adapter.state(existing.seatBindings[node]!),BlueprintSeatState.used);
-    expect(controller.adapter.publicPresentation(existing.seatBindings[node]!)['fill'],'#412673FF');
-    expect(controller.isProtected(node),true);
+    await expectLater(created.save(), throwsStateError);
+    expect(calls, 1);
+    controller.refreshLive(BlueprintModel(
+        spots: [BlueprintObjectModel(id: 11, type: 'spot', state: 'used')]));
+    expect(controller.adapter.state(existing.seatBindings[node]!),
+        BlueprintSeatState.used);
+    expect(
+        controller.adapter
+            .publicPresentation(existing.seatBindings[node]!)['fill'],
+        '#412673FF');
+    expect(controller.isProtected(node), true);
   });
 
   test(
@@ -381,6 +441,27 @@ void main() {
     expect(controller.layout.document.nodes.single.x, 100);
     expect(controller.products[2]!.title, 'Updated');
     expect(controller.isDirty, isFalse);
+  });
+  test('geometry previews retain commercial binding identities', () {
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: snapshot()),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    final binding = c.snapshot.seatBindings[node]!;
+    final document = c.layout.document;
+    expect(
+        c.layout.apply(
+            document.copyWith(nodes: [document.nodes.single.copyWith(x: 180)])),
+        isTrue);
+    expect(identical(c.snapshot.seatBindings[node], binding), isTrue);
+    expect(c.snapshot.seatBindings[node]!.spotId, 11);
+    expect(
+        c.layout.apply(c.layout.document.copyWith(nodes: [
+          c.layout.document.nodes.single.copyWith(label: 'Renamed')
+        ])),
+        isTrue);
+    expect(c.snapshot.seatBindings[node]!.title, 'Renamed');
   });
   test('live holds protect products while movement retains spot identity', () {
     final controller = BlueprintLayoutController(
