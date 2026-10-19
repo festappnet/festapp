@@ -379,8 +379,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         initialHtml: '<p>${htmlEscape.convert(_subject ?? '')}</p>',
         owner: const HtmlMediaOwner.none(),
         authoring: _subjectProvider);
-    _bodyProvider.completion = _authoringCompletion;
-    _bodyProvider.headerBuilder = (_) => _bodyLeading();
     _subjectProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
     _bodyProvider.onSelectionChanged = _withdrawSuggestionIfLeft;
     _subjectProvider.footerBuilder = (_) =>
@@ -408,30 +406,15 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     _initialAuthoringContext = _loadAuthoringContext();
   }
 
-  EmailAuthoringCompletion? _authoringCompletion() => _authoringContext == null
-      ? null
-      : _scenario?.authoringCompletion(_bodyDraft?.html ?? _htmlContent ?? '',
-          wrapperHtml: _authoringContext!.wrapperHtml);
-
-  Widget _bodyLeading() {
-    Widget render() {
-      final html = _authoringCompletion()?.leadingHtml ?? '';
-      return html.isEmpty ? const SizedBox.shrink() : Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: EmailPreviewHtml(key: const ValueKey('email-automatic-leading'), html: html));
-    }
-    return _bodyProvider.previewChanges == null ? render() : ListenableBuilder(
-        listenable: _bodyProvider.previewChanges!, builder: (context, child) => render());
-  }
-
-  Future<void> _requestClose() async {
-    if (await confirmHtmlDiscard(context, _htmlSave) && mounted) Navigator.of(context).pop();
-  }
-
   Widget _bodyFooter() {
     // Wait for the authoritative wrapper before deciding whether delivery adds
     // a link. This is presentation only, outside the editable document.
-    final automatic = _authoringCompletion()?.trailingHtml ?? '';
+    final automatic = _authoringContext == null
+        ? ''
+        : _scenario?.automaticCompletionHtml(
+              _bodyDraft?.html ?? _htmlContent ?? '',
+              wrapperHtml: _authoringContext!.wrapperHtml,
+            ) ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -486,7 +469,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
     return AppAlertDialog(
-      onClose: _requestClose,
+      onClose: () async {
+        if (await confirmHtmlDiscard(context, _htmlSave) && context.mounted)
+          Navigator.of(context).pop();
+      },
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -506,7 +492,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           16,
           MediaQuery.sizeOf(context).width < 600 ? 12 : 24,
           0),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       content: SizedBox(
         width: 760,
         child: Form(
@@ -582,7 +568,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                               : null,
                           child: RichHtmlEditor(
                               controller: _subjectEditor, enabled: _canEdit,
-                              onCancel: _requestClose,
                               textStyle: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(height: 1.5)))))),
               const SizedBox(height: 16),
@@ -607,12 +592,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       child: EditableHtmlField(
                           enabled: _canEdit,
                           authoring: _bodyProvider,
-                          onCancel: _requestClose,
                           onDraftChanged: (controller) {
-                            if (!identical(_bodyDraft, controller)) {
-                              _bodyProvider.previewChanges = controller == null ? null
-                                  : Listenable.merge([controller, controller.authoringChanges]);
-                            }
                             _bodyDraft = controller;
                             if (controller != null) _draftUpdated(controller);
                           },
@@ -685,7 +665,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 ),
           actions: [
             TextButton(
-              onPressed: _requestClose,
+              onPressed: () async {
+                if (await confirmHtmlDiscard(context, _htmlSave) &&
+                    context.mounted) Navigator.of(context).pop();
+              },
               child: Text(CommonStrings.storno),
             ),
             const SizedBox(width: 8),

@@ -28,13 +28,11 @@ class EditableHtmlField extends StatefulWidget {
     this.coordinator,
     this.authoring,
     this.onDraftChanged,
-    this.onCancel,
     this.twoFingersOn,
     this.twoFingersOff,
     super.key,
   });
   final TemplateAuthoringProvider? authoring;
-  final VoidCallback? onCancel;
   final ValueChanged<RichHtmlEditorController?>? onDraftChanged;
   final String? html;
   final HtmlEmbeddedBlock? embeddedBlock;
@@ -293,7 +291,7 @@ class _EditableHtmlFieldState extends State<EditableHtmlField> {
               RichHtmlEditor(
                 controller: _controller!,
                 textStyle: htmlTextStyle(context, fontSize: widget.fontSize),
-                onCancel: widget.onCancel ?? (widget.authoring == null ? _requestCancel : null),
+                onCancel: widget.authoring == null ? _requestCancel : null,
                 toolbarActions: _editingActions(),
                 enabled: !_saving && widget.enabled,
               ),
