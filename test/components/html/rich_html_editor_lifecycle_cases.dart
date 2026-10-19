@@ -188,7 +188,6 @@ void main() {
           ),
         ));
         await tester.pump();
-        controller.focusNode.requestFocus();
         await tester.pump(const Duration(milliseconds: 300));
         final caret = tester
             .widget<CaretDocumentOverlay>(find.byType(CaretDocumentOverlay));

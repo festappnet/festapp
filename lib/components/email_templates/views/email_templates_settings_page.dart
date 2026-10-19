@@ -46,7 +46,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   late final EmailAuthoringProvider _subjectProvider;
   late final EmailAuthoringProvider _bodyProvider;
   RichHtmlEditorController? _bodyDraft;
-  EmailPreviewExamples? _examples;
   List<EmailPreviewScenario> _scenarios = [];
   EmailPreviewScenario? _scenario;
   bool _previewError = false;
@@ -69,11 +68,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     try {
       final value = await (widget.authoringContextLoader?.call() ??
           DbEmailTemplates.getAuthoringContext(widget.emailTemplatesResponse, widget.template.code ?? ''));
-      if (mounted) {
-        _authoringContext = value;
-        _refreshScenarios();
-        _subjectEditor.refreshAuthoringPresentation();
-      }
+      if (mounted) _authoringContext = value;
     } catch (_) {
       if (mounted) _authoringContext = null;
     } finally {
@@ -91,8 +86,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
           EmailPreviewExamples.loadForOccasion(widget.emailTemplatesResponse.occasion));
       if (!mounted) return;
       setState(() {
-        _examples = examples;
-        _refreshScenarios();
+        _scenarios = examples.scenariosFor(widget.template.code ?? '');
+        _scenario = _scenarios.firstOrNull;
+        _subjectProvider.scenario = _scenario;
+        _bodyProvider.scenario = _scenario;
         _previewError = false;
         _contextUnavailable = examples.contextUnavailable;
         _usesOccasionProducts = examples.usesOccasionProducts;
@@ -102,18 +99,6 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     } catch (_) {
       if (mounted) setState(() => _previewError = true);
     }
-  }
-
-  void _refreshScenarios() {
-    final examples = _examples;
-    if (examples == null) return;
-    final previous = _scenario;
-    _scenarios = examples.scenariosFor(widget.template.code ?? '',
-        paymentAccounts: _authoringContext?.paymentAccounts ?? const []);
-    _scenario = _scenarios.where((s) => s.scenario == previous?.scenario &&
-        s.locale == previous?.locale && s.tone == previous?.tone).firstOrNull ?? _scenarios.firstOrNull;
-    _subjectProvider.scenario = _scenario;
-    _bodyProvider.scenario = _scenario;
   }
 
   void _draftUpdated(RichHtmlEditorController controller) {

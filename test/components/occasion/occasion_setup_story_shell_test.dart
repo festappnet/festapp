@@ -46,15 +46,15 @@ void main() {
             child: Scaffold(
               body: OccasionSetupStoryShell(
                 questionTitles: const [
-                  'Jak má nová událost vzniknout?',
+                  'Jak chceš začít?',
                   'Jak se událost jmenuje?',
-                  'Kdy se událost koná?',
-                  'Jak bude událost představena?',
+                  'Kdy začíná?',
+                  'Kdy končí?',
                   'Jak má vypadat formulář?',
-                  'Bude součástí prodeje plánek míst?',
-                  'Jak budou nastavené platby?',
+                  'Potřebuješ plánek?',
+                  'Jak nastavíme platby?',
                   'Jak má vypadat vstupenka?',
-                  'Ověření organizace (nepovinné)',
+                  'Chceš ověřit organizaci?',
                   'Je vše připravené?',
                 ],
                 currentIndex: 1,

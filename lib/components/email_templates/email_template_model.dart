@@ -94,7 +94,7 @@ class EmailTemplateModel {
   static EmailTemplateSub get emailSub => EmailTemplateSub(
         code: 'email',
         description: EmailTemplatesStrings.subEmail,
-        defaultValue: 'jana.novakova@example.com',
+        defaultValue: 'jana.novakova@example.invalid',
       );
 
   static EmailTemplateSub get nameSub => EmailTemplateSub(

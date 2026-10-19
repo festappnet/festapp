@@ -96,9 +96,7 @@ class DbEmailTemplates {
 class EmailAuthoringContext {
   final String senderAddress;
   final String? wrapperHtml;
-  final List<EmailPreviewPaymentAccount> paymentAccounts;
-  const EmailAuthoringContext({required this.senderAddress, this.wrapperHtml,
-    this.paymentAccounts = const []});
+  const EmailAuthoringContext({required this.senderAddress, this.wrapperHtml});
 
   factory EmailAuthoringContext.fromJson(Map<String, dynamic> json) {
     final sender = json['senderAddress'];
@@ -106,13 +104,7 @@ class EmailAuthoringContext {
       throw const FormatException('Missing canonical sender');
     }
     return EmailAuthoringContext(
-        senderAddress: sender, wrapperHtml: json['wrapperHtml'] as String?,
-        paymentAccounts: [
-          for (final value in (json['paymentAccounts'] as List? ?? const []))
-            if (value is Map && value['accountNumber'] is String && value['iban'] is String && value['currencies'] is List)
-              EmailPreviewPaymentAccount(accountNumber: value['accountNumber'],
-                iban: value['iban'], currencies: List<String>.from(value['currencies'])),
-        ]);
+        senderAddress: sender, wrapperHtml: json['wrapperHtml'] as String?);
   }
 
   String composeHtml(EmailPreviewScenario scenario, String body) =>

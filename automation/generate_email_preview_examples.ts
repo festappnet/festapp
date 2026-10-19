@@ -65,7 +65,7 @@ const scalar = {
   appName: "Festapp",
   name: "Jana",
   surname: "Nováková",
-  email: fixture.orderData.email,
+  email: "jana.novakova@example.invalid",
   resetLink: "https://example.invalid/reset?preview=1",
   confirmationUrl: "https://example.invalid/delete?preview=1",
   expiresAt: "30. 10. 2026 18:00",
@@ -342,17 +342,13 @@ for (const record of records) {
     preview_zero_explanation: "0 CZK",
     preview_deadline: values.deadline || fixture.deadline,
     preview_currency: "CZK",
-    preview_account_number: fixture.accountNumber,
-    preview_iban: formatIBAN(fixture.iban),
   };
   const contextualize = (templates: Record<string, string>) => Object.fromEntries(
     Object.entries(templates).map((
       [code, html],
     ) => [
       code,
-      html.replaceAll(fixture.accountNumber, "{{preview_account_number}}")
-        .replaceAll(formatIBAN(fixture.iban), "{{preview_iban}}")
-        .replace(moneyPattern, (value) => moneySlots[value])
+      html.replace(moneyPattern, (value) => moneySlots[value])
         .replaceAll(values.deadline || fixture.deadline, "{{preview_deadline}}")
         .replace(/0 CZK/g, "{{preview_zero_explanation}}"),
     ]),
