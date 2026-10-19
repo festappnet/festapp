@@ -186,6 +186,21 @@ void main() {
         tester.widget<FontFamilyPicker>(find.byType(FontFamilyPicker));
     expect(fonts.families, containsAll(['Zeyada', 'Roboto Slab', 'Futura PT']));
     expect(fonts.families.length, greaterThan(1000));
+    expect(editor.globalFontPickerBuilder, isNotNull);
+    // The plan-style dialog receives the same full catalog, independently of
+    // the currently selected object and of the generic Text scope.
+    showDialog<void>(
+      context: tester.element(find.byType(VenueLayoutEditor)),
+      builder: (context) => Dialog(
+        child: editor.globalFontPickerBuilder!(context, 'table'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final globalFonts =
+        tester.widgetList<FontFamilyPicker>(find.byType(FontFamilyPicker)).last;
+    expect(globalFonts.families, fonts.families);
+    Navigator.of(tester.element(find.byType(Dialog))).pop();
+    await tester.pumpAndSettle();
     final name = find.byWidgetPredicate(
         (w) => w is TextField && w.decoration?.labelText == 'Name');
     await tester.enterText(name, '  Front table  ');

@@ -264,7 +264,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             ));
   }
 
-  Future<void> _prepareFonts({String? selectedFont, String? nodeId}) async {
+  Future<void> _prepareFonts(
+      {String? selectedFont, String? nodeId, String? appearanceKind}) async {
     final generation = ++_fontGeneration;
     final provider = await _fonts;
     if (!mounted || generation != _fontGeneration) return;
@@ -282,13 +283,24 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           'fixture:serif' => legacyTicketFontIds['robotoSlab']!,
           _ => id,
         };
-    final defaultId = (nodeId == null ? selectedFont : null) ??
-        realId(document.defaultTextStyle['fontId'] as String);
-    final nodes = document.nodes
+    final defaultId =
+        (nodeId == null && appearanceKind == null ? selectedFont : null) ??
+            realId(document.defaultTextStyle['fontId'] as String);
+    final styled = appearanceKind == null
+        ? document
+        : setLayoutAppearance(
+            document, appearanceKind, {'fontId': selectedFont});
+    final nodes = styled.nodes
         .map((node) => node.id == nodeId
             ? node.copyWith(properties: {
                 ...({...node.properties}..remove('fontId')),
                 if (selectedFont != null) 'fontId': selectedFont,
+                'appearanceOverrides': {
+                  ...(node.properties['appearanceOverrides'] as List? ??
+                          const [])
+                      .where((key) => key != 'fontId'),
+                  if (selectedFont != null) 'fontId',
+                }.toList(),
               })
             : node.properties['fontId'] is String
                 ? node.copyWith(properties: {
@@ -297,8 +309,12 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   })
                 : node)
         .toList();
+    final appearance = styled.appearance;
     final ids = {
       defaultId,
+      for (final style in appearance.values)
+        if (style is Map && style['fontId'] is String)
+          style['fontId'] as String,
       for (final node in nodes)
         if (node.properties['fontId'] is String)
           node.properties['fontId'] as String
@@ -330,6 +346,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     }
     final next = document.copyWith(
         nodes: nodes,
+        appearance: appearance,
         defaultTextStyle: {...document.defaultTextStyle, 'fontId': defaultId});
     if (!controller.layout
         .setResources({...controller.layout.resources, 'fonts': fonts})) {
@@ -349,6 +366,13 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   Widget _objectFontPicker(BuildContext context, LayoutNode node) =>
+      _labelFontPicker(context, node: node);
+
+  Widget _globalFontPicker(BuildContext context, String kind) =>
+      _labelFontPicker(context, appearanceKind: kind);
+
+  Widget _labelFontPicker(BuildContext context,
+          {LayoutNode? node, String? appearanceKind}) =>
       FutureBuilder<BlueprintLayoutFontProvider>(
         future: _fonts,
         builder: (context, snapshot) {
@@ -356,12 +380,15 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           if (provider == null) {
             return const SizedBox(height: 48);
           }
-          final id = node.properties['fontId'];
+          final id = node?.properties['fontId'] ??
+              (controller.layout.document.appearance[appearanceKind]
+                  as Map?)?['fontId'];
           final selected = provider.catalog.where((font) => font['id'] == id);
           return FontFamilyPicker(
             value: selected.isEmpty ? null : selected.first['family'] as String,
-            label: BlueprintStrings.fontFamily,
-            enabled: !_busy && !controller.layout.readOnly && !node.locked,
+            enabled: !_busy &&
+                !controller.layout.readOnly &&
+                !(node?.locked ?? false),
             families: provider.catalog
                 .map((font) => font['family'] as String)
                 .toList(),
@@ -376,8 +403,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   : provider.catalog
                           .firstWhere((font) => font['family'] == family)['id']
                       as String;
-              await _run(() =>
-                  _prepareFonts(selectedFont: selectedId, nodeId: node.id));
+              await _run(() => _prepareFonts(
+                  selectedFont: selectedId,
+                  nodeId: node?.id,
+                  appearanceKind: appearanceKind));
             },
           );
         },
@@ -1442,6 +1471,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                 toolbarLeading: _toolbarActions(),
                                 onRenameNode: _renameFromInspector,
                                 fontPickerBuilder: _objectFontPicker,
+                                globalFontPickerBuilder: _globalFontPicker,
                                 toolbarTrailing: _canEdit
                                     ? EditorActionBar(
                                         inline: true,
