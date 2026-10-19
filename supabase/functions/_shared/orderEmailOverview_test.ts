@@ -61,5 +61,6 @@ Deno.test('template substitution preserves text values, subjects and authored li
  const values={account:'2502719268/2010',phone:'+420 731 140 198',email:'user@example.invalid',url:'https://example.invalid/order?token=abc'};
  const email=await renderEmail({to:'test@example.invalid',context:{organization:1},substitutions:values},async()=>({template:{id:1,subject:'{{account}} {{phone}}',html:'<p>{{account}} {{phone}} {{email}}</p><a href="{{url}}">Status</a>'}}));
  assert.equal(email.subject,'2502719268/2010 +420 731 140 198');
- assert.equal(email.html,'<p>2502719268/2010 +420 731 140 198 user@example.invalid</p><a href="https://example.invalid/order?token=abc">Status</a>');
+ assert.equal(email.html.replace(/<style[\s\S]*?<\/style>/g,'').replace(/<span class="festapp-plain-value">([^<]*)<\/span>/g,'$1'),'<p>2502719268/2010 +420 731 140 198 user@example.invalid</p><a href="https://example.invalid/order?token=abc">Status</a>');
+ assert.doesNotMatch(email.html,/mailto:|tel:|&#8203;/);
 });
