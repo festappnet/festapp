@@ -128,3 +128,11 @@ test('public tooltip retains the original product-seat line and whole-number pri
  const a=new BlueprintLayoutAdapter(data());const t=a.seatPresentation.a.tooltip;
  assert.match(t,/^Chair A\n/);assert.match(t,/100/);assert.equal(t.includes('undefined'),false);assert.equal(t.includes('private'),false);
 });
+
+test('atomic seat unit over the form ticket limit sends no hold and creates no partial tickets',async t=>{
+ let calls=0;t.mock.method(DbForms,'selectSpot',async()=>{calls++;return{code:200,spotIds:[11,12],secret:'s'};});
+ const form=new FormSession({key:'form',secret:'s',visibleFields:[],relatedFields:[{type:'ticket',data:{max_tickets:1}}]});
+ const adapter=new BlueprintLayoutAdapter(data(),{session:form});
+ assert.equal((await adapter.requestSelection(new Set(['a','b']),true)).accepted,false);
+ assert.equal(calls,0);assert.equal(form.state.tickets.length,0);assert.equal(adapter.selectedSeats.length,0);
+});
