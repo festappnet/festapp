@@ -268,16 +268,18 @@ class FormHelper {
         var ticket = fieldHolder as TicketHolder;
         for (int i = 0; i < ticket.tickets.length; i++) {
           final ticketKey = ticket.tickets[i].ticketKey;
-          if (ticketKey.currentState == null) continue;
+          if (ticketKey.currentState == null &&
+              ticket.tickets[i].blueprintAreaNodeId == null) continue;
           Map<String, dynamic> ticketData = {
             if (ticket.tickets[i].ticketId != null)
               'ticketId': ticket.tickets[i].ticketId,
           };
-          for (var subFieldHolder in ticket.fields) {
+          for (var subFieldHolder in ticket.tickets[i].ticketValues) {
             if (ticketData[FormMetadata.metaFields] == null) {
               ticketData[FormMetadata.metaFields] = [];
             }
-            var value = getFieldData(ticketKey, subFieldHolder);
+            var value = getFieldData(ticketKey, subFieldHolder) ??
+                ticket.tickets[i].productDefaults[subFieldHolder.id];
             if (subFieldHolder.fieldType == FormMetadata.fieldTypeProductType &&
                 (value == null || value == '')) {
               continue;

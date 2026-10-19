@@ -284,9 +284,26 @@ export class TicketFieldBuilder {
                 };
                 if (!formModel.offerBundle) header.appendChild(removeBtn);
                 ticketItem.appendChild(header);
+
+                if (ticketData?._blueprintArea) {
+                    for (const value of ticketData.fields || []) {
+                        const offered = (formModel.offeredTicketProductFields || [])
+                            .find(item => String(item.id) === String(value._subFieldId));
+                        const product = offered?.productTypeData?.products
+                            ?.find(item => String(item.id) === String(value.product_type));
+                        if (!product) continue;
+                        const summary = document.createElement('p');
+                        summary.className = 'ticket-area-product';
+                        const currency = product.currency_code || product.currencyCode || formModel.currencyCode;
+                        summary.textContent = `${product.title} · ${formatPrice(product.price, currency)}`;
+                        ticketItem.appendChild(summary);
+                    }
+                }
                 
                 // Sort fields to ensure Spot is first
-                const sortedSubFields = [...subFields].sort((a, b) => (a.type === 'spot' ? -1 : 1));
+                const sortedSubFields = subFields
+                    .filter(item => !ticketData?._blueprintArea || item.type !== 'spot')
+                    .sort((a, b) => (a.type === 'spot' ? -1 : 1));
 
                 if (sortedSubFields.length > 0) {
                     sortedSubFields.forEach(subDef => {

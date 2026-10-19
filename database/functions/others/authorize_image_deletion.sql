@@ -45,6 +45,9 @@ BEGIN
     RAISE EXCEPTION 'Permission denied for image deletion.' USING ERRCODE = '42501';
   END IF;
 
+  IF EXISTS(SELECT 1 FROM public.blueprint_image_assets a WHERE a.url=ANY(p_links)) THEN
+    RAISE insufficient_privilege USING MESSAGE='BLUEPRINT_IMAGE_IMMUTABLE'; END IF;
+
   RETURN QUERY
   SELECT DISTINCT image.link
   FROM public.images AS image

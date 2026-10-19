@@ -1,3 +1,4 @@
+import {layoutFontOutline} from '../_shared/layoutFontOutline.ts';
 import { documentLimits, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { AuthError } from '../_shared/authError.ts';
 import QRCode from 'npm:qrcode';
@@ -11,9 +12,11 @@ const fontReply=(f:TicketFont)=>({id:f.id,family:f.family,weight:f.weight,font:B
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
   authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean):Promise<false|{abuseLimits:Record<string,number>}>;
+  authorizeSetupDraft?:(header:string,draftId:string,bytes:number)=>Promise<false|{abuseLimits:Record<string,number>}>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
+  registerLayoutFont?:(id:string,outline:Awaited<ReturnType<typeof layoutFontOutline>>)=>Promise<void>;
   layout?:(value:unknown)=>ReturnType<typeof parseLayout>|Promise<ReturnType<typeof parseLayout>>;
   resources:typeof loadLayoutResources;
 }
@@ -38,19 +41,36 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const reader=req.body?.getReader();let raw='',count=0;const decoder=new TextDecoder();
     if(reader)while(true){const {done,value}=await reader.read();if(done)break;count+=value.length;if(count>40000){await reader.cancel();return reply(413,{error:'Request too large'});}raw+=decoder.decode(value,{stream:true});}
     raw+=decoder.decode();const body=JSON.parse(raw);
-    const {occasionId,mode,type,scenario='normal'}=body;
-    if(!Number.isSafeInteger(occasionId)||occasionId<1||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
+    const {occasionId,setupDraftId,mode,type,scenario='normal'}=body;
+    const setup=setupDraftId!==undefined;
+    const validContext=setup
+      ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&mode==='font'&&body.outline===true&&!('layout' in body)&&!('background' in body)&&!('borrowResourcesOnly' in body)
+      : Number.isSafeInteger(occasionId)&&occasionId>0;
+    if(!validContext||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
     const readOnly=body.readOnly===true;
     if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
-    const admission=await deps.authorize(auth,occasionId,count,readOnly);
+    const admission=setup
+      ? await deps.authorizeSetupDraft?.(auth,setupDraftId,count)??false
+      : await deps.authorize(auth,occasionId,count,readOnly);
     if(!admission)return reply(403,{error:'Forbidden'});
     const limits=documentLimits(admission);
     const boundedReply=(status:number,body:unknown)=>{
       if(new TextEncoder().encode(JSON.stringify(body)).byteLength>limits.outputBytes)throw new AuthError('Preview output too large',429);
       return reply(status,body);
     };
-    if(mode==='font'){if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});return boundedReply(200,fontReply(await deps.font(body.fontId)));}
+    if(mode==='font'){
+      if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});
+      const font=await deps.font(body.fontId);
+      if(body.outline===true){
+        if(typeof body.characters!=='string'||!deps.registerLayoutFont)return reply(400,{error:'Invalid outline request'});
+        const outline=await layoutFontOutline(font,body.characters);
+        const response=boundedReply(200,outline);
+        await deps.registerLayoutFont(font.id,outline);
+        return response;
+      }
+      return boundedReply(200,fontReply(font));
+    }
     const occasion=await deps.occasion(occasionId);
     if(readOnly&&type!==(occasion.features?.find((f:any)=>f.code==='ticket')?.ticket_type==='named'?'named':'wide'))return reply(400,{error:'Saved ticket type mismatch'});
     let products:ProductCatalog;let catalogError=false;

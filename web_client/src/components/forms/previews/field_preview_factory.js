@@ -110,6 +110,7 @@ function _buildMetaSurchargeForProduct(product, context) {
 class ProductTypePreviewStrategy extends BasePreviewStrategy {
     _getOptions(fieldDef) {
         // Prioritize internal schema for product types
+        if (fieldDef.productTypeData?.products) return fieldDef.productTypeData.products;
         if (fieldDef.data && fieldDef.data.product_type_data && fieldDef.data.product_type_data.products) {
             return fieldDef.data.product_type_data.products;
         }
