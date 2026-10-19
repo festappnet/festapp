@@ -4,6 +4,7 @@ import 'dart:async';
 import '../../support/fixtures/root_supabase_fixture.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
+import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
@@ -129,8 +130,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final originalRights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value =
-        OccasionLinkModel(isAdmin: true, occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true,
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
     addTearDown(
         () => RightsService.occasionLinkModelNotifier.value = originalRights);
     const id = '10000000-0000-4000-8000-000000000001';
@@ -140,15 +142,38 @@ void main() {
         title: 'Local fixture',
         revision: 1,
         document: VenueLayoutDocument(nodes: [
-          LayoutNode(id: id, kind: 'seat', parentId: '10000000-0000-4000-8000-000000000003', x: 100, y: 100, label: 'A1'),
-          LayoutNode(id: '10000000-0000-4000-8000-000000000003', kind: 'table', parentId: '10000000-0000-4000-8000-000000000002', label: 'Physical table'),
-          LayoutNode(id: '10000000-0000-4000-8000-000000000010', kind: 'group', label: 'Group 10'),
-          LayoutNode(id: '10000000-0000-4000-8000-000000000002', kind: 'group', label: 'Group 2'),
+          LayoutNode(
+              id: id,
+              kind: 'seat',
+              parentId: '10000000-0000-4000-8000-000000000003',
+              x: 100,
+              y: 100,
+              label: 'A1'),
+          LayoutNode(
+              id: '10000000-0000-4000-8000-000000000003',
+              kind: 'table',
+              parentId: '10000000-0000-4000-8000-000000000002',
+              label: 'Physical table'),
+          LayoutNode(
+              id: '10000000-0000-4000-8000-000000000010',
+              kind: 'group',
+              label: 'Group 10'),
+          LayoutNode(
+              id: '10000000-0000-4000-8000-000000000002',
+              kind: 'group',
+              label: 'Group 2'),
         ]),
         seatBindings: {
           id: const BlueprintSeatBinding(
-              nodeId: id, spotId: 11, productId: 1, title: 'A1', groupNodeId: '10000000-0000-4000-8000-000000000002')
-        }, groupProducts: {'10000000-0000-4000-8000-000000000002': 1});
+              nodeId: id,
+              spotId: 11,
+              productId: 1,
+              title: 'A1',
+              groupNodeId: '10000000-0000-4000-8000-000000000002')
+        },
+        groupProducts: {
+          '10000000-0000-4000-8000-000000000002': 1
+        });
     final source = BlueprintModel(layoutSnapshot: snapshot, products: [
       ProductModel(
           id: 1,
@@ -164,37 +189,87 @@ void main() {
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
     await tester.pumpAndSettle();
+    void expectActionVisible(String key) {
+      final action = find.byKey(ValueKey(key));
+      expect(action.hitTestable(), findsOneWidget);
+      final badge = find.byKey(const ValueKey('blueprint-unsaved-plan'));
+      if (badge.evaluate().isNotEmpty) {
+        expect(tester.getRect(action).right,
+            lessThanOrEqualTo(tester.getRect(badge).left));
+      }
+    }
+
+    expectActionVisible('blueprint-start-order');
+    expectActionVisible('blueprint-start-swap');
+    final initialEditor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(initialEditor.interactionEnabled, isFalse);
+    expect(find.byType(EditorActionBar), findsNothing);
+    expect(find.byKey(const ValueKey('layout-palette')), findsNothing);
+    final canvasState = tester.state(find.byType(LayoutSceneSurface));
+    initialEditor.controller.select({id});
+    await tester.pump();
+    expect(find.text(BlueprintStrings.selectProduct), findsNothing);
+    expect(
+        tester
+            .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
+            .onDragStart,
+        isNull);
+    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
     final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));
     expect(toolbar, findsOneWidget);
     expect(tester.getSize(toolbar).height, lessThanOrEqualTo(56));
-    expect(find.descendant(of: toolbar, matching: find.byType(EditorActionBar)), findsOneWidget);
-    expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).inline, isTrue);
+    expect(find.descendant(of: toolbar, matching: find.byType(EditorActionBar)),
+        findsOneWidget);
+    expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).inline,
+        isTrue);
     expect(find.byType(BottomAppBar), findsNothing);
-    expect(tester.getRect(toolbar).contains(tester.getCenter(
-        find.widgetWithText(FilledButton, CommonStrings.save))), isTrue);
-    expect(tester.getSize(find.byType(VenueLayoutEditor)).height,
-        greaterThan(tester.view.physicalSize.height / tester.view.devicePixelRatio - 70));
+    expect(
+        tester.getRect(toolbar).contains(tester
+            .getCenter(find.widgetWithText(FilledButton, CommonStrings.save))),
+        isTrue);
+    expect(
+        tester.getSize(find.byType(VenueLayoutEditor)).height,
+        greaterThan(
+            tester.view.physicalSize.height / tester.view.devicePixelRatio -
+                70));
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    final chooser = tester.widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
-    expect(chooser.items!.map((item) => (item.child as Text).data), ['Group 2', 'Group 10']);
+    final chooser = tester
+        .widget<DropdownButton<String>>(find.byType(DropdownButton<String>));
+    expect(chooser.items!.map((item) => (item.child as Text).data),
+        ['Group 2', 'Group 10']);
     chooser.onChanged!('10000000-0000-4000-8000-000000000002');
     await tester.pump();
-    expect(editor.controller.selection, {'10000000-0000-4000-8000-000000000002'});
+    expect(
+        editor.controller.selection, {'10000000-0000-4000-8000-000000000002'});
     expect(editor.controller.dirty, isFalse);
     editor.controller.select({'10000000-0000-4000-8000-000000000003'});
     await tester.pump();
     expect(find.text(BlueprintStrings.seatCount(1)), findsOneWidget);
-    expect(find.textContaining('${BlueprintStrings.groupDefault}: Standard'), findsOneWidget);
+    expect(find.textContaining('${BlueprintStrings.groupDefault}: Standard'),
+        findsOneWidget);
     editor.controller.beginGesture();
     editor.controller.apply(editor.controller.document.copyWith(
         canvas: {...editor.controller.document.canvas, 'width': 2600}));
     await tester.pump();
     editor.controller.commitGesture();
     final draft = editor.controller.document;
-    await tester.tap(find.byType(DropdownButton<BlueprintLayoutMode>));
+    await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(BlueprintStrings.legendCreateOrder).last);
+    expect(tester.state(find.byType(LayoutSceneSurface)), same(canvasState));
+    expect(find.byType(EditorActionBar), findsNothing);
+    expect(
+        find.byKey(const ValueKey('blueprint-unsaved-plan')), findsOneWidget);
+    expectActionVisible('blueprint-start-order');
+    expectActionVisible('blueprint-start-swap');
+    await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.pumpAndSettle();
     final operationalEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
@@ -203,32 +278,111 @@ void main() {
     expect(find.text(BlueprintStrings.selectedCount(1)), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
-    expect(find.text(BlueprintStrings.selectedCount(0)), findsOneWidget);
+    expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget);
     expect(identical(editor.controller.document, draft), isTrue);
-    operationalEditor.onNodeActivated!(id);
-    await tester.pump();
-    await tester.tap(find.byType(DropdownButton<BlueprintLayoutMode>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(BlueprintStrings.legendSwapSeats).last);
+    expectActionVisible('blueprint-start-swap');
+    await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.selectedCount(0)), findsOneWidget);
     expect(editor.controller.dirty, isTrue);
     expect(identical(editor.controller.document, draft), isTrue);
+    expectActionVisible('blueprint-cancel-operation');
+    await tester.tap(find.byKey(const ValueKey('blueprint-cancel-operation')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('blueprint-unsaved-plan')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
+    expect(identical(editor.controller.document, draft), isTrue);
+    editor.controller.markSaved();
+    await tester.pump();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
   });
   testWidgetsWithEnvironment(() => environment,
-      'wizard geometry save keeps a failed draft repairable and suppresses duplicates', (tester) async {
+      'empty blueprint chooses a template and stays in explicit editing after creation',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true,
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+      blueprintId: 1,
+      occasionId: 1,
+      title: 'New plan',
+      revision: 1,
+      document: VenueLayoutDocument.empty(),
+      seatBindings: const {},
+    ));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
+    final template = find
+        .descendant(
+            of: find.byType(Dialog), matching: find.byType(OutlinedButton))
+        .first;
+    await tester.tap(template);
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+    final editor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(editor.controller.document.nodes, isNotEmpty);
+    expect(editor.interactionEnabled, isTrue);
+    expect(find.byType(EditorActionBar), findsOneWidget);
+    editor.controller.markSaved();
+    await tester.pump();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .interactionEnabled,
+        isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
+      'wizard geometry save keeps a failed draft repairable and suppresses duplicates',
+      (tester) async {
     var saves = 0;
     final pending = Completer<void>();
-    await environment.pumpWidget(tester, MaterialApp(home: BlueprintLayoutDemo(
-      // Existing draft: an empty document intentionally opens the template
-      // gallery, whose modal barrier is unrelated to save/retry behavior.
-      initialDocument: VenueLayoutDocument(nodes: [
-        LayoutNode(id: '10000000-0000-4000-8000-000000000099', kind: 'group'),
-      ]),
-      initialResources: const {'protocol': 1, 'fonts': {}, 'assets': {}},
-      initiallyUnsaved: true,
-      onSave: (_) { saves++; return saves == 1 ? pending.future : Future.value(); },
-    )));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutDemo(
+          // Existing draft: an empty document intentionally opens the template
+          // gallery, whose modal barrier is unrelated to save/retry behavior.
+          initialDocument: VenueLayoutDocument(nodes: [
+            LayoutNode(
+                id: '10000000-0000-4000-8000-000000000099', kind: 'group'),
+          ]),
+          initialResources: const {'protocol': 1, 'fonts': {}, 'assets': {}},
+          initiallyUnsaved: true,
+          onSave: (_) {
+            saves++;
+            return saves == 1 ? pending.future : Future.value();
+          },
+        )));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, CommonStrings.save));
     await tester.pump();
@@ -240,19 +394,30 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, CommonStrings.save));
     await tester.pumpAndSettle();
     expect(saves, 2);
-    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, CommonStrings.save)).onPressed, isNull);
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.widgetWithText(FilledButton, CommonStrings.save))
+            .onPressed,
+        isNull);
   });
 
   testWidgetsWithEnvironment(() => environment,
-      'empty catalog cannot invent a product template or call the writer', (tester) async {
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(body:
-      SelectProductDialog.catalog(products: const [],
-        onProductSaved: (_) => fail('No product can be created without a template')))));
+      'empty catalog cannot invent a product template or call the writer',
+      (tester) async {
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SelectProductDialog.catalog(
+                    products: const [],
+                    onProductSaved: (_) => fail(
+                        'No product can be created without a template')))));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, BlueprintStrings.createProduct));
+    await tester.tap(
+        find.widgetWithText(ElevatedButton, BlueprintStrings.createProduct));
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.toastNoTemplateProduct), findsOneWidget);
     expect(find.byType(EditProductDialog), findsNothing);
   });
-
 }

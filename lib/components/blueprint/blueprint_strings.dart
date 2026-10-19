@@ -1,13 +1,26 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
-  static String get operationNetworkError => 'FeatureBlueprint.operationNetworkError'.tr();
+  static String get unsavedPlanShort =>
+      'FeatureBlueprint.unsavedPlanShort'.tr();
+  static String get orderAction => 'FeatureBlueprint.orderAction'.tr();
+  static String get editPlan => 'FeatureBlueprint.editPlan'.tr();
+  static String get reservationsAndOrders =>
+      'FeatureBlueprint.reservationsAndOrders'.tr();
+  static String get unsavedPlan => 'FeatureBlueprint.unsavedPlan'.tr();
+  static String get operationNetworkError =>
+      'FeatureBlueprint.operationNetworkError'.tr();
   static String get tryLayoutDemo => 'FeatureBlueprint.tryLayoutDemo'.tr();
-  static String get layoutConversionRequired => 'FeatureBlueprint.layoutConversionRequired'.tr();
-  static String areaCount(int count) => 'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
-  static String get draftGeometryNotice => 'FeatureBlueprint.draftGeometryNotice'.tr();
-  static String seatState(String state) => 'FeatureBlueprint.seatStates.$state'.tr();
-  static String get demoGeometryNotice => 'FeatureBlueprint.demoGeometryNotice'.tr();
+  static String get layoutConversionRequired =>
+      'FeatureBlueprint.layoutConversionRequired'.tr();
+  static String areaCount(int count) =>
+      'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
+  static String get draftGeometryNotice =>
+      'FeatureBlueprint.draftGeometryNotice'.tr();
+  static String seatState(String state) =>
+      'FeatureBlueprint.seatStates.$state'.tr();
+  static String get demoGeometryNotice =>
+      'FeatureBlueprint.demoGeometryNotice'.tr();
   static String get groupDefault => 'FeatureBlueprint.groupDefault'.tr();
   static String get backgroundUnavailable =>
       'FeatureBlueprint.backgroundUnavailable'.tr();

@@ -1255,6 +1255,11 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "unsavedPlanShort": "Neuloženo",
+    "orderAction": "Objednávka",
+    "editPlan": "Úprava plánku",
+    "reservationsAndOrders": "Rezervace a objednávky",
+    "unsavedPlan": "Neuložené úpravy plánku",
     "operationNetworkError": "Spojení se přerušilo. Před dalším potvrzením zkontrolujte aktuální náhled.",
     "groupDefault": "Výchozí produkt skupiny",
     "backgroundUnavailable": "Import podkladu zatím není dostupný. Nejprve je nutné dokončit ověřené zpracování obrázků. Uložený plánek zůstává zachovaný.",

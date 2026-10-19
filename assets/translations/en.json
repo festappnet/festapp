@@ -1255,6 +1255,11 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "unsavedPlanShort": "Unsaved",
+    "orderAction": "Order",
+    "editPlan": "Edit plan",
+    "reservationsAndOrders": "Reservations and orders",
+    "unsavedPlan": "Unsaved plan changes",
     "operationNetworkError": "The connection was interrupted. Check the current preview before confirming again.",
     "groupDefault": "Group default",
     "backgroundUnavailable": "Background import is not available yet. Verified image processing must be completed first. Your saved layout is preserved.",

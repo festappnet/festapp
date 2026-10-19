@@ -1,4 +1,11 @@
 {
+  "FeatureBlueprint": {
+    "unsavedPlanShort": "Neuložené",
+    "orderAction": "Objednávka",
+    "editPlan": "Úprava plániku",
+    "reservationsAndOrders": "Rezervácie a objednávky",
+    "unsavedPlan": "Neuložené úpravy plániku"
+  },
   "OrganizationVerification": {
     "verifiedDescription": "Právne údaje organizácie sú schválené a zobrazujú sa pri vašich formulároch.",
     "pendingDescription": "Žiadosť o overenie právnych údajov čaká na schválenie administrátorom.",

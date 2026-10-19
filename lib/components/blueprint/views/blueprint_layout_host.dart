@@ -24,6 +24,8 @@ import 'blueprint_create_order_dialog.dart';
 import 'blueprint_layout_legend.dart';
 import 'blueprint_product_dialogs.dart';
 
+enum _BlueprintScreenMode { reservations, edit }
+
 /// Business UI surrounds the public editor; geometry and its history remain in
 /// the package, while all prices, rights and commands remain in Festapp.
 class BlueprintLayoutHost extends StatefulWidget {
@@ -37,6 +39,8 @@ class BlueprintLayoutHost extends StatefulWidget {
 
 class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   late BlueprintLayoutController controller;
+  late _BlueprintScreenMode _screenMode;
+  bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
   final _assets = BlueprintLayoutAssetResolver();
   bool _assetsPending = false;
@@ -53,6 +57,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     super.initState();
     controller = BlueprintLayoutController(source: widget.source);
     controller.layout.readOnly = !_canEdit;
+    // Decide once on entry. Inserting or saving never leaves explicit editing.
+    _screenMode = _canEdit && controller.layout.document.nodes.isEmpty
+        ? _BlueprintScreenMode.edit
+        : _BlueprintScreenMode.reservations;
     _fonts = BlueprintLayoutFontProvider.load(controller.snapshot.occasionId);
     _loadAssets();
   }
@@ -63,6 +71,19 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _assets.dispose();
     controller.dispose();
     super.dispose();
+  }
+
+  void _setScreenMode(_BlueprintScreenMode mode) {
+    if (_busy || (mode == _BlueprintScreenMode.edit && !_canEdit)) return;
+    controller.layout.cancelGesture();
+    controller.layout.select({});
+    controller.setMode(BlueprintLayoutMode.manage);
+    setState(() => _screenMode = mode);
+  }
+
+  void _cancelOperation() {
+    if (_busy) return;
+    controller.setMode(BlueprintLayoutMode.manage);
   }
 
   Future<void> _loadAssets() async {
@@ -262,7 +283,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           barrierDismissible: false,
           builder: (_) => BlueprintCreateOrderDialog(
               selectedSpotIds: List.of(controller.selectedSpotIds)));
-      if (done == true) await _refresh();
+      if (done == true) {
+        await _refresh();
+        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+      }
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }
@@ -329,6 +353,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       if (confirmed == true && mounted) {
         await controller.swapSelected();
         await _refresh();
+        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
       }
     } catch (error) {
       if (mounted)
@@ -412,6 +437,31 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   Widget _inspector(BuildContext context, LayoutNode node) {
     final snapshot = controller.snapshot;
     final binding = snapshot.seatBindings[node.id];
+    if (!_editingPlan) {
+      final spot =
+          binding == null ? null : controller.adapter.spots[binding.spotId];
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(binding?.title ?? node.label,
+                style: Theme.of(context).textTheme.titleMedium),
+            if (binding != null) ...[
+              const SizedBox(height: 8),
+              Text(BlueprintStrings.seatState(
+                  controller.adapter.state(binding).name)),
+              const SizedBox(height: 8),
+              if (_canOrder && spot != null)
+                SelectableText(spot.blueprintTooltip(context))
+              else
+                Text(_productText(binding.productId)),
+            ],
+          ],
+        ),
+      );
+    }
+
     final commercialGroupId = binding?.groupNodeId ??
         (node.kind == 'table'
             ? blueprintCommercialGroupFor(node, controller.layout.document,
@@ -572,7 +622,17 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             'label': binding.title,
             ...controller.adapter.publicPresentation(binding),
             'selected': controller.operationSelection.contains(binding.nodeId),
-            'tooltip': '${binding.title}\n${_productText(binding.productId)}',
+            'tooltip': !_editingPlan &&
+                    _canOrder &&
+                    controller.adapter.spots[binding.spotId] != null
+                ? controller.adapter.spots[binding.spotId]!
+                    .blueprintTooltip(context)
+                : [
+                    binding.title,
+                    BlueprintStrings.seatState(
+                        controller.adapter.state(binding).name),
+                    _productText(binding.productId),
+                  ].join('\n'),
             'accessibilityLabel':
                 '${binding.title}, ${_productText(binding.productId)}, ${BlueprintStrings.seatState(controller.adapter.state(binding).name)}',
           },
@@ -582,51 +642,47 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         key: const ValueKey('blueprint-toolbar-actions'),
         mainAxisSize: MainAxisSize.min,
         children: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<BlueprintLayoutMode>(
-              value: controller.mode,
-              onChanged: _busy
-                  ? null
-                  : (mode) {
-                      if (mode != null) controller.setMode(mode);
-                    },
-              items: [
-                for (final mode in BlueprintLayoutMode.values)
-                  if (mode == BlueprintLayoutMode.manage || _canOrder)
-                    DropdownMenuItem(
-                        value: mode,
-                        child: Text(switch (mode) {
-                          BlueprintLayoutMode.manage =>
-                            BlueprintStrings.manageSeats,
-                          BlueprintLayoutMode.order =>
-                            BlueprintStrings.legendCreateOrder,
-                          BlueprintLayoutMode.swap =>
-                            BlueprintStrings.legendSwapSeats,
-                        })),
-              ],
-            ),
-          ),
-          if (controller.mode == BlueprintLayoutMode.manage) _groupChooser(),
-          if (_canEdit)
+          // Each mode takes only its label width; equal-width segments would
+          // reserve the long reservations label's width twice.
+          for (final mode in _BlueprintScreenMode.values)
+            if (mode != _BlueprintScreenMode.edit || _canEdit)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: ChoiceChip(
+                  showCheckmark: false,
+                  label: Text(
+                      mode == _BlueprintScreenMode.edit
+                          ? BlueprintStrings.editPlan
+                          : BlueprintStrings.reservationsAndOrders,
+                      key: ValueKey(mode == _BlueprintScreenMode.edit
+                          ? 'blueprint-edit-mode'
+                          : 'blueprint-reservations-mode')),
+                  selected: _screenMode == mode,
+                  onSelected: _busy ? null : (_) => _setScreenMode(mode),
+                ),
+              ),
+          const SizedBox(width: 12),
+          if (_editingPlan) _groupChooser(),
+          if (_editingPlan && _canEdit)
             IconButton(
                 onPressed: _busy ? null : _chooseFont,
                 tooltip: BlueprintStrings.fontFamily,
                 icon: const Icon(Icons.font_download_outlined)),
           if (_canEdit &&
-              controller.mode == BlueprintLayoutMode.manage &&
+              _editingPlan &&
               controller.layout.selection.length > 1)
             TextButton.icon(
                 onPressed: _busy ? null : _bulkProduct,
                 icon: const Icon(Icons.sell_outlined),
                 label: Text(BlueprintStrings.selectedCount(
                     controller.layout.selection.length))),
-          if (_canEdit && controller.mode == BlueprintLayoutMode.manage)
+          if (_canEdit && _editingPlan)
             IconButton(
                 tooltip: BlueprintStrings.background,
                 icon: const Icon(Icons.image_outlined),
                 onPressed: _busy ? null : _uploadBackground),
           if (_canEdit &&
-              controller.mode == BlueprintLayoutMode.manage &&
+              _editingPlan &&
               controller.layout.document.background != null)
             IconButton(
                 tooltip: BlueprintStrings.removeBackground,
@@ -637,15 +693,39 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                         controller.layout.document
                             .copyWith(clearBackground: true),
                         label: BlueprintStrings.removeBackground)),
-          if (controller.mode != BlueprintLayoutMode.manage) ...[
+          if (!_editingPlan &&
+              _canOrder &&
+              controller.mode == BlueprintLayoutMode.manage) ...[
+            Tooltip(
+              message: BlueprintStrings.legendCreateOrder,
+              child: TextButton.icon(
+                key: const ValueKey('blueprint-start-order'),
+                onPressed: _busy
+                    ? null
+                    : () => controller.setMode(BlueprintLayoutMode.order),
+                icon: const Icon(Icons.add_shopping_cart, size: 18),
+                label: Text(BlueprintStrings.orderAction),
+              ),
+            ),
+            TextButton.icon(
+              key: const ValueKey('blueprint-start-swap'),
+              onPressed: _busy
+                  ? null
+                  : () => controller.setMode(BlueprintLayoutMode.swap),
+              icon: const Icon(Icons.swap_horiz, size: 18),
+              label: Text(BlueprintStrings.legendSwapSeats),
+            ),
+          ],
+          if (!_editingPlan &&
+              controller.mode != BlueprintLayoutMode.manage) ...[
             Semantics(
                 liveRegion: true,
                 child: Text(BlueprintStrings.selectedCount(
                     controller.operationSelection.length))),
             TextButton(
-                onPressed:
-                    _busy ? null : () => controller.setMode(controller.mode),
-                child: Text(BlueprintStrings.clearSelection)),
+                key: const ValueKey('blueprint-cancel-operation'),
+                onPressed: _busy ? null : _cancelOperation,
+                child: Text(CommonStrings.cancel)),
             FilledButton(
                 onPressed: _busy ||
                         controller.selectedSpotIds.isEmpty ||
@@ -680,7 +760,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       builder: (context, _) => CallbackShortcuts(
               bindings: {
                 const SingleActivator(LogicalKeyboardKey.escape): () {
-                  if (!_busy) controller.setMode(controller.mode);
+                  if (!_editingPlan) _cancelOperation();
                 }
               },
               child: Focus(
@@ -709,18 +789,38 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                               child: VenueLayoutEditor(
                                   controller: controller.layout,
                                   toolbarLeading: _toolbarActions(),
-                                  toolbarTrailing: EditorActionBar(
-                                    inline: true,
-                                    hasChanges: controller.isDirty,
-                                    enabled: _canEdit && !_busy,
-                                    onSave: () => _run(_save),
-                                    onDiscard: () =>
-                                        _run(() async => controller.cancel()),
-                                  ),
+                                  toolbarTrailing: _editingPlan
+                                      ? EditorActionBar(
+                                          inline: true,
+                                          hasChanges: controller.isDirty,
+                                          enabled: _canEdit && !_busy,
+                                          onSave: () => _run(_save),
+                                          onDiscard: () => _run(
+                                              () async => controller.cancel()),
+                                        )
+                                      : controller.isDirty
+                                          ? Tooltip(
+                                              message:
+                                                  BlueprintStrings.unsavedPlan,
+                                              child: TextButton.icon(
+                                                key: const ValueKey(
+                                                    'blueprint-unsaved-plan'),
+                                                onPressed: _busy || !_canEdit
+                                                    ? null
+                                                    : () => _setScreenMode(
+                                                        _BlueprintScreenMode
+                                                            .edit),
+                                                icon:
+                                                    const Icon(Icons.edit_note),
+                                                label: Text(BlueprintStrings
+                                                    .unsavedPlanShort),
+                                              ),
+                                            )
+                                          : null,
                                   inspectorBuilder: _inspector,
                                   seatPresentation: _presentations,
-                                  interactionEnabled: controller.mode ==
-                                      BlueprintLayoutMode.manage,
+                                  interactionEnabled: _editingPlan,
+                                  showGallery: _editingPlan && _canEdit,
                                   onNodeActivated: controller.activateNode))),
                     ])),
                   ))));
