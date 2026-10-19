@@ -75,7 +75,18 @@ Email authoring uses native Super Editor action-tag composition and atomic
 placeholder objects. The editor serializes them only as existing `{{code}}`
 substitutions. Preview data and editor metadata never enter the saved HTML.
 The portable rules and preview composer live in `festapp_core/email_templates.dart`;
-localized authoring labels remain in the Flutter adapter.
+localized authoring labels remain in the Flutter adapter. Required overview actions
+are also shown as read-only generated content inside the editor. They follow
+the same wrapper/body deduplication as delivery and never enter the saved draft.
+
+Payment-state presentation is owned by `_shared/orderEmailPresentation.ts`, used
+by both actual order email producers and the preview generator. Synthetic
+scenarios select payment facts, not separate wording or payment-state branches.
+A zero-price scenario uses the canonical zero-order explanation. Authored fixed
+text is preserved verbatim; templates that need conditional payment instructions
+should use `balanceReasoning` (Stav platby). The confirmation `amount` is the full
+order total even when a deposit is requested; payment-received `amount` is the
+received amount.
 
 Preview HTML is generated from production pure renderers, using synthetic inputs
 in `automation/fixtures/email_preview/order.json`. Regenerate from the repository

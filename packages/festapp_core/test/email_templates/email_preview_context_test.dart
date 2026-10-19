@@ -77,7 +77,8 @@ void main() {
           startsWith(
             scenario.scenario == 'zero'
                 ? '0'
-                : scenario.scenario == 'deposit'
+                : scenario.templateCode == 'TICKET_ORDER_PAYMENT_DONE' &&
+                    scenario.scenario == 'deposit'
                 ? '300'
                 : '800',
           ),

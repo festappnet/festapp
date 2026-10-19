@@ -179,6 +179,35 @@ void main() {
       }
     },
   );
+  test('automatic completion uses delivery deduplication and wrapper placement', () {
+    for (final fixture in asset['compositionFixtures'] as List) {
+      final links = (fixture['requiredLinks'] as List)
+          .map((v) => EmailRequiredLink.fromJson(Map<String, dynamic>.from(v as Map)))
+          .toList();
+      final scenario = EmailPreviewScenario(templateCode: 'ORDER', scenario: 'test',
+          locale: 'cs', tone: 'neutral', values: const {}, richCodes: const {},
+          requiredLinks: links);
+      final html = fixture['html'] as String;
+      expect(scenario.composeHtml(html), fixture['expected']);
+      final automatic = scenario.automaticCompletionHtml(html);
+      expect(scenario.automaticCompletionHtml(scenario.composeHtml(html)), isEmpty);
+      if (automatic.isNotEmpty) expect(scenario.composeHtml(html), contains(automatic));
+    }
+    const action = '<a href="https://example.test/order">Order</a>';
+    const scenario = EmailPreviewScenario(templateCode: 'ORDER', scenario: 'test',
+        locale: 'cs', tone: 'neutral',
+        values: {'button': action, 'url': 'https://example.test/order'},
+        richCodes: {'button'},
+        requiredLinks: [EmailRequiredLink(url: 'https://example.test/order', html: action)]);
+    expect(scenario.automaticCompletionHtml('<p>Text</p>'), action);
+    expect(scenario.automaticCompletionHtml('{{button}}'), isEmpty);
+    expect(scenario.automaticCompletionHtml('<a href="{{url}}">Custom</a>'), isEmpty);
+    expect(scenario.automaticCompletionHtml('<p>Text</p>',
+        wrapperHtml: '<body>{{content}}$action</body>'), isEmpty);
+    expect(scenario.composeHtml('<p>Text</p>',
+        wrapperHtml: '<body>$emailOverviewSlot{{content}}</body>'),
+        '<body>$action<p>Text</p></body>');
+  });
   test(
     'composer escapes once by context, never recursively substitutes values',
     () {

@@ -1,3 +1,4 @@
+import { reminderBalanceReasoning, depositReminderBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
 import { formatCurrency, formatIBAN } from "../_shared/utilities.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
@@ -58,33 +59,8 @@ export async function getTicketOrderReminderTemplate(
       );
     }
 
-    // Get deposit deadline from the deposit feature in occasion features
-    const features = occasion.features || [];
-    const depositFeature = features.find((f: any) => f.code === "deposit");
-    let depositDeadline: string;
-    const deadlineDays = depositFeature?.deposit_deadline_days;
-
-    if (deadlineDays) {
-      // Calculate actual deadline date from occasion start_time
-      const startTime = new Date(occasion.start_time);
-      const deadlineDate = new Date(
-        startTime.getTime() - (deadlineDays * 24 * 60 * 60 * 1000),
-      );
-      depositDeadline = deadlineDate.toLocaleDateString(
-        lang === "cs" ? "cs-CZ" : "en-US",
-      );
-    } else {
-      depositDeadline = lang === "cs" ? "na místě" : "on site";
-    }
-
-    // Generate deposit reminder text
-    const balanceReasoning = tr.depositReminder(
-      formatCurrency(remainingAmount, currency),
-      depositDeadline,
-      bank_account.account_number_human_readable,
-      iban,
-      paymentReferenceValue(payment_info),
-      tone,
+    const balanceReasoning = depositReminderBalanceReasoning(
+      remainingAmount, currency, occasion.features || [], occasion.start_time, bank_account, payment_info, lang, tone,
     );
 
     // Generate Payment QR Code for remaining amount
@@ -167,30 +143,9 @@ export async function getTicketOrderReminderTemplate(
     const deadline = new Date(payment_info.deadline);
     const timeDiff = deadline.getTime() - now.getTime();
     const daysDiff = Math.ceil(Math.abs(timeDiff) / (1000 * 3600 * 24));
-    const formattedPaidAmount = formatCurrency(amountPaid, currency);
-    let balanceReasoning = "";
-
-    if (timeDiff > 0) { // Deadline is in the future
-      balanceReasoning = tr.reminder_before_deadline(
-        daysDiff,
-        formatCurrency(balance, currency),
-        bank_account.account_number_human_readable,
-        iban,
-        paymentReferenceValue(payment_info),
-        formattedPaidAmount,
-        tone,
-      );
-    } else { // Deadline is in the past
-      balanceReasoning = tr.reminder_after_deadline(
-        daysDiff,
-        formatCurrency(balance, currency),
-        bank_account.account_number_human_readable,
-        iban,
-        paymentReferenceValue(payment_info),
-        formattedPaidAmount,
-        tone,
-      );
-    }
+    const balanceReasoning = reminderBalanceReasoning(
+      timeDiff, daysDiff, balance, amountPaid, currency, bank_account, payment_info, lang, tone,
+    );
 
     // Generate Payment QR Code
     try {
