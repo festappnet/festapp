@@ -11,13 +11,17 @@ rules are tracked in `AGENTS.md`, `CLAUDE.md`, and
 
 ## 1. Testing Workflow
 
-### A. The "One-Click" Way (Recommended)
+### A. Broad test wrapper
 
-Runs all project tests: Web Client (JavaScript), Database (SQL), Flutter,
-Deno Edge Functions, and Integration tests.
+Selects the repository's Web Client, SQL, client, Deno, image integration and
+explicit automation lanes. Install their dependencies and choose a disposable
+local database before running it. The wrapper loads `.env.local`; an existing
+`DATABASE_URL` there takes precedence over automatic local-DB detection unless
+you supply an explicit shell override.
 
 ```bash
-./automation/test_all.sh
+DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
+  ./automation/test_all.sh
 ```
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
@@ -36,6 +40,19 @@ GOOGLE_AUTH_DATABASE_URL="$DATABASE_URL" deno test --allow-env --allow-net --all
 ```
 
 This mode rejects remote/unmarked databases and rolls back admission counters.
+
+The database must already be running; this command does not start it. Missing
+tools/credentials can skip lanes. Web failures/timeouts and image integration
+failures currently print warnings and may leave the wrapper exit status zero.
+Client, SQL, Deno and selected automation failures propagate. Review each lane;
+"Done" alone is not a full pass. For a reliable JS or image integration result,
+run `npm test --prefix web_client` or
+`npm run test:integration --prefix workers/image-worker` directly with their
+required isolated fixtures.
+
+Scopes are `web`, `db`, `flutter`, `integration` and `automation`. Both `db` and
+`integration` also run the Deno lane. `automation` uses the script's explicit
+file list; it does not discover every test in that directory.
 
 ### B. Running Only Database Tests
 
@@ -56,7 +73,10 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 ```
 
 **Key concept:** Tests run in a transaction and auto-rollback. Any data inserted
-during a test is undone automatically.
+during a test is undone automatically. The SQL runner exits nonzero when files
+still fail after its sequential retry; it also exits zero when the filter selects
+no files. Check the selected count and summary as well as the exit status. This
+is separate from the broad wrapper's warning-only web/integration lanes.
 
 The payment-reference concurrency/restore test uses a separate disposable
 PostgreSQL template via `PAYMENT_REFERENCE_DATABASE_URL`. The template must
@@ -132,13 +152,17 @@ errors or changed inputs; unmet performance targets remain explicit in JSON.
 The pre-existing loopback-only GoTrue SDK test is in `test_dart/integration`;
 it retains its explicit skip without its `FESTAPP_FIXTURE_*` environment.
 
-Use `--no-pub` for repeated local runs when dependencies are already resolved.
+`test_client.sh` already passes `--no-pub` to its Flutter lane and does not
+accept that flag itself. When running `fvm flutter test` directly, add
+`--no-pub` only after resolving dependencies.
 
 ### D. Troubleshooting
 
 If a test fails saying "function does not exist":
 
-1. Rebuild the isolated local database: `./automation/bootstrap_local_db.sh`.
+1. Verify the runner is using the dedicated local database. If its schema is
+   stale, rebuild it with `./automation/bootstrap_local_db.sh`; this deletes
+   that fixture's data.
 2. Check that every active migration has a unique 14-digit timestamp.
 3. Run schema check tests if available.
 
@@ -240,13 +264,15 @@ changes):
 
 ### Step 3: Verify Integrity
 
-Run the full test suite (Web, DB, Integration, and Edge Functions).
+Run checks appropriate to the change and required by repository/user
+verification scope. For a full validation, run the broad wrapper with explicit
+local database configuration and inspect every lane as described above.
 
 ```bash
 ./automation/test_all.sh
 ```
 
-> All tests must PASS.
+> A skipped or warning-only failed lane is not a passing full validation.
 
 ### Step 4: Synchronize Translations
 
@@ -291,12 +317,15 @@ npm test       # Node.js native test runner
 
 ### Component Pattern
 
-All components extend a base class (`src/components/base/component.js`) with a
+Page components extend a base class (`src/components/base/component.js`) with a
 standard lifecycle:
 
 - `init()` - Initialize state and fetch data
 - `render()` - Build DOM elements
 - `clear()` - Cleanup listeners and DOM
+
+Small widgets such as dialogs and floating action buttons need not inherit
+this page lifecycle.
 
 ### Key Directories
 

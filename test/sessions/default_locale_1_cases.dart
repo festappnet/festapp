@@ -6,7 +6,6 @@ import '../components/fonts/font_family_picker_cases.dart' as suite3;
 import '../components/users/profile_companion_widget_cases.dart' as suite4;
 import '../components/users/user_fields_widget_cases.dart' as suite5;
 import '../components/ticket_layout/ticket_layout_unit_cases.dart' as suite6;
-import '../components/map/mbtiles_vector_tile_provider_cases.dart' as suite7;
 
 void main() {
   registerClientSuites({
@@ -17,6 +16,5 @@ void main() {
     'profile_companion_widget': suite4.main,
     'user_fields_widget': suite5.main,
     'ticket_layout_unit': suite6.main,
-    'mbtiles_vector_tile_provider': suite7.main,
   });
 }

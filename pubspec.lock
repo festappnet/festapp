@@ -489,14 +489,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.2"
-  executor_lib:
-    dependency: transitive
-    description:
-      name: executor_lib
-      sha256: "95ddf2957d9942d9702855b38dd49677f0ee6a8b77d7b16c0e509c7669d17386"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2"
   extended_image:
     dependency: transitive
     description:
@@ -1290,14 +1282,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
-  mbtiles:
-    dependency: "direct main"
-    description:
-      name: mbtiles
-      sha256: "0d9e5b35815a9292e51ffeac04bc885365511c8f985590d41f03894b7d43f1a2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.1"
   meta:
     dependency: transitive
     description:
@@ -1618,14 +1602,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "68645b24e0716782e58948f8467fd42a880f255096a821f9e7d0ec625b00c84d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   provider:
     dependency: transitive
     description:
@@ -1944,14 +1920,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
-  sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: "4c7fe79840389aaeaf05fd093f795b631b5a98e2bd28d54e555c100f4a9c7a1c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.2"
   stack_trace:
     dependency: transitive
     description:
@@ -2288,24 +2256,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
-  vector_map_tiles:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: "429de4cda07a6dfa7141a9f044aa5f7576765c5b"
-      resolved-ref: "429de4cda07a6dfa7141a9f044aa5f7576765c5b"
-      url: "https://github.com/miakh/flutter-vector-map-tiles.git"
-    source: git
-    version: "9.0.0-beta.13"
-  vector_map_tiles_mbtiles:
-    dependency: "direct main"
-    description:
-      path: vector_map_tiles_mbtiles
-      ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
-      resolved-ref: a099c38a87f39dcea61a0bf946dd6e77169cbd62
-      url: "https://github.com/miakh/flutter_map_plugins.git"
-    source: git
-    version: "1.2.2"
   vector_math:
     dependency: transitive
     description:
@@ -2314,22 +2264,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.2"
-  vector_tile:
-    dependency: transitive
-    description:
-      name: vector_tile
-      sha256: "7ae290246e3a8734422672dbe791d3f7b8ab631734489fc6d405f1cc2080e38c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.1"
-  vector_tile_renderer:
-    dependency: "direct main"
-    description:
-      name: vector_tile_renderer
-      sha256: "982ae5d8f0ab285463a4cd62e711c8f9a36b9b3112b5a471ae8d4f4838f31537"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   venue_seat_picker:
     dependency: "direct main"
     description:

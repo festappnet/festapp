@@ -1,5 +1,12 @@
 # Encrypted Festapp backups
 
+For host/runtime preparation, see [server deployment](../../../docs/setup/server_deployment.md).
+The installer requires root on the approved host and
+`FESTAPP_BACKUP_INSTALL_ACK=install-encrypted-off-host-backup-without-cutover`.
+Provision root-only mode-0600 backup credentials and keep the `age` decryption
+identity separately. Check the dependencies and host guard in
+`install-online-backup.sh` before installing the scheduled jobs.
+
 Ordinary online backups in `festapp-supabase-backups/backups/festapp-supabase-rehearsal-01/` retain all complete sets from the last 14 days plus the newest complete set in each of the four most recent completed ISO calendar weeks. The latest three complete sets are always kept. Weekly copies can overlap the daily window. The user selected this policy on 2026-10-08.
 
 `create-online-encrypted-backup.sh` first uploads and checks a fresh encrypted set, then calls `prune-online-backups.py`. The helper checks manifests and artifact sizes, preserves incomplete/unrecognized sets, records a protected deletion manifest, rechecks the inventory and verifies both deletion and preserved recovery points. Other bucket prefixes, migration exports, restore evidence and runtime logs are outside its cleanup scope.
@@ -16,3 +23,17 @@ flock -n /var/backups/festapp-supabase/.lock python3 /opt/festapp-backup/prune-o
 Override policy only through the explicit `FESTAPP_BACKUP_RETENTION_DAYS` and `FESTAPP_BACKUP_WEEKLY_COPIES` variables of the scheduled backup. The helper enforces a minimum of 7 daily days and 4 weekly copies. Install it together with the scheduled shell script using `install-online-backup.sh`.
 
 Validation: `node --test automation/tests/hetzner_supabase_backup.test.mjs` (includes the Python selection/regression tests).
+
+## Recovery evidence
+
+The backup manifest identifies the captured asset format. Format 2 includes a
+canonical R2 image archive and omits the retired Storage volume. The explicit
+runtime list in `archive-runtime.sh` includes present email/PITR Compose
+overlays, initialization SQL and the protected admin Tunnel credential.
+Systemd jobs and any other omitted host inputs still need their protected
+configuration source; the runtime archive is not a complete host image.
+
+The upload receipt uses `rclone check --size-only --one-way`. It verifies remote
+object sizes; recorded SHA-256 values describe the local encrypted artifacts.
+Downloaded-content verification, decryption and a disposable restore are separate
+recovery checks. An enabled timer or successful upload is not restore proof.

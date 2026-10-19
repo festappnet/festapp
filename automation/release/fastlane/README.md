@@ -10,8 +10,8 @@ unavailable.
 
 Fastlane is pinned by the adjacent `Gemfile` and `Gemfile.lock`. Run
 `bundle install` once in this directory and invoke every lane with
-`bundle exec fastlane`; the generated `[bundle exec]` notation below should be
-treated as mandatory for Festapp releases.
+`bundle exec fastlane`; Bundler is mandatory for Festapp releases, even if a later Fastlane-generated
+reference shows it in optional brackets.
 
 Store copy and screenshots are staged from that repository into temporary
 directories. Keystores, API keys, passwords, and service-account credentials do
@@ -32,7 +32,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 ### android play_check
 
 ```sh
-[bundle exec] fastlane android play_check
+bundle exec fastlane android play_check
 ```
 
 Read-only package and relevant-track version-code inspection
@@ -40,7 +40,7 @@ Read-only package and relevant-track version-code inspection
 ### android play_internal_draft
 
 ```sh
-[bundle exec] fastlane android play_internal_draft
+bundle exec fastlane android play_internal_draft
 ```
 
 Exactly gated binary-only upload to internal testing as draft
@@ -48,7 +48,7 @@ Exactly gated binary-only upload to internal testing as draft
 ### android play_production
 
 ```sh
-[bundle exec] fastlane android play_production
+bundle exec fastlane android play_production
 ```
 
 Exactly gated full production release for the canonical package and version
@@ -61,7 +61,7 @@ Exactly gated full production release for the canonical package and version
 ### ios asc_check
 
 ```sh
-[bundle exec] fastlane ios asc_check
+bundle exec fastlane ios asc_check
 ```
 
 Read-only numeric identity and version inspection
@@ -69,7 +69,7 @@ Read-only numeric identity and version inspection
 ### ios signing_check
 
 ```sh
-[bundle exec] fastlane ios signing_check
+bundle exec fastlane ios signing_check
 ```
 
 Read-only signing certificate and provisioning profile inventory
@@ -77,7 +77,7 @@ Read-only signing certificate and provisioning profile inventory
 ### ios refresh_notification_extension_profile
 
 ```sh
-[bundle exec] fastlane ios refresh_notification_extension_profile
+bundle exec fastlane ios refresh_notification_extension_profile
 ```
 
 Regenerate only the notification-extension App Store profile after capability changes
@@ -85,7 +85,7 @@ Regenerate only the notification-extension App Store profile after capability ch
 ### ios refresh_app_store_profiles
 
 ```sh
-[bundle exec] fastlane ios refresh_app_store_profiles
+bundle exec fastlane ios refresh_app_store_profiles
 ```
 
 Regenerate both App Store profiles after capability changes
@@ -93,7 +93,7 @@ Regenerate both App Store profiles after capability changes
 ### ios bootstrap_signing
 
 ```sh
-[bundle exec] fastlane ios bootstrap_signing
+bundle exec fastlane ios bootstrap_signing
 ```
 
 Create the first release certificate and exact App Store profiles
@@ -101,7 +101,7 @@ Create the first release certificate and exact App Store profiles
 ### ios create_version
 
 ```sh
-[bundle exec] fastlane ios create_version
+bundle exec fastlane ios create_version
 ```
 
 Create the target version on the existing app only
@@ -109,15 +109,33 @@ Create the target version on the existing app only
 ### ios upload_build
 
 ```sh
-[bundle exec] fastlane ios upload_build
+bundle exec fastlane ios upload_build
 ```
 
 Upload one already-built IPA; never submit or release
 
+### ios upload_testflight_build
+
+```sh
+bundle exec fastlane ios upload_testflight_build
+```
+
+Uploads an exact IPA to internal TestFlight without changing the App Store
+version. Requires the identity/version/build/IPA-digest confirmation from the
+Fastfile; it does not notify external testers.
+
+### ios editable_version_check
+
+```sh
+bundle exec fastlane ios editable_version_check
+```
+
+Read-only editable-version inventory without canonical metadata assertions.
+
 ### ios upload_metadata
 
 ```sh
-[bundle exec] fastlane ios upload_metadata
+bundle exec fastlane ios upload_metadata
 ```
 
 Upload canonical metadata only; never submit or release
@@ -125,7 +143,7 @@ Upload canonical metadata only; never submit or release
 ### ios upload_review_information
 
 ```sh
-[bundle exec] fastlane ios upload_review_information
+bundle exec fastlane ios upload_review_information
 ```
 
 Upload reviewer contact, demo credentials and notes from external secrets
@@ -133,7 +151,7 @@ Upload reviewer contact, demo credentials and notes from external secrets
 ### ios review_information_check
 
 ```sh
-[bundle exec] fastlane ios review_information_check
+bundle exec fastlane ios review_information_check
 ```
 
 Read-only reviewer-contact and demo-account audit against the canonical manifest
@@ -141,7 +159,7 @@ Read-only reviewer-contact and demo-account audit against the canonical manifest
 ### ios upload_privacy_urls
 
 ```sh
-[bundle exec] fastlane ios upload_privacy_urls
+bundle exec fastlane ios upload_privacy_urls
 ```
 
 Upload the two privacy URLs not fully covered by deliver metadata
@@ -149,7 +167,7 @@ Upload the two privacy URLs not fully covered by deliver metadata
 ### ios listing_check
 
 ```sh
-[bundle exec] fastlane ios listing_check
+bundle exec fastlane ios listing_check
 ```
 
 Read-only App Store listing, privacy URL and screenshot audit
@@ -157,7 +175,7 @@ Read-only App Store listing, privacy URL and screenshot audit
 ### ios compliance_check
 
 ```sh
-[bundle exec] fastlane ios compliance_check
+bundle exec fastlane ios compliance_check
 ```
 
 Read-only category, age-rating, content-rights and availability audit
@@ -165,7 +183,7 @@ Read-only category, age-rating, content-rights and availability audit
 ### ios upload_store_classification
 
 ```sh
-[bundle exec] fastlane ios upload_store_classification
+bundle exec fastlane ios upload_store_classification
 ```
 
 Upload canonical age-rating answers after preserving inherited classification fields
@@ -173,7 +191,7 @@ Upload canonical age-rating answers after preserving inherited classification fi
 ### ios deduplicate_screenshots
 
 ```sh
-[bundle exec] fastlane ios deduplicate_screenshots
+bundle exec fastlane ios deduplicate_screenshots
 ```
 
 Delete retry-created screenshot duplicates only
@@ -181,7 +199,7 @@ Delete retry-created screenshot duplicates only
 ### ios replace_screenshots
 
 ```sh
-[bundle exec] fastlane ios replace_screenshots
+bundle exec fastlane ios replace_screenshots
 ```
 
 Exactly gated replacement of all screenshots for the editable target version;
@@ -190,7 +208,7 @@ never submits or releases the app
 ### ios select_build
 
 ```sh
-[bundle exec] fastlane ios select_build
+bundle exec fastlane ios select_build
 ```
 
 Select exactly one processed target build; never submit or release
@@ -198,15 +216,23 @@ Select exactly one processed target build; never submit or release
 ### ios build_check
 
 ```sh
-[bundle exec] fastlane ios build_check
+bundle exec fastlane ios build_check
 ```
 
 Read-only status of the exact target build
 
+### ios release_status
+
+```sh
+bundle exec fastlane ios release_status
+```
+
+Read-only release/build state for the configured app.
+
 ### ios cancel_review_submission
 
 ```sh
-[bundle exec] fastlane ios cancel_review_submission
+bundle exec fastlane ios cancel_review_submission
 ```
 
 Cancel only the in-progress review submission for the exact target version
@@ -214,7 +240,7 @@ Cancel only the in-progress review submission for the exact target version
 ### ios submission_check
 
 ```sh
-[bundle exec] fastlane ios submission_check
+bundle exec fastlane ios submission_check
 ```
 
 Read-only submission completeness summary
@@ -222,7 +248,7 @@ Read-only submission completeness summary
 ### ios submit_for_review
 
 ```sh
-[bundle exec] fastlane ios submit_for_review
+bundle exec fastlane ios submit_for_review
 ```
 
 Explicitly gated submission with automatic release after Apple approval

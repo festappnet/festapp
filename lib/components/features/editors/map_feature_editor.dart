@@ -28,20 +28,11 @@ extension MapFeatureSettingsEditor on MapFeature {
         final onlineLayerLink =
             TextEditingController(text: onlineMapLayer.layerLink);
 
-        final offlineLogo = TextEditingController(text: offlineMapLayer.logo);
         final offlineText = TextEditingController(text: offlineMapLayer.text);
-        final offlineLogoLink =
-            TextEditingController(text: offlineMapLayer.logoLink);
         final offlineTextLink =
             TextEditingController(text: offlineMapLayer.textLink);
 
         MapBaseMode mapBaseMode = offlineMapLayer.mapBaseMode;
-        final pkgCtrl =
-            TextEditingController(text: offlineMapLayer.offlineMapPackageURL);
-        final styleCtrl =
-            TextEditingController(text: offlineMapLayer.offlineMapStyleURL);
-        final layerNameCtrl =
-            TextEditingController(text: offlineMapLayer.offlineMapLayerName);
         final manifestCtrl = TextEditingController(
           text: offlineMapLayer.offlineMapBundleManifestURL,
         );
@@ -151,24 +142,10 @@ extension MapFeatureSettingsEditor on MapFeature {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextFormField(
-                        controller: offlineLogo,
-                        decoration: InputDecoration(
-                            labelText: FeaturesStrings.mapLayerLogo),
-                        onSaved: (val) => offlineMapLayer.logo = val ?? '',
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
                         controller: offlineText,
                         decoration: InputDecoration(
                             labelText: FeaturesStrings.mapLayerText),
                         onSaved: (val) => offlineMapLayer.text = val ?? '',
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: offlineLogoLink,
-                        decoration: InputDecoration(
-                            labelText: FeaturesStrings.mapLayerLogoLink),
-                        onSaved: (val) => offlineMapLayer.logoLink = val ?? '',
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -190,10 +167,6 @@ extension MapFeatureSettingsEditor on MapFeature {
                             child: Text(FeaturesStrings.mapBaseModeOnline),
                           ),
                           DropdownMenuItem(
-                            value: MapBaseMode.legacy,
-                            child: Text(FeaturesStrings.mapBaseModeLegacy),
-                          ),
-                          DropdownMenuItem(
                             value: MapBaseMode.maplibre,
                             child: Text(FeaturesStrings.mapBaseModeMapLibre),
                           ),
@@ -206,59 +179,24 @@ extension MapFeatureSettingsEditor on MapFeature {
                           });
                         },
                       ),
-                      if (mapBaseMode == MapBaseMode.maplibre) ...[
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: manifestCtrl,
-                          decoration: InputDecoration(
-                            labelText:
-                                FeaturesStrings.offlineMapBundleManifestUrl,
-                          ),
-                          validator: (value) => _validateRequiredHttpsUrl(
-                            value,
-                            FeaturesStrings.mapLibreBundleManifestRequired,
-                          ),
-                          onSaved: (val) => offlineMapLayer
-                              .offlineMapBundleManifestURL = val ?? '',
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: manifestCtrl,
+                        decoration: InputDecoration(
+                          labelText:
+                              FeaturesStrings.offlineMapBundleManifestUrl,
                         ),
-                      ] else if (mapBaseMode == MapBaseMode.legacy) ...[
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: pkgCtrl,
-                          decoration: InputDecoration(
-                              labelText: FeaturesStrings.offlineMapPackageUrl),
-                          validator: (value) => _validateRequiredHttpsUrl(
-                            value,
-                            FeaturesStrings.offlineMapRendererFieldRequired,
-                          ),
-                          onSaved: (val) =>
-                              offlineMapLayer.offlineMapPackageURL = val ?? '',
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: styleCtrl,
-                          decoration: InputDecoration(
-                              labelText: FeaturesStrings.offlineMapStyleUrl),
-                          validator: (value) => _validateRequiredHttpsUrl(
-                            value,
-                            FeaturesStrings.offlineMapRendererFieldRequired,
-                          ),
-                          onSaved: (val) =>
-                              offlineMapLayer.offlineMapStyleURL = val ?? '',
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: layerNameCtrl,
-                          decoration: InputDecoration(
-                              labelText: FeaturesStrings.offlineMapLayerName),
-                          validator: (value) => value == null ||
-                                  value.trim().isEmpty
-                              ? FeaturesStrings.offlineMapRendererFieldRequired
-                              : null,
-                          onSaved: (val) =>
-                              offlineMapLayer.offlineMapLayerName = val ?? '',
-                        ),
-                      ],
+                        validator: (value) => mapBaseMode ==
+                                    MapBaseMode.online &&
+                                (value?.trim().isEmpty ?? true)
+                            ? null
+                            : _validateRequiredHttpsUrl(
+                                value,
+                                FeaturesStrings.mapLibreBundleManifestRequired,
+                              ),
+                        onSaved: (val) => offlineMapLayer
+                            .offlineMapBundleManifestURL = val?.trim() ?? '',
+                      ),
                     ],
                   ),
                 ),

@@ -58,7 +58,6 @@
         "test/components/ticket_layout/ticket_image_palette_cases.dart",
         "test/components/ticket_layout/ticket_layout_saver_cases.dart",
         "test/components/ticket_layout/ticket_group_resize_cases.dart",
-        "test/components/map/mbtiles_vector_tile_provider_cases.dart",
         "test/widgets/widgets_cases.dart",
         "test/widgets/app_dialog_cases.dart",
         "test/widgets/app_text_selection_cases.dart",
@@ -85,7 +84,6 @@
         "test/sessions/default_locale_3_cases.dart",
         "test/components/map/map_surface_widget_cases.dart",
         "test/components/map/map_renderer_host_cases.dart",
-        "test/components/map/legacy_map_focus_contract_cases.dart",
         "test/components/map/path_node_cases.dart",
         "test/components/map/map_cache_cases.dart",
         "test/components/map/offline_map_bundle_manager_cases.dart",
@@ -166,7 +164,8 @@
         "test/data_services/auth_refresh_recovery_cases.dart",
         "test/data_services/offline_data_service_cases.dart",
         "test/data_services/saved_program_pending_state_cases.dart",
-        "test/data_services/update_service_cases.dart"
+        "test/data_services/update_service_cases.dart",
+        "test/components/map/raster_map_focus_contract_cases.dart"
       ]
     },
     "test/sessions/shared_default_3_test.dart": {
@@ -201,7 +200,6 @@
         "test/components/map/map_commands_cases.dart",
         "test/components/map/map_deep_link_route_identity_cases.dart",
         "test/components/map/map_path_direction_layout_cases.dart",
-        "test/components/map/map_renderer_benchmark_override_cases.dart",
         "test/components/map/map_viewport_coordinator_cases.dart",
         "test/components/map/maplibre_place_icon_rasterizer_cases.dart",
         "test/components/map/maplibre_scene_controller_cases.dart",

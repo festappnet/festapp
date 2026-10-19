@@ -1,6 +1,30 @@
 # Canonical email delivery - operator runbook
 
-Status: Canonical production delivery is active. The user-authorized Edge Function cutover is complete; see `docs/plans/canonical-email-delivery-EDGE-CUTOVER-2026-10-04.md`. The initial production cutover completed on 2026-10-04. The canonical shared backend is unpaused, signed Auth hooks and SNS feedback are enabled, and all eleven approved active tenant websites deployed version 0.20.83+567 with Orders email status/history. Both required predeployment emails arrived and the PDF opened; a separate production owner canary has durable SES acceptance and signed delivery evidence. See `docs/plans/canonical-email-delivery-PRODUCTION-2026-10-04.md`. Two legacy unknown records remain for individual audited reconciliation; they are not automatically resent.
+The canonical queue architecture and its original deployment were recorded on
+2026-10-04. Those receipts document the approved tenants, versions, acceptance
+and feedback at that time; they do not establish today's pause state, installed
+bundle, quotas or unresolved-message count. See the
+[Edge cutover](../../docs/plans/canonical-email-delivery-EDGE-CUTOVER-2026-10-04.md)
+and [production record](../../docs/plans/canonical-email-delivery-PRODUCTION-2026-10-04.md).
+The current delivery boundary is also summarized in [SES setup](../../docs/setup/aws_ses.md).
+
+## Routine maintenance on the existing queue
+
+Resolve the selected tenant and canonical database through
+[protected backend access](../../.agents/skills/festapp-backend-access/SKILL.md).
+Inspect current queue health, provider capacity and unknown/in-flight sends
+without exposing message bodies or credentials. Run the read-only
+`automation/email-delivery/check-readiness.sql` against that identity-verified
+target with `ON_ERROR_STOP=1`; it checks producer access and missing account
+templates without sending a canary.
+
+A change to SQL, the Function bundle/router or provider configuration needs the
+exact reviewed release sequence and affected scope. Preserve snapshot encryption
+keys and durable intents. Record whether the queue was already paused; do not
+unpause an operator pause just because a deployment completed. Never replay the
+original migration below on an already migrated database. Use new forward
+migrations and the [canonical bundle path](../../docs/backend/edge_functions.md#deployment).
+
 
 ## Authority and compatibility
 
@@ -10,7 +34,7 @@ Public sender routes and existing payload/response contracts remain adapters. Ol
 
 The confirmation must be accepted (or explicitly cancelled/expired) before dependent order messages can send. A dead/unknown confirmation blocks successors until operator resolution. Do not cancel an uncertain parent solely to force its children through. Product edits invalidate the old version; the existing sent-order behavior remains, and an explicit resend renders the new version.
 
-## Pre-deployment gates
+## Release checks and original deployment evidence
 
 1. Resolve the requested tenant's `project.conf` and live activation document. Match activation generation, organization, SSH host, active runtime database and `current_database()` using the persisted `festapp-backend-agent` connection. Do not use former cloud credentials as an alternative. On 2026-10-04 all 11 active tenant activation documents matched canonical generation 1 and their configured organizations. The protected host and runtime database matched festapp-supabase-rehearsal-01 / festapp_rehearsal_20260909220601.
 2. Inventory deployed sender routes, cron jobs, Auth SMTP/hook settings, function bundle, Fakturoid release/abort gates and current in-flight work. Save a database backup and a copy of runtime configuration and function bundle under the existing protected operational process. Never print credentials or decrypted bodies.
@@ -26,7 +50,11 @@ Use the exact verified SNS topic ARN. The security configuration set must have n
 
 Approved Festapp allocation: 2 emails/second and 10,000 emails/day, as requested by the user on 2026-10-04. This is a Festapp allocation within the shared account, not an account quota increase; the queue still applies its safety reserves. Owner alerts: bujnmi@gmail.com through the confirmed operations SNS subscription.
 
-## Maintenance cutover
+## Historical first-cutover sequence
+
+The following sequence records the original transition from the legacy queue.
+It is not the default procedure for a routine release. Verify applied migrations
+and the exact current architecture before a separately scoped recovery.
 
 1. Enter maintenance and stop old workers/cron/direct SMTP senders before changing schema. Record any possible in-flight SMTP acceptance and retain it as unknown.
 2. Apply only the reviewed `20261003200000_canonical_email_delivery.sql` migration to the asserted database. It is transactional and starts with `email_capacity.paused=true`. Its sources can be regenerated with `python3 automation/email-delivery/build-migration.py`. Do not reapply historical migrations or apply unrelated pending migrations.
@@ -57,9 +85,16 @@ The SNS handler returns success only after the event batch commits. Database fai
 
 Expired/terminal sensitive ciphertext is erased by recovery; operational bodies expire after 30 days and provider events after 90 days. Dedupe tombstones and correlation remain. Keep recovery running even while paused. When enabled and idle, recovery also wakes the same worker for a missing or older-than-five-minute quota snapshot; worker reservations coalesce refreshes and no email intent is created. A cancelled/used ticket is never revived by acceptance post-actions. Payment removal, changed reminder settings/deadlines and source versions invalidate old pending intents at both claim and send.
 
-## Reproduce local verification
+## Historical local cutover fixture
 
 Only the dedicated disposable database on port 55434 is allowed. Do not point these commands at production. `rehearse-local.sh` recreates only project `festapp-email-tests-pg15`, imports main snapshot `c2c5634f72287a86a1b2f55e58ea63727f53ac0f`, installs legacy fixtures and the new migration, asserts compatibility, and disables local cron. It leaves the queue paused for inspection.
+
+The snapshot selects migration *filenames* through `git ls-tree`, but baseline
+and migration bytes are read from the current checkout with `psql -f`; this is
+not an immutable replay of that Git SHA. The harness installs only its selected
+historical cutover/follow-up set, not the full current migration tail. Keep its
+working revision and observed results with the evidence. For ordinary current
+SQL regressions use [the standard local database](../../docs/setup/local_development.md).
 
 ```sh
 EMAIL_LOCAL_REHEARSAL=1 bash automation/email-delivery/rehearse-local.sh
@@ -68,6 +103,6 @@ EMAIL_TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55434/postgres
 EMAIL_NATIVE_REHEARSAL=1 deno test --allow-env --allow-net --allow-read --allow-run automation/email-delivery/native-gotrue-test.ts
 ```
 
-Inspect the SQL runner's summary because its process exit code does not reliably represent failed test files. The pg_net test sends one local machine wake and races the same intent across two connections. The pinned GoTrue test uses no SMTP/SES and checks signed enqueue, outage, and both secure email-change links. None of these is a load or synthetic batch test.
+The current SQL runner exits nonzero for files still failing after sequential retry. Inspect its selected-file count and summary too: a filter matching no tests exits zero. The pg_net test sends one local machine wake and races the same intent across two connections. The pinned GoTrue test uses no SMTP/SES and checks signed enqueue, outage, and both secure email-change links. None of these is a load or synthetic batch test.
 
 Provider contracts: [SES SendEmail](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html), [SES GetAccount](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_GetAccount.html), [STS identity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html), [signed Auth hook](https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook), [self-hosted hooks](https://supabase.com/docs/guides/self-hosting/self-hosted-auth-hooks), [SNS topic signature configuration](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-topic.html).

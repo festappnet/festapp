@@ -53,8 +53,10 @@ final occasion = RightsService.occasionLinkModel;
 final user = RightsService.currentUser();
 ```
 
-**CRITICAL**: Always check `currentUnit()` and `occasionLinkModel` before
-displaying data - critical for multi-tenancy security!
+Check the active unit/occasion before displaying context-sensitive data.
+`RightsService` controls UI availability; SQL/RLS and Edge authorization enforce
+tenant isolation. A visible/hidden button or populated client context is not
+server-side permission proof.
 
 ---
 
@@ -74,7 +76,10 @@ displaying data - critical for multi-tenancy security!
 
 ### Pattern
 
-No automatic fallback. Code manually fetches remote, saves to cache, and reads from cache when offline:
+The legacy refresh explicitly fetches and caches data. With v1 selected,
+domain accessors such as `getAllEvents()` read `ClientSyncStore` projections
+instead of legacy JSON. The generic JSON storage helpers do not fetch remote
+data or select a fallback backend. For the legacy cache:
 
 ```dart
 // Save remote data to cache
@@ -100,9 +105,11 @@ reads and populate `OfflineDataService`.
   index when v1 is selected; otherwise fetches user info, events, activities,
   inventory, map data, information, speakers, cleaning status and news into the
   legacy cache
-- `getAppConfig(LinkModel)` — Retrieves app configuration through
-  `AppConfigRpc` (`get_app_config_v219`, with explicit legacy fallback only when
-  the selected backend profile requires it)
+- `getAppConfig(LinkModel)` calls `loadAppConfigWithLegacyFallback`:
+  `get_app_config_v219` first, then `get_app_config_v218` / `get_app_config_v2`
+  only for the exact PostgREST missing-function error. `useLegacyContract` can
+  select the legacy sequence directly. Authorization, network and server errors
+  propagate instead of triggering fallback.
 
 ### Data Flow
 
@@ -171,4 +178,4 @@ offline authentication, payments or server-confirmed writes. See the
 [Client Sync runbook](../runbooks/client-sync-v1.md) and
 [email queue guide](../setup/aws_ses.md) for operational boundaries.
 
-**Last updated**: 2026-10-07
+**Last reviewed**: 2026-10-19

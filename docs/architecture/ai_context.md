@@ -112,6 +112,16 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
 
+## Occasion feature configuration
+
+`occasions.features` stores each event's feature array. `Feature.fromJson`
+selects typed settings or `SimpleFeature`; `FeatureService` controls UI availability.
+When adding a feature, register its code, parsing/defaults and UI/SQL behavior.
+`appSupportedFeatures` lists only features restricted to `AppConfig.isAppSupported`;
+form/ticket features also serve ticketing-only tenants. UI flags never replace
+server authorization. Creation/save SQL remains authoritative for stored defaults
+and validation.
+
 ## Directory Structure
 
 - `lib/components/[feature]/` — Feature-oriented Flutter (views/, models/, sub-features)
@@ -127,11 +137,17 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 
 ## Feature READMEs (Complex Components Only)
 
-These components have non-obvious architecture worth reading before modifying:
+Keep a feature README when it explains a cross-layer contract, ownership or
+failure mode that is hard to infer from one file. File/class inventories, getter
+lists and change-by-change release notes belong in source, generated references
+or dated operational records. Shared concepts have one owner; other clients link
+to it and document only their own adapter differences.
+
+These components have such local contracts:
 
 - **[Eshop](../../lib/components/eshop/README.md)**: Orders, payments, Split Brain SQL
 - **[Blueprint](../../lib/components/blueprint/README.md)**: Seat reservation with SQL locking
-- **[Forms](../../lib/components/forms/README.md)**: Dynamic form engine, massive data bundles
+- **[Forms](../../lib/components/forms/README.md)**: Server availability, editor drafts and capability-scoped orders
 - **[Schedule](../../lib/components/schedule/README.md)**: Sign-ups with SQL error codes, offline sync
 - **[Users](../../lib/components/users/README.md)**: Bundle re-stitching, multi-tenancy
 - **[Inventory](../../lib/components/inventory/README.md)**: Pool/Resource/Context hierarchy
@@ -186,3 +202,15 @@ watermarks and private exact/sequence/random allocation. Unactivated organizatio
 retain the guarded legacy allocator until separately authorized activation. The
 preexisting BankSync issuance API is retired in source; its historical registry
 is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
+
+## Native offline maps
+
+MapLibre is the only native offline renderer. `OfflineMapConfiguration` accepts
+`offlineMapBundleManifestURL` and `forceOfflineMap`; `OfflineMapBundleManager`
+verifies the assets before `MapLibreStyleAssembler` creates a local style.
+CSM Ostrava's schema 2 MBTiles and schema 3 PMTiles bundles remain supported.
+Schema 2 retains its existing `mbtiles` asset role and absent/null
+`bundle_mode`; this format does not select an old renderer. Online and web maps use
+`RasterMapSurface` with network tiles.
+There is no standalone package/style URL downloader or renderer rollback flag.
+See [offline map tooling](../../automation/offline-map/README.md).

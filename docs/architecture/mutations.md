@@ -5,6 +5,11 @@
 Target architecture for new writes and for migrations away from direct
 PostgREST DML. This document defines the application-wide write boundary; it
 does not change the read model or require every domain to share one payload.
+The problem statement and illustrative `*_v1` names below describe the original
+migration design, not a current RPC inventory or unfinished-work list. Current
+attendance uses `set_event_attendance_client_sync_v1`; consult the typed domain
+command adapters and [implementation status](../runbooks/client-sync-v1-implementation-status-2026-08-03.md)
+for implemented boundaries and their dated evidence.
 
 ## Problem
 

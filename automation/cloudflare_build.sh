@@ -119,7 +119,7 @@ const IS_APP_SUPPORTED = true; // replaced from project.conf after generation
 const WEB_CLIENT_EXACT = new Set(["/"]);
 
 // Flutter SPA routes (login / admin / handover).
-const FLUTTER_PREFIXES = ["/login", "/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/instanceInstall", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
+const FLUTTER_PREFIXES = ["/login", "/login-qr", "/admin", "/bank-accounts", "/transfer", "/organizationEdit", "/unit", "/signup", "/settings", "/install", "/scan", "/check", "/map-editor", "/resetPassword", "/forgotPassword", "/reset-password", "/forgot-password"];
 
 // auth_bridge.html alias — RouterService still posts to /auth_bridge.html.
 const AUTH_BRIDGE_PATHS = new Set(["/auth_bridge", "/auth_bridge.html"]);

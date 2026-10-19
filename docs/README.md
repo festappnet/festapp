@@ -1,5 +1,29 @@
 # Festapp documentation map
 
+## Documentation status
+
+Active guides describe the current repository and canonical self-hosted backend.
+The old browser SQL installer (`instanceInstall` / `instance-install`) and
+`sync_db.js` are removed. Cloud Supabase installation and CLI production deploy
+procedures are unsupported; the CLI remains in isolated local development.
+`/install` is the separate end-user mobile/PWA installation page.
+
+Dated audits, migration plans and cutover receipts record what was true at that
+time. They are evidence, not permission to repeat old installation or rollout
+commands. See the [2026-10-19 documentation audit](development/documentation-audit-2026-10-19.md).
+
+## Setup and deployment
+
+| Task | Guide |
+|---|---|
+| Local app development and tenant configuration | [Setup](setup/howto.md) |
+| Disposable SQL fixture | [Local database](setup/local_development.md) |
+| Backend host, runtime, secrets and recovery | [Server deployment](setup/server_deployment.md) |
+| Cloudflare account, DNS, Workers, R2 and Access | [Cloudflare infrastructure](setup/cloudflare.md) |
+| One tenant's web release | [Pages deployment](../automation/cloudflare/README.md) |
+| Mobile build and publication | [Android](../automation/release/android_play_release.md), [iOS](../automation/release/ios_howto.md) |
+| Product features and screenshots | [Feature overview](overview/features.md) |
+
 ## Active reference
 
 - [AI context](architecture/ai_context.md) - mandatory architecture, canonical
@@ -30,7 +54,12 @@
   [occasion reports](../lib/components/eshop/README.md#occasion-report-snapshot)
 - [Tab deep links](architecture/tab_deep_links.md) - tab ownership and access boundaries
 
-Other feature README files live beside the Flutter and web-client code.
+Feature READMEs live beside the code when they explain ownership, cross-layer
+contracts, failure/retry behavior or fixture provenance. Routine file inventories
+and API lists stay in source; shared domain rules have one reference linked by
+both clients. See the [local documentation rule](architecture/ai_context.md#feature-readmes-complex-components-only).
+Fixture READMEs remain useful even in tiny folders: they explain where test data
+came from, what can be regenerated and what the tests cannot prove.
 
 ## Operational records and historical material
 

@@ -1,71 +1,63 @@
-# FestApp Web Client
+# Festapp web client
 
-A web-based interface for the FestApp ecosystem, built with vanilla JavaScript
-and HTML/CSS. This project mirrors the business logic and some UI patterns of
-the main Flutter application but is designed for lightweight, browser-based
-access (e.g., ticket purchasing, registration forms).
+The vanilla JavaScript client handles the public occasion catalog, forms,
+checkout and browser ticket scanning. PostgreSQL owns business decisions shared
+with Flutter; this client owns browser state and rendering.
 
-## Overview
+## Run locally
 
-This project is a Single Page Application (SPA) that acts as a web client for:
-
-- Users to register or buy tickets.
-- Filling out forms with validation.
-- Browsing "occasions" or events.
-
-## Key Features
-
-- **Dynamic Form building**: Renders forms based on JSON configurations
-  (`blueprint`).
-- **EShop Integration**: Manages orders and tickets (similar to the Flutter
-  app's Eshop component).
-- **Responsive Design**: Mobile-friendly layout using custom CSS variables and
-  utility classes.
-- **Component-based Architecture**: UI logic is split into functional
-  components.
-  - **Forms**: The primary UI for user interaction, handling Tickets and Orders.
-  - **Eshop**: (Logic only) Provides backing data services for Forms, mirroring
-    the Flutter Eshop logic.
-
-## Architecture
-
-- **Vanilla JS**: No heavy frontend framework. Uses direct DOM manipulation and
-  custom component classes (SFC-like pattern with `.js` and scoped `.css`).
-- **CSS Variables**: Extensive use of CSS variables for theming.
-- **Service Layer**: `src/services` handles API communication.
-
-## Setup & Running
-
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Run Dev Server**:
-   ```bash
-   npm run dev
-   ```
-
-3. **Build**:
-   ```bash
-   npm run build
-   ```
-
-## Testing
-
-The project uses Node.js's native test runner.
+Complete [developer setup](../docs/setup/howto.md) and apply the selected public
+configuration from the repository root:
 
 ```bash
-# Run all tests
-npm test
+./automation/apply_config.sh
 ```
 
-## Maintenance Scripts
+Then, inside `web_client/`:
 
-Located in `scripts/` (and root `automation/` wrappers):
+```bash
+npm ci
+npm run dev
+```
 
-- **Translation Sync**:
-  - `unify_translations.js`: Syncs keys between Flutter and Web.
-  - `reorder_cs_like_en.js`: Ensures Czech translation file matches English
-    structure.
-- **Database Tests**: `run_db_tests.js` runs SQL regression tests.
+`src/app_config.js` and `src/theme_config.css` are generated. Put changes in
+`automation/project.conf` and the generator inputs. Keep private credentials out
+of browser assets. SQL tests use the [isolated local database](../docs/setup/local_development.md).
+
+```bash
+npm test
+npm run build
+```
+
+The build above produces only this client. A tenant production release combines
+it with Flutter through the [Pages release path](../automation/cloudflare/README.md).
+
+## Browser state and domain boundaries
+
+Page components use the `init()` / `render()` / `clear()` lifecycle from
+`src/components/base/component.js`. Release page listeners and owned resources
+on clear; small widgets have their own lifecycle.
+
+Forms load `get_form_by_link` through `DbForms`. `FormModel` holds the loaded
+bundle; `FormSession` tracks tickets, fields, currency and validation, and
+`FormDataReader` creates the submission payload. Do not infer server capacity or
+permissions from DOM state. Shared deletion, availability, waitlist and customer
+capability rules live in the [form domain reference](../lib/components/forms/README.md).
+
+`DbOrders` sends order create/replacement through `send-ticket-order`. The
+receipted SQL command owns allocation and transactional effects. A queued
+confirmation and a delivered email are different states. Keep the shared
+[order contract](../lib/components/eshop/README.md) and
+[email delivery boundary](../docs/setup/aws_ses.md) in sync with both clients.
+
+Form typography inherits the generated tenant font/scale. A per-form Google
+font override sets its scale to 1; removing the override restores inheritance.
+Theme changes and input rendering belong to `ThemeService`, not order payloads.
+
+## References for changes
+
+- [Seat-map renderer](src/components/blueprint/README.md): transforms, gestures
+  and cleanup specific to this DOM implementation
+- [Browser scanner](../docs/runbooks/web-scanner.md): offline preparation,
+  synchronization and recovery
+- [Contributing](../CONTRIBUTING.md): test lanes, configuration and translation workflow

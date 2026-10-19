@@ -144,4 +144,4 @@ SHA-256 z `pg_get_functiondef`, nikoli z pracovní kopie zdrojů:
 
 ## Follow-up implementace - lokální stav 2026-10-16
 
-Tato session nezopakovala audit. Úzký read-only katalog potvrdil původní RPC/sync nálezy a nulové uložené/pg_depend/control-plane cron callery. Opravy jsou lokálně implementované a cíleně ověřené na PG17 v samostatném worktree; nejsou nasazené. Aktuální stav, konkrétní migrační balík a chybějící provozní evidence jsou v [autoritativním plánu](../plans/server-security-remediation-plan-2026-10-16.md#lokální-realizace-2026-10-16---aktuální-stav). Původní produkční nálezy se bez následného live readbacku neuzavírají.
+Tato session nezopakovala audit. Úzký read-only katalog potvrdil původní RPC/sync nálezy a nulové uložené/pg_depend/control-plane cron callery. Opravy jsou lokálně implementované a cíleně ověřené na PG17 v samostatném worktree; nejsou nasazené. Aktuální stav, konkrétní migrační balík a chybějící provozní evidence jsou v [autoritativním plánu](../plans/server-security-remediation-plan-2026-10-16.md#lokální-realizace-2026-10-16---historická-příprava). Původní produkční nálezy se bez následného live readbacku neuzavírají.

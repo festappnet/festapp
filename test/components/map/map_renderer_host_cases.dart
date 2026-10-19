@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/map_feature.dart';
-import 'package:fstapp/components/map/legacy_map_surface.dart';
+import 'package:fstapp/components/map/raster_map_surface.dart';
 import 'package:fstapp/components/map/map_renderer_host.dart';
 import 'package:fstapp/components/map/map_strings.dart';
 import 'package:fstapp/components/map/map_place_model.dart';
@@ -27,26 +27,22 @@ void main() {
         onPlaceTap: (_) {},
       );
 
-  LegacyMapConfiguration legacy() => LegacyMapConfiguration.online(MapLayer());
-
-  test('web always resolves to the legacy Live View renderer', () {
+  test('web always resolves to the online raster renderer', () {
     expect(
       MapRendererHost.resolveRenderer(
-        configuredRenderer: OfflineMapRenderer.maplibre,
         isOffline: true,
         isWeb: true,
       ),
-      OfflineMapRenderer.legacy,
+      MapRenderer.raster,
     );
   });
 
-  testWidgets('selects exactly the configured renderer', (tester) async {
+  testWidgets('native offline maps use MapLibre', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.maplibre,
         isOffline: true,
         model: model(),
-        legacy: legacy(),
+        onlineLayer: MapLayer(),
         mapLibre: const MapLibreMapConfiguration(
           style: null,
           unavailable: Text('maplibre'),
@@ -55,57 +51,53 @@ void main() {
     ));
 
     expect(find.text('maplibre'), findsOneWidget);
-    expect(find.text('legacy'), findsNothing);
+    expect(find.byType(RasterMapSurface), findsNothing);
   });
 
   testWidgets('keeps the concrete surface warm while its tab is inactive',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
-        isOffline: true,
+        isOffline: false,
         model: model(active: false),
-        legacy: LegacyMapConfiguration.offlineUnavailable(MapLayer()),
+        onlineLayer: MapLayer(),
       ),
     ));
 
-    expect(find.byType(LegacyMapSurface), findsOneWidget);
+    expect(find.byType(RasterMapSurface), findsOneWidget);
     expect(find.byType(fm.FlutterMap), findsOneWidget);
   });
 
-  testWidgets('keeps offline Legacy as an explicit supported renderer',
-      (tester) async {
+  testWidgets('online raster supports the shared maximum zoom', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
-        isOffline: true,
+        isOffline: false,
         model: model(),
-        legacy: LegacyMapConfiguration.offlineUnavailable(MapLayer()),
+        onlineLayer: MapLayer(),
       ),
     ));
 
-    expect(find.byType(LegacyMapSurface), findsOneWidget);
+    expect(find.byType(RasterMapSurface), findsOneWidget);
     final map = tester.widget<fm.FlutterMap>(find.byType(fm.FlutterMap));
     expect(map.options.maxZoom, MapZoomLimits.interactionMaximum);
   });
 
-  testWidgets('Legacy renders the location supplied by the shared map scene',
+  testWidgets('Raster renders the location supplied by the shared map scene',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
-        isOffline: true,
+        isOffline: false,
         model: model(
           scene: const MapScene(
             showCurrentLocation: true,
             currentLocation: LatLng(49.8, 18.2),
           ),
         ),
-        legacy: LegacyMapConfiguration.offlineUnavailable(MapLayer()),
+        onlineLayer: MapLayer(),
       ),
     ));
 
-    const locationMarkerKey = Key('legacy-current-location-marker');
+    const locationMarkerKey = Key('raster-current-location-marker');
     expect(find.byKey(locationMarkerKey), findsOneWidget);
     final locationLayer = tester
         .widgetList<fm.MarkerLayer>(find.byType(fm.MarkerLayer))
@@ -121,23 +113,22 @@ void main() {
     expect(locationMarker.height, 20);
   });
 
-  testWidgets('Legacy hides a retained location while its scene is inactive',
+  testWidgets('Raster hides a retained location while its scene is inactive',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
-        isOffline: true,
+        isOffline: false,
         model: model(
           scene: const MapScene(
             currentLocation: LatLng(49.8, 18.2),
           ),
         ),
-        legacy: LegacyMapConfiguration.offlineUnavailable(MapLayer()),
+        onlineLayer: MapLayer(),
       ),
     ));
 
     expect(
-      find.byKey(const Key('legacy-current-location-marker')),
+      find.byKey(const Key('raster-current-location-marker')),
       findsNothing,
     );
   });
@@ -146,25 +137,23 @@ void main() {
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.maplibre,
         isOffline: true,
         model: model(),
-        legacy: legacy(),
+        onlineLayer: MapLayer(),
       ),
     ));
 
     expect(tester.takeException(), isStateError);
-    expect(find.byType(LegacyMapSurface), findsNothing);
+    expect(find.byType(RasterMapSurface), findsNothing);
   });
 
-  test('online maps resolve to the legacy Live View renderer', () {
+  test('online maps resolve to the raster renderer', () {
     expect(
       MapRendererHost.resolveRenderer(
-        configuredRenderer: OfflineMapRenderer.maplibre,
         isOffline: false,
         isWeb: false,
       ),
-      OfflineMapRenderer.legacy,
+      MapRenderer.raster,
     );
   });
 
@@ -172,14 +161,13 @@ void main() {
     expect(MapZoomLimits.interactionMaximum, 22);
   });
 
-  testWidgets('online Legacy overzooms without requesting deeper raster tiles',
+  testWidgets('online raster overzooms without requesting deeper raster tiles',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
         isOffline: false,
         model: model(),
-        legacy: legacy(),
+        onlineLayer: MapLayer(),
       ),
     ));
 
@@ -198,14 +186,11 @@ void main() {
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
         isOffline: false,
         model: model(),
-        legacy: LegacyMapConfiguration.online(
-          MapLayer(
-            layerLink: 'https://primary.example/{z}/{x}/{y}.png',
-            text: 'Primary maps',
-          ),
+        onlineLayer: MapLayer(
+          layerLink: 'https://primary.example/{z}/{x}/{y}.png',
+          text: 'Primary maps',
         ),
       ),
     ));
@@ -256,7 +241,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('Legacy place long press uses the shared navigation callback',
+  testWidgets('Raster place long press uses the shared navigation callback',
       (tester) async {
     const coordinate = LatLng(49.8, 18.2);
     int? longPressedPlaceId;
@@ -286,10 +271,9 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       home: MapRendererHost(
-        renderer: OfflineMapRenderer.legacy,
         isOffline: false,
         model: longPressModel,
-        legacy: legacy(),
+        onlineLayer: MapLayer(),
       ),
     ));
 

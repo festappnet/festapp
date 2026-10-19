@@ -108,7 +108,7 @@ SQL functions organized by domain:
 | `units/` | Unit management | Unit CRUD, user-unit linking |
 | `user_permissions/` | RBAC | `get_is_*` permission checks (boolean returns) |
 | `user_services/` | Service assignments | User-service linking |
-| `users/` | User management | `create_user_in_organization_with_data_pure`, `delete_user`, `import_user_group_assignments` |
+| `users/` | User management | `create_user_in_organization_with_data_pure`, `delete_occasion_user_ws`, `delete_unit_user`, `import_user_group_assignments` |
 | `utilities/` | Shared utilities | Helper functions |
 | `utils/` | Additional utils | Format helpers |
 
@@ -246,7 +246,8 @@ Dart or `supabase.rpc(...)` in JS):
 | `send-ticket-order` (Edge Function) | Web Client, Flutter | Receipted order create/replace + transactional effect queue |
 | `replace_blueprint_order_client_sync_v1` | Edge Function | Atomic seat replacement and new order |
 | `scan_ticket` | Flutter | Ticket verification |
-| `delete_user` | Flutter | User deletion |
+| `delete_occasion_user_ws` / `delete_unit_user` | Flutter legacy adapters | Remove occasion membership / unit access; v1 uses receipted commands |
+| `request-account-deletion` / `confirm-account-deletion` | Edge Functions | Confirmed account deletion lifecycle |
 | `create_user_in_organization_with_data_pure` | SQL Functions (internal) | User creation |
 | `get_ticket_details_for_generating` | Edge Functions | Ticket PDF data |
 | `get_occasion_seo_data` | Cloudflare Pages Worker | SEO metadata |

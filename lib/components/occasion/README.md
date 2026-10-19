@@ -37,16 +37,16 @@ services, and lifecycle (Duplication/Deletion).
    the target Unit, and the creator receives occasion administration rights.
 2. **Dart**: `DbOccasions.duplicateOccasion` then handles **Image Copying**.
    - It manually fetches the ticket background and occasion image.
-   - Calls `DbImages.createCopyOfImage` (which likely involves storage bucket
-     operations) to deep-copy the assets.
+   - Calls `DbImages.createCopyOfImage` to download through the image control
+     client and upload a new R2 object through the image Worker. A media failure
+     leaves the committed occasion visible and returns a partial result; never
+     repeat SQL creation just to retry copying media.
 
 ### 2. Deletion (`deleteOccasion`)
 
-**Hybrid Logic**:
-
-1. **SQL**: Calls `delete_occasion` RPC to remove the database records.
-2. **Dart**: Manually scans for "Orphan Images" (images with `occasion IS NULL`
-   after the delete) and removes them from Supabase Storage.
+`DbOccasions.deleteOccasion` calls the Client Sync delete command when v1 is
+selected, otherwise the `delete_occasion` RPC. SQL owns record deletion. There
+is no client-side orphan-image scan or Supabase Storage cleanup in this flow.
 
 ## Critical Implementation Details
 

@@ -34,7 +34,6 @@ import 'package:fstapp/components/information/song/song_page.dart';
 import 'package:fstapp/components/schedule/timetable_page.dart';
 import 'package:fstapp/components/users/views/user_page.dart';
 import 'package:fstapp/components/forms/views/form_page.dart';
-import 'package:fstapp/components/app_management/instance_install_page.dart';
 import 'package:fstapp/components/reception/reception_page.dart';
 import 'package:fstapp/components/reception/login_qr_scanner_page.dart';
 
@@ -85,9 +84,6 @@ class AppRouter extends RootStackRouter {
             path: '/bank-accounts/:accountId/connection', usesPathAsKey: true),
         AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
         AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
-        AutoRoute(
-            page: InstanceInstallRoute.page,
-            path: sl(InstanceInstallPage.ROUTE)),
         CustomRoute(
             page: UnitAdminRoute.page,
             // Retained context routers must have different keys per unit/link.

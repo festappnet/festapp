@@ -95,10 +95,6 @@ class FeatureConstants {
   static const String defaultMapLocation = "defaultMapLocation";
 
   // Offline map extra fields (for offline map layer)
-  static const String offlineMapPackageURL = "offlineMapPackageURL";
-  static const String offlineMapStyleURL = "offlineMapStyleURL";
-  static const String offlineMapLayerName = "offlineMapLayerName";
-  static const String offlineMapRenderer = "offlineMapRenderer";
   static const String offlineMapBundleManifestURL =
       "offlineMapBundleManifestURL";
   static const String forceOfflineMap = "forceOfflineMap";

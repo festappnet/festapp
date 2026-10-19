@@ -101,8 +101,8 @@ setup. The `fetch-http-data` surface requires occasion-editor authorization and
 rejects private DNS, unsafe redirects, non-images and oversized responses.
 Provider Signature Version 2, Vault/Function secret equality and signed live
 canaries remain operational activation gates.
-`instance-install` is excluded from production rather than migrated because it
-accepts database credentials and executes remotely fetched SQL.
+The remote SQL `instance-install` source was removed on 2026-10-19, along with
+its in-app installer. The production denylist remains to prevent reintroduction.
 
 ## Gate contract
 

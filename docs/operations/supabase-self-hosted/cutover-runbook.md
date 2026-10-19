@@ -1,5 +1,12 @@
 # Festapp self-hosted Supabase cutover runbook
 
+> Historical 2026 backend migration procedure. The canonical switch completed
+> on 2026-09-10. This runbook preserves cutover/recovery gates; do not use its
+> preactivation sequence to install a new tenant. Current tenant setup is in
+> [the setup guide](../../setup/howto.md), and current backend operations are in
+> [the tooling reference](../../../automation/hetzner-supabase/README.md).
+
+
 This runbook is a fail-closed gate. Rehearsal completion does not authorize a
 production cutover, DNS change, client activation or cloud deletion.
 
@@ -85,10 +92,11 @@ Do not carry the historical blanket `--no-verify-jwt` deployment practice into
 canonical production. `bank-mail-parser` now requires an exact-topic AWS SNS
 Signature Version 2 proof and constrains certificate/confirmation URLs;
 `notify` requires a constant-time bearer proof shared with a Vault-backed
-database trigger; `fetch-http-data` requires an occasion editor and constrains
+database request; current SQL domain commands enqueue it explicitly through
+pg_net, without an application row trigger. `fetch-http-data` requires an occasion editor and constrains
 DNS, redirects, content type and response size. Live provider/Vault canaries
-remain activation gates. `instance-install` is an operator bootstrap surface
-that executes remote SQL and is explicitly excluded from canonical production.
+remain activation gates. The obsolete remote-SQL `instance-install` source was
+removed on 2026-10-19; it remains explicitly forbidden in canonical production.
 
 Auth continuity is a separate hard gate. Every imported user UUID and
 `encrypted_password` value must match the fresh source snapshot exactly; hashes
