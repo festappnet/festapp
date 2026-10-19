@@ -121,7 +121,10 @@ export class BlueprintSelector {
         const load = async () => {
             if (closed || loading) return;
             loading = true; refreshActions();
-            const loadingLabel = document.createElement('p'); loadingLabel.textContent = CommonStrings.loading;
+            const loadingLabel = document.createElement('div'); loadingLabel.className = 'blueprint-loading';
+            const spinner = document.createElement('div'); spinner.className = 'sp-loader';
+            loadingLabel.setAttribute('role', 'status'); loadingLabel.setAttribute('aria-label', CommonStrings.loading);
+            loadingLabel.append(spinner);
             content.replaceChildren(loadingLabel);
             try {
                 if (session.formModel.demoSimulation) throw new Error(FormStrings.demoNotice);
@@ -142,6 +145,13 @@ export class BlueprintSelector {
                 this.createZoomControls(content);
                 const options = this.adapter.options();
                 options.minZoom = 1; options.maxZoom = 5;
+                options.tooltipOffset = 15;
+                options.tooltipStyle = {
+                    zIndex: '3100', background: 'white', border: '2px solid black',
+                    borderRadius: '8px', padding: '6px 10px', color: 'black',
+                    font: 'inherit', fontSize: '14px', lineHeight: 'normal',
+                    whiteSpace: 'pre-wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxWidth: '300px',
+                };
                 options.onCameraChanged = state => {
                     this.zoomInButton.disabled = !state.canZoomIn;
                     this.zoomOutButton.disabled = !state.canZoomOut;

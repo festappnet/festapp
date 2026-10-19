@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../blueprint_layout_resources.dart';
-import '../../views/blueprint_layout_legend.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_adapter.dart';
@@ -12,7 +11,6 @@ import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
-import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -258,13 +256,9 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
             ..._adapter!.publicPresentation(b),
             'selected': _selected.contains(b.spotId),
             'label': b.title,
-            'tooltip': [
-              b.title,
-              _adapter!.product(b)?.title ?? BlueprintStrings.noProductAssigned,
-              if (_adapter!.product(b)?.price != null)
-                Utilities.formatPrice(context, _adapter!.product(b)!.price!,
-                    currencyCode: _adapter!.product(b)!.currencyCode)
-            ].whereType<String>().join('\n'),
+            'tooltip': BlueprintObjectModel(
+                    title: b.title, product: _adapter!.product(b))
+                .blueprintTooltip(context),
           },
       };
 
@@ -274,8 +268,6 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
               child: Container(
         constraints: const BoxConstraints(maxWidth: StylesConfig.appMaxWidth),
         child: Column(children: [
-          if (!_loading && _error == null && _snapshot != null)
-            BlueprintLayoutLegend(states: _snapshot!.seatBindings.values.map(_adapter!.state)),
           Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -289,13 +281,27 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
                                   onPressed: _load,
                                   child: Text(CommonStrings.retry))
                             ]))
-                      : VenueLayoutPicker(
-                          document: _snapshot!.document,
-                          resources: _resources,
-                          seatPresentation: _presentations,
-                          capacityPresentation: _capacityPresentation,
-                          onQuantityRequested: _quantity,
-                          onSelectionRequested: _request)),
+                      : TooltipTheme(
+                          data: const TooltipThemeData(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.fromBorderSide(
+                                    BorderSide(color: Colors.black, width: 2)),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8))),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            textStyle:
+                                TextStyle(color: Colors.black, fontSize: 14),
+                          ),
+                          child: VenueLayoutPicker(
+                              showSelectionControls: false,
+                              document: _snapshot!.document,
+                              resources: _resources,
+                              seatPresentation: _presentations,
+                              capacityPresentation: _capacityPresentation,
+                              onQuantityRequested: _quantity,
+                              onSelectionRequested: _request))),
           Padding(
               padding: const EdgeInsets.all(16),
               child: ButtonsHelper.primaryButton(

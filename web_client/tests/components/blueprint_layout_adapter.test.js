@@ -123,3 +123,8 @@ test('Basic status palette preserves seven distinct domain states through generi
         if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'unavailable'); }
     }
 });
+
+test('public tooltip retains the original product-seat line and whole-number price',()=>{
+ const a=new BlueprintLayoutAdapter(data());const t=a.seatPresentation.a.tooltip;
+ assert.match(t,/^Chair A\n/);assert.match(t,/100/);assert.equal(t.includes('undefined'),false);assert.equal(t.includes('private'),false);
+});

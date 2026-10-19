@@ -1,5 +1,7 @@
-import { BlueprintStrings } from './blueprint_strings.js';
 import { SeatStates } from './blueprint_config.js';
+import { formatPrice } from '../../utils/formatters.js';
+import { CommonStrings } from '../shared/common_strings.js';
+import { LocalizationService } from '../../services/localization_service.js';
 
 // Existing Basic status palette, supplied through the generic presentation seam.
 const basicSeatFills = {
@@ -31,7 +33,7 @@ export class BlueprintLayoutAdapter {
             const selected = spot.state === SeatStates.SELECTED_BY_ME || (!spot.state && initial.has(String(binding.spotId)));
             const currency = product?.currency_code;
             const priceLabel = typeof product?.price === 'number' && Number.isFinite(product.price) && /^[A-Z]{3}$/.test(currency || '')
-                ? new Intl.NumberFormat(undefined, {style:'currency',currency}).format(product.price) : null;
+                ? formatPrice(product.price, currency, 0, LocalizationService.currentLocale) : null;
             this.bindings.set(binding.nodeId, { ...binding });
             // Explicit allowlist: no order/customer/internal-note data crosses
             // the generic public renderer boundary, even if a caller errs.
@@ -62,7 +64,7 @@ export class BlueprintLayoutAdapter {
                 selectable: own || (available && model.productModel != null && model.productModel.isAvailable !== false && model.productModel.is_dynamically_available !== false && model.productModel.is_available_dynamic_capacity !== false),
                 stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'none' : 'auto',
                 selected: own, label: model.title, fill: basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY],
-                tooltip: model.productModel ? [model.title, model.productModel.title, model.priceLabel].filter(Boolean).join(' - ') : [model.title, BlueprintStrings.unassignedProduct].filter(Boolean).join(' - '),
+                tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,
             }];
         }));
     }
