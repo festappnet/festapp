@@ -1238,7 +1238,7 @@
     "createStepByStep": "Schritt für Schritt erstellen",
     "stepByStep": "Schritt für Schritt",
     "recommendedForTickets": "Für Tickets empfohlen",
-    "guidedCreationDescription": "Der Assistent führt Sie durch die Einrichtung der Veranstaltung, Tickets und des Verkaufs.",
+    "guidedCreationDescription": "Der Assistent führt Sie durch die Einrichtung der Veranstaltung.",
     "quickCreationDescription": "Geben Sie Titel, Datum und Uhrzeit ein. Weitere Einstellungen ergänzen Sie später.",
     "withoutWizard": "Ohne Assistenten",
     "createEvent": "Veranstaltung erstellen",
