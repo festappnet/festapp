@@ -542,6 +542,12 @@ void main() {
     expect(tester.widget<ListTile>(row).selected, isTrue);
     expect(find.text('${BlueprintStrings.manageGroupProducts}: T18'),
         findsOneWidget);
+    final detailRoute = ModalRoute.of(tester
+        .element(find.byKey(const ValueKey('commercial-detail-dialog'))))!;
+    expect(detailRoute.transitionDuration, Duration.zero,
+        reason:
+            'Opening a table detail must not animate like a page transition');
+
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     editor.onViewSelectionChanged!({seatId});

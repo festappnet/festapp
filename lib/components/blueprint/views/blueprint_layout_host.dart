@@ -723,6 +723,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     try {
       await showDialog<void>(
         context: context,
+        animationStyle: AnimationStyle.noAnimation,
         builder: (dialogContext) => AnimatedBuilder(
           animation: Listenable.merge([controller, _commercialDetailRevision]),
           builder: (context, _) {
