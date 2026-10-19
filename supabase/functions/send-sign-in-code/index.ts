@@ -1,6 +1,9 @@
+import { authorizeRequest } from "../_shared/auth.ts";
+import { hasTeamAccess, sendTeamAccessNotice } from "./teamAccessNotice.ts";
 import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
   awaitEmailAccepted,
+  enqueueAndAwaitEmail,
   prepareAccountEmail,
 } from "../_shared/emailQueueClient.ts";
 import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
@@ -66,7 +69,7 @@ Deno.serve(async (req) => {
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
       .from("occasion_users")
-      .select("data")
+      .select("data,is_editor,is_editor_view,is_manager")
       .eq("user", userId)
       .eq("occasion", occasionId)
       .single();
@@ -85,7 +88,7 @@ Deno.serve(async (req) => {
     // Retrieve the occasion's organization.
     const { data: occasionData, error: occasionError } = await supabaseAdmin
       .from("occasions")
-      .select("organization")
+      .select("organization,unit,link,title")
       .eq("id", occasionId)
       .single();
 
@@ -149,6 +152,35 @@ Deno.serve(async (req) => {
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
+        },
+      );
+    }
+
+    if (hasTeamAccess(occasionUser.data)) {
+      await sendTeamAccessNotice({
+        access: occasionUser.data,
+        occasion: { id: occasionId, ...occasionData },
+        user: userId,
+        email: userEmail,
+        defaultUrl: orgConfig.DEFAULT_URL,
+        appName,
+        requestId: typeof reqData.requestId === "string"
+          ? reqData.requestId
+          : String(Math.floor(Date.now() / 300000)),
+      }, {
+        authorize: () =>
+          authorizeRequest({
+            authorizationHeader: req.headers.get("Authorization"),
+            occasionId,
+            permission: "manageUsers",
+          }),
+        deliver: enqueueAndAwaitEmail,
+      });
+      return new Response(
+        JSON.stringify({ user: userId, code: 200, status: "sent" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }

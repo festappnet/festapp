@@ -93,7 +93,8 @@ void main() {
         'optional verification does not introduce a required persisted step',
         () {
           final pages = OccasionSetupStory.questions(appSupported);
-          expect(pages.where((q) => q.optional).single.key, 'verification');
+          expect(pages.where((q) => q.optional).map((q) => q.key),
+              ['team', 'verification']);
           expect(pages.last.key, 'review');
           expect(
             pages.where((q) => !q.optional).map((q) => q.step).toSet(),
@@ -127,6 +128,18 @@ void main() {
           ],
         },
       };
+
+  test('team invitations are optional for every journey', () {
+    for (final appSupported in [false, true]) {
+      final pages = OccasionSetupStory.questions(appSupported,
+          data: {'formEnabled': false}, organizationVerified: true);
+      final index = pages.indexWhere((q) => q.key == 'team');
+      expect(index, greaterThan(0));
+      expect(pages[index].optional, isTrue);
+      expect(OccasionSetupStory.completesRequiredStep(pages, index), isFalse);
+      expect(pages.last.key, 'review');
+    }
+  });
 
   test('dependent questions follow paid products and actual ticket field', () {
     List<String> keys(Map<String, dynamic> data) =>

@@ -49,6 +49,8 @@ import 'occasion_setup_form_link.dart';
 import 'occasion_setup_pricing.dart';
 import 'occasion_setup_bank_account.dart';
 import 'occasion_setup_communication.dart';
+import 'occasion_setup_invitations.dart';
+import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 
@@ -488,6 +490,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _finalizing = true;
       _finalizeError = null;
     });
+    var eventCreated = false;
     try {
       if (_finalizeCommand == null) {
         if (!await _flush() || !mounted) return;
@@ -495,12 +498,29 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _finalizeCommand = OccasionSetupDrafts.newId();
       }
       final link = await _store.finalize(_finalizeDraft!, _finalizeCommand!);
+      eventCreated = true;
+      if (_finalizeDraft!.data['sendTeamInvitations'] == true &&
+          occasionSetupInviteEmails(_finalizeDraft!.data).isNotEmpty) {
+        final result = await Supabase.instance.client.functions.invoke(
+            'send-occasion-team-invitations',
+            body: {'draftId': _finalizeDraft!.id});
+        if (result.status != 200 ||
+            result.data is! Map ||
+            result.data['complete'] != true) {
+          if (mounted)
+            setState(() => _finalizeError =
+                OccasionTeamInvitationStrings.text('sendFailed'));
+          return;
+        }
+      }
       if (!mounted) return;
       setState(() => _allowPop = true);
       Navigator.of(context).pop(link);
     } catch (_) {
       if (mounted)
-        setState(() => _finalizeError = OccasionSetupStrings.finalizeFailed);
+        setState(() => _finalizeError = eventCreated
+            ? OccasionTeamInvitationStrings.text('sendFailed')
+            : OccasionSetupStrings.finalizeFailed);
     } finally {
       if (mounted) setState(() => _finalizing = false);
     }
@@ -1443,6 +1463,19 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ],
             ],
             issues),
+        _reviewSection(
+            d,
+            5,
+            OccasionTeamInvitationStrings.text('question'),
+            [
+              OccasionSetupInvitationsSummary(
+                  data: d,
+                  onSendChanged: (value) => _change(
+                      (x) => x['sendTeamInvitations'] = value,
+                      changesConfiguration: true))
+            ],
+            issues,
+            questionKey: 'team'),
         if (OccasionSetupStory.formEnabled(d))
           _reviewSection(
               d,
@@ -1558,6 +1591,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Widget _body(Map<String, dynamic> d) {
+    if (_questions[_questionIndex(d)].key == 'team') {
+      return OccasionSetupInvitations(
+          draftId: _stored.id,
+          data: d,
+          onChanged: (patch) =>
+              _change((x) => x.addAll(patch), changesConfiguration: true));
+    }
     if (_questions[_questionIndex(d)].key == 'communication') {
       return OccasionSetupCommunication(
           draftId: _stored.id,
@@ -1861,7 +1901,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return OccasionSetupStoryShell(
       questionTitles: [
         for (final item in _questions)
-          OccasionSetupStrings.story('${item.key}Question'),
+          item.key == 'team'
+              ? OccasionTeamInvitationStrings.text('question')
+              : OccasionSetupStrings.story('${item.key}Question'),
       ],
       currentIndex: index,
       eventTitle:
