@@ -11,6 +11,9 @@ class DbImages {
   static final _supabase = Supabase.instance.client;
   static final _httpClient = http.Client();
 
+  /// Detect image format from magic bytes and return extension.
+  static String _detectExtension(Uint8List data) => ImageFileFormat.detect(data).extension;
+
   /// Upload original image bytes. The Worker owns all processing rules.
   ///
   /// The control API resolves the server-owned project registry from projectId.
@@ -26,27 +29,16 @@ class DbImages {
     int? unit, {
     ImageUploadProfile profile = ImageUploadProfile.standard,
     String? endpoint,
-  }) async => (await uploadImageWithResult(imageData, occasion, unit,
-      profile: profile, endpoint: endpoint)).url;
-
-
-  static Future<ImageUploadResult> uploadImageWithResult(
-    Uint8List imageData,
-    int? occasion,
-    int? unit, {
-    ImageUploadProfile profile = ImageUploadProfile.standard,
-    String? endpoint,
   }) async {
     final session = _supabase.auth.currentSession;
     if (session == null) throw Exception('Not authenticated');
 
-    final ext = ImageFileFormat.detect(imageData,
-        allowSvg: profile == ImageUploadProfile.blueprintBackground).extension;
+    final ext = _detectExtension(imageData);
     return ImageControlClient(
       endpoint: endpoint ?? AppConfig.imageApiUrl,
       projectId: AppConfig.imageProjectId,
       httpClient: _httpClient,
-    ).uploadWithResult(
+    ).upload(
       bytes: imageData,
       filename: '${DateTime.now().millisecondsSinceEpoch}.$ext',
       accessToken: session.accessToken,

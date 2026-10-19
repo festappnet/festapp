@@ -9,12 +9,6 @@ import 'image_upload_profile.dart';
 import 'image_upload_limits.dart';
 export 'image_upload_profile.dart';
 
-class ImageUploadResult {
-  const ImageUploadResult(this.url, {this.asset});
-  final String url;
-  final Map<String, dynamic>? asset;
-}
-
 class ImageControlClient {
   final String endpoint;
   final String projectId;
@@ -33,22 +27,10 @@ class ImageControlClient {
     int? occasionId,
     int? unitId,
     ImageUploadProfile profile = ImageUploadProfile.standard,
-  }) async => (await uploadWithResult(bytes: bytes, filename: filename,
-      accessToken: accessToken, occasionId: occasionId, unitId: unitId,
-      profile: profile)).url;
-
-
-  Future<ImageUploadResult> uploadWithResult({
-    required Uint8List bytes,
-    required String filename,
-    required String accessToken,
-    int? occasionId,
-    int? unitId,
-    ImageUploadProfile profile = ImageUploadProfile.standard,
   }) async {
     if (bytes.length > ImageUploadLimits.maxInputBytes)
       throw const FormatException('Image exceeds 20 MB');
-    final format = ImageFileFormat.detect(bytes, allowSvg: profile == ImageUploadProfile.blueprintBackground);
+    final format = ImageFileFormat.detect(bytes);
     final stem = filename.replaceFirst(RegExp(r'\.[^.]*$'), '');
     final request = http.MultipartRequest('POST', Uri.parse('$endpoint/upload'))
       ..headers['Authorization'] = 'Bearer $accessToken'
@@ -82,26 +64,12 @@ class ImageControlClient {
     if (streamed.statusCode != 200)
       throw ImageUploadRejected(streamed.statusCode);
     try {
-      final payload = jsonDecode(responseBody) as Map<String, dynamic>;
-      final url = payload['url'] as String;
+      final url =
+          (jsonDecode(responseBody) as Map<String, dynamic>)['url'] as String;
       final uri = Uri.parse(url);
       if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty)
         throw const FormatException('Invalid permanent image URL');
-      Map<String, dynamic>? asset;
-      if (profile == ImageUploadProfile.blueprintBackground) {
-        final raw = payload['asset'];
-        if (raw is! Map || raw['state'] != 'ready' || raw['url'] != url ||
-            raw['hash'] is! String || !RegExp(r'^[a-f0-9]{64}$').hasMatch(raw['hash']) ||
-            raw['assetRef'] != 'image:${raw['hash']}' ||
-            raw['width'] is! int || raw['width'] <= 0 ||
-            raw['height'] is! int || raw['height'] <= 0 ||
-            raw['byteLength'] is! int || raw['byteLength'] <= 0 ||
-            !const ['image/png', 'image/jpeg', 'image/webp'].contains(raw['mimeType'])) {
-          throw const FormatException('Invalid processed background manifest');
-        }
-        asset = Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(raw));
-      }
-      return ImageUploadResult(url, asset: asset);
+      return url;
     } catch (error) {
       throw ImageUploadOutcomeUnknown(error);
     }

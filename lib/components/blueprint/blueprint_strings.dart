@@ -1,51 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class BlueprintStrings {
-  static String get operationNetworkError => 'FeatureBlueprint.operationNetworkError'.tr();
-  static String get tryLayoutDemo => 'FeatureBlueprint.tryLayoutDemo'.tr();
-  static String get layoutConversionRequired => 'FeatureBlueprint.layoutConversionRequired'.tr();
-  static String areaCount(int count) => 'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
-  static String get draftGeometryNotice => 'FeatureBlueprint.draftGeometryNotice'.tr();
-  static String seatState(String state) => 'FeatureBlueprint.seatStates.$state'.tr();
-  static String get demoGeometryNotice => 'FeatureBlueprint.demoGeometryNotice'.tr();
-  static String get groupDefault => 'FeatureBlueprint.groupDefault'.tr();
-  static String get backgroundUnavailable =>
-      'FeatureBlueprint.backgroundUnavailable'.tr();
-  static String get draftChanged => 'FeatureBlueprint.draftChanged'.tr();
-  static String get fontFamily => 'FeatureBlueprint.fontFamily'.tr();
-  static String get productsTitle => 'FeatureBlueprint.productsTitle'.tr();
-  static String get manageSeats => 'FeatureBlueprint.manageSeats'.tr();
-  static String get emptyGroup => 'FeatureBlueprint.emptyGroup'.tr();
-  static String get inheritedProduct =>
-      'FeatureBlueprint.inheritedProduct'.tr();
-  static String get productOverride => 'FeatureBlueprint.productOverride'.tr();
-  static String get onlyFreeSeats => 'FeatureBlueprint.onlyFreeSeats'.tr();
-  static String get individualAssignments =>
-      'FeatureBlueprint.individualAssignments'.tr();
-  static String get clearSelection => 'FeatureBlueprint.clearSelection'.tr();
-  static String get saveConflict => 'FeatureBlueprint.saveConflict'.tr();
-  static String get copyDraft => 'FeatureBlueprint.copyDraft'.tr();
-  static String get reloadSaved => 'FeatureBlueprint.reloadSaved'.tr();
-  static String get swapServerNotice =>
-      'FeatureBlueprint.swapServerNotice'.tr();
-  static String get layoutUnavailable =>
-      'FeatureBlueprint.layoutUnavailable'.tr();
-  static String get orderLabel => 'FeatureBlueprint.orderLabel'.tr();
-  static String get ticketLabel => 'FeatureBlueprint.ticketLabel'.tr();
-  static String seatCount(int count) =>
-      'FeatureBlueprint.seatCount'.tr(namedArgs: {'count': '$count'});
-  static String protectedCount(int count) =>
-      'FeatureBlueprint.protectedCount'.tr(namedArgs: {'count': '$count'});
-  static String selectedCount(int count) =>
-      'FeatureBlueprint.selectedCount'.tr(namedArgs: {'count': '$count'});
-  static String get analysisFailed => 'FeatureBlueprint.analysisFailed'.tr();
-
-  static String get catalogSaveNotice =>
-      'FeatureBlueprint.catalogSaveNotice'.tr();
-  static String catalogAffectedSeats(int count) =>
-      'FeatureBlueprint.catalogAffectedSeats'
-          .tr(namedArgs: {'count': '$count'});
-
   // --- BlueprintTab (General) ---
   static String get changeTitle =>
       'FeatureBlueprint.changeTitle'.tr(); // "Change title"

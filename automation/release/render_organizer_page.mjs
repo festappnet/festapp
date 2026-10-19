@@ -28,7 +28,6 @@ const tokens = {
   APP_NAME: value('APP_NAME'), CONTACT_EMAIL: 'info@festapp.net', PROVIDER_NAME: 'Michael Bujnovský',
   CTA_HREF: '/?create=1', CTA_LABEL: 'Založit akci',
   CTA_NOTE: 'Začněte vytvořením účtu, nebo pokračujte do správy svých akcí.',
-  BOOKING_URL: 'https://cal.com/michael-bujnovsky-5srszz/ukazka',
 };
 const content = fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8').replace(/{{([A-Z_]+)}}/g, (_, key) => {
   if (!(key in tokens)) throw new Error(`Unknown organizer token ${key}`);

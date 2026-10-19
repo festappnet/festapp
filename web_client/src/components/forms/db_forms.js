@@ -83,11 +83,9 @@ export class DbForms {
         }
 
         if (data && data.code !== 200) {
-            const rejection = new Error(data.message || data.reason || 'Selection failed');
-            rejection.reason = data.reason; rejection.issues = data.issues;
-            throw rejection;
+            throw new Error(data.message || "Selection failed");
         }
         
-        return data.data ?? data;
+        return data.data;
     }
 }

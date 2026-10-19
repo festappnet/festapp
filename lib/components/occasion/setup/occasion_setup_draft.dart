@@ -100,12 +100,6 @@ class OccasionSetupDrafts {
     return (response['data'] as Map)['link'] as String;
   }
 
-  Future<Map<String, dynamic>> blueprintResources(OccasionSetupDraft draft) async {
-    final response = Map<String, dynamic>.from(await client.rpc(
-      'get_occasion_setup_blueprint_resources', params: {'p_draft': draft.id}));
-    return Map<String, dynamic>.from(response['resources'] as Map);
-  }
-
   Future<void> delete(OccasionSetupDraft draft) async {
     await client.rpc('delete_occasion_setup_draft', params: {
       'p_id': draft.id,
