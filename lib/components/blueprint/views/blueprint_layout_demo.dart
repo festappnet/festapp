@@ -91,9 +91,11 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
           if (widget.unitId != null) Row(children: [
             IconButton(tooltip: BlueprintStrings.background, icon: const Icon(Icons.image_outlined),
               onPressed: _pending ? null : () async {
+                final selection = await showBlueprintBackgroundPicker(context);
+                if (selection == null || !mounted || _pending) return;
                 setState(() { _pending = true; _error = null; });
                 try {
-                  await pickBlueprintBackground(context: context,controller: controller, assets: _assets,
+                  await uploadBlueprintBackground(selection: selection, controller: controller, assets: _assets,
                     unitId: widget.unitId, isMounted: () => mounted);
                 } catch (error) {
                   if (mounted) setState(() => _error = error.toString());

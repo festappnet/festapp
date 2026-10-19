@@ -140,13 +140,17 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
 
   Future<void> _uploadBackground() async {
     if (_busy) return;
-    setState(() {
-      _operationPending = true;
-      _message = null;
-    });
+    var uploading = false;
     try {
-      await pickBlueprintBackground(
-          context: context,
+      final selection = await showBlueprintBackgroundPicker(context);
+      if (selection == null || !mounted || _busy) return;
+      uploading = true;
+      setState(() {
+        _operationPending = true;
+        _message = null;
+      });
+      await uploadBlueprintBackground(
+          selection: selection,
           controller: controller.layout,
           assets: _assets,
           occasionId: controller.snapshot.occasionId,
@@ -156,7 +160,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         setState(() => _message = BlueprintStrings.layoutErrorMessage(error));
       }
     } finally {
-      if (mounted) setState(() => _operationPending = false);
+      if (mounted && uploading) setState(() => _operationPending = false);
     }
   }
 
@@ -1178,7 +1182,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         for (final binding in controller.snapshot.seatBindings.values)
           binding.nodeId: {
             'label': binding.title,
-            ...controller.adapter.publicPresentation(binding),
+            for (final entry
+                in controller.adapter.publicPresentation(binding).entries)
+              if (!_editingPlan || entry.key != 'fill') entry.key: entry.value,
             'selected': controller.operationSelection.contains(binding.nodeId),
             'tooltip': !_editingPlan &&
                     _canOrder &&

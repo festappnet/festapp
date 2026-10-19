@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/widgets/drop_file.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -75,9 +74,6 @@ Future<XFile?> showBlueprintBackgroundPicker(BuildContext context,
                 ),
               ],
             ))),
-        actions: [
-          TextButton(onPressed: close, child: Text(CommonStrings.cancel))
-        ],
       );
     }),
   );
@@ -85,15 +81,14 @@ Future<XFile?> showBlueprintBackgroundPicker(BuildContext context,
 
 /// The existing image service processes uploads; this only applies its verified
 /// asset to the package geometry draft, for either an occasion or a setup unit.
-Future<void> pickBlueprintBackground(
-    {required BuildContext context,
+Future<void> uploadBlueprintBackground(
+    {required XFile selection,
     required VenueLayoutController controller,
     required BlueprintLayoutAssetResolver assets,
     required bool Function() isMounted,
     int? occasionId,
     int? unitId}) async {
-  final selection = await showBlueprintBackgroundPicker(context);
-  if (selection == null || !isMounted()) return;
+  if (!isMounted()) return;
   final bytes = await selection.readAsBytes();
   if (!isMounted()) return;
   final uploaded = await DbImages.uploadImageWithResult(

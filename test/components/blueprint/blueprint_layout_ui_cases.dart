@@ -236,6 +236,7 @@ void main() {
     final initialEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     expect(initialEditor.interactionEnabled, isFalse);
+    expect((initialEditor.seatPresentation[id] as Map)['fill'], '#267329FF');
     expect(initialEditor.controller.placementIssues, isEmpty);
     expect(find.byType(EditorActionBar), findsOneWidget);
     expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
@@ -380,6 +381,20 @@ void main() {
                 70));
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect((editor.seatPresentation[id] as Map).containsKey('fill'), isFalse,
+        reason:
+            'Geometry styles must not be hidden by reservation status colors');
+    await tester.tap(find.byTooltip(BlueprintStrings.background));
+    await tester.pump(const Duration(milliseconds: 350));
+    final backgroundDialog =
+        find.byKey(const ValueKey('blueprint-background-picker'));
+    expect(backgroundDialog, findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing,
+        reason: 'Choosing a background is not an upload');
+    await tester.tap(find.descendant(
+        of: backgroundDialog, matching: find.byIcon(Icons.close)));
+    await tester.pumpAndSettle();
+
     expect(find.text(BlueprintStrings.selectProduct), findsNothing);
     expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
         findsNothing);
