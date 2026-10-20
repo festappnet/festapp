@@ -1,6 +1,3 @@
-import 'blueprint_standing_setup_dialog.dart';
-import 'package:fstapp/components/_shared/copy_button.dart';
-import 'blueprint_inline_name.dart';
 import 'blueprint_standing_capacity_control.dart';
 import 'blueprint_layout_help.dart';
 import 'package:fstapp/services/dialog_helper.dart';
@@ -23,6 +20,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
+import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/theme_config.dart';
@@ -35,7 +33,6 @@ import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_create_order_dialog.dart';
 import 'blueprint_layout_legend.dart';
-import 'blueprint_editor_feedback.dart';
 import 'blueprint_product_dialogs.dart';
 
 enum _BlueprintScreenMode { reservations, edit }
@@ -66,7 +63,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   bool _showIndividualCommercialSeats = false;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
-  BlueprintSeatState? _legendHover;
   late final _assets = widget.assetResolver ?? BlueprintLayoutAssetResolver();
   bool _assetsPending = false;
   bool _assetsFailed = false;
@@ -74,14 +70,13 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   Future<void>? _modeFlight;
   int _assetGeneration = 0;
   Future<BlueprintTextResources>? _fontCatalog;
-  // Public viewers use saved outlines; this editor loads native faces on demand.
+  // Viewing uses persisted outlines; even the editor catalog loads only on demand.
   Future<BlueprintTextResources> get _fonts =>
       _fontCatalog ??= widget.loadTextResources?.call() ??
           BlueprintTextResources.load(controller.snapshot.occasionId);
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _canOrder => RightsService.canUpdateOrders();
   bool get _busy =>
-      _saveFlight != null ||
       controller.isBusy ||
       _operationPending ||
       _assetsPending ||
@@ -104,11 +99,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (!mounted) return;
     setState(() {
       controller.layout.readOnly = !_canEdit;
-      if (controller.mode == BlueprintLayoutMode.block
-          ? !_canEdit
-          : !_canOrder) {
-        controller.setMode(BlueprintLayoutMode.manage);
-      }
+      if (!_canOrder) controller.setMode(BlueprintLayoutMode.manage);
     });
   }
 
@@ -116,7 +107,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
     _assets.dispose();
-    _saveNoticeTimer?.cancel();
     _hostFocus.dispose();
     controller.dispose();
     super.dispose();
@@ -154,13 +144,41 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       final issues =
           compileScene(document, resources: session.layout.resources)['issues']
               as List;
-      // Unsaved labels use the editor's local font renderer in either mode.
-      // Canonical paths are prepared only for the explicit save snapshot.
-      if (issues.any((issue) => !const {
+      if (issues.any((issue) => const {
             'text_layout_unavailable',
             'font_family_unavailable',
             'font_face_unavailable'
           }.contains(issue['reason']))) {
+        final provider = await _fonts;
+        if (!mounted || !identical(session, controller)) return;
+        final result = await BlueprintTextPreparation(provider.prepareTextBatch)
+            .prepare(
+                document,
+                {
+                  for (final family in provider.families)
+                    family['id'] as String: family
+                },
+                session.layout.resources,
+                stillCurrent: () =>
+                    mounted &&
+                    identical(session, controller) &&
+                    identical(document, session.layout.document));
+        if (!mounted || !identical(session, controller)) return;
+        if (result is BlueprintTextSuperseded) {
+          throw StateError(BlueprintStrings.draftChanged);
+        }
+        if (result is BlueprintTextFailed) throw result.error;
+        if (!commitBlueprintTextResources(
+            session.layout, (result as BlueprintTextReady).resources)) {
+          throw StateError('invalid_layout_resources');
+        }
+      }
+      if (!identical(document, session.layout.document)) {
+        throw StateError(BlueprintStrings.draftChanged);
+      }
+      if ((compileScene(document, resources: session.layout.resources)['issues']
+              as List)
+          .isNotEmpty) {
         throw StateError('invalid_layout_resources');
       }
       _applyScreenMode(mode);
@@ -193,7 +211,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     controller.setMode(BlueprintLayoutMode.manage);
     setState(() {
       _screenMode = mode;
-      _legendHover = null;
       _message = null;
     });
     _hostFocus.requestFocus();
@@ -231,10 +248,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   void _startOperation(BlueprintLayoutMode mode) {
-    final blocking = mode == BlueprintLayoutMode.block;
-    if (_busy || _editingPlan || (blocking ? !_canEdit : !_canOrder)) return;
-    final selected =
-        Set<String>.from(blocking ? _blockableSeatIds : _detailSeatIds);
+    if (_busy || _editingPlan || !_canOrder) return;
+    final selected = Set<String>.from(_detailSeatIds);
     if (mode == BlueprintLayoutMode.order) {
       for (final unit in controller.layout.document.selectionUnits) {
         final members = Set<String>.from(unit['nodeIds'] as List);
@@ -244,9 +259,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     controller.setMode(mode);
     final eligible = selected.where((id) {
       final seat = controller.snapshot.seatBindings[id];
-      if (seat?.spotId == null) return false;
-      if (blocking) return !controller.isProtected(id);
-      if (seat!.blocked) return false;
+      if (seat?.spotId == null || seat!.blocked) return false;
       return mode != BlueprintLayoutMode.order ||
           (!controller.isProtected(id) &&
               controller.adapter.product(seat)?.price != null);
@@ -321,18 +334,11 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     }
   }
 
-  Timer? _saveNoticeTimer;
-  bool _savedNotice = false;
   Future<void>? _saveFlight;
   Future<void> _save() {
     if (_saveFlight != null) return _saveFlight!;
-    _saveNoticeTimer?.cancel();
-    _savedNotice = false;
-    final future = _saveCaptured().whenComplete(() {
-      _saveFlight = null;
-      if (mounted) setState(() {});
-    });
-    setState(() => _saveFlight = future);
+    final future = _saveCaptured().whenComplete(() => _saveFlight = null);
+    _saveFlight = future;
     return future;
   }
 
@@ -375,10 +381,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         preparedResources: prepared);
     if (!mounted) return;
     if (result.accepted) {
-      setState(() => _savedNotice = true);
-      _saveNoticeTimer = Timer(const Duration(seconds: 4), () {
-        if (mounted) setState(() => _savedNotice = false);
-      });
+      ToastHelper.Show(context, CommonStrings.saved,
+          severity: ToastSeverity.Ok);
       return;
     }
     setState(() => _message = [
@@ -394,10 +398,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               actions: [
                 TextButton(
                     onPressed: () async {
-                      final copied = await CopyButton.copy(dialogContext,
-                          jsonEncode(controller.snapshot.toJson()));
-                      if (copied && dialogContext.mounted)
-                        Navigator.pop(dialogContext);
+                      await Clipboard.setData(ClipboardData(
+                          text: jsonEncode(controller.snapshot.toJson())));
+                      if (dialogContext.mounted) Navigator.pop(dialogContext);
                     },
                     child: Text(BlueprintStrings.copyDraft)),
                 TextButton(
@@ -638,10 +641,22 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _commercialName(binding != null ? node : commercialGroup ?? node,
-                name: binding?.title ?? commercialGroup?.label ?? node.label,
-                enabled: !protected,
-                style: Theme.of(context).textTheme.titleMedium),
+            Row(children: [
+              Expanded(
+                  child: Text(
+                      binding?.title ?? commercialGroup?.label ?? node.label,
+                      style: Theme.of(context).textTheme.titleMedium)),
+              if (_canEdit)
+                IconButton(
+                    tooltip: CommonStrings.rename,
+                    key: ValueKey(
+                        'rename-commercial-${binding != null ? node.id : commercialGroupId}'),
+                    onPressed: _busy || protected
+                        ? null
+                        : () => _renameCommercial(
+                            binding != null ? node : commercialGroup ?? node),
+                    icon: const Icon(Icons.edit_outlined, size: 18)),
+            ]),
             const SizedBox(height: 8),
             Text(isGroup && products.length > 1
                 ? BlueprintStrings.mixedProducts
@@ -666,8 +681,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   child: Text(
                       BlueprintStrings.protectedCount(protected ? 1 : blockers),
                       style: TextStyle(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant))),
+                          color: Theme.of(context).colorScheme.error))),
             if (binding != null &&
                 _canOrder &&
                 controller.adapter.spots[binding.spotId] != null)
@@ -817,29 +831,43 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     });
   }
 
-  Widget _commercialName(LayoutNode node,
-      {String? name, bool enabled = true, TextStyle? style}) {
-    return BlueprintInlineName(
-        key: ValueKey('commercial-name-${node.id}'),
-        nodeId: node.id,
-        name: name ?? node.label,
-        enabled: _canEdit && !_busy && enabled,
-        style: style,
-        onSubmitted: (value) =>
-            _run(() => _commitCommercialRename(node.id, value)));
+  Future<void> _renameCommercial(LayoutNode node) async {
+    var name = controller.snapshot.seatBindings[node.id]?.title ?? node.label;
+    final value = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AppAlertDialog(
+              title: Text(CommonStrings.rename),
+              content: TextFormField(
+                  initialValue: name,
+                  autofocus: true,
+                  onChanged: (value) => name = value,
+                  decoration: InputDecoration(labelText: CommonStrings.name),
+                  onFieldSubmitted: (value) {
+                    if (value.trim().isNotEmpty)
+                      Navigator.pop(dialogContext, value);
+                  }),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(CommonStrings.cancel)),
+                FilledButton(
+                    onPressed: () {
+                      if (name.trim().isNotEmpty)
+                        Navigator.pop(dialogContext, name);
+                    },
+                    child: Text(CommonStrings.save)),
+              ],
+            ));
+    if (!mounted || value == null) return;
+    await _run(() async => controller.renameCommercialNode(node.id, value));
   }
 
   void _renameFromInspector(LayoutNode node, String name) {
     if (!_editingPlan || !_canEdit || _busy) {
       throw StateError('blueprint_read_only');
     }
-    _run(() => _commitCommercialRename(
-        node.kind == 'table' ? _commercialId(node) : node.id, name));
-  }
-
-  Future<void> _commitCommercialRename(String nodeId, String name) async {
-    // A rename is an undoable local draft, not a shaping or persistence request.
-    controller.renameCommercialNode(nodeId, name);
+    controller.renameCommercialNode(
+        node.kind == 'table' ? _commercialId(node) : node.id, name);
   }
 
   Future<void> _editAreaProduct(LayoutNode area) async {
@@ -869,35 +897,24 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final availability = controller.adapter.areaAvailability[area.id];
     final capacity = controller.areaCapacity(area.id);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _commercialName(area, style: Theme.of(context).textTheme.titleMedium),
+      Row(children: [
+        Expanded(
+            child: Text(area.label,
+                style: Theme.of(context).textTheme.titleMedium)),
+        if (_canEdit)
+          IconButton(
+              tooltip: CommonStrings.rename,
+              onPressed: _busy ? null : () => _renameCommercial(area),
+              icon: const Icon(Icons.edit_outlined, size: 18)),
+      ]),
       Text(_productText(controller.snapshot.areaBindings[area.id]?.productId)),
       const SizedBox(height: 12),
-      if (!controller.snapshot.areaBindings.containsKey(area.id)) ...[
-        Text('${BlueprintStrings.standingCapacity}: $capacity'),
-        const SizedBox(height: 8),
-        Text(BlueprintStrings.standingRequiresProduct),
-        if (_canEdit && _canOrder)
-          FilledButton.icon(
-              key: const ValueKey('assign-standing-product'),
-              onPressed: _busy
-                  ? null
-                  : () => showDialog<void>(
-                      context: context,
-                      builder: (_) => BlueprintStandingSetupDialog(
-                          controller: controller,
-                          nodeId: area.id,
-                          occasionLink:
-                              RightsService.currentOccasion()!.link!)),
-              icon: const Icon(Icons.add),
-              label: Text(BlueprintStrings.assignStandingProduct)),
-      ] else
-        Text(BlueprintStrings.standingAvailability(
-            (availability?['available'] as num?)?.toInt() ?? 0,
-            (availability?['capacity'] as num?)?.toInt() ?? capacity)),
+      Text(BlueprintStrings.standingAvailability(
+          (availability?['available'] as num?)?.toInt() ?? 0,
+          (availability?['capacity'] as num?)?.toInt() ?? capacity)),
       if (_canEdit &&
           controller.snapshot.areaBindings.containsKey(area.id)) ...[
         const SizedBox(height: 16),
-        Text(BlueprintStrings.standingSharedCapacityHint),
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],
@@ -971,88 +988,84 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final mixed = members.any((seat) => seat.productId != defaultId);
     final blockers =
         members.where((seat) => controller.isProtected(seat.nodeId)).length;
-    final theme = Theme.of(context);
-    final statusColor = mixed || defaultId == null
-        ? theme.colorScheme.onSurfaceVariant
-        : ThemeConfig.greenColor(context);
+    final statusColor = mixed
+        ? (ThemeConfig.isDarkMode(context)
+            ? Colors.orangeAccent
+            : Colors.orange)
+        : defaultId == null
+            ? Theme.of(context).colorScheme.onSurfaceVariant
+            : ThemeConfig.greenColor(context);
     final showSeats = _showIndividualCommercialSeats || mixed;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(BlueprintStrings.groupDefaultProduct,
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(_productText(defaultId),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(
-                    mixed
-                        ? Icons.tune
-                        : defaultId == null
-                            ? Icons.info_outline
-                            : Icons.check_circle_outline,
-                    size: 16,
-                    color: statusColor),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
-                        mixed
-                            ? BlueprintStrings.statusMixed
-                            : defaultId == null
-                                ? BlueprintStrings.noProductAssigned
-                                : BlueprintStrings.statusUniform,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: statusColor))),
-              ]),
-            ],
+        Ink(
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: .3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
-          trailing: _canEdit && blockers == 0
-              ? const Icon(Icons.edit_outlined, size: 18)
-              : null,
-          onTap: !_canEdit || _busy || blockers > 0
-              ? null
-              : () => _product(table.id, group: true),
+          child: ListTile(
+            leading: const Icon(Icons.category_outlined),
+            title: Text(BlueprintStrings.groupDefaultProduct,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                    '${BlueprintStrings.currentProductPrefix}${_productText(defaultId)}'),
+                const SizedBox(height: 4),
+                Row(children: [
+                  Icon(
+                      mixed
+                          ? Icons.warning_amber_rounded
+                          : defaultId == null
+                              ? Icons.info_outline
+                              : Icons.check_circle_outline,
+                      size: 14,
+                      color: statusColor),
+                  const SizedBox(width: 4),
+                  Expanded(
+                      child: Text(
+                          mixed
+                              ? BlueprintStrings.statusMixed
+                              : defaultId == null
+                                  ? BlueprintStrings.noProductAssigned
+                                  : BlueprintStrings.statusUniform,
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor))),
+                ]),
+              ],
+            ),
+            trailing:
+                _canEdit ? const Icon(Icons.edit_outlined, size: 20) : null,
+            onTap: !_canEdit || _busy || blockers > 0
+                ? null
+                : () => _product(table.id, group: true),
+          ),
         ),
         if (blockers > 0) ...[
-          const SizedBox(height: 8),
-          Semantics(
-            liveRegion: true,
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(Icons.people_outline,
-                  size: 18, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(BlueprintStrings.protectedCount(blockers),
-                      style: theme.textTheme.bodyMedium)),
-            ]),
-          ),
-          if (_canEdit) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
+          Text(BlueprintStrings.protectedCount(blockers),
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          if (_canEdit)
+            TextButton(
                 onPressed: _busy
                     ? null
                     : () => _product(table.id, group: true, freeOnly: true),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: Text(BlueprintStrings.onlyFreeSeats)),
-          ],
+                child: Text(BlueprintStrings.onlyFreeSeats)),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SwitchListTile(
           key: const ValueKey('commercial-individual-seats'),
           contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(BlueprintStrings.customizeIndividualSeats,
-              style: theme.textTheme.bodyMedium),
+          controlAffinity: ListTileControlAffinity.leading,
+          title: Text(BlueprintStrings.customizeIndividualSeats),
           value: showSeats,
           onChanged: mixed
               ? null
@@ -1061,7 +1074,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   setState(() {});
                 },
         ),
-        if (showSeats) const Divider(height: 16),
+        const Divider(),
         if (showSeats)
           for (final seat in members)
             ListTile(
@@ -1266,16 +1279,24 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       label: Text(tables[grouped.keys.single]!.label))),
             for (final entry in grouped.entries) ...[
               ...[
-                if (tables.containsKey(entry.key) &&
-                    entry.value.contains(entry.key))
-                  _commercialName(tables[entry.key]!,
-                      style: Theme.of(context).textTheme.titleSmall)
-                else
-                  Text(
-                      tables[entry.key]?.label ??
-                          byId[entry.key]?.label ??
-                          BlueprintStrings.manageSeats,
-                      style: Theme.of(context).textTheme.titleSmall),
+                Row(children: [
+                  Expanded(
+                      child: Text(
+                          tables[entry.key]?.label ??
+                              byId[entry.key]?.label ??
+                              BlueprintStrings.manageSeats,
+                          style: Theme.of(context).textTheme.titleSmall)),
+                  if (_canEdit &&
+                      tables.containsKey(entry.key) &&
+                      entry.value.contains(entry.key))
+                    IconButton(
+                        key: ValueKey('rename-commercial-${entry.key}'),
+                        tooltip: CommonStrings.rename,
+                        onPressed: _busy
+                            ? null
+                            : () => _renameCommercial(tables[entry.key]!),
+                        icon: const Icon(Icons.edit_outlined, size: 18)),
+                ]),
                 const SizedBox(height: 12),
               ],
               if (entry.value.contains(entry.key) &&
@@ -1399,9 +1420,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         .toList();
     final products = members.map((seat) => seat.productId).toSet();
     return [
-      controller.layout.document.nodes
-          .firstWhere((node) => node.id == id)
-          .label,
+      table.label,
       BlueprintStrings.seatCount(members.length),
       products.length > 1
           ? BlueprintStrings.mixedProducts
@@ -1422,10 +1441,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 in controller.adapter.publicPresentation(binding).entries)
               if (!_editingPlan || entry.key != 'fill') entry.key: entry.value,
             'selected': controller.operationSelection.contains(binding.nodeId),
-            'highlighted': _legendHover != null &&
-                (_legendHover == BlueprintSeatState.selectedByMe
-                    ? controller.operationSelection.contains(binding.nodeId)
-                    : controller.adapter.state(binding) == _legendHover),
             'tooltip': !_editingPlan &&
                     _canOrder &&
                     controller.adapter.spots[binding.spotId] != null
@@ -1442,116 +1457,48 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           },
       };
 
-  Widget _modeSelector() => LayoutBuilder(builder: (context, constraints) {
-        if (constraints.maxWidth < 400 ||
-            MediaQuery.sizeOf(context).width < 700) {
-          return PopupMenuButton<_BlueprintScreenMode>(
-            key: const ValueKey('blueprint-screen-mode'),
-            enabled: !_busy,
-            initialValue: _screenMode,
-            onSelected: _setScreenMode,
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                  key: const ValueKey('blueprint-reservations-mode'),
-                  value: _BlueprintScreenMode.reservations,
-                  child: Text(BlueprintStrings.reservationsAndOrders)),
-              if (_canEdit)
-                PopupMenuItem(
-                    key: const ValueKey('blueprint-edit-mode'),
-                    value: _BlueprintScreenMode.edit,
-                    child: Text(BlueprintStrings.editPlan)),
-            ],
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8)),
-              child: Row(children: [
-                if (constraints.maxWidth >= 120) ...[
-                  Icon(
-                      _editingPlan
-                          ? Icons.edit_outlined
-                          : Icons.event_seat_outlined,
-                      size: 20),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                    child: Text(
-                        _editingPlan
-                            ? BlueprintStrings.editPlan
-                            : BlueprintStrings.reservationsAndOrders,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis)),
-                const Icon(Icons.arrow_drop_down),
-              ]),
-            ),
-          );
-        }
-        return ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 460),
-          child: LayoutBuilder(
-            builder: (context, constraints) =>
-                SegmentedButton<_BlueprintScreenMode>(
-              direction:
-                  constraints.maxWidth < 400 ? Axis.vertical : Axis.horizontal,
-              key: const ValueKey('blueprint-screen-mode'),
-              showSelectedIcon: true,
-              style: ButtonStyle(
-                minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
-                textStyle: WidgetStatePropertyAll(Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w600)),
-                backgroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.selected)
-                        ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context).colorScheme.surface),
-                foregroundColor: WidgetStateProperty.resolveWith((states) =>
-                    states.contains(WidgetState.disabled)
-                        ? Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: .38)
-                        : states.contains(WidgetState.selected)
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurfaceVariant),
-                side: WidgetStatePropertyAll(BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant)),
-              ),
-              segments: [
-                ButtonSegment(
-                    value: _BlueprintScreenMode.reservations,
-                    icon: const Icon(Icons.event_seat_outlined),
-                    tooltip: BlueprintStrings.reservationsAndOrders,
-                    label: Text(BlueprintStrings.reservationsAndOrders,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        key: const ValueKey('blueprint-reservations-mode'))),
-                if (_canEdit)
-                  ButtonSegment(
-                      value: _BlueprintScreenMode.edit,
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: BlueprintStrings.editPlan,
-                      label: Text(BlueprintStrings.editPlan,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          key: const ValueKey('blueprint-edit-mode'))),
-              ],
-              selected: {_screenMode},
-              onSelectionChanged:
-                  _busy ? null : (modes) => _setScreenMode(modes.single),
-            ),
+  Widget _modeSelector() => Padding(
+        padding: const EdgeInsets.only(right: 16),
+        child: SegmentedButton<_BlueprintScreenMode>(
+          key: const ValueKey('blueprint-screen-mode'),
+          showSelectedIcon: true,
+          style: ButtonStyle(
+            minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+            textStyle: const WidgetStatePropertyAll(
+                TextStyle(fontWeight: FontWeight.w700)),
+            backgroundColor: WidgetStateProperty.resolveWith((states) =>
+                states.contains(WidgetState.selected)
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.surface),
+            foregroundColor: WidgetStateProperty.resolveWith((states) =>
+                states.contains(WidgetState.selected)
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.primary),
+            side: WidgetStatePropertyAll(
+                BorderSide(color: Theme.of(context).colorScheme.primary)),
           ),
-        );
-      });
+          segments: [
+            ButtonSegment(
+                value: _BlueprintScreenMode.reservations,
+                icon: const Icon(Icons.event_seat_outlined),
+                label: Text(BlueprintStrings.reservationsAndOrders,
+                    key: const ValueKey('blueprint-reservations-mode'))),
+            if (_canEdit)
+              ButtonSegment(
+                  value: _BlueprintScreenMode.edit,
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(BlueprintStrings.editPlan,
+                      key: const ValueKey('blueprint-edit-mode'))),
+          ],
+          selected: {_screenMode},
+          onSelectionChanged:
+              _busy ? null : (modes) => _setScreenMode(modes.single),
+        ),
+      );
 
   Set<String> get _blockableSeatIds {
-    final ids = (controller.mode == BlueprintLayoutMode.block
-            ? controller.operationSelection
-            : _detailSeatIds)
-        .where((id) => !controller.isProtected(id))
-        .toSet();
+    final ids =
+        _detailSeatIds.where((id) => !controller.isProtected(id)).toSet();
     for (final unit in controller.layout.document.selectionUnits) {
       final members = Set<String>.from(unit['nodeIds'] as List? ?? const []);
       if (!members.any(ids.contains)) continue;
@@ -1569,10 +1516,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (_busy || !_canEdit || ids.isEmpty) return;
     final block =
         ids.any((id) => !controller.snapshot.seatBindings[id]!.blocked);
-    _run(() async {
-      controller.setBlockedForSeats(ids, block);
-      controller.setMode(BlueprintLayoutMode.manage);
-    });
+    _run(() async => controller.setBlockedForSeats(ids, block));
   }
 
   Widget _reservationAction(
@@ -1583,7 +1527,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       TextButton.icon(
           key: key,
           onPressed: onPressed,
-          icon: Icon(icon, size: 20),
+          icon: Icon(icon, size: 18),
           label: Text(label));
 
   Widget _blockAction() {
@@ -1592,107 +1536,53 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         ids.every((id) => controller.snapshot.seatBindings[id]!.blocked);
     return _reservationAction(
       key: const ValueKey('blueprint-toggle-blocked'),
-      onPressed:
-          _busy ? null : () => _startOperation(BlueprintLayoutMode.block),
+      onPressed: _busy || ids.isEmpty ? null : _toggleSelectedBlocked,
       icon: unblock ? Icons.lock_open_outlined : Icons.block_outlined,
       label:
           unblock ? BlueprintStrings.unblockSeats : BlueprintStrings.blockSeats,
     );
   }
 
-  Widget _toolbarActions() {
-    if (MediaQuery.sizeOf(context).width < 700) {
-      if (_editingPlan || controller.mode != BlueprintLayoutMode.manage)
-        return const SizedBox.shrink();
-      final ids = _blockableSeatIds;
-      final unblock = ids.isNotEmpty &&
-          ids.every((id) => controller.snapshot.seatBindings[id]!.blocked);
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        if (_canOrder)
-          IconButton(
-              key: const ValueKey('blueprint-start-order'),
-              tooltip: BlueprintStrings.orderAction,
-              onPressed: _busy
-                  ? null
-                  : () => _startOperation(BlueprintLayoutMode.order),
-              icon: const Icon(Icons.add_shopping_cart)),
-        if (_canOrder || _canEdit)
-          PopupMenuButton<String>(
-            key: const ValueKey('blueprint-more-actions'),
-            enabled: !_busy,
-            onSelected: (action) {
-              if (action == 'swap') _startOperation(BlueprintLayoutMode.swap);
-              if (action == 'block') _startOperation(BlueprintLayoutMode.block);
-            },
-            itemBuilder: (context) => [
-              if (_canOrder)
-                PopupMenuItem(
-                    value: 'swap',
-                    key: const ValueKey('blueprint-start-swap'),
-                    child: Text(BlueprintStrings.legendSwapSeats)),
-              if (_canEdit)
-                PopupMenuItem(
-                    value: 'block',
-                    key: const ValueKey('blueprint-toggle-blocked'),
-                    child: Text(unblock
-                        ? BlueprintStrings.unblockSeats
-                        : BlueprintStrings.blockSeats)),
-            ],
-          ),
-      ]);
-    }
-    return Wrap(
-      key: const ValueKey('blueprint-toolbar-actions'),
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        if (!_editingPlan &&
-            _canOrder &&
-            controller.mode == BlueprintLayoutMode.manage) ...[
-          Tooltip(
-            message: BlueprintStrings.legendCreateOrder,
-            child: _reservationAction(
-              key: const ValueKey('blueprint-start-order'),
-              onPressed: _busy
-                  ? null
-                  : () => _startOperation(BlueprintLayoutMode.order),
-              icon: Icons.add_shopping_cart,
-              label: BlueprintStrings.orderAction,
+  Widget _toolbarActions() => Wrap(
+        key: const ValueKey('blueprint-toolbar-actions'),
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          if (!_editingPlan &&
+              _canOrder &&
+              controller.mode == BlueprintLayoutMode.manage) ...[
+            Tooltip(
+              message: BlueprintStrings.legendCreateOrder,
+              child: TextButton.icon(
+                key: const ValueKey('blueprint-start-order'),
+                onPressed: _busy
+                    ? null
+                    : () => _startOperation(BlueprintLayoutMode.order),
+                icon: const Icon(Icons.add_shopping_cart, size: 18),
+                label: Text(BlueprintStrings.orderAction),
+              ),
             ),
-          ),
-          _reservationAction(
-            key: const ValueKey('blueprint-start-swap'),
-            onPressed:
-                _busy ? null : () => _startOperation(BlueprintLayoutMode.swap),
-            icon: Icons.swap_horiz,
-            label: BlueprintStrings.legendSwapSeats,
-          ),
+            _reservationAction(
+              key: const ValueKey('blueprint-start-swap'),
+              onPressed: _busy
+                  ? null
+                  : () => _startOperation(BlueprintLayoutMode.swap),
+              icon: Icons.swap_horiz,
+              label: BlueprintStrings.legendSwapSeats,
+            ),
+          ],
+          if (!_editingPlan &&
+              _canEdit &&
+              controller.mode == BlueprintLayoutMode.manage)
+            _blockAction(),
         ],
-        if (!_editingPlan &&
-            _canEdit &&
-            controller.mode == BlueprintLayoutMode.manage)
-          _blockAction(),
-      ],
-    );
-  }
+      );
 
   Widget? _operationPanel() {
     if (_editingPlan || controller.mode == BlueprintLayoutMode.manage)
       return null;
     final ordering = controller.mode == BlueprintLayoutMode.order;
-    final blocking = controller.mode == BlueprintLayoutMode.block;
-    final blockIds = blocking ? _blockableSeatIds : <String>{};
-    final unblocking = blocking &&
-        blockIds.isNotEmpty &&
-        blockIds.every((id) => controller.snapshot.seatBindings[id]!.blocked);
-    final title = blocking
-        ? (unblocking
-            ? BlueprintStrings.unblockSeats
-            : BlueprintStrings.blockSeats)
-        : (ordering
-            ? BlueprintStrings.orderSelectionTitle
-            : BlueprintStrings.legendSwapSeats);
     final totals = <String?, double>{};
     for (final id in controller.operationSelection) {
       final binding = controller.snapshot.seatBindings[id];
@@ -1710,10 +1600,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 Utilities.formatPrice(context, e.value, currencyCode: e.key))
             .join(' + ');
     final valid = !_busy &&
-        (blocking
-            ? _canEdit && blockIds.isNotEmpty
-            : controller.selectedSpotIds.isNotEmpty &&
-                (ordering || controller.selectedSpotIds.length == 2));
+        controller.selectedSpotIds.isNotEmpty &&
+        (ordering || controller.selectedSpotIds.length == 2);
     return ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: Material(
@@ -1733,13 +1621,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 runSpacing: 8,
                 children: [
                   Icon(
-                      blocking
-                          ? (unblocking
-                              ? Icons.lock_open_outlined
-                              : Icons.block_outlined)
-                          : ordering
-                              ? Icons.shopping_cart_outlined
-                              : Icons.swap_horiz,
+                      ordering
+                          ? Icons.shopping_cart_outlined
+                          : Icons.swap_horiz,
                       color: Theme.of(context).colorScheme.primary),
                   Semantics(
                       liveRegion: true,
@@ -1747,32 +1631,25 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title,
+                            Text(
+                                ordering
+                                    ? BlueprintStrings.orderSelectionTitle
+                                    : BlueprintStrings.legendSwapSeats,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
-                            Text(blocking
-                                ? BlueprintStrings.selectedCount(
-                                    blockIds.length)
-                                : ordering
-                                    ? '${BlueprintStrings.selectedCount(controller.operationSelection.length)} · $total'
-                                    : '${controller.operationSelection.length} / 2'),
+                            Text(ordering
+                                ? '${BlueprintStrings.selectedCount(controller.operationSelection.length)} · $total'
+                                : '${controller.operationSelection.length} / 2'),
                           ])),
                   TextButton(
                       key: const ValueKey('blueprint-cancel-operation'),
                       onPressed: _busy ? null : _cancelOperation,
                       child: Text(CommonStrings.storno)),
                   FilledButton(
-                      key: const ValueKey('blueprint-confirm-operation'),
-                      onPressed: !valid
-                          ? null
-                          : blocking
-                              ? _toggleSelectedBlocked
-                              : (ordering ? _order : _swap),
-                      child: Text(blocking
-                          ? title
-                          : ordering
-                              ? BlueprintStrings.confirmOrder
-                              : BlueprintStrings.legendSwapSeats)),
+                      onPressed: valid ? (ordering ? _order : _swap) : null,
+                      child: Text(ordering
+                          ? BlueprintStrings.confirmOrder
+                          : BlueprintStrings.legendSwapSeats)),
                 ],
               )),
         ));
@@ -1823,137 +1700,99 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 onKeyEvent: _hostHistoryKey,
                 child: Scaffold(
                   body: SafeArea(
-                      child: BlueprintEditorFeedback(
-                          message: _message,
-                          status: _saveFlight != null
-                              ? CommonStrings.saving
-                              : _savedNotice
-                                  ? CommonStrings.saved
-                                  : null,
-                          saving: _saveFlight != null,
-                          onDismiss: () => setState(() => _message = null),
-                          child: Column(children: [
-                            if (_assetsFailed)
-                              TextButton(
-                                  onPressed:
-                                      _assetsPending ? null : _loadAssets,
-                                  child: Text(CommonStrings.retry)),
-                            Expanded(
-                                child: AbsorbPointer(
-                                    absorbing: _busy || _assetsFailed,
-                                    child: BlueprintPlanEditor(
-                                        nativeTextPreview: _canEdit,
-                                        controller: controller.layout,
-                                        footerTrailing: _seatHelp(),
-                                        canvasBottomOverlay: _operationPanel(),
-                                        canvasHeader: _editingPlan
-                                            ? null
-                                            : BlueprintLayoutLegend(
-                                                compact: true,
-                                                onHover: (state) => setState(
-                                                    () => _legendHover = state),
-                                                states: controller.snapshot
-                                                    .seatBindings.values
-                                                    .map(controller
-                                                        .adapter.state),
-                                              ),
-                                        toolbarPrefix: _modeSelector(),
-                                        toolbarLeading: _toolbarActions(),
-                                        onRenameNode: _renameFromInspector,
-                                        loadTextResources: () => _fonts,
-                                        occasionId:
-                                            controller.snapshot.occasionId,
-                                        busy: _busy,
-                                        onBusyChanged: (busy) {
-                                          if (mounted)
-                                            setState(
-                                                () => _operationPending = busy);
-                                        },
-                                        toolbarTrailing: _canEdit
-                                            ? Container(
-                                                margin:
-                                                    const EdgeInsetsDirectional
-                                                        .only(start: 8),
-                                                padding:
-                                                    const EdgeInsetsDirectional
-                                                        .only(start: 8),
-                                                decoration: BoxDecoration(
-                                                  border: BorderDirectional(
-                                                      start: BorderSide(
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .outlineVariant)),
-                                                ),
-                                                child: EditorActionBar(
-                                                  inline: true,
-                                                  hasChanges:
-                                                      controller.isDirty,
-                                                  enabled: !_busy,
-                                                  onSave: () => _run(_save),
-                                                  onDiscard: () => _run(
-                                                      () async =>
-                                                          controller.cancel()),
-                                                ),
-                                              )
-                                            : null,
-                                        libraryOverride: _editingPlan
-                                            ? null
-                                            : _reservationsPanel(tables),
-                                        inspectorOverride: _editingPlan
-                                            ? null
-                                            : _reservationDetails(tables),
-                                        viewSelection: _editingPlan
-                                            ? null
-                                            : controller.mode ==
-                                                    BlueprintLayoutMode.manage
-                                                ? _commercialSelection
-                                                : controller.operationSelection,
-                                        onViewSelectionChanged: _editingPlan
-                                            ? null
-                                            : _selectCommercialFromCanvas,
-                                        viewSelectionTarget:
-                                            _viewSelectionTarget,
-                                        viewSelectableIds: _editingPlan
-                                            ? null
-                                            : {
-                                                for (final node in controller
-                                                    .layout.document.nodes)
-                                                  if (node.kind == 'seat' ||
-                                                      node.kind ==
-                                                          'capacityArea' ||
-                                                      (controller.mode ==
-                                                              BlueprintLayoutMode
-                                                                  .manage &&
-                                                          (node.kind ==
-                                                                  'table' ||
-                                                              tables.containsKey(
-                                                                  node.id))))
-                                                    node.id,
-                                              },
-                                        readOnlyLabelNodeIds: {
-                                          for (final node in controller
-                                              .layout.document.nodes)
-                                            if (const {
-                                                  'seat',
-                                                  'table',
-                                                  'capacityArea'
-                                                }.contains(node.kind) ||
-                                                tables.containsKey(node.id))
-                                              node.id,
-                                        },
-                                        seatPresentation: _presentations,
-                                        interactionEnabled: _editingPlan,
-                                        showGallery: _editingPlan && _canEdit,
-                                        onEditRequested: !_editingPlan &&
-                                                _canEdit &&
-                                                controller.mode ==
-                                                    BlueprintLayoutMode.manage
-                                            ? _editFromCanvas
-                                            : null,
-                                        onNodeActivated:
-                                            controller.activateNode))),
-                          ]))),
+                      child: Column(children: [
+                    if (_saveFlight != null) const LinearProgressIndicator(),
+                    if (_message != null)
+                      Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Semantics(
+                              liveRegion: true,
+                              child: Text(_message!,
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error)))),
+                    if (_assetsFailed)
+                      TextButton(
+                          onPressed: _assetsPending ? null : _loadAssets,
+                          child: Text(CommonStrings.retry)),
+                    Expanded(
+                        child: AbsorbPointer(
+                            absorbing: _busy || _assetsFailed,
+                            child: BlueprintPlanEditor(
+                                controller: controller.layout,
+                                footerTrailing: _seatHelp(),
+                                canvasBottomOverlay: _operationPanel(),
+                                toolbarPrefix: _modeSelector(),
+                                toolbarLeading: _toolbarActions(),
+                                onRenameNode: _renameFromInspector,
+                                loadTextResources: () => _fonts,
+                                occasionId: controller.snapshot.occasionId,
+                                busy: _busy,
+                                onBusyChanged: (busy) {
+                                  if (mounted)
+                                    setState(() => _operationPending = busy);
+                                },
+                                toolbarTrailing: _canEdit
+                                    ? EditorActionBar(
+                                        inline: true,
+                                        hasChanges: controller.isDirty,
+                                        enabled: !_busy,
+                                        onSave: () => _run(_save),
+                                        onDiscard: () => _run(
+                                            () async => controller.cancel()),
+                                      )
+                                    : null,
+                                libraryOverride: _editingPlan
+                                    ? null
+                                    : _reservationsPanel(tables),
+                                inspectorOverride: _editingPlan
+                                    ? null
+                                    : _reservationDetails(tables),
+                                viewSelection: _editingPlan
+                                    ? null
+                                    : controller.mode ==
+                                            BlueprintLayoutMode.manage
+                                        ? _commercialSelection
+                                        : controller.operationSelection,
+                                onViewSelectionChanged: _editingPlan
+                                    ? null
+                                    : _selectCommercialFromCanvas,
+                                viewSelectionTarget: _viewSelectionTarget,
+                                viewSelectableIds: _editingPlan
+                                    ? null
+                                    : {
+                                        for (final node
+                                            in controller.layout.document.nodes)
+                                          if (node.kind == 'seat' ||
+                                              node.kind == 'capacityArea' ||
+                                              (controller.mode ==
+                                                      BlueprintLayoutMode
+                                                          .manage &&
+                                                  (node.kind == 'table' ||
+                                                      tables.containsKey(
+                                                          node.id))))
+                                            node.id,
+                                      },
+                                readOnlyLabelNodeIds: {
+                                  for (final node
+                                      in controller.layout.document.nodes)
+                                    if (const {'seat', 'table', 'capacityArea'}
+                                            .contains(node.kind) ||
+                                        tables.containsKey(node.id))
+                                      node.id,
+                                },
+                                seatPresentation: _presentations,
+                                interactionEnabled: _editingPlan,
+                                showGallery: _editingPlan && _canEdit,
+                                onEditRequested: !_editingPlan &&
+                                        _canEdit &&
+                                        controller.mode ==
+                                            BlueprintLayoutMode.manage
+                                    ? _editFromCanvas
+                                    : null,
+                                onNodeActivated: controller.activateNode))),
+                  ])),
                 )));
       });
 }

@@ -100,8 +100,4 @@ class Main {
 }
 
 // Start
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', Main.init, { once: true });
-} else {
-    Main.init();
-}
+document.addEventListener('DOMContentLoaded', Main.init);

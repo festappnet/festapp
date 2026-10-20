@@ -41,7 +41,6 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
   bool _pending = false;
   bool _editorBusy = false;
   bool _savedOnce = false;
-  bool _allowPop = false;
   String? _error;
   @override
   void dispose() {
@@ -99,18 +98,7 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
           return ListenableBuilder(
               listenable: controller,
               builder: (context, _) => PopScope(
-                  canPop: !_pending &&
-                      !_editorBusy &&
-                      (_allowPop || !controller.dirty),
-                  onPopInvokedWithResult: (didPop, result) async {
-                    if (didPop || _pending || _editorBusy) return;
-                    if (await confirmDiscardChanges(context) && mounted) {
-                      setState(() => _allowPop = true);
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) Navigator.of(context).pop();
-                      });
-                    }
-                  },
+                  canPop: !_pending && !_editorBusy,
                   child: Scaffold(
                     body: Column(children: [
                       MaterialBanner(

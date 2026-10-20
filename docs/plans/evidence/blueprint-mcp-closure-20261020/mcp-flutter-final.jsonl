@@ -1,0 +1,32 @@
+{"protocolVersion":"0.1.1","runnerVersion":"1.31.1","pid":61989,"type":"start","time":0}
+{"suite":{"id":0,"platform":"vm","path":"/Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"suite","time":0}
+{"test":{"id":1,"name":"loading /Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false,"skipReason":null},"line":null,"column":null,"url":null},"type":"testStart","time":1}
+{"count":1,"time":7,"type":"allSuites"}
+{"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":6055}
+{"group":{"id":2,"suiteID":0,"parentID":null,"name":"","metadata":{"skip":false,"skipReason":null},"testCount":9,"line":null,"column":null,"url":null},"type":"group","time":6057}
+{"test":{"id":3,"name":"continuation only permits the exact issuer finish route and one opaque code","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":17,"column":3,"url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":6057}
+{"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":6072}
+{"test":{"id":4,"name":"tenant confirmation has its own settings route with the opaque request","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":39,"column":3,"url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":6072}
+{"testID":4,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":6093}
+{"test":{"id":5,"name":"app login is offered without fetching account details anonymously","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":48,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":6093}
+{"testID":5,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=5","type":"print","time":6766}
+{"testID":5,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":6766}
+{"test":{"id":6,"name":"existing login sees consent and must explicitly select an occasion","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":66,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":6766}
+{"testID":6,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=20","type":"print","time":6986}
+{"testID":6,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":6987}
+{"test":{"id":7,"name":"expired request displays a recoverable error without a consent button","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":99,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":6987}
+{"testID":7,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=6","type":"print","time":7033}
+{"testID":7,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":7034}
+{"test":{"id":8,"name":"select all follows partial selection and does not approve access","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":113,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":7034}
+{"testID":8,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=67","type":"print","time":7282}
+{"testID":8,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":7282}
+{"test":{"id":9,"name":"empty eligible list has no select-all control","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":180,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":7282}
+{"testID":9,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=10","type":"print","time":7428}
+{"testID":9,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":7429}
+{"test":{"id":10,"name":"native completion stays on the tenant and waits for verified exchange","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":202,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":7429}
+{"testID":10,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=29","type":"print","time":7881}
+{"testID":10,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":7882}
+{"test":{"id":11,"name":"whole organizer and creation require two explicit choices","suiteID":0,"groupIDs":[2],"metadata":{"skip":false,"skipReason":null},"line":174,"column":5,"url":"package:flutter_test/src/widget_tester.dart","root_line":255,"root_column":3,"root_url":"file:///Users/miakh/source/festapp-blueprint-mcp-closure-20261020/test/components/mcp/mcp_connection_test.dart"},"type":"testStart","time":7882}
+{"testID":11,"messageType":"print","message":"Localization logs omitted: debug=0, expected missing=43","type":"print","time":8268}
+{"testID":11,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":8268}
+{"success":true,"type":"done","time":8302}

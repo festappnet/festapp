@@ -29,8 +29,7 @@ class OccasionCreationHelper {
   static Future<UnitModel?> createCopy(
       BuildContext context, OccasionModel source,
       {int? sourceUnitId,
-      List<OccasionModel> existingOccasions = const [],
-      ValueChanged<OccasionModel>? onCreated}) async {
+      List<OccasionModel> existingOccasions = const []}) async {
     final copyLocale = context.locale.languageCode;
     final destinations = await ExceptionHandler.guard(context,
         futureFunction: () => DbUnits.getOccasionCopyUnits(source.id!));
@@ -40,10 +39,8 @@ class OccasionCreationHelper {
         sourceUnitId: sourceUnitId ?? source.unit);
     if (target == null || !context.mounted) return null;
     if (AppConfig.occasionSetupEnabled) {
-      final created = await createNewOccasion(
-          context, target, existingOccasions,
+      await createNewOccasion(context, target, existingOccasions,
           source: source, copyLocale: copyLocale);
-      if (created != null) onCreated?.call(created);
       return target;
     }
     bool mediaCopied = false;
@@ -76,29 +73,27 @@ class OccasionCreationHelper {
       bool withoutWizard = false}) async {
     final intentLocale = copyLocale ?? context.locale.languageCode;
     if (source != null && AppConfig.occasionSetupEnabled) {
-      return _openSetup(context, unit, {
+      await _openSetup(context, unit, {
         'sourceId': source.id,
         'sourceUnitId': source.unit,
         'sourceSelectionPending': true,
         'copy_locale': intentLocale,
         'copy_title_edited': false,
       });
+      return null;
     }
-    if (AppConfig.occasionSetupEnabled && !withoutWizard) {
-      return _openSetup(context, unit, const {});
+    if (AppConfig.occasionSetupEnabled &&
+        !AppConfig.isAppSupported &&
+        !withoutWizard) {
+      await _openSetup(context, unit, const {});
+      return null;
     }
     final formKey = GlobalKey<FormState>();
     String? title = AdministrationStrings.myFestival;
     String? link = '';
-    final seed = DateTime.now().add(const Duration(days: 30));
-    DateTime? startDate = DateTime(seed.year, seed.month, seed.day, seed.hour)
-        .add(Duration(
-            minutes: ((seed.minute * 60 +
-                            seed.second +
-                            (seed.microsecond + seed.millisecond > 0 ? 1 : 0)) /
-                        1800)
-                    .ceil() *
-                30));
+    DateTime? startDate = DateTime.now()
+        .add(Duration(days: 30))
+        .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
     DateTime? endDate = startDate
         .add(Duration(days: 3))
         .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
@@ -294,19 +289,17 @@ class OccasionCreationHelper {
       },
     );
     if (useSetup && context.mounted) {
-      return _openSetup(context, unit, {
+      await _openSetup(context, unit, {
         'title': title ?? '',
         'link': link ?? '',
-        if (startDate != null)
-          'start': startDate!.toUtcFromOccasionTime().toIso8601String(),
-        if (endDate != null)
-          'end': endDate!.toUtcFromOccasionTime().toIso8601String(),
+        if (startDate != null) 'start': startDate!.toIso8601String(),
+        if (endDate != null) 'end': endDate!.toIso8601String(),
       });
     }
     return occasion;
   }
 
-  static Future<OccasionModel?> _openSetup(BuildContext context, UnitModel unit,
+  static Future<void> _openSetup(BuildContext context, UnitModel unit,
       Map<String, dynamic> initialData) async {
     final store = OccasionSetupDrafts(Supabase.instance.client);
     final draft =
@@ -315,10 +308,8 @@ class OccasionCreationHelper {
       return store.save(created, {...created.data, ...initialData}, 0);
     });
     if (draft != null && context.mounted) {
-      final result = await OccasionSetupPage.open(context, draft);
-      return result?.occasion;
+      await OccasionSetupPage.open(context, draft);
     }
-    return null;
   }
 
   static String? _validateLink(String link) {

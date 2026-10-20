@@ -1,8 +1,9 @@
 import { bankSyncRemote, bankSyncErrorCode } from './bankSyncRemote.ts';
 import { supabaseAdmin } from "./supabaseUtil.ts";
-import type { BankConnection } from '../fetch-transactions/handler.ts';
-/** Accept only the data returned by the authenticated SQL bank operation. */
-export async function synchronizeCanonicalBankConnections(connections: BankConnection[]) {
+/** The caller must already have checked editor rights on this occasion/unit. */
+export async function synchronizeCanonicalBankConnections(unitId: number) {
+  const { data: connections, error } = await supabaseAdmin.rpc("get_bank_sync_connections_for_unit", { p_unit_id: unitId });
+  if (error) throw new Error("canonical_connections_unavailable");
   const results = [];
   for (const connection of connections ?? []) {
     if (!/^[0-9]+$/.test(connection.remote_bank_account_id)) throw new Error("invalid_remote_mapping");

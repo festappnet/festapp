@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'layout_style.dart';
 import 'layout_font_size_control.dart';
 import 'layout_floor_style.dart';
-
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 
@@ -58,7 +56,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
 
   void change(List<String> path, Object? value, {bool unset = false}) {
     try {
-      var d = switch (scope) {
+      final d = switch (scope) {
         'document' => setDocumentLabelLeaf(
           c.document,
           path.last,
@@ -87,48 +85,6 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
           unset: unset,
         ),
       };
-      if (path.length == 1 && path.single == 'material') {
-        // Construction is a family choice. Remove conflicting construction
-        // leaves while preserving the independent palette and typography.
-        const leaves = ['seatStyle', 'cornerRadius', 'strokeWidth'];
-        if (scope == 'children') {
-          for (final leaf in leaves) {
-            d = setTableChildStyleLeaf(d, node.id, [leaf], unset: true);
-          }
-        } else if (scope == 'kind') {
-          for (final leaf in leaves) {
-            d = setKindStyleLeaf(d, kind, [leaf], unset: true);
-          }
-          if (kind == 'table') {
-            d = setKindStyleLeaf(
-              d,
-              'seat',
-              ['material'],
-              value: value,
-              unset: unset,
-            );
-            for (final leaf in leaves) {
-              d = setKindStyleLeaf(d, 'seat', [leaf], unset: true);
-            }
-          }
-        } else if (scope != 'document') {
-          for (final leaf in leaves) {
-            d = setNodeStyleLeaf(d, node.id, [leaf], unset: true);
-          }
-          if (node.kind == 'table') {
-            d = setTableChildStyleLeaf(
-              d,
-              node.id,
-              ['material'],
-              value: value,
-              unset: unset,
-            );
-            for (final leaf in leaves) {
-              d = setTableChildStyleLeaf(d, node.id, [leaf], unset: true);
-            }
-          }
-        }
-      }
       final accepted = c.apply(d, label: 'Style');
       setState(() => failure = accepted ? null : c.error);
     } catch (error) {
@@ -179,7 +135,6 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
     Map<String, dynamic> values,
   ) async {
     var selected = current;
-    var selectedDocument = c.document;
     c.beginGesture();
     bool? accepted;
     try {
@@ -190,13 +145,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
           child: StatefulBuilder(
             builder: (context, update) {
               void preview(String value) {
-                c.preview(selectedDocument);
                 change(path, value);
-              }
-
-              void select(String value) {
-                preview(value);
-                selectedDocument = c.document;
                 update(() => selected = value);
               }
 
@@ -226,14 +175,10 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                             for (final value in choices)
                               MouseRegion(
                                 onEnter: (_) => preview(value),
-                                onExit: (_) {
-                                  if (c.gestureActive)
-                                    c.preview(selectedDocument);
-                                },
                                 child: RadioListTile<String>(
                                   value: value,
                                   groupValue: selected,
-                                  onChanged: (_) => select(value),
+                                  onChanged: (_) => preview(value),
                                   title: Text(tr(value)),
                                   secondary: LayoutStylePreview(
                                     size: const Size(64, 42),
@@ -266,10 +211,8 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                               child: Text(tr('Cancel')),
                             ),
                             FilledButton(
-                              onPressed: () {
-                                c.preview(selectedDocument);
-                                Navigator.pop(dialogContext, true);
-                              },
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
                               child: Text(tr('Apply')),
                             ),
                           ],
@@ -393,43 +336,26 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                 onPressed: enabled
                     ? () => _previewChoice(title, path, value, choices, values)
                     : null,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  textStyle: Theme.of(context).textTheme.labelLarge,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        tr(value),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      LayoutStylePreview(
+                        size: const Size(56, 36),
+                        appearance: LayoutAppearance(
+                          {...values},
+                          seats: {
+                            ...layoutMaterialFamilyAppearances['minimal']!
+                                .seats!,
+                            if (title == 'Chair style') 'seatStyle': value,
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    LayoutStylePreview(
-                      size: const Size(48, 32),
-                      appearance: title == 'Material'
-                          ? layoutMaterialFamilyAppearances[value]!
-                          : LayoutAppearance(
-                              {...values},
-                              seats: {
-                                ...layoutMaterialFamilyAppearances['minimal']!
-                                    .seats!,
-                                'seatStyle': value,
-                              },
-                            ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.expand_more, size: 20),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(tr(value))),
+                      const Icon(Icons.expand_more),
+                    ],
+                  ),
                 ),
               )
             : DropdownButtonFormField<String>(
@@ -477,28 +403,16 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               ),
       );
       Future<void> color(List<String> path, String value) async {
-        c.beginGesture();
-        EditorColorResult? result;
-        try {
-          result = await showEditorDialog<EditorColorResult>(
-            context: context,
-            barrierColor: Colors.transparent,
-            builder: (_) => EditorColorDialog(
-              value: EditorColorValue.fromRgba(value),
-              usedColors: usedColors(),
-              translate: tr,
-              onPreview: (result) {
-                if (mounted) change(path, result.primary.rgba);
-              },
-            ),
-          );
-          if (result != null && mounted) change(path, result.primary.rgba);
-        } finally {
-          if (result != null && mounted) {
-            c.commitGesture();
-          } else {
-            c.cancelGesture();
-          }
+        final result = await showEditorDialog<EditorColorResult>(
+          context: context,
+          builder: (_) => EditorColorDialog(
+            value: EditorColorValue.fromRgba(value),
+            usedColors: usedColors(),
+            translate: tr,
+          ),
+        );
+        if (result != null && mounted) {
+          change(path, result.primary.rgba);
         }
       }
 

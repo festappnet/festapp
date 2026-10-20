@@ -109,19 +109,11 @@ jobs:
       deployments: write
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
       - name: Install isolated Chromium test runner
-        run: |
-          # pnpm 11 places global executables in PNPM_HOME/bin.
-          export PATH="$PNPM_HOME/bin:$PATH"
-          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
-          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
-          agent-browser install --with-deps
+        run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - id: flutter-version
         name: Read canonical Flutter version
         run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"

@@ -1,4 +1,3 @@
-import 'package:fstapp/components/blueprint/blueprint_table_titles.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -295,93 +294,6 @@ void main() {
         resolver.resolve(_resources(width: 3)), throwsFormatException);
     expect((await resolver.resolve(_resources()))['images'], isNotEmpty);
   });
-  test(
-      'prepared label ink inside canvas is valid even when imported text box overflows',
-      () {
-    final fixture = jsonDecode(
-        File('test/fixtures/blueprint/canonical-text-scene.json')
-            .readAsStringSync()) as Map;
-    final original = VenueLayoutDocument.fromJson(
-        Map<String, dynamic>.from(fixture['document']));
-    final families =
-        Map<String, dynamic>.from(fixture['resources']['fontFamilies']);
-    final label = original.nodes.first.copyWith(
-        x: 1000,
-        y: 100,
-        width: 500,
-        height: 100,
-        properties: {'text': 'Stůl 9'});
-    final document = original.copyWith(canvas: {
-      'x': 0,
-      'y': 0,
-      'width': 1100,
-      'height': 800,
-      'fill': '#FFFFFFFF',
-    }, nodes: [
-      label
-    ]);
-    final request = nodeTextRequest(document, label, families);
-    Map<String, dynamic> resources(double start) => {
-          'protocol': 2,
-          'fontFamilies': families,
-          'numberSymbols': {},
-          'textLayouts': {
-            request.id: {
-              'id': request.id, 'descriptor': request.resourceDescriptor,
-              // Deterministic prepared outline, including empty alignment space.
-              'path': [
-                ['M', start, -10],
-                ['L', start + 50, -10],
-                ['L', start + 50, 10],
-                ['L', start, 10],
-                ['Z']
-              ],
-              'clip': request.descriptor['box'],
-            }
-          },
-        };
-    final c = VenueLayoutController(document, resources: resources(-250));
-    addTearDown(c.dispose);
-    expect(c.showPlacementWarnings(), isEmpty);
-    expect(c.document.toJson(), document.toJson());
-    expect(c.setResources(resources(150)), isTrue);
-    expect(c.showPlacementWarnings().single.code, 'outside_canvas');
-    expect(c.setResources({}), isTrue);
-    expect(c.showPlacementWarnings().single.code, 'outside_canvas');
-  });
-
-  test(
-      'unbound imported furniture recovers a single native name from rotated caption pieces',
-      () {
-    final table = LayoutNode(
-        id: newLayoutId(),
-        kind: 'table',
-        surface: {'type': 'rect'},
-        width: 40,
-        height: 160);
-    final document = VenueLayoutDocument(nodes: [
-      table,
-      for (final entry in ['Stůl', '1', '2'].asMap().entries)
-        LayoutNode(
-            id: newLayoutId(),
-            kind: 'text',
-            parentId: table.id,
-            x: 0,
-            y: -20.0 * entry.key,
-            rotation: -90,
-            label: entry.value,
-            properties: {'text': entry.value}),
-    ]);
-    final result = normalizeBlueprintTableTitles(document);
-    expect(result.nodes.length, 1);
-    expect(result.nodes.single.id, table.id);
-    expect(result.nodes.single.label, '12');
-    expect(result.nodes.single.width, 160);
-    expect(result.nodes.single.height, 40);
-    expect(result.nodes.single.rotation, -90);
-    expect(normalizeBlueprintTableTitles(result).toJson(), result.toJson());
-  });
-
   test('reviewed native furniture preserves stable chairs and moves together',
       () {
     final source = BlueprintModel(
@@ -410,44 +322,9 @@ void main() {
           'width': 120,
           'height': 40,
           'shape': 'rect'
-        },
-        {
-          'id': 'caption1',
-          'parentId': 'table1',
-          'kind': 'text',
-          'label': '1',
-          'text': '1',
-          'transform': {'x': 0, 'y': 0, 'rotation': -90},
-          'width': 60,
-          'height': 30,
-          'size': 24,
-          'role': 'decoration'
-        },
-        {
-          'id': 'caption1-duplicate',
-          'parentId': 'table1',
-          'kind': 'text',
-          'label': '1',
-          'text': '1',
-          'transform': {'x': 0, 'y': 0, 'rotation': -90},
-          'width': 60,
-          'height': 30,
-          'size': 24,
-          'role': 'decoration'
-        },
-        {
-          'id': 'label1',
-          'kind': 'text',
-          'label': 'Stůl 9',
-          'text': 'Stůl 9',
-          'transform': {'x': 2200, 'y': 180, 'rotation': 0},
-          'width': 80,
-          'height': 40,
-          'size': 24,
-          'align': 'left'
         }
       ],
-      'tableGroups': <String, dynamic>{}
+      'tableGroups': {'1': 'table1'}
     };
     final conversion = convertLegacyBlueprint(source,
         fontFamilies: blueprintFontRegistryFixture(),
@@ -456,18 +333,11 @@ void main() {
     final result = conversion.snapshot;
     expect(conversion.receipt['documentImport']['targetSchema'], 2);
     expect(result.document.background, isNull);
-    final text = result.document.nodes.singleWhere((n) => n.kind == 'text');
-    expect(text.width, 80);
-    expect(text.x, 2200);
     final table = result.document.nodes.singleWhere((n) => n.kind == 'table');
-    expect(table.label, '1');
-    expect(result.document.nodes.where((n) => n.kind == 'text').length, 1,
-        reason: 'the imported caption is replaced by the editable table name');
     final seat = result.document.nodes.singleWhere((n) => n.kind == 'seat');
     expect(seat.parentId, table.id);
     expect(result.seatBindings[seat.id]!.spotId, 4);
-    expect(result.seatBindings[seat.id]!.groupNodeId, table.id);
-    expect(result.document.nodes.where((n) => n.kind == 'group'), isEmpty);
+    expect(result.seatBindings[seat.id]!.groupNodeId, table.parentId);
     final before = worldMatrix(result.document, seat);
     expect(before[4], closeTo(120, .002));
     expect(before[5], closeTo(168, .002));

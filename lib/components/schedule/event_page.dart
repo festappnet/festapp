@@ -1,5 +1,3 @@
-import 'package:fstapp/components/_shared/copy_button.dart';
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:fstapp/components/schedule/event_presentation.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -8,6 +6,7 @@ import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
 import 'package:fstapp/router_service.dart';
@@ -195,9 +194,7 @@ class _EventPageState extends State<EventPage> {
         scheduleFeature is ScheduleFeature && scheduleFeature.enableChildren;
     final bool showSubScheduleArea = _event?.isGroupEvent == false &&
         (_event?.childEvents.isNotEmpty == true ||
-            (RightsService.hasCapability(
-                    AuthorizationCapabilities.scheduleWrite) &&
-                childrenScheduleIsEnabled));
+            (RightsService.isEditor() && childrenScheduleIsEnabled));
 
     final EventType? headerEventType = _currentEventType();
     final Color headerFg = _headerForeground();
@@ -208,8 +205,11 @@ class _EventPageState extends State<EventPage> {
       MediaQuery.paddingOf(context).top,
     );
     final bool showAddButton = _showAddButton(isEventCancelled);
-    final bool canViewParticipants = RightsService.hasCapability(
-        AuthorizationCapabilities.scheduleParticipantsRead);
+    final bool canViewParticipants = EventParticipantsAccess.canView(
+      isEditorView: RightsService.isEditorView(),
+      isEditor: RightsService.isEditor(),
+      isAdmin: RightsService.isAdmin(),
+    );
     final onPinchStart = _onPinchStart;
     final onPinchEnd = _onPinchEnd;
 
@@ -330,11 +330,7 @@ class _EventPageState extends State<EventPage> {
                           Visibility(
                             visible: _event != null &&
                                 (_event?.description != null ||
-                                    (RightsService.hasGroupCapability(
-                                            RightsService.currentUserGroup()
-                                                ?.id,
-                                            AuthorizationCapabilities
-                                                .groupsWrite) &&
+                                    (RightsService.isGroupAdmin() &&
                                         (_event!.isGroupEvent ?? false))),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
@@ -355,8 +351,7 @@ class _EventPageState extends State<EventPage> {
                               eventId: _event!.id!,
                               isOpen:
                                   TimeHelper.now().isAfter(_event!.startTime),
-                              isEditorPreview: RightsService.hasCapability(
-                                  AuthorizationCapabilities.scheduleWrite),
+                              isEditorPreview: RightsService.isEditor(),
                               requiresSignIn:
                                   EventModel.isEventSupportingSignIn(_event),
                               isParticipant: _event!.isSignedIn == true,
@@ -368,9 +363,7 @@ class _EventPageState extends State<EventPage> {
                                 events: _childDots,
                                 onEventPressed: _eventPressed,
                                 showAddNewEventButton: () =>
-                                    RightsService.hasCapability(
-                                        AuthorizationCapabilities
-                                            .scheduleWrite) &&
+                                    RightsService.isEditor() &&
                                     childrenScheduleIsEnabled,
                                 onAddNewEvent: (context, p, parent) =>
                                     AddNewEventDialog.showAddEventDialog(
@@ -388,12 +381,10 @@ class _EventPageState extends State<EventPage> {
                               title: Row(children: [
                                 IconButton(
                                     onPressed: () async {
-                                      final copied = await CopyButton.copy(
-                                          context,
-                                          _participants
+                                      await Clipboard.setData(ClipboardData(
+                                          text: _participants
                                               .map((e) => e.toFullNameString())
-                                              .join("\n"));
-                                      if (!copied || !context.mounted) return;
+                                              .join("\n")));
                                       ToastHelper.Show(context,
                                           ScheduleStrings.participantsCopied);
                                     },
@@ -413,9 +404,7 @@ class _EventPageState extends State<EventPage> {
                                         padding: const EdgeInsets.all(8.0),
                                         child: Row(
                                           children: [
-                                            if (RightsService.hasCapability(
-                                                AuthorizationCapabilities
-                                                    .scheduleWrite))
+                                            if (RightsService.isEditor())
                                               IconButton(
                                                   onPressed: () => signOutOther(
                                                       _participants[index]),
@@ -719,7 +708,7 @@ class _EventPageState extends State<EventPage> {
                 ScheduleBackButton(color: fg),
                 const Spacer(),
                 if (showLoginLogoutButton() &&
-                    RightsService.canOpenScheduleEntryCheck() &&
+                    RightsService.isApprover() &&
                     FeatureService.isFeatureEnabled(
                         FeatureConstants.entryCode) &&
                     _event != null)
@@ -1083,17 +1072,14 @@ class _EventPageState extends State<EventPage> {
     final group = _groupInfoModel;
     final version = group?.aggregateVersion ?? 0;
     final eventId = _event?.id;
-    final canEdit = RightsService.hasGroupCapability(
-            RightsService.currentUserGroup()?.id,
-            AuthorizationCapabilities.groupsWrite) &&
+    final canEdit = RightsService.isGroupAdmin() &&
         (_event?.isGroupEvent ?? false) &&
         group != null;
     return EditableHtmlField(
         key: ValueKey('group-event-html-$eventId'),
         html: _event?.description,
         enabled: canEdit,
-        owner: RightsService.hasCapability(
-                AuthorizationCapabilities.mediaOccasionWrite)
+        owner: RightsService.isEditor() || RightsService.isOrderEditor()
             ? HtmlMediaOwner.occasion(_event?.occasionId)
             : const HtmlMediaOwner.none(),
         twoFingersOn: onPinchStart,
@@ -1143,8 +1129,7 @@ class _EventPageState extends State<EventPage> {
       buttons.add(_actionButton(Icons.group_add_outlined,
           CommonStrings.companions, () => signInCompanion()));
     }
-    if (showLoginLogoutButton() &&
-        RightsService.hasCapability(AuthorizationCapabilities.scheduleWrite)) {
+    if (showLoginLogoutButton() && RightsService.isEditor()) {
       buttons.add(_actionButton(
           Icons.person_add_alt_1, ScheduleStrings.signInOther, () async {
         _queriedParticipants = await DbUsers.getAllUsersBasics();
@@ -1159,7 +1144,7 @@ class _EventPageState extends State<EventPage> {
         }, _queriedParticipants, ScheduleStrings.signInSomeone);
       }));
     }
-    if (RightsService.hasCapability(AuthorizationCapabilities.scheduleWrite)) {
+    if (RightsService.isEditor()) {
       buttons.add(_actionButton(Icons.edit, CommonStrings.edit, () {
         RouterService.navigateOccasion(
                 context, "${EventEditPage.ROUTE}/${_event!.id}")
@@ -1356,9 +1341,12 @@ class _EventPageState extends State<EventPage> {
         await loadEvent(id);
         if (await _redirectIfCounselingSlot()) return;
       }
-      if (!isOffline &&
-          RightsService.hasCapability(
-              AuthorizationCapabilities.scheduleParticipantsRead)) {
+      if (EventParticipantsAccess.shouldLoad(
+        isOffline: isOffline,
+        isEditorView: RightsService.isEditorView(),
+        isEditor: RightsService.isEditor(),
+        isAdmin: RightsService.isAdmin(),
+      )) {
         await loadParticipants(id);
       }
       if (localOnly) {
@@ -1541,9 +1529,7 @@ class _EventPageState extends State<EventPage> {
     var event = await DbEvents.getEvent(eventId);
 
     if ((event.isGroupEvent ?? false) && (event.isMyGroupEvent ?? false)) {
-      var group = RightsService.hasGroupCapability(
-              RightsService.currentUserGroup()?.id,
-              AuthorizationCapabilities.groupsEditorRead)
+      var group = RightsService.isGroupAdmin() || RightsService.isEditor()
           ? await DbGroups.getUserGroupForEdit(
               RightsService.currentUserGroup()!.id!)
           : await DbGroups.getUserGroupInfo(

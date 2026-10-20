@@ -1,4 +1,3 @@
-import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/news/news_commands.dart';
 import 'package:fstapp/components/news/news_model.dart';
@@ -13,8 +12,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': commandResponseFixture(
-              params['p_command_id'] as String)['mutation'],
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -60,8 +64,13 @@ void main() {
         versions.add(parameters['p_expected_version']);
         ids.add(parameters['p_command_id']);
         return {
-          'mutation': commandResponseFixture(
-              parameters['p_command_id'] as String)['mutation'],
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': versions.length == 1 ? 'conflict' : 'applied',
           'code': versions.length == 1 ? 409 : 200,
           'data': {
@@ -98,8 +107,13 @@ void main() {
         ClientCommandTransport((_, parameters) async {
       attempts++;
       return {
-        'mutation': commandResponseFixture(
-            parameters['p_command_id'] as String)['mutation'],
+        'mutation': {
+          'commandId': '00000000-0000-4000-8000-000000000001',
+          'receiptId': '00000000-0000-4000-8000-000000000001',
+          'commitId': null,
+          'replayed': false,
+          'occurredAt': '2026-10-15T10:00:00Z'
+        },
         'status': 'conflict',
         'code': 409,
         'data': {
@@ -133,8 +147,13 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': commandResponseFixture(
-              params['p_command_id'] as String)['mutation'],
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {

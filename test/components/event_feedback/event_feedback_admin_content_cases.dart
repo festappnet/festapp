@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,7 +33,6 @@ void main() {
     Future<void> Function(int occasionId, int feedbackId)? deleteOverride,
   }) {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-      capabilities: {AuthorizationCapabilities.scheduleFeedbackDelete: isAdmin},
       isAdmin: isAdmin,
       occasion: OccasionModel(
         id: 7,

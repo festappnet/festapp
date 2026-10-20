@@ -366,12 +366,7 @@ class LayoutSpatialIndex {
 
   /// [tolerance] is a world-space radius for open strokes. Editors can supply
   /// a screen-pixel radius divided by viewport zoom. Filled shapes are unchanged.
-  String? hitTest(
-    double x,
-    double y, {
-    double? tolerance,
-    bool Function(LayoutNode)? accept,
-  }) {
+  String? hitTest(double x, double y, {double? tolerance}) {
     if (tolerance != null && (!tolerance.isFinite || tolerance < 0)) {
       throw ArgumentError('Hit tolerance must be finite and nonnegative');
     }
@@ -386,7 +381,6 @@ class LayoutSpatialIndex {
           }).map((id) => _nodes[id]!).toList();
     candidates.sort((a, b) => _paintRanks[b.id]!.compareTo(_paintRanks[a.id]!));
     for (final n in candidates) {
-      if (accept != null && !accept(n)) continue;
       final inverse = _hitInverse.putIfAbsent(
         n.id,
         () => inverseMatrix(matrices[n.id]!.map(quantize).toList()),
@@ -476,8 +470,7 @@ String? hitTest(
   double x,
   double y, {
   double? tolerance,
-  bool Function(LayoutNode)? accept,
-}) => spatialIndexFor(d).hitTest(x, y, tolerance: tolerance, accept: accept);
+}) => spatialIndexFor(d).hitTest(x, y, tolerance: tolerance);
 bool _convexOverlap(List<List<double>> a, List<List<double>> b) {
   for (final poly in [a, b]) {
     for (var i = 0; i < poly.length; i++) {
@@ -594,6 +587,33 @@ List<List<String>> layoutCollisions(VenueLayoutDocument d) {
     }
   }
   return out;
+}
+
+List<double> registerTwoPoints(
+  List<double> a1,
+  List<double> a2,
+  List<double> b1,
+  List<double> b2,
+) {
+  final ax = a2[0] - a1[0],
+      ay = a2[1] - a1[1],
+      bx = b2[0] - b1[0],
+      by = b2[1] - b1[1];
+  final al = sqrt(ax * ax + ay * ay), bl = sqrt(bx * bx + by * by);
+  if (al < 1 || bl < 1)
+    throw ArgumentError('Registration points must be at least one unit apart');
+  final angle = atan2(by, bx) - atan2(ay, ax),
+      s = bl / al,
+      c = cos(angle) * s,
+      t = sin(angle) * s;
+  return [
+    c,
+    t,
+    -t,
+    c,
+    b1[0] - c * a1[0] + t * a1[1],
+    b1[1] - t * a1[0] - c * a1[1],
+  ].map(quantize).toList();
 }
 
 Map<String, dynamic> backgroundPlacement(

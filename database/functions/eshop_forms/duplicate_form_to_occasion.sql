@@ -42,7 +42,13 @@ BEGIN
     END IF;
 
     -- Step 3: Check if the user has editor_view rights on the source occasion or its unit.
-    SELECT public.can_copy_form_source(source_occasion_id)
+    SELECT EXISTS (
+        SELECT 1 FROM public.occasion_users
+        WHERE occasion = source_occasion_id AND "user" = user_id AND is_editor_view = TRUE
+    ) OR EXISTS (
+        SELECT 1 FROM public.unit_users
+        WHERE unit = source_unit_id AND "user" = user_id AND is_editor_view = TRUE
+    )
     INTO has_source_permission;
 
     IF NOT has_source_permission THEN
@@ -50,7 +56,10 @@ BEGIN
     END IF;
 
     -- Step 4: Check if the user has editor rights on the target occasion.
-    SELECT public.can_copy_form_target(target_occasion_id)
+    SELECT EXISTS (
+        SELECT 1 FROM public.occasion_users
+        WHERE occasion = target_occasion_id AND "user" = user_id AND is_editor = TRUE
+    )
     INTO has_target_permission;
 
     IF NOT has_target_permission THEN

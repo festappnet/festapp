@@ -9,7 +9,7 @@ import '../form_strings.dart';
 bool isValidPublicSlug(String value, {bool allowEmpty = false}) =>
     (allowEmpty && value.isEmpty) ||
     (value.length <= 80 &&
-        RegExp(r'^[a-z0-9]+(?:[-_][a-z0-9]+)*$').hasMatch(value));
+        RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(value));
 
 String publicLinkUrl(String link, {bool isForm = true}) =>
     '${AppConfig.webLink}/${isForm ? 'form/' : ''}${Uri.encodeComponent(link)}${isForm ? '' : '/event'}';
@@ -19,13 +19,8 @@ class PublicLink extends StatelessWidget {
   final String link;
   final String? savedLink;
   final bool isForm;
-  final bool showCopyLabel;
   const PublicLink(
-      {super.key,
-      required this.link,
-      this.savedLink,
-      this.isForm = true,
-      this.showCopyLabel = false});
+      {super.key, required this.link, this.savedLink, this.isForm = true});
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +30,7 @@ class PublicLink extends StatelessWidget {
         Text(FormStrings.savedPublicLink, style: const TextStyle(fontSize: 12)),
         Row(children: [
           Expanded(child: SelectableText(publicLinkUrl(saved, isForm: isForm))),
-          CopyButton(
-              value: publicLinkUrl(saved, isForm: isForm),
-              showLabel: showCopyLabel),
+          CopyButton(value: publicLinkUrl(saved, isForm: isForm)),
         ]),
       ],
       if (link != saved) ...[

@@ -109,8 +109,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
   }
 
   void _armExpiry(DateTime? expiry, {bool authoritative = false}) {
-    if (!authoritative &&
-        _expiresAt != null &&
+    if (!authoritative && _expiresAt != null &&
         (expiry == null || _expiresAt!.isBefore(expiry))) {
       expiry = _expiresAt;
     }
@@ -166,8 +165,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
       // Availability refreshes keep the immutable geometry identity so the
       // package preserves the camera and active interaction session.
       _snapshot = _snapshot != null &&
-              jsonEncode(_snapshot!.document.toJson()) ==
-                  jsonEncode(next.document.toJson())
+              jsonEncode(_snapshot!.document.toJson()) == jsonEncode(next.document.toJson())
           ? next.copyWith(document: _snapshot!.document)
           : next;
       _adapter = BlueprintLayoutAdapter(blueprint);
@@ -177,13 +175,9 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
           .map((b) => b.spotId)
           .whereType<int>());
       _armExpiry(blueprint.reservationExpiresAt, authoritative: true);
-      await widget.onSessionChanged
-          ?.call(_secret, blueprint.reservationExpiresAt);
+      await widget.onSessionChanged?.call(_secret, blueprint.reservationExpiresAt);
       if (!mounted || generation != _generation) return;
-      setState(() {
-        _loading = false;
-        _refreshing = false;
-      });
+      setState(() { _loading = false; _refreshing = false; });
       widget.onPendingChanged?.call(false);
       widget.onSelectionChanged?.call(_selectedSeats);
     } catch (error, stack) {
@@ -217,12 +211,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
         .map((id) => snapshot.seatBindings[id]?.spotId)
         .whereType<int>()
         .toSet();
-    if (_loading ||
-        _refreshing ||
-        _error != null ||
-        spots.isEmpty ||
-        spots.length != ids.length ||
-        ids.any(_pending.contains)) {
+    if (_loading || _refreshing || _error != null || spots.isEmpty || spots.length != ids.length || ids.any(_pending.contains)) {
       return const LayoutSelectionResult(accepted: false);
     }
     if (selecting &&
@@ -274,8 +263,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
       // the mutation or infer that the hold was released.
       _reconcileRequired = true;
       _notice = BlueprintStrings.operationNetworkError;
-      outcome =
-          LayoutSelectionResult(accepted: false, message: error.toString());
+      outcome = LayoutSelectionResult(accepted: false, message: error.toString());
     } finally {
       if (mounted && generation == _generation) {
         setState(() => _pending.removeAll(ids));
@@ -288,36 +276,23 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
         }
       }
     }
-    return LayoutSelectionResult(
-        accepted: outcome.accepted,
-        message: outcome.message,
-        authoritativeSeatIds: reconciled
-            ? {
-                for (final binding in _snapshot!.seatBindings.values)
-                  if (_selected.contains(binding.spotId)) binding.nodeId,
-              }
-            : null);
+    return LayoutSelectionResult(accepted: outcome.accepted, message: outcome.message,
+      authoritativeSeatIds: reconciled ? {
+        for (final binding in _snapshot!.seatBindings.values)
+          if (_selected.contains(binding.spotId)) binding.nodeId,
+      } : null);
   }
 
   Map<String, dynamic> get _capacityPresentation => {
-        for (final node in _snapshot!.document.nodes.where((n) =>
-            n.kind == 'capacityArea' && !_snapshot!.areaBindings.containsKey(n.id)))
-          node.id: {
-            'available': 0,
-            'selectable': false,
-            'status': 'unavailable',
-            'tooltip': BlueprintStrings.standingRequiresProduct,
-          },
         for (final binding in _snapshot!.areaBindings.values)
           binding.nodeId: {
             'quantity': widget.selectedAreaQuantity?.call(binding.nodeId) ?? 0,
             'available':
                 _blueprint!.areaAvailability[binding.nodeId]?['available'] ?? 0,
-            'selectable': (_blueprint!.areaAvailability[binding.nodeId]?['available'] as num? ?? 0) > 0 && widget.onQuantityRequested != null &&
+            'selectable': widget.onQuantityRequested != null &&
                 _blueprint!.areaAvailability[binding.nodeId]?['reason'] ==
                     null &&
                 _blueprint!.areaAvailability.containsKey(binding.nodeId),
-            'tooltip': (_blueprint!.areaAvailability[binding.nodeId]?['available'] as num? ?? 0) <= 0 ? BlueprintStrings.standingUnavailable : _adapter!.products[binding.productId]?.title ?? '',
             'label': _adapter!.products[binding.productId]?.title ?? '',
           },
       };
@@ -336,8 +311,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
       final available =
           (_blueprint!.areaAvailability[id]?['available'] as num?)?.toInt() ??
               0;
-      await widget.onQuantityRequested!(
-          binding, quantity, available, _adapter!.products[binding.productId]);
+      await widget.onQuantityRequested!(binding, quantity, available, _adapter!.products[binding.productId]);
       return LayoutSelectionResult(
           accepted: mounted && generation == _generation);
     } catch (error) {
@@ -358,7 +332,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
   Map<String, dynamic> get _presentations => {
         for (final b in _snapshot!.seatBindings.values)
           b.nodeId: {
-            ..._adapter!.customerPresentation(b),
+            ..._adapter!.publicPresentation(b),
             'selected': _selected.contains(b.spotId),
             'label': b.title,
             'tooltip': BlueprintObjectModel(
@@ -374,27 +348,24 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
         width: double.infinity,
         child: Column(children: [
           if (_notice != null)
-            Padding(
-                padding: const EdgeInsets.all(8),
-                child: Semantics(
-                    liveRegion: true,
-                    child: Text(_notice!, textAlign: TextAlign.center))),
+            Padding(padding: const EdgeInsets.all(8), child:
+              Semantics(liveRegion: true, child: Text(_notice!, textAlign: TextAlign.center))),
           Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
                       ? Center(
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text(_error!),
-                          TextButton(
-                              onPressed: _load,
-                              child: Text(CommonStrings.retry)),
-                          TextButton(
-                              onPressed: () =>
-                                  widget.onCloseSeatReservation?.call(null),
-                              child: Text(CommonStrings.close)),
-                        ]))
+                          child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                              Text(_error!),
+                              TextButton(
+                                  onPressed: _load,
+                                  child: Text(CommonStrings.retry)),
+                              TextButton(
+                                  onPressed: () => widget.onCloseSeatReservation?.call(null),
+                                  child: Text(CommonStrings.close)),
+                            ]))
                       : TooltipTheme(
                           data: const TooltipThemeData(
                             decoration: BoxDecoration(
@@ -420,16 +391,10 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
               padding: const EdgeInsets.all(16),
               child: ButtonsHelper.primaryButton(
                   context: context,
-                  onPressed: _loading ||
-                          _refreshing ||
-                          _error != null ||
-                          _pending.isNotEmpty
+                  onPressed: _loading || _refreshing || _error != null || _pending.isNotEmpty
                       ? null
                       : () {
-                          if (!_loading &&
-                              !_refreshing &&
-                              _error == null &&
-                              _pending.isEmpty)
+                          if (!_loading && !_refreshing && _error == null && _pending.isEmpty)
                             widget.onCloseSeatReservation?.call(_selectedSeats);
                         },
                   label: _pending.isNotEmpty || _refreshing

@@ -113,8 +113,8 @@ test('unassigned available seat is empty while protected live state survives mis
     assert.equal(adapter.seatPresentation.b.status,'occupied');
 });
 
-test('public status palette renders blocked seats like ordered seats', () => {
-    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
+test('Basic status palette preserves seven distinct domain states through generic presentation', () => {
+    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#000000DE'],['empty','#267329FF']];
     for (const [state, fill] of cases) {
         const fixture = data(); fixture.spots[0].state = state;
         if (state === 'black') fixture.seatBindings[0].blocked = true;
@@ -124,7 +124,6 @@ test('public status palette renders blocked seats like ordered seats', () => {
         assert.equal(item.stateMarker, state === 'used' ? 'none' : 'auto');
         assert.equal(item.selected, state === 'selected_by_me');
         if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'unavailable'); }
-        if (state === 'black') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
     }
 });
 
@@ -254,18 +253,4 @@ test('reopen drops stale seat payload and preserves standing tickets', () => {
     assert.equal(adapter.selectedSeats.length, 0);
     assert.equal(form.payload.ticket.some(ticket => ticket.spot === 11), false);
     assert.equal(form.state.tickets[0]._blueprintArea, 'standing');
-});
-
-test('standing availability disables sold out and unbound areas with an explanation', () => {
-    const source = data();
-    source.layout.nodes = [{id:'unbound',kind:'capacityArea',capacity:100},{id:'sold',kind:'capacityArea',capacity:100}];
-    source.areaBindings = [{nodeId:'sold',productId:9,inventoryContextId:3}];
-    source.areaAvailability = [{nodeId:'sold',capacity:100,available:0,reason:'PRODUCT_CAPACITY_EXCEEDED'}];
-    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
-    const adapter = new BlueprintLayoutAdapter(source);
-    assert.equal(adapter.capacityPresentation.unbound.available,0);
-    assert.equal(adapter.capacityPresentation.unbound.selectable,false);
-    assert.ok(adapter.capacityPresentation.unbound.tooltip);
-    assert.equal(adapter.capacityPresentation.sold.selectable,false);
-    assert.ok(adapter.capacityPresentation.sold.tooltip);
 });

@@ -1,37 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
-import '../images/image_control_client.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show GraphicImportFailure;
 
 class BlueprintStrings {
-  static String get standingSalesLimit =>
-      'FeatureBlueprint.standingSalesLimit'.tr();
-  static String get standingSupplyHint =>
-      'FeatureBlueprint.standingSupplyHint'.tr();
-  static String get standingNoAdmissionType =>
-      'FeatureBlueprint.standingNoAdmissionType'.tr();
-  static String get standingPreparationRetained =>
-      'FeatureBlueprint.standingPreparationRetained'.tr();
-
-  static String get assignStandingProduct =>
-      'FeatureBlueprint.assignStandingProduct'.tr();
-  static String get standingSetupSaveHint =>
-      'FeatureBlueprint.standingSetupSaveHint'.tr();
-  static String get standingCapacityGroup =>
-      'FeatureBlueprint.standingCapacityGroup'.tr();
-  static String get standingSharedCapacityHint =>
-      'FeatureBlueprint.standingSharedCapacityHint'.tr();
-
-  static String get reservationExpired =>
-      'FeatureBlueprint.reservationExpired'.tr();
+  static String get reservationExpired => 'FeatureBlueprint.reservationExpired'.tr();
   static String get releaseTemporaryReservation =>
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>
       'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
-  static String get standingUnavailable =>
-      'FeatureBlueprint.viewer.standingUnavailable'.tr();
-  static String get standingRequiresProduct =>
-      'FeatureBlueprint.standingRequiresProduct'.tr();
   static String get standingCapacity =>
       'FeatureBlueprint.standingCapacity'.tr();
   static String get capacitySaveHint =>
@@ -55,9 +31,6 @@ class BlueprintStrings {
   static String get seatProductRequired =>
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
-    if (error is ImageUploadOutcomeUnknown)
-      return 'FeatureBlueprint.imageUploadUncertain'.tr();
-    if (error is ImageUploadRejected) return toastImageUploadFail;
     if (error is GraphicImportFailure) {
       final reason = error.reason;
       final key = reason.endsWith('_limit')
@@ -127,9 +100,6 @@ class BlueprintStrings {
       'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
   static String get draftGeometryNotice =>
       'FeatureBlueprint.draftGeometryNotice'.tr();
-  static String seatStateDescription(String state) =>
-      'FeatureBlueprint.seatStateDescriptions.$state'.tr();
-
   static String seatState(String state) =>
       'FeatureBlueprint.seatStates.$state'.tr();
   static String get demoGeometryNotice =>

@@ -180,4 +180,5 @@ END $$;
 REVOKE ALL ON FUNCTION public.update_user_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.update_user(jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.update_user(jsonb) TO authenticated;
--- The obsolete three-argument occasion-profile overload is retired in contraction.sql.
+-- No current caller of this obsolete occasion-profile overload remains.
+REVOKE ALL ON FUNCTION public.update_user(uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;

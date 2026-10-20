@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
-import 'layout_path.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
@@ -80,55 +78,12 @@ class LayoutPlacementIssue {
 // Imported SVG edges may straddle the canvas by a fraction of a layout unit.
 const _canvasEdgeTolerance = .5;
 
-// Text boxes include alignment space, which is not painted artwork. Imported
-// labels can have generous boxes extending past the canvas while every glyph
-// remains inside. Use the same prepared outlines and clip as the renderer.
-List<List<double>> _placementHull(
-  VenueLayoutDocument document,
-  LayoutNode node,
-  List<double> matrix,
-  Map<String, dynamic> resources,
-) {
-  if (node.kind != 'text') return worldHull(node, matrix);
-  final text =
-      '${effectiveNodeProperties(document, node)['text'] ?? node.label}';
-  final prepared = preparedNodeText(document, node, resources, [], text: text);
-  if (prepared == null) return worldHull(node, matrix);
-  final clip = prepared['clip'] as Map;
-  final bounds = layoutPath(prepared['path'] as List).getBounds().intersect(
-    ui.Rect.fromLTWH(
-      (clip['x'] as num).toDouble(),
-      (clip['y'] as num).toDouble(),
-      (clip['width'] as num).toDouble(),
-      (clip['height'] as num).toDouble(),
-    ),
-  );
-  if (bounds.isEmpty) return const [];
-  final transform = labelRenderMatrix(
-    node,
-    resolveNodeAppearance(document, node).label,
-    matrix,
-  );
-  return [
-    for (final point in [
-      bounds.topLeft,
-      bounds.topRight,
-      bounds.bottomRight,
-      bounds.bottomLeft,
-    ])
-      transformPoint(transform, point.dx, point.dy),
-  ];
-}
-
 double _canvasOverflow(
   VenueLayoutDocument document,
   LayoutNode node,
   List<double> matrix,
-  Map<String, dynamic> resources,
 ) {
-  final hull = _placementHull(document, node, matrix, resources);
-  if (hull.isEmpty) return 0;
-  final bounds = boundsOfPoints(hull);
+  final bounds = boundsOfPoints(worldHull(node, matrix));
   final canvas = document.canvas;
   final left = (canvas['x'] as num? ?? 0).toDouble();
   final top = (canvas['y'] as num? ?? 0).toDouble();
@@ -237,7 +192,7 @@ class VenueLayoutController extends ChangeNotifier {
     final matrices = worldMatrices(document);
     for (final node in document.nodes) {
       if (node.kind == 'group') continue;
-      if (_placementHull(document, node, matrices[node.id]!, _resources).any(
+      if (worldHull(node, matrices[node.id]!).any(
         (p) =>
             p[0] < left - _canvasEdgeTolerance ||
             p[0] > right + _canvasEdgeTolerance ||
@@ -435,25 +390,14 @@ class VenueLayoutController extends ChangeNotifier {
         nextWorld = worldMatrices(next);
     for (final node in next.nodes) {
       if (node.kind == 'group') continue;
-      final overflow = _canvasOverflow(
-        next,
-        node,
-        nextWorld[node.id]!,
-        _resources,
-      );
+      final overflow = _canvasOverflow(next, node, nextWorld[node.id]!);
       if (overflow <= _canvasEdgeTolerance) continue;
       final prior = priorById[node.id];
       // Old drafts can be repaired progressively, but no new or worsened
       // placement may leave the canvas, including rotation/resize/insert.
       if (prior == null ||
           overflow >
-              _canvasOverflow(
-                    _document,
-                    prior,
-                    priorWorld[node.id]!,
-                    _resources,
-                  ) +
-                  .02) {
+              _canvasOverflow(_document, prior, priorWorld[node.id]!) + .02) {
         error = 'Object must stay inside the canvas. Enlarge the canvas first.';
         notifyListeners();
         return false;
@@ -770,34 +714,6 @@ class VenueLayoutController extends ChangeNotifier {
       if (prefix.trim() == 'Table' && tableLabelPrefix != 'Table') {
         prefix = '$tableLabelPrefix ';
       }
-      // Palette insertion follows the prevailing authored series. Copying a
-      // named table still keeps that table's own series.
-      if (defaultTablePrefix != null &&
-          (label.isEmpty ||
-              prefix.trim() == defaultTablePrefix ||
-              prefix.trim() == tableLabelPrefix ||
-              prefix.trim() == 'Table')) {
-        final series = <String, (int, int)>{};
-        for (final name in used) {
-          final match = RegExp(r'^(.*?)(\d+)$').firstMatch(name);
-          if (match == null) continue;
-          final key = match.group(1)!;
-          final old = series[key] ?? (0, 0);
-          series[key] = (
-            old.$1 + 1,
-            math.max(old.$2, int.parse(match.group(2)!)),
-          );
-        }
-        final ranked = series.keys.toList()
-          ..sort((a, b) {
-            final frequency = series[b]!.$1.compareTo(series[a]!.$1);
-            return frequency != 0 ? frequency : a.compareTo(b);
-          });
-        if (ranked.isNotEmpty) {
-          prefix = ranked.first;
-          label = ''; // Always append after the last authored number.
-        }
-      }
       var highest = 0;
       for (final name in used) {
         if (!name.startsWith(prefix)) continue;
@@ -806,9 +722,7 @@ class VenueLayoutController extends ChangeNotifier {
           highest = math.max(highest, int.parse(suffix));
         }
       }
-      if (label.isNotEmpty &&
-          numbered != null &&
-          used.add('$prefix${numbered.group(2)}')) {
+      if (numbered != null && used.add('$prefix${numbered.group(2)}')) {
         return '$prefix${numbered.group(2)}';
       }
       var index = highest + 1;
@@ -1293,40 +1207,14 @@ class VenueLayoutController extends ChangeNotifier {
     }
   }
 
-  /// Selected manually positioned table chairs, excluding unrelated objects.
-  Set<String> get automaticChairTargets {
-    final targets = {
-      for (final n in _document.nodes)
-        if (selection.contains(n.id) &&
-            n.kind == 'seat' &&
-            _document.nodes.any((p) => p.id == n.parentId && p.kind == 'table'))
-          n.id,
-    };
-    return targets.any(
-          (id) =>
-              seatAttachment(_document, id)?['placement']?['mode'] !=
-              'automatic',
-        )
-        ? targets
-        : const {};
-  }
-
-  void restoreAutomaticChairPosition(String seatId) =>
-      restoreAutomaticChairPositions({seatId});
-
-  /// One undoable operation for the complete selection; reject atomically if
-  /// any member is protected or locked.
-  void restoreAutomaticChairPositions(Set<String> seatIds) {
-    if (readOnly || saving || seatIds.isEmpty) return;
+  void restoreAutomaticChairPosition(String seatId) {
+    if (readOnly || saving) return;
     try {
       final protected = protectedSeatIds?.call() ?? const <String>{};
-      if (seatIds.any(protected.contains)) throw StateError('protected_spot');
-      var next = _document;
-      for (final id in seatIds) {
-        next = setTableSeatPlacement(next, id, const {
-          'mode': 'automatic',
-        }, protectedSeatIds: protected);
-      }
+      if (protected.contains(seatId)) throw StateError('protected_spot');
+      final next = setTableSeatPlacement(_document, seatId, const {
+        'mode': 'automatic',
+      }, protectedSeatIds: protected);
       _apply(
         next,
         label: 'Restore automatic position',
@@ -1379,7 +1267,6 @@ class VenueLayoutController extends ChangeNotifier {
                 _document,
                 tableId,
                 count,
-                constrainToCanvas: true,
                 protectedSeatIds: protectedSeatIds?.call() ?? const {},
               ),
         label: 'Seats',

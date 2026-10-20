@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import '../layout_scene_cache.dart';
-import '../layout_path.dart';
 import '../layout_native_text.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -36,7 +35,6 @@ class LayoutSceneSurface extends StatefulWidget {
     this.highlightedIds = const {},
     this.selectableIds,
     this.canvasSelected = false,
-    this.backgroundSelected = false,
     this.transientForegroundIds = const {},
     this.warningIds = const {},
     this.blockedPlacementHulls = const [],
@@ -52,7 +50,6 @@ class LayoutSceneSurface extends StatefulWidget {
     this.onDragEnd,
     this.onDragCancel,
     this.pan = true,
-    this.touchPanOnEmpty = false,
     this.showControls = true,
     this.compactZoomControls = false,
     this.showGrid = false,
@@ -90,15 +87,12 @@ class LayoutSceneSurface extends StatefulWidget {
   final List<Offset> pathPoints;
   final VoidCallback? onDragEnd, onDragCancel;
   final bool pan, showControls, animate;
-
-  /// In Select mode, a finger on empty canvas navigates instead of drawing a marquee.
-  final bool touchPanOnEmpty;
   final bool retainPendingTextPreview;
   final bool compactZoomControls;
   final bool showGrid;
   final double gridStep;
   final Offset gridOrigin;
-  final bool canvasSelected, backgroundSelected;
+  final bool canvasSelected;
   final Rect? marquee;
   final LayoutNode? inlineNode;
   final ValueChanged<String>? onInlineSubmit;
@@ -211,7 +205,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   Offset? _doubleTapPosition;
   Offset? _pointTapDown;
   Offset? _dragPointerDown;
-  bool _touchPanning = false;
   late final _motion = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: layoutMotionTokens['reflowMs']!),
@@ -270,10 +263,8 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
     if (bounds == null || size == null) return value;
     final zoom = _cameraScale(value);
     double translation(double value, double start, double end, double extent) {
-      // Each plan edge may reach the viewport midpoint, but never pass it.
-      // This caps empty space at half the viewport, even for a narrow plan.
-      final visible = extent / 2;
-      return value.clamp(visible - end * zoom, extent - visible - start * zoom);
+      final a = 16 - start * zoom, b = extent - 16 - end * zoom;
+      return value.clamp(math.min(a, b), math.max(a, b));
     }
 
     return value.clone()..setTranslationRaw(
@@ -956,13 +947,8 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                         ),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      textStyle: Theme.of(context).textTheme.bodyLarge
+                      textStyle: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(
-                            fontSize: 16,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                       triggerMode: TooltipTriggerMode.manual,
@@ -1010,7 +996,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                       onScaleStart: (details) {
                         _gestureScale = 1;
                         if (!widget.pan &&
-                            !_touchPanning &&
                             details.pointerCount == 1 &&
                             widget.onDragStart != null) {
                           _interactionDragging = true;
@@ -1028,7 +1013,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                           }
                           _twoFinger = true;
                         }
-                        if (widget.pan || _touchPanning || _twoFinger) {
+                        if (widget.pan || _twoFinger) {
                           _moveCamera(
                             details.localFocalPoint,
                             details.focalPointDelta,
@@ -1044,7 +1029,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                         if (_interactionDragging) widget.onDragEnd?.call();
                         _interactionDragging = false;
                         _twoFinger = false;
-                        _touchPanning = false;
                       },
                       child: GestureDetector(
                         // A semantic tap synthesizes the center, losing the
@@ -1072,19 +1056,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                           onPointerDown: (event) {
                             _hideHoverTooltip();
                             if (event.buttons != kPrimaryButton) return;
-                            if (_dragPointerDown == null) {
-                              final world = globalWorld(event.position);
-                              _touchPanning =
-                                  widget.touchPanOnEmpty &&
-                                  event.kind == PointerDeviceKind.touch &&
-                                  hitTest(
-                                        widget.document,
-                                        world.dx,
-                                        world.dy,
-                                      ) ==
-                                      null;
-                              _dragPointerDown = event.position;
-                            }
+                            _dragPointerDown ??= event.position;
                             _pointTapDown = widget.onPointTap == null
                                 ? null
                                 : event.position;
@@ -1159,8 +1131,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               // commercial check marker presentation.
                               emphasizeSelection: true,
                               selectionHulls: [
-                                if (widget.backgroundSelected)
-                                  backgroundHull(widget.document),
                                 for (final node in widget.document.nodes.where(
                                   (n) => widget.highlightedIds.contains(n.id),
                                 ))
@@ -1605,20 +1575,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                             );
                           },
                         )
-                      : size.width < 700
-                      ? IconButton.filledTonal(
-                          key: const ValueKey('layout-mobile-fit-plan'),
-                          tooltip: VenueLayoutStrings.text(context, 'Fit plan'),
-                          constraints: const BoxConstraints(
-                            minWidth: 44,
-                            minHeight: 44,
-                          ),
-                          onPressed: () => setState(() {
-                            _frame = null;
-                            _camera.value = Matrix4.identity();
-                          }),
-                          icon: const Icon(Icons.fit_screen),
-                        )
                       : FilledButton.tonalIcon(
                           onPressed: () => setState(() {
                             _frame = null;
@@ -1723,7 +1679,26 @@ class LayoutScenePainter extends CustomPainter {
         : Color(0xff000000 | n);
   }
 
-  static Path path(List commands) => layoutPath(commands);
+  static Path path(List commands) {
+    final p = Path();
+    for (final raw in commands) {
+      final c = raw as List;
+      double v(int i) => (c[i] as num).toDouble();
+      switch (c.first) {
+        case 'M':
+          p.moveTo(v(1), v(2));
+        case 'L':
+          p.lineTo(v(1), v(2));
+        case 'Q':
+          p.quadraticBezierTo(v(1), v(2), v(3), v(4));
+        case 'C':
+          p.cubicTo(v(1), v(2), v(3), v(4), v(5), v(6));
+        case 'Z':
+          p.close();
+      }
+    }
+    return p;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2002,9 +1977,7 @@ class LayoutScenePainter extends CustomPainter {
                   ? StrokeJoin.bevel
                   : StrokeJoin.miter
               ..strokeMiterLimit = (item['miterLimit'] as num? ?? 4).toDouble()
-              ..strokeWidth = item['screenStrokeWidth'] is num
-                  ? (item['screenStrokeWidth'] as num).toDouble() / zoom
-                  : item['kind'] == 'floor'
+              ..strokeWidth = item['kind'] == 'floor'
                   ? strokeWidth / zoom
                   : strokeWidth
               ..color = itemColor(item['stroke'])

@@ -30,9 +30,6 @@ class DropFile extends StatefulWidget {
 
   /// Height of the drop area.
   final double height;
-  final bool dropEnabled;
-  final bool singleFileOnly;
-  final VoidCallback? onInvalidDrop;
 
   /// Optional picker used by hosts that need custom file loading on every platform.
   final Future<XFile?> Function()? pickFile;
@@ -44,9 +41,6 @@ class DropFile extends StatefulWidget {
     this.hint,
     this.allowedExtensions,
     this.height = 250,
-    this.dropEnabled = true,
-    this.singleFileOnly = false,
-    this.onInvalidDrop,
     this.pickFile,
   });
 
@@ -141,16 +135,8 @@ class _DropFileState extends State<DropFile> {
     double iconSpacing = isCompact ? 6 : 12;
 
     return DropTarget(
-      enable: widget.dropEnabled,
       onDragDone: (detail) async {
-        if (!widget.dropEnabled || detail.files.isEmpty) return;
-        if (widget.singleFileOnly &&
-            (detail.files.length != 1 ||
-                detail.files.single is DropItemDirectory ||
-                !_isAllowed(detail.files.single))) {
-          widget.onInvalidDrop?.call();
-          return;
-        }
+        if (detail.files.isEmpty) return;
 
         // Flatten directories into individual files
         final allFiles = _flattenDropItems(detail.files);

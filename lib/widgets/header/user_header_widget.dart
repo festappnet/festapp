@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -16,7 +15,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
-import 'package:fstapp/components/_shared/admin_strings.dart';
 
 class UserHeaderWidget extends StatefulWidget {
   final Color? appBarIconColor;
@@ -155,7 +153,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
   }
 
   /// Common popover wrapper that applies constraints, decoration and places a cross button.
-  Widget _buildPopoverWrapper(Widget content) {
+  Widget _buildPopoverWrapper(Widget content, {Widget? topLeftWidget}) {
     // Use a Builder so that we always have the current Theme.
     return Builder(
       builder: (context) {
@@ -186,6 +184,12 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                   hoverColor: Colors.transparent,
                 ),
               ),
+              if (topLeftWidget != null)
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: topLeftWidget,
+                ),
             ],
           ),
         );
@@ -201,8 +205,6 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     if (button == null) return;
     final Offset offset = button.localToGlobal(Offset.zero);
     final Size size = button.size;
-    final organizationId = AppConfig.organization;
-    final openedUserId = RightsService.currentUser()?.id;
     showMenu(
       context: context,
       constraints: const BoxConstraints(maxWidth: _popoverWidth),
@@ -294,31 +296,6 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
 
                     // This divider separates the content above from the sign out button
                     const Divider(),
-                    ValueListenableBuilder(
-                      valueListenable: RightsService.occasionLinkModelNotifier,
-                      builder: (context, rights, _) => RightsService
-                                  .hasCapability(AuthorizationCapabilities
-                                      .organizationSettingsWrite) &&
-                              !RightsService.isDemoReadOnly &&
-                              RightsService.currentUser()?.id == openedUserId &&
-                              AppConfig.organization == organizationId
-                          ? ListTile(
-                              leading: Icon(Icons.business,
-                                  color: Theme.of(context).primaryColor),
-                              title: Text(
-                                AdministrationStrings.organizationSettings,
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    color: ThemeConfig.blackColor(context)),
-                              ),
-                              onTap: () {
-                                Navigator.pop(context);
-                                rootRouter.push(
-                                    OrganizationEditRoute(id: organizationId));
-                              },
-                            )
-                          : const SizedBox.shrink(),
-                    ),
                     ListTile(
                       leading: Icon(
                         Icons.logout,
@@ -338,6 +315,21 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                     ),
                   ],
                 ),
+                topLeftWidget: RightsService.isAdmin()
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.business,
+                          size: 24, // Slightly smaller than close button (28)
+                          color: ThemeConfig.blackColor(context),
+                        ),
+                        tooltip: "Platform Settings",
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.router
+                              .push(const OrganizationEditRedirectRoute());
+                        },
+                      )
+                    : null,
               );
             },
           ),

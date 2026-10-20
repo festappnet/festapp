@@ -60,56 +60,6 @@ class BlueprintLayoutController extends ChangeNotifier
               0)
           .toInt();
 
-  /// Initial assignment only: existing sold allocations must retain their context.
-  void bindStandingArea(
-    String id,
-    ProductModel product, {
-    required int inventoryContextId,
-    required int capacity,
-  }) {
-    if (isBusy || layout.readOnly) throw StateError('blueprint_read_only');
-    if (_draft.areaBindings.containsKey(id) ||
-        _draft.areaBindings.values.any(
-            (binding) => binding.inventoryContextId == inventoryContextId) ||
-        !layout.document.nodes.any(
-          (n) => n.id == id && n.kind == 'capacityArea',
-        ) ||
-        product.id == null ||
-        product.occasion != snapshot.occasionId ||
-        product.productTypeString != ProductModel.spotType ||
-        product.isHidden == true ||
-        product.price == null ||
-        !product.includedInventories.any(
-          (link) =>
-              link.inventoryContextId == inventoryContextId &&
-              link.quantity == 1,
-        ) ||
-        capacity < 0 ||
-        capacity > 1000000) {
-      throw StateError('invalid_area_binding');
-    }
-    upsertCatalogProduct(product);
-    final candidate = _draft.copyWith(
-      areaBindings: {
-        ..._draft.areaBindings,
-        id: BlueprintAreaBinding(
-          nodeId: id,
-          inventoryContextId: inventoryContextId,
-          productId: product.id!,
-        ),
-      },
-    );
-    if (!layout.apply(
-      layout.document,
-      participantCheckpoints: [
-        _captureSnapshot(
-          candidate,
-          areaCapacities: {..._areaCapacities, id: capacity},
-        ),
-      ],
-    )) throw StateError(layout.error ?? 'area_binding_rejected');
-  }
-
   void setAreaCapacity(String id, int capacity) {
     if (isBusy || layout.readOnly) throw StateError('blueprint_read_only');
     if (capacity < 0 ||
@@ -211,10 +161,9 @@ class BlueprintLayoutController extends ChangeNotifier
     final binding = _draft.seatBindings[id];
     if (mode == BlueprintLayoutMode.manage ||
         binding?.spotId == null ||
-        (binding!.blocked && mode != BlueprintLayoutMode.block) ||
+        binding!.blocked ||
         isBusy) return;
-    if (mode == BlueprintLayoutMode.order ||
-        mode == BlueprintLayoutMode.block) {
+    if (mode == BlueprintLayoutMode.order) {
       final unit = layout.document.selectionUnits
           .where((u) => (u['nodeIds'] as List? ?? const []).contains(id));
       final ids = unit.isEmpty
@@ -225,9 +174,7 @@ class BlueprintLayoutController extends ChangeNotifier
       } else {
         if (ids.any((node) =>
             _draft.seatBindings[node]?.spotId == null ||
-            (mode == BlueprintLayoutMode.block
-                ? isProtected(node)
-                : _draft.seatBindings[node]!.blocked))) return;
+            _draft.seatBindings[node]!.blocked)) return;
         _operationSelection.addAll(ids);
       }
     } else if (!_operationSelection.remove(id)) {
@@ -313,7 +260,7 @@ class BlueprintLayoutController extends ChangeNotifier
     _preferredSeatProductId = productId;
   }
 
-  VenueLayoutDocument commercialRenameDocument(String nodeId, String title) {
+  void renameCommercialNode(String nodeId, String title) {
     if (layout.readOnly || isBusy) throw StateError('blueprint_read_only');
     final value = title.trim();
     if (value.isEmpty) throw ArgumentError('name_required');
@@ -322,16 +269,18 @@ class BlueprintLayoutController extends ChangeNotifier
       throw ArgumentError('not_commercial_node');
     if (node.kind == 'seat' && isProtected(nodeId))
       throw StateError('protected_spot');
-    return layout.document.copyWith(nodes: [
-      for (final n in layout.document.nodes)
-        n.id == nodeId ? n.copyWith(label: value) : n
-    ]);
-  }
-
-  void renameCommercialNode(String nodeId, String title,
-      {Map<String, dynamic>? preparedResources}) {
-    if (!layout.apply(commercialRenameDocument(nodeId, title),
-        preparedResources: preparedResources,
+    if (!layout.apply(
+        layout.document.copyWith(nodes: [
+          for (final n in layout.document.nodes)
+            n.id == nodeId ||
+                    (node.kind == 'group' &&
+                        n.kind == 'table' &&
+                        blueprintCommercialGroupFor(n, layout.document,
+                                groupProducts: _draft.groupProducts) ==
+                            nodeId)
+                ? n.copyWith(label: value)
+                : n
+        ]),
         label: 'Rename commercial item')) {
       throw StateError(layout.error ?? 'invalid_name');
     }

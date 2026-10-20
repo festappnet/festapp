@@ -1,11 +1,3 @@
--- Round in the event tenant's civil time; a single captured instant owns defaults.
-CREATE OR REPLACE FUNCTION public.occasion_setup_default_start_internal(p_now timestamptz,p_timezone text DEFAULT 'Europe/Prague')
-RETURNS timestamptz LANGUAGE sql STABLE SET search_path = public, extensions AS $$
- SELECT (date_trunc('hour',local_now) + ceil(extract(epoch FROM (local_now-date_trunc('hour',local_now)))/1800)*interval '30 minutes') AT TIME ZONE p_timezone
- FROM (SELECT (p_now AT TIME ZONE p_timezone)+interval '30 days' local_now) x;
-$$;
-REVOKE ALL ON FUNCTION public.occasion_setup_default_start_internal(timestamptz,text) FROM PUBLIC,anon,authenticated,service_role;
-
 -- Drafts are private workspace objects, never public occasions.
 CREATE TABLE IF NOT EXISTS public.occasion_setup_drafts (
   id uuid PRIMARY KEY,
@@ -27,27 +19,12 @@ REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_drafts(p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
-  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
+  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   RETURN COALESCE((SELECT jsonb_agg(to_jsonb(d) ORDER BY updated_at DESC)
-    FROM public.occasion_setup_drafts d WHERE unit = p_unit AND NOT (d.data ? 'finalizedOccasion')), '[]'::jsonb);
+    FROM public.occasion_setup_drafts d WHERE unit = p_unit), '[]'::jsonb);
 END $$;
-
--- Terminal receipts remain readable to an already-open wizard, independently
--- of the resumable list. Never infer completion from a missing list item.
-CREATE OR REPLACE FUNCTION public.get_occasion_setup_draft(p_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts;
-BEGIN
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id;
-  IF NOT FOUND OR auth.uid() IS NULL OR public.can_create_occasion(d.unit) IS NOT TRUE THEN
-    RAISE insufficient_privilege USING MESSAGE='Draft access denied';
-  END IF;
-  RETURN to_jsonb(d);
-END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_draft(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_draft(uuid) TO authenticated;
 
 -- Run the canonical creator inside a rollback-only subtransaction. Its
 -- complete configuration survives in a PL/pgSQL variable, but no occasion,
@@ -56,22 +33,20 @@ GRANT EXECUTE ON FUNCTION public.get_occasion_setup_draft(uuid) TO authenticated
 CREATE OR REPLACE FUNCTION public.build_occasion_setup_configuration(p_unit bigint, p_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE configuration jsonb; organization_id bigint;
-  default_start timestamptz; event_zone text;
   provisional_link text := 'draft-' || p_id::text;
 BEGIN
-  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
+  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
-  SELECT organization,coalesce(data->>'timezone','Europe/Prague') INTO organization_id,event_zone FROM public.units WHERE id = p_unit;
-  default_start:=public.occasion_setup_default_start_internal(now(),event_zone);
+  SELECT organization INTO organization_id FROM public.units WHERE id = p_unit;
   BEGIN
     PERFORM public.update_occasion_internal_v1(jsonb_build_object(
       'unit',p_unit,'organization',organization_id,'title','',
       'link',provisional_link,'is_hidden',true,'is_open',false,
-      'features','[{"code":"form","is_enabled":true}]'::jsonb,
-      'start_time',default_start,'end_time',((default_start AT TIME ZONE event_zone)+interval '3 days') AT TIME ZONE event_zone));
-    SELECT public.occasion_setup_source_internal(id) INTO configuration
-      FROM public.occasions WHERE link=provisional_link AND unit=p_unit;
+      'start_time',now()+interval '30 days','end_time',now()+interval '33 days'));
+    SELECT item INTO configuration
+      FROM jsonb_array_elements(public.get_occasion_setup_sources(p_unit)) item
+      WHERE item->'occasion'->>'link' = provisional_link;
     IF configuration IS NULL THEN RAISE EXCEPTION 'Creation configuration missing'; END IF;
     RAISE EXCEPTION 'Rollback provisional creation' USING ERRCODE = 'ZX001';
   EXCEPTION WHEN SQLSTATE 'ZX001' THEN
@@ -90,7 +65,7 @@ CREATE OR REPLACE FUNCTION public.create_occasion_setup_draft(p_id uuid, p_unit 
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE d public.occasion_setup_drafts; configuration jsonb; is_new boolean; policy jsonb;
 BEGIN
-  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
+  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   -- Serialize identical UUIDs before inspecting existence, without charging retries.
@@ -128,12 +103,10 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extens
 DECLARE d public.occasion_setup_drafts; configuration jsonb; policy jsonb;
 BEGIN
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
+  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
-  IF d.data ? 'finalizedOccasion' OR
-     (jsonb_typeof(d.data#>'{defaultConfiguration,forms}')='array' AND
-      jsonb_array_length(d.data#>'{defaultConfiguration,forms}')>0) THEN RETURN to_jsonb(d); END IF;
+  IF d.data ? 'defaultConfiguration' THEN RETURN to_jsonb(d); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
   END IF;
@@ -143,7 +116,7 @@ BEGIN
   UPDATE public.occasion_setup_drafts SET data =
     jsonb_build_object('defaultConfiguration',configuration,
       'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
-    || (d.data-'defaultConfiguration'), revision = revision+1, updated_at=now()
+    || d.data, revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(d.data::text),false,false,policy);
   RETURN to_jsonb(d);
@@ -156,7 +129,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extens
 DECLARE d public.occasion_setup_drafts;
 BEGIN
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
+  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
@@ -188,7 +161,7 @@ CREATE OR REPLACE FUNCTION public.delete_occasion_setup_draft(p_id uuid, p_unit 
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE d public.occasion_setup_drafts;
 BEGIN
-  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
+  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;

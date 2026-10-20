@@ -1,6 +1,6 @@
 # Vaše volby a práva – Festapp
 
-Účinnost: 20. října 2026. Verze: 1.1.
+Účinnost: 25. srpna 2026. Verze: 1.0.
 
 ## Správa účtu
 
@@ -13,10 +13,6 @@ Po potvrzení se účet zablokuje a odstraní se autentizace, soukromý profil a
 ## Vaše práva
 
 O přístup, opravu, výmaz, omezení zpracování, přenositelnost, odvolání souhlasu nebo námitku lze požádat na `info@festapp.net`.
-
-## Serverový provoz na vstupenky.online
-
-Browserová analytika Cloudflare Web Analytics (RUM) je vypnutá. Pro souhrny provozu nepoužíváme analytický skript ani analytické cookies. Serverové přehledy vznikají z požadavků při doručování a ochraně webu, včetně požadavků přihlášených uživatelů. Dřívější předvolba `festapp_analytics_optout` je nevylučuje a lze ji z prohlížeče odstranit. Proti souvisejícímu zpracování na základě oprávněného zájmu můžete vznést námitku na `info@festapp.net`.
 
 ## Další informace
 

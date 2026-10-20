@@ -1,4 +1,3 @@
-import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -12,15 +11,27 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         parameters = params;
-        return commandResponseFixture(params['p_command_id'] as String, data: {
-          'version': 3,
-          'unit': {
-            'id': 4,
-            'title': 'Unit',
-            'data': <String, dynamic>{},
-            'aggregate_version': 3
+        return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
           },
-        });
+          'status': 'applied',
+          'code': 200,
+          'data': {
+            'version': 3,
+            'unit': {
+              'id': 4,
+              'title': 'Unit',
+              'data': <String, dynamic>{},
+              'aggregate_version': 3,
+            },
+          },
+          'sync': {'replacements': <Object>[]},
+        };
       }, maxAttempts: 1),
     );
 
@@ -42,9 +53,19 @@ void main() {
     final commands = SupabaseUnitCommands.withTransport(
       ClientCommandTransport((name, params) async {
         functionName = name;
-        return commandResponseFixture(params['p_command_id'] as String, data: {
-          'userId': '00000000-0000-0000-0000-000000000001',
-        });
+        return {
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
+          'status': 'applied',
+          'code': 200,
+          'data': {'userId': '00000000-0000-0000-0000-000000000001'},
+          'sync': {'replacements': <Object>[]},
+        };
       }, maxAttempts: 1),
     );
     await commands.deleteUserAccess(

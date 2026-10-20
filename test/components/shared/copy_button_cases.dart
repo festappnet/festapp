@@ -29,52 +29,6 @@ void main() {
       .instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, null));
 
-  testWidgets(
-      'denied clipboard exposes the saved value selected for manual copy without success feedback',
-      (tester) async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'Clipboard.setData')
-        throw PlatformException(code: 'copy_fail');
-      return null;
-    });
-    const value = 'https://example.invalid/form/saved';
-    await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: CopyButton(value: value, showLabel: true))));
-    await tester.tap(find.text(CommonStrings.copy));
-    await tester.pumpAndSettle();
-    final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.controller!.text, value);
-    expect(field.controller!.selection,
-        const TextSelection(baseOffset: 0, extentOffset: value.length));
-    expect(find.text(CommonStrings.copied), findsNothing);
-    Navigator.of(tester.element(find.byType(TextField))).pop();
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('labelled completion copy is accessible and copies the saved URL',
-      (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(
-            body: SizedBox(
-                width: 288,
-                child: PublicLink(
-                    link: 'saved-form',
-                    savedLink: 'saved-form',
-                    showCopyLabel: true)))));
-    expect(find.widgetWithText(OutlinedButton, CommonStrings.copy),
-        findsOneWidget);
-    await tester.tap(find.widgetWithText(OutlinedButton, CommonStrings.copy));
-    await tester.pumpAndSettle();
-    expect(copied, '${AppConfig.webLink}/form/saved-form');
-    expect(find.widgetWithText(OutlinedButton, CommonStrings.copied),
-        findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 3));
-  });
-
   for (final brightness in Brightness.values) {
     testWidgets('visible hover tooltip changes on copy and resets: $brightness',
         (tester) async {
@@ -145,13 +99,13 @@ void main() {
   });
 
   test('new public slug format has narrow ASCII and length boundaries', () {
-    for (final value in ['abc', 'summer-2027', 'under_score', 'a' * 80]) {
+    for (final value in ['abc', 'summer-2027', 'a' * 80]) {
       expect(isValidPublicSlug(value), isTrue);
     }
     for (final value in [
       '',
       'Upper',
-      'two__underscores',
+      'under_score',
       '-edge',
       'edge-',
       'two--hyphens',
