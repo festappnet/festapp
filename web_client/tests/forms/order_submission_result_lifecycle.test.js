@@ -35,7 +35,7 @@ test('a successful fast submission keeps its confirmation visible after closing 
     RouterService.pushOverlayState = () => {};
 
     const page = new FormPage('form-page-container');
-    page.currentSession = { payload: { form: 'test' } };
+    page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {}, payload: { form: 'test' } };
     page.cleanup = () => {};
     page.renderForm = () => {};
 
@@ -82,7 +82,7 @@ test('demo checkout and waitlist use the normal result without sending or storin
     RouterService.pushOverlayState = () => {};
     for (const registrationMode of ['regular', 'waitlist']) {
       const page = new FormPage('form-page-container');
-      page.currentSession = { payload: { form: 'demo', email: 'private@example.invalid' } };
+      page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {}, payload: { form: 'demo', email: 'private@example.invalid' } };
       page.waitlistCommands = { command: async () => { writes++; throw new Error('real waitlist called'); } };
       page.cleanup = () => {};
       page.submitOrder(document.createElement('form'), {
@@ -121,7 +121,7 @@ for (const viewFails of [false, true]) {
     const page = new FormPage('form-page-container');
     page.currentLink = 'test';
     const model = {key: 'test-key', registrationMode: 'waitlist', visibleFields: [], communicationTone: 'formal'};
-    page.currentSession = {formModel: model, payload: {fields: []}, state: {tickets: [{fields: []}]}};
+    page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {},formModel: model, payload: {fields: []}, state: {tickets: [{fields: []}]}};
     let registrations = 0, reads = 0;
     const token = 'a'.repeat(64);
     page.waitlistCommands = {

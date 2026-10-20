@@ -9,6 +9,7 @@ DECLARE
   v_conflicts jsonb;
   v_new_order_items jsonb;
   v_occasion_id BIGINT;
+  v_total numeric; v_currency text; v_order_form jsonb;
 BEGIN
   -- =======================================================================
   -- 0. VALIDATION & SECURITY
@@ -39,9 +40,14 @@ BEGIN
   END IF;
 
   -- Permission Check: User must have "Order View" rights on this occasion
-  IF NOT public.get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+  IF public.get_is_editor_order_view_on_occasion(v_occasion_id) IS NOT TRUE THEN
      RAISE EXCEPTION 'Permission denied. User does not have view rights for occasion %.', v_occasion_id;
   END IF;
+
+  IF (SELECT count(*) FROM eshop.spots WHERE id=ANY(p_spot_ids) AND occasion=v_occasion_id)<>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id)) THEN
+    RAISE EXCEPTION 'BLUEPRINT_SPOT_SCOPE_MISMATCH'; END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion_id]);
+  PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
 
   -- =======================================================================
   -- 1. IDENTIFY CONFLICTS
@@ -122,9 +128,20 @@ BEGIN
   LEFT JOIN eshop.products p ON s.product = p.id
   WHERE s.id = ANY(p_spot_ids);
 
+  IF (SELECT count(DISTINCT item->>'currency') FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item)>1 THEN RAISE EXCEPTION 'BLUEPRINT_CURRENCY_MISMATCH'; END IF;
+  SELECT coalesce(sum((item->>'price')::numeric),0),min(item->>'currency') INTO v_total,v_currency FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item;
+  SELECT jsonb_build_object('key',f.key,'phone_prefixes',public.get_effective_form_data(f.id)->'phone_prefixes',
+    'fields',coalesce((SELECT jsonb_agg(to_jsonb(ff) ORDER BY coalesce(ff."order",0),ff.id)
+      FROM public.form_fields ff WHERE ff.form=f.id AND ff.is_required=true
+      AND ff.is_hidden=false AND ff.type NOT IN ('ticket','spot','product_type')),'[]'::jsonb))
+    INTO v_order_form FROM public.forms f WHERE f.occasion=v_occasion_id AND f.is_open=true
+      AND f.blueprint=(SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1])
+      AND NOT EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND blueprint IS DISTINCT FROM (SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1]))
+    ORDER BY f.type='ticket' DESC,f.id DESC LIMIT 1;
   RETURN jsonb_build_object(
     'conflicts', COALESCE(v_conflicts, '[]'::jsonb),
-    'new_order_items', COALESCE(v_new_order_items, '[]'::jsonb)
+    'new_order_items', COALESCE(v_new_order_items, '[]'::jsonb),
+    'total_price',v_total,'currency',v_currency,'order_form',v_order_form
   );
 END;
 $$;

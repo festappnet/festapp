@@ -851,7 +851,7 @@ void main() {
     final first = TicketLayoutService(transport: transport),
         second = TicketLayoutService(transport: transport);
     final a =
-            catalog.firstWhere((f) => f['family'] == 'Roboto')['id'] as String,
+            catalog.firstWhere((f) => f['family'] == 'Roboto' && f['weight'] == 400 && f['style'] == 'normal')['id'] as String,
         b = catalog.firstWhere((f) => f['family'] == 'Russo One')['id']
             as String;
     final concurrent = await Future.wait([first.font(1, a), second.font(1, a)]);
@@ -913,18 +913,20 @@ void main() {
                     child: TicketLayoutProperties(controller: c)))));
     await tester.tap(find.text('TicketLayout.color'.tr()));
     await tester.pumpAndSettle();
-    final first = find.byTooltip('#000000').last;
-    final last = find.byTooltip('#FFFFFF').last;
+    final first = find.byKey(const ValueKey('editor-color-Basic colors-000000'));
+    final last = find.byKey(const ValueKey('editor-color-Basic colors-FFFFFF'));
     expect(tester.getTopLeft(first).dy, tester.getTopLeft(last).dy);
     expect(tester.getTopLeft(find.text('TicketLayout.usedColors'.tr())).dx,
         tester.getTopLeft(find.text('TicketLayout.basicColors'.tr())).dx);
     final row = find
-        .ancestor(of: last, matching: find.byType(SingleChildScrollView))
+        .ancestor(of: last, matching: find.byWidgetPredicate((widget) => widget is SingleChildScrollView && widget.scrollDirection == Axis.horizontal))
         .first;
     final previousX = tester.getCenter(last).dx;
     await tester.drag(row, const Offset(-220, 0));
     await tester.pumpAndSettle();
-    expect(tester.getCenter(last).dx, lessThan(previousX));
+    expect(tester.getCenter(last).dx, lessThanOrEqualTo(previousX));
+    expect(tester.getRect(row).contains(tester.getCenter(last)), isTrue,
+        reason: 'The final swatch must be reachable, including when all compact swatches fit without scrolling');
     await tester.tap(last);
     await tester.pump();
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,

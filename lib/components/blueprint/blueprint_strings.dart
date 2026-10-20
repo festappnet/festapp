@@ -1,6 +1,149 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:venue_seat_picker/venue_seat_picker.dart'
+    show GraphicImportFailure;
 
 class BlueprintStrings {
+  static String get reservationExpired => 'FeatureBlueprint.reservationExpired'.tr();
+  static String get releaseTemporaryReservation =>
+      'FeatureBlueprint.releaseTemporaryReservation'.tr();
+  static String get releaseTemporaryReservationConfirm =>
+      'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
+  static String get standingCapacity =>
+      'FeatureBlueprint.standingCapacity'.tr();
+  static String get capacitySaveHint =>
+      'FeatureBlueprint.capacitySaveHint'.tr();
+  static String get invalidStandingCapacity =>
+      'FeatureBlueprint.invalidStandingCapacity'.tr();
+  static String standingAvailability(int available, int capacity) =>
+      'FeatureBlueprint.standingAvailability'
+          .tr(namedArgs: {'available': '$available', 'capacity': '$capacity'});
+  static String get blockSeats => 'FeatureBlueprint.blockSeats'.tr();
+  static String get unblockSeats => 'FeatureBlueprint.unblockSeats'.tr();
+  static String get cancelReservation =>
+      'FeatureBlueprint.cancelReservation'.tr();
+  static String get assignSelectionProduct =>
+      'FeatureBlueprint.assignSelectionProduct'.tr();
+
+  static String get blockSeat => 'FeatureBlueprint.blockSeat'.tr();
+  static String get blockSeatHint => 'FeatureBlueprint.blockSeatHint'.tr();
+  static String get placementInvalid =>
+      'FeatureBlueprint.placementInvalid'.tr();
+  static String get seatProductRequired =>
+      'FeatureBlueprint.seatProductRequired'.tr();
+  static String layoutErrorMessage(Object error) {
+    if (error is GraphicImportFailure) {
+      final reason = error.reason;
+      final key = reason.endsWith('_limit')
+          ? 'svgImportLimit'
+          : switch (reason) {
+              'svg_external_resource' => 'svgExternalDependency',
+              'svg_executable_content' => 'svgInteractiveContent',
+              'svg_document_type_unsupported' => 'svgDocumentType',
+              'svg_invalid_xml' || 'svg_root_required' => 'svgInvalid',
+              'svg_embedded_image_unsupported' => 'svgEmbeddedBitmap',
+              'svg_text_attribute_unsupported' ||
+              'svg_text_direction_unsupported' ||
+              'svg_text_length_unsupported' ||
+              'svg_text_position_unsupported' ||
+              'svg_text_spacing_unsupported' ||
+              'svg_text_stylesheet_unsupported' ||
+              'svg_mixed_text_unsupported' =>
+                'svgComplexText',
+              'svg_blend_unsupported' ||
+              'svg_element_unsupported' ||
+              'svg_gradient_unsupported' ||
+              'svg_layer_unsupported' ||
+              'svg_operation_unsupported' ||
+              'svg_path_unsupported' ||
+              'svg_paint_attribute_unsupported' =>
+                'svgUnsupportedEffect',
+              _ => 'svgConversionFailed',
+            };
+      return 'FeatureBlueprint.$key'.tr();
+    }
+    if (error is StateError) {
+      switch (error.message) {
+        case 'layout_placement_invalid':
+          return placementInvalid;
+        case 'seat_product_required':
+          return seatProductRequired;
+      }
+    }
+    return error.toString();
+  }
+
+  static String get editAreaProduct => 'FeatureBlueprint.editAreaProduct'.tr();
+  static String get tablesTitle => 'FeatureBlueprint.tablesTitle'.tr();
+  static String get standingAreas => 'FeatureBlueprint.standingAreas'.tr();
+  static String get tableSelectionHint =>
+      'FeatureBlueprint.tableSelectionHint'.tr();
+  static String get noTables => 'FeatureBlueprint.noTables'.tr();
+  static String get selectTableOrSeat =>
+      'FeatureBlueprint.selectTableOrSeat'.tr();
+  static String get useTableDefault => 'FeatureBlueprint.useTableDefault'.tr();
+  static String get defaultProductHint =>
+      'FeatureBlueprint.defaultProductHint'.tr();
+
+  static String get unsavedPlanShort =>
+      'FeatureBlueprint.unsavedPlanShort'.tr();
+  static String get orderAction => 'FeatureBlueprint.orderAction'.tr();
+  static String get editPlan => 'FeatureBlueprint.editPlan'.tr();
+  static String get reservationsAndOrders =>
+      'FeatureBlueprint.reservationsAndOrders'.tr();
+  static String get unsavedPlan => 'FeatureBlueprint.unsavedPlan'.tr();
+  static String get operationNetworkError =>
+      'FeatureBlueprint.operationNetworkError'.tr();
+  static String get tryLayoutDemo => 'FeatureBlueprint.tryLayoutDemo'.tr();
+  static String get layoutConversionRequired =>
+      'FeatureBlueprint.layoutConversionRequired'.tr();
+  static String areaCount(int count) =>
+      'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
+  static String get draftGeometryNotice =>
+      'FeatureBlueprint.draftGeometryNotice'.tr();
+  static String seatState(String state) =>
+      'FeatureBlueprint.seatStates.$state'.tr();
+  static String get demoGeometryNotice =>
+      'FeatureBlueprint.demoGeometryNotice'.tr();
+  static String get groupDefault => 'FeatureBlueprint.groupDefault'.tr();
+  static String get backgroundUnavailable =>
+      'FeatureBlueprint.backgroundUnavailable'.tr();
+  static String get draftChanged => 'FeatureBlueprint.draftChanged'.tr();
+  static String get fontFamily => 'FeatureBlueprint.fontFamily'.tr();
+  static String get productsTitle => 'FeatureBlueprint.productsTitle'.tr();
+  static String get manageSeats => 'FeatureBlueprint.manageSeats'.tr();
+  static String get emptyGroup => 'FeatureBlueprint.emptyGroup'.tr();
+  static String get inheritedProduct =>
+      'FeatureBlueprint.inheritedProduct'.tr();
+  static String get productOverride => 'FeatureBlueprint.productOverride'.tr();
+  static String get onlyFreeSeats => 'FeatureBlueprint.onlyFreeSeats'.tr();
+  static String get individualAssignments =>
+      'FeatureBlueprint.individualAssignments'.tr();
+  static String get clearSelection => 'FeatureBlueprint.clearSelection'.tr();
+  static String get saveConflict => 'FeatureBlueprint.saveConflict'.tr();
+  static String get copyDraft => 'FeatureBlueprint.copyDraft'.tr();
+  static String get reloadSaved => 'FeatureBlueprint.reloadSaved'.tr();
+  static String get swapServerNotice =>
+      'FeatureBlueprint.swapServerNotice'.tr();
+  static String get layoutUnavailable =>
+      'FeatureBlueprint.layoutUnavailable'.tr();
+  static String get orderLabel => 'FeatureBlueprint.orderLabel'.tr();
+  static String get ticketLabel => 'FeatureBlueprint.ticketLabel'.tr();
+  static String seatCount(int count) =>
+      'FeatureBlueprint.seatCount'.tr(namedArgs: {'count': '$count'});
+  static String protectedCount(int count) =>
+      'FeatureBlueprint.protectedCount'.tr(namedArgs: {'count': '$count'});
+  static String selectedCount(int count) =>
+      'FeatureBlueprint.selectedCount'.tr(namedArgs: {'count': '$count'});
+  static String get analysisFailed => 'FeatureBlueprint.analysisFailed'.tr();
+
+  static String get assignmentSaveNotice =>
+      'FeatureBlueprint.assignmentSaveNotice'.tr();
+  static String get catalogSaveNotice =>
+      'FeatureBlueprint.catalogSaveNotice'.tr();
+  static String catalogAffectedSeats(int count) =>
+      'FeatureBlueprint.catalogAffectedSeats'
+          .tr(namedArgs: {'count': '$count'});
+
   // --- BlueprintTab (General) ---
   static String get changeTitle =>
       'FeatureBlueprint.changeTitle'.tr(); // "Change title"
@@ -25,6 +168,7 @@ class BlueprintStrings {
   // --- Main Content (Dimension & Background Controls) ---
   static String get width => 'FeatureBlueprint.width'.tr(); // "Width"
   static String get height => 'FeatureBlueprint.height'.tr(); // "Height"
+  static String get insertGraphic => 'FeatureBlueprint.insertGraphic'.tr();
   static String get background =>
       'FeatureBlueprint.background'.tr(); // "Background"
   static String get changeBackground =>
@@ -204,4 +348,32 @@ class BlueprintStrings {
   static String get warningNoCancellationEmail =>
       'FeatureBlueprint.warningNoCancellationEmail'
           .tr(); // "Note: Users will NOT receive cancellation emails for these changes."
+  static String get helpTitle => 'FeatureBlueprint.helpTitle'.tr();
+  static String get helpClick => 'FeatureBlueprint.helpClick'.tr();
+  static String get helpSelect => 'FeatureBlueprint.helpSelect'.tr();
+  static String get helpShiftClick => 'FeatureBlueprint.helpShiftClick'.tr();
+  static String get helpAddSelection =>
+      'FeatureBlueprint.helpAddSelection'.tr();
+  static String get helpDrag => 'FeatureBlueprint.helpDrag'.tr();
+  static String get helpPan => 'FeatureBlueprint.helpPan'.tr();
+  static String get helpWheel => 'FeatureBlueprint.helpWheel'.tr();
+  static String get helpZoom => 'FeatureBlueprint.helpZoom'.tr();
+  static String get helpEnterEditKeys =>
+      'FeatureBlueprint.helpEnterEditKeys'.tr();
+  static String get helpEnterEdit => 'FeatureBlueprint.helpEnterEdit'.tr();
+  static String get helpAltClick => 'FeatureBlueprint.helpAltClick'.tr();
+  static String get helpIndividual => 'FeatureBlueprint.helpIndividual'.tr();
+  static String get helpArrows => 'FeatureBlueprint.helpArrows'.tr();
+  static String get helpMove => 'FeatureBlueprint.helpMove'.tr();
+  static String get helpUndo => 'FeatureBlueprint.helpUndo'.tr();
+  static String get helpRedo => 'FeatureBlueprint.helpRedo'.tr();
+  static String get helpDuplicate => 'FeatureBlueprint.helpDuplicate'.tr();
+  static String get helpCopyPaste => 'FeatureBlueprint.helpCopyPaste'.tr();
+  static String get helpDelete => 'FeatureBlueprint.helpDelete'.tr();
+  static String get helpGrid => 'FeatureBlueprint.helpGrid'.tr();
+  static String get helpEscapeEdit => 'FeatureBlueprint.helpEscapeEdit'.tr();
+  static String get helpEscapeView => 'FeatureBlueprint.helpEscapeView'.tr();
+  static String get helpSeatStates => 'FeatureBlueprint.helpSeatStates'.tr();
+  static String get orderSelectionTitle =>
+      'FeatureBlueprint.orderSelectionTitle'.tr();
 }

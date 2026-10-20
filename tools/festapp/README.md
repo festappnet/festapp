@@ -269,7 +269,7 @@ native client uses the same scoped read handlers and separate OAuth grant.
 ### First-party consent
 
 The pilot redirects OAuth connections to the configured tenant's
-`/settings/mcp-connect` page. On vstupenky.online, use the existing application
+`/settings/mcp-connect` web-client page (no Flutter runtime is loaded). On vstupenky.online, use the existing application
 login, select occasions and approve. The tenant exchanges the app access proof
 for a separate MCP-owned Auth session over the first-party Edge broker. No app
 refresh token is shared and no token is placed in a redirect URL. Deployment

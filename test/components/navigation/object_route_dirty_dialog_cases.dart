@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -28,9 +29,15 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     await tester.tap(find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.widgetWithText(TextButton, 'Storno')));
+        matching: find.widgetWithText(TextButton, CommonStrings.storno)));
     await tester.pumpAndSettle();
     expect(router.currentUrl, '/unit/5/edit/bank-accounts/9/general');
     expect(find.text('Unsaved title'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.ok));
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, '/unit/5/edit/bank-accounts');
+    expect(find.text('Unsaved title'), findsNothing);
   });
 }

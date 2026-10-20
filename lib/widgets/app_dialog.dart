@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:venue_seat_picker/editor_ui.dart' show EditorDialogDismissal;
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 /// Shared appearance and keyboard dismissal for application modals.
@@ -82,30 +82,18 @@ class AppDialogActions extends StatelessWidget {
 /// Keeps focus inside the modal, including before an input receives focus.
 /// maybePop preserves the caller's PopScope and draft confirmation.
 class AppDialogDismissal extends StatelessWidget {
-  const AppDialogDismissal({
-    super.key,
-    required this.child,
-    this.onClose,
-    this.enabled = true,
-    this.autofocus = true,
-  });
-
+  const AppDialogDismissal(
+      {super.key,
+      required this.child,
+      this.onClose,
+      this.enabled = true,
+      this.autofocus = true});
   final Widget child;
   final VoidCallback? onClose;
-  final bool enabled;
-  final bool autofocus;
-
+  final bool enabled, autofocus;
   @override
-  Widget build(BuildContext context) => CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): () {
-            if (enabled) {
-              (onClose ?? () => Navigator.of(context).maybePop())();
-            }
-          },
-        },
-        child: Focus(autofocus: autofocus, child: child),
-      );
+  Widget build(BuildContext context) => EditorDialogDismissal(
+      onClose: onClose, enabled: enabled, autofocus: autofocus, child: child);
 }
 
 class AppDialogAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -258,7 +246,9 @@ class AppAlertDialog extends AlertDialog {
           title: title,
           titlePadding: titlePadding,
           titleTextStyle: titleTextStyle,
-          content: content,
+          // Keep scrolled content and its paint effects inside the body, below
+          // the fixed title and close button.
+          content: content == null ? null : ClipRect(child: content!),
           contentPadding: contentPadding,
           contentTextStyle: contentTextStyle,
           actions: actions,

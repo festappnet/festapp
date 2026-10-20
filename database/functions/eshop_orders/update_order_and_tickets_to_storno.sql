@@ -10,6 +10,7 @@ DECLARE
     v_occasion public.occasions;
     v_notice jsonb;
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=order_id)]);
     PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
     SELECT * INTO v_order FROM eshop.orders WHERE id=order_id FOR UPDATE;
     IF v_order.id IS NULL THEN RAISE EXCEPTION 'Order not found'; END IF;

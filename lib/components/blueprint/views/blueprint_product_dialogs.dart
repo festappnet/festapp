@@ -10,21 +10,36 @@ import 'package:fstapp/components/eshop/db_eshop.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/theme_config.dart'; // Import ThemeConfig
-import 'package:collection/collection.dart';
 import '../blueprint_seat_state.dart';
 
 import '../../_shared/common_strings.dart';
 
 /// Dialog to select an existing spot product, or manage (edit/create) them.
 class SelectProductDialog extends StatefulWidget {
-  final BlueprintModel blueprint;
-  final int? currentProductId; // To show selection
+  final BlueprintModel? blueprint;
+  final List<ProductModel>? products;
+  final ValueChanged<ProductModel>? onProductSaved;
+  final int Function(int)? affectedSeatCount;
+  final bool canEditCatalog;
+  final int? currentProductId;
 
-  const SelectProductDialog({
-    super.key,
-    required this.blueprint,
-    this.currentProductId,
-  });
+  const SelectProductDialog(
+      {super.key,
+      required BlueprintModel this.blueprint,
+      this.currentProductId,
+      this.canEditCatalog = true})
+      : products = null,
+        onProductSaved = null,
+        affectedSeatCount = null;
+
+  const SelectProductDialog.catalog(
+      {super.key,
+      required List<ProductModel> this.products,
+      required this.onProductSaved,
+      this.currentProductId,
+      this.affectedSeatCount,
+      this.canEditCatalog = true})
+      : blueprint = null;
 
   @override
   State<SelectProductDialog> createState() => _SelectProductDialogState();
@@ -32,167 +47,163 @@ class SelectProductDialog extends StatefulWidget {
 
 class _SelectProductDialogState extends State<SelectProductDialog> {
   late List<ProductModel> _spotProducts;
+  bool _busy = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _spotProducts = widget.blueprint.spotProducts;
+    _spotProducts = List.of(widget.products ?? widget.blueprint!.spotProducts);
     _sortProducts();
   }
 
-  void _sortProducts() {
-    _spotProducts
-        .sort((a, b) => Utilities.naturalCompare(a.title ?? "", b.title ?? ""));
-  }
+  void _sortProducts() => _spotProducts
+      .sort((a, b) => Utilities.naturalCompare(a.title ?? '', b.title ?? ''));
 
-  /// Shows the EditProductDialog to create or update a product.
-  void _editProduct(ProductModel? product) async {
-    final bool isCreating = product == null;
-
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (dialogContext) {
-        return EditProductDialog(
+  Future<void> _editProduct(ProductModel? product) async {
+    if (_busy || !widget.canEditCatalog) return;
+    if (product == null && _spotProducts.isEmpty) {
+      setState(() => _error = BlueprintStrings.toastNoTemplateProduct);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (_) => EditProductDialog(
           product: product?.copyWith() ??
               ProductModel(
-                title: "",
-                price: 0.0,
-                productTypeString: ProductModel.spotType, // Set valid type
-              ),
-          isCreating: isCreating,
-        );
-      },
-    );
-
-    if (result != null) {
-      final newTitle = result['title'] as String;
-      final newPrice = result['price'] as double;
-
-      try {
-        if (isCreating) {
-          // Safety check: Cannot create a new spot product if we don't have a template
-          if (_spotProducts.isEmpty) {
-            ToastHelper.Show(
-              context,
-              BlueprintStrings.toastNoTemplateProduct,
-              severity: ToastSeverity.NotOk,
-            );
-            return;
-          }
-
-          // Get details from an existing spot product
-          final existingProduct = _spotProducts.first;
-
-          var newProduct = ProductModel(
-            title: newTitle,
-            price: newPrice,
-            currencyCode: existingProduct.currencyCode,
-            productTypeId: existingProduct.productTypeId,
-            occasion: existingProduct.occasion,
-            productTypeString: ProductModel.spotType,
-          );
-
-          // Call DB to create, get new ID
-          newProduct = await DbEshop.saveProductBasics(newProduct);
-
-          setState(() {
-            widget.blueprint.products ??= [];
-            widget.blueprint.products!.add(newProduct);
-            _spotProducts = widget.blueprint.spotProducts;
-            _sortProducts();
-          });
-
-          ToastHelper.Show(context, BlueprintStrings.productCreated,
-              severity: ToastSeverity.Ok);
+                  title: '',
+                  price: 0,
+                  productTypeString: ProductModel.spotType),
+          isCreating: product == null,
+          affectedSeatCount: product?.id == null
+              ? null
+              : widget.affectedSeatCount?.call(product!.id!),
+        ),
+      );
+      if (result == null || !mounted) return;
+      final template = product ?? _spotProducts.first;
+      var updated = product == null
+          ? ProductModel(
+              title: result['title'] as String,
+              price: result['price'] as double,
+              currencyCode: template.currencyCode,
+              productTypeId: template.productTypeId,
+              occasion: template.occasion,
+              productTypeString: ProductModel.spotType)
+          : product.copyWith(
+              title: result['title'] as String,
+              price: result['price'] as double);
+      updated = await DbEshop.saveProductBasics(updated);
+      // Catalog persistence is immediate and deliberately outside layout undo.
+      final blueprint = widget.blueprint;
+      if (blueprint != null) {
+        blueprint.products ??= [];
+        final index = blueprint.products!.indexWhere((p) => p.id == updated.id);
+        if (index < 0) {
+          blueprint.products!.add(updated);
         } else {
-          // Find the original product in the blueprint and update it
-          final originalProduct = widget.blueprint.products
-              ?.firstWhereOrNull((p) => p.id == product.id);
-          if (originalProduct != null) {
-            var updatedProduct =
-                originalProduct.copyWith(title: newTitle, price: newPrice);
-            // productTypeId and productTypeString are not changing
-
-            // Call DB to update
-            updatedProduct = await DbEshop.saveProductBasics(updatedProduct);
-
-            setState(() {
-              final index = widget.blueprint.products!.indexOf(originalProduct);
-              widget.blueprint.products![index] = updatedProduct;
-              // Refresh local list
-              _spotProducts = widget.blueprint.spotProducts;
-              _sortProducts();
-            });
-
-            ToastHelper.Show(context, BlueprintStrings.productUpdated,
-                severity: ToastSeverity.Ok);
-          }
+          blueprint.products![index] = updated;
         }
-      } catch (e) {
-        // Show error from DB call
-        ToastHelper.Show(context, e.toString(), severity: ToastSeverity.NotOk);
       }
+      widget.onProductSaved?.call(updated);
+      if (!mounted) return;
+      setState(() {
+        final index = _spotProducts.indexWhere((p) => p.id == updated.id);
+        if (index < 0) {
+          _spotProducts.add(updated);
+        } else {
+          _spotProducts[index] = updated;
+        }
+        _sortProducts();
+      });
+      ToastHelper.Show(
+          context,
+          product == null
+              ? BlueprintStrings.productCreated
+              : BlueprintStrings.productUpdated,
+          severity: ToastSeverity.Ok);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AppAlertDialog(
-      onClose: () => Navigator.of(context).pop(),
-      title: Text(BlueprintStrings.selectProduct),
-      content: SizedBox(
-        width: 500, // Make it a bit wider
-        child: _spotProducts.isEmpty
-            ? Center(child: Text(BlueprintStrings.noSpotProducts))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: _spotProducts.length,
-                itemBuilder: (context, index) {
-                  final product = _spotProducts[index];
-                  // Check if this product is the selected one
-                  final isSelected = product.id == widget.currentProductId;
-                  return ListTile(
-                    // Apply selected state
-                    selected: isSelected,
-                    selectedTileColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    title: Text(product.title ?? ""),
-                    subtitle: Text(
-                        Utilities.formatPrice(context, product.price ?? 0)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      tooltip: BlueprintStrings.editProduct,
-                      onPressed: () => _editProduct(product),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop(product); // Select the product
-                    },
-                  );
-                },
-              ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(CommonStrings.storno),
-        ),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.add),
-          label: Text(BlueprintStrings.createProduct),
-          onPressed: () => _editProduct(null), // Pass null for creation
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => AppAlertDialog(
+        onClose: () => Navigator.of(context).pop(),
+        dismissible: !_busy,
+        title: Text(BlueprintStrings.selectProduct),
+        content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(
+                child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.canEditCatalog)
+                  Text(BlueprintStrings.assignmentSaveNotice),
+                if (_busy) const LinearProgressIndicator(),
+                if (_error != null)
+                  Semantics(
+                      liveRegion: true,
+                      child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(_error!,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.error)))),
+                if (_spotProducts.isEmpty)
+                  Text(BlueprintStrings.noSpotProducts),
+                for (final product in _spotProducts)
+                  ListTile(
+                      selected: product.id == widget.currentProductId,
+                      title: Text(product.title ?? ''),
+                      subtitle: Text(product.price == null
+                          ? BlueprintStrings.noProductAssigned
+                          : Utilities.formatPrice(context, product.price!,
+                              currencyCode: product.currencyCode)),
+                      trailing: widget.canEditCatalog
+                          ? IconButton(
+                              icon: const Icon(Icons.edit_outlined),
+                              tooltip: BlueprintStrings.editProduct,
+                              onPressed:
+                                  _busy ? null : () => _editProduct(product))
+                          : null,
+                      onTap: _busy
+                          ? null
+                          : () => Navigator.of(context).pop(product)),
+              ],
+            ))),
+        actions: [
+          TextButton(
+              onPressed: _busy ? null : () => Navigator.of(context).pop(),
+              child: Text(CommonStrings.storno)),
+          if (widget.canEditCatalog)
+            ElevatedButton.icon(
+                icon: const Icon(Icons.add),
+                label: Text(BlueprintStrings.createProduct),
+                onPressed: _busy ? null : () => _editProduct(null)),
+        ],
+      );
 }
 
 /// Dialog for editing/creating a single product
 class EditProductDialog extends StatefulWidget {
   final ProductModel product;
   final bool isCreating;
+  final int? affectedSeatCount;
 
   const EditProductDialog(
-      {super.key, required this.product, required this.isCreating});
+      {super.key,
+      required this.product,
+      required this.isCreating,
+      this.affectedSeatCount});
 
   @override
   State<EditProductDialog> createState() => _EditProductDialogState();
@@ -235,11 +246,17 @@ class _EditProductDialogState extends State<EditProductDialog> {
       title: Text(widget.isCreating
           ? BlueprintStrings.createProduct
           : BlueprintStrings.editProduct),
-      content: Form(
+      content: SingleChildScrollView(
+          child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Text(BlueprintStrings.catalogSaveNotice),
+            if (widget.affectedSeatCount != null)
+              Text(BlueprintStrings.catalogAffectedSeats(
+                  widget.affectedSeatCount!)),
+            const SizedBox(height: 16),
             TextFormField(
               initialValue: _title,
               decoration: InputDecoration(
@@ -274,7 +291,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                   return CommonStrings.fieldCannotBeEmpty;
                 }
                 final price = double.tryParse(value);
-                if (price == null || price < 0) {
+                if (price == null || !price.isFinite || price < 0) {
                   return CommonStrings.invalidFormat;
                 }
                 return null;
@@ -285,7 +302,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
             ),
           ],
         ),
-      ),
+      )),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),

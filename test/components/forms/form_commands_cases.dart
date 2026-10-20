@@ -1,6 +1,7 @@
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
+import 'reservation_capability_store_cases.dart' as reservationCapability;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/supabase_form_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -36,6 +37,7 @@ void main() {
     expect(original.toJson().containsKey('aggregate_version'), false);
   });
 
+  group('reservation_capability', reservationCapability.main);
   test('form lifecycle and blueprint saves use dedicated command RPCs',
       () async {
     final calls = <String>[];
@@ -56,7 +58,7 @@ void main() {
             'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
             'commitId': '00000000-0000-4000-8000-000000000001',
             'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
-          }, 'formId': 8},
+          }, 'formId': 8, if (name == 'update_blueprint_client_sync_v1') ...{ 'blueprint_id': 2, 'layout_revision': 1, 'seatBindings': <Object>[] }},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -75,7 +77,29 @@ void main() {
     );
     await commands.delete(8, expectedVersion: 4);
     await commands.save({'id': 1, 'occasion': 7});
-    await commands.saveBlueprint({'id': 2, 'occasion': 7});
+    await commands.saveBlueprint({
+      'id': 2,
+      'occasion': 7,
+      'layout': <String, dynamic>{
+        'schemaVersion': 2,
+        'symbolSetVersion': 1,
+        'canvas': {
+          'x': 0,
+          'y': 0,
+          'width': 1000,
+          'height': 1000,
+          'fill': '#FFFFFFFF'
+        },
+        'styles': <String, dynamic>{},
+        'seatingDefaults': <String, dynamic>{},
+        'textPolicy': {'language': 'und', 'direction': 'auto'},
+        'nodes': <Object>[]
+      },
+      'textResourceIds': <String>[],
+      'expected_layout_revision': 0
+    });
+    await expectLater(
+        commands.saveBlueprint({'id': 2, 'objects': []}), throwsStateError);
     expect(calls, [
       'create_form_client_sync_v1',
       'duplicate_form_to_occasion_client_sync_v1',

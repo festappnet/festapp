@@ -1,3 +1,7 @@
+import 'package:festapp_core/forms.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
+import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -5,16 +9,21 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 
 class BlueprintCreateOrderDialog extends StatefulWidget {
   final List<int> selectedSpotIds;
+  final Map<String, dynamic>? initialAnalysis;
+  final Future<Map<String, dynamic>> Function(List<int>)? analyze;
+  final Future<void> Function(List<int>, Map<String, dynamic>)? submit;
 
   const BlueprintCreateOrderDialog({
     super.key,
     required this.selectedSpotIds,
+    this.initialAnalysis,
+    this.analyze,
+    this.submit,
   });
 
   @override
@@ -42,6 +51,8 @@ class _BlueprintCreateOrderDialogState
   static const String _kProductTitle = 'product_title';
 
   bool _loading = true;
+  String? _error;
+  bool _analysisReady = false;
   // New state to track the submission process
   bool _isSubmitting = false;
 
@@ -53,11 +64,58 @@ class _BlueprintCreateOrderDialogState
   List<dynamic> _newItems = [];
 
   double _sumCur = 0;
+  String? _currency;
+  String? _orderFormKey;
+  _OrderFormFields? _customerFields;
+  final _ticketFields = <int, _OrderFormFields>{};
+
+  void _acceptAnalysis(Map<String, dynamic> data) {
+    final total = data[_kTotalPrice], currency = data['currency'];
+    if (total is! num ||
+        !total.isFinite ||
+        currency is! String ||
+        currency.isEmpty) {
+      throw const FormatException('Missing authoritative order total');
+    }
+    _conflicts = data[_kConflicts] ?? [];
+    _newItems = data[_kNewItems] ?? [];
+    _sumCur = total.toDouble();
+    _currency = currency;
+    final form = data['order_form'] as Map?;
+    _orderFormKey = form?['key'] as String?;
+    final fields = (form?['fields'] as List? ?? const [])
+        .map((json) =>
+            FormFieldDefinition.fromJson(Map<String, dynamic>.from(json)))
+        .where((f) =>
+            f.isRequired == true &&
+            f.isHidden != true &&
+            !{'ticket', 'spot', 'product_type'}.contains(f.type))
+        .toList();
+    final customer = fields
+        .where((f) => f.isTicketField != true && f.type != 'email')
+        .toList();
+    _customerFields = customer.isEmpty
+        ? null
+        : _OrderFormFields(customer, form?['phone_prefixes']);
+    final ticket = fields.where((f) => f.isTicketField == true).toList();
+    _ticketFields.clear();
+    if (ticket.isNotEmpty) {
+      for (final id in widget.selectedSpotIds) {
+        _ticketFields[id] = _OrderFormFields(ticket, form?['phone_prefixes']);
+      }
+    }
+    _analysisReady = true;
+    _loading = false;
+  }
 
   @override
   void initState() {
     super.initState();
-    _analyze();
+    if (widget.initialAnalysis != null) {
+      _acceptAnalysis(widget.initialAnalysis!);
+    } else {
+      _analyze();
+    }
   }
 
   @override
@@ -68,34 +126,35 @@ class _BlueprintCreateOrderDialogState
   }
 
   Future<void> _analyze() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _analysisReady = false;
+    });
     try {
-      final data = await DbEshop.analyzeNewOrderSpots(widget.selectedSpotIds);
-      if (mounted) {
-        setState(() {
-          _conflicts = data[_kConflicts] ?? [];
-          _newItems = data[_kNewItems] ?? [];
-          _recalc();
-          _loading = false;
-        });
-      }
+      final data = await (widget.analyze ??
+          DbEshop.analyzeNewOrderSpots)(widget.selectedSpotIds);
+      if (mounted) setState(() => _acceptAnalysis(data));
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context);
-        ToastHelper.Show(context, "Error analyzing spots: $e",
-            severity: ToastSeverity.NotOk);
+        setState(() {
+          _loading = false;
+          _error = BlueprintStrings.analysisFailed;
+        });
       }
     }
   }
 
-  void _recalc() {
-    _sumCur = _newItems.fold(0.0, (sum, item) {
-      final price = (item[_kPrice] as num?)?.toDouble() ?? 0.0;
-      return sum + price;
-    });
-  }
-
   Future<void> _confirm() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_loading || _isSubmitting || !_analysisReady) return;
+    var valid = _formKey.currentState!.validate();
+    for (final group in [
+      if (_customerFields != null) _customerFields!,
+      ..._ticketFields.values
+    ]) {
+      if (!(group.key.currentState?.saveAndValidate() ?? false)) valid = false;
+    }
+    if (!valid) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
@@ -106,15 +165,28 @@ class _BlueprintCreateOrderDialogState
 
     setState(() {
       _isSubmitting = true;
+      _error = null;
     });
 
     final inputData = {
       'email': _emailController.text.trim(),
+      if (_orderFormKey != null) 'form_key': _orderFormKey,
+      if (_customerFields != null)
+        'fields': _customerFields!.values(ticket: false),
+      if (_ticketFields.isNotEmpty)
+        'ticket_fields': {
+          for (final entry in _ticketFields.entries)
+            entry.key.toString(): entry.value.values(ticket: true),
+        },
     };
 
     try {
       // API call performed here so we can show loading state
-      await DbEshop.createOrderFromSpots(widget.selectedSpotIds, inputData);
+      if (widget.submit != null) {
+        await widget.submit!(widget.selectedSpotIds, inputData);
+      } else {
+        await DbEshop.createOrderFromSpots(widget.selectedSpotIds, inputData);
+      }
 
       if (mounted) {
         // Return true to indicate success
@@ -122,9 +194,8 @@ class _BlueprintCreateOrderDialogState
       }
     } catch (e) {
       if (mounted) {
-        ToastHelper.Show(context, e.toString().replaceFirst("Exception: ", ""),
-            severity: ToastSeverity.NotOk);
         setState(() {
+          _error = e.toString().replaceFirst('Exception: ', '');
           _isSubmitting = false;
         });
       }
@@ -147,147 +218,187 @@ class _BlueprintCreateOrderDialogState
         ],
       ),
       content: _loading
-          ? const SizedBox(
-              height: 150, child: Center(child: CircularProgressIndicator()))
-          : SizedBox(
-              width: StylesConfig.formMaxWidth,
-              child: SelectionArea(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- SECTION 1: CANCELLED ITEMS ---
-                      if (groupedConflicts.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+          ? SizedBox(
+              height: 150, child: Center(child: Text(OrdersStrings.processing)))
+          : !_analysisReady
+              ? Column(mainAxisSize: MainAxisSize.min, children: [
+                  Semantics(
+                      liveRegion: true,
+                      child: Text(_error ?? BlueprintStrings.analysisFailed)),
+                  TextButton(
+                      onPressed: _analyze, child: Text(CommonStrings.retry)),
+                ])
+              : SizedBox(
+                  width: StylesConfig.formMaxWidth,
+                  child: SelectionArea(
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_error != null)
+                            Semantics(
+                                liveRegion: true,
+                                child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Text(_error!,
+                                        style: TextStyle(
+                                            color: theme.colorScheme.error)))),
+                          // --- SECTION 1: CANCELLED ITEMS ---
+                          if (groupedConflicts.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.remove_shopping_cart,
-                                      color: theme.colorScheme.error, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(OrdersStrings.cancelledItemsTitle,
-                                      style: TextStyle(
+                                  Row(
+                                    children: [
+                                      Icon(Icons.remove_shopping_cart,
                                           color: theme.colorScheme.error,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16)),
+                                          size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(OrdersStrings.cancelledItemsTitle,
+                                          style: TextStyle(
+                                              color: theme.colorScheme.error,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    BlueprintStrings.warningNoCancellationEmail,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                BlueprintStrings.warningNoCancellationEmail,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                  color: theme.colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ...groupedConflicts.entries.map((entry) {
-                          return _buildOrderConflictCard(
-                              entry.key, entry.value);
-                        }),
-                        const SizedBox(height: 24),
-                        const Divider(thickness: 1),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // --- SECTION 2: NEW ORDER ---
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.add_shopping_cart,
-                                color: theme.colorScheme.primary, size: 20),
-                            const SizedBox(width: 8),
-                            Text(OrdersStrings.newOrderTitle,
-                                style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16)),
+                            ),
+                            ...groupedConflicts.entries.map((entry) {
+                              return _buildOrderConflictCard(
+                                  entry.key, entry.value);
+                            }),
+                            const SizedBox(height: 24),
+                            const Divider(thickness: 1),
+                            const SizedBox(height: 24),
                           ],
-                        ),
-                      ),
-                      _buildNewOrderCard(),
 
-                      const SizedBox(height: 24),
-
-                      // --- SECTION 3: EMAIL INPUT ---
-                      Text(OrdersStrings.infoEmail,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(
-                        OrdersStrings.emailHelpText,
-                        style: TextStyle(
-                            fontSize: 14, color: theme.colorScheme.onSurface),
-                      ),
-                      const SizedBox(height: 8),
-                      Form(
-                        key: _formKey,
-                        child: TextFormField(
-                          controller: _emailController,
-                          enabled:
-                              !_isSubmitting, // Disable input while submitting
-                          decoration: InputDecoration(
-                            hintText: OrdersStrings.customerExample,
-                            hintStyle: TextStyle(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6)),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 16),
+                          // --- SECTION 2: NEW ORDER ---
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.add_shopping_cart,
+                                    color: theme.colorScheme.primary, size: 20),
+                                const SizedBox(width: 8),
+                                Text(OrdersStrings.newOrderTitle,
+                                    style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
+                              ],
+                            ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty)
-                              return 'Email is required';
-                            if (!value.contains('@')) return 'Invalid email';
-                            return null;
-                          },
-                        ),
+                          _buildNewOrderCard(),
+
+                          const SizedBox(height: 24),
+
+                          // --- SECTION 3: EMAIL INPUT ---
+                          Text(OrdersStrings.infoEmail,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(
+                            OrdersStrings.emailHelpText,
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface),
+                          ),
+                          const SizedBox(height: 8),
+                          Form(
+                            key: _formKey,
+                            child: TextFormField(
+                              controller: _emailController,
+                              enabled:
+                                  !_isSubmitting, // Disable input while submitting
+                              decoration: InputDecoration(
+                                hintText: OrdersStrings.customerExample,
+                                hintStyle: TextStyle(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.6)),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 16),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return CommonStrings.fieldCannotBeEmpty;
+                                if (!value.contains('@'))
+                                  return CommonStrings.invalidFormat;
+                                return null;
+                              },
+                            ),
+                          ),
+                          if (_customerFields != null) ...[
+                            const SizedBox(height: 16),
+                            _requiredFields(_customerFields!),
+                          ],
+                          for (final entry in _ticketFields.entries) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                                _newItems
+                                            .where((item) =>
+                                                item['spot_id'] == entry.key)
+                                            .firstOrNull?['spot_title']
+                                        as String? ??
+                                    '${entry.key}',
+                                style: theme.textTheme.titleSmall),
+                            const SizedBox(height: 8),
+                            _requiredFields(entry.value),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
           child: Text(CommonStrings.storno),
         ),
         ElevatedButton(
-          onPressed: (_loading || _isSubmitting) ? null : _confirm,
+          onPressed:
+              (_loading || _isSubmitting || !_analysisReady) ? null : _confirm,
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          // Swap label/icon for ProgressIndicator when submitting
-          child: _isSubmitting
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: theme.colorScheme.onPrimary))
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check, size: 18),
-                    const SizedBox(width: 8),
-                    Text(BlueprintStrings.confirmOrder),
-                  ],
-                ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check, size: 18),
+              const SizedBox(width: 8),
+              Text(BlueprintStrings.confirmOrder),
+            ],
+          ),
         ),
       ],
     );
   }
+
+  Widget _requiredFields(_OrderFormFields group) => FormBuilder(
+        key: group.key,
+        enabled: !_isSubmitting,
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children:
+                FormHelper.getAllFormFields(context, group.key, group.holder)),
+      );
 
   Widget _buildOrderConflictCard(dynamic orderId, List<dynamic> tickets) {
     return _buildOrderConflictCardOriginal(orderId, tickets);
@@ -342,7 +453,8 @@ class _BlueprintCreateOrderDialogState
                           overflow: TextOverflow.ellipsis)
                     ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text("-${Utilities.formatPrice(context, orderTotalRefund)}",
+                  Text(
+                      "-${Utilities.formatPrice(context, orderTotalRefund, currencyCode: _currency)}",
                       style: TextStyle(
                           color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
@@ -457,7 +569,8 @@ class _BlueprintCreateOrderDialogState
                               style: const TextStyle(fontSize: 13))
                         ]),
                     const Spacer(),
-                    Text("+${Utilities.formatPrice(context, price)}",
+                    Text(
+                        "+${Utilities.formatPrice(context, price, currencyCode: item['currency'] as String? ?? _currency)}",
                         style: TextStyle(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.bold))
@@ -469,7 +582,9 @@ class _BlueprintCreateOrderDialogState
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary)),
-              Text(Utilities.formatPrice(context, _sumCur),
+              Text(
+                  Utilities.formatPrice(context, _sumCur,
+                      currencyCode: _currency),
                   style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -480,4 +595,24 @@ class _BlueprintCreateOrderDialogState
       ),
     );
   }
+}
+
+class _OrderFormFields {
+  _OrderFormFields(List<FormFieldDefinition> definitions, Object? prefixes)
+      : holder = FormHolder(
+            fields: definitions.map(FormHolder.createFieldHolder).toList(),
+            isCardDesign: false,
+            phonePrefixes:
+                prefixes is List ? prefixes.cast<String>() : const []) {
+    holder.controller = FormHolderController(globalKey: key);
+  }
+  final key = GlobalKey<FormBuilderState>();
+  final FormHolder holder;
+  List<Map<String, dynamic>> values({required bool ticket}) => [
+        for (final field in holder.fields)
+          {
+            field.id.toString(): FormHelper.getFieldData(key, field),
+            if (ticket) field.fieldType: FormHelper.getFieldData(key, field),
+          },
+      ];
 }

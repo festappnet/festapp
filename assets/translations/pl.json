@@ -1523,6 +1523,7 @@
     "client": "Connecting {client}",
     "scope": "The connected application can read your identity, accessible occasions and ticket artwork within the selected access. Allow occasion creation separately below.",
     "choose": "Choose occasions to allow:",
+    "selectAll": "Zaznacz wszystko",
     "duration": "Access lasts 7 days. You can revoke it earlier in Festapp connection management.",
     "approve": "Allow and connect",
     "cancel": "Cancel",
@@ -1541,6 +1542,27 @@
     "wholeOrganizerHint": "Includes current and future occasions. Your current permissions always apply.",
     "organizer": "Organizer",
     "allowCreate": "Allow creating new occasions",
-    "allowCreateHint": "New occasions will be hidden, with sales closed."
+    "allowCreateHint": "New occasions will be hidden, with sales closed.",
+    "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
+  },
+  "FeatureBlueprint": {
+    "protectedCount": "Zajęte miejsca: {count}.",
+    "cancelReservation": "Anuluj wybrane rezerwacje",
+    "assignSelectionProduct": "Wspólny produkt i cena",
+    "assignmentSaveNotice": "Przypisanie produktu zostanie zapisane po kliknięciu Zapisz na planie.",
+    "insertGraphic": "Wstaw obraz lub SVG",
+    "svgImportLimit": "SVG przekracza limit rozmiaru lub złożoności.",
+    "svgExternalDependency": "SVG odwołuje się do pliku zewnętrznego. Przed importem osadź potrzebną grafikę w SVG.",
+    "svgInteractiveContent": "Skryptów i interaktywnej zawartości SVG nie można przekształcić w grafikę statyczną.",
+    "svgDocumentType": "Definicje DTD nie są obsługiwane. Wyeksportuj SVG bez DTD.",
+    "svgInvalid": "Ten plik nie jest prawidłowym SVG.",
+    "svgEmbeddedBitmap": "SVG zawiera obraz bitmapowy. Wstaw go do planu osobno jako obraz.",
+    "svgComplexText": "Tekst SVG używa nieobsługiwanego pozycjonowania lub mieszanych stylów. Przed importem zamień go na krzywe.",
+    "svgUnsupportedEffect": "Tego efektu SVG nie można jeszcze przekształcić bez zmiany wyglądu.",
+    "svgConversionFailed": "Nie udało się przekształcić SVG. Plan pozostał bez zmian.",
+    "blockSeat": "Zablokuj miejsce",
+    "blockSeatHint": "Zablokowanego miejsca nie można wybrać do nowego zamówienia.",
+    "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
+    "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień."
   }
 }

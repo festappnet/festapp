@@ -58,155 +58,6 @@
     color: red;
 }
 
-/* Confirm / Continue Button */
-.blueprint-btn-confirm {
-    margin: 16px auto;
-    z-index: 3010;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-    min-width: 200px;
-    padding: 12px 32px;
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-radius: 8px;
-}
-
-/* Close Button (Optional/Hidden in current code but good to have) */
-.blueprint-btn-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 3010;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-}
-
-/* Renderer Container */
-.blueprint-renderer-container {
-    overflow: hidden;
-    position: relative;
-    background-color: #f0f0f0;
-    touch-action: none;
-    width: 100%;
-    height: 100%;
-}
-
-.blueprint-transform-container {
-    transform-origin: 0 0;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-/* Reserve a map viewport independently of mobile zoom controls. */
-.blueprint-renderer-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.blueprint-map-viewport {
-    position: relative;
-    overflow: hidden;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    touch-action: none;
-}
-
-/* Background */
-.blueprint-bg-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.blueprint-bg-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
-.blueprint-bg-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* Seat Container */
-.blueprint-seat-container {
-    position: absolute;
-    z-index: 1;
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
-    touch-action: none !important;
-}
-
-/* Add to content as well */
-.blueprint-content {
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    touch-action: none !important;
-}
-
-/* Seat Visuals */
-.blueprint-seat-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    /* dynamic properties: width, height, margin, background-color, border-radius, cursor */
-}
-
-.blueprint-seat-visual-inner {
-    box-sizing: border-box;
-    width: 100%;
-    height: 100%;
-    font-size: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    color: #fff;
-    text-shadow: 0 0 2px #000;
-}
-
-/* Tooltip */
-.blueprint-tooltip {
-    position: fixed;
-    z-index: 3100;
-    background-color: white;
-    border: 2px solid black;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 14px;
-    color: black;
-    pointer-events: none;
-    display: none;
-    white-space: pre-wrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    max-width: 300px;
-}
-
 /* Global Overrides when Blueprint is Active */
 html.blueprint-active,
 body.blueprint-active {
@@ -231,6 +82,61 @@ body.blueprint-active #floating-price-widget {
     left: auto !important;
     margin: 0 !important;
 }
+
+/* Confirm / Continue Button */
+.blueprint-btn-confirm {
+    margin: 16px auto;
+    z-index: 3010;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    min-width: 200px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+}
+
+.blueprint-operation-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.blueprint-content > .venue-layout-viewer { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+.blueprint-content > .venue-layout-viewer > svg { flex: 1; min-height: 240px; }
+.blueprint-content > .venue-layout-viewer button,
+.blueprint-content > .venue-layout-viewer input {
+    font: inherit;
+    color: var(--text-color, #202124);
+    background: var(--background-color, #fff);
+    border: 1px solid var(--border-color, #c7cbd1);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.blueprint-content > .venue-layout-viewer button[aria-pressed="true"] {
+    border-color: var(--primary-color, #526a9c);
+    box-shadow: inset 0 0 0 1px var(--primary-color, #526a9c);
+}
+.blueprint-content > .venue-layout-viewer button:focus-visible,
+.blueprint-content > .venue-layout-viewer input:focus-visible {
+    outline: 2px solid var(--primary-color, #526a9c);
+    outline-offset: 2px;
+}
+.blueprint-content > .venue-layout-viewer > div:not([role]) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+}
+.blueprint-content > .venue-layout-viewer label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.blueprint-content > .venue-layout-viewer input { width: 72px; min-height: 44px; }
+.blueprint-content > .venue-layout-viewer > [role="status"] { padding: 8px 12px; }
+@media (prefers-reduced-motion: reduce) {
+    .blueprint-modal-container, .blueprint-loading { animation: none; }
+}
+.blueprint-content { min-height: 0; }
+.blueprint-content > .blueprint-error { height: auto; padding: 16px; margin: 16px; color: inherit; border-inline-start: 4px solid var(--danger-color, #b42318); }
 
 /* Fixed, touch-friendly controls, independent of the map transform. */
 .blueprint-zoom-controls {
@@ -308,20 +214,4 @@ body.blueprint-active #floating-price-widget {
     .blueprint-zoom-button {
         transition: none;
     }
-}
-
-/* Reserve a map viewport independently of mobile zoom controls. */
-.blueprint-renderer-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.blueprint-map-viewport {
-    position: relative;
-    overflow: hidden;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
-    touch-action: none;
 }

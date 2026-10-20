@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
@@ -27,6 +28,22 @@ class FormEditBundle {
 }
 
 class DbForms {
+  static Future<Map<String, dynamic>> previewBlueprintSwap(
+      int firstSpot, int secondSpot) async {
+    final response = await _supabase.rpc('preview_blueprint_swap', params: {
+      'p_spot_1': firstSpot,
+      'p_spot_2': secondSpot,
+    });
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  static Future<BlueprintLayoutSaveResult> saveLayoutSnapshot(
+          BlueprintLayoutSaveRequest request) async =>
+      BlueprintLayoutSaveResult.fromJson(
+          await _commands.saveBlueprint(request.toJson()));
+
+  static FormCommands blueprintCommands() => _commands;
+
   static final _supabase = Supabase.instance.client;
   static FormCommands get _commands => SupabaseFormCommands(_supabase);
 
@@ -198,16 +215,6 @@ class DbForms {
     var b = BlueprintModel.fromJson(response["data"]);
     b.assignAllSpotsWithBlueprint();
     return b;
-  }
-
-  static Future<void> updateBlueprint(BlueprintModel blueprint) async {
-    final result = await _commands.saveBlueprint(blueprint.toSaveJson());
-    blueprint.id = (result['blueprint_id'] as num).toInt();
-    blueprint.aggregateVersion = (result['aggregate_version'] as num).toInt();
-    final savedObjects = result['updated_objects'] as List;
-    for (var index = 0; index < savedObjects.length; index++) {
-      blueprint.objects![index].id = savedObjects[index]['id'] as int?;
-    }
   }
 
   static Future<List<FormResponseModel>> getAllResponses(

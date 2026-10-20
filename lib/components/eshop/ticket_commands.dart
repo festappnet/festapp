@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -31,6 +32,7 @@ class TicketCancellationOutcome {
 abstract interface class TicketCommands {
   Future<void> swapSpots(int firstSpotId, int secondSpotId);
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds);
+  Future<void> releaseHolds(List<int> spotIds);
 }
 
 class SupabaseTicketCommands implements TicketCommands {
@@ -49,10 +51,22 @@ class SupabaseTicketCommands implements TicketCommands {
       }),
     );
     if (response.code != 200) {
-      throw StateError('Ticket cancellation was rejected');
+      throw BlueprintCommandRejection(response.code, response.data);
     }
     await applyClientCommandReplacements(response);
     return TicketCancellationOutcome.fromJson(response.data);
+  }
+
+  @override
+  Future<void> releaseHolds(List<int> spotIds) async {
+    final response = ClientCommandResponse.from(await _transport.invoke(
+      'release_blueprint_holds_client_sync_v1',
+      {'p_spots': spotIds},
+    ));
+    if (response.code != 200) {
+      throw BlueprintCommandRejection(response.code, response.data);
+    }
+    await applyClientCommandReplacements(response);
   }
 
   @override
@@ -64,7 +78,7 @@ class SupabaseTicketCommands implements TicketCommands {
       }),
     );
     if (response.code != 200) {
-      throw StateError('Spot ticket swap was rejected');
+      throw BlueprintCommandRejection(response.code, response.data);
     }
     await applyClientCommandReplacements(response);
   }

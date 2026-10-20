@@ -17,7 +17,7 @@ export async function parseRegisteredTicketLayout(value:unknown){
   for(const id of ids)if(!await ticketFontAsset(id))throw new TicketFontError('font_unknown');
   return layout;
 }
-export const ticketFontStore:FontStore=createTicketFontR2Store(()=>Deno.env.get('TICKET_FONT_SERVICE_SECRET'));
+export const ticketFontStore:FontStore=createTicketFontR2Store(()=>Deno.env.get('TICKET_FONT_SERVICE_SECRET'),fetch,Deno.env.get('TICKET_FONT_SERVICE_URL'));
 const resolver=new TicketFontResolver({store:ticketFontStore,fetch,
   bundled:async a=>{if(!a.file)return null;try{return await Deno.readFile(new URL(`./ticket-assets/${a.file}`,import.meta.url));}catch(e){if(e instanceof Deno.errors.NotFound)return null;throw e;}},
   lookup:ticketFontAsset,

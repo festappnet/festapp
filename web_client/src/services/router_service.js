@@ -111,6 +111,7 @@ export class RouterService {
 
     // History Management
     static pushState(path) {
+        RouterService.disposeMcpPage();
         window.history.pushState({}, '', path);
     }
 
@@ -145,10 +146,21 @@ export class RouterService {
 
     // Initial Load Check
     static async handleInitialLoad() {
+        RouterService.disposeMcpPage();
+        const mcpGeneration = RouterService._mcpGeneration;
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.
         if (window.location.pathname === '/google-auth') return true;
         if (/^\/unit\/[1-9]\d*\/?$/.test(window.location.pathname)) return false;
+        if (window.location.pathname === '/settings/mcp-connect') {
+            const { McpConnectionPage } = await import('../components/mcp/mcp_connection_page.js');
+            if (mcpGeneration !== RouterService._mcpGeneration ||
+                window.location.pathname !== '/settings/mcp-connect') return true;
+            document.getElementById('app')?.setAttribute('hidden', '');
+            RouterService._mcpPage = new McpConnectionPage(document.getElementById('form-page-container'));
+            await RouterService._mcpPage.init();
+            return true;
+        }
         let path = window.location.pathname;
         const fullUrl = window.location.href;
 
@@ -466,6 +478,14 @@ export class RouterService {
     // Listen for PopState
     static _lastPath = window.location.pathname;
     static _scannerPage = null;
+    static _mcpPage = null;
+    static _mcpGeneration = 0;
+
+    static disposeMcpPage() {
+        RouterService._mcpGeneration++;
+        RouterService._mcpPage?.dispose();
+        RouterService._mcpPage = null;
+    }
 
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
@@ -476,6 +496,7 @@ export class RouterService {
                 return;
             }
             RouterService._lastPath = path;
+            RouterService.disposeMcpPage();
 
             const scannerRoute = resolveScannerRoute(path);
             if (scannerRoute) {

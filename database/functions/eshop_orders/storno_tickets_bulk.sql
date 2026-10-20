@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[])
+CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[], p_send_email BOOLEAN DEFAULT TRUE)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -18,6 +18,8 @@ DECLARE
     v_removed_price NUMERIC(10, 2);
     v_current_price NUMERIC(10, 2);
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(p_ticket_ids)));
+    PERFORM public.check_blueprint_selection_units_internal(ARRAY(SELECT s.id FROM eshop.spots s JOIN eshop.order_product_ticket opt ON opt.id=s.order_product_ticket WHERE opt.ticket=ANY(p_ticket_ids)));
     PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_ticket_ids)));
     -- 1. Identify all unique orders involved in this batch AND their occasion
     -- We need the occasion ID to perform the security check
@@ -71,7 +73,7 @@ BEGIN
         -- -----------------------------------------------------
         IF v_remaining_count <= 0 THEN
             -- Helper function to cancel the entire order
-            PERFORM update_order_and_tickets_to_storno_ws_internal_v1(v_order_id);
+            PERFORM public.cancel_order_domain_internal_v1(v_order_id,p_send_email);
 
         -- -----------------------------------------------------
         -- SCENARIO B: Partial Cancellation (Modify Order)
@@ -149,4 +151,4 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM PUBLIC, anon, authenticated;

@@ -1,3 +1,10 @@
+import 'package:venue_seat_picker/venue_seat_picker.dart';
+import 'blueprint_setup_layout_draft.dart';
+import '../../blueprint/blueprint_layout_resources.dart';
+import '../../blueprint/blueprint_text_preparation.dart';
+import '../../blueprint/blueprint_strings.dart';
+import '../../blueprint/views/blueprint_layout_demo.dart';
+import '../../blueprint/views/blueprint_product_dialogs.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -11,11 +18,6 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/blueprint/blueprint_configuration.dart';
-import 'package:fstapp/components/blueprint/blueprint_group.dart';
-import 'package:fstapp/components/blueprint/blueprint_model.dart';
-import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
-import 'package:fstapp/components/blueprint/views/blueprint_editor_tab.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/create_or_copy_dialog.dart';
@@ -125,6 +127,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _conflict = false;
   String? _error;
   bool _finalizing = false;
+  bool _openingBlueprint = false;
   String? _finalizeCommand;
   OccasionSetupDraft? _finalizeDraft;
   String? _finalizeError;
@@ -151,10 +154,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'formDraft': null,
       'deadline': '',
       'blueprintMode': 'Bez plánku',
-      'blueprintObjects': <Map<String, dynamic>>[],
-      'blueprintGroups': <Map<String, dynamic>>[],
-      'blueprintWidth': 12,
-      'blueprintHeight': 8,
       'reviewed': false,
       'reviewConfirmed': false,
       'completed': <int>[],
@@ -319,9 +318,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['sourceId'] = null;
     draft['formDraft'] = null;
     draft['formOrigin'] = null;
-    draft['blueprintObjects'] = <Map<String, dynamic>>[];
-    draft['blueprintGroups'] = <Map<String, dynamic>>[];
-    draft['blueprintBackground'] = null;
+    draft.remove('blueprintLayoutDraft');
     draft['blueprintMode'] = 'Bez plánku';
     draft['sourceProgram'] = <dynamic>[];
     draft['sourceInformation'] = <dynamic>[];
@@ -382,12 +379,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   void _applyBlueprint(Map<String, dynamic> draft, Map plan) {
     draft['blueprintMode'] = 'Převzít';
-    draft['blueprintObjects'] = jsonDecode(jsonEncode(plan['objects'] ?? []));
-    draft['blueprintGroups'] = jsonDecode(jsonEncode(plan['groups'] ?? []));
-    final dimensions = (plan['configuration'] as Map?)?['dimensions'] as Map?;
-    draft['blueprintWidth'] = dimensions?['width'] ?? 12;
-    draft['blueprintHeight'] = dimensions?['height'] ?? 8;
-    draft['blueprintBackground'] = plan['background_svg'];
+    draft.remove('blueprintLayoutDraft');
+    if (plan['blueprintLayoutDraft'] is Map) {
+      draft['blueprintLayoutDraft'] =
+          jsonDecode(jsonEncode(plan['blueprintLayoutDraft']));
+    }
     draft['blueprintTitle'] = plan['title'];
   }
 
@@ -659,7 +655,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   bool _blueprintReady(Map<String, dynamic> d) =>
       d['blueprintMode'] == 'Bez plánku' ||
-      (d['formEnabled'] == true && (d['blueprintObjects'] as List).isNotEmpty);
+      (d['formEnabled'] == true &&
+          _layoutSeatCount(d) + _layoutAreaCount(d) > 0);
 
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
@@ -785,90 +782,159 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     });
   }
 
-  void _openBlueprint() {
-    final d = _active!;
-    final plan = _planFromDraft(d);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: Text('${CommonStrings.blueprint} · návrh události'),
-          ),
-          body: BlueprintTab.prototype(
-            prototypeBlueprint: plan,
-            onPrototypeSave: (saved) {
-              _change((x) {
-                x['blueprintObjects'] =
-                    (saved.objects ?? []).map((o) => o.toJson()).toList();
-                x['blueprintGroups'] =
-                    (saved.groups ?? []).map((g) => g.toJson()).toList();
-                x['blueprintWidth'] = saved.configuration?.width ?? 12;
-                x['blueprintHeight'] = saved.configuration?.height ?? 8;
-                x['blueprintBackground'] = saved.backgroundSvg;
-              }, changesConfiguration: true);
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  BlueprintModel _planFromDraft(Map<String, dynamic> d) {
-    final groups = (d['blueprintGroups'] as List)
-        .map(
-          (g) =>
-              BlueprintGroupModel.fromJson(Map<String, dynamic>.from(g as Map)),
-        )
-        .toList();
-    final objects = (d['blueprintObjects'] as List)
-        .map(
-          (o) => BlueprintObjectModel.fromJson(
-            Map<String, dynamic>.from(o as Map),
-          ),
-        )
-        .toList();
-    for (final obj in objects) {
-      for (final group in groups) {
-        if (obj.groupId == group.id) {
-          obj.group = group;
-          group.objects.add(obj);
-        }
+  Future<void> _openBlueprint() async {
+    if (_openingBlueprint) return;
+    setState(() {
+      _openingBlueprint = true;
+      _error = null;
+    });
+    final assets = BlueprintLayoutAssetResolver();
+    try {
+      if (!await _flush() || !mounted) return;
+      final data = _active!;
+      final formData = data['formDraft'];
+      final products = formData is Map
+          ? draftFormBundle(Map<String, dynamic>.from(formData))
+              .products
+              .where((p) => p.productTypeString == ProductModel.spotType)
+              .toList()
+          : <ProductModel>[];
+      if (products.isEmpty)
+        throw StateError(BlueprintStrings.toastNoTemplateProduct);
+      ProductModel? defaultProduct;
+      if (products.length == 1) {
+        defaultProduct = products.single;
+      } else {
+        defaultProduct = await showDialog<ProductModel>(
+            context: context,
+            builder: (_) => SelectProductDialog.catalog(
+                products: products,
+                onProductSaved: (_) {},
+                canEditCatalog: false));
+        if (defaultProduct == null || !mounted) return;
       }
+      final raw = data['blueprintLayoutDraft'];
+      if (raw == null && data['blueprintMode'] == 'Převzít') {
+        throw StateError(BlueprintStrings.layoutUnavailable);
+      }
+      var draft = raw is Map
+          ? BlueprintSetupLayoutDraft.fromJson(Map<String, dynamic>.from(raw))
+          : BlueprintSetupLayoutDraft.empty(
+              document:
+                  VenueLayoutTemplates.byId(VenueLayoutTemplates.defaultId)
+                      .create(
+                          localize: VenueLayoutLocalizations.of(context).text),
+              resources: const {});
+      final provider = await BlueprintTextResources.forSetupDraft(_stored.id);
+      Future<Map<String, dynamic>> prepare(
+          VenueLayoutDocument document, Map<String, dynamic> resources) async {
+        final prepared =
+            await BlueprintTextPreparation(provider.prepareTextBatch)
+                .prepareSnapshot(
+                    document,
+                    {
+                      for (final family in provider.families)
+                        family['id'] as String: family
+                    },
+                    resources);
+        return assets.resolve(prepared);
+      }
+
+      final resources = await prepare(
+          draft.document, await _store.blueprintResources(_stored));
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(MaterialPageRoute(
+          builder: (_) => Scaffold(
+                appBar: AppBar(title: Text(CommonStrings.blueprint)),
+                body: BlueprintLayoutDemo(
+                    initialDocument: draft.document,
+                    initiallyUnsaved: raw is! Map,
+                    initialResources: resources,
+                    loadTextResources: () async => provider,
+                    prepareResources: prepare,
+                    unitId: _stored.unit,
+                    onSave: (document) async {
+                      var next = draft.reconcile(document,
+                          defaultProductId: defaultProduct!.id);
+                      final unassigned = next.seatBindings.values
+                          .where((seat) =>
+                              seat.productId == null &&
+                              !draft.seatBindings.containsKey(seat.nodeId))
+                          .toList();
+                      for (final group in unassigned
+                          .map((seat) => seat.groupNodeId)
+                          .whereType<String>()
+                          .toSet()) {
+                        final product = await showDialog<ProductModel>(
+                            context: context,
+                            builder: (_) => SelectProductDialog.catalog(
+                                products: products,
+                                onProductSaved: (_) {},
+                                canEditCatalog: false));
+                        if (product == null)
+                          throw StateError(CommonStrings.storno);
+                        next = next.withGroupProduct(group, product.id!,
+                            assignNodeIds: unassigned
+                                .where((seat) => seat.groupNodeId == group)
+                                .map((seat) => seat.nodeId)
+                                .toSet());
+                      }
+                      for (final area in document.nodes
+                          .where((n) => n.kind == 'capacityArea')) {
+                        if (next.areaBindings
+                            .any((b) => b['nodeId'] == area.id)) continue;
+                        final product = await showDialog<ProductModel>(
+                            context: context,
+                            builder: (_) => SelectProductDialog.catalog(
+                                products: products,
+                                onProductSaved: (_) {},
+                                canEditCatalog: false));
+                        if (product == null)
+                          throw StateError(CommonStrings.storno);
+                        final capacity = area.properties['capacity'];
+                        if (capacity is! num ||
+                            capacity < 0 ||
+                            capacity != capacity.round()) {
+                          throw StateError(CommonStrings.invalidFormat);
+                        }
+                        next = next.withArea(
+                            nodeId: area.id,
+                            productId: product.id!,
+                            capacity: capacity.toInt());
+                      }
+                      _change(
+                          (value) =>
+                              value['blueprintLayoutDraft'] = next.toJson(),
+                          changesConfiguration: true);
+                      if (!await _flush())
+                        throw StateError(
+                            _error ?? CommonStrings.unexpectedError);
+                      draft = next;
+                    }),
+              )));
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      assets.dispose();
+      if (mounted) setState(() => _openingBlueprint = false);
     }
-    final formData = d['formDraft'];
-    final products = formData is Map
-        ? draftFormBundle(Map<String, dynamic>.from(formData)).products
-        : <ProductModel>[];
-    for (final obj in objects) {
-      obj.product = products.where((p) => p.id == obj.spotProduct).firstOrNull;
-    }
-    for (final group in groups) {
-      group.product = group.objects
-          .map((o) => o.product)
-          .whereType<ProductModel>()
-          .firstOrNull;
-    }
-    final plan = BlueprintModel(
-      title: d['blueprintTitle'] as String? ?? 'Plán sálu',
-      backgroundSvg: d['blueprintBackground'] as String?,
-      configuration: BlueprintConfiguration(
-        width: d['blueprintWidth'] as int,
-        height: d['blueprintHeight'] as int,
-      ),
-      objects: objects,
-      groups: groups,
-      products: products,
-    );
-    plan.assignAllSpotsWithBlueprint();
-    return plan;
   }
 
-  Widget _choice(
-    Map<String, dynamic> d,
-    String keyName,
-    String label,
-    List<String> options,
-  ) =>
+  int _layoutSeatCount(Map<String, dynamic> data) =>
+      data['blueprintLayoutDraft'] is Map
+          ? ((data['blueprintLayoutDraft'] as Map)['seatBindings'] as List? ??
+                  [])
+              .length
+          : 0;
+  int _layoutAreaCount(Map<String, dynamic> data) =>
+      data['blueprintLayoutDraft'] is Map
+          ? ((data['blueprintLayoutDraft'] as Map)['areaBindings'] as List? ??
+                  [])
+              .length
+          : 0;
+
+  Widget _choice(Map<String, dynamic> d, String keyName, String label,
+          List<String> options) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
@@ -885,11 +951,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             x[keyName] = v;
             if (keyName == 'source') _applySource(x, v!);
             if (keyName == 'blueprintMode' && v == 'Nový') {
-              x['blueprintObjects'] = <Map<String, dynamic>>[];
-              x['blueprintGroups'] = <Map<String, dynamic>>[];
-              x['blueprintBackground'] = null;
-              x['blueprintWidth'] = 12;
-              x['blueprintHeight'] = 8;
+              x.remove('blueprintLayoutDraft');
             }
             if (keyName == 'blueprintMode' && v == 'Převzít') {
               final source = _sources
@@ -1171,13 +1233,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           ),
         );
       }
-      if ((d['blueprintObjects'] as List).isEmpty) {
-        issues.add(
-          MapEntry(
-            AppConfig.isAppSupported ? 4 : 6,
-            'Plánek zatím nemá žádná místa.',
-          ),
-        );
+      if (_layoutSeatCount(d) + _layoutAreaCount(d) == 0) {
+        issues.add(MapEntry(AppConfig.isAppSupported ? 4 : 6,
+            'Plánek zatím nemá žádná místa.'));
       }
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
@@ -1309,8 +1367,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final form = formData is Map
         ? draftFormBundle(Map<String, dynamic>.from(formData))
         : null;
-    final groups = d['blueprintGroups'] as List;
-    final seatCount = (d['blueprintObjects'] as List).length;
+    final layout = (d['blueprintLayoutDraft'] as Map?)?['layout'] as Map?;
+    final canvas = layout?['canvas'] as Map?;
+    final groups = [
+      for (final node in layout?['nodes'] as List? ?? const [])
+        if (const ['table', 'group', 'row', 'section']
+            .contains((node as Map)['kind']))
+          {'title': node['label']}
+    ];
+    final seatCount = _layoutSeatCount(d);
     final applicable = OccasionSetupStory.applicableSteps(
       d,
       AppConfig.isAppSupported,
@@ -1564,7 +1629,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               if (d['blueprintMode'] != 'Bez plánku') ...[
                 _reviewRow(
                   'Rozměry',
-                  '${d['blueprintWidth']} × ${d['blueprintHeight']}',
+                  '${canvas?['width'] ?? '-'} × ${canvas?['height'] ?? '-'}',
                 ),
                 _reviewRow(
                   'Skupiny',
@@ -1953,16 +2018,22 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _choice(d, 'blueprintMode', CommonStrings.blueprint, [
-          'Bez plánku',
-          'Nový',
-          'Převzít',
-        ]),
+        _choice(d, 'blueprintMode', CommonStrings.blueprint,
+            ['Bez plánku', 'Nový', 'Převzít']),
+        TextButton.icon(
+            icon: const Icon(Icons.science_outlined),
+            label: Text(BlueprintStrings.tryLayoutDemo),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                    appBar: AppBar(title: Text(BlueprintStrings.tryLayoutDemo)),
+                    body: const BlueprintLayoutDemo())))),
         if (d['blueprintMode'] != 'Bez plánku') ...[
-          Text('${(d['blueprintObjects'] as List).length} míst v plánu'),
+          Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
+          if (_layoutAreaCount(d) > 0)
+            Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: _openBlueprint,
+            onPressed: _openingBlueprint ? null : _openBlueprint,
             icon: const Icon(Icons.grid_on),
             label: const Text('Otevřít editor plánku'),
           ),

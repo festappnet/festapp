@@ -1,3 +1,6 @@
+import { BlueprintLayoutAdapter } from '../blueprint/blueprint_layout_adapter.js';
+import { ReservationCapabilityStore } from './reservation_capability_store.js';
+import { SupabaseService } from '../../services/supabase_service.js';
 import { OptionBuilderHelper } from './fields/option_builder_helper.js';
 import { AppConfig } from '../../app_config.js';
 import { FormHelper } from './form_helper.js';
@@ -9,9 +12,21 @@ import { FieldInputHandlerFactory } from './handlers/field_input_handler_factory
 
 export class FormSession extends EventTarget {
 
-    constructor(formModel) {
+    constructor(formModel, {reservationStorage, backend = SupabaseService.endpoint} = {}) {
         super();
         this.formModel = formModel;
+        if (backend && formModel.key && (formModel.blueprint || reservationStorage) && !formModel.demoSimulation) {
+            this._capabilityStore = new ReservationCapabilityStore(backend, formModel.key,
+                reservationStorage ? {storage: reservationStorage} : {});
+            const restored = this._capabilityStore.restore();
+            this._restoredCapability = !!restored;
+            this._reservationUnresolved = !!restored;
+            if (restored) {
+                formModel.secret = restored.secret;
+                this.reservationExpiresAt = restored.expiresAt;
+            }
+            this._reservationCapability = restored || this._capabilityStore.save(formModel.secret);
+        }
         
         const availableCurrencies = FormHelper.getAvailableCurrencies(formModel);
         
@@ -59,6 +74,23 @@ export class FormSession extends EventTarget {
 
         // Spot Model Cache (Price Robustness)
         this.spotModels = new Map();
+        const blueprintId = typeof formModel.blueprint === 'object' ? formModel.blueprint?.id : formModel.blueprint;
+        if (this._capabilityStore && blueprintId) {
+            this.recoverReservations = async () => {
+                const data = await DbForms.getBlueprint(this.formModel.secret, this.formModel.key, blueprintId);
+                const authority = new BlueprintLayoutAdapter(data, {session: this});
+                authority.dispose();
+                this.reservationRecoveryError = null;
+            };
+            if (this._restoredCapability) {
+                // Serialize the reload read before any new hold or checkout.
+                this._spotQueue = this._spotQueue.then(() => this.recoverReservations()).catch(error => {
+                    this._reservationUnresolved = true;
+                    this.reservationRecoveryError = error;
+                    this._emitStateChanged();
+                });
+            }
+        }
     }
 
     getComponentState(key) {
@@ -276,17 +308,10 @@ export class FormSession extends EventTarget {
     async removeTicket(index, skipBackendSync = false) {
         if (index >= 0 && index < this.state.tickets.length) {
             const ticket = this.state.tickets[index];
-            
-            // Sync with Backend: Deselect Spot if present
-            // If skipBackendSync is true (optimistic update from toggleSpot), we rely on toggleSpot's queue.
-            if (!this.formModel.demoSimulation && !skipBackendSync && ticket.spot) {
-                try {
-                    await DbForms.selectSpot(this.formModel.key, this.formModel.secret, ticket.spot, false);
-                } catch (e) {
-                    console.error("FormSession: Failed to deselect spot on removal", e);
-                    // Continue anyway to sync local state? Or throw?
-                    // User likely wants the ticket gone visually.
-                }
+            if (!skipBackendSync && ticket.spot) {
+                await this.toggleSpotUnit(this._spotUnits?.get(String(ticket.spot)) ||
+                    [this.spotModels.get(String(ticket.spot)) || {id: ticket.spot}], false);
+                return;
             }
 
             this.state.tickets.splice(index, 1);
@@ -342,71 +367,168 @@ export class FormSession extends EventTarget {
         this._emitStateChanged();
     }
 
-    async toggleSpot(spotObjOrId, isSelecting) {
-        const spotId = typeof spotObjOrId === 'object' ? spotObjOrId.id : spotObjOrId;
-        const spotObj = typeof spotObjOrId === 'object' ? spotObjOrId : { id: spotId };
-
-        // Optimistic State Update Helper
-        const updateState = (selecting) => {
-             if (selecting) {
-                 // ADD Ticket
-                 const exists = this.state.tickets.some(t => String(t.spot) === String(spotId));
-                 if (!exists) {
-                     const ticketData = { 
-                         spot: spotId,
-                         spotName: spotObj.title || spotObj.name || `Spot ${spotId}`
-                     };
-                     
-                     const product = spotObj.productModel || spotObj.product;
-                     if (product) {
-                         if (product.price) ticketData.spotPrice = product.price;
-                     }
-                     
-                     this.addTicket(ticketData);
-                 }
-             } else {
-                 // REMOVE Ticket
-                 const idx = this.state.tickets.findIndex(t => String(t.spot) === String(spotId));
-                 if (idx !== -1) {
-                     this.removeTicket(idx, true); // Skip internal sync, we handle it in queue
-                 }
-             }
-        };
-
-        // 1. Apply Change Optimistically (Synchronous)
-        // Store Spot Model for Price Robustness
-        if (spotObj.product || spotObj.productModel || spotObj.price) {
-             this.spotModels.set(String(spotId), spotObj);
+    setAreaQuantity(binding, quantity, available) {
+        if (!Number.isInteger(quantity) || quantity < 0 || !Number.isInteger(available) || quantity > available) {
+            throw new Error('area_quantity_unavailable');
         }
-        updateState(isSelecting);
+        if (quantity === 0) {
+            this.state.tickets = this.state.tickets.filter(ticket => ticket._blueprintArea !== binding.nodeId);
+            this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
+            return 0;
+        }
+        const candidates = (this.formModel.offeredTicketProductFields ?? this._getTicketSubDefs()).filter(field => field.type === 'product_type' && field.isHidden !== true).flatMap(field => {
+            return (field.productTypeData?.products || field.data?.product_type_data?.products || field.options || []).filter(product =>
+                String(product.id) === String(binding.productId) && product.is_hidden !== true && product.isAvailable !== false && product.is_dynamically_available !== false && product.is_available_dynamic_capacity !== false)
+                .map(product => ({field, product}));
+        });
+        const choice = candidates.find(({product}) => !(product.currency_code || product.currencyCode || product.currency) ||
+            (product.currency_code || product.currencyCode || product.currency) === this.state.currency);
+        if (!choice) throw new Error('area_product_not_offered');
+        const current = this.state.tickets.filter(ticket => ticket._blueprintArea === binding.nodeId);
+        if (this.state.tickets.length - current.length + quantity > this.maxTickets) throw new Error(BlueprintStrings.maxTicketsReached);
+        const before = [...this.state.tickets];
+        try {
+            while (current.length > quantity) {
+                const ticket = current.pop();
+                const index = this.state.tickets.indexOf(ticket);
+                this.state.tickets.splice(index, 1);
+            }
+            while (current.length < quantity) {
+                const value = {product_type: choice.product.id, _subFieldId: choice.field.id,
+                    price: choice.product.price, currency_code: choice.product.currency_code || choice.product.currencyCode || this.state.currency};
+                this.addTicket({_blueprintArea: binding.nodeId, fields: [value]});
+                current.push(this.state.tickets.at(-1));
+            }
+            this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
+        } catch (error) {
+            this.state.tickets = before;
+            this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
+            throw error;
+        }
+        return quantity;
+    }
 
-        // Enqueue the NETWORK operation (Serialized)
+    // One reservation command for a complete atomic unit; each member remains a
+    // normal ticket in the existing form payload and price calculation.
+    async toggleSpotUnit(spots, isSelecting) {
+        const unique = [...new Map(spots.map(spot => [String(spot.id), spot])).values()];
+        if (!unique.length) throw new Error('No seats selected');
+        const ids = new Set(unique.map(spot => String(spot.id)));
+        this._spotUnits ??= new Map();
+        for (const spot of unique) this._spotUnits.set(String(spot.id), unique);
         const task = async () => {
+            const before = this.state.tickets.filter(ticket => ids.has(String(ticket.spot)));
+            const additions = unique.filter(spot => !before.some(ticket => String(ticket.spot) === String(spot.id)));
+            if (isSelecting && this.state.tickets.length + additions.length > this.maxTickets) {
+                throw new Error(BlueprintStrings.maxTicketsReached);
+            }
+            for (const spot of unique) this.spotModels.set(String(spot.id), spot);
+            const apply = () => {
+                if (isSelecting) for (const spot of additions) {
+                    const product = spot.productModel || spot.product;
+                    this.addTicket({spot: spot.id, spotName: spot.title || spot.name || `Spot ${spot.id}`,
+                        ...(product && typeof product.price === 'number' ? {spotPrice: product.price} : {})});
+                }
+                else for (let index = this.state.tickets.length - 1; index >= 0; index--) {
+                    if (ids.has(String(this.state.tickets[index].spot))) this.removeTicket(index, true);
+                }
+            };
+            const capability = this._capabilityStore?.save(this.formModel.secret, this.reservationExpiresAt ?? null);
+            if (capability) this._reservationCapability = capability;
+            apply();
             try {
-                 const currentSecret = this.formModel.secret;
-
-                 // 2. Sync with Backend
-                 // ALWAYS use the latest secret from the model (which might have been updated by previous queue task)
-                 const resultData = this.formModel.demoSimulation ? {}
-                     : await DbForms.selectSpot(this.formModel.key, currentSecret, spotId, isSelecting);
-                 
-                 return resultData;
-            } catch (e) {
-                 console.error("FormSession: Spot selection failed, reverting state", e);
-                 
-                 // 3. Revert on Failure
-                 updateState(!isSelecting); 
-                 throw e; 
+                const result = this.formModel.demoSimulation ? {spotIds: unique.map(s => s.id)}
+                    : await DbForms.selectSpot(this.formModel.key, this.formModel.secret, unique[0].id, isSelecting);
+                if (result?.spotIds && (result.spotIds.length !== ids.size || result.spotIds.some(id => !ids.has(String(id))))) {
+                    // The authoritative command succeeded but the geometry is stale.
+                    // Keep those tickets recoverable and require a fresh layout.
+                    throw Object.assign(new Error('Seat unit changed; reload the seating plan'), {reservationApplied: true});
+                }
+                if (!this.state.tickets.some(ticket => ticket.spot)) this.reservationExpiresAt = null;
+                this.adoptReservation(result);
+                if (!this.state.tickets.some(ticket => ticket.spot)) this.completeReservation(this._reservationCapability);
+                return result;
+            } catch (error) {
+                // Restore the last confirmed payload before attempting a read.
+                this.state.tickets = this.state.tickets.filter(ticket => !ids.has(String(ticket.spot)));
+                this.state.tickets.push(...before);
+                this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
+                if (!error.reservationRejected || error.reservationApplied) {
+                    this._reservationUnresolved = true;
+                    if (this.recoverReservations) {
+                        try {
+                            await this.recoverReservations();
+                            error.reservationRecovered = true;
+                        } catch { /* Unknown state blocks checkout until an authoritative read succeeds. */ }
+                    }
+                }
+                throw error;
             }
         };
+        const enqueued = this._spotQueue.then(task);
+        this._spotQueue = enqueued.catch(() => {});
+        return enqueued;
+    }
 
-        // Append to Queue
-        const enqueuedTask = this._spotQueue.then(() => task());
-        
-        // Update Main Queue to wait for this new task (regardless of success/fail)
-        this._spotQueue = enqueuedTask.catch(() => {});
-        
-        return enqueuedTask;
+    toggleSpot(spotObjOrId, isSelecting) {
+        const spot = typeof spotObjOrId === 'object' ? spotObjOrId : {id: spotObjOrId};
+        return this.toggleSpotUnit(this._spotUnits?.get(String(spot.id)) || [spot], isSelecting);
+    }
+
+    captureReservationCapability() { return this._reservationCapability; }
+    completeReservation(capability) {
+        if (this._capabilityStore?.clear(capability)) this._reservationCapability = null;
+    }
+
+    adoptReservation(result) {
+        const secret = result?.secret || result?.secretId;
+        if (secret) {
+            this.formModel.secret = secret;
+            this.payload[DbForms.metaSecret] = secret;
+        }
+        // Server deadlines may shorten, but a retry never grants a new timeout.
+        if (result?.expiresAt && Number.isFinite(Date.parse(result.expiresAt))) {
+            if (!this.reservationExpiresAt || Date.parse(result.expiresAt) < Date.parse(this.reservationExpiresAt)) {
+                this.reservationExpiresAt = result.expiresAt;
+            }
+        }
+        const stored = this._capabilityStore?.save(this.formModel.secret, this.reservationExpiresAt ?? null);
+        if (stored) this._reservationCapability = stored;
+    }
+
+    reconcileReservations(models, result = {}) {
+        const scoped = new Map(models.map(model => [String(model.id), model]));
+        const own = [...scoped.values()].filter(model => model.state === 'selected_by_me');
+        const ownIds = new Set(own.map(model => String(model.id)));
+        this.state.tickets = this.state.tickets.filter(ticket =>
+            !scoped.has(String(ticket.spot)) || ownIds.has(String(ticket.spot)));
+        for (const model of own) {
+            this.spotModels.set(String(model.id), model);
+            if (!this.state.tickets.some(ticket => String(ticket.spot) === String(model.id))) {
+                this.addTicket({spot: model.id, spotName: model.title,
+                    spotPrice: model.productModel?.price});
+            }
+        }
+        // A read supplies the actual server deadline, including a genuinely new
+        // hold acquired after an earlier reservation expired in another tab.
+        this.reservationExpiresAt = this.state.tickets.some(ticket => ticket.spot)
+            ? result.expiresAt ?? this.reservationExpiresAt : null;
+        this.adoptReservation(result);
+        if (!this.state.tickets.some(ticket => ticket.spot)) this.completeReservation(this._reservationCapability);
+        this._reservationUnresolved = false;
+        this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
+    }
+
+    async awaitPendingReservations() {
+        // A new operation can join while the previous queue settles.
+        let queue;
+        do { queue = this._spotQueue; await queue; } while (queue !== this._spotQueue);
+        if (this._reservationUnresolved) throw new Error('reservation_state_unknown');
+        if (this.reservationExpiresAt && Date.parse(this.reservationExpiresAt) <= Date.now() &&
+            this.state.tickets.some(ticket => ticket.spot)) {
+            if (!this.recoverReservations) throw new Error('reservation_expired');
+            await this.recoverReservations();
+        }
     }
 
     // --- Critical: Sync Payload from State ---
@@ -920,7 +1042,7 @@ export class FormSession extends EventTarget {
 
     _getTicketSubDef(subId) {
         const subDefs = this._getTicketSubDefs();
-        return subDefs.find(s => String(s.id) === String(subId));
+        return subDefs.find(s => String(s.id) === String(subId)) || this.formModel.offeredTicketProductFields?.find(s => String(s.id) === String(subId));
     }
 
     get currentState() {

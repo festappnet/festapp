@@ -36,14 +36,14 @@ test('catalogue stays hidden while cards load, then startup reveals cards', asyn
         .replace("document.addEventListener('DOMContentLoaded', Main.init);", 'Main.init();');
     const noop = { init() {} };
     const startup = runInNewContext(source, {
-        window, document, console, UnitPage,
+        window, document, console, resolveScannerRoute: () => null, UnitPage,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async () => {},
         handleOrganizerIntent: async () => false,
         LocalizationService: {}, SupabaseService: {}, RightsService: {},
         AppConfig: { organization: 3 },
         ThemeService: noop, ImageLoader: noop, FeedbackFab: noop,
-        RouterService: { handleInitialLoad: async () => false, initPopStateListener() {} },
+        RouterService: { normalizeUrl: url => url, handleInitialLoad: async () => false, initPopStateListener() {} },
     });
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(ready, false, 'loading cards does not prematurely mark application ready');
@@ -81,13 +81,13 @@ for (const fails of [false, true]) test(`organizer startup preserves static cont
     let ready = 0;
     dom.window.markFestappAppReady = () => ready++;
     await runInNewContext(source, {
-        window: dom.window, document: dom.window.document, console: { error() {} },
+        resolveScannerRoute: () => null, window: dom.window, document: dom.window.document, console: { error() {} },
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async options => { assert.equal(options.isAppSupported, false); initializations++; if (fails) throw Error('offline'); },
         LocalizationService: {}, SupabaseService: {}, RightsService: {}, AppConfig: { isAppSupported: true },
         ThemeService: { init() { themes++; } }, ImageLoader: { init() {} },
         handleOrganizerIntent: () => assert.fail('no creation intent on content page'),
-        RouterService: { handleInitialLoad() { assert.fail('no router fallback'); } },
+        RouterService: { normalizeUrl: url => url, handleInitialLoad() { assert.fail('no router fallback'); } },
         UnitPage: class { constructor() { assert.fail('no catalog'); } },
     });
     assert.equal(initializations, 1);

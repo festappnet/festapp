@@ -20,10 +20,10 @@ test('Flutter map documents allow OSM identification without overriding callback
 });
 test('real generated hosting router chooses the correct callback adapter and disables proof caching',async()=>{
  const paths=[];const env={ASSETS:{fetch:async(request)=>{const p=new URL(request.url).pathname;paths.push(p);return new Response(p,{headers:{'content-type':'application/octet-stream'}});}}};
- for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter']]){
+ for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient']]){
   const response=await worker.fetch(new Request('https://tenant.invalid'+path+'?google_code=proof&google_attempt=fixture'),env);
   assert.equal(await response.text(),entry);assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(response.headers.get('location'),null);
  }
- assert.deepEqual(paths,['/webclient','/flutter']);
+ assert.deepEqual(paths,['/webclient','/flutter','/webclient']);
  const aasa=await worker.fetch(new Request('https://tenant.invalid/.well-known/apple-app-site-association'),env);assert.equal(aasa.headers.get('content-type'),'application/json');
 });

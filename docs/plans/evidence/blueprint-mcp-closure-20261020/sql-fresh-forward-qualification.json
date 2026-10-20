@@ -1,0 +1,20 @@
+{
+  "project": "festapp-blueprint-mcp-closure-fresh-20261020",
+  "port": 60922,
+  "freshForwardMigrations": 252,
+  "preexistingFixture": {
+    "occasion": 4,
+    "blueprint": 4,
+    "heldSpot": 12,
+    "soldSpot": 9,
+    "order": 3
+  },
+  "aggregateBeforeAfterSha256": "357a7e09b63efee12d09d3ee88b70abec092fe5ef22024530f42e33d15a8a205",
+  "migrationSha256": "f5e137f068223398e0cb4705c732aaf1f7d9f473d5448da31dbae3437eaa3019",
+  "unchangedAggregate": true,
+  "receiptReplay": true,
+  "ownExpiryReadback": true,
+  "installedSourceParity": true,
+  "stagedReadersAbsent": true,
+  "adminMissingLayoutFailClosed": true
+}

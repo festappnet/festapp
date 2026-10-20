@@ -807,7 +807,12 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
-        const request = formModel.demoSimulation
+        const submittedSession = this.currentSession;
+        let submittedCapability;
+        const request = Promise.resolve().then(async () => {
+            await submittedSession?.awaitPendingReservations();
+            submittedCapability = submittedSession?.captureReservationCapability();
+            return formModel.demoSimulation
             ? Promise.resolve({ success: true, data: { demoSimulation: true } })
             : formModel.registrationMode === 'waitlist'
             ? this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession))
@@ -820,6 +825,7 @@ export class FormPage extends Component {
                 }) })),
             }).then(data => ({ success: true, data }))
             : FormNetwork.submitOrder(payload);
+        });
         request.then(async result => {
              // history.back() is asynchronous. Rendering the result before the
              // preview popstate arrives lets that stale event close the result.
@@ -829,6 +835,7 @@ export class FormPage extends Component {
              document.body.style.overflow = '';
 
              if (result.success) {
+                 submittedSession?.completeReservation(submittedCapability);
                  if (formModel.registrationMode === 'waitlist' && result.data.orderOverviewUrl) {
                      try {
                          const link = this.currentLink;

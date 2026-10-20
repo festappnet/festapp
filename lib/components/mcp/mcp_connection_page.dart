@@ -281,6 +281,22 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                           if (!_wholeUnit)
                             Text(text('choose'),
                                 style: Theme.of(context).textTheme.titleMedium),
+                          if (!_wholeUnit && occasions.length > 100)
+                            Text(text('selectionLimit')),
+                          if (!_wholeUnit && occasions.isNotEmpty)
+                            CheckboxListTile(
+                              key: const ValueKey('mcp-select-all'),
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(text('selectAll')),
+                              tristate: true,
+                              value: _selected.isEmpty ? false :
+                                  occasions.every((o) => _selected.contains(o['id'])) ? true : null,
+                              onChanged: _busy || occasions.length > 100 ? null : (_) => setState(() {
+                                final all = occasions.every((o) => _selected.contains(o['id']));
+                                _selected.clear();
+                                if (!all) _selected.addAll(occasions.map((o) => o['id'] as int));
+                              }),
+                            ),
                           if (!_wholeUnit)
                             for (final group in groups) ...[
                               const SizedBox(height: 20),
@@ -296,7 +312,7 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                                     contentPadding: EdgeInsets.zero,
                                     title: Text(occasion['title'].toString()),
                                     value: _selected.contains(occasion['id']),
-                                    onChanged: _busy
+                                    onChanged: _busy || (!_selected.contains(occasion['id']) && _selected.length >= 100)
                                         ? null
                                         : (selected) => setState(() {
                                               if (selected == true) {
@@ -317,7 +333,7 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                                 onPressed: _busy ||
                                         (_wholeUnit
                                             ? _unitId == null
-                                            : _selected.isEmpty)
+                                            : _selected.isEmpty || _selected.length > 100)
                                     ? null
                                     : () => _finish('approve'),
                                 child: Text(_busy

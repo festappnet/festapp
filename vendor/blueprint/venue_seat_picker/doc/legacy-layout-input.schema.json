@@ -1,0 +1,519 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://festappnet.github.io/venue_seat_picker/layout-v1.schema.json",
+  "title": "VenueLayoutDocument",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "symbolSetVersion",
+    "canvas",
+    "nodes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "symbolSetVersion": {
+      "const": 1
+    },
+    "canvas": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "fill"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": -1000000000,
+          "maximum": 1000000000
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1000000000,
+          "maximum": 1000000000
+        },
+        "width": {
+          "type": "number",
+          "minimum": 64,
+          "maximum": 1000000
+        },
+        "height": {
+          "type": "number",
+          "minimum": 64,
+          "maximum": 1000000
+        },
+        "fill": {
+          "$ref": "#/$defs/color"
+        },
+        "floorStyle": {
+          "type": "string",
+          "enum": [
+            "plain",
+            "wood",
+            "tile",
+            "carpet"
+          ]
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "maxItems": 25000,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "sections": {
+      "type": "array"
+    },
+    "selectionUnits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "nodeIds"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "nodeIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "kind": {
+            "enum": [
+              "atomic",
+              null
+            ],
+            "default": "atomic",
+            "$comment": "Omitted or null v1 kind is normalized to atomic by the core model."
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "attachments": {
+      "type": "array"
+    },
+    "generators": {
+      "type": "array"
+    },
+    "presets": {
+      "type": "array",
+      "maxItems": 100
+    },
+    "background": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "defaultTextStyle": {
+      "type": "object"
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "$ref": "#/$defs/appearanceStyle"
+        },
+        "seat": {
+          "$ref": "#/$defs/appearanceStyle"
+        },
+        "furniture": {
+          "$ref": "#/$defs/appearanceStyle"
+        },
+        "shape": {
+          "$ref": "#/$defs/appearanceStyle"
+        },
+        "capacityArea": {
+          "$ref": "#/$defs/appearanceStyle"
+        },
+        "text": {
+          "$ref": "#/$defs/appearanceStyle"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{8}$"
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "transform",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "group",
+            "table",
+            "seat",
+            "furniture",
+            "capacityArea",
+            "shape",
+            "text"
+          ]
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "rotation"
+          ],
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": -1000000000,
+              "maximum": 1000000000
+            },
+            "y": {
+              "type": "number",
+              "minimum": -1000000000,
+              "maximum": 1000000000
+            },
+            "rotation": {
+              "type": "number",
+              "minimum": -1000000000,
+              "maximum": 1000000000
+            }
+          }
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000000
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "z": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string"
+        },
+        "appearanceOverrides": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 17,
+          "items": {
+            "type": "string",
+            "enum": [
+              "fontId",
+              "size",
+              "bold",
+              "italic",
+              "seatWidth",
+              "seatHeight",
+              "seatGap",
+              "seatSpacing",
+              "seatEdgePadding",
+              "objectStyle",
+              "seatStyle",
+              "fill",
+              "stroke",
+              "strokeWidth",
+              "cornerRadius",
+              "opacity",
+              "color"
+            ]
+          }
+        },
+        "seatStyle": {
+          "type": "string",
+          "enum": [
+            "roundUpholstered",
+            "round",
+            "plain",
+            "wood",
+            "upholstered",
+            "transit",
+            "banquet"
+          ]
+        },
+        "objectStyle": {
+          "type": "string",
+          "enum": [
+            "round",
+            "simple",
+            "minimal",
+            "wood",
+            "lounge",
+            "transit",
+            "hall",
+            "banquet"
+          ]
+        },
+        "guestSide": {
+          "type": "string",
+          "enum": [
+            "top",
+            "right",
+            "bottom",
+            "left"
+          ]
+        },
+        "deck": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "decks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "upperRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20000
+        },
+        "upperRear": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "holes": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 512,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "labelOrientation": {
+          "type": "string",
+          "enum": [
+            "screen",
+            "object"
+          ],
+          "default": "screen"
+        },
+        "seatWidth": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "seatHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "seatGap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "seatSpacing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "seatEdgePadding": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "furniture"
+            ],
+            "properties": {
+              "furniture": {
+                "const": "bar"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "guestSide",
+              "shape"
+            ],
+            "properties": {
+              "kind": {
+                "const": "table"
+              },
+              "shape": {
+                "enum": [
+                  "rect",
+                  "rectangle",
+                  "roundedRect",
+                  "polygon"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "guestSide"
+            ]
+          },
+          "then": {
+            "required": [
+              "furniture"
+            ],
+            "properties": {
+              "furniture": {
+                "const": "bar"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "appearanceStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fontId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "seatWidth": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "seatHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "seatGap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "seatSpacing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "seatEdgePadding": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "objectStyle": {
+          "type": "string",
+          "enum": [
+            "round",
+            "simple",
+            "minimal",
+            "wood",
+            "lounge",
+            "transit",
+            "hall",
+            "banquet"
+          ]
+        },
+        "seatStyle": {
+          "type": "string",
+          "enum": [
+            "roundUpholstered",
+            "round",
+            "plain",
+            "wood",
+            "upholstered",
+            "transit",
+            "banquet"
+          ]
+        },
+        "fill": {
+          "$ref": "#/$defs/color"
+        },
+        "stroke": {
+          "$ref": "#/$defs/color"
+        },
+        "strokeWidth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "cornerRadius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        }
+      }
+    }
+  },
+  "$comment": "Scalar structural schema. The public core validator additionally enforces identity/reference consistency, closed authoring keys, JSON nesting and resource/host boundaries."
+}

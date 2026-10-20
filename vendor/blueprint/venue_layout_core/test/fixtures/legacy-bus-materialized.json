@@ -1,0 +1,970 @@
+{
+  "attachments": [],
+  "background": null,
+  "canvas": {
+    "fill": "#FFFFFFFF",
+    "height": 1600,
+    "width": 2400,
+    "x": 0,
+    "y": 0
+  },
+  "defaultTextStyle": {
+    "color": "#222222FF",
+    "fontId": "fixture:sans",
+    "size": 24
+  },
+  "generators": [],
+  "nodes": [
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 2.0,
+      "deck": 0,
+      "fill": "#E9EFF4FF",
+      "height": 64.0,
+      "id": "02486bcf-a170-4210-9e53-8a67fc37b64c",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "roundedRect",
+      "slot": "decor:deck:0:door-1",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 306.0,
+        "y": 190.0
+      },
+      "width": 24.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "1dfb6286-7464-4a76-af09-3246d493fb59",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:0:left:0",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 50.0,
+        "y": 176.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "285956ea-7bf5-4fb5-ac48-2faf36292244",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-0-step-1",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 94.0
+      },
+      "width": 23.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "2c1f56e4-9f4a-4370-9931-8043d7e05aab",
+      "kind": "seat",
+      "label": "8",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:1:right:1",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 270.0,
+        "y": 240.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "2daa5c24-9459-4707-81e2-efb8537acae8",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -132.0,
+          0.0
+        ],
+        [
+          132.0,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:windshield",
+      "stroke": "#7896ACFF",
+      "strokeWidth": 4.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": 18.0
+      },
+      "width": 264.0
+    },
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 28.0,
+      "deck": 0,
+      "fill": "#F8FAFCFF",
+      "height": 316.0,
+      "id": "3150ff85-2f59-46f8-be00-4c55cc3110b1",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "roundedRect",
+      "slot": "decor:deck:0:body",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 2.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": 158.0
+      },
+      "width": 320.0,
+      "z": -20
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "382debf0-9633-4793-90bb-a9bdb1f23fb6",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:1:left:0",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 50.0,
+        "y": 240.0
+      },
+      "width": 40.0
+    },
+    {
+      "align": "center",
+      "appearanceOverrides": [
+        "color"
+      ],
+      "color": "#46596BFF",
+      "deck": 0,
+      "height": 24.0,
+      "id": "3bb5e24c-b5a0-4715-923e-9f2c45d7ec6d",
+      "kind": "text",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "size": 14.0,
+      "slot": "decor:deck:0:label",
+      "text": "Bus",
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": -24.0
+      },
+      "width": 320.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "5ea36bee-bbd7-4a09-89a9-33760142d13d",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-1-step-1",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 190.0
+      },
+      "width": 23.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "6b98036b-6de6-474d-bde8-a62902d3f84a",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:0:right:1",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 270.0,
+        "y": 176.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 31.0,
+      "id": "6eebe8d0-759e-4a0c-80fa-42b62c0b29f0",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -48.0,
+          -15.5
+        ],
+        [
+          34.0,
+          -15.5
+        ],
+        [
+          48.0,
+          15.5
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:dashboard",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 2.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 70.0,
+        "y": 49.5
+      },
+      "width": 96.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 40.0,
+      "id": "76580fdf-bfa6-41bd-90fe-ef522b4b4a30",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:window-left-1",
+      "stroke": "#7896ACFF",
+      "strokeWidth": 3.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 8.0,
+        "y": 240.0
+      },
+      "width": 1.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 40.0,
+      "id": "7a9bcda4-6792-4c8b-a426-66159cf84180",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:window-right-1",
+      "stroke": "#7896ACFF",
+      "strokeWidth": 3.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 312.0,
+        "y": 240.0
+      },
+      "width": 1.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "7b7f5ab6-0a5d-41bb-9c2f-078410ab5a8b",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-1-step-2",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 210.0
+      },
+      "width": 23.0
+    },
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 22.0,
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 300.0,
+      "id": "7e599d4f-a57a-4888-8811-24189449473b",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "roundedRect",
+      "slot": "decor:deck:0:interior",
+      "stroke": "#B3C0CCFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": 158.0
+      },
+      "width": 304.0,
+      "z": -19
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "dash": [
+        6.0,
+        6.0
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 108.0,
+      "id": "7f41dacd-80a0-4e64-92fc-b17cdb0c57df",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -54.0
+        ],
+        [
+          0.0,
+          54.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:aisle-right",
+      "stroke": "#BCC7D2FF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 185.0,
+        "y": 198.0
+      },
+      "width": 1.0
+    },
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 2.0,
+      "deck": 0,
+      "fill": "#E9EFF4FF",
+      "height": 64.0,
+      "id": "87dbe4da-eeb5-4bb0-b34a-dac56089e991",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "roundedRect",
+      "slot": "decor:deck:0:door-0",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 306.0,
+        "y": 94.0
+      },
+      "width": 24.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "8c814b9f-4fb4-4e34-9e27-0bb6d8b0b8a9",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:0:left:1",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 102.0,
+        "y": 176.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 8.0,
+      "deck": 0,
+      "fill": "#CBD5E1FF",
+      "height": 42.0,
+      "id": "8fb8d49a-a6b6-4b51-9d2d-69496cd39470",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "roundedRect",
+      "slot": "decor:deck:0:driver-seat",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 54.0,
+        "y": 87.0
+      },
+      "width": 40.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "919ca0b6-f2bb-438c-bfc9-fc0ef886ff4e",
+      "kind": "seat",
+      "label": "7",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:1:right:0",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 218.0,
+        "y": 240.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "997260ce-155e-452c-b31a-a2cdbff3dcaa",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-0-step-0",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 74.0
+      },
+      "width": 23.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 40.0,
+      "id": "9a1a0821-df62-4a09-84c0-928b2c623860",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:window-left-0",
+      "stroke": "#7896ACFF",
+      "strokeWidth": 3.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 8.0,
+        "y": 176.0
+      },
+      "width": 1.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "a37d0c0f-9d29-4c5c-9343-131f5a688872",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -50.0,
+          0.0
+        ],
+        [
+          50.0,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:cab-partition",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 2.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 68.0,
+        "y": 146.0
+      },
+      "width": 100.0
+    },
+    {
+      "align": "center",
+      "appearanceOverrides": [
+        "color"
+      ],
+      "color": "#46596BFF",
+      "deck": 0,
+      "height": 20.0,
+      "id": "b6d9ec6d-027d-47d1-869b-98f0e385098f",
+      "kind": "text",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "size": 12.0,
+      "slot": "decor:deck:0:driver-label",
+      "text": "Driver",
+      "transform": {
+        "rotation": 0.0,
+        "x": 64.0,
+        "y": 126.0
+      },
+      "width": 96.0
+    },
+    {
+      "assembly": "bus",
+      "decks": 1,
+      "height": 316.0,
+      "id": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "kind": "group",
+      "label": "Bus",
+      "left": 2,
+      "rear": 0,
+      "right": 2,
+      "rows": 2,
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": 120.0
+      },
+      "upperRear": 0,
+      "upperRows": 4,
+      "width": 320.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "c15778b7-7561-44e9-a261-25fadbb5e304",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:0:right:0",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 218.0,
+        "y": 176.0
+      },
+      "width": 40.0
+    },
+    {
+      "align": "center",
+      "deck": 0,
+      "height": 40.0,
+      "id": "cca0dcef-944a-403d-8b0c-ba3f391f1744",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "size": 12.0,
+      "slot": "deck:0:row:1:left:1",
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0.0,
+        "x": 102.0,
+        "y": 240.0
+      },
+      "width": 40.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "cff8821c-8f35-42b0-8a9e-2c6c3a3eaebc",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-0-step-2",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 114.0
+      },
+      "width": 23.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 40.0,
+      "id": "d9350008-67e4-4125-9290-1f942d5625a2",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:window-right-0",
+      "stroke": "#7896ACFF",
+      "strokeWidth": 3.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 312.0,
+        "y": 176.0
+      },
+      "width": 1.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 1.0,
+      "id": "e915788b-4ba9-4127-b464-618bfc42a811",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          -11.5,
+          0.0
+        ],
+        [
+          11.5,
+          0.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:door-1-step-0",
+      "stroke": "#7C8C9CFF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 305.5,
+        "y": 170.0
+      },
+      "width": 23.0
+    },
+    {
+      "appearanceOverrides": [
+        "cornerRadius",
+        "fill",
+        "objectStyle",
+        "stroke",
+        "strokeWidth"
+      ],
+      "cornerRadius": 4.0,
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 28.0,
+      "id": "ebe36a98-099e-4087-9368-b6bc9e69035a",
+      "kind": "shape",
+      "objectStyle": "simple",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "role": "decoration",
+      "shape": "ellipse",
+      "slot": "decor:deck:0:steering",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 3.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 68.0,
+        "y": 45.0
+      },
+      "width": 28.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 74.0,
+      "id": "ed95c044-32d7-49c5-8e0b-ad04c07596c0",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          37.0
+        ],
+        [
+          0.0,
+          -37.0
+        ],
+        [
+          -10.0,
+          -25.0
+        ],
+        [
+          0.0,
+          -37.0
+        ],
+        [
+          10.0,
+          -25.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:travel-direction",
+      "stroke": "#4B6072FF",
+      "strokeWidth": 2.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 160.0,
+        "y": 95.0
+      },
+      "width": 20.0
+    },
+    {
+      "appearanceOverrides": [
+        "fill",
+        "stroke",
+        "strokeWidth"
+      ],
+      "dash": [
+        6.0,
+        6.0
+      ],
+      "deck": 0,
+      "fill": "#00000000",
+      "height": 108.0,
+      "id": "f74cde04-925a-484e-bbd5-1bc390cb13bb",
+      "kind": "shape",
+      "parentId": "b9cdf04f-0648-4a03-9f81-8b3ae1807e65",
+      "points": [
+        [
+          0.0,
+          -54.0
+        ],
+        [
+          0.0,
+          54.0
+        ]
+      ],
+      "role": "decoration",
+      "shape": "polyline",
+      "slot": "decor:deck:0:aisle-left",
+      "stroke": "#BCC7D2FF",
+      "strokeWidth": 1.0,
+      "transform": {
+        "rotation": 0.0,
+        "x": 135.0,
+        "y": 198.0
+      },
+      "width": 1.0
+    }
+  ],
+  "presets": [],
+  "schemaVersion": 1,
+  "sections": [],
+  "selectionUnits": [],
+  "symbolSetVersion": 1
+}

@@ -46,6 +46,10 @@ BEGIN
         RETURN jsonb_build_object('code', 404, 'message', 'No blueprint found for this occasion');
     END IF;
 
+    IF EXISTS(SELECT 1 FROM eshop.blueprints WHERE id=blueprint_id AND layout IS NULL) THEN
+      RETURN jsonb_build_object('code',409,'reason','BLUEPRINT_LAYOUT_MIGRATION_REQUIRED');
+    END IF;
+
     -- Fetch blueprint details
     SELECT jsonb_build_object(
         'id', b.id,
@@ -55,23 +59,16 @@ BEGIN
         'title', b.title,
         'occasion', b.occasion,
         'organization', b.organization,
-        'configuration', b.configuration,
-        'objects', b.objects,
-        'groups', b.groups,
-        'background_svg', b.background_svg
+        'layout', b.layout, 'layout_revision', b.layout_revision,
+        'layoutResources', public.blueprint_layout_resources_internal(b.layout,b.occasion)
     )
     INTO blueprintData
     FROM eshop.blueprints b
     WHERE b.id = blueprint_id;
 
-    -- Fetch valid spot IDs
-    SELECT jsonb_agg((obj->>'id')::BIGINT)
-    INTO valid_spots
-    FROM jsonb_array_elements(
-        (SELECT objects FROM eshop.blueprints WHERE id = blueprint_id)
-    ) obj
-    WHERE obj->>'type' = 'spot'
-      AND obj->>'id' IS NOT NULL;
+    -- Every runtime spot belongs to a canonical node binding.
+    SELECT coalesce(jsonb_agg(spot),'[]'::jsonb) INTO valid_spots
+      FROM eshop.blueprint_seat_bindings WHERE blueprint=blueprint_id;
 
     -- Fetch enriched spots data
     SELECT jsonb_agg(
@@ -136,7 +133,7 @@ BEGIN
         'price', o.price,
         'state', o.state,
         'currency_code', o.currency_code,
-        'data', jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email', 'note', o.data->>'note')
+        'data', jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email', 'note', o.data->>'note', 'note_hidden', coalesce(o.note_hidden,o.data->>'note_hidden'))
     ))
     INTO ordersData
     FROM eshop.orders o
@@ -196,6 +193,10 @@ BEGIN
         '{order_product_ticket}',
         COALESCE(orderProductTicketsData, '[]'::jsonb)
     );
+
+    blueprintData:=blueprintData||public.blueprint_binding_projection_internal(blueprint_id);
+
+    blueprintData:=blueprintData||jsonb_build_object('areaAvailability',public.blueprint_area_availability_internal(blueprint_id,NULL));
 
     -- Return combined data
     RETURN jsonb_build_object(

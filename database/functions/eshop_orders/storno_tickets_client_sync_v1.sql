@@ -5,6 +5,7 @@ DECLARE v_request_tickets bigint[]:=p_tickets; v_actor uuid:=auth.uid(); v_occas
   v_unchanged boolean:=false; v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
 BEGIN
   p_tickets:=ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id ORDER BY id);
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(p_tickets)));
   IF cardinality(p_tickets)>(SELECT hard_cap FROM public.abuse_policy_rules WHERE rule_key='order.mutation.items') THEN RAISE SQLSTATE 'PT429' USING MESSAGE='abuse_limit_exceeded'; END IF;
   SELECT min(t.occasion) INTO v_occasion FROM eshop.tickets t
     WHERE t.id=ANY(p_tickets);
@@ -38,7 +39,7 @@ BEGIN
     WHERE t.id=ANY(p_tickets) AND t.state IS DISTINCT FROM 'storno';
   IF coalesce(cardinality(v_changed_orders),0)=0 THEN
     RAISE SQLSTATE 'P0C01' USING MESSAGE='cancellation already committed'; END IF;
-  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets);
+  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets, false);
   SELECT coalesce(jsonb_agg(o.id ORDER BY o.id) FILTER(WHERE o.state='storno'),'[]'::jsonb),
     coalesce(jsonb_agg(jsonb_build_object('id',o.id,'email',o.data->>'email') ORDER BY o.id)
       FILTER(WHERE o.state IS DISTINCT FROM 'storno'),'[]'::jsonb)

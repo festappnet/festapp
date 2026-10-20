@@ -1,4 +1,5 @@
 import 'package:fstapp/components/users/user_strings.dart';
+import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/i_has_id.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
@@ -115,7 +116,7 @@ class UsersTabHelper {
       var reinviteConfirm = await DialogHelper.showConfirmationDialog(
         context,
         UserStrings.invite,
-        UserStrings.reinviteConfirm,
+        OccasionTeamInvitationStrings.text('legacyReinviteConfirm'),
       );
       if (!reinviteConfirm) {
         await processInvites(context, newUsers);
@@ -133,7 +134,7 @@ class UsersTabHelper {
     var confirm = await DialogHelper.showConfirmationDialog(
       context,
       UserStrings.invite,
-      "${UserStrings.inviteInfo} (${users.length}):\n${users.map((u) => u.toBasicString()).join(",\n")}",
+      "${OccasionTeamInvitationStrings.text('legacyInviteHint')} (${users.length}):\n${users.map((u) => u.toBasicString()).join(",\n")}",
     );
 
     if (!confirm) return;

@@ -263,8 +263,9 @@ SET search_path = public, extensions
 
          -- If a form exists and it doesn't already have a blueprint, create one.
          IF FOUND AND v_form_blueprint IS NULL THEN
-             INSERT INTO eshop.blueprints(configuration, occasion, organization, created_at, updated_at)
-             VALUES ('{"dimensions": {"width": 28, "height": 52}}'::jsonb, occ_id, COALESCE(updated_occ.organization, 1), now, now)
+             INSERT INTO eshop.blueprints(occasion, organization, created_at, updated_at,layout)
+             VALUES (occ_id, COALESCE(updated_occ.organization, 1), now, now,
+              '{"schemaVersion":1,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1120,"height":2080,"fill":"#ffffffff"},"defaultTextStyle":{"fontId":"builtin:roboto-unpacked:24438383f80387edbbd3a199d7b257258db7003f5b291a7d3fb6fa89483ae57f","size":24,"color":"#222222FF"},"nodes":[]}'::jsonb)
              RETURNING id INTO new_blueprint_id;
 
              UPDATE public.forms
