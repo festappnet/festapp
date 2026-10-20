@@ -59,6 +59,7 @@ try {
             assert.ok(Object.hasOwn(rpc, name), `Unexpected RPC ${name}`);
             const [sql, parameters] = rpc[name];
             calls.push(name);
+            if (name === 'select_spot') await new Promise(resolve => setTimeout(resolve, 250));
             await db.query('SAVEPOINT browser_rpc');
             await db.query('SET LOCAL ROLE anon');
             const result = (await db.query(sql, parameters(args))).rows[0].result;
@@ -87,15 +88,55 @@ try {
     await browser('fill', `input[name="${fixture.name}"]`, 'Test');
     await browser('fill', `input[name="${fixture.surname}"]`, 'Checkout');
     await browser('click', '.btn-blueprint-select');
-    await browser('wait', `.blueprint-seat-container[data-seat-id="${fixture.seat}"]`);
+    const seatSelector = `.venue-layout-viewer svg g:nth-child(1 of [data-node-id="${fixture.node}"])`;
+    await browser('wait', seatSelector);
+    const controls = (await browser('eval', `(() => {
+        const modal=document.querySelector('.blueprint-modal-container');
+        const list=modal.querySelector('.venue-layout-viewer > [role="list"]');
+        const bounds=list.getBoundingClientRect();
+        const button=modal.querySelector('.blueprint-btn-confirm');
+        const b=button.getBoundingClientRect();
+        return {listWidth:bounds.width,listHeight:bounds.height,
+            buttons:modal.querySelectorAll(':scope > button').length,
+            oldClass:button.className,buttonType:button.type,
+            centered:Math.abs(b.x+b.width/2-innerWidth/2)<2,
+            extraControls:!!modal.querySelector('.blueprint-modal-actions,.blueprint-state-legend')};
+    })()`)).result;
+    assert.ok(controls.listWidth<=1 && controls.listHeight<=1, 'Assistive seat list must not be visible');
+    assert.equal(controls.buttons,1,'Keep the original single Continue button');
+    assert.equal(controls.oldClass,'btn btn-primary btn-submit blueprint-btn-confirm');
+    assert.equal(controls.buttonType,'button');
+    assert.equal(controls.centered,true,'Continue keeps its original centered placement');
+    assert.equal(controls.extraControls,false,'No new footer actions or legend');
+
+    await browser('wait', '--fn', "document.querySelector('.blueprint-modal-container').getAnimations().every(a=>a.playState!=='running')");
+    const fit=(await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
+    await browser('click', '.blueprint-zoom-button:first-child');
+    assert.notEqual((await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result,fit);
+    await browser('click', '.blueprint-zoom-reset');
+    const reset = (await browser('eval', "document.querySelector('.venue-layout-viewer svg').getAttribute('viewBox')")).result;
+    const fitBounds = fit.trim().split(/\s+/).map(Number);
+    const resetBounds = reset.trim().split(/\s+/).map(Number);
+    assert.equal(fitBounds.length, 4);
+    assert.equal(resetBounds.length, 4);
+    // Equivalent fitted bounds can differ by floating-point rounding after zoom.
+    resetBounds.forEach((value, index) => assert.ok(
+        Number.isFinite(value) && Number.isFinite(fitBounds[index]) && Math.abs(value - fitBounds[index]) < 1e-6,
+        `Reset restores fitted viewBox component ${index}: ${value} vs ${fitBounds[index]}`,
+    ));
+    const viewport="(() => {const s=document.querySelector('.venue-layout-viewer svg'),r=s.getBoundingClientRect();return JSON.stringify({x:r.x,y:r.y,width:r.width,height:r.height,camera:s.getAttribute('viewBox')})})()";
+    const beforeClick=(await browser('eval',viewport)).result;
     await browser('snapshot', '-i');
-    await browser('click', `.blueprint-seat-container[data-seat-id="${fixture.seat}"]`);
+    await browser('click', seatSelector);
+    await browser('wait', '--fn', "document.querySelector('.blueprint-btn-confirm').disabled");
+    assert.equal((await browser('eval',viewport)).result,beforeClick,'Pending selection must not move or resize the map');
     await browser('wait', '--fn', `document.querySelector('.ticket-item[data-seat-id="${fixture.seat}"]') !== null`);
     // The seat appears optimistically. Wait for the real reservation response
     // before inspecting SQL on the fixture connection used by the RPC adapter.
     await browser('wait', '--fn', "window.__seatCheckoutRpcResults?.has('select_spot') === true");
     assert.equal((await db.query('SELECT secret IS NOT NULL AS reserved FROM eshop.spots WHERE id=$1', [fixture.seat])).rows[0].reserved,
         true, 'The map click must reserve the actual SQL seat');
+    assert.equal((await browser('eval',viewport)).result,beforeClick,'Confirmed selection must retain camera and viewport');
     await browser('click', '.blueprint-btn-confirm');
     await browser('wait', '--fn', '!document.querySelector(".blueprint-modal-container")');
     await browser('snapshot', '-i');

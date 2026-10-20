@@ -584,6 +584,8 @@ const _cs = <String, String>{
   "Copy fragment JSON": "Zkopírovat JSON objektu",
   "Crop image": "Oříznout obrázek",
   "Text is not ready yet.": "Text ještě není připravený.",
+  "The selected font could not be loaded.": "Vybraný font se nepodařilo načíst.",
+  "Retry font": "Zkusit znovu",
   "Part of the plan could not be displayed.":
       "Část plánku se nepodařilo zobrazit.",
   "Delete preset": "Smazat vlastní objekt",

@@ -69,6 +69,31 @@ void main() {
         expect(effectiveNodeProperties(result.document, table)['cornerRadius'], 8, reason: 'blueprint$id styles=${result.document.styles} local=${table.style}');
         expect(effectiveNodeProperties(result.document, table)['stroke'], '#000000FF');
       }
+      // Semantic names must survive appearance normalization. SVG labels that
+      // are already separate text nodes remain separate and are not duplicated.
+      final expectedTableLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'table')
+          .map((node) => node['label'] ?? (node['properties'] as Map?)?['label'])
+          .whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
+      final actualTableLabels = result.document.nodes.where((node) => node.kind == 'table')
+          .map((node) => node.label).whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
+      expect(actualTableLabels, expectedTableLabels, reason: 'authored table names blueprint$id');
+      final expectedTextLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'text')
+          .map((node) => node['text'] ?? node['label'] ?? (node['properties'] as Map?)?['text'] ?? (node['properties'] as Map?)?['label'] ?? '')
+          .toList()..sort((a,b)=>a.toString().compareTo(b.toString()));
+      final actualTextLabels = result.document.nodes.where((node) => node.kind == 'text')
+          .map((node) => node.label ?? '').toList()..sort();
+      expect(actualTextLabels, expectedTextLabels, reason: 'existing artwork labels neither lost nor duplicated blueprint$id');
+      for (final table in result.document.nodes.where((node) => node.kind == 'table' && (node.label?.isNotEmpty ?? false))) {
+        final request = nodeTextRequest(result.document, table, families).toJson();
+        expect(request['align'], 'center', reason: 'default horizontal table centering blueprint$id');
+        expect(request['fit'], 'shrink', reason: 'automatic vertical centered label box blueprint$id');
+        for (final entry in (nativePlan?['tableLabelStyle'] as Map? ?? const {}).entries) {
+          expect(resolveNodeAppearance(result.document, table).label[entry.key], entry.value, reason: 'reviewed typography blueprint$id');
+          expect((table.style?['label'] as Map? ?? const {}).containsKey(entry.key), isFalse, reason: 'kind style inheritance blueprint$id');
+        }
+      }
       if (nativePlan != null) nativeCount++;
       tables += result.document.nodes.where((n) => n.kind == 'table').length;
       final sourceObjects = {for (final obj in (source['objects'] as List? ?? const []).cast<Map>()) obj['id']: obj};

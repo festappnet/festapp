@@ -20,7 +20,7 @@ BEGIN
   ('public.update_occasion(jsonb)','0425e6f46c20d2c30a2ffd054619b2b0',true),
   ('public.update_occasion_182(jsonb)','bdcda71506ac0abb50a466bb18eb1cc7',true),
   ('public.update_occasion_203(jsonb)','916b23b47758d87e478b3b7d84a50ee2',true),
-  ('public.update_occasion_internal_v1(jsonb)','4f9cb835f420a0e3852775ee21e53b05',true),
+  ('public.update_occasion_internal_v1(jsonb)','b5ee0d25b704fd8b6cb76a9cfe8d68a4',true),
   ('public.validate_ticket_layout(jsonb)','5153fe15bd80e6c1985413e54d8cd3a6',false),
   ('public.validate_ticket_layout_references(bigint,jsonb)','aad01d93c9f0a7035efa243caa3d5a20',false)
  ) expected(signature,body_md5,definer)

@@ -1,0 +1,39 @@
+{
+  "status": "pass",
+  "engine": "HarfBuzz 14.6.0",
+  "cases": 11,
+  "paragraphs": 4,
+  "faces": 3,
+  "coldBatchMs": 245.26939500000003,
+  "batchLabels": 11,
+  "samples": 60,
+  "p50ms": 31.50396499999988,
+  "p95ms": 95.0514820000003,
+  "bidi": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2
+  ],
+  "graphemes": [
+    "a\u0301",
+    "\ud83d\ude00"
+  ],
+  "lineBreak": 2,
+  "script": "Arabic",
+  "image": "public.ecr.aws/supabase/edge-runtime:v1.74.2@sha256:a82676277615aee03c4f288cbbbf68dedb5ba8693073e567ab8dbfdd11ba5d45",
+  "startupAndFirstRequestMs": 6187.724333023652,
+  "scriptSha256": "1cf371df4fb253d69da0e033f34c2abc6f8138b10709e3f12d66cdb15996900d",
+  "shaperSha256": "3ccbaf1e4adc5bfc15f69b0ea77d9f0d08e198c18514299ba5ca1cd2c582b140",
+  "productionCredentials": false,
+  "repositoryMounted": false,
+  "scope": "actual Edge user worker; local loopback transport; no authorization/DB/end-to-end preparation latency claim"
+}

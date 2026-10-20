@@ -3,14 +3,14 @@
   "port": 60922,
   "freshForwardMigrations": 252,
   "preexistingFixture": {
-    "occasion": 4,
-    "blueprint": 4,
-    "heldSpot": 12,
-    "soldSpot": 9,
-    "order": 3
+    "occasion": 37,
+    "blueprint": 42,
+    "heldSpot": 166,
+    "soldSpot": 163,
+    "order": 34
   },
-  "aggregateBeforeAfterSha256": "357a7e09b63efee12d09d3ee88b70abec092fe5ef22024530f42e33d15a8a205",
-  "migrationSha256": "f5e137f068223398e0cb4705c732aaf1f7d9f473d5448da31dbae3437eaa3019",
+  "aggregateBeforeAfterSha256": "2ffac24f4e3986527f70d86a2f67a2587135b7867e0e223101e7f2e2deee8e4c",
+  "migrationSha256": "f095f66c0fe7f22516bec5ab47e43b03bc6360a9e0c4126563a5b5663647d590",
   "unchangedAggregate": true,
   "receiptReplay": true,
   "ownExpiryReadback": true,

@@ -147,7 +147,10 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
         // survive; the reviewed hall palette is owned by the document style.
         wire.remove('appearanceOverrides');
         wire.remove('objectStyle');
-        for (final key in basic.object.keys) { wire.remove(key); }
+        // A table's authored name is semantic content, not an appearance override.
+        for (final key in basic.object.keys) {
+          if (key != 'label') wire.remove(key);
+        }
         wire['lineHeight'] = 1;
       }
       if (wire['kind'] == 'text') {
@@ -225,7 +228,19 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
     'background': null,
   }, fontFamilies: fontFamilies, sourceRevision: 0);
   if (!imported.isReady) throw StateError('legacy_conversion_invalid:${imported.receipt['issues']}');
-  final document = imported.document!;
+  var document = imported.document!;
+  final labelProfile = nativePlan?['tableLabelStyle'] as Map?;
+  if (labelProfile != null) {
+    // Explicitly reviewed typography applies to the table kind, so later
+    // styling continues through the same canonical inheritance as new tables.
+    for (final entry in labelProfile.entries) {
+      final key = entry.key as String;
+      document = setKindStyleLeaf(document, 'table', ['label', key], value: entry.value);
+      for (final table in document.nodes.where((node) => node.kind == 'table').toList()) {
+        document = setNodeStyleLeaf(document, table.id, ['label', key], unset: true);
+      }
+    }
+  }
   final snapshot = BlueprintLayoutSnapshot(
       blueprintId: source.id,
       occasionId: source.occasion!,

@@ -47,7 +47,8 @@ try{
   'payment',(select to_jsonb(p) from eshop.payment_info p join eshop.orders o on o.payment_info=p.id where o.id=$3)
  ) state`,[f.blueprint,f.occasion,sold.data.order.id])).state;
  const before=await state();
- const migration=readFileSync(resolve(root,'supabase/migrations/20261021010000_blueprint_reservation_integrity.sql'),'utf8');
+ const migrations=['20261021010000_blueprint_reservation_integrity.sql','20261021020000_blueprint_release_integration.sql'];
+ const migration=migrations.map(name=>readFileSync(resolve(root,'supabase/migrations',name),'utf8')).join('\n');
  await c.query(migration);
  assert.deepEqual(await state(),before,'forward migration preserves sold price/labels/history, active hold, layout revision and bindings');
  assert.equal((await one("select to_regprocedure('public.get_blueprint_legacy_rollout_internal(uuid,uuid,bigint)') public_legacy,to_regprocedure('public.get_blueprint_for_edit_legacy_rollout_internal(text)') admin_legacy")).public_legacy,null);

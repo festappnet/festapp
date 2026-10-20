@@ -12,7 +12,8 @@ try {
  assert(
   (marker==='festapp-blueprint-b-20261019' && url.port==='59432') ||
   (marker==='festapp-blueprint-b-e2e-20261019' && url.port==='59522') ||
-  (marker==='festapp-blueprint-1000-e2e-20261020' && url.port==='59722'),
+  (marker==='festapp-blueprint-1000-e2e-20261020' && url.port==='59722') ||
+  (marker==='festapp-blueprint-mcp-closure-fresh-20261020' && url.port==='60922'),
   'owned task database marker and port');
  for(const c of clients)await c.query("SET statement_timeout='12s'; SET lock_timeout='6s'");
  await a.query(readFileSync(new URL('../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));

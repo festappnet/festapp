@@ -11,8 +11,8 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const args=Object.fromEntries(process.argv.slice(2).reduce((pairs,value,index,all)=>index%2===0?[...pairs,[value.replace(/^--/,''),all[index+1]]]:pairs,[]));
 assert(args['env-file'] && args['state-dir'],'--env-file and --state-dir are required');
 assert.equal(statSync(args['env-file']).mode&0o077,0,'private env file must not be group/world readable');
-const api=new URL(args.api??'http://127.0.0.1:59721');assert.equal(api.origin,'http://127.0.0.1:59721','only owned E2E API59721 is allowed');
-const port=Number(args.port??59725);assert.equal(port,59725,'owned bridge port59725 required');
+const api=new URL(args.api??'http://127.0.0.1:59521');assert.equal(api.origin,'http://127.0.0.1:59521','only owned E2E API59521 is allowed');
+const port=Number(args.port??59525);assert.equal(port,59525,'owned bridge port59525 required');
 const vars=Object.fromEntries(readFileSync(args['env-file'],'utf8').split(/\r?\n/).filter(x=>x&&!x.startsWith('#')).map(line=>{const at=line.indexOf('=');return [line.slice(0,at),line.slice(at+1).replace(/^['"]|['"]$/g,'')];}));
 assert(vars.IMAGE_PROCESSING_SERVICE_SECRET?.length>=32 && vars.SUPABASE_ANON_KEY,'local manifest secret + anon key required');
 const state=resolve(args['state-dir']);assert(state.includes('blueprint'),'task-specific state directory required');mkdirSync(state,{recursive:true,mode:0o700});
@@ -30,8 +30,8 @@ const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:readFileSy
 await mf.ready;
 const server=createServer(async(req,res)=>{
  try{
-  const local=new URL(req.url,'http://127.0.0.1:59725');
-  if(local.pathname==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{"project":"festapp-blueprint-1000-image-local","processor":"miniflare-images","remote":false}');return;}
+  const local=new URL(req.url,'http://127.0.0.1:59525');
+  if(local.pathname==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{"project":"festapp-blueprint-b-image-local","processor":"miniflare-images","remote":false}');return;}
   if(!['GET','HEAD','POST','PUT','OPTIONS'].includes(req.method)){res.writeHead(405);res.end();return;}
   const origin=req.headers.origin;
   if(origin&&!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)){res.writeHead(403);res.end();return;}
@@ -49,5 +49,5 @@ const server=createServer(async(req,res)=>{
   res.writeHead(result.status,Object.fromEntries(responseHeaders));if(result.body)Readable.fromWeb(result.body).pipe(res);else res.end();
  }catch{res.writeHead(500,{'Content-Type':'application/json'});res.end('{"error":"owned local image bridge failed"}');}
 });
-await new Promise(resolve=>server.listen(port,args.host??'127.0.0.1',resolve));console.log('READY owned image bridge127.0.0.1:59725; real local Images/R2; all non-owned outbound network blocked');
+await new Promise(resolve=>server.listen(port,args.host??'127.0.0.1',resolve));console.log('READY owned image bridge127.0.0.1:59525; real local Images/R2; all non-owned outbound network blocked');
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{server.close();await mf.dispose();process.exit(0);});

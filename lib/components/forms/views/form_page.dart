@@ -265,9 +265,9 @@ class _FormPageState extends State<FormPage> {
             selectedSeats: formSession!.currentSeats,
             maxTickets: formHolder!.getTicket()?.maxTickets,
             selectedAreaQuantity: (id) => formSession!.areaQuantity(id),
-            onQuantityRequested: (binding, quantity, available) async {
+            onQuantityRequested: (binding, quantity, available, product) async {
               formSession!
-                  .setAreaQuantity(binding, quantity, available: available);
+                  .setAreaQuantity(binding, quantity, available: available, product: product);
             },
             onPendingChanged: (pending) {
               formHolder!.controller!.reservationPending = pending;

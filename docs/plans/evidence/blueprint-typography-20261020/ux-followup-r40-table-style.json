@@ -1,0 +1,16 @@
+{
+  "productionApplied": false,
+  "plansVerified": 49,
+  "unchangedOtherPlans": 48,
+  "boldPlan": 87,
+  "canonicalTableLabelStyle": {
+    "align": "center",
+    "color": "#FFFFFFFF",
+    "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+    "weight": 700
+  },
+  "realFace": "Roboto 700:normal",
+  "all37TableLabelsInheritTypography": true,
+  "alignment": "center; canonical shrink-to-fit vertical label box",
+  "occupancyAndOrderHoldStatePreserved": true
+}

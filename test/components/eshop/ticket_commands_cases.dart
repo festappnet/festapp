@@ -11,8 +11,8 @@ void main() {
         functionName = name;
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'
@@ -63,8 +63,8 @@ void main() {
         functionName = name;
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'
@@ -91,8 +91,8 @@ void main() {
       ClientCommandTransport(
           (name, params) async => {
                 'mutation': {
-                  'commandId': '00000000-0000-4000-8000-000000000001',
-                  'receiptId': '00000000-0000-4000-8000-000000000001',
+                  'commandId': params['p_command_id'],
+                  'receiptId': params['p_command_id'],
                   'commitId': null,
                   'replayed': false,
                   'occurredAt': '2026-10-15T10:00:00Z'

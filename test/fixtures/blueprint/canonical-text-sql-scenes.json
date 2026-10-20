@@ -1,128 +1,267 @@
 {
   "admin": {
     "document": {
+      "attachments": [
+        {
+          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "free"
+          },
+          "rotationMode": "manual",
+          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        }
+      ],
+      "background": null,
+      "canvas": {
+        "fill": "#ffffffff",
+        "height": 800,
+        "width": 1400,
+        "x": 0,
+        "y": 0
+      },
       "nodes": [
         {
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "shape": "roundedRect",
+          "slot": 0,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": -36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "assembly": {
+            "kind": "couch",
+            "minSeatHeight": 64,
+            "minSeatWidth": 64,
+            "seats": 2
+          },
+          "furniture": "couch",
+          "height": 100.0,
+          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "kind": "furniture",
+          "shape": "roundedRect",
+          "style": {
+            "fill": "#DED4F0FF"
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 650.0,
+            "y": 470.0
+          },
+          "width": 160.0
+        },
+        {
+          "assembly": {
+            "aisle": 80,
+            "arc": -2,
+            "blocks": 1,
+            "kind": "rows",
+            "rowSpacing": 64,
+            "rows": 2,
+            "seatsPerRow": 3,
+            "spacing": 56
+          },
+          "height": 40.0,
+          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "kind": "group",
+          "seating": {
+            "height": 40,
+            "width": 40
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 100.0,
+            "y": 430.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000001",
           "kind": "text",
-          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "cs",
               "direction": "auto",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "italic": false,
+              "language": "cs",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "transform": {
-            "x": 200,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 200.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000002",
           "kind": "text",
-          "text": "مرحبا Latin 123 (سلام) العربية",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "ar",
               "direction": "auto",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "ar",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "مرحبا Latin 123 (سلام) العربية",
           "transform": {
-            "x": 460,
-            "y": 180,
-            "rotation": 17
-          }
+            "rotation": 17.0,
+            "x": 460.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000003",
           "kind": "text",
-          "text": "Latin 123 سلام 456 Arabic",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "und",
               "direction": "ltr",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "und",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Latin 123 سلام 456 Arabic",
           "transform": {
-            "x": 720,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 720.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000004",
           "kind": "text",
-          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "hi",
               "direction": "auto",
-              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a"
+              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a",
+              "italic": false,
+              "language": "hi",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "transform": {
-            "x": 980,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 980.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 80.0,
           "id": "20000000-0000-4000-8000-000000000050",
           "kind": "table",
           "label": "Příliš široký název stolu",
           "style": {
             "label": {
-              "size": 28,
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 28
             }
           },
-          "width": 220,
-          "height": 80,
           "surface": {
             "type": "rect"
           },
           "transform": {
-            "x": 400,
-            "y": 600,
-            "rotation": 23
-          }
+            "rotation": 23.0,
+            "x": 400.0,
+            "y": 600.0
+          },
+          "width": 220.0
         },
         {
-          "id": "20000000-0000-4000-8000-000000000091",
-          "kind": "vector",
-          "width": 320,
-          "height": 160,
           "graphic": {
-            "type": "vector",
-            "width": 200,
-            "height": 100,
-            "version": 1,
             "commands": [
               {
+                "fillRule": "nonzero",
                 "op": "clip",
                 "path": [
                   [
@@ -148,16 +287,37 @@
                   [
                     "Z"
                   ]
-                ],
-                "fillRule": "nonzero"
+                ]
               },
               {
                 "op": "layer",
                 "opacity": 0.6
               },
               {
-                "op": "path",
                 "fill": "#ffffffff",
+                "fillGradient": {
+                  "colors": [
+                    "#ff0000ff",
+                    "#0000ffff"
+                  ],
+                  "from": [
+                    0,
+                    0
+                  ],
+                  "spread": "pad",
+                  "stops": [
+                    0,
+                    1
+                  ],
+                  "to": [
+                    200,
+                    0
+                  ],
+                  "type": "linear"
+                },
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -186,35 +346,15 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
-                "strokeWidth": 0,
-                "fillGradient": {
-                  "to": [
-                    200,
-                    0
-                  ],
-                  "from": [
-                    0,
-                    0
-                  ],
-                  "type": "linear",
-                  "stops": [
-                    0,
-                    1
-                  ],
-                  "colors": [
-                    "#ff0000ff",
-                    "#0000ffff"
-                  ],
-                  "spread": "pad"
-                }
+                "strokeWidth": 0
               },
               {
-                "op": "path",
                 "fill": "#00aa44ff",
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -240,9 +380,7 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
                 "strokeWidth": 0
               },
@@ -252,362 +390,226 @@
               {
                 "op": "restore"
               }
-            ]
+            ],
+            "height": 100,
+            "type": "vector",
+            "version": 1,
+            "width": 200
           },
-          "transform": {
-            "x": 1180,
-            "y": 570,
-            "rotation": 0
-          },
+          "height": 160.0,
+          "id": "20000000-0000-4000-8000-000000000091",
+          "kind": "vector",
           "originalSource": {
-            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n",
             "format": "svg",
-            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9"
-          }
-        },
-        {
-          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "kind": "group",
-          "width": 40,
-          "height": 40,
-          "seating": {
-            "width": 40,
-            "height": 40
-          },
-          "assembly": {
-            "arc": -2,
-            "kind": "rows",
-            "rows": 2,
-            "aisle": 80,
-            "blocks": 1,
-            "spacing": 56,
-            "rowSpacing": 64,
-            "seatsPerRow": 3
+            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9",
+            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n"
           },
           "transform": {
-            "x": 100,
-            "y": 430,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 1180.0,
+            "y": 570.0
+          },
+          "width": 320.0
         },
         {
-          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "kind": "seat",
-          "slot": "1:0:2",
-          "label": "6",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": 62,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "kind": "seat",
-          "slot": "0:0:0",
-          "label": "1",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 4,
-            "y": -2,
-            "rotation": 37
-          }
-        },
-        {
-          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "kind": "seat",
-          "slot": "1:0:0",
-          "label": "4",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 0,
-            "y": 62,
-            "rotation": 4.0859375
-          }
-        },
-        {
-          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "kind": "seat",
-          "slot": "1:0:1",
-          "label": "5",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 64,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "kind": "seat",
-          "slot": "0:0:2",
-          "label": "3",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": -2,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "kind": "seat",
-          "slot": "0:0:1",
-          "label": "2",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 0,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "kind": "seat",
-          "slot": 0,
-          "label": "1",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
           "furniture": "cushion",
-          "transform": {
-            "x": -36,
-            "y": 6,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "kind": "furniture",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#DED4F0FF"
-          },
-          "width": 160,
-          "height": 100,
-          "assembly": {
-            "kind": "couch",
-            "seats": 2,
-            "minSeatWidth": 64,
-            "minSeatHeight": 64
-          },
-          "furniture": "couch",
-          "transform": {
-            "x": 650,
-            "y": 470,
-            "rotation": 0
-          }
-        },
-        {
+          "height": 64.0,
           "id": "4edfa8a0-3fa1-409b-9444-f3a601552159",
           "kind": "seat",
-          "slot": 1,
           "label": "2",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
           "shape": "roundedRect",
+          "slot": 1,
           "style": {
             "fill": "#F8FAFCFF",
             "label": {
-              "size": 12,
-              "align": "center"
+              "align": "center",
+              "size": 12
             }
           },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "furniture": "cushion",
           "transform": {
-            "x": 36,
-            "y": 6,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "height": 40.0,
+          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "kind": "seat",
+          "label": "6",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 37.0,
+            "x": 4.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "kind": "seat",
+          "label": "4",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 4.0859375,
+            "x": 0.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "kind": "seat",
+          "label": "5",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 64.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "kind": "seat",
+          "label": "3",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 0.0
+          },
+          "width": 40.0
         }
       ],
-      "canvas": {
-        "x": 0,
-        "y": 0,
-        "fill": "#ffffffff",
-        "width": 1400,
-        "height": 800
-      },
-      "styles": {},
       "presets": [
         {
-          "id": "20000000-0000-4000-8000-000000000060",
-          "title": "Admin only",
           "document": {
+            "attachments": [],
+            "background": null,
+            "canvas": {
+              "fill": "#ffffffff",
+              "height": 600,
+              "width": 1000,
+              "x": 0,
+              "y": 0
+            },
             "nodes": [
               {
+                "height": 80.0,
                 "id": "20000000-0000-4000-8000-000000000061",
                 "kind": "text",
                 "text": "Private preset text",
-                "width": 240,
-                "height": 80,
                 "transform": {
-                  "x": 200,
-                  "y": 200,
-                  "rotation": 0
-                }
+                  "rotation": 0.0,
+                  "x": 200.0,
+                  "y": 200.0
+                },
+                "width": 240.0
               }
             ],
-            "canvas": {
-              "x": 0,
-              "y": 0,
-              "fill": "#ffffffff",
-              "width": 1000,
-              "height": 600
-            },
+            "presets": [],
+            "schemaVersion": 2,
+            "seatingDefaults": {},
+            "sections": [],
+            "selectionUnits": [],
             "styles": {
               "label": {
                 "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
               }
             },
+            "symbolSetVersion": 1,
             "textPolicy": {
-              "language": "und",
-              "direction": "auto"
-            },
-            "schemaVersion": 2,
-            "seatingDefaults": {},
-            "symbolSetVersion": 1
-          }
-        }
-      ],
-      "sections": [],
-      "textPolicy": {
-        "language": "und",
-        "direction": "auto"
-      },
-      "attachments": [
-        {
-          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
+              "direction": "auto",
+              "language": "und"
+            }
           },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "free"
-          },
-          "rotationMode": "manual"
-        },
-        {
-          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
-          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
-          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
+          "id": "20000000-0000-4000-8000-000000000060",
+          "title": "Admin only"
         }
       ],
       "schemaVersion": 2,
+      "seatingDefaults": {},
+      "sections": [],
       "selectionUnits": [
         {
           "id": "7872a184-f6a9-43b3-8cd7-dd5e3ab9479f",
@@ -618,8 +620,12 @@
           ]
         }
       ],
-      "seatingDefaults": {},
-      "symbolSetVersion": 1
+      "styles": {},
+      "symbolSetVersion": 1,
+      "textPolicy": {
+        "direction": "auto",
+        "language": "und"
+      }
     },
     "scene": {
       "protocol": 1,
@@ -26875,128 +26881,267 @@
   },
   "public": {
     "document": {
+      "attachments": [
+        {
+          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "free"
+          },
+          "rotationMode": "manual",
+          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        }
+      ],
+      "background": null,
+      "canvas": {
+        "fill": "#ffffffff",
+        "height": 800,
+        "width": 1400,
+        "x": 0,
+        "y": 0
+      },
       "nodes": [
         {
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "shape": "roundedRect",
+          "slot": 0,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": -36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "assembly": {
+            "kind": "couch",
+            "minSeatHeight": 64,
+            "minSeatWidth": 64,
+            "seats": 2
+          },
+          "furniture": "couch",
+          "height": 100.0,
+          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "kind": "furniture",
+          "shape": "roundedRect",
+          "style": {
+            "fill": "#DED4F0FF"
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 650.0,
+            "y": 470.0
+          },
+          "width": 160.0
+        },
+        {
+          "assembly": {
+            "aisle": 80,
+            "arc": -2,
+            "blocks": 1,
+            "kind": "rows",
+            "rowSpacing": 64,
+            "rows": 2,
+            "seatsPerRow": 3,
+            "spacing": 56
+          },
+          "height": 40.0,
+          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "kind": "group",
+          "seating": {
+            "height": 40,
+            "width": 40
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 100.0,
+            "y": 430.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000001",
           "kind": "text",
-          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "cs",
               "direction": "auto",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "italic": false,
+              "language": "cs",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "transform": {
-            "x": 200,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 200.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000002",
           "kind": "text",
-          "text": "مرحبا Latin 123 (سلام) العربية",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "ar",
               "direction": "auto",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "ar",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "مرحبا Latin 123 (سلام) العربية",
           "transform": {
-            "x": 460,
-            "y": 180,
-            "rotation": 17
-          }
+            "rotation": 17.0,
+            "x": 460.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000003",
           "kind": "text",
-          "text": "Latin 123 سلام 456 Arabic",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "und",
               "direction": "ltr",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "und",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Latin 123 سلام 456 Arabic",
           "transform": {
-            "x": 720,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 720.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000004",
           "kind": "text",
-          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "hi",
               "direction": "auto",
-              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a"
+              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a",
+              "italic": false,
+              "language": "hi",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "transform": {
-            "x": 980,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 980.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 80.0,
           "id": "20000000-0000-4000-8000-000000000050",
           "kind": "table",
           "label": "Příliš široký název stolu",
           "style": {
             "label": {
-              "size": 28,
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 28
             }
           },
-          "width": 220,
-          "height": 80,
           "surface": {
             "type": "rect"
           },
           "transform": {
-            "x": 400,
-            "y": 600,
-            "rotation": 23
-          }
+            "rotation": 23.0,
+            "x": 400.0,
+            "y": 600.0
+          },
+          "width": 220.0
         },
         {
-          "id": "20000000-0000-4000-8000-000000000091",
-          "kind": "vector",
-          "width": 320,
-          "height": 160,
           "graphic": {
-            "type": "vector",
-            "width": 200,
-            "height": 100,
-            "version": 1,
             "commands": [
               {
+                "fillRule": "nonzero",
                 "op": "clip",
                 "path": [
                   [
@@ -27022,16 +27167,37 @@
                   [
                     "Z"
                   ]
-                ],
-                "fillRule": "nonzero"
+                ]
               },
               {
                 "op": "layer",
                 "opacity": 0.6
               },
               {
-                "op": "path",
                 "fill": "#ffffffff",
+                "fillGradient": {
+                  "colors": [
+                    "#ff0000ff",
+                    "#0000ffff"
+                  ],
+                  "from": [
+                    0,
+                    0
+                  ],
+                  "spread": "pad",
+                  "stops": [
+                    0,
+                    1
+                  ],
+                  "to": [
+                    200,
+                    0
+                  ],
+                  "type": "linear"
+                },
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -27060,35 +27226,15 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
-                "strokeWidth": 0,
-                "fillGradient": {
-                  "to": [
-                    200,
-                    0
-                  ],
-                  "from": [
-                    0,
-                    0
-                  ],
-                  "type": "linear",
-                  "stops": [
-                    0,
-                    1
-                  ],
-                  "colors": [
-                    "#ff0000ff",
-                    "#0000ffff"
-                  ],
-                  "spread": "pad"
-                }
+                "strokeWidth": 0
               },
               {
-                "op": "path",
                 "fill": "#00aa44ff",
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -27114,9 +27260,7 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
                 "strokeWidth": 0
               },
@@ -27126,317 +27270,176 @@
               {
                 "op": "restore"
               }
-            ]
+            ],
+            "height": 100,
+            "type": "vector",
+            "version": 1,
+            "width": 200
           },
+          "height": 160.0,
+          "id": "20000000-0000-4000-8000-000000000091",
+          "kind": "vector",
           "transform": {
-            "x": 1180,
-            "y": 570,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 1180.0,
+            "y": 570.0
+          },
+          "width": 320.0
         },
         {
-          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "kind": "group",
-          "width": 40,
-          "height": 40,
-          "seating": {
-            "width": 40,
-            "height": 40
-          },
-          "assembly": {
-            "arc": -2,
-            "kind": "rows",
-            "rows": 2,
-            "aisle": 80,
-            "blocks": 1,
-            "spacing": 56,
-            "rowSpacing": 64,
-            "seatsPerRow": 3
-          },
-          "transform": {
-            "x": 100,
-            "y": 430,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "kind": "seat",
-          "slot": "1:0:2",
-          "label": "6",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": 62,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "kind": "seat",
-          "slot": "0:0:0",
-          "label": "1",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 4,
-            "y": -2,
-            "rotation": 37
-          }
-        },
-        {
-          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "kind": "seat",
-          "slot": "1:0:0",
-          "label": "4",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 0,
-            "y": 62,
-            "rotation": 4.0859375
-          }
-        },
-        {
-          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "kind": "seat",
-          "slot": "1:0:1",
-          "label": "5",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 64,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "kind": "seat",
-          "slot": "0:0:2",
-          "label": "3",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": -2,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "kind": "seat",
-          "slot": "0:0:1",
-          "label": "2",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 0,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "kind": "seat",
-          "slot": 0,
-          "label": "1",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
           "furniture": "cushion",
-          "transform": {
-            "x": -36,
-            "y": 6,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "kind": "furniture",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#DED4F0FF"
-          },
-          "width": 160,
-          "height": 100,
-          "assembly": {
-            "kind": "couch",
-            "seats": 2,
-            "minSeatWidth": 64,
-            "minSeatHeight": 64
-          },
-          "furniture": "couch",
-          "transform": {
-            "x": 650,
-            "y": 470,
-            "rotation": 0
-          }
-        },
-        {
+          "height": 64.0,
           "id": "4edfa8a0-3fa1-409b-9444-f3a601552159",
           "kind": "seat",
-          "slot": 1,
           "label": "2",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
           "shape": "roundedRect",
+          "slot": 1,
           "style": {
             "fill": "#F8FAFCFF",
             "label": {
-              "size": 12,
-              "align": "center"
+              "align": "center",
+              "size": 12
             }
           },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "furniture": "cushion",
           "transform": {
-            "x": 36,
-            "y": 6,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "height": 40.0,
+          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "kind": "seat",
+          "label": "6",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 37.0,
+            "x": 4.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "kind": "seat",
+          "label": "4",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 4.0859375,
+            "x": 0.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "kind": "seat",
+          "label": "5",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 64.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "kind": "seat",
+          "label": "3",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 0.0
+          },
+          "width": 40.0
         }
       ],
-      "canvas": {
-        "x": 0,
-        "y": 0,
-        "fill": "#ffffffff",
-        "width": 1400,
-        "height": 800
-      },
-      "styles": {},
       "presets": [],
-      "sections": [],
-      "textPolicy": {
-        "language": "und",
-        "direction": "auto"
-      },
-      "attachments": [
-        {
-          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "free"
-          },
-          "rotationMode": "manual"
-        },
-        {
-          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
-          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
-          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        }
-      ],
       "schemaVersion": 2,
+      "seatingDefaults": {},
+      "sections": [],
       "selectionUnits": [
         {
           "id": "7872a184-f6a9-43b3-8cd7-dd5e3ab9479f",
@@ -27447,8 +27450,12 @@
           ]
         }
       ],
-      "seatingDefaults": {},
-      "symbolSetVersion": 1
+      "styles": {},
+      "symbolSetVersion": 1,
+      "textPolicy": {
+        "direction": "auto",
+        "language": "und"
+      }
     },
     "scene": {
       "protocol": 1,
@@ -53704,128 +53711,352 @@
   },
   "copy": {
     "document": {
+      "attachments": [
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "2017937e-2cb9-47c2-9f23-f06a653a1066",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "448ee8dc-6c41-45e3-a784-ff140c234a6d",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "6538b466-4714-40ea-aa62-4c5f7e552d68",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "7f094134-5447-4fe9-9383-488651635c1e",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        },
+        {
+          "id": "4bca933d-3696-475c-b322-a1409dae2635",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "81a7df7b-86b0-4342-9c95-7f8bac11aa9e",
+          "targetId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5"
+        },
+        {
+          "placement": {
+            "mode": "free"
+          },
+          "rotationMode": "manual",
+          "seatId": "af738e21-fce1-4bfb-a19e-9dc5b04999e2",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        },
+        {
+          "id": "31fecfa9-5ea8-4717-b52b-d302ff74d1b2",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "badd5586-f3f3-494a-82fe-4a931b20fe38",
+          "targetId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "dfcf71aa-5d2f-4221-9793-17048215eae0",
+          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d"
+        }
+      ],
+      "background": null,
+      "canvas": {
+        "fill": "#ffffffff",
+        "height": 800,
+        "width": 1400,
+        "x": 0,
+        "y": 0
+      },
       "nodes": [
         {
+          "height": 40.0,
+          "id": "2017937e-2cb9-47c2-9f23-f06a653a1066",
+          "kind": "seat",
+          "label": "3",
+          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "slot": "0:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "assembly": {
+            "aisle": 80,
+            "arc": -2,
+            "blocks": 1,
+            "kind": "rows",
+            "rowSpacing": 64,
+            "rows": 2,
+            "seatsPerRow": 3,
+            "spacing": 56
+          },
+          "height": 40.0,
+          "id": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "kind": "group",
+          "seating": {
+            "height": 40,
+            "width": 40
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 100.0,
+            "y": 430.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "448ee8dc-6c41-45e3-a784-ff140c234a6d",
+          "kind": "seat",
+          "label": "5",
+          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "slot": "1:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 64.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 300.0,
           "id": "556a3c7f-b5f9-48fc-b198-7a955682885a",
           "kind": "text",
-          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "style": {
             "label": {
-              "size": 28,
+              "direction": "auto",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
               "italic": false,
-              "weight": 400,
               "language": "cs",
-              "direction": "auto",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "transform": {
-            "x": 200,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 200.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
-          "id": "8adfa691-7dae-4d09-a4b1-f0f37bb7d912",
-          "kind": "text",
-          "text": "مرحبا Latin 123 (سلام) العربية",
+          "height": 40.0,
+          "id": "6538b466-4714-40ea-aa62-4c5f7e552d68",
+          "kind": "seat",
+          "label": "6",
+          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "slot": "1:0:2",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "ar",
-              "direction": "auto",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
             }
           },
-          "width": 180,
-          "height": 300,
           "transform": {
-            "x": 460,
-            "y": 180,
-            "rotation": 17
-          }
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": 62.0
+          },
+          "width": 40.0
         },
         {
+          "height": 300.0,
           "id": "676c40ff-e81b-4726-9265-5f865ed4e055",
           "kind": "text",
-          "text": "Latin 123 سلام 456 Arabic",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "und",
               "direction": "ltr",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
-            }
-          },
-          "width": 180,
-          "height": 300,
-          "transform": {
-            "x": 720,
-            "y": 180,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "face7d0f-9755-4bc9-9aad-fbaf9cc1b1c9",
-          "kind": "text",
-          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
-          "style": {
-            "label": {
-              "size": 28,
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
               "italic": false,
-              "weight": 400,
-              "language": "hi",
-              "direction": "auto",
-              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a"
+              "language": "und",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Latin 123 سلام 456 Arabic",
           "transform": {
-            "x": 980,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 720.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
-          "id": "ce1a661e-9f89-43b8-ac77-ca698a3ff151",
-          "kind": "table",
-          "label": "Příliš široký název stolu",
+          "height": 40.0,
+          "id": "7f094134-5447-4fe9-9383-488651635c1e",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "slot": "0:0:1",
           "style": {
             "label": {
-              "size": 28,
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
             }
           },
-          "width": 220,
-          "height": 80,
-          "surface": {
-            "type": "rect"
-          },
           "transform": {
-            "x": 400,
-            "y": 600,
-            "rotation": 23
-          }
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 0.0
+          },
+          "width": 40.0
         },
         {
-          "id": "cc6f10d9-9fe0-4b6e-9dff-d37a720d92b3",
-          "kind": "vector",
-          "width": 320,
-          "height": 160,
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "81a7df7b-86b0-4342-9c95-7f8bac11aa9e",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
+          "shape": "roundedRect",
+          "slot": 0,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": -36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "height": 300.0,
+          "id": "8adfa691-7dae-4d09-a4b1-f0f37bb7d912",
+          "kind": "text",
+          "style": {
+            "label": {
+              "direction": "auto",
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "ar",
+              "size": 28,
+              "weight": 400
+            }
+          },
+          "text": "مرحبا Latin 123 (سلام) العربية",
+          "transform": {
+            "rotation": 17.0,
+            "x": 460.0,
+            "y": 180.0
+          },
+          "width": 180.0
+        },
+        {
+          "assembly": {
+            "kind": "couch",
+            "minSeatHeight": 64,
+            "minSeatWidth": 64,
+            "seats": 2
+          },
+          "furniture": "couch",
+          "height": 100.0,
+          "id": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
+          "kind": "furniture",
+          "shape": "roundedRect",
+          "style": {
+            "fill": "#DED4F0FF"
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 650.0,
+            "y": 470.0
+          },
+          "width": 160.0
+        },
+        {
+          "height": 40.0,
+          "id": "af738e21-fce1-4bfb-a19e-9dc5b04999e2",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "slot": "0:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 37.0,
+            "x": 4.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "badd5586-f3f3-494a-82fe-4a931b20fe38",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
+          "shape": "roundedRect",
+          "slot": 1,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
           "graphic": {
-            "type": "vector",
-            "width": 200,
-            "height": 100,
-            "version": 1,
             "commands": [
               {
+                "fillRule": "nonzero",
                 "op": "clip",
                 "path": [
                   [
@@ -53851,16 +54082,37 @@
                   [
                     "Z"
                   ]
-                ],
-                "fillRule": "nonzero"
+                ]
               },
               {
                 "op": "layer",
                 "opacity": 0.6
               },
               {
-                "op": "path",
                 "fill": "#ffffffff",
+                "fillGradient": {
+                  "colors": [
+                    "#ff0000ff",
+                    "#0000ffff"
+                  ],
+                  "from": [
+                    0,
+                    0
+                  ],
+                  "spread": "pad",
+                  "stops": [
+                    0,
+                    1
+                  ],
+                  "to": [
+                    200,
+                    0
+                  ],
+                  "type": "linear"
+                },
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -53889,35 +54141,15 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
-                "strokeWidth": 0,
-                "fillGradient": {
-                  "to": [
-                    200,
-                    0
-                  ],
-                  "from": [
-                    0,
-                    0
-                  ],
-                  "type": "linear",
-                  "stops": [
-                    0,
-                    1
-                  ],
-                  "colors": [
-                    "#ff0000ff",
-                    "#0000ffff"
-                  ],
-                  "spread": "pad"
-                }
+                "strokeWidth": 0
               },
               {
-                "op": "path",
                 "fill": "#00aa44ff",
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -53943,9 +54175,7 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
                 "strokeWidth": 0
               },
@@ -53955,362 +54185,141 @@
               {
                 "op": "restore"
               }
-            ]
+            ],
+            "height": 100,
+            "type": "vector",
+            "version": 1,
+            "width": 200
           },
-          "transform": {
-            "x": 1180,
-            "y": 570,
-            "rotation": 0
-          },
+          "height": 160.0,
+          "id": "cc6f10d9-9fe0-4b6e-9dff-d37a720d92b3",
+          "kind": "vector",
           "originalSource": {
-            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n",
             "format": "svg",
-            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9"
-          }
-        },
-        {
-          "id": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "kind": "group",
-          "width": 40,
-          "height": 40,
-          "seating": {
-            "width": 40,
-            "height": 40
-          },
-          "assembly": {
-            "arc": -2,
-            "kind": "rows",
-            "rows": 2,
-            "aisle": 80,
-            "blocks": 1,
-            "spacing": 56,
-            "rowSpacing": 64,
-            "seatsPerRow": 3
+            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9",
+            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n"
           },
           "transform": {
-            "x": 100,
-            "y": 430,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 1180.0,
+            "y": 570.0
+          },
+          "width": 320.0
         },
         {
-          "id": "6538b466-4714-40ea-aa62-4c5f7e552d68",
-          "kind": "seat",
-          "slot": "1:0:2",
-          "label": "6",
+          "height": 80.0,
+          "id": "ce1a661e-9f89-43b8-ac77-ca698a3ff151",
+          "kind": "table",
+          "label": "Příliš široký název stolu",
           "style": {
             "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 28
             }
           },
-          "width": 40,
-          "height": 40,
-          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "transform": {
-            "x": 112,
-            "y": 62,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "af738e21-fce1-4bfb-a19e-9dc5b04999e2",
-          "kind": "seat",
-          "slot": "0:0:0",
-          "label": "1",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
+          "surface": {
+            "type": "rect"
           },
-          "width": 40,
-          "height": 40,
-          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
           "transform": {
-            "x": 4,
-            "y": -2,
-            "rotation": 37
-          }
+            "rotation": 23.0,
+            "x": 400.0,
+            "y": 600.0
+          },
+          "width": 220.0
         },
         {
+          "height": 40.0,
           "id": "dfcf71aa-5d2f-4221-9793-17048215eae0",
           "kind": "seat",
-          "slot": "1:0:0",
           "label": "4",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
           "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "transform": {
-            "x": 0,
-            "y": 62,
-            "rotation": 4.0859375
-          }
-        },
-        {
-          "id": "448ee8dc-6c41-45e3-a784-ff140c234a6d",
-          "kind": "seat",
-          "slot": "1:0:1",
-          "label": "5",
+          "slot": "1:0:0",
           "style": {
             "label": {
-              "size": 12,
               "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
             }
           },
-          "width": 40,
-          "height": 40,
-          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
           "transform": {
-            "x": 56,
-            "y": 64,
-            "rotation": 0
-          }
+            "rotation": 4.0859375,
+            "x": 0.0,
+            "y": 62.0
+          },
+          "width": 40.0
         },
         {
-          "id": "2017937e-2cb9-47c2-9f23-f06a653a1066",
-          "kind": "seat",
-          "slot": "0:0:2",
-          "label": "3",
+          "height": 300.0,
+          "id": "face7d0f-9755-4bc9-9aad-fbaf9cc1b1c9",
+          "kind": "text",
           "style": {
             "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "direction": "auto",
+              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a",
+              "italic": false,
+              "language": "hi",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 40,
-          "height": 40,
-          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
+          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "transform": {
-            "x": 112,
-            "y": -2,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "7f094134-5447-4fe9-9383-488651635c1e",
-          "kind": "seat",
-          "slot": "0:0:1",
-          "label": "2",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
+            "rotation": 0.0,
+            "x": 980.0,
+            "y": 180.0
           },
-          "width": 40,
-          "height": 40,
-          "parentId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "transform": {
-            "x": 56,
-            "y": 0,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "81a7df7b-86b0-4342-9c95-7f8bac11aa9e",
-          "kind": "seat",
-          "slot": 0,
-          "label": "1",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
-          "furniture": "cushion",
-          "transform": {
-            "x": -36,
-            "y": 6,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
-          "kind": "furniture",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#DED4F0FF"
-          },
-          "width": 160,
-          "height": 100,
-          "assembly": {
-            "kind": "couch",
-            "seats": 2,
-            "minSeatWidth": 64,
-            "minSeatHeight": 64
-          },
-          "furniture": "couch",
-          "transform": {
-            "x": 650,
-            "y": 470,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "badd5586-f3f3-494a-82fe-4a931b20fe38",
-          "kind": "seat",
-          "slot": 1,
-          "label": "2",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
-          "furniture": "cushion",
-          "transform": {
-            "x": 36,
-            "y": 6,
-            "rotation": 0
-          }
+          "width": 180.0
         }
       ],
-      "canvas": {
-        "x": 0,
-        "y": 0,
-        "fill": "#ffffffff",
-        "width": 1400,
-        "height": 800
-      },
-      "styles": {},
       "presets": [
         {
-          "id": "f4c28c1a-8083-4ea2-8520-e7bb7377fb3a",
-          "title": "Admin only",
           "document": {
+            "attachments": [],
+            "background": null,
+            "canvas": {
+              "fill": "#ffffffff",
+              "height": 600,
+              "width": 1000,
+              "x": 0,
+              "y": 0
+            },
             "nodes": [
               {
+                "height": 80.0,
                 "id": "10dd4d37-3d5d-426f-bbd1-aa2193ddeec0",
                 "kind": "text",
                 "text": "Private preset text",
-                "width": 240,
-                "height": 80,
                 "transform": {
-                  "x": 200,
-                  "y": 200,
-                  "rotation": 0
-                }
+                  "rotation": 0.0,
+                  "x": 200.0,
+                  "y": 200.0
+                },
+                "width": 240.0
               }
             ],
-            "canvas": {
-              "x": 0,
-              "y": 0,
-              "fill": "#ffffffff",
-              "width": 1000,
-              "height": 600
-            },
+            "presets": [],
+            "schemaVersion": 2,
+            "seatingDefaults": {},
+            "sections": [],
+            "selectionUnits": [],
             "styles": {
               "label": {
                 "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
               }
             },
+            "symbolSetVersion": 1,
             "textPolicy": {
-              "language": "und",
-              "direction": "auto"
-            },
-            "schemaVersion": 2,
-            "seatingDefaults": {},
-            "symbolSetVersion": 1
-          }
-        }
-      ],
-      "sections": [],
-      "textPolicy": {
-        "language": "und",
-        "direction": "auto"
-      },
-      "attachments": [
-        {
-          "seatId": "6538b466-4714-40ea-aa62-4c5f7e552d68",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "automatic"
+              "direction": "auto",
+              "language": "und"
+            }
           },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "af738e21-fce1-4bfb-a19e-9dc5b04999e2",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "free"
-          },
-          "rotationMode": "manual"
-        },
-        {
-          "seatId": "dfcf71aa-5d2f-4221-9793-17048215eae0",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "448ee8dc-6c41-45e3-a784-ff140c234a6d",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "2017937e-2cb9-47c2-9f23-f06a653a1066",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "7f094134-5447-4fe9-9383-488651635c1e",
-          "targetId": "26e4286c-be21-4b28-8680-c159df7b486d",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "4bca933d-3696-475c-b322-a1409dae2635",
-          "seatId": "81a7df7b-86b0-4342-9c95-7f8bac11aa9e",
-          "targetId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "31fecfa9-5ea8-4717-b52b-d302ff74d1b2",
-          "seatId": "badd5586-f3f3-494a-82fe-4a931b20fe38",
-          "targetId": "a8d15069-87ff-4574-8b0c-1ef2bb643bb5",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
+          "id": "f4c28c1a-8083-4ea2-8520-e7bb7377fb3a",
+          "title": "Admin only"
         }
       ],
       "schemaVersion": 2,
+      "seatingDefaults": {},
+      "sections": [],
       "selectionUnits": [
         {
           "id": "65f57546-df84-4d5d-b82f-fdb6b52b6814",
@@ -54321,8 +54330,12 @@
           ]
         }
       ],
-      "seatingDefaults": {},
-      "symbolSetVersion": 1
+      "styles": {},
+      "symbolSetVersion": 1,
+      "textPolicy": {
+        "direction": "auto",
+        "language": "und"
+      }
     },
     "scene": {
       "protocol": 1,
@@ -80578,128 +80591,267 @@
   },
   "setup": {
     "document": {
+      "attachments": [
+        {
+          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
+          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "free"
+          },
+          "rotationMode": "manual",
+          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        },
+        {
+          "placement": {
+            "mode": "automatic"
+          },
+          "rotationMode": "auto",
+          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616"
+        }
+      ],
+      "background": null,
+      "canvas": {
+        "fill": "#ffffffff",
+        "height": 800,
+        "width": 1400,
+        "x": 0,
+        "y": 0
+      },
       "nodes": [
         {
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "shape": "roundedRect",
+          "slot": 0,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": -36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "assembly": {
+            "kind": "couch",
+            "minSeatHeight": 64,
+            "minSeatWidth": 64,
+            "seats": 2
+          },
+          "furniture": "couch",
+          "height": 100.0,
+          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "kind": "furniture",
+          "shape": "roundedRect",
+          "style": {
+            "fill": "#DED4F0FF"
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 650.0,
+            "y": 470.0
+          },
+          "width": 160.0
+        },
+        {
+          "assembly": {
+            "aisle": 80,
+            "arc": -2,
+            "blocks": 1,
+            "kind": "rows",
+            "rowSpacing": 64,
+            "rows": 2,
+            "seatsPerRow": 3,
+            "spacing": 56
+          },
+          "height": 40.0,
+          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "kind": "group",
+          "seating": {
+            "height": 40,
+            "width": 40
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 100.0,
+            "y": 430.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000001",
           "kind": "text",
-          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "cs",
               "direction": "auto",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "italic": false,
+              "language": "cs",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Příliš žluťoučký kůň. AV office ffi fi.",
           "transform": {
-            "x": 200,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 200.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000002",
           "kind": "text",
-          "text": "مرحبا Latin 123 (سلام) العربية",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "ar",
               "direction": "auto",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "ar",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "مرحبا Latin 123 (سلام) العربية",
           "transform": {
-            "x": 460,
-            "y": 180,
-            "rotation": 17
-          }
+            "rotation": 17.0,
+            "x": 460.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000003",
           "kind": "text",
-          "text": "Latin 123 سلام 456 Arabic",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "und",
               "direction": "ltr",
-              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028"
+              "fontFamilyId": "font-family:31472a6343eeef268a1c2e7368cb6ae0f9c6b0071f6b528c66e42a0187820028",
+              "italic": false,
+              "language": "und",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "Latin 123 سلام 456 Arabic",
           "transform": {
-            "x": 720,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 720.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 300.0,
           "id": "20000000-0000-4000-8000-000000000004",
           "kind": "text",
-          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "style": {
             "label": {
-              "size": 28,
-              "italic": false,
-              "weight": 400,
-              "language": "hi",
               "direction": "auto",
-              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a"
+              "fontFamilyId": "font-family:0e7143d0f98ab5f6f1ab81533ff3739cfa94e5b8f8b85675813ac406b3bf4e8a",
+              "italic": false,
+              "language": "hi",
+              "size": 28,
+              "weight": 400
             }
           },
-          "width": 180,
-          "height": 300,
+          "text": "नमस्ते हिन्दी क्षि नमस्ते हिन्दी",
           "transform": {
-            "x": 980,
-            "y": 180,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 980.0,
+            "y": 180.0
+          },
+          "width": 180.0
         },
         {
+          "height": 80.0,
           "id": "20000000-0000-4000-8000-000000000050",
           "kind": "table",
           "label": "Příliš široký název stolu",
           "style": {
             "label": {
-              "size": 28,
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 28
             }
           },
-          "width": 220,
-          "height": 80,
           "surface": {
             "type": "rect"
           },
           "transform": {
-            "x": 400,
-            "y": 600,
-            "rotation": 23
-          }
+            "rotation": 23.0,
+            "x": 400.0,
+            "y": 600.0
+          },
+          "width": 220.0
         },
         {
-          "id": "20000000-0000-4000-8000-000000000091",
-          "kind": "vector",
-          "width": 320,
-          "height": 160,
           "graphic": {
-            "type": "vector",
-            "width": 200,
-            "height": 100,
-            "version": 1,
             "commands": [
               {
+                "fillRule": "nonzero",
                 "op": "clip",
                 "path": [
                   [
@@ -80725,16 +80877,37 @@
                   [
                     "Z"
                   ]
-                ],
-                "fillRule": "nonzero"
+                ]
               },
               {
                 "op": "layer",
                 "opacity": 0.6
               },
               {
-                "op": "path",
                 "fill": "#ffffffff",
+                "fillGradient": {
+                  "colors": [
+                    "#ff0000ff",
+                    "#0000ffff"
+                  ],
+                  "from": [
+                    0,
+                    0
+                  ],
+                  "spread": "pad",
+                  "stops": [
+                    0,
+                    1
+                  ],
+                  "to": [
+                    200,
+                    0
+                  ],
+                  "type": "linear"
+                },
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -80763,35 +80936,15 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
-                "strokeWidth": 0,
-                "fillGradient": {
-                  "to": [
-                    200,
-                    0
-                  ],
-                  "from": [
-                    0,
-                    0
-                  ],
-                  "type": "linear",
-                  "stops": [
-                    0,
-                    1
-                  ],
-                  "colors": [
-                    "#ff0000ff",
-                    "#0000ffff"
-                  ],
-                  "spread": "pad"
-                }
+                "strokeWidth": 0
               },
               {
-                "op": "path",
                 "fill": "#00aa44ff",
+                "fillRule": "nonzero",
+                "miterLimit": 4,
+                "op": "path",
                 "path": [
                   [
                     "M",
@@ -80817,9 +80970,7 @@
                     "Z"
                   ]
                 ],
-                "fillRule": "nonzero",
                 "strokeCap": "butt",
-                "miterLimit": 4,
                 "strokeJoin": "miter",
                 "strokeWidth": 0
               },
@@ -80829,384 +80980,248 @@
               {
                 "op": "restore"
               }
-            ]
+            ],
+            "height": 100,
+            "type": "vector",
+            "version": 1,
+            "width": 200
           },
-          "transform": {
-            "x": 1180,
-            "y": 570,
-            "rotation": 0
-          },
+          "height": 160.0,
+          "id": "20000000-0000-4000-8000-000000000091",
+          "kind": "vector",
           "originalSource": {
-            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n",
             "format": "svg",
-            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9"
-          }
-        },
-        {
-          "id": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "kind": "group",
-          "width": 40,
-          "height": 40,
-          "seating": {
-            "width": 40,
-            "height": 40
-          },
-          "assembly": {
-            "arc": -2,
-            "kind": "rows",
-            "rows": 2,
-            "aisle": 80,
-            "blocks": 1,
-            "spacing": 56,
-            "rowSpacing": 64,
-            "seatsPerRow": 3
+            "sha256": "0383828b9b0bcb600fc09f2defc74a6c729555486fa25a691386a5334fbd7fa9",
+            "text": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\" viewBox=\"0 0 200 100\">\n  <!-- Retained private original, not a viewer input. -->\n  <defs><linearGradient id=\"paint\"><stop stop-color=\"#ff0000\"/><stop offset=\"1\" stop-color=\"#0000ff\"/></linearGradient><clipPath id=\"crop\"><rect x=\"5\" y=\"5\" width=\"190\" height=\"90\"/></clipPath></defs>\n  <g opacity=\"0.6\" clip-path=\"url(#crop)\"><path d=\"M0 80 C40 0 80 0 120 80 Q160 20 200 80Z\" fill=\"url(#paint)\"/><rect x=\"60\" y=\"25\" width=\"25\" height=\"40\" fill=\"#00aa44\"/></g>\n</svg>\n"
           },
           "transform": {
-            "x": 100,
-            "y": 430,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 1180.0,
+            "y": 570.0
+          },
+          "width": 320.0
         },
         {
-          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "kind": "seat",
-          "slot": "1:0:2",
-          "label": "6",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": 62,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "kind": "seat",
-          "slot": "0:0:0",
-          "label": "1",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 4,
-            "y": -2,
-            "rotation": 37
-          }
-        },
-        {
-          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "kind": "seat",
-          "slot": "1:0:0",
-          "label": "4",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 0,
-            "y": 62,
-            "rotation": 4.0859375
-          }
-        },
-        {
-          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "kind": "seat",
-          "slot": "1:0:1",
-          "label": "5",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 64,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "kind": "seat",
-          "slot": "0:0:2",
-          "label": "3",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 112,
-            "y": -2,
-            "rotation": -4.0859375
-          }
-        },
-        {
-          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "kind": "seat",
-          "slot": "0:0:1",
-          "label": "2",
-          "style": {
-            "label": {
-              "size": 12,
-              "align": "center",
-              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
-            }
-          },
-          "width": 40,
-          "height": 40,
-          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "transform": {
-            "x": 56,
-            "y": 0,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "kind": "seat",
-          "slot": 0,
-          "label": "1",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "furniture": "cushion",
-          "transform": {
-            "x": -36,
-            "y": 6,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "kind": "furniture",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#DED4F0FF"
-          },
-          "width": 160,
-          "height": 100,
-          "assembly": {
-            "kind": "couch",
-            "seats": 2,
-            "minSeatWidth": 64,
-            "minSeatHeight": 64
-          },
-          "furniture": "couch",
-          "transform": {
-            "x": 650,
-            "y": 470,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "4edfa8a0-3fa1-409b-9444-f3a601552159",
-          "kind": "seat",
-          "slot": 1,
-          "label": "2",
-          "shape": "roundedRect",
-          "style": {
-            "fill": "#F8FAFCFF",
-            "label": {
-              "size": 12,
-              "align": "center"
-            }
-          },
-          "width": 64,
-          "height": 64,
-          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "furniture": "cushion",
-          "transform": {
-            "x": 36,
-            "y": 6,
-            "rotation": 0
-          }
-        },
-        {
-          "id": "20000000-0000-4000-8000-000000000099",
-          "kind": "image",
-          "width": 80,
-          "height": 40,
           "graphic": {
+            "assetRef": "image:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "crop": {
-              "x": 0,
-              "y": 0,
+              "height": 1,
               "width": 1,
-              "height": 1
+              "x": 0,
+              "y": 0
             },
             "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-            "type": "bitmap",
-            "assetRef": "image:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            "type": "bitmap"
+          },
+          "height": 40.0,
+          "id": "20000000-0000-4000-8000-000000000099",
+          "kind": "image",
+          "transform": {
+            "rotation": 0.0,
+            "x": 1200.0,
+            "y": 700.0
+          },
+          "width": 80.0
+        },
+        {
+          "furniture": "cushion",
+          "height": 64.0,
+          "id": "4edfa8a0-3fa1-409b-9444-f3a601552159",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "045ecf5d-0241-4bef-8805-4caf3186e246",
+          "shape": "roundedRect",
+          "slot": 1,
+          "style": {
+            "fill": "#F8FAFCFF",
+            "label": {
+              "align": "center",
+              "size": 12
+            }
           },
           "transform": {
-            "x": 1200,
-            "y": 700,
-            "rotation": 0
-          }
+            "rotation": 0.0,
+            "x": 36.0,
+            "y": 6.0
+          },
+          "width": 64.0
+        },
+        {
+          "height": 40.0,
+          "id": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
+          "kind": "seat",
+          "label": "6",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
+          "kind": "seat",
+          "label": "1",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 37.0,
+            "x": 4.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
+          "kind": "seat",
+          "label": "4",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:0",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 4.0859375,
+            "x": 0.0,
+            "y": 62.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "a263f531-3ecd-4580-a569-1248efd8306a",
+          "kind": "seat",
+          "label": "5",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "1:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 64.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
+          "kind": "seat",
+          "label": "3",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:2",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": -4.0859375,
+            "x": 112.0,
+            "y": -2.0
+          },
+          "width": 40.0
+        },
+        {
+          "height": 40.0,
+          "id": "df655e09-846b-4239-9b62-a74ec9200c6f",
+          "kind": "seat",
+          "label": "2",
+          "parentId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
+          "slot": "0:0:1",
+          "style": {
+            "label": {
+              "align": "center",
+              "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+              "size": 12
+            }
+          },
+          "transform": {
+            "rotation": 0.0,
+            "x": 56.0,
+            "y": 0.0
+          },
+          "width": 40.0
         }
       ],
-      "canvas": {
-        "x": 0,
-        "y": 0,
-        "fill": "#ffffffff",
-        "width": 1400,
-        "height": 800
-      },
-      "styles": {},
       "presets": [
         {
-          "id": "20000000-0000-4000-8000-000000000060",
-          "title": "Admin only",
           "document": {
+            "attachments": [],
+            "background": null,
+            "canvas": {
+              "fill": "#ffffffff",
+              "height": 600,
+              "width": 1000,
+              "x": 0,
+              "y": 0
+            },
             "nodes": [
               {
+                "height": 80.0,
                 "id": "20000000-0000-4000-8000-000000000061",
                 "kind": "text",
                 "text": "Private preset text",
-                "width": 240,
-                "height": 80,
                 "transform": {
-                  "x": 200,
-                  "y": 200,
-                  "rotation": 0
-                }
+                  "rotation": 0.0,
+                  "x": 200.0,
+                  "y": 200.0
+                },
+                "width": 240.0
               }
             ],
-            "canvas": {
-              "x": 0,
-              "y": 0,
-              "fill": "#ffffffff",
-              "width": 1000,
-              "height": 600
-            },
+            "presets": [],
+            "schemaVersion": 2,
+            "seatingDefaults": {},
+            "sections": [],
+            "selectionUnits": [],
             "styles": {
               "label": {
                 "fontFamilyId": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5"
               }
             },
+            "symbolSetVersion": 1,
             "textPolicy": {
-              "language": "und",
-              "direction": "auto"
-            },
-            "schemaVersion": 2,
-            "seatingDefaults": {},
-            "symbolSetVersion": 1
-          }
-        }
-      ],
-      "sections": [],
-      "textPolicy": {
-        "language": "und",
-        "direction": "auto"
-      },
-      "attachments": [
-        {
-          "seatId": "5e53f632-1f6f-4b1f-8795-7187968a61e8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
+              "direction": "auto",
+              "language": "und"
+            }
           },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "758f9290-e5e1-4159-a635-2a2fb30ccef6",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "free"
-          },
-          "rotationMode": "manual"
-        },
-        {
-          "seatId": "9f5c534f-6e00-419b-975e-35b514e0ccb8",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "a263f531-3ecd-4580-a569-1248efd8306a",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "c7dcd1f9-28c1-40d1-a447-f297b10f2a0e",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "seatId": "df655e09-846b-4239-9b62-a74ec9200c6f",
-          "targetId": "05702f0b-90b2-4478-b2e8-f26a4e3ce616",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "54f16bef-2571-4dc8-a4fc-1ba32ee014ca",
-          "seatId": "042e3870-3d71-4c73-bf77-6d6716c7c702",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
-        },
-        {
-          "id": "ed622139-fc7f-49c1-af5d-7f096905329c",
-          "seatId": "4edfa8a0-3fa1-409b-9444-f3a601552159",
-          "targetId": "045ecf5d-0241-4bef-8805-4caf3186e246",
-          "placement": {
-            "mode": "automatic"
-          },
-          "rotationMode": "auto"
+          "id": "20000000-0000-4000-8000-000000000060",
+          "title": "Admin only"
         }
       ],
       "schemaVersion": 2,
+      "seatingDefaults": {},
+      "sections": [],
       "selectionUnits": [
         {
           "id": "7872a184-f6a9-43b3-8cd7-dd5e3ab9479f",
@@ -81217,8 +81232,12 @@
           ]
         }
       ],
-      "seatingDefaults": {},
-      "symbolSetVersion": 1
+      "styles": {},
+      "symbolSetVersion": 1,
+      "textPolicy": {
+        "direction": "auto",
+        "language": "und"
+      }
     },
     "scene": {
       "protocol": 1,

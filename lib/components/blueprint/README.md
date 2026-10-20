@@ -32,7 +32,7 @@ immediately and are not reversed by geometry undo or draft discard.
 
 Both customer pickers apply optimistic presentation through the package and
 rollback rejected callbacks. Only `select_spot` creates/releases the actual
-secret/expiry hold. SQL locks the complete atomic unit, validates form offers,
+secret/expiry hold. SQL locks the complete atomic unit, validates the assigned blueprint bindings,
 visibility, maximum and shared PIC capacity, then changes all members or none.
 An owned retry keeps its original expiry; release remains possible after an
 offer closes. Existing active addressed holds count through PIC quantities even
@@ -53,8 +53,10 @@ object. Bindings expose sale state and commercial identities, with one catalog
 row per product; order/customer metadata, secrets and private asset originals stay
 outside that projection.
 
-Standing quantity uses actual offered form product fields and the existing
-inventory/finalization owner. Changing quantity does not create a seat hold.
+Assigning a blueprint to a form offers its bound seats and capacity areas. No
+duplicate product-type form field is required. Questions and optional product
+fields remain separate. Standing quantity uses the blueprint catalog and the
+existing inventory/finalization owner. Changing quantity does not create a seat hold.
 Checkout uses `send-ticket-order` and `create_ticket_order_client_sync_v1`;
 admin replacement uses `replace_blueprint_order_client_sync_v1` and the existing
 conflict/cancellation owner. Swaps use the existing preview, receipted command,
@@ -209,3 +211,20 @@ operation summary and delegates dirty indication to its existing Save control.
 New generated row seats use row-number plus alphabetic column (1A...1Z, 1AA),
 continuing across blocks. Host commercial reconciliation keeps those titles;
 assembly resizing updates only automatic labels and preserves custom names.
+
+Native font preview failures are scoped to active rendered faces. Cache identity
+includes actual face metadata; late failures of abandoned choices do not affect
+the current face, and active load failures offer retry. Text-tool thumbnails use
+a schematic theme-colored Aa without requiring prepared authored text resources.
+
+Changing a font family normalizes only affected declarations/nodes to an actual
+available 400/700 normal/italic face in the same undoable edit. Supported styles
+and independent font choices survive. Renderer fallback/synthetic faces remain
+disallowed; existing B/I controls disable unavailable face combinations.
+
+Reviewed legacy conversion preserves semantic table labels separately from
+appearance normalization. Existing SVG text nodes remain unchanged. An explicit
+`tableLabelStyle` review profile can promote typography to the canonical table
+kind while clearing conflicting local leaves; it never invents unsupported font
+faces. Unprofiled plans preserve their original typography. Table labels use the
+centered, shrink-to-fit label box by default.

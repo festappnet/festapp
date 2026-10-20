@@ -61,6 +61,7 @@ test('standing quantity uses offered admission fields and leaves unrelated ticke
     const form=new FormSession({key:'form',secret:'s',visibleFields:[{type:'ticket',subFields:[{id:23,type:'product_type',data:{product_type_data:{products:[{id:9,title:'Standing',price:80,currency_code:'CZK'}]}}}]}],relatedFields:[{type:'ticket',data:{max_tickets:5}}]});
     form.addTicket({spot:99,spotPrice:50});
     const source=data();source.areaBindings=[{nodeId:'standing',productId:9,inventoryContextId:3}];source.areaAvailability=[{nodeId:'standing',available:3}];
+    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
     const adapter=new BlueprintLayoutAdapter(source,{session:form});
     assert.equal((await adapter.requestQuantity('standing',2)).accepted,true);
     assert.equal(form.payload.ticket.length,3);
@@ -93,13 +94,13 @@ test('raw form retains separately offered spot admission catalog only for area r
     assert.equal(Object.isFrozen(model.offeredTicketProductFields),true);
     assert.deepEqual(model.offeredTicketProductFields.map(field=>field.id),[21,23]);
     form.addTicket({spot:11,spotPrice:100});
-    form.setAreaQuantity({nodeId:'standing',productId:9},2,5);
+    form.setAreaQuantity({nodeId:'standing',productId:9},2,5,{id:9,title:'Standing',price:80,currency_code:'CZK'});
     assert.equal(form.payload.ticket.length,3);
     assert.equal(form.payload.ticket[0].spot,11);
     assert.equal(form.payload.ticket[1].fields[0].product_type,9);
     assert.equal(form.payload.ticket[1].fields[0]._subFieldId,23);
     assert.equal(form.state.totalPrice,260);
-    assert.throws(()=>form.setAreaQuantity({nodeId:'hidden',productId:10},1,5),/area_product_not_offered/);
+    assert.throws(()=>form.setAreaQuantity({nodeId:'hidden',productId:10},1,5),/area_product_unavailable/);
 });
 
 test('unassigned available seat is empty while protected live state survives missing product',()=>{
@@ -178,6 +179,18 @@ test('distributed core rejects historical masks and malformed canonical styles',
     const candidate = structuredClone(document);
     candidate.nodes[0].appearanceOverrides = ['fontId'];
     assert.ok(JSON.parse(globalThis.VenueLayoutKernel.validate(JSON.stringify(candidate))).length > 0);
+});
+
+test('capacity callback uses the bound blueprint catalog without admission form fields',async()=>{
+    const form=new FormSession(new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}},{id:17,type:'spot',is_ticket_field:true}]}));
+    const source=data();source.areaBindings=[{nodeId:'standing',productId:9}];source.areaAvailability=[{nodeId:'standing',available:3}];source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
+    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
+    const adapter=new BlueprintLayoutAdapter(source,{session:form});
+    assert.equal((await adapter.requestQuantity('standing',2)).accepted,true);
+    assert.equal(form.payload.ticket.length,2);
+    assert.equal(form.state.totalPrice,160);
+    assert.equal(form.payload.ticket[0].fields[0].product_type,9);
+    assert.equal((await adapter.requestQuantity('unknown',1)).accepted,false);
 });
 
 test('checkout waits for pending hold and preserves original server deadline', async t => {

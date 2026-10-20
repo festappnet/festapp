@@ -1,0 +1,32 @@
+{
+  "packageArchive": "/Users/miakh/source/venue-seat-picker-blueprint-b-20261019/build/qa/canonical-0.3.0-20261020-r10",
+  "targetedWidgetTests": 16,
+  "testLog": "/tmp/blueprint-ux-targeted-final.log",
+  "archiveLog": "/tmp/blueprint-ux-archive.log",
+  "hostBuildLog": "/tmp/blueprint-ux-host-build.log",
+  "hostJsSha256": "761359dc2ede579e038acb4441f8a59610216a1607b29a4e408ca2df6605f9dd",
+  "servedPort": 59602,
+  "changes": [
+    "Native selection bounds without checkmarks",
+    "Continuous grid-boundary pointer drag retains original handle topology",
+    "Color swatches and Czech canonical style controls",
+    "Six quick canonical material families separate from color palettes",
+    "Top-right close button and Escape"
+  ],
+  "actualBrowser": {
+    "authenticatedEditor": true,
+    "quickFamilyButtons": 6,
+    "separatePaletteButtons": 4,
+    "closeButtonLocalized": true,
+    "escapeDismissed": true,
+    "assetError": false,
+    "persistentEditsMade": false
+  },
+  "sourceHashes": {
+    "lib/src/layout_editor/widgets/canonical_appearance_panel.dart": "cd85e8a0653550cc49f7801c675b9c4adeefc110f56b699cad1b5306f7665173",
+    "lib/src/layout_editor/widgets/layout_style.dart": "f0ea88a94050c589f2d132f9e5f40d8529e873a9fa6fdbf3e39bdac56d23a44f",
+    "lib/src/layout_editor/widgets/layout_scene_surface.dart": "5d9600deb1cfc7c513147fabf908d95209de5b95e13f231f98fb3889f3d2db5c",
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "e6c4293edb66e6af59bc978d1729edd1fce10e184b0b14c471ab47f28e7a7ca1",
+    "lib/src/layout_editor/layout_localizations.dart": "13cce5789474120e62775feb8d5f4d5ecc9d8216c8a5549cc151501df776f3f7"
+  }
+}

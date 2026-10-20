@@ -491,7 +491,7 @@ void main() {
     },
   );
   test('all templates are standalone public API with fresh identities', () {
-    expect(VenueLayoutTemplates.all.length, 14);
+    expect(VenueLayoutTemplates.all.length, 15);
     for (final t in VenueLayoutTemplates.all) {
       final a = t.create(), b = t.create();
       expect(validateDocument(a), isEmpty, reason: t.id);

@@ -129,7 +129,10 @@ BEGIN
    capacity_int:=(c->>'capacity')::bigint;
    IF capacity_int IS NULL OR capacity_int<0 OR capacity_int>1000000 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_INVALID_CAPACITY'; END IF;
    SELECT ip.* INTO pool FROM public.inventory_pools ip JOIN public.inventory_contexts ic ON ic.inventory_pool=ip.id WHERE ic.id=(c->>'inventoryContextId')::bigint;
-   PERFORM public.update_inventory_pool_bundle(jsonb_build_object('pool',to_jsonb(pool)||jsonb_build_object('sellable_capacity',capacity_int)));
+   PERFORM public.update_inventory_pool_bundle(jsonb_build_object('pool',jsonb_build_object(
+    'id',pool.id,'occasion',pool.occasion,'title',pool.title,
+    'description',pool.description,'type',pool.type,'data',pool.data,
+    'sellable_capacity',capacity_int)));
   END IF;
   INSERT INTO eshop.blueprint_area_bindings VALUES(b.id,node,(c->>'inventoryContextId')::bigint,product_id);
  END LOOP;

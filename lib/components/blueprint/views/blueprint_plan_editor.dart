@@ -1,3 +1,4 @@
+import '../blueprint_font_selection.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -278,9 +279,12 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
         }
         next = document.copyWith(styles: styles);
       }
+      final families = _editorFamilies(next, provider, selected: selectedFont);
+      next = normalizeBlueprintFontSelection(document, next, families,
+          nodeId: nodeId, appearanceKind: appearanceKind);
       if (!controller.apply(next, preparedResources: {
         ...controller.resources,
-        'fontFamilies': _editorFamilies(next, provider, selected: selectedFont)
+        'fontFamilies': families
       })) throw StateError(controller.error ?? 'font_change_rejected');
       return;
     }

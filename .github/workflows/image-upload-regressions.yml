@@ -27,6 +27,9 @@ on:
       - 'lib/components/schedule/**'
       - 'lib/components/speakers/**'
       - 'lib/components/email_templates/**'
+      - 'test/components/images/**'
+      - 'test/components/html/**'
+      - 'test/components/ticket_layout/**'
       - '.github/workflows/image-upload-regressions.yml'
 permissions:
   contents: read
@@ -65,7 +68,7 @@ jobs:
       - run: fvm flutter pub get
       - run: fvm dart test test_dart/adapters/image_control_client_test.dart
       - run: >-
-          fvm flutter test --no-pub --concurrency=2
+          fvm flutter test --no-pub --concurrency=1
           test/components/images/image_upload_contract_test.dart
           test/components/html/html_media_service_cases.dart
           test/components/ticket_layout/ticket_layout_cases.dart

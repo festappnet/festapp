@@ -1,3 +1,4 @@
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -31,7 +32,7 @@ class SeatReservationWidget extends StatefulWidget {
   final List<BlueprintSeat> selectedSeats;
   final int? maxTickets;
   final bool demoSimulation;
-  final Future<void> Function(BlueprintAreaBinding, int, int)?
+  final Future<void> Function(BlueprintAreaBinding, int, int, ProductModel?)?
       onQuantityRequested;
   final int Function(String)? selectedAreaQuantity;
 
@@ -310,7 +311,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
       final available =
           (_blueprint!.areaAvailability[id]?['available'] as num?)?.toInt() ??
               0;
-      await widget.onQuantityRequested!(binding, quantity, available);
+      await widget.onQuantityRequested!(binding, quantity, available, _adapter!.products[binding.productId]);
       return LayoutSelectionResult(
           accepted: mounted && generation == _generation);
     } catch (error) {
@@ -349,7 +350,6 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
           if (_notice != null)
             Padding(padding: const EdgeInsets.all(8), child:
               Semantics(liveRegion: true, child: Text(_notice!, textAlign: TextAlign.center))),
-          if (_refreshing && !_loading) const LinearProgressIndicator(),
           Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())

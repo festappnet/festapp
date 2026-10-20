@@ -28,6 +28,30 @@ class _ThumbnailState extends State<LayoutPaletteThumbnail> {
 
   @override
   Widget build(BuildContext context) {
+    // A tool icon is schematic, not authored document text. It must not depend
+    // on a prepared whole-text path for the current document font.
+    if (widget.kind == 'Text') {
+      return ExcludeSemantics(
+        child: Center(
+          child: SizedBox(
+            width: 54,
+            height: 34,
+            child: Center(
+              child: Text(
+                'Aa',
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 28,
+                  height: 1,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final brightness = Theme.of(context).brightness;
     if (!identical(_document, widget.document) ||
         !identical(_resources, widget.resources) ||

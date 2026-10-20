@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_font_selection.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
 import 'package:festapp_core/forms.dart';
@@ -67,6 +68,93 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
       'areaBindings': []
     };
 void main() {
+  test(
+      'font family change drops unsupported bold italic but preserves independent fonts',
+      () {
+    const oldId = '10000000-0000-4000-8000-000000000010';
+    const plainId = '10000000-0000-4000-8000-000000000011';
+    final families = <String, dynamic>{
+      oldId: {
+        'faces': {'400:normal': 'old-regular', '700:italic': 'old-bold-italic'}
+      },
+      plainId: {
+        'faces': {'400:normal': 'plain-regular'}
+      }
+    };
+    final a = LayoutNode(id: newLayoutId(), kind: 'text', properties: const {
+      'text': 'A'
+    }, style: const {
+      'label': {'fontFamilyId': oldId, 'weight': 700, 'italic': true}
+    });
+    final b = LayoutNode(
+        id: newLayoutId(),
+        kind: 'text',
+        properties: const {'text': 'B'},
+        style: a.style);
+    final before = VenueLayoutDocument(nodes: [a, b]);
+    final chosen = setNodeStyleLeaf(before, a.id, ['label', 'fontFamilyId'],
+        value: plainId);
+    final next =
+        normalizeBlueprintFontSelection(before, chosen, families, nodeId: a.id);
+    final label = resolveNodeAppearance(next, next.nodes.first).label;
+    expect(label['weight'], 400);
+    expect(label['italic'], false);
+    expect(resolvedLayoutFontFace(label, families), 'plain-regular');
+    expect(next.nodes.last.toJson(), b.toJson());
+    final italicAvailable = <String, dynamic>{
+      ...families,
+      plainId: {
+        'faces': {'400:normal': 'plain-regular', '400:italic': 'plain-italic'}
+      }
+    };
+    final withItalic = normalizeBlueprintFontSelection(
+        before, chosen, italicAvailable,
+        nodeId: a.id);
+    final italicLabel =
+        resolveNodeAppearance(withItalic, withItalic.nodes.first).label;
+    expect(italicLabel['weight'], 400);
+    expect(italicLabel['italic'], true);
+    expect(
+        resolvedLayoutFontFace(italicLabel, italicAvailable), 'plain-italic');
+  });
+  test(
+      'document font choice normalizes inherited kind faces and keeps supported bold',
+      () {
+    const oldId = '10000000-0000-4000-8000-000000000010';
+    const plainId = '10000000-0000-4000-8000-000000000011';
+    final families = <String, dynamic>{
+      oldId: {
+        'faces': {'400:normal': 'old-regular', '700:italic': 'old-bold-italic'}
+      },
+      plainId: {
+        'faces': {'400:normal': 'plain-regular'}
+      }
+    };
+    final table = LayoutNode(
+        id: newLayoutId(), kind: 'table', label: 'T', x: 100, y: 100);
+    final before = VenueLayoutDocument(nodes: [
+      table
+    ], styles: const {
+      'label': {'fontFamilyId': oldId, 'weight': 700, 'italic': true},
+      'kinds': {
+        'table': {
+          'label': {'weight': 700}
+        }
+      }
+    });
+    final chosen = setDocumentLabelLeaf(before, 'fontFamilyId', value: plainId);
+    final next = normalizeBlueprintFontSelection(before, chosen, families,
+        appearanceKind: 'document');
+    final label = resolveNodeAppearance(next, table).label;
+    expect(resolvedLayoutFontFace(label, families), 'plain-regular');
+    expect((next.styles['label'] as Map)['weight'], 400);
+    expect((next.styles['kinds']['table']['label'] as Map)['weight'], 400);
+    final unchanged = normalizeBlueprintFontSelection(before, before, families,
+        appearanceKind: 'document');
+    expect(resolveNodeAppearance(unchanged, table).label['weight'], 700);
+    expect(resolveNodeAppearance(unchanged, table).label['italic'], true);
+  });
+
   test('permission loss blocks draft save and retains the confirmed layout', () async {
     var calls = 0;
     final controller = BlueprintLayoutController(
@@ -681,7 +769,7 @@ void main() {
         const BlueprintAreaBinding(
             nodeId: 'standing', inventoryContextId: 3, productId: 9),
         2,
-        available: 5);
+        available: 5, product: ProductModel(id: 9, title: 'Standing', price: 80, currencyCode: 'CZK'));
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
     expect(
@@ -761,6 +849,24 @@ void main() {
     expect(controller.snapshot.seatBindings[node]!.title, 'A');
   });
 
+  test('standing uses bound blueprint catalog without duplicate form product fields', () {
+    final key=GlobalKey<FormBuilderState>();
+    final tickets=TicketHolder(fieldType:'ticket',maxTickets:5,id:99,fields:[]);
+    final holder=FormHolder(fields:[tickets],isCardDesign:false)..controller=FormHolderController(globalKey:key);
+    final form=FormSession(form:FormBundle(definition:FormDefinition()),formHolder:holder,formKey:key);
+    addTearDown(form.dispose);
+    const area=BlueprintAreaBinding(nodeId:'standing',inventoryContextId:3,productId:9);
+    final product=ProductModel(id:9,title:'Bound standing',price:80,currencyCode:'CZK');
+    form.setAreaQuantity(area,2,available:3,product:product);
+    final payload=FormHelper.getFieldData(key,tickets) as List;
+    expect(payload.length,2);
+    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id,'9');
+    expect(form.totalPrice,160);
+    expect(()=>form.setAreaQuantity(area,1,available:3,product:ProductModel(id:10,price:80)),throwsStateError);
+    form.setAreaQuantity(area,0,available:0,product:null);
+    expect(tickets.tickets,isEmpty);
+  });
+
   test(
       'standing tickets use actual offered fields before mounting and survive seat refresh',
       () {
@@ -786,16 +892,17 @@ void main() {
     addTearDown(form.dispose);
     const area = BlueprintAreaBinding(
         nodeId: 'standing', inventoryContextId: 3, productId: 9);
-    form.setAreaQuantity(area, 2, available: 3);
+    final boundProduct=ProductModel(id: 9,title:'Standing',price:80,currencyCode:'CZK');
+    form.setAreaQuantity(area, 2, available: 3, product: boundProduct);
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
-    expect(payload[0]['fields'][0]['product_type'], same(option));
+    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id, option.id);
     expect(form.totalPrice, 160);
     form.updateSeats([]);
     expect(tickets.tickets.length, 2);
-    form.setAreaQuantity(area, 1, available: 3);
+    form.setAreaQuantity(area, 1, available: 3, product: boundProduct);
     expect(form.totalPrice, 80);
-    expect(() => form.setAreaQuantity(area, 4, available: 3), throwsStateError);
+    expect(() => form.setAreaQuantity(area, 4, available: 3, product: boundProduct), throwsStateError);
     expect(tickets.tickets.length, 1);
   });
 

@@ -361,33 +361,66 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   final _nativeFonts = <String, TextStyle>{};
   final _nativeFontLoads = <String>{};
   final _nativeFontErrors = <String>{};
+  Set<String> _activeNativeFontKeys = {};
   String _nativeFontKey(LayoutNode node) {
     final label = resolveNodeAppearance(widget.document, node).label;
-    return '${label['fontFamilyId']}:${label['weight']}:${label['italic']}';
+    final family =
+        (widget.resources['fontFamilies'] as Map?)?[label['fontFamilyId']]
+            as Map?;
+    final face =
+        (family?['faces']
+            as Map?)?['${label['weight']}:${label['italic'] == true ? 'italic' : 'normal'}'];
+    return '${label['fontFamilyId']}:${label['weight']}:${label['italic']}:$face';
+  }
+
+  bool _usesNativeText(LayoutNode node) {
+    if (const {'seat', 'group', 'image', 'vector'}.contains(node.kind) ||
+        isCouchNode(node) ||
+        isBarNode(node))
+      return false;
+    final text = node.kind == 'text'
+        ? '${node.properties['text'] ?? ''}'
+        : '${(widget.presentation[node.id] as Map?)?['label'] ?? node.label}';
+    return text.isNotEmpty;
   }
 
   void _loadNativeFonts() {
-    for (final node in widget.document.nodes) {
-      if (const {'seat', 'group', 'image', 'vector'}.contains(node.kind) ||
-          (node.kind == 'text'
-                  ? '${node.properties['text'] ?? ''}'
-                  : node.label)
-              .isEmpty)
-        continue;
+    final nodes = widget.document.nodes.where(_usesNativeText).toList();
+    final active = nodes.map(_nativeFontKey).toSet();
+    for (final key in _nativeFontErrors.difference(active)) {
+      _nativeFontLoads.remove(key);
+      _nativeFontErrors.remove(key);
+    }
+    _activeNativeFontKeys = active;
+    for (final node in nodes) {
       final key = _nativeFontKey(node);
       if (!_nativeFontLoads.add(key)) continue;
       widget.inlineTextStyleBuilder!(node)
           .then((style) {
-            if (mounted) setState(() => _nativeFonts[key] = style);
-          })
-          .catchError((Object error) {
             if (mounted)
               setState(() {
-                _nativeFontErrors.add(key);
+                _nativeFonts[key] = style;
+                _nativeFontErrors.remove(key);
               });
+          })
+          .catchError((Object error) {
+            if (!mounted) return;
+            // A late failure from a dismissed font preview must not poison the
+            // current face. Returning to that face starts a fresh request.
+            if (_activeNativeFontKeys.contains(key)) {
+              setState(() => _nativeFontErrors.add(key));
+            } else {
+              _nativeFontLoads.remove(key);
+            }
           });
     }
   }
+
+  void _retryNativeFonts() => setState(() {
+    final failed = _nativeFontErrors.intersection(_activeNativeFontKeys);
+    _nativeFontLoads.removeAll(failed);
+    _nativeFontErrors.removeAll(failed);
+  });
 
   final _textPreviewCache = LayoutTextPreviewCache();
   Map<String, dynamic>? _scene;
@@ -522,7 +555,10 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
           presentation: presentation,
         );
       }
-      if (nativeEditing && _nativeFontErrors.isNotEmpty)
+      final fontFailed =
+          nativeEditing &&
+          _nativeFontErrors.intersection(_activeNativeFontKeys).isNotEmpty;
+      if (fontFailed)
         _scene = {
           ..._scene!,
           'issues': [
@@ -1560,12 +1596,25 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: const EdgeInsets.all(8),
-                      child: LayoutText(
-                        textWaiting
-                            ? 'Text is not ready yet.'
-                            : 'Part of the plan could not be displayed.',
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: LayoutText(
+                              fontFailed
+                                  ? 'The selected font could not be loaded.'
+                                  : textWaiting
+                                  ? 'Text is not ready yet.'
+                                  : 'Part of the plan could not be displayed.',
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (fontFailed)
+                            TextButton(
+                              onPressed: _retryNativeFonts,
+                              child: const LayoutText('Retry font'),
+                            ),
+                        ],
                       ),
                     ),
                   ),

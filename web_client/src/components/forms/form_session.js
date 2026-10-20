@@ -367,7 +367,7 @@ export class FormSession extends EventTarget {
         this._emitStateChanged();
     }
 
-    setAreaQuantity(binding, quantity, available) {
+    setAreaQuantity(binding, quantity, available, product) {
         if (!Number.isInteger(quantity) || quantity < 0 || !Number.isInteger(available) || quantity > available) {
             throw new Error('area_quantity_unavailable');
         }
@@ -376,14 +376,13 @@ export class FormSession extends EventTarget {
             this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();
             return 0;
         }
-        const candidates = (this.formModel.offeredTicketProductFields ?? this._getTicketSubDefs()).filter(field => field.type === 'product_type' && field.isHidden !== true).flatMap(field => {
-            return (field.productTypeData?.products || field.data?.product_type_data?.products || field.options || []).filter(product =>
-                String(product.id) === String(binding.productId) && product.is_hidden !== true && product.isAvailable !== false && product.is_dynamically_available !== false && product.is_available_dynamic_capacity !== false)
-                .map(product => ({field, product}));
-        });
-        const choice = candidates.find(({product}) => !(product.currency_code || product.currencyCode || product.currency) ||
-            (product.currency_code || product.currencyCode || product.currency) === this.state.currency);
-        if (!choice) throw new Error('area_product_not_offered');
+        if (!product || String(product.id) !== String(binding.productId) ||
+            product.is_hidden === true || product.isAvailable === false || product.is_dynamically_available === false ||
+            product.is_available_dynamic_capacity === false || !Number.isFinite(product.price)) throw new Error('area_product_unavailable');
+        // An existing field can supply presentation metadata, but the blueprint
+        // catalog supplies the offer and does not require this duplicate field.
+        const field = (this.formModel.offeredTicketProductFields || []).find(field =>
+            (field.productTypeData?.products || []).some(p => String(p.id) === String(product.id)));
         const current = this.state.tickets.filter(ticket => ticket._blueprintArea === binding.nodeId);
         if (this.state.tickets.length - current.length + quantity > this.maxTickets) throw new Error(BlueprintStrings.maxTicketsReached);
         const before = [...this.state.tickets];
@@ -394,9 +393,9 @@ export class FormSession extends EventTarget {
                 this.state.tickets.splice(index, 1);
             }
             while (current.length < quantity) {
-                const value = {product_type: choice.product.id, _subFieldId: choice.field.id,
-                    price: choice.product.price, currency_code: choice.product.currency_code || choice.product.currencyCode || this.state.currency};
-                this.addTicket({_blueprintArea: binding.nodeId, fields: [value]});
+                const value = {product_type: product.id, ...(field ? {_subFieldId: field.id} : {}),
+                    price: product.price, currency_code: product.currency_code || product.currencyCode || this.state.currency};
+                this.addTicket({_blueprintArea: binding.nodeId, _blueprintProduct: {id:product.id,title:product.title,price:product.price,currency_code:value.currency_code}, fields: [value]});
                 current.push(this.state.tickets.at(-1));
             }
             this._syncPayloadFromState(); this._recalculate(); this._emitStateChanged();

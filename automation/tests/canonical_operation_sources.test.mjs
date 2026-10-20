@@ -40,7 +40,12 @@ test('forward manifest is deterministic, definition-only and refuses historical 
 });
 test('current order callers reach the command and have no automatic email follow-up', () => {
   const source=read('lib/components/eshop/db_orders.dart');
-  assert.doesNotMatch(source,/sendStornoTicketOrderEmail|update_order_and_tickets_to_storno_ws_221|delete_order_221/);
+  assert.doesNotMatch(source,/update_order_and_tickets_to_storno_ws_221|delete_order_221/);
+  const cancellation=source.split('static Future<void> stornoOrder(')[1].split('static Future<SpotSelectionResult>')[0];
+  assert.doesNotMatch(cancellation,/sendStornoTicketOrderEmail|functions\.invoke/);
+  const followup=read('lib/components/eshop/ticket_cancellation_updates.dart');
+  assert.match(followup,/if \(!send \|\| !context\.mounted\) continue/);
+  assert.match(followup,/DbOrders\.sendStornoTicketOrderEmail/);
   assert.doesNotMatch(read('database/functions/eshop_orders/storno_tickets_bulk.sql'),/enqueue_order_email/);
   assert.match(read('database/functions/eshop_orders/delete_order_client_sync_v1.sql'),/r\.actor_id=v_actor AND r\.request_sha256=v_hash/);
 });

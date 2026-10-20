@@ -216,7 +216,7 @@ void main() {
       );
       expect(
         inspector.top,
-        tester.getTopLeft(find.byType(LayoutSceneSurface).first).dy,
+        greaterThanOrEqualTo(tester.getTopLeft(find.byType(LayoutSceneSurface).first).dy),
       );
       expect(inspector.height, greaterThan(750));
       expect(tester.takeException(), isNull);

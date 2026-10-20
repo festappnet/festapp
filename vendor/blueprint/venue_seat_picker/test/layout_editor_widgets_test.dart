@@ -305,6 +305,10 @@ void main() {
           expect(validateDocument(preview.document), isEmpty, reason: kind);
           expect(preview.document.canvas['fill'], '#00000000');
           expect(preview.document.nodes.every((n) => n.label.isEmpty), true);
+          if (kind == 'Text') {
+            expect(find.descendant(of: find.byWidget(preview), matching: find.text('Aa')), findsOneWidget);
+            continue;
+          }
           final paint = find.descendant(
             of: find.byWidget(preview),
             matching: find.byType(CustomPaint),
@@ -353,6 +357,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Position and size'));
+    await tester.tap(find.text('Position and size'));
+    await tester.pumpAndSettle();
     final field = find.byWidgetPredicate(
       (widget) =>
           widget is TextField && widget.decoration?.labelText == 'Rotation',
@@ -362,7 +369,7 @@ void main() {
     final textField = tester.widget<TextField>(field);
     // Browser pointer-down blur and suffix activation can precede one rebuild.
     textField.onTapOutside!(const PointerDownEvent());
-    (textField.decoration!.suffixIcon! as IconButton).onPressed!();
+    textField.onSubmitted!(textField.controller!.text);
     await tester.pump();
     expect(controller.document.nodes.single.rotation, 37);
     controller.undo();
@@ -538,9 +545,9 @@ void main() {
         ),
       ),
     );
-    final field = find.widgetWithText(TextField, 'Before');
+    final field = find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == 'Text');
     await tester.enterText(field, 'First line\nSecond line');
-    await tester.tap(find.byTooltip('Apply Text'));
+    tester.widget<TextField>(field).onEditingComplete!();
     await tester.pump();
     expect(
       controller.document.nodes.single.properties['text'],
@@ -744,13 +751,13 @@ void main() {
       );
       await tester.tap(find.text('Align and distribute'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Align left'));
+      await tester.tap(find.byTooltip('Align left'));
       await tester.pumpAndSettle();
       expect(controller.document.nodes.map((n) => n.x).toSet(), {200.0});
       controller.undo();
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Distribute horizontally'));
-      await tester.tap(find.text('Distribute horizontally'));
+      await tester.ensureVisible(find.byTooltip('Distribute horizontally'));
+      await tester.tap(find.byTooltip('Distribute horizontally'));
       await tester.pumpAndSettle();
       expect(controller.document.nodes.map((n) => n.x).toList()..sort(), [
         200.0,

@@ -152,6 +152,7 @@ export class BlueprintSelector {
                 this.createZoomControls(content);
                 const options = this.adapter.options();
                 options.minZoom = 1; options.maxZoom = 5;
+                options.canvasCornerRadius = 12;
                 options.tooltipOffset = 15;
                 options.tooltipStyle = {
                     zIndex: '3100', background: 'var(--card-bg, #fff)', border: '2px solid var(--text-color, #000)',
