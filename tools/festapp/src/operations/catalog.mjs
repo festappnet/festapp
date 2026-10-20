@@ -1,3 +1,5 @@
+import { operatorAccess, accessProjection } from './access.mjs';
+import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { digest } from '../context/profile.mjs';
@@ -28,6 +30,8 @@ const projection = z
     })
     .strict();
 const dataSchemas = {
+    'occasions.create': occasionCreateResult,
+    'access.inspect': accessProjection,
     'context.inspect': z.strictObject({
         userId: z.uuid(),
         backend: z.url(),
@@ -96,6 +100,10 @@ const resultSchema = (id) =>
         meta: metaSchema,
     });
 const descriptors = [
+    { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
+    { id: 'occasions.create', name: 'festapp_occasions_create',
+      description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
+      input: occasionCreateInput, domainReadOnly: false, idempotent: true, requiresDelegatedCreate: true },
     {
         id: 'context.inspect',
         name: 'festapp_context_inspect',
@@ -170,7 +178,8 @@ export class Operations {
             .filter(
                 (descriptor) =>
                     (!this.owner.allowedOperations || this.owner.allowedOperations.includes(descriptor.id)) &&
-                    (!descriptor.requiresLayoutWriteContract || this.writeReady),
+                    (!descriptor.requiresLayoutWriteContract || this.writeReady) &&
+                    (!descriptor.requiresDelegatedCreate || this.owner.allowedOperations?.includes('occasions.create') === true),
             )
             .map((descriptor) => ({
                 ...descriptor,
@@ -259,6 +268,7 @@ export class Operations {
             const args = parsed.data;
             await this.owner.authorizeOperation?.(id, args);
             return await this.owner.authorized(async (client, context) => {
+                await this.owner.authorizeContext?.(id, args, client);
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
                 let data;
@@ -267,8 +277,10 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.includes('occasions.create') === true,
                     };
+                else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (id === 'occasions.create') data = await createOccasion(client, this.owner.profile, args);
                 else if (id === 'ticket_layouts.save') {
                     await this.inspect(client, args.occasionId); // Permission only; never replace the original version.
                     data = await this.layoutSave.save(client, context, args);

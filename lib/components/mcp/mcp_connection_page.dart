@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';
+import 'package:fstapp/services/utilities_all.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'mcp_connection_service.dart';
@@ -12,7 +13,7 @@ import 'mcp_callback_browser.dart';
 import 'mcp_connection_complete.dart';
 
 typedef McpConnectionRequester = Future<Map<String, dynamic>> Function(
-    String request, String operation, List<int> occasions);
+    String request, String operation, Map<String, dynamic> access);
 
 @RoutePage()
 class McpConnectionPage extends StatefulWidget {
@@ -36,6 +37,9 @@ class McpConnectionPage extends StatefulWidget {
 class _McpConnectionPageState extends State<McpConnectionPage> {
   Map<String, dynamic>? _details;
   final _selected = <int>{};
+  bool _wholeUnit = false;
+  int? _unitId;
+  bool _allowCreate = false;
   bool _loading = false;
   bool _busy = false;
   bool _failed = false;
@@ -51,7 +55,17 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
       RegExp(r'^[A-Za-z0-9_-]{43}$').hasMatch(widget.request ?? '');
   Future<Map<String, dynamic>> call(String operation) =>
       (widget.requester ?? McpConnectionService.request)(
-          widget.request!, operation, _selected.toList());
+          widget.request!,
+          operation,
+          operation == 'approve'
+              ? (_wholeUnit
+                  ? {
+                      'type': 'unit',
+                      'unitId': _unitId,
+                      'canCreateOccasions': _allowCreate
+                    }
+                  : {'type': 'occasions', 'occasionIds': _selected.toList()})
+              : {});
 
   @override
   void initState() {
@@ -150,6 +164,28 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
   @override
   Widget build(BuildContext context) {
     final occasions = (_details?['occasions'] as List? ?? []).cast<Map>();
+    final units = (_details?['units'] as List? ?? []).cast<Map>();
+    final unitTitles = <int, String>{
+      for (final unit in units) unit['id'] as int: unit['title'].toString(),
+    };
+    final occasionsByUnit = <int?, List<Map>>{};
+    for (final occasion in occasions) {
+      (occasionsByUnit[occasion['unitId'] as int?] ??= []).add(occasion);
+    }
+    String unitTitle(int? id) =>
+        unitTitles[id] ??
+        (id == null ? text('organizer') : '${text('organizer')} #$id');
+    int byName(String a, String b) =>
+        Utilities.removeDiacritics(a.toLowerCase())
+            .compareTo(Utilities.removeDiacritics(b.toLowerCase()));
+    final groups = occasionsByUnit.entries.toList()
+      ..sort((a, b) => byName(unitTitle(a.key), unitTitle(b.key)));
+    for (final group in groups) {
+      group.value
+          .sort((a, b) => byName(a['title'].toString(), b['title'].toString()));
+    }
+    final unitCanCreate =
+        units.any((u) => u['id'] == _unitId && u['canCreateOccasions'] == true);
     return Scaffold(
       appBar: AppBar(title: Text('${AppConfig.appName} - ${text('title')}')),
       body: Center(
@@ -197,29 +233,91 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                           const SizedBox(height: 16),
                           Text(text('scope')),
                           const SizedBox(height: 16),
-                          Text(text('choose'),
-                              style: Theme.of(context).textTheme.titleMedium),
-                          ...occasions.map((occasion) => CheckboxListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(occasion['title'].toString()),
-                                value: _selected.contains(occasion['id']),
+                          if (units.isNotEmpty) ...[
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(text('wholeOrganizer')),
+                              subtitle: Text(text('wholeOrganizerHint')),
+                              value: _wholeUnit,
+                              onChanged: _busy
+                                  ? null
+                                  : (value) => setState(() {
+                                        _wholeUnit = value;
+                                        _allowCreate = false;
+                                        _unitId ??= units.first['id'] as int;
+                                      }),
+                            ),
+                            if (_wholeUnit) ...[
+                              DropdownButtonFormField<int>(
+                                initialValue: _unitId,
+                                decoration: InputDecoration(
+                                    labelText: text('organizer')),
+                                items: units
+                                    .map((u) => DropdownMenuItem<int>(
+                                        value: u['id'] as int,
+                                        child: Text(u['title'].toString())))
+                                    .toList(),
                                 onChanged: _busy
                                     ? null
-                                    : (selected) => setState(() {
-                                          if (selected == true) {
-                                            _selected
-                                                .add(occasion['id'] as int);
-                                          } else {
-                                            _selected.remove(occasion['id']);
-                                          }
+                                    : (value) => setState(() {
+                                          _unitId = value;
+                                          _allowCreate = false;
                                         }),
-                              )),
+                              ),
+                              if (_details!['canRequestCreate'] == true &&
+                                  unitCanCreate)
+                                CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(text('allowCreate')),
+                                  subtitle: Text(text('allowCreateHint')),
+                                  value: _allowCreate,
+                                  onChanged: _busy
+                                      ? null
+                                      : (value) => setState(
+                                          () => _allowCreate = value == true),
+                                ),
+                            ],
+                          ],
+                          if (!_wholeUnit)
+                            Text(text('choose'),
+                                style: Theme.of(context).textTheme.titleMedium),
+                          if (!_wholeUnit)
+                            for (final group in groups) ...[
+                              const SizedBox(height: 20),
+                              Semantics(
+                                header: true,
+                                child: Text(unitTitle(group.key),
+                                    key: ValueKey('mcp-unit-${group.key}'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium),
+                              ),
+                              ...group.value.map((occasion) => CheckboxListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(occasion['title'].toString()),
+                                    value: _selected.contains(occasion['id']),
+                                    onChanged: _busy
+                                        ? null
+                                        : (selected) => setState(() {
+                                              if (selected == true) {
+                                                _selected
+                                                    .add(occasion['id'] as int);
+                                              } else {
+                                                _selected
+                                                    .remove(occasion['id']);
+                                              }
+                                            }),
+                                  )),
+                            ],
                           const SizedBox(height: 16),
                           Text(text('duration')),
                           const SizedBox(height: 16),
                           Wrap(spacing: 12, runSpacing: 12, children: [
                             FilledButton(
-                                onPressed: _busy || _selected.isEmpty
+                                onPressed: _busy ||
+                                        (_wholeUnit
+                                            ? _unitId == null
+                                            : _selected.isEmpty)
                                     ? null
                                     : () => _finish('approve'),
                                 child: Text(_busy

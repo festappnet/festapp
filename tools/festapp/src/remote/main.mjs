@@ -25,7 +25,7 @@ try {
     } else if (args[0] === 'check' && args.length === 2) {
         const c = parseRemoteConfig(JSON.parse(await readFile(args[1], 'utf8')));
         process.stdout.write(JSON.stringify({ ok: true, issuer: c.issuer, resource: c.resource,
-            tenant: c.profile.tenantId, clients: c.clients.length, operators: c.operators.length }) + '\n');
+            tenant: c.profile.tenantId, clients: c.clients.length }) + '\n');
     } else {
         check(args.length === 8 && args[0] === 'serve' && args[2] === '--secrets' &&
             args[4] === '--data' && args[6] === '--port', 'INVALID_COMMAND');

@@ -35,6 +35,7 @@ test('SDK client sees only fixed schemas, shares CLI result, renders canonical P
     assert.deepEqual(
         tools.tools.map((tool) => tool.name),
         [
+            'festapp_access_inspect',
             'festapp_context_inspect',
             'festapp_ticket_layouts_inspect',
             'festapp_ticket_layouts_preview',
@@ -43,7 +44,7 @@ test('SDK client sees only fixed schemas, shares CLI result, renders canonical P
             'festapp_ticket_layouts_resume',
         ],
     );
-    assert.equal(tools.tools[2].annotations.readOnlyHint, false);
+    assert.equal(tools.tools.find(t => t.name === 'festapp_ticket_layouts_preview').annotations.readOnlyHint, false);
     const direct = await ops.invoke('context.inspect', {}),
         through = await client.callTool({
             name: 'festapp_context_inspect',

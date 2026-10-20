@@ -7,7 +7,8 @@ import { Operations } from '../operations/catalog.mjs';
 import { createServer } from '../mcp/server.mjs';
 import { check, safeError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
-import { READ_SCOPE } from './config.mjs';
+import { operatorAccess, verifySelection } from '../operations/access.mjs';
+import { READ_SCOPE, CREATE_SCOPE } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
 
@@ -28,7 +29,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             redirect_uris: c.redirectUris, response_types: ['code'],
             grant_types: ['authorization_code', 'refresh_token'], token_endpoint_auth_method: 'none', })),
         cookies: { keys: cookieKeys }, jwks,
-        scopes: ['openid', 'offline_access', READ_SCOPE], responseTypes: ['code'],
+        scopes: ['openid', 'offline_access', READ_SCOPE, CREATE_SCOPE], responseTypes: ['code'],
         pkce: { required: () => true },
         features: {
             devInteractions: { enabled: false },
@@ -39,7 +40,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                 useGrantedResource: () => true,
                 getResourceServerInfo: async (_ctx, resource) => {
                     if (resource !== config.resource) throw new errors.InvalidTarget();
-                    return { scope: READ_SCOPE, audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
+                    return { scope: `${READ_SCOPE} ${CREATE_SCOPE}`, audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
                 },
             },
         },
@@ -95,7 +96,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
     });
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
-    const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE] };
+    const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE, CREATE_SCOPE] };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
     // OAuth metadata can be discovered without assuming OIDC URL conventions.
@@ -113,34 +114,27 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     };
     const flow = (uid) => storage.get('Connect', uid);
     const loginOwner = uid => boundOwner(config, storage, connectionBinding(config.profile, uid), { fetchImpl });
-    const eligible = (userId) => config.operators.find(o => o.userId === userId);
-    const availableOccasions = async (userOwner, backend, userId) => {
-        const policy = eligible(userId);
-        check(policy, 'FORBIDDEN');
-        const operations = new Operations(userOwner);
-        const found = [];
-        for (const id of policy.occasions) {
-            try {
-                await operations.inspect(backend, id);
-                found.push({ id, title: config.occasionLabels?.[id] ? `${config.occasionLabels[id]} (#${id})` : `Akce #${id}` });
-            } catch (error) {
-                if (!['FORBIDDEN', 'NOT_FOUND_OR_INACCESSIBLE'].includes(error.code)) throw error;
-            }
-        }
-        check(found.length > 0, 'FORBIDDEN');
-        return found;
-    };
-    const completeConsent = async (req, res, d, f, selected) => {
-        check(selected.length > 0 && selected.every(id => f.available.includes(id) && eligible(f.userId)?.occasions.includes(id)), 'FORBIDDEN');
-        await loginOwner(d.uid).authorized(async () => {});
+    // Upgrade existing selected-event delegations once without widening them.
+    for (const previousGrant of storage.values('Delegation')) {
+        if (previousGrant.access || !previousGrant.occasions) continue;
+        const { occasions, ...grant } = previousGrant;
+        storage.put('Delegation', grant.id, { ...grant, access: { type: 'occasions', occasionIds: occasions } },
+            Math.max(1, (grant.expiresAt - Date.now()) / 1000));
+    }
+    const availableAccess = async (_owner, backend) => operatorAccess(backend, config.profile);
+    const canRequestCreate = d => String(d.params.scope ?? '').split(' ').includes(CREATE_SCOPE);
+    const completeConsent = async (req, res, d, f, selection) => {
+        const access = await loginOwner(d.uid).authorized(async backend =>
+            verifySelection(selection, await availableAccess(null, backend), canRequestCreate(d)));
+        const scopes = `${READ_SCOPE}${access.type === 'unit' && access.canCreateOccasions ? ' ' + CREATE_SCOPE : ''}`;
         const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
-        grant.addOIDCScope(`openid offline_access ${READ_SCOPE}`);
-        grant.addResourceScope(config.resource, READ_SCOPE);
+        grant.addOIDCScope(`openid offline_access ${scopes}`);
+        grant.addResourceScope(config.resource, scopes);
         const grantId = await grant.save();
         const sessionBinding = connectionBinding(config.profile, d.uid);
         storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
             profileBinding: config.profile.binding, binding: sessionBinding,
-            occasions: [...new Set(selected)], expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
+            access, expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
         storage.put('Binding', sessionBinding, { id: grantId }, 86400 * 8);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
         if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
@@ -149,7 +143,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
     };
     const tenantRedirect = tenantBridge(app, { config, storage, brokerSecret,
-        owner: loginOwner, available: availableOccasions, complete: completeConsent, details, provider });
+        owner: loginOwner, available: availableAccess, canRequestCreate, complete: completeConsent, details, provider });
     const renderConnect = async (req, res, error = '') => {
         const d = await details(req);
         let f = flow(d.uid);
@@ -158,16 +152,14 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const client = config.clients.find(c => c.id === d.params.client_id).name;
         if (!f.userId) return res.type('html').send(loginForm({ csrf: f.csrf, client,
             action: `/connect/${d.uid}/login`, consent: true, error }));
-        const policy = eligible(f.userId);
-        check(policy, 'FORBIDDEN');
         const consentOwner = loginOwner(d.uid);
         const available = await consentOwner.authorized((backend, context) =>
-            availableOccasions(consentOwner, backend, context.userId));
-        check(available.length > 0, 'FORBIDDEN');
-        f.available = available.map(o => o.id);
+            availableAccess(consentOwner, backend, context.userId));
+        check(available.occasions.length > 0 || available.units.length > 0, 'FORBIDDEN');
+        f.available = available;
         storage.put('Connect', d.uid, f, 600);
         return res.type('html').send(consentForm({ csrf: f.csrf, client,
-            action: `/connect/${d.uid}/consent`, occasions: available, selectedTenant: config.profile.tenantId }));
+            action: `/connect/${d.uid}/consent`, occasions: available.occasions, units: available.units, canRequestCreate: canRequestCreate(d), selectedTenant: config.profile.tenantId }));
     };
     app.get('/connect/:uid', (req, res) => renderConnect(req, res));
     app.post('/connect/:uid/login', form, async (req, res) => {
@@ -180,7 +172,6 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             check(typeof req.body.email === 'string' && typeof req.body.password === 'string', 'INVALID_INPUT');
             const owner = loginOwner(d.uid);
             const { userId } = await owner.login(req.body.email, req.body.password);
-            if (!eligible(userId)) { await owner.logout(); check(false, 'FORBIDDEN'); }
             storage.put('Connect', d.uid, { csrf: nonce(), userId }, 600);
         } catch (e) {
             const message = e.code === 'MFA_REQUIRED'
@@ -198,9 +189,9 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             await loginOwner(d.uid).logout(); storage.remove('Connect', d.uid);
             return provider.interactionFinished(req, res, { error: 'access_denied' }, { mergeWithLastSubmission: false });
         }
-        const selected = [req.body.occasion].flat().map(Number);
-        check(selected.length > 0 && selected.every(id => f.available.includes(id) && eligible(f.userId)?.occasions.includes(id)), 'FORBIDDEN');
-        return completeConsent(req, res, d, f, selected);
+        const selection = req.body.unit ? { type: 'unit', unitId: Number(req.body.unit), canCreateOccasions: req.body.create === '1' }
+            : { type: 'occasions', occasionIds: [req.body.occasion].flat().map(Number) };
+        return completeConsent(req, res, d, f, selection);
     });
     const manage = (req, res) => {
         const value = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith(cookieName + '='))?.slice(cookieName.length + 1);

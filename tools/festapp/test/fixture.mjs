@@ -107,6 +107,9 @@ export async function fixture(
                     app_metadata: {},
                     user_metadata: {},
                 });
+            if (url.pathname === '/rest/v1/rpc/get_operator_access_v1')
+                return reply({ units: [{ id: 3, title: 'Fixture organizer', canCreateOccasions: true }],
+                    occasions: [{ id: 7, title: 'Fixture occasion', unitId: 3 }] });
             if (url.pathname === '/rest/v1/user_info')
                 return reply({
                     id: userId,

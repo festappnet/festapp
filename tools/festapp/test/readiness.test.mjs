@@ -45,7 +45,7 @@ test('verified canonical contract enables writes; rollback disables SDK exposure
     await f.owner.login('fixture@example.invalid', 'test');
     const ops = new Operations(f.owner);
     await ops.prepare();
-    assert.equal(ops.catalog.length, 6);
+    assert.equal(ops.catalog.length, 7);
     const server = createServer(ops),
         client = new Client({ name: 'readiness-fixture', version: '1' }),
         [a, b] = InMemoryTransport.createLinkedPair();
@@ -68,7 +68,7 @@ test('verified canonical contract enables writes; rollback disables SDK exposure
     });
     assert.equal(blocked.structuredContent.error.code, 'FAMILY_NOT_READY');
     assert.equal(writes, 1);
-    assert.equal((await client.listTools()).tools.length, 3);
+    assert.equal((await client.listTools()).tools.length, 4);
 });
 for (const invalid of [
     null,
@@ -86,7 +86,7 @@ for (const invalid of [
         await f.owner.login('fixture@example.invalid', 'test');
         const ops = new Operations(f.owner);
         await ops.prepare();
-        assert.equal(ops.catalog.length, 3);
+        assert.equal(ops.catalog.length, 4);
         assert.equal(
             (await ops.invoke('ticket_layouts.save', request(f.owner.profile)))
                 .error.code,

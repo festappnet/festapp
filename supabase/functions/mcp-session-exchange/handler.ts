@@ -49,7 +49,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     const { data, error } = await admin.auth.getUser(accessToken);
     if (error || !data.user) return json({ error: "authentication_required" }, 401);
     if (["details", "status"].includes(body.operation)) return json(await broker({ operation: body.operation, accessToken }));
-    const prepared = await broker({ operation: "prepare", accessToken, occasions: body.occasions });
+    const prepared = await broker({ operation: "prepare", accessToken, access: body.access });
     if (prepared.userId !== data.user.id || prepared.organizationId !== config.organizationId || !prepared.lease) throw new Error();
     // Resolve from the verified actor, never a caller-supplied email/user ID.
     const target = await admin.rpc("resolve_existing_user_session_v1", { p_user: data.user.id });

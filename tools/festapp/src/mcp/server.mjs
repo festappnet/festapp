@@ -21,12 +21,12 @@ export function createServer(operations) {
                 inputSchema: operation.input,
                 outputSchema: operation.output,
                 ...(operations.owner?.securitySchemes ? {
-                    _meta: { securitySchemes: operations.owner.securitySchemes },
+                    _meta: { securitySchemes: operations.owner.securitySchemesFor?.(operation.id) ?? operations.owner.securitySchemes },
                 } : {}),
                 annotations: {
                     readOnlyHint: operation.domainReadOnly,
                     destructiveHint: false,
-                    idempotentHint: operation.domainReadOnly,
+                    idempotentHint: operation.idempotent ?? operation.domainReadOnly,
                     openWorldHint: true,
                 },
             },

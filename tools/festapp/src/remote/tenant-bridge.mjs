@@ -1,3 +1,4 @@
+import { verifySelection } from '../operations/access.mjs';
 import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { digest } from '../context/profile.mjs';
@@ -10,7 +11,7 @@ const equal = (a, b) => typeof a === 'string' && typeof b === 'string' &&
 
 // Only the first-party Edge broker can exchange a live app proof for a separate
 // downstream session. OAuth completion still requires the original issuer cookie.
-export function tenantBridge(app, { config, storage, brokerSecret, owner, available, complete, details, provider }) {
+export function tenantBridge(app, { config, storage, brokerSecret, owner, available, canRequestCreate, complete, details, provider }) {
     if (!config.tenantOrigin) return null;
     check(typeof brokerSecret === 'string' && brokerSecret.length >= 43, 'INVALID_BROKER_SECRET');
     const read = request => {
@@ -62,19 +63,17 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         }
         check(['details', 'prepare'].includes(operation) && flow.state === 'pending', 'FORBIDDEN');
         const proof = await userOwner.withAccessToken(accessToken, async (backend, context) => ({
-            userId: context.userId, occasions: await available(userOwner, backend, context.userId),
+            userId: context.userId, available: await available(userOwner, backend, context.userId),
         }));
         const client = config.clients.find(c => c.id === flow.clientId);
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
-            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, occasions: proof.occasions, expiresAt: flow.expiresAt });
-        const selected = req.body.occasions;
-        check(Array.isArray(selected) && selected.length > 0 && selected.length <= 100 &&
-            selected.every(id => Number.isSafeInteger(id) && proof.occasions.some(o => o.id === id)), 'FORBIDDEN');
+            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, expiresAt: flow.expiresAt });
+        const selected = verifySelection(req.body.access, proof.available, flow.canRequestCreate === true);
         // Re-read after remote authorization so concurrent approval cannot fork a mint.
         check(read(request).flow.state === 'pending', 'FORBIDDEN');
         const lease = nonce();
         save(uid, { ...flow, state: 'preparing', lease, userId: proof.userId,
-            available: proof.occasions.map(o => o.id), selected: [...new Set(selected)] });
+            selected });
         return res.json({ lease, userId: proof.userId, organizationId: config.profile.organizationId });
     });
     app.get('/connect/:uid/finish', async (req, res) => {
@@ -94,7 +93,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         let request = flow.request;
         if (!request) {
             request = nonce();
-            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, expiresAt: Date.now() + 600000 };
+            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), expiresAt: Date.now() + 600000 };
             save(d.uid, pending);
             storage.put('TenantRequest', digest(request), { uid: d.uid }, 600);
         }

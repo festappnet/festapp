@@ -4,7 +4,7 @@ import { handleMcpExchange } from "./handler.ts";
 
 const actor = "00000000-0000-4000-8000-000000000001";
 const config = { tenantId: "fixture", tenantOrigin: "https://tenant.invalid", issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) };
-function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, organization = 3 } = {}) {
+function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, organization = 3, access = { type: "occasions", occasionIds: [7] } as Record<string, unknown> } = {}) {
   const calls: string[] = [];
   const admin = {
     auth: { getUser: (token: string) => { calls.push(`proof:${token}`); return Promise.resolve({ error: invalidProof ? {} : null, data: { user: { id: actor } } }); },
@@ -17,7 +17,7 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
       assertEquals((init!.headers as Record<string, string>)["X-Festapp-Mcp-Broker"], config.brokerSecret);
       const body = JSON.parse(init!.body as string); calls.push(body.operation);
       assertEquals(body.tenantId, "fixture"); assertEquals(body.organizationId, 3);
-      if (body.operation === "prepare") return Response.json({ lease: "lease", userId: wrongActor ? "other" : actor, organizationId: 3 });
+      if (body.operation === "prepare") { assertEquals(body.access, access); return Response.json({ lease: "lease", userId: wrongActor ? "other" : actor, organizationId: 3 }); }
       if (body.operation === "check") return Response.json({ valid: true, userId: actor });
       if (body.operation === "complete") {
         assertEquals(body.session.refresh_token, "independent-refresh");
@@ -35,7 +35,7 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
   const request = (operation = "approve", origin = config.tenantOrigin, token = "app-access") =>
     handleMcpExchange(new Request("https://api.invalid/mcp-session-exchange", { method: "POST",
       headers: { Origin: origin, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ request: "r".repeat(43), operation, occasions: [7], userId: "attacker", email: "attacker@invalid" }),
+      body: JSON.stringify({ request: "r".repeat(43), operation, access, userId: "attacker", email: "attacker@invalid" }),
     }), deps);
   return { request, calls };
 }
@@ -60,4 +60,10 @@ Deno.test("actor or tenant mismatch rejects before session issuance", async () =
 Deno.test("an uncertain failed transfer revokes only the new independent session", async () => {
   const f = fixture({ failTransfer: true }); assertEquals((await f.request()).status, 403);
   assertEquals(f.calls.at(-1), "revoke:local");
+});
+
+Deno.test("explicit organizer selection reaches the broker unchanged and uses only verified identity", async () => {
+  const f = fixture({ access: { type: "unit", unitId: 8, canCreateOccasions: true } });
+  assertEquals((await f.request()).status, 200);
+  assert(f.calls.includes("prepare"));
 });

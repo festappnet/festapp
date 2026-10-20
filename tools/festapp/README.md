@@ -200,8 +200,10 @@ normal operator login; no service credential is used. The remaining report/event
 E5; the current visual/layout slice is not completion of the overall MCP plan.
 The hosted OAuth read pilot is implemented in `src/remote`, with its activation
 gates and client setup in [remote-mcp-auth.md](../../docs/architecture/operations/remote-mcp-auth.md).
-It adds two read tools for explicitly selected occasions, using the same handlers.
-Hosted preview/writes and issued-ticket actions remain separate waves.
+It adds context, access discovery and ticket-artwork reads scoped to selected occasions
+or one whole organizer. Explicitly consented organizer grants can also create
+hidden occasions with sales closed through the canonical command. Hosted artwork
+writes, preview and issued-ticket actions remain separate waves.
 
 ## Hosted OAuth pilot: connect in a browser
 
@@ -218,7 +220,7 @@ advertised and verified locally. Automatic/open client registration is disabled.
 Click connect. The configured first-party tenant page reuses the application
 login, then lets you select allowed occasions and confirm access. No API key or refresh token is copied into ChatGPT. The first
 pilot allows only `context.inspect` and `ticket_layouts.inspect`; the configured
-operator/resource list is checked again for every call. Disconnect at
+ordinary-user rights and consent scope are checked again for every call. Disconnect at
 `https://mcp.festapp.net/connections`, independently of the Festapp application.
 
 The first-party page uses the application's existing login choices. MFA accounts

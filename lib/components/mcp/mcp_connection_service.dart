@@ -4,14 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// the browser. The SDK supplies the current app access proof in its header.
 class McpConnectionService {
   static Future<Map<String, dynamic>> request(
-      String request, String operation, List<int> occasions) async {
+      String request, String operation, Map<String, dynamic> access) async {
     final response = await Supabase.instance.client.functions.invoke(
       'mcp-session-exchange',
-      body: {
-        'request': request,
-        'operation': operation,
-        'occasions': occasions
-      },
+      body: {'request': request, 'operation': operation, 'access': access},
     );
     return Map<String, dynamic>.from(response.data as Map);
   }

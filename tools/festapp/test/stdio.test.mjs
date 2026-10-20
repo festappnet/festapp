@@ -40,7 +40,7 @@ test('real CLI subprocess interoperates over stdio without login tools or stdout
     await client.connect(transport);
     t.after(() => client.close());
     const tools = await client.listTools();
-    assert.equal(tools.tools.length, 3);
+    assert.equal(tools.tools.length, 4);
     assert(
         !tools.tools.some((tool) =>
             /login|execute|sql|shell|save/.test(tool.name),
