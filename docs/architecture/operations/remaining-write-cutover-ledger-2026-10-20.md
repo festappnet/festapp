@@ -116,10 +116,10 @@ tool automatically; the initial exposed MCP surface stays read-only.
 ## Local execution closure
 
 The selected CW01-CW24 cutovers are implemented and locally verified. The
-[execution matrix](backend-refactor-execution-2026-10-20.md#cw01-cw24-closure-matrix)
-records each owner, caller, fence, test and production/MCP condition; the
+[execution record](backend-refactor-execution-2026-10-20.md)
+records the canonical integration and compatibility boundaries; the
 [verification receipt](backend-refactor-verification-2026-10-20.json) identifies
-exact final sources and executed lanes. No production activation is implied.
+exact integration sources and executed lanes. The subsequent [production closure](backend-refactor-release-result-2026-10-20.md) records the applied migration, tenant deployment and live checks.
 
 Specific reconciliations of the investigation requirements:
 
@@ -140,7 +140,7 @@ Specific reconciliations of the investigation requirements:
 - Public old scalar/facade shapes are compatibility adapters for released
   Flutter/external consumers. Obsolete raw writers have no ordinary executor
   grant; migrated table DML is fenced. Installed-client and pending-intent
-  inventory is mandatory before activating these changes.
+  inventory remains mandatory before removing retained compatibility signatures or enabling MCP writes.
 - W03/W05 and R01-R07 retain their explicit workflow/read-candidate dispositions.
   A new remote orchestrator and optional read consolidation are outside this
   backend-only execution, not unexplained CW engineering work.
@@ -151,5 +151,4 @@ The scanner, broad client-sync assertion and stale SQL source-fingerprint gates
 listed in the execution record are repaired. Runtime SQL and compatibility
 reachability are unchanged. See [release preparation](backend-refactor-release-preparation-2026-10-20.md)
 for the read-only preflight and explicit migration/client, shared-grant,
-installed-version and pending-intent decisions. This is local preparation,
-not evidence of production activation or MCP write eligibility.
+installed-version and pending-intent decisions. The preparation snapshot is historical; production activation is now verified in the release result. MCP writes remain disabled.
