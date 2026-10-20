@@ -1,0 +1,15 @@
+# Add only after the reviewed image/config/keys and loopback probes pass.
+# Keep the existing canonical API/admin site blocks unchanged.
+mcp.festapp.net {
+    request_body {
+        max_size 48KB
+    }
+    header -Server
+    reverse_proxy 127.0.0.1:3399 {
+        header_up Host mcp.festapp.net
+        header_up X-Forwarded-Proto https
+        header_up -Forwarded
+    }
+    # Intentionally no access log: auth URLs can contain login context.
+    # The Node sidecar emits bounded, redacted consent/operation/outcome events.
+}

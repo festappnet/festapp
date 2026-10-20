@@ -1,0 +1,28 @@
+# Standalone pilot sidecar. No changes/restarts to the Supabase compose project.
+services:
+  mcp:
+    image: ${FESTAPP_MCP_IMAGE:?use the reviewed immutable image digest}
+    network_mode: host
+    user: "1000:1000"
+    restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 64
+    stop_grace_period: 35s
+    tmpfs: [/tmp:size=16m,noexec,nosuid]
+    volumes:
+      - ${FESTAPP_MCP_CONFIG:?private pilot configuration}:/run/festapp/config.json:ro
+      - ${FESTAPP_MCP_SECRETS:?separate protected issuer keys}:/run/festapp/secrets.json:ro
+      - ${FESTAPP_MCP_DATA:?private single-process state volume}:/var/lib/festapp-mcp
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3399/healthz',{headers:{host:'mcp.festapp.net','x-forwarded-proto':'https'}}).then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '2'}

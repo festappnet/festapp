@@ -169,7 +169,8 @@ export class Operations {
         return descriptors
             .filter(
                 (descriptor) =>
-                    !descriptor.requiresLayoutWriteContract || this.writeReady,
+                    (!this.owner.allowedOperations || this.owner.allowedOperations.includes(descriptor.id)) &&
+                    (!descriptor.requiresLayoutWriteContract || this.writeReady),
             )
             .map((descriptor) => ({
                 ...descriptor,
@@ -256,6 +257,7 @@ export class Operations {
             const parsed = descriptor.input.safeParse(raw);
             check(parsed.success, 'INVALID_INPUT');
             const args = parsed.data;
+            await this.owner.authorizeOperation?.(id, args);
             return await this.owner.authorized(async (client, context) => {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);

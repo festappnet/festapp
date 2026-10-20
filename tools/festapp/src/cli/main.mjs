@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { profileFromTenant } from '../context/tenant-profile.mjs';
 import { createInterface } from 'node:readline/promises';
 import { loadProfile, importProfile } from '../context/profile.mjs';
@@ -78,7 +79,12 @@ try {
         const owner = new SessionOwner(profile);
         const operations = new Operations(owner);
         const command = args.slice(0, option).join(' ');
-        if (command === 'mcp serve') {
+        if (command === 'mcp config') {
+            process.stdout.write(JSON.stringify({ mcpServers: { festapp: {
+                command: process.execPath,
+                args: [fileURLToPath(import.meta.url), 'mcp', 'serve', '--profile', profile.name],
+            } } }, null, 2) + '\n');
+        } else if (command === 'mcp serve') {
             await operations.prepare();
             const server = createServer(operations);
             await server.connect(new StdioServerTransport());
