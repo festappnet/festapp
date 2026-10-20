@@ -1,7 +1,8 @@
 # Ticketing authoring and issued-ticket operations through MCP
 
-Date: 2026-10-20. Status: tool design proposed; selected backend prerequisites
-partially implemented locally; no tool or live activation.
+Date: 2026-10-20. Status: [E0 implemented and locally verified](../architecture/operations/mcp-e0-local-execution-2026-10-20.md); selected backend prerequisites were released previously.
+Local [E1 layout saving/recovery](../architecture/operations/mcp-e1-local-execution-2026-10-20.md) is also verified against disposable PostgreSQL. The [legacy artwork fence and ordinary-user runtime gate](../architecture/operations/ticket-layout-fence-release-preparation-2026-10-20.md) are implemented and locally verified; production activation is tracked separately.
+Ordinary-user live login and client connection are operator setup, not verified here.
 Implementation verification: standard (shared contracts, permissions, payments,
 concurrency and forward database migrations).
 
@@ -25,6 +26,10 @@ MCP never drives the admin UI, executes arbitrary SQL or imports a whole admin
 screen model as a write payload. Edge/Worker execution remains for actual media,
 PDF, delivery or other external work. Two related database writes become one
 domain transaction where they form one intention; unrelated actions stay separate.
+
+The user subsequently authorized local E0 implementation after the architecture
+cleanup. This supersedes the original backend-only scope for that wave; it does
+not enable business writes or authorize real-ticket operations.
 
 ## Concrete tool surface
 

@@ -17,7 +17,7 @@
       "Migration/baseline lookup is a fallback for missing authored definitions, not runtime precedence proof. Tests and operator automation are excluded. SQL declarations include internal helpers and overloads, not just callable APIs."
     ]
   },
-  "scannedFiles": 1119,
+  "scannedFiles": 1120,
   "rpc": [
     {
       "name": "abort_fakturoid_ticket_order_v1",
@@ -958,7 +958,7 @@
       "references": [
         {
           "file": "lib/components/occasion/occasion_commands.dart",
-          "line": 169,
+          "line": 170,
           "via": "_configurationCommand"
         }
       ],
@@ -1277,7 +1277,7 @@
       "references": [
         {
           "file": "lib/components/occasion/occasion_commands.dart",
-          "line": 132,
+          "line": 133,
           "via": "invoke"
         }
       ],
@@ -1326,7 +1326,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 139,
+          "line": 131,
           "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint"
         }
       ]
@@ -1491,7 +1491,7 @@
       "references": [
         {
           "file": "lib/components/occasion/occasion_commands.dart",
-          "line": 148,
+          "line": 149,
           "via": "invoke"
         }
       ],
@@ -1666,11 +1666,6 @@
     {
       "name": "duplicate_occasion_client_sync_v1",
       "references": [
-        {
-          "file": "lib/components/occasion/db_occasions.dart",
-          "line": 221,
-          "via": "rpc"
-        },
         {
           "file": "lib/components/occasion/occasion_commands.dart",
           "line": 116,
@@ -1892,7 +1887,7 @@
       "references": [
         {
           "file": "lib/components/occasion/occasion_commands.dart",
-          "line": 199,
+          "line": 200,
           "via": "_configurationCommand"
         }
       ],
@@ -2041,7 +2036,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 122,
+          "line": 121,
           "via": "rpc"
         }
       ],
@@ -2059,7 +2054,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 28,
+          "line": 27,
           "via": "rpc"
         }
       ],
@@ -2607,7 +2602,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 38,
+          "line": 44,
           "via": "rpc"
         },
         {
@@ -3426,7 +3421,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 106,
+          "line": 105,
           "via": "rpc"
         }
       ],
@@ -3444,7 +3439,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 112,
+          "line": 111,
           "via": "rpc"
         }
       ],
@@ -4212,7 +4207,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 130,
+          "line": 129,
           "via": "rpc"
         }
       ],
@@ -4587,7 +4582,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 72,
+          "line": 78,
           "via": "rpc"
         }
       ],
@@ -4605,7 +4600,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 27,
+          "line": 33,
           "via": "rpc"
         },
         {
@@ -4628,7 +4623,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 77,
+          "line": 83,
           "via": "rpc"
         }
       ],
@@ -4646,7 +4641,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 80,
+          "line": 86,
           "via": "rpc"
         }
       ],
@@ -4713,7 +4708,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 10,
+          "line": 2,
           "arguments": "p_occasion bigint, p_command_id uuid, p_rows jsonb, p_delete_user_ids jsonb"
         }
       ]
@@ -5930,7 +5925,7 @@
         {
           "schema": "public",
           "file": "database/functions/users/save_profile_client_sync_v1.sql",
-          "line": 1,
+          "line": 2,
           "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb"
         }
       ]
@@ -6779,7 +6774,7 @@
       "references": [
         {
           "file": "lib/components/occasion/occasion_commands.dart",
-          "line": 185,
+          "line": 186,
           "via": "_configurationCommand"
         }
       ],
@@ -7065,12 +7060,12 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 45,
+          "line": 51,
           "via": "invoke"
         },
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 59,
+          "line": 65,
           "via": "invoke"
         },
         {
@@ -7565,7 +7560,7 @@
         },
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 91,
+          "line": 97,
           "via": "_invoke"
         },
         {
@@ -7615,7 +7610,7 @@
       "references": [
         {
           "file": "lib/components/forms/waitlist_commands.dart",
-          "line": 84,
+          "line": 90,
           "via": "_invoke"
         },
         {
@@ -7808,7 +7803,7 @@
       "references": [
         {
           "file": "lib/components/occasion/db_occasions.dart",
-          "line": 81,
+          "line": 80,
           "via": "from-Tb"
         },
         {
@@ -8015,14 +8010,14 @@
     },
     {
       "file": "lib/components/forms/waitlist_commands.dart",
-      "line": 104,
+      "line": 116,
       "kind": "edge",
       "expression": "endpoint",
       "via": "invoke"
     },
     {
       "file": "lib/components/forms/waitlist_commands.dart",
-      "line": 108,
+      "line": 129,
       "kind": "rpc",
       "expression": "endpoint",
       "via": "invoke"
@@ -8050,7 +8045,7 @@
     },
     {
       "file": "lib/components/occasion/occasion_commands.dart",
-      "line": 210,
+      "line": 211,
       "kind": "rpc",
       "expression": "functionName",
       "via": "invoke"
@@ -8106,7 +8101,7 @@
     },
     {
       "file": "lib/data_services/client_sync/client_command_transport.dart",
-      "line": 30,
+      "line": 36,
       "kind": "rpc",
       "expression": "functionName",
       "via": "rpc"
@@ -8731,17 +8726,6 @@
           "file": "database/functions/abuse/budgets.sql",
           "line": 94,
           "arguments": "p_actor uuid,p_org bigint"
-        }
-      ]
-    },
-    {
-      "name": "advance_group_profile_heads_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 1,
-          "arguments": "p_occasion bigint,p_users uuid[]"
         }
       ]
     },
@@ -9675,7 +9659,7 @@
         {
           "schema": "public",
           "file": "database/functions/public_links/legacy_writers.sql",
-          "line": 26,
+          "line": 8,
           "arguments": "p_source_form_id bigint"
         }
       ]
@@ -10424,18 +10408,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 139,
-          "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint"
-        }
-      ]
-    },
-    {
-      "name": "delete_occasion_user_companion_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/users/delete_occasion_user_companion_internal_v1.sql",
-          "line": 1,
+          "line": 131,
           "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint"
         }
       ]
@@ -10523,7 +10496,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 202,
+          "line": 194,
           "arguments": "p_occasion bigint, p_companion uuid, p_command_id uuid"
         }
       ]
@@ -10815,7 +10788,7 @@
         {
           "schema": "public",
           "file": "database/functions/public_links/legacy_writers.sql",
-          "line": 19,
+          "line": 1,
           "arguments": "p_old_form_id bigint"
         }
       ]
@@ -11280,7 +11253,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/legacy_group_facades.sql",
-          "line": 49,
+          "line": 54,
           "arguments": "check_point_id bigint,guess text"
         }
       ]
@@ -11291,7 +11264,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 285,
+          "line": 277,
           "arguments": "p_checkpoint bigint, p_guess text, p_command_id uuid"
         }
       ]
@@ -13724,6 +13697,17 @@
       ]
     },
     {
+      "name": "get_ticket_layout_write_contract_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/others/get_ticket_layout_write_contract_v1.sql",
+          "line": 3,
+          "arguments": ""
+        }
+      ]
+    },
+    {
       "name": "get_ticketing_product_versions_internal_v1",
       "locations": [
         {
@@ -14202,18 +14186,7 @@
         {
           "schema": "public",
           "file": "database/functions/groups/adjacent_group_lifecycle.sql",
-          "line": 10,
-          "arguments": "p_occasion bigint, p_command_id uuid, p_rows jsonb, p_delete_user_ids jsonb"
-        }
-      ]
-    },
-    {
-      "name": "import_profiles_companion_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/users/import_profiles_companion_internal_v1.sql",
-          "line": 1,
+          "line": 2,
           "arguments": "p_occasion bigint, p_command_id uuid, p_rows jsonb, p_delete_user_ids jsonb"
         }
       ]
@@ -15297,17 +15270,6 @@
       ]
     },
     {
-      "name": "replace_group_assignments_companion_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/users/replace_group_assignments_companion_internal_v1.sql",
-          "line": 1,
-          "arguments": "p_occasion bigint, p_command_id uuid, p_assignments jsonb"
-        }
-      ]
-    },
-    {
       "name": "report_cleaning_issue",
       "locations": [
         {
@@ -15787,6 +15749,17 @@
       ]
     },
     {
+      "name": "save_occasion_legacy_facade_internal_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/others/legacy_occasion_facades.sql",
+          "line": 3,
+          "arguments": "input_data jsonb"
+        }
+      ]
+    },
+    {
       "name": "save_occasion_setup_draft",
       "locations": [
         {
@@ -15902,18 +15875,7 @@
         {
           "schema": "public",
           "file": "database/functions/users/save_profile_client_sync_v1.sql",
-          "line": 1,
-          "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb"
-        }
-      ]
-    },
-    {
-      "name": "save_profile_companion_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/users/save_profile_companion_internal_v1.sql",
-          "line": 1,
+          "line": 2,
           "arguments": "p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb"
         }
       ]
@@ -16814,8 +16776,8 @@
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/public_links/legacy_writers.sql",
-          "line": 2,
+          "file": "database/functions/others/legacy_occasion_facades.sql",
+          "line": 36,
           "arguments": "input_data jsonb"
         }
       ]
@@ -16825,8 +16787,8 @@
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/public_links/legacy_writers.sql",
-          "line": 15,
+          "file": "database/functions/others/legacy_occasion_facades.sql",
+          "line": 53,
           "arguments": "input_data jsonb"
         }
       ]
@@ -16836,8 +16798,8 @@
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/others/update_occasion.sql",
-          "line": 283,
+          "file": "database/functions/others/legacy_occasion_facades.sql",
+          "line": 44,
           "arguments": "input_data jsonb"
         }
       ]

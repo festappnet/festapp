@@ -279,25 +279,3 @@ SET search_path = public, extensions
      END IF;
  END;
  $$;
-
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_occasion bigint; v_version bigint;
-BEGIN
-  v_occasion:=NULLIF(input_data->>'id','')::bigint;
-  IF v_occasion IS NULL THEN
-    PERFORM public.create_occasion_client_sync_v1(
-      extensions.gen_random_uuid(),input_data);
-    RETURN;
-  END IF;
-  PERFORM 1 FROM public.forms WHERE occasion=v_occasion ORDER BY id FOR UPDATE;
-  PERFORM 1 FROM public.occasions WHERE id=v_occasion FOR UPDATE;
-  SELECT COALESCE(v.version,0) INTO v_version
-    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
-      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
-  PERFORM public.save_occasion_client_sync_v1(v_occasion,
-    extensions.gen_random_uuid(),v_version,input_data);
-END; $$;
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;

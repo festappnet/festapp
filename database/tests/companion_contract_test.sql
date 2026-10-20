@@ -89,21 +89,21 @@ BEGIN
     'private companion profile projects canonical participant services');
 
   SELECT pg_get_functiondef(to_regprocedure(
-    'public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)'))
+    'public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)'))
     INTO v_definition;
   PERFORM assert_true(v_definition LIKE '%impact_companion_owners_v1%',
     'canonical profile domain changes invalidate the companion owner before receipt completion');
 
   SELECT pg_get_functiondef(to_regprocedure(
-    'public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)'))
+    'public.import_profiles_client_sync_v1(bigint,uuid,jsonb,jsonb)'))
     INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%impact_private_profile_users_v1%',
+  PERFORM assert_true(v_definition LIKE '%group_profile_impacts_internal_v1%',
     'profile import invalidates companion owners');
 
   SELECT pg_get_functiondef(to_regprocedure(
-    'public.delete_occasion_user_companion_internal_v1(bigint,uuid,uuid,bigint)'))
+    'public.remove_occasion_user_domain_internal_v1(bigint,uuid)'))
     INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%impact_private_profile_users_v1%',
+  PERFORM assert_true(v_definition LIKE '%group_profile_impacts_internal_v1%',
     'occasion-member deletion invalidates companion owners before cascade');
 
   SELECT pg_get_functiondef(to_regprocedure(

@@ -160,10 +160,13 @@ test('forward reassembly preserves Auth consumption and receipts and installs th
   const ownerURL=new URL(connectionString);ownerURL.username='supabase_admin';
   const owner=new Client({connectionString:ownerURL.toString()});
   await owner.connect();
-  try { await owner.query(migration); } finally { await owner.end(); }
+  try {
+    await owner.query(migration);
+    await owner.query(await readFile(new URL('../../../../supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql',import.meta.url),'utf8'));
+  } finally { await owner.end(); }
   assert.deepEqual((await c.query(budgetSQL,[key])).rows[0],before,'definition assembly must never reset consumed budgets');
   assert.deepEqual((await c.query('SELECT command_id,actor_id,response,request_sha256 FROM public.client_mutation_receipts WHERE command_id=$1',[receipt.command_id])).rows[0],receipt);
-  const manifest=JSON.parse(await readFile(new URL('../../../../automation/operations-foundation-sources.json',import.meta.url),'utf8'));
+  const manifest=JSON.parse(await readFile(new URL('../../../../automation/canonical-operation-sources.json',import.meta.url),'utf8'));
   const declarations=[];
   for(const source of manifest.sources) {
    const sql=await readFile(new URL(`../../../functions/${source}`,import.meta.url),'utf8');
@@ -555,4 +558,24 @@ test('owned companion deletion waits for an admitted attendance command and repl
   assert.equal((await setup.query('SELECT count(*)::int AS n FROM public.user_info WHERE id=$1',[companion])).rows[0].n,0);
   await asActor(deleter,f.actor);assert.deepEqual((await deleter.query('SELECT public.delete_owned_companion_client_sync_v1($1,$2,$3) AS r',[f.id,companion,command])).rows[0].r,deleted);await deleter.query('COMMIT');
  } finally {await attendee.query('ROLLBACK');await deleter.query('ROLLBACK');await Promise.all([setup.end(),attendee.end(),deleter.end()]);}
+});
+
+
+test('ownership cleanup refuses an unresolved stored caller and rolls back its definition change',async()=>{
+ const ownerURL=new URL(connectionString);ownerURL.username='supabase_admin';
+ const owner=new Client({connectionString:ownerURL.toString()});await owner.connect();
+ const {readFile}=await import('node:fs/promises');
+ const migration=await readFile(new URL('../../../../supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql',import.meta.url),'utf8');
+ const definition="SELECT prosrc FROM pg_proc WHERE oid='public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)'::regprocedure";
+ try {
+  const before=(await owner.query(definition)).rows[0].prosrc;
+  await owner.query(`CREATE FUNCTION pg_temp.retired_profile_caller() RETURNS jsonb LANGUAGE plpgsql AS $body$
+   BEGIN RETURN public.import_profiles_companion_internal_v1(NULL,NULL,'[]','[]'); END $body$`);
+  await assert.rejects(owner.query(migration),e=>e.message.includes('still has a stored caller'));
+  await owner.query('ROLLBACK');
+  assert.equal((await owner.query(definition)).rows[0].prosrc,before,'failed cleanup is atomic');
+  await owner.query('DROP FUNCTION pg_temp.retired_profile_caller()');
+  await owner.query(migration);
+  assert.equal((await owner.query("SELECT to_regprocedure('public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)') AS retired")).rows[0].retired,null);
+ } finally {await owner.query('ROLLBACK');await owner.end();}
 });

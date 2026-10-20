@@ -1,3 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -98,14 +104,29 @@ class WaitlistCommands {
       });
   Future<Map<String, dynamic>> _invoke(
       String endpoint, Map<String, dynamic> body) async {
-    final identity = '$endpoint:$body';
+    final snapshot = jsonDecode(jsonEncode(body)) as Map<String, dynamic>;
+    String principal() => client.auth.currentUser?.id ?? 'anonymous';
+    final identity =
+        '${principal()}:$endpoint:${ClientCommandIdentity.fingerprint(snapshot)}';
     final commandId = _pending.putIfAbsent(identity, () => const Uuid().v4());
     final transport = ClientCommandTransport((_, parameters) async {
-      final response = await client.functions.invoke(endpoint,
-          body: {...body, 'commandId': commandId, 'clientId': _clientId});
-      return response.data;
-    });
-    final raw = await transport.invoke(endpoint, {});
+      final request = Map<String, dynamic>.from(parameters);
+      final id = request.remove('p_command_id');
+      try {
+        final response = await client.functions.invoke(endpoint,
+            body: {...request, 'commandId': id, 'clientId': _clientId});
+        return response.data;
+      } on FunctionsFetchException catch (error) {
+        // Normalize SDK-wrapped network failures for the shared retry policy.
+        final cause = error.details;
+        if (cause is TimeoutException || cause is http.ClientException) {
+          throw cause;
+        }
+        rethrow;
+      }
+    }, principalProvider: principal);
+    final raw =
+        await transport.invoke(endpoint, snapshot, commandId: commandId);
     final response = ClientCommandResponse.from(raw);
     if (response.code == 200 ||
         (response.code >= 400 &&

@@ -1,7 +1,7 @@
 {
   "baseline": "supabase/baseline/20260805230000_production_schema.sql",
   "baselineVersion": "20260805230000",
-  "operationsManifest": "automation/operations-foundation-sources.json",
+  "operationsManifest": "automation/canonical-operation-sources.json",
   "retainedSignatures": [
     "public.record_account_deletion_sync_v1(uuid,bigint)",
     "public.advance_group_profile_heads_internal_v1(bigint,uuid[])",
@@ -59,5 +59,12 @@
     "public.delete_order_internal_v1(bigint)",
     "public.delete_order_client_sync_v1(bigint,uuid)",
     "public.delete_order_221(bigint)"
+  ],
+  "retiredSignatures": [
+    "public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)",
+    "public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)",
+    "public.replace_group_assignments_companion_internal_v1(bigint,uuid,jsonb)",
+    "public.delete_occasion_user_companion_internal_v1(bigint,uuid,uuid,bigint)",
+    "public.advance_group_profile_heads_internal_v1(bigint,uuid[])"
   ]
 }

@@ -8,11 +8,12 @@ import 'package:sembast/sembast.dart';
 /// Immutable recovery handle. Original parameters include original revisions;
 /// resuming never reads a fresh editor baseline or allocates another command ID.
 class ClientCommandIntent {
-  const ClientCommandIntent(
-      {required this.operation,
-      required this.commandId,
-      required this.principalBinding,
-      required this.requestJson});
+  const ClientCommandIntent({
+    required this.operation,
+    required this.commandId,
+    required this.principalBinding,
+    required this.requestJson,
+  });
   final String operation;
   final String commandId;
   final String principalBinding;
@@ -26,6 +27,17 @@ class ClientCommandIdentity {
   static String fingerprint(Object? value) =>
       sha256.convert(utf8.encode(jsonEncode(_canonicalize(value)))).toString();
 
+  // These formats are persisted recovery contracts, including payment intents.
+  static String _pendingKey(String namespace, Object? payload) =>
+      'client_command_pending:$namespace:${fingerprint(payload)}';
+
+  static String _activeKey(
+    String namespace,
+    String? principalBinding,
+    String scopeBinding,
+  ) =>
+      'client_command_active:$namespace:${fingerprint([principalBinding, scopeBinding])}';
+
   static String newCommandId() => const Uuid().v4();
 
   static Future<String> claimIntent(
@@ -35,23 +47,18 @@ class ClientCommandIdentity {
     String? scopeBinding,
     String? requestJson,
   }) async {
-    final fingerprint = sha256
-        .convert(utf8.encode(jsonEncode(_canonicalize(payload))))
-        .toString();
-    final key = 'client_command_pending:$namespace:$fingerprint';
+    final key = _pendingKey(namespace, payload);
     final activeKey = scopeBinding == null
         ? null
-        : 'client_command_active:$namespace:${sha256.convert(utf8.encode(jsonEncode([
-                principalBinding,
-                scopeBinding
-              ])))}';
+        : _activeKey(namespace, principalBinding, scopeBinding);
     final db = await StorageHelper.openDatabase();
     return db.transaction((transaction) async {
       final store = StoreRef.main();
       var commandId = await store.record(key).get(transaction) as String?;
       if (principalBinding != null) {
-        final previousBinding =
-            await store.record('$key:principal').get(transaction);
+        final previousBinding = await store
+            .record('$key:principal')
+            .get(transaction);
         if (commandId != null && previousBinding != principalBinding) {
           throw StateError('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
         }
@@ -79,8 +86,12 @@ class ClientCommandIdentity {
         await store.record('$key:scope').put(transaction, activeKey);
       }
       if (requestJson != null) {
-        await store.record('$key:request').put(
-            transaction, jsonEncode(_canonicalize(jsonDecode(requestJson))));
+        await store
+            .record('$key:request')
+            .put(
+              transaction,
+              jsonEncode(_canonicalize(jsonDecode(requestJson))),
+            );
       }
       return commandId;
     });
@@ -94,10 +105,7 @@ class ClientCommandIdentity {
     required String commandId,
     required String principalBinding,
   }) async {
-    final fingerprint = sha256
-        .convert(utf8.encode(jsonEncode(_canonicalize(payload))))
-        .toString();
-    final key = 'client_command_pending:$namespace:$fingerprint';
+    final key = _pendingKey(namespace, payload);
     final db = await StorageHelper.openDatabase();
     return db.transaction((transaction) async {
       final store = StoreRef.main();
@@ -129,11 +137,7 @@ class ClientCommandIdentity {
     required String principalBinding,
     required String scopeBinding,
   }) async {
-    final activeKey =
-        'client_command_active:$operation:${sha256.convert(utf8.encode(jsonEncode([
-          principalBinding,
-          scopeBinding
-        ])))}';
+    final activeKey = _activeKey(operation, principalBinding, scopeBinding);
     final db = await StorageHelper.openDatabase();
     return db.transaction((transaction) async {
       final store = StoreRef.main();
@@ -153,10 +157,11 @@ class ClientCommandIdentity {
         return null;
       }
       return ClientCommandIntent(
-          operation: operation,
-          commandId: id as String,
-          principalBinding: principalBinding,
-          requestJson: request);
+        operation: operation,
+        commandId: id as String,
+        principalBinding: principalBinding,
+        requestJson: request,
+      );
     });
   }
 
@@ -174,8 +179,10 @@ class ClientCommandIdentity {
 
   // Original version controls survive transport/process loss without persisting
   // customer payloads. The key's digest binds the entire normalized request.
-  static Map<String, Object?> _expectedRevisions(Object? value,
-      [String path = '']) {
+  static Map<String, Object?> _expectedRevisions(
+    Object? value, [
+    String path = '',
+  ]) {
     final result = <String, Object?>{};
     if (value is Map) {
       for (final entry in value.entries) {
@@ -204,13 +211,14 @@ class ClientCommandIdentity {
 
   static Object? _canonicalize(Object? value) {
     if (value is Map) {
-      final entries = value.entries
-          .map((entry) => MapEntry(
-                entry.key.toString(),
-                _canonicalize(entry.value),
-              ))
-          .toList()
-        ..sort((left, right) => left.key.compareTo(right.key));
+      final entries =
+          value.entries
+              .map(
+                (entry) =>
+                    MapEntry(entry.key.toString(), _canonicalize(entry.value)),
+              )
+              .toList()
+            ..sort((left, right) => left.key.compareTo(right.key));
       return {for (final entry in entries) entry.key: entry.value};
     }
     if (value is Iterable) return value.map(_canonicalize).toList();

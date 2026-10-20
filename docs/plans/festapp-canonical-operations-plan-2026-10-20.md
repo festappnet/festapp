@@ -1,7 +1,7 @@
 # Canonical Festapp operations and MCP access
 
 Date: 2026-10-20  
-Status: Selected backend execution scope implemented locally; later CLI/MCP and production phases remain  
+Status: Selected backend scope released; subsequent architecture cleanup and [MCP E0](../architecture/operations/mcp-e0-local-execution-2026-10-20.md) plus [local E1](../architecture/operations/mcp-e1-local-execution-2026-10-20.md) verified. Live operator login, connection and later write/hosted waves remain.
 Verification for implementation: standard (authorization, destructive commands,
 email commitments, shared contracts and database migrations)
 

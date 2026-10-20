@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 const read = p => fs.readFileSync(p, 'utf8');
-const manifest = JSON.parse(read('automation/operations-foundation-sources.json'));
+const manifest = JSON.parse(read('automation/canonical-operation-sources.json'));
 function files(dir) {
   return fs.readdirSync(dir, {withFileTypes:true}).flatMap(e => e.isDirectory()
     ? files(path.join(dir,e.name)) : e.name.endsWith('.sql') ? [path.join(dir,e.name)] : []);
@@ -29,11 +29,14 @@ test('one authored owner per selected PostgreSQL function identity', () => {
 test('forward manifest is deterministic, definition-only and refuses historical targets', () => {
   execFileSync('python3',['automation/assemble-operations-foundation-migration.py','--check']);
   assert.equal(new Set(manifest.sources).size,manifest.sources.length);
-  const sql = read(manifest.migration);
+  const sql = read('supabase/migrations/20261020120000_canonical_operations_foundation.sql');
   assert.doesNotMatch(sql,/INSERT INTO public\.abuse_budget_usage|DROP TABLE public\.(password_reset|external_login)_rate_limits/);
   const rejected = spawnSync('python3',['automation/assemble-operations-foundation-migration.py','--output','supabase/migrations/20261016100000_abuse_admission.sql']);
   assert.notEqual(rejected.status,0);
   assert.doesNotMatch(read('automation/assemble-abuse-migration.py'), /\.write_text\(/);
+  assert.doesNotMatch(read('automation/assemble-operations-foundation-migration.py'), /\.write_text\(/);
+  const installedWrite = spawnSync('python3',['automation/assemble-operations-foundation-migration.py','--output','supabase/migrations/20261020120000_canonical_operations_foundation.sql']);
+  assert.notEqual(installedWrite.status,0);
 });
 test('current order callers reach the command and have no automatic email follow-up', () => {
   const source=read('lib/components/eshop/db_orders.dart');
@@ -70,5 +73,15 @@ test('all forward SECURITY DEFINER owners pin the trusted search path', () => {
 
 test('effective SQL source fingerprints are reproducible from release inputs', () => {
   execFileSync('python3',['automation/generate_canonical_source_contract.py','--check']);
+  execFileSync('python3',['automation/generate_ticket_layout_write_contract.py','--check']);
   execFileSync('python3',['-m','unittest','discover','-s','automation/tests','-p','test_canonical_source_contract.py']);
+});
+
+test('retired profile implementations have no authored definition or SQL caller', () => {
+  const retired = JSON.parse(read('automation/canonical-source-contract.json')).retiredSignatures;
+  const sql = files('database/functions').map(read).join('\n');
+  for (const signature of retired) {
+    const name = signature.split('(')[0].split('.').at(-1);
+    assert.doesNotMatch(sql, new RegExp(`\\b${name}\\s*\\(`, 'i'), signature);
+  }
 });

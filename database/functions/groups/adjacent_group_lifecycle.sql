@@ -1,11 +1,3 @@
-CREATE OR REPLACE FUNCTION public.advance_group_profile_heads_internal_v1(p_occasion bigint,p_users uuid[])
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- INSERT INTO public.client_sync_private_scopes(component,occasion,user_id,source_revision)
- SELECT 'private_profile',p_occasion,(x->>'userId')::uuid,1 FROM jsonb_array_elements(public.group_profile_impacts_internal_v1(p_occasion,p_users)) x ORDER BY x->>'userId'
- ON CONFLICT(component,occasion,user_id) DO UPDATE SET source_revision=public.client_sync_private_scopes.source_revision+1,updated_at=clock_timestamp();
-END $$;
-REVOKE ALL ON FUNCTION public.advance_group_profile_heads_internal_v1(bigint,uuid[]) FROM PUBLIC,anon,authenticated;
 -- Adjacent lifecycle owners: only group lock/version seam corrections.
 CREATE OR REPLACE FUNCTION public.import_profiles_client_sync_v1(p_occasion bigint, p_command_id uuid, p_rows jsonb, p_delete_user_ids jsonb)
  RETURNS jsonb

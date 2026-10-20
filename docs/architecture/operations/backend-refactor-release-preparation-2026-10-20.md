@@ -20,10 +20,10 @@ Status: **production release complete** for vstupenky.online, version 0.20.296+7
   generation. The normal canonical source test invokes regeneration checking
   and the generator's regression cases.
 
-Refresh after a deliberate SQL change:
+Verify installed history and the effective forward definitions after a deliberate SQL change. Author a new forward migration; do not regenerate the installed foundation:
 
 ```sh
-python3 automation/assemble-operations-foundation-migration.py --output supabase/migrations/20261020120000_canonical_operations_foundation.sql
+python3 automation/assemble-operations-foundation-migration.py --check
 python3 automation/generate_canonical_source_contract.py
 python3 automation/generate_canonical_source_contract.py --check
 ```

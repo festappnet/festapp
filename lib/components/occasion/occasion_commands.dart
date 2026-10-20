@@ -11,7 +11,7 @@ abstract interface class OccasionCommands {
       int occasionId, int expectedVersion, Map<String, dynamic> change,
       {String? commandId});
   Future<int> duplicate(int occasionId,
-      {int? targetUnitId, String locale = 'en'});
+      {int? targetUnitId, String locale = 'en', String? commandId});
   Future<void> delete(int occasionId);
   Future<Map<String, dynamic>> deleteService(
     int occasionId,
@@ -112,7 +112,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
 
   @override
   Future<int> duplicate(int occasionId,
-      {int? targetUnitId, String locale = 'en'}) async {
+      {int? targetUnitId, String locale = 'en', String? commandId}) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
       'duplicate_occasion_client_sync_v1',
       {
@@ -120,6 +120,7 @@ class SupabaseOccasionCommands implements OccasionCommands {
         'p_target_unit': targetUnitId,
         'p_locale': locale,
       },
+      commandId: commandId,
     ));
     if (response.code != 200 || response.data['occasionId'] is! num) {
       throw StateError('Occasion duplication was rejected');

@@ -666,7 +666,9 @@
     "20261018200000_festapp_payment_reference_reservations.sql",
     "20261018210000_integration_contract_reconciliation.sql",
     "20261018220000_global_canonical_mutation_release.sql",
-    "20261020120000_canonical_operations_foundation.sql"
+    "20261020120000_canonical_operations_foundation.sql",
+    "20261020150000_canonical_profile_ownership_cleanup.sql",
+    "20261020173000_ticket_layout_legacy_fence.sql"
   ],
   "registrySource": "database/operations/canonical_mutation_contraction.sql",
   "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4"
