@@ -24,7 +24,7 @@ const configuration = (issuer) => ({ schemaVersion: 1, issuer, profile: rawProfi
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
     operators: [{ userId: actor, occasions: [7] }],
 });
-async function setup(t) {
+async function setup(t, { native = false } = {}) {
     const base = await fixture(t, { fetchImpl: url => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? reply({ presets: {}, fonts: {} }) : undefined });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -33,7 +33,9 @@ async function setup(t) {
     const server = httpServer();
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const issuer = `http://127.0.0.1:${server.address().port}`;
-    const config = parseRemoteConfig(configuration(issuer));
+    const raw = configuration(issuer);
+    if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
+    const config = parseRemoteConfig(raw);
     const audit = [];
     const service = createRemoteApp(config, storage, { ...secrets, fetchImpl: base.owner.fetch, audit: r => audit.push(r) });
     server.on('request', service.app);
@@ -52,10 +54,10 @@ async function setup(t) {
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback' } = {}) {
     const verifier = randomBytes(32).toString('base64url');
-    const params = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
-        redirect_uri: f.issuer + '/callback', scope: `openid offline_access ${READ_SCOPE}`,
+    const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
+        redirect_uri: callbackUri, scope: `openid offline_access ${READ_SCOPE}`,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         code_challenge_method: 'S256', resource: f.config.resource, state: 'fixture-state' });
     let r = await f.browser('/auth?' + params);
@@ -84,8 +86,8 @@ async function connect(f, { badVerifier = false } = {}) {
     assert.equal(callback.searchParams.get('iss'), f.issuer);
     assert(callback.searchParams.get('code'), callback.href);
     const exchange = async (codeVerifier = verifier) => fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
-        client_id: 'chatgpt-fixture', grant_type: 'authorization_code', code: callback.searchParams.get('code'),
-        redirect_uri: f.issuer + '/callback', code_verifier: codeVerifier, resource: f.config.resource,
+        client_id: clientId, grant_type: 'authorization_code', code: callback.searchParams.get('code'),
+        redirect_uri: callbackUri, code_verifier: codeVerifier, resource: f.config.resource,
     }) });
     const response = await exchange(badVerifier ? 'wrong-verifier'.repeat(4) : verifier);
     assert.equal(response.status, badVerifier ? 400 : 200, await response.clone().text());
@@ -98,6 +100,21 @@ test('remote configuration rejects insecure origins, redirects and duplicate ide
     assert.throws(() => parseRemoteConfig({ ...c, issuer: 'http://public.example' }));
     assert.throws(() => parseRemoteConfig({ ...c, clients: [...c.clients, ...c.clients] }));
     assert.throws(() => parseRemoteConfig({ ...c, clients: [{ ...c.clients[0], redirectUris: ['https://user:password@example.test/callback'] }] }));
+});
+
+test('native OAuth accepts only explicit IP loopback callbacks and honors an ephemeral port', async t => {
+    const f = await setup(t, { native: true });
+    const { tokens, callback } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback' });
+    assert.equal(callback.origin, 'http://127.0.0.1:51789');
+    assert(tokens.access_token);
+    for (const uri of ['http://localhost/callback', 'http://evil.example/callback', 'https://127.0.0.1/callback', 'http://127.0.0.1/callback?code=other']) {
+        const c = configuration(f.issuer);
+        c.clients[0] = { ...c.clients[0], applicationType: 'native', redirectUris: [uri] };
+        assert.throws(() => parseRemoteConfig(c));
+    }
+    const request = new URLSearchParams({ client_id: 'codex-fixture', response_type: 'code', redirect_uri: 'http://127.0.0.1:51789/other',
+        scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) });
+    assert.equal((await f.browser('/auth?' + request)).status, 400);
 });
 
 test('encrypted durable adapter survives restart and refuses another process or key', async t => {
