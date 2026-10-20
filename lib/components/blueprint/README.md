@@ -1,63 +1,58 @@
-# Blueprint (visual seat selection)
+# Blueprint (Visual Seat Selection)
 
-The public `venue_seat_picker` package owns V2 geometry, rendering, gestures,
-selection activation and history. Festapp owns products/prices, explicit commercial
-group membership, seat-to-spot bindings, permissions, orders and command receipts.
-The generic package never receives a Supabase client or private order metadata.
+Visual seat selection/reservation interface for the Eshop.
 
-`layout != null` selects the V2 host and public adapters. Unconverted legacy
-records retain the explicit V1 route. A V2 load/save failure remains repairable;
-it never silently falls back to legacy rendering. `convertLegacyBlueprint` is an
-explicit reviewed conversion input, not a reader side effect. Legacy SVG cover
-placement requires a ready asset processed by the existing Image Worker.
+The reusable viewer, customer picker and venue editor are provided by the public
+[`venue_seat_picker`](https://github.com/festappnet/venue_seat_picker) package.
+Festapp maps `BlueprintObjectModel` through a read-only `SeatAdapter`; SQL
+reservation authority and product/order behavior remain in this feature.
 
-## Geometry and business state
+## Split Brain: Dart UI vs SQL Authority (CRITICAL)
 
-Geometry and commercial binding changes form one revisioned draft. Selection alone
-does not dirty it. Group defaults are explicit; mixed or unassigned groups do not
-invent a price. New seats inherit a known group default, while protected ordered,
-used or actively held seats cannot be structurally rewritten. Existing `spot.id`
-stays stable when geometry changes. Copy creates fresh identities without holds
-or order/ticket assignments.
+Selection state is managed optimistically in Dart but authoritatively in SQL.
 
-`FormCommands.saveBlueprint` uses `update_blueprint_client_sync_v1`, the existing
-receipt and sync boundary. SQL validates the entire geometry/binding aggregate
-before commit. An ambiguous retry retains the same command UUID and frozen input;
-a late response must not erase newer draft edits. `_v1` names this public protocol,
-not the geometry version. Catalog edits and confirmed order commands take effect
-immediately and are not reversed by geometry undo or draft discard.
+- Dart updates UI color immediately on tap.
+- `select_spot` RPC does the real work:
+  1. Validates Blueprint/Form exists
+  2. Checks availability (`order_product_ticket IS NULL`)
+  3. On select: sets `secret` + `secret_expiration_time` (temporary lock)
+  4. On deselect: verifies secret matches before clearing
 
-## Reservation and financial authority
+**If RPC fails (spot taken by another user), UI must roll back** -- handled by
+the package `VenueSeatPicker` around Festapp's `select_spot` callback.
 
-Both customer pickers apply optimistic presentation through the package and
-rollback rejected callbacks. Only `select_spot` creates/releases the actual
-secret/expiry hold. SQL locks the complete atomic unit, validates form offers,
-visibility, maximum and shared PIC capacity, then changes all members or none.
-An owned retry keeps its original expiry; release remains possible after an
-offer closes. Existing active addressed holds count through PIC quantities even
-when the held spot has no direct inventory context. They use the existing spot
-hold records, not a second reservation ledger.
+## Gotchas
 
-Standing quantity uses actual offered form product fields and the existing
-inventory/finalization owner. Changing quantity does not create a seat hold.
-Checkout uses `send-ticket-order` and `create_ticket_order_client_sync_v1`;
-admin replacement uses `replace_blueprint_order_client_sync_v1` and the existing
-conflict/cancellation owner. Swaps use the existing preview, receipted command,
-financial recalculation and history. Clients never calculate authoritative money
-or publish a success before the command receipt. Refresh restores server state.
+- **SVG Coordinates**: Do not change `BlueprintModel` parsing without verifying the SVG export format. Coordinate mapping is fragile.
+- **Spot -> Product linking**: `BlueprintModel.findObject` locates objects by ID; complex logic links seat coordinates to Product IDs.
 
-## Fonts, images and setup
+## Data Flow
 
-Font outlines reuse Ticket Editor's catalog and authorized resolver. Public readers
-receive only referenced validated resources. The existing Image Worker processes
-backgrounds, and an authorized one-purpose HMAC registers final byte hash, raster
-dimensions, MIME and length. Canonical save checks owner scope and readiness;
-clients verify/decode bytes into transient renderer resources. Neither source SVG,
-private image records nor proof keys enter the public document.
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant D as Dart UI
+    participant SQL as PostgreSQL
+    participant EF as Edge Function
 
-Setup drafts persist typed geometry and commercial bindings without source spot
-IDs or binary resources. Unit-scoped resources work before the occasion exists.
-Final creation remaps identities through existing product/inventory and aggregate
-save owners. Shared configuration-copy helpers preserve exact resources and named
-slots, with no reservations. The separately marked offline demo uses package
-fixtures only and calls no business commands.
+    U->>D: Tap seat
+    D->>D: Optimistic UI update (color)
+    D->>SQL: select_spot RPC
+    SQL-->>SQL: Check availability + set secret + expiration
+    SQL-->>D: OK / Error (roll back UI)
+    U->>D: Submit order
+    D->>EF: send-ticket-order (spots + payload)
+    EF->>SQL: Create order + tickets
+    EF-->>D: Confirmation
+```
+
+## SQL RPCs
+
+- `select_spot` -- locks/unlocks seat with secret and expiration
+- `create_ticket_order_client_sync_v1` -- receipted order creation via `send-ticket-order`
+- `replace_blueprint_order_client_sync_v1` -- atomic seat/order replacement via the same Edge boundary
+
+Replacement still calls `confirm_blueprint_order_change_internal_v1` inside its
+transaction. The original SQL source is retained for that implementation and
+historical schema reconstruction; lack of direct frontend calls does not make
+the domain logic obsolete.

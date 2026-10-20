@@ -16,6 +16,15 @@ Most specific wins. This applies to both template content AND banners/wrappers.
 
 Banner upload auto-regenerates wrapper HTML via `update_entity_email_banner` RPC.
 
+## Global order defaults
+
+`database/seeds/order_symbol_email_defaults.sql` owns the five global order
+messages. Confirmation, update, reminder and payment-received content use
+`{{balanceReasoning}}` so free orders, deposits and remaining balances use the
+producer's actual payment state. Never replace it with unconditional payment
+instructions or example organizer/site text. Imported global copies can share a
+code; the seed synchronizes their content while retaining IDs and scoped overrides.
+
 ## Editor visibility
 
 `get_all_email_templates` explicitly lists editor-supported codes. Order templates

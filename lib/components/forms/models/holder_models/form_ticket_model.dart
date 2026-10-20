@@ -1,4 +1,3 @@
-import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
@@ -6,8 +5,6 @@ import 'field_holder.dart';
 
 class FormTicketModel {
   int? ticketId;
-  final String? blueprintAreaNodeId;
-  final Map<int, FormOptionProductModel> productDefaults;
   BlueprintSeat? seat;
   final List<FieldHolder> ticketValues;
   final GlobalKey<FormBuilderState> ticketKey;
@@ -17,8 +14,6 @@ class FormTicketModel {
     required this.ticketKey,
     this.seat,
     this.ticketId,
-    this.blueprintAreaNodeId,
-    this.productDefaults = const {},
   });
 
   @override
@@ -26,10 +21,8 @@ class FormTicketModel {
       identical(this, other) ||
       other is FormTicketModel &&
           runtimeType == other.runtimeType &&
-          (seat == null || other.seat == null
-              ? identical(ticketKey, other.ticketKey)
-              : seat!.seat!.id! == other.seat!.seat!.id!);
+          seat!.seat!.id! == other.seat!.seat!.id!;
 
   @override
-  int get hashCode => seat?.seat?.id?.hashCode ?? identityHashCode(ticketKey);
+  int get hashCode => seat!.seat!.id!.hashCode;
 }
