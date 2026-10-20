@@ -78,6 +78,31 @@ CREATE FUNCTION public.selected(p_id bigint) RETURNS text AS $$new$$ LANGUAGE sq
             with self.assertRaisesRegex(ValueError, 'not effective at release head'):
                 contract.render(root)
 
+    def test_retired_signature_is_checked_absent_and_cannot_be_revived(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.make_release(root)
+            p = root / 'automation/canonical-source-contract.json'
+            config = json.loads(p.read_text())
+            config['retiredSignatures'] = ['public.removed(text)']
+            p.write_text(json.dumps(config))
+            self.assertIn("to_regprocedure('public.removed(text)') IS NULL", contract.render(root))
+            (root / 'supabase/migrations/20260103000000.sql').write_text(
+                'CREATE FUNCTION public.removed(p_id text) RETURNS text AS $$revived$$ LANGUAGE sql;')
+            with self.assertRaisesRegex(ValueError, 'Retired implementation remains reachable'):
+                contract.render(root)
+
+    def test_different_function_names_cannot_own_the_same_receipted_operation(self):
+        body = "PERFORM public.begin_client_mutation_v1(p_id,'profile.user.save',oc,actor,hash);"
+        with self.assertRaisesRegex(ValueError, 'Multiple transaction owners for profile.user.save'):
+            contract.command_transaction_owners({'public.command()': body, 'public.renamed_copy()': body})
+
+    def test_actor_admission_branches_inside_one_command_share_one_owner(self):
+        body = """PERFORM public.begin_anonymous_client_mutation_v1(p_id,'feedback.submit',oc,client,hash);
+PERFORM public.begin_client_mutation_v1(p_id,'feedback.submit',oc,actor,hash);"""
+        self.assertEqual(contract.command_transaction_owners({'public.feedback()': body}),
+                         {'feedback.submit': {'public.feedback()'}})
+
 
 if __name__ == '__main__':
     unittest.main()

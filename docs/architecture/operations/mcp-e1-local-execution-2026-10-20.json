@@ -1,0 +1,54 @@
+{
+  "status": "E1_implemented_locally_verified_canonical_write_registration_disabled",
+  "productionApplied": false,
+  "blueprintV2Included": false,
+  "canonicalProfileOperations": [
+    "context.inspect",
+    "ticket_layouts.inspect",
+    "ticket_layouts.preview"
+  ],
+  "disposableLocalAdditionalOperations": [
+    "ticket_layouts.save",
+    "ticket_layouts.pending",
+    "ticket_layouts.resume"
+  ],
+  "checks": {
+    "nodeTestsIncludingOrdinaryRolePostgresIntegration": 27,
+    "skipped": 0,
+    "existingSqlTests": 2,
+    "diffCheck": "pass"
+  },
+  "limitations": [
+    "Auth/HTTP/Keychain boundaries simulated",
+    "PostgreSQL integration uses an outer rollback transaction, not crash durability",
+    "Live login/client configuration not verified",
+    "Canonical legacy-writer and executor readiness gates remain open"
+  ],
+  "sourceHashes": {
+    "database/tests/ticket_layout_authoring_test.sql": "46f81d1c5952e92002588ba6d94b26f8721f27cf0e09645a03e010851d462780",
+    "database/tests/ticket_layout_mcp_read_test.sql": "3b7b084f7c784cdc7582fb1c9640b6c6679405b9667c458bcb813cec5ed7ed9d",
+    "tools/festapp/.gitignore": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+    "tools/festapp/README.md": "bd11b7c93b4d62e259e6bb8cd685b4b93b81ce8ac4791852e47cf2f5af4fcfac",
+    "tools/festapp/package-lock.json": "ee2b9b41ca9f2aabbb3c7c952718b7561aee829cf92bd515af2ef875612d2084",
+    "tools/festapp/package.json": "e04c56d70c652d9c4700e52bd64d3041ddccec412a023987af5e639a7532e2ad",
+    "tools/festapp/src/auth/session.mjs": "8f5eb4721f60221ba5dcbfab0900a9a136469f43265e9f2aba09b711ead8e843",
+    "tools/festapp/src/cli/main.mjs": "b26444e5a0ed34a693a06a9ad8201a1a07b426ba1c86ea0ea8fb54545f53e77e",
+    "tools/festapp/src/context/profile.mjs": "233a83881ce1a1aab16905b825b85d6baabede9de2309859d643346905b1f48f",
+    "tools/festapp/src/context/tenant-profile.mjs": "80ba809f7e132dcda4a0fe574b330f37b1f71bfedca5e6176d9a7b5abb4628ce",
+    "tools/festapp/src/errors.mjs": "b65d69e96d1362d0f846c1cc05558f2ef769a32554e81a1b45364477bbb787a9",
+    "tools/festapp/src/mcp/server.mjs": "be121db4facc0a60ec5cf490e235650727b63e24b6397b5bcc801c7475e571fd",
+    "tools/festapp/src/operations/catalog.mjs": "e9e92a9461006d625cd65cf669a4d22bfdd3d15558d3ef4b42b4628f31049ab0",
+    "tools/festapp/src/operations/intent-store.mjs": "efce1cd4bfd8674379f8137b3a11f4157dbd060c1eb8a428c4dd94a85d856086",
+    "tools/festapp/src/operations/layout-contract.mjs": "ad31cbf61043a501bd1ee9c1f89c5bec3feb40b88f0e11f1a5c6c3c54024954c",
+    "tools/festapp/src/operations/layout-save.mjs": "14ed2258a6ea7454c499ab2ed967d0f4a22657b5e32a247f9425447086234427",
+    "tools/festapp/src/operations/preview.mjs": "2600cfab36dcbc4c0a2d58b8fef996b63d549ebfce73fbcf305b1255dcbefef7",
+    "tools/festapp/test/canonical_preview.ts": "e5939c466f5d69f8614e3c898d284248defe2be03f5c38d39ce74836765ff89c",
+    "tools/festapp/test/context.test.mjs": "9b3c7b83818514b5731b0941102c18db2a7d265b41ec7e980663846a6844b190",
+    "tools/festapp/test/fixture.mjs": "fa7ec166464a9515ff3c6c3f2171658edda1eb3fe901d27963bea3c5a77859a3",
+    "tools/festapp/test/layout-postgres.test.mjs": "c42341cae389363f2d67d474020b6a9a42e361c3a2b13653a7df09fe9d410145",
+    "tools/festapp/test/layout-save.test.mjs": "fdb39fc73207e9ad7444bab3f444a7d2500d60fff57b4247885cd7c2f8e4bdfb",
+    "tools/festapp/test/operations.test.mjs": "fb5b5aa878af3c32fb1fd355c042417004186bb8074c597fe0591b1da4523fe8",
+    "tools/festapp/test/render-fixture.mjs": "a62d5d1f5180ba3b23c023272bdfca31d2334b9a4ac94866a904d8b34bbbb750",
+    "tools/festapp/test/stdio.test.mjs": "25d4c5ccd583b96702e31d53a685a04d0aaa68c4048b39dac71175d88de9791c"
+  }
+}

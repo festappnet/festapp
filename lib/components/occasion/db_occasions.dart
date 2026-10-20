@@ -4,14 +4,13 @@ import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/information/game/game_settings_model.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/occasion/occasion_commands.dart';
-import 'package:fstapp/components/occasion/occasion_media_copier.dart';
+import 'package:fstapp/components/occasion/occasion_duplication.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion_services/service_item_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbOccasions {
@@ -191,51 +190,28 @@ class DbOccasions {
     occasionModel.markTicketLayoutSaved();
   }
 
+  static final _duplicator = OccasionDuplicator(
+    commands: _commands,
+    loadOccasion: getOccasion,
+    copyImage: DbImages.createCopyOfImage,
+  );
+
   /// Returns false only when the event exists but its media could not be copied.
   static Future<bool> duplicateOccasion(int oc,
       {int? targetUnitId, String locale = 'en'}) async {
-    final ocId = await _commands.duplicate(oc,
+    final result = await _duplicator.duplicate(oc,
         targetUnitId: targetUnitId, locale: locale);
-
-    try {
-      final occasion = await getOccasion(ocId);
-      await copyOccasionMedia(occasion, DbImages.createCopyOfImage);
-      await updateOccasion(occasion);
-      return true;
-    } catch (error, stackTrace) {
-      // The database copy is committed. Keep its existing public media links
-      // and report the partial result instead of inviting a second copy.
-      debugPrint('Occasion $ocId was copied, but media setup failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
-      return false;
-    }
+    return result.mediaCopied;
   }
 
   /// Keeps the committed result visible even if the following media work fails.
   static Future<({int occasionId, bool mediaCopied})> duplicateDemoOccasion(
-      int source,
-      {required int targetUnitId,
-      required String commandId,
-      String locale = 'en'}) async {
-    final response =
-        await _supabase.rpc('duplicate_occasion_client_sync_v1', params: {
-      'p_occasion': source,
-      'p_target_unit': targetUnitId,
-      'p_command_id': commandId,
-      'p_locale': locale,
-    });
-    final id = (response['data']['occasionId'] as num).toInt();
-    var ready = false;
-    try {
-      final copy = await getOccasion(id);
-      await copyOccasionMedia(copy, DbImages.createCopyOfImage);
-      await updateOccasion(copy);
-      ready = true;
-    } catch (_) {
-      // Never repeat SQL creation to recover a media failure.
-    }
-    return (occasionId: id, mediaCopied: ready);
-  }
+          int source,
+          {required int targetUnitId,
+          required String commandId,
+          String locale = 'en'}) =>
+      _duplicator.duplicate(source,
+          targetUnitId: targetUnitId, commandId: commandId, locale: locale);
 
   static Future<void> deleteOccasion(int oc) async {
     await _commands.delete(oc);
