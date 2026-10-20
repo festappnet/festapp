@@ -13,7 +13,7 @@ services:
     cpus: 0.5
     pids_limit: 64
     stop_grace_period: 35s
-    tmpfs: [/tmp:size=16m,noexec,nosuid]
+    tmpfs: ["/tmp:size=16m,noexec,nosuid"]
     volumes:
       - ${FESTAPP_MCP_CONFIG:?private pilot configuration}:/run/festapp/config.json:ro
       - ${FESTAPP_MCP_SECRETS:?separate protected issuer keys}:/run/festapp/secrets.json:ro
