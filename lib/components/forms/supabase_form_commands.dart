@@ -6,10 +6,9 @@ import 'package:fstapp/components/forms/form_commands.dart';
 
 class SupabaseFormCommands implements FormCommands {
   SupabaseFormCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseFormCommands.withTransport(this._transport);
-
   final ClientCommandTransport _transport;
 
   @override
@@ -39,8 +38,8 @@ class SupabaseFormCommands implements FormCommands {
   }
 
   @override
-  Future<void> delete(int formId) async {
-    await _invoke('delete_form_client_sync_v1', {'p_form_id': formId});
+  Future<void> delete(int formId, {required int expectedVersion}) async {
+    await _invoke('delete_form_client_sync_v1', {'p_form_id': formId, 'p_expected_version': expectedVersion});
   }
 
   @override

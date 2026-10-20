@@ -1,13 +1,10 @@
 import 'package:fstapp/components/users/user_strings.dart';
-import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/i_has_id.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
-import 'package:fstapp/components/groups/group_participant_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/database_tables/tb.dart';
-import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/components/groups/db_groups.dart';
 import 'package:fstapp/components/users/db_users.dart';
@@ -56,13 +53,8 @@ class UsersTabHelper {
     var chosenGroup = await DialogHelper.showAddToGroupDialogAsync(
         context, await DbGroups.getAllUserGroupInfo());
     if (chosenGroup != null) {
-      final existingIds =
-          chosenGroup.participants!.map((p) => p.userInfo!.id).toSet();
-      chosenGroup.participants!.addAll(users
-          .where((u) => !existingIds.contains(u.id))
-          .map(
-              (u) => GroupParticipantModel(userInfo: UserInfoModel(id: u.id))));
-      await DbGroups.updateUserGroupInfo(chosenGroup);
+      await DbGroups.addMembers(
+          chosenGroup, users.map<String>((u) => u.id as String).toList());
       ToastHelper.Show(
           context, CommonStrings.updatedItem(item: chosenGroup.title));
     }
@@ -123,7 +115,7 @@ class UsersTabHelper {
       var reinviteConfirm = await DialogHelper.showConfirmationDialog(
         context,
         UserStrings.invite,
-        OccasionTeamInvitationStrings.text('legacyReinviteConfirm'),
+        UserStrings.reinviteConfirm,
       );
       if (!reinviteConfirm) {
         await processInvites(context, newUsers);
@@ -141,7 +133,7 @@ class UsersTabHelper {
     var confirm = await DialogHelper.showConfirmationDialog(
       context,
       UserStrings.invite,
-      "${OccasionTeamInvitationStrings.text('legacyInviteHint')} (${users.length}):\n${users.map((u) => u.toBasicString()).join(",\n")}",
+      "${UserStrings.inviteInfo} (${users.length}):\n${users.map((u) => u.toBasicString()).join(",\n")}",
     );
 
     if (!confirm) return;

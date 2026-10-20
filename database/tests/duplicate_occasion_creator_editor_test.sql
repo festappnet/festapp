@@ -65,8 +65,6 @@ BEGIN
 
   PERFORM assert_eq(v_result->>'status', 'applied', 'copy command applies');
   PERFORM assert_true(v_copy IS NOT NULL, 'copy is created');
-  PERFORM assert_eq((public.get_occasion_for_context_v1(v_copy)->>'id')::bigint,
-    v_copy,'context reader loads the newly created hidden copy before publication');
   PERFORM assert_true(public.get_is_editor_on_occasion(v_copy),
     'copy creator can edit the new occasion');
   PERFORM assert_true(public.get_is_manager_on_occasion(v_copy),

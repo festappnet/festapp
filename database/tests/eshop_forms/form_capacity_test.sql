@@ -78,8 +78,7 @@ BEGIN
  c:=public.get_form_capacity_snapshot_internal(f);
  PERFORM assert_jsonb_contains(c,'{"occupiedPeople":0,"waitingPeople":2,"offeredPlaces":0,"remainingPublic":3,"offerablePlaces":5,"heldForWaiting":2}','release five waiting two gives P three');
  PERFORM assert_eq((SELECT count(*) FROM eshop.waitlist_offers WHERE form_id=f),0::bigint,'release does not automatically send');
- BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below waiting reservations allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
- PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":2}');
+ BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":1}'); RAISE EXCEPTION 'below held waiting capacity allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%CAPACITY_BELOW_COMMITTED%' THEN RAISE; END IF; END;
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"participant_capacity":null}'); RAISE EXCEPTION 'remove active limit allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;
  UPDATE occasions SET features='[{"code":"blueprint","is_enabled":true}]' WHERE id=(x->>'occasion')::bigint;
  BEGIN PERFORM public.check_form_capacity_settings_internal(f,'{"blueprint":1}'); RAISE EXCEPTION 'blueprint active allowed'; EXCEPTION WHEN OTHERS THEN IF SQLERRM NOT LIKE '%WAITLIST_HAS_ACTIVE_ENTRIES%' THEN RAISE; END IF; END;

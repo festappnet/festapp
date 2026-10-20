@@ -1,0 +1,13 @@
+# Canonical backend integration, 2026-10-20
+
+The selected backend refactor is integrated over canonical main 77e5987413ca9b28f1fc1fb9ee91f4bac696b03c in an isolated checkout. The original dirty feature checkout was preserved. User authorization now includes publication to main and deployment of prod/festapptickets only.
+
+The deterministic forward assembly gives each selected SQL signature one authored owner. Existing main activity graph/history/UTC handling, actor/context guards, group ownership and companion projections, safe waitlist-order deletion, Auth admission, free-text ticket layout and product price/delivery behavior were retained while porting the refactor. New commands cover atomic authoring, inventory reconciliation, cancellation notification intent, additive membership and receipt recovery after teardown. Current Dart callers use those commands and durable principal-bound intents.
+
+Released fixed-signature group/profile/map/game adapters delegate to canonical owners. Legacy two-step activity publication is fenced with 426. No global contraction or minimum-build increase was performed: the existing gate (620, unpaused) remains authoritative. These adapters have no editor baseline and cannot establish MCP readiness. Remove them only after verified installed-consumer retirement and the existing contraction gates. No MCP/CLI/OAuth integration is enabled.
+
+Effective ACL closure removes ordinary table, column, inherited and TRUNCATE writes on the selected command-owned tables while preserving reads and trusted service boundaries. Auth budgets, mutation receipt identity and hashes, payment and external invoice policies remain unchanged. Cancellation queues one automatic notice transactionally; manual resend remains separate.
+
+The integration verification receipt records actual checks. Local Docker metadata I/O failure was resolved by an explicitly authorized Colima restart; only the disposable test project was rebuilt. Seventy-one SQL tests passed across the initial batch and the targeted correction batch. Twenty-six real multi-connection/catalog tests passed across the initial batch and targeted fixture corrections. No production fixtures, test emails or connector activation were used.
+
+Before production SQL: seal canonical source, verify target and ledger, capture protected rollback evidence, build the selected client artifact, then apply only the exact forward migration and ledger atomically. Deploy locally using automation/deploy_direct.sh and perform coherent live-version/legal/build probes. Production observation is read-only and does not prove dormant clients or offline intents are absent.

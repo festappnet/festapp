@@ -12,10 +12,11 @@ BEGIN
   END IF;
   -- Deletion removes the order, so a lost response is recovered from its receipt.
   IF p_command_id IS NOT NULL THEN
-    SELECT r.response INTO v_response FROM public.client_mutation_receipts r
+    SELECT CASE WHEN r.status='expired' THEN public.expired_client_mutation_response_v1(r)
+      ELSE r.response END INTO v_response FROM public.client_mutation_receipts r
     JOIN public.occasions oc ON oc.id=r.occasion
     WHERE r.command_id=p_command_id AND r.actor_id=auth.uid()
-      AND r.command_name='inventory.order.delete' AND r.status='completed'
+      AND r.command_name='inventory.order.delete' AND r.status IN ('completed','expired')
       AND r.request_sha256=encode(extensions.digest(convert_to(
         jsonb_build_object('order',p_order)::text,'UTF8'),'sha256'),'hex')
       AND (public.get_is_manager_on_unit(oc.unit) OR public.get_is_editor_on_unit(oc.unit)

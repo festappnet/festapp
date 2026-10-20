@@ -1,3 +1,6 @@
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
+import 'package:festapp_core/sync.dart';
+import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +24,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbEshop {
   static final _supabase = Supabase.instance.client;
-  static EshopCommands get commands => SupabaseEshopCommands(_supabase,
-      useClientSync: () => ClientSyncRuntime.isV1Selected);
+  static EshopCommands get commands => SupabaseEshopCommands(_supabase);
 
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
       int orderId) async {
@@ -194,18 +196,6 @@ class DbEshop {
     );
   }
 
-  static Future<void> updateProductInventoryContexts(
-      int productId, List<ProductInventoryContextModel> contexts) async {
-    final contextsJson = contexts
-        .map((c) => {
-              'inventory_context_id': c.inventoryContextId,
-              'quantity': c.quantity
-            })
-        .toList();
-
-    await commands.updateProductInventoryContexts(productId, contextsJson);
-  }
-
   static Future<ProductsEditBundle> getProductsAndTypesForOccasion(
       String occasionLink) async {
     final response = await _supabase.rpc(
@@ -290,6 +280,32 @@ class DbEshop {
             'p_occasion_link': link,
             'p_change_time': time.toUtc().toIso8601String()
           }));
+  static Future<void> saveNewProductWaveTarget(
+      String occasionLink,
+      ProductPriceWave wave,
+      int productId,
+      double? price,
+      bool? hidden,
+      int? priceRevision,
+      int? visibilityRevision) async {
+    final response = ClientCommandResponse.from(
+        await ClientCommandTransport.supabase(_supabase, durable: true)
+            .invoke('save_product_wave_target_client_sync_v1', {
+      'p_target': {
+        'occasion_link': occasionLink,
+        'product_id': productId,
+        'change_time': wave.time.toUtc().toIso8601String(),
+        'price': price,
+        'is_hidden': hidden,
+        'expected_price_revision': priceRevision,
+        'expected_visibility_revision': visibilityRevision,
+      }
+    }));
+    if (response.code != 200)
+      throw StateError('Product wave target was rejected');
+    await applyClientCommandReplacements(response);
+  }
+
   static Future<void> saveProductWaveTarget(
       ProductPriceWave wave,
       int productId,
@@ -343,20 +359,29 @@ class DbEshop {
     });
   }
 
-  static Future<int> updateProduct(ProductModel product) =>
-      commands.saveProduct(product.toJson());
-
-  static Future<void> deleteProduct(int productId) =>
-      commands.deleteProduct(productId);
+  static Future<ProductModel> saveProductBasics(ProductModel product) async {
+    final saved = await commands.saveProduct({
+      'id': product.id,
+      'title': product.title,
+      'price': product.price,
+      if (product.id == null) ...{
+        'product_type': product.productTypeId,
+        'occasion': product.occasion,
+        'currency_code': product.currencyCode,
+      },
+      if (product.id != null)
+        'expected_aggregate_version': product.aggregateVersion,
+    });
+    return product.copyWith(
+        id: saved.id, aggregateVersion: saved.aggregateVersion);
+  }
 
   /// Fetches all resources associated with a specific inventory pool ID.
   static Future<List<ResourceModel>> getResourcesForInventoryPool(
       int inventoryPoolId) async {
     try {
       final response = await _supabase.rpc(
-        ClientSyncRuntime.isV1Selected
-            ? 'get_resources_for_inventory_pool_v1'
-            : 'get_resources_for_inventory_pool',
+        'get_resources_for_inventory_pool_v1',
         params: {'p_inventory_pool_id': inventoryPoolId},
       );
 

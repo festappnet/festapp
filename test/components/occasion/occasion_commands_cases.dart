@@ -13,6 +13,41 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  test('layout save sends only the narrow change and original revision',
+      () async {
+    late Map<String, dynamic> sent;
+    final commands = SupabaseOccasionCommands.withTransport(
+        ClientCommandTransport((name, parameters) async {
+      expect(name, 'save_occasion_client_sync_v1');
+      sent = parameters;
+      return {
+        'status': 'applied',
+        'code': 200,
+        'data': {
+          'occasion': {
+            'id': 7,
+            'is_open': false,
+            'is_hidden': false,
+            'is_promoted': false,
+            'aggregate_version': 8,
+          }
+        },
+        'sync': {'replacements': <Object>[]}
+      };
+    }));
+    final change = {
+      'expected': null,
+      'next': {'schemaVersion': 3},
+      'appearance': {'ticket_type': 'wide'}
+    };
+    final saved = await commands.saveTicketLayout(7, 7, change,
+        commandId: '00000000-0000-4000-8000-000000000001');
+    expect(sent['p_config'], {'id': 7, 'ticket_layout_change': change});
+    expect(sent['p_expected_version'], 7);
+    expect(saved.aggregateVersion, 8);
+    expect(sent['p_command_id'], '00000000-0000-4000-8000-000000000001');
+  });
+
   test('occasion save carries its loaded aggregate version', () async {
     late String functionName;
     late Map<String, dynamic> parameters;
@@ -21,13 +56,6 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -75,13 +103,6 @@ void main() {
       config =
           jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
       return {
-        'mutation': {
-          'commandId': '00000000-0000-4000-8000-000000000001',
-          'receiptId': '00000000-0000-4000-8000-000000000001',
-          'commitId': null,
-          'replayed': false,
-          'occurredAt': '2026-10-15T10:00:00Z'
-        },
         'status': 'applied',
         'code': 200,
         'data': {
@@ -117,13 +138,6 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': name.startsWith('duplicate')
@@ -150,13 +164,6 @@ void main() {
         expect(params['p_target_unit'], 23);
         expect(params['p_locale'], 'cs');
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {'occasionId': 12},
@@ -173,13 +180,6 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -212,13 +212,6 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {'message': 'deleted'},
@@ -237,13 +230,6 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': <String, dynamic>{},

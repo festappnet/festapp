@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.get_blueprint_for_edit(
     occasion_link TEXT
 )
 RETURNS JSONB
-LANGUAGE plpgsql
+LANGUAGE plpgsql STABLE
 SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
@@ -49,6 +49,7 @@ BEGIN
     -- Fetch blueprint details
     SELECT jsonb_build_object(
         'id', b.id,
+        'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='blueprint' AND scope_type='occasion' AND scope_id=b.occasion AND aggregate_id=b.id::text),0),
         'created_at', b.created_at,
         'data', b.data,
         'title', b.title,
@@ -97,6 +98,7 @@ BEGIN
     -- Fetch all products of type "spot", "taxi", "food"
     SELECT jsonb_agg(jsonb_build_object(
         'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
         'title', p.title,
         'price', p.price,
         'type', pt.type,

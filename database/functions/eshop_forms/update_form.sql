@@ -207,6 +207,8 @@ BEGIN
         DELETE FROM public.form_fields ff WHERE ff.id = ANY(deleted_fields);
         DELETE FROM eshop.planned_changes WHERE subject_id=ANY(deleted_products) AND change_type IN('products.price','products.is_hidden') AND NOT applied;
         DELETE FROM eshop.products p WHERE p.id = ANY(deleted_products);
+        DELETE FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion'
+          AND scope_id=occasion_id AND aggregate_id=ANY(ARRAY(SELECT id::text FROM unnest(deleted_products) id));
 
         ----------------------------------------------------------------------------
         -- Process form_fields array from input_data if present
@@ -313,6 +315,7 @@ BEGIN
                     ----------------------------------------------------------------------------
                     -- Process products within this product_type, if any
                     ----------------------------------------------------------------------------
+                    PERFORM public.advance_ticketing_authoring_version_internal_v1('product_type',occasion_id,product_type_id);
                     products_data := product_type_data->'products';
                     IF products_data IS NOT NULL AND products_data::TEXT <> 'null' THEN
                         product_array_data := '[]'::JSONB;
@@ -415,6 +418,7 @@ BEGIN
                                    AND product_type = product_type_id;
                             END IF;
 
+                            PERFORM public.advance_ticketing_authoring_version_internal_v1('product',occasion_id,product_id);
                             product_array_data := product_array_data || product_data;
                         END LOOP;
 
@@ -504,6 +508,9 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Validate that deadline_duration_seconds is zero, positive, or null
         ----------------------------------------------------------------------------
+        IF (input_data->'data'->>'reminder_interval_seconds')::bigint < 0 THEN
+            RAISE EXCEPTION 'reminder_interval_seconds must be zero or higher or null';
+        END IF;
         deadline_val := NULLIF(input_data->>'deadline_duration_seconds','')::BIGINT;
         IF deadline_val IS NOT NULL AND deadline_val < 0 THEN
             RAISE EXCEPTION '%',
@@ -548,6 +555,9 @@ BEGIN
         ----------------------------------------------------------------------------
         -- Update the main form record with all validated fields
         ----------------------------------------------------------------------------
+        IF input_data->>'blueprint' IS NOT NULL AND NOT EXISTS(
+          SELECT 1 FROM eshop.blueprints WHERE id=(input_data->>'blueprint')::bigint AND occasion=occasion_id) THEN
+          RAISE EXCEPTION '%',jsonb_build_object('code',403,'message','Foreign blueprint')::text; END IF;
         PERFORM public.check_form_capacity_settings_internal(form_id,input_data);
         UPDATE public.forms
            SET
@@ -556,15 +566,15 @@ BEGIN
                show_remaining_capacity = CASE WHEN input_data ? 'show_remaining_capacity' THEN (input_data->>'show_remaining_capacity')::boolean ELSE show_remaining_capacity END,
                waitlist_offer_duration_seconds = CASE WHEN input_data ? 'waitlist_offer_duration_seconds' THEN (input_data->>'waitlist_offer_duration_seconds')::integer ELSE waitlist_offer_duration_seconds END,
                capacity_revision = capacity_revision+1,
-               title = input_data->>'title',
-               data = input_data->'data',
-               header = input_data->>'header',
-               header_off = input_data->>'header_off',
+               title = CASE WHEN input_data ? 'title' THEN input_data->>'title' ELSE title END,
+               data = CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END,
+               header = CASE WHEN input_data ? 'header' THEN input_data->>'header' ELSE header END,
+               header_off = CASE WHEN input_data ? 'header_off' THEN input_data->>'header_off' ELSE header_off END,
                link = link_param,
-               blueprint = NULLIF(input_data->>'blueprint','')::BIGINT,
-               bank_account = bank_account_val,
-               deadline_duration_seconds = deadline_val,
-               is_open = COALESCE((input_data->>'is_open')::BOOLEAN, true)
+               blueprint = CASE WHEN input_data ? 'blueprint' THEN NULLIF(input_data->>'blueprint','')::BIGINT ELSE blueprint END,
+               bank_account = CASE WHEN input_data ? 'bank_account' THEN bank_account_val ELSE bank_account END,
+               deadline_duration_seconds = CASE WHEN input_data ? 'deadline_duration_seconds' THEN deadline_val ELSE deadline_duration_seconds END,
+               is_open = CASE WHEN input_data ? 'is_open' THEN (input_data->>'is_open')::boolean ELSE is_open END
          WHERE id = form_id;
 
         ----------------------------------------------------------------------------
@@ -580,9 +590,7 @@ BEGIN
          LIMIT 1;
 
         -- If the setting is found, call the function to rebuild the reminder queue.
-        IF v_seconds_before_deadline IS NOT NULL THEN
-            PERFORM public.queue_payment_reminders(occasion_id, v_seconds_before_deadline);
-        END IF;
+        PERFORM public.queue_payment_reminders(occasion_id, COALESCE(v_seconds_before_deadline,86400));
 
         ----------------------------------------------------------------------------
         -- Prepare a success response
@@ -595,7 +603,7 @@ BEGIN
             'form_fields', form_fields_data
         );
 
-    EXCEPTION WHEN OTHERS THEN
+    EXCEPTION WHEN raise_exception THEN
         -- Catch any exception and attempt to parse it as JSON; if not JSON, wrap it in our own JSON.
         result := CASE
             WHEN left(SQLERRM, 1) = '{' THEN SQLERRM::JSONB
@@ -606,3 +614,5 @@ BEGIN
     RETURN result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.update_form_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;

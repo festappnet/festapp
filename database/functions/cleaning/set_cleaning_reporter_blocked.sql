@@ -1,21 +1,9 @@
--- Cleaning service — block/unblock a reporter (anti-spam hard ban, feature B).
--- Sets occasion_users.is_cleaning_blocked for the target user on the occasion and
--- audits who/when into occasion_users.data (cleaning_blocked_by / cleaning_blocked_at),
--- cleared on unblock.
---
--- Rights are asymmetric (plan section 2, open question B): the cleaning crew may
--- BLOCK a repeat offender straight from a report, but UN-blocking is editor/admin
--- only. So p_blocked = true requires crew rights, p_blocked = false requires
--- editor rights. Envelope {code, message, data} like resolve_cleaning_place.
-CREATE OR REPLACE FUNCTION public.set_cleaning_reporter_blocked_internal_v1(
-  p_occasion bigint,
-  p_user uuid,
-  p_blocked boolean
-) RETURNS jsonb
-  LANGUAGE plpgsql
-  SECURITY DEFINER
-  SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.set_cleaning_reporter_blocked_internal_v1(p_occasion bigint, p_user uuid, p_blocked boolean)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   v_caller uuid := auth.uid();
   v_found boolean;
@@ -64,14 +52,14 @@ BEGIN
     'data', jsonb_build_object('blocked', p_blocked)
   );
 END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.set_cleaning_reporter_blocked(
-  p_occasion bigint,
-  p_user uuid,
-  p_blocked boolean
-) RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.set_cleaning_reporter_blocked_internal_v1(
-    p_occasion, p_user, p_blocked
-  );
-$$;
+$function$;
+REVOKE ALL ON FUNCTION public.set_cleaning_reporter_blocked_internal_v1(bigint,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.set_cleaning_reporter_blocked(p_occasion bigint,p_user uuid,p_blocked boolean)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ result:=public.set_cleaning_reporter_blocked_client_sync_v1(p_occasion,p_user,p_blocked,extensions.gen_random_uuid());
+ RETURN jsonb_build_object('code',result->'code','message',result#>'{data,message}','data',result->'data');
+END $$;
+REVOKE ALL ON FUNCTION public.set_cleaning_reporter_blocked(bigint,uuid,boolean) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.set_cleaning_reporter_blocked(bigint,uuid,boolean) TO authenticated;

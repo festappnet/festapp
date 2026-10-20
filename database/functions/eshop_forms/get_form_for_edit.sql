@@ -1,7 +1,7 @@
 -- Fix get_form_for_edit: Remove bigint = uuid comparison and add can_delete
 CREATE OR REPLACE FUNCTION public.get_form_for_edit(form_link text)
  RETURNS jsonb
- LANGUAGE plpgsql
+ LANGUAGE plpgsql STABLE
  SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
@@ -41,6 +41,7 @@ BEGIN
     ) INTO canDelete;
 
     SELECT jsonb_build_object(
+        'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='form' AND scope_type='occasion' AND scope_id=f.occasion AND aggregate_id=f.id::text),0),
         'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
         'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
         'organizationIdentity',(SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
@@ -67,6 +68,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', pt.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product_type' AND scope_type='occasion' AND scope_id=pt.occasion AND aggregate_id=pt.id::text),0),
             'title', pt.title,
             'description', pt.description,
             'type', pt.type,
@@ -94,6 +96,7 @@ BEGIN
     SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
             'can_delete', usage.reason IS NULL,
             'delete_blocked_reason', usage.reason,
             'occasion', p.occasion,
@@ -182,10 +185,7 @@ BEGIN
             'account_number_human_readable', ba.account_number_human_readable,
             'title', ba.title,
             'supported_currencies', ba.supported_currencies,
-            'type', ba.type,
-            'bank_sync_warning', public.bank_sync_warning(ba.id),
-            'bank_sync', (SELECT jsonb_build_object('state',c.state,'mode',c.mode) FROM eshop.bank_sync_connections c
-              WHERE c.bank_account_id=ba.id OR c.id IN (SELECT a.connection_id FROM eshop.bank_sync_account_aliases a WHERE a.bank_account_id=ba.id))
+            'type', ba.type
         ) ORDER BY uba.priority ASC, ba.id ASC
     ), '[]'::jsonb)
     INTO availableBankAccountsData

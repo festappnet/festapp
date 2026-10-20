@@ -32,7 +32,7 @@ BEGIN
     WHERE form = p_form_id AND product_type IS NOT NULL;
 
     PERFORM 1 FROM public.occasions WHERE id=(SELECT occasion FROM public.forms WHERE id=p_form_id) FOR UPDATE;
-    IF EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=ANY(v_product_type_ids_to_check) AND public.ticket_layout_uses_product_type(pt.occasion,pt.id) AND NOT EXISTS(SELECT 1 FROM eshop.products p WHERE p.product_type=pt.id))
+    IF EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=ANY(v_product_type_ids_to_check) AND public.ticket_layout_uses_product_type(pt.occasion,pt.id) AND NOT EXISTS(SELECT 1 FROM eshop.products p WHERE p.product_type=pt.id) AND NOT EXISTS(SELECT 1 FROM public.form_fields ff WHERE ff.product_type=pt.id AND ff.form<>p_form_id))
     THEN RAISE EXCEPTION 'ticket_product_type_in_use'; END IF;
     -- Step 3: Delete the form fields unconditionally (after the response check).
     -- This severs the link from the form to the product types, fulfilling the
@@ -50,7 +50,7 @@ BEGIN
             SELECT 1
             FROM eshop.products p
             WHERE p.product_type = pt.id
-        );
+        ) AND NOT EXISTS(SELECT 1 FROM public.form_fields ff WHERE ff.product_type=pt.id);
 
         -- If we found any deletable product types, delete them.
         IF v_deletable_product_type_ids IS NOT NULL AND array_length(v_deletable_product_type_ids, 1) > 0 THEN
@@ -63,3 +63,4 @@ BEGIN
     DELETE FROM public.forms WHERE id = p_form_id;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.delete_form_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;

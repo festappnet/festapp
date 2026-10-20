@@ -1,25 +1,62 @@
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/supabase_form_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
+  test('form draft freezes shared product versions before edits or deletion',
+      () {
+    final original = ProductModel.fromJson(
+        {'id': 9, 'title': 'Original', 'aggregate_version': 4});
+    final type =
+        ProductTypeModel(id: 3, aggregateVersion: 2, products: [original]);
+    final field = FormFieldDraft(id: 11, productType: type);
+    final draft =
+        FormEditorDraft(id: 1, aggregateVersion: 7, relatedFields: [field]);
+    field.definition = field.definition.copyWith(
+        productType: type.copyWith(products: [
+      original.copyWith(title: 'Draft', aggregateVersion: 99)
+    ]));
+    draft.captureProductCatalog([
+      type.copyWith(products: [original.copyWith(aggregateVersion: 99)])
+    ]);
+    expect(draft.toEditedJson()['expected_product_versions'], {'9': 4});
+    expect(draft.toEditedJson()['expected_product_type_versions'], {'3': 2});
+    draft.removeField(field);
+    expect(draft.toEditedJson()['expected_product_versions'], {'9': 4});
+    expect(draft.toEditedJson()['deleted_field_ids'], [11]);
+    draft.acceptProductVersions({
+      'product_versions': {'9': 5},
+      'product_type_versions': {'3': 3}
+    });
+    expect(draft.toEditedJson()['expected_product_versions'], {'9': 5});
+    expect(original.copyWith(price: 15).aggregateVersion, 4);
+    expect(original.toJson().containsKey('aggregate_version'), false);
+  });
+
   test('form lifecycle and blueprint saves use dedicated command RPCs',
       () async {
     final calls = <String>[];
     final commands = SupabaseFormCommands.withTransport(
       ClientCommandTransport((name, params) async {
         calls.add(name);
+        if (name == 'delete_form_client_sync_v1') expect(params['p_expected_version'], 4);
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
-          'data': {'code': 200, 'formId': 8},
+          'mutation': {
+            'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
+            'commitId': '00000000-0000-4000-8000-000000000001',
+            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+          },
+          'data': {'code': 200,
+          'mutation': {
+            'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
+            'commitId': '00000000-0000-4000-8000-000000000001',
+            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+          }, 'formId': 8},
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -36,7 +73,7 @@ void main() {
       ),
       8,
     );
-    await commands.delete(8);
+    await commands.delete(8, expectedVersion: 4);
     await commands.save({'id': 1, 'occasion': 7});
     await commands.saveBlueprint({'id': 2, 'occasion': 7});
     expect(calls, [

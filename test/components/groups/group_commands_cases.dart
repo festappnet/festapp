@@ -7,6 +7,36 @@ import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
+  test('add members submits only the normalized additive selection', () async {
+    late String operation;
+    late Map<String, dynamic> sent;
+    final commands = SupabaseGroupCommands.withTransport(
+        ClientCommandTransport((name, parameters) async {
+      operation = name;
+      sent = parameters;
+      return {
+        'status': 'applied',
+        'code': 200,
+          'mutation': {
+            'commandId': parameters['p_command_id'],
+            'receiptId': parameters['p_command_id'],
+            'commitId': '00000000-0000-4000-8000-000000000001',
+            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+          },
+        'data': {'version': 1},
+        'sync': {'replacements': <Object>[]}
+      };
+    }));
+    const a = '00000000-0000-4000-8000-000000000001';
+    const b = '00000000-0000-4000-8000-000000000002';
+    await commands.addMembers(7, 9, [b, a, b]);
+    expect(operation, 'add_user_group_members_client_sync_v1');
+    expect(sent['p_users'], [a, b]);
+    expect(sent['p_group'], 9);
+    expect(sent['p_occasion'], 7);
+    expect(sent.containsKey('participants'), isFalse);
+  });
+
   test('group command sends members and private place as one aggregate',
       () async {
     late String functionName;
@@ -16,15 +46,14 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': {
-            'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
+          'mutation': {
+            'commandId': parameters['p_command_id'],
+            'receiptId': parameters['p_command_id'],
+            'commitId': '00000000-0000-4000-8000-000000000001',
+            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+          },
           'data': {
             'version': 4,
             'group': {
@@ -85,15 +114,14 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': {
-            'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
+          'mutation': {
+            'commandId': parameters['p_command_id'],
+            'receiptId': parameters['p_command_id'],
+            'commitId': '00000000-0000-4000-8000-000000000001',
+            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+          },
           'data': {'assignments': 1},
           'sync': {'replacements': <Object>[]},
         };

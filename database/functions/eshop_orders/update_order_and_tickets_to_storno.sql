@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_storno_221(order_id BIGINT)
+CREATE OR REPLACE FUNCTION public.cancel_order_domain_internal_v1(order_id BIGINT,p_notify boolean)
 RETURNS VOID
 LANGUAGE plpgsql
 SET search_path = public, extensions
@@ -6,7 +6,14 @@ AS $$
 DECLARE
     ticket_ids BIGINT[];
     updated_order_data jsonb;
+    v_order eshop.orders;
+    v_occasion public.occasions;
+    v_notice jsonb;
 BEGIN
+    PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
+    SELECT * INTO v_order FROM eshop.orders WHERE id=order_id FOR UPDATE;
+    IF v_order.id IS NULL THEN RAISE EXCEPTION 'Order not found'; END IF;
+    IF v_order.state='storno' THEN RETURN; END IF;
     PERFORM public.check_order_is_mutable(order_id);
     PERFORM public.cancel_order_email_intents(order_id);
     -- Retrieve all ticket ids associated with the order
@@ -51,5 +58,22 @@ BEGIN
         NOW()
     );
 
+    -- The full transition owns the durable automatic commitment for every caller.
+    SELECT * INTO v_occasion FROM public.occasions WHERE id=v_order.occasion;
+    IF p_notify AND position('@' in v_order.data->>'email')>0
+      AND length(v_order.data->>'email')<=320 THEN
+      v_notice:=public.enqueue_order_email('TICKET_ORDER_STORNO',
+        jsonb_build_object('order_id',order_id),v_occasion.organization,
+        v_occasion.id,v_occasion.unit);
+    END IF;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.cancel_order_domain_internal_v1(bigint,boolean)
+ FROM PUBLIC,anon,authenticated,service_role;
+-- Compatibility for trusted SQL callers; domain logic exists only above.
+CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_storno_221(order_id bigint)
+RETURNS void LANGUAGE sql SET search_path=public,extensions AS $$
+ SELECT public.cancel_order_domain_internal_v1(order_id,true);
+$$;
+REVOKE ALL ON FUNCTION public.update_order_and_tickets_to_storno_221(bigint)
+ FROM PUBLIC,anon,authenticated,service_role;

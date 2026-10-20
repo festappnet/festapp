@@ -93,8 +93,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           );
 
           // Call DB to create, get new ID
-          final newId = await DbEshop.updateProduct(newProduct);
-          newProduct = newProduct.copyWith(id: newId);
+          newProduct = await DbEshop.saveProductBasics(newProduct);
 
           setState(() {
             widget.blueprint.products ??= [];
@@ -110,12 +109,12 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           final originalProduct = widget.blueprint.products
               ?.firstWhereOrNull((p) => p.id == product.id);
           if (originalProduct != null) {
-            final updatedProduct =
+            var updatedProduct =
                 originalProduct.copyWith(title: newTitle, price: newPrice);
             // productTypeId and productTypeString are not changing
 
             // Call DB to update
-            await DbEshop.updateProduct(updatedProduct);
+            updatedProduct = await DbEshop.saveProductBasics(updatedProduct);
 
             setState(() {
               final index = widget.blueprint.products!.indexOf(originalProduct);

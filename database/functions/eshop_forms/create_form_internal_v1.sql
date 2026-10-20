@@ -16,6 +16,7 @@ BEGIN
     -- Create the new form
     INSERT INTO public.forms(
         title,
+        is_open,
         link,
         occasion,
         created_at,
@@ -25,6 +26,7 @@ BEGIN
     )
     VALUES (
         p_title,
+        false,
         NULL,
         p_occasion_id,
         now,

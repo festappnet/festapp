@@ -209,17 +209,28 @@ void main() {
     });
   });
 
-  group('specificFieldMappings', () {
-    test('contains expected field IDs', () {
-      expect(specificFieldMappings.containsKey('735'), isTrue);
-      expect(specificFieldMappings.containsKey('739'), isTrue);
-      expect(specificFieldMappings.containsKey('615'), isTrue);
+  group('occasion-defined scanner fields', () {
+    test('reads arbitrary field IDs supplied by the occasion', () {
+      final order = OrderModel();
+      order.data = {
+        'fields': [
+          {'custom-diet-2026': 'Vegan'},
+          {'custom-category-2026': 'Student'},
+        ],
+      };
+      expect(getFieldValue(order, 'custom-diet-2026'), 'Vegan');
+      expect(getFieldValue(order, 'custom-category-2026'), 'Student');
+      expect(getFieldValue(order, '735'), isNull);
     });
 
-    test('maps to non-empty labels', () {
-      for (final value in specificFieldMappings.values) {
-        expect(value, isNotEmpty);
-      }
+    test('matches numeric backend field keys using their string ID', () {
+      final order = OrderModel();
+      order.data = {
+        'fields': [
+          {987654: 'Guest'},
+        ],
+      };
+      expect(getFieldValue(order, '987654'), 'Guest');
     });
   });
 }

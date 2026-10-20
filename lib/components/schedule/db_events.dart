@@ -44,18 +44,13 @@ class DbEvents {
     currentScope: _currentSavedProgramScope,
     persist: _persistSavedProgram,
   );
-  static EventCommands get commands => SupabaseEventCommands(_supabase,
-      useClientSyncDelete: () => ClientSyncRuntime.isV1Selected);
+  static EventCommands get commands => SupabaseEventCommands(_supabase);
   static AttendanceCommands get _attendanceCommands =>
       SupabaseAttendanceCommands(_supabase);
   static SavedProgramCommands get _savedProgramCommands =>
       SupabaseSavedProgramCommands(
           _supabase, RightsService.currentOccasionId()!);
-  static SavedProgramCommands get _legacySavedProgramCommands =>
-      LegacySavedProgramCommands(
-        _supabase,
-        RightsService.currentOccasionId()!,
-      );
+
   static ExclusiveGroupCommands get _exclusiveGroupCommands =>
       SupabaseExclusiveGroupCommands(_supabase);
 
@@ -248,21 +243,16 @@ class DbEvents {
 
     dynamic result;
     try {
-      if (ClientSyncRuntime.isV1Selected) {
-        final response = await _attendanceCommands.setAttendance(
-          eventId: eventId,
-          participantId: userId,
-          action: AttendanceAction.signIn,
-        );
-        result = {
-          'code': response.code,
-          if (response.eventsRegistrationStart != null)
-            'events_registration_start': response.eventsRegistrationStart,
-        };
-      } else {
-        result = await _supabase
-            .rpc("sign_user_to_event", params: {"ev": eventId, "usr": userId});
-      }
+      final response = await _attendanceCommands.setAttendance(
+        eventId: eventId,
+        participantId: userId,
+        action: AttendanceAction.signIn,
+      );
+      result = {
+        'code': response.code,
+        if (response.eventsRegistrationStart != null)
+          'events_registration_start': response.eventsRegistrationStart,
+      };
     } catch (e) {
       // Offline: say so readably and behave like the non-200 branches
       // (toast + return); other errors keep today's behavior.
@@ -494,17 +484,12 @@ class DbEvents {
       String scope, int id, bool saved) async {
     if (_currentSavedProgramScope() != scope) return false;
     if (AuthService.isLoggedIn()) {
-      if (ClientSyncRuntime.isV1Selected) {
-        await _savedProgramCommands.update(
-          [id],
-          saved ? SavedProgramMode.join : SavedProgramMode.remove,
-        );
-      } else {
-        final savedIds = await _legacySavedProgramCommands.update(
-          [id],
-          saved ? SavedProgramMode.join : SavedProgramMode.remove,
-        );
-        if (_currentSavedProgramScope() != scope) return false;
+      final savedIds = await _savedProgramCommands.update(
+        [id],
+        saved ? SavedProgramMode.join : SavedProgramMode.remove,
+      );
+      if (_currentSavedProgramScope() != scope) return false;
+      if (!ClientSyncRuntime.isV1Selected) {
         await OfflineDataService.saveMyScheduleDataIfCurrent(
           savedIds,
           () => _currentSavedProgramScope() == scope,
@@ -612,87 +597,28 @@ class DbEvents {
   }
 
   static Future<List<ExclusiveGroupModel>> getAllExclusiveGroups() async {
-    if (ClientSyncRuntime.isV1Selected) {
-      return _exclusiveGroupCommands.list(RightsService.currentOccasionId()!);
-    }
-    var data = await _supabase
-        .from(Tb.exclusive_groups.table)
-        .select("${Tb.exclusive_groups.id}, "
-            "${Tb.exclusive_groups.title}, "
-            "${Tb.exclusive_events.table}(${Tb.exclusive_events.event})")
-        .eq(Tb.exclusive_groups.occasion, RightsService.currentOccasionId()!);
-    return List<ExclusiveGroupModel>.from(
-        data.map((x) => ExclusiveGroupModel.fromJson(x)));
+    return _exclusiveGroupCommands.list(RightsService.currentOccasionId()!);
   }
 
   static Future<void> updateExclusiveGroup(ExclusiveGroupModel model) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final saved = await _exclusiveGroupCommands.save(
-        RightsService.currentOccasionId()!,
-        model,
-      );
-      model
-        ..id = saved.id
-        ..title = saved.title
-        ..events = saved.events
-        ..aggregateVersion = saved.aggregateVersion;
-      return;
-    }
-    Map<String, dynamic> upsertObj = {
-      Tb.exclusive_groups.title: model.title,
-    };
-
-    dynamic eventData;
-    if (model.id != null) {
-      upsertObj.addAll({Tb.exclusive_groups.id: model.id.toString()});
-      eventData = await _supabase
-          .from(Tb.exclusive_groups.table)
-          .update(upsertObj)
-          .eq(Tb.exclusive_groups.id, model.id!)
-          .select()
-          .single();
-    } else {
-      upsertObj.addAll(
-          {Tb.exclusive_groups.occasion: RightsService.currentOccasionId()!});
-      eventData = await _supabase
-          .from(Tb.exclusive_groups.table)
-          .insert(upsertObj)
-          .select()
-          .single();
-    }
-    var updated = ExclusiveGroupModel.fromJson(eventData);
-
-    await _supabase
-        .from(Tb.exclusive_events.table)
-        .delete()
-        .eq(Tb.exclusive_events.group, updated.id!);
-
-    var insert = [];
-    for (var e in model.events!) {
-      insert.add({
-        Tb.exclusive_events.group: updated.id,
-        Tb.exclusive_events.event: e
-      });
-    }
-    await _supabase.from(Tb.exclusive_events.table).insert(insert).select();
+    final saved = await _exclusiveGroupCommands.save(
+      RightsService.currentOccasionId()!,
+      model,
+    );
+    model
+      ..id = saved.id
+      ..title = saved.title
+      ..events = saved.events
+      ..aggregateVersion = saved.aggregateVersion;
+    return;
   }
 
   static Future<void> deleteExclusiveGroup(ExclusiveGroupModel data) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _exclusiveGroupCommands.delete(
-        RightsService.currentOccasionId()!,
-        data,
-      );
-      return;
-    }
-    await _supabase
-        .from(Tb.exclusive_events.table)
-        .delete()
-        .eq(Tb.exclusive_events.group, data.id!);
-    await _supabase
-        .from(Tb.exclusive_groups.table)
-        .delete()
-        .eq(Tb.exclusive_groups.id, data.id!);
+    await _exclusiveGroupCommands.delete(
+      RightsService.currentOccasionId()!,
+      data,
+    );
+    return;
   }
 
   static Future<void> signOutFromEvent(BuildContext? context, int eventId,
@@ -702,17 +628,12 @@ class DbEvents {
 
     dynamic result;
     try {
-      if (ClientSyncRuntime.isV1Selected) {
-        final response = await _attendanceCommands.setAttendance(
-          eventId: eventId,
-          participantId: userId,
-          action: AttendanceAction.signOut,
-        );
-        result = {'code': response.code};
-      } else {
-        result = await _supabase.rpc("sign_user_out_of_event",
-            params: {"ev": eventId, "usr": userId});
-      }
+      final response = await _attendanceCommands.setAttendance(
+        eventId: eventId,
+        participantId: userId,
+        action: AttendanceAction.signOut,
+      );
+      result = {'code': response.code};
     } catch (e) {
       // Offline: say so readably and behave like the non-200 branches
       // (toast + return); other errors keep today's behavior.

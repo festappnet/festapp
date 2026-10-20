@@ -1,0 +1,30 @@
+DO $$
+DECLARE actor uuid; member uuid; foreign_member uuid; org bigint; un bigint; oc bigint; g bigint; result jsonb; cmd uuid:=gen_random_uuid();
+BEGIN
+ PERFORM public.create_user_for_test('add-member-admin','add-member-admin@example.invalid');actor:=public.get_user_id('add-member-admin');
+ PERFORM public.create_user_for_test('add-member-one','add-member-one@example.invalid');member:=public.get_user_id('add-member-one');
+ PERFORM public.create_user_for_test('add-member-foreign','add-member-foreign@example.invalid');foreign_member:=public.get_user_id('add-member-foreign');
+ INSERT INTO public.organizations(title) VALUES('Group additions') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id=ANY(ARRAY[actor,member,foreign_member]);
+ INSERT INTO public.units(title,organization) VALUES('Group additions',org) RETURNING id INTO un;
+ INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Group additions',org,un,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
+ INSERT INTO public.occasion_users(occasion,"user") VALUES(oc,actor),(oc,member);
+ INSERT INTO public.user_group_info(occasion,title,description) VALUES(oc,'Preserved group','Preserved description') RETURNING id INTO g;
+ INSERT INTO public.user_groups("group","user",is_admin) VALUES(g,actor,true);
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ BEGIN PERFORM public.add_user_group_members_client_sync_v1(oc,g,ARRAY[member,foreign_member],cmd);RAISE EXCEPTION 'foreign member accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ ASSERT (SELECT count(*)=1 FROM public.user_groups WHERE "group"=g);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ result:=public.add_user_group_members_client_sync_v1(oc,g,ARRAY[member,actor,member],cmd);
+ ASSERT result->>'code'='200';
+ ASSERT public.add_user_group_members_client_sync_v1(oc,g,ARRAY[actor,member],cmd)=result;
+ ASSERT public.add_user_group_members_client_sync_v1(oc,g,ARRAY[member],gen_random_uuid())->>'status'='unchanged';
+ EXECUTE 'RESET ROLE';
+ ASSERT (SELECT is_admin FROM public.user_groups WHERE "group"=g AND "user"=actor);
+ ASSERT (SELECT count(*)=2 FROM public.user_groups WHERE "group"=g);
+ ASSERT (SELECT title='Preserved group' AND description='Preserved description' FROM public.user_group_info WHERE id=g);
+ PERFORM set_config('request.jwt.claim.sub',member::text,true);
+ BEGIN PERFORM public.add_user_group_members_client_sync_v1(oc,g,ARRAY[actor],gen_random_uuid());RAISE EXCEPTION 'non-admin added members';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;

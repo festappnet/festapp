@@ -19,6 +19,7 @@ BEGIN
   INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time,data)
     VALUES (org,source_unit,'Source','copy-target-'||command,now(),now()+interval '1 day','{}')
     RETURNING id INTO source;
+  INSERT INTO public.inventory_pools(title,occasion,sellable_capacity) VALUES('Ordered pool',source,17);
   INSERT INTO public.email_templates(occasion,unit,organization,code,title,subject,html)
     VALUES (source,source_unit,org,'TICKET_ORDER_CONFIRMATION','Custom title','Custom subject','Custom body');
   INSERT INTO public.email_templates(unit,organization,code,subject,html)
@@ -51,6 +52,7 @@ BEGIN
 
   response := public.duplicate_occasion_client_sync_v1(source,command,target_unit);
   copied := (response #>> '{data,occasionId}')::bigint;
+  PERFORM assert_true(EXISTS(SELECT 1 FROM public.inventory_pools WHERE occasion=copied AND title='Ordered pool' AND sellable_capacity=17),'copied pool keeps configured capacity');
   PERFORM assert_eq((SELECT unit FROM public.occasions WHERE id=copied),target_unit,'copy belongs to target');
   PERFORM assert_eq((SELECT organization FROM public.occasions WHERE id=copied),org,'tenant unchanged');
   PERFORM assert_true(public.get_is_manager_on_occasion(copied),'creator can manage copy');

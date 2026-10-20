@@ -1,43 +1,12 @@
-CREATE OR REPLACE FUNCTION public.delete_event_feedback(
-    p_event bigint,
-    p_client_id uuid DEFAULT NULL::uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $function$
-DECLARE
-    v_user UUID := auth.uid();
-    v_deleted INTEGER := 0;
+CREATE OR REPLACE FUNCTION public.delete_event_feedback(p_event bigint,p_client_id uuid DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE p_occasion bigint; r jsonb;
 BEGIN
-    IF v_user IS NULL AND p_client_id IS NULL THEN
-        RETURN jsonb_build_object(
-            'code', 401,
-            'message', 'Client id is required for anonymous feedback'
-        );
-    END IF;
+ SELECT occasion INTO p_occasion FROM public.events WHERE id=p_event;
+ IF p_occasion IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
+ r:=public.delete_event_feedback_client_sync_v1(p_occasion,p_event,p_client_id,extensions.gen_random_uuid());
+ RETURN jsonb_build_object('code',r->'code','data',jsonb_build_object('deleted',CASE WHEN (r#>>'{data,deleted}')::boolean THEN 1 ELSE 0 END),'message',r#>'{data,message}');
+END $$;
 
-    IF v_user IS NOT NULL THEN
-        DELETE FROM public.event_feedback
-        WHERE event = p_event
-          AND "user" = v_user;
-    ELSE
-        DELETE FROM public.event_feedback
-        WHERE event = p_event
-          AND "user" IS NULL
-          AND client_id = p_client_id;
-    END IF;
-
-    GET DIAGNOSTICS v_deleted = ROW_COUNT;
-
-    RETURN jsonb_build_object(
-        'code', 200,
-        'data', jsonb_build_object('deleted', v_deleted)
-    );
-END;
-$function$;
-
-REVOKE ALL ON FUNCTION public.delete_event_feedback(bigint, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.delete_event_feedback(bigint, uuid)
-  TO anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.delete_event_feedback(bigint,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_event_feedback(bigint,uuid) TO anon,authenticated,service_role;

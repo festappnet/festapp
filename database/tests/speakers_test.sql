@@ -153,6 +153,7 @@ DECLARE
     v_sp      bigint := (SELECT v FROM _spk WHERE k = 'speaker');
     v_payload jsonb;
     v_res     jsonb;
+    v_version bigint;
 BEGIN
     PERFORM set_config('request.jwt.claim.sub', get_user_id('spk_editor')::text, true);
     SELECT jsonb_build_object(
@@ -164,11 +165,14 @@ BEGIN
       INTO v_payload
       FROM public.speakers s WHERE s.id=v_sp;
 
+    SELECT version INTO v_version FROM public.client_aggregate_versions
+      WHERE aggregate_type='speaker' AND scope_type='occasion'
+      AND scope_id=v_oc AND aggregate_id=v_sp::text;
     v_res := public.save_speaker_client_sync_v1(
-        v_oc, gen_random_uuid(), 0, v_payload);
+        v_oc, gen_random_uuid(), v_version, v_payload);
     PERFORM assert_eq(v_res->>'status', 'applied',
         'v1 speaker save with non-empty topics is applied');
-    PERFORM assert_eq((v_res->'data'->>'version')::int, 1,
+    PERFORM assert_eq((v_res->'data'->>'version')::int, (v_version+1)::int,
         'v1 speaker save advances the aggregate version');
     PERFORM assert_eq((SELECT count(*)::int
         FROM public.speaker_topic_links WHERE speaker=v_sp), 2,

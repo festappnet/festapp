@@ -86,10 +86,7 @@ class DbSpeakers {
   /// topic catalog (get_speakers_for_edit).
   static Future<({List<SpeakerModel> speakers, List<SpeakerTopicModel> topics})>
       getSpeakersForEdit(int occasionId) async {
-    final res = await _supabase.rpc(
-        ClientSyncRuntime.isV1Selected
-            ? 'get_speakers_editor_bundle_v1'
-            : 'get_speakers_for_edit',
+    final res = await _supabase.rpc('get_speakers_editor_bundle_v1',
         params: {'p_occasion': occasionId});
     _ensureOk(res);
     final data = (res['data'] as Map).cast<String, dynamic>();
@@ -107,79 +104,52 @@ class DbSpeakers {
 
   static Future<SpeakerModel> updateSpeaker(
       int occasionId, SpeakerModel speaker) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.saveSpeaker(occasionId, speaker);
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Speaker was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected ||
-          result.entity == null) {
-        throw StateError('Speaker save was rejected');
-      }
-      return result.entity!;
+    final result = await _commands.saveSpeaker(occasionId, speaker);
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Speaker was changed by another editor');
     }
-    final res = await _supabase.rpc('update_speaker', params: {
-      'p_occasion': occasionId,
-      'p_speaker': speaker.toJson(),
-    });
-    _ensureOk(res);
-    return SpeakerModel.fromJson((res['data'] as Map).cast<String, dynamic>());
+    if (result.status == SpeakerCommandStatus.rejected ||
+        result.entity == null) {
+      throw StateError('Speaker save was rejected');
+    }
+    return result.entity!;
   }
 
   static Future<void> deleteSpeaker(SpeakerModel speaker) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.deleteSpeaker(
-          RightsService.currentOccasionId()!, speaker);
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Speaker was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected) {
-        throw StateError('Speaker delete was rejected');
-      }
-      return;
+    final result = await _commands.deleteSpeaker(
+        RightsService.currentOccasionId()!, speaker);
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Speaker was changed by another editor');
     }
-    final res = await _supabase
-        .rpc('delete_speaker', params: {'p_speaker_id': speaker.id});
-    _ensureOk(res);
+    if (result.status == SpeakerCommandStatus.rejected) {
+      throw StateError('Speaker delete was rejected');
+    }
+    return;
   }
 
   static Future<SpeakerTopicModel> updateTopic(
       int occasionId, SpeakerTopicModel topic) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.saveTopic(occasionId, topic);
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Speaker topic was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected ||
-          result.entity == null) {
-        throw StateError('Speaker topic save was rejected');
-      }
-      return result.entity!;
+    final result = await _commands.saveTopic(occasionId, topic);
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Speaker topic was changed by another editor');
     }
-    final res = await _supabase.rpc('update_speaker_topic', params: {
-      'p_occasion': occasionId,
-      'p_topic': topic.toJson(),
-    });
-    _ensureOk(res);
-    return SpeakerTopicModel.fromJson(
-        (res['data'] as Map).cast<String, dynamic>());
+    if (result.status == SpeakerCommandStatus.rejected ||
+        result.entity == null) {
+      throw StateError('Speaker topic save was rejected');
+    }
+    return result.entity!;
   }
 
   static Future<void> deleteTopic(SpeakerTopicModel topic) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.deleteTopic(
-          RightsService.currentOccasionId()!, topic);
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Speaker topic was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected) {
-        throw StateError('Speaker topic delete was rejected');
-      }
-      return;
+    final result =
+        await _commands.deleteTopic(RightsService.currentOccasionId()!, topic);
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Speaker topic was changed by another editor');
     }
-    final res = await _supabase
-        .rpc('delete_speaker_topic', params: {'p_topic_id': topic.id});
-    _ensureOk(res);
+    if (result.status == SpeakerCommandStatus.rejected) {
+      throw StateError('Speaker topic delete was rejected');
+    }
+    return;
   }
 
   static Future<int> setEventSpeakers(
@@ -209,82 +179,47 @@ class DbSpeakers {
     String? title,
     int breakMinutes = 0,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.createCounselingSlots(
-        speakerId: speakerId,
-        start: start,
-        end: end,
-        slotMinutes: slotMinutes,
-        placeId: placeId,
-        capacity: capacity,
-        title: title,
-        breakMinutes: breakMinutes,
-      );
-      if (result.status == SpeakerCommandStatus.rejected) {
-        throw StateError('Counseling slot creation was rejected');
-      }
-      return (created: result.count, eventIds: result.eventIds);
-    }
-    final res = await _supabase.rpc('create_counseling_slots', params: {
-      'p_speaker': speakerId,
-      'p_start': start.toUtc().toIso8601String(),
-      'p_end': end.toUtc().toIso8601String(),
-      'p_slot_minutes': slotMinutes,
-      'p_place': placeId,
-      'p_capacity': capacity,
-      'p_title': title,
-      'p_break_minutes': breakMinutes,
-    });
-    _ensureOk(res);
-    final data = (res['data'] as Map).cast<String, dynamic>();
-    return (
-      created: (data['created'] as num).toInt(),
-      eventIds: ((data['event_ids'] as List?) ?? const [])
-          .map((e) => (e as num).toInt())
-          .toList(),
+    final result = await _commands.createCounselingSlots(
+      speakerId: speakerId,
+      start: start,
+      end: end,
+      slotMinutes: slotMinutes,
+      placeId: placeId,
+      capacity: capacity,
+      title: title,
+      breakMinutes: breakMinutes,
     );
+    if (result.status == SpeakerCommandStatus.rejected) {
+      throw StateError('Counseling slot creation was rejected');
+    }
+    return (created: result.count, eventIds: result.eventIds);
   }
 
   static Future<int> deleteEmptyCounselingSlots(int speakerId,
       {DateTime? from}) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result =
-          await _commands.deleteEmptyCounselingSlots(speakerId, from: from);
-      if (result.status == SpeakerCommandStatus.rejected) {
-        throw StateError('Counseling slot deletion was rejected');
-      }
-      return result.count;
+    final result =
+        await _commands.deleteEmptyCounselingSlots(speakerId, from: from);
+    if (result.status == SpeakerCommandStatus.rejected) {
+      throw StateError('Counseling slot deletion was rejected');
     }
-    final res = await _supabase.rpc('delete_empty_counseling_slots', params: {
-      'p_speaker': speakerId,
-      'p_from': from?.toUtc().toIso8601String(),
-    });
-    _ensureOk(res);
-    return ((res['data'] as Map)['deleted'] as num).toInt();
+    return result.count;
   }
 
   static Future<void> deleteCounselingSlot(
       int speakerId, SpeakerEventRef slot) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.deleteCounselingSlot(
-        speakerId: speakerId,
-        eventId: slot.id,
-        expectedVersion: slot.aggregateVersion,
-      );
-      if (result.status == SpeakerCommandStatus.conflict) {
-        throw StateError('Counseling slot was changed by another editor');
-      }
-      if (result.status == SpeakerCommandStatus.rejected || result.count != 1) {
-        throw StateError(
-            'Only a counseling slot owned by this speaker can be deleted');
-      }
-      return;
+    final result = await _commands.deleteCounselingSlot(
+      speakerId: speakerId,
+      eventId: slot.id,
+      expectedVersion: slot.aggregateVersion,
+    );
+    if (result.status == SpeakerCommandStatus.conflict) {
+      throw StateError('Counseling slot was changed by another editor');
     }
-    final res = await _supabase.rpc('delete_counseling_slot', params: {
-      'p_speaker': speakerId,
-      'p_event': slot.id,
-    });
-    _ensureOk(res);
+    if (result.status == SpeakerCommandStatus.rejected || result.count != 1) {
+      throw StateError(
+          'Only a counseling slot owned by this speaker can be deleted');
+    }
+    return;
   }
 
   static void _ensureOk(dynamic res) {

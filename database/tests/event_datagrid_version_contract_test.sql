@@ -15,7 +15,7 @@ BEGIN
   );
 
   SELECT pg_get_functiondef(
-    'public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)'::regprocedure
+    'public.save_event_domain_command_internal_v1(bigint,uuid,bigint,jsonb)'::regprocedure
   ) INTO v_definition;
 
   PERFORM assert_true(

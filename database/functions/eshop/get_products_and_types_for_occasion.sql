@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
-RETURNS json LANGUAGE plpgsql
+RETURNS json LANGUAGE plpgsql STABLE
 SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
@@ -44,6 +44,7 @@ BEGIN
   SELECT json_agg(
            json_build_object(
              'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
              'title', p.title,
              'description', p.description,
              'short_title', p.data->>'short_title',

@@ -15,6 +15,7 @@ DECLARE
     v_catalog jsonb;
     v_existing_services jsonb;
     v_code text;
+    v_global_before jsonb;
 BEGIN
     SELECT o.unit,
            CASE WHEN jsonb_typeof(o.services) = 'object'
@@ -71,6 +72,7 @@ BEGIN
         END IF;
     END LOOP;
 
+    SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=v_user FOR UPDATE;
     UPDATE public.user_info
        SET data = COALESCE(user_info.data, '{}'::jsonb)
                   || public.get_user_profile_data_patch(v_data),
@@ -87,6 +89,8 @@ BEGIN
                ELSE user_info.birth_date
            END
      WHERE id = v_user;
+
+    PERFORM public.publish_user_profile_change_internal_v1(v_user,v_occasion,v_global_before);
 
     UPDATE public.occasion_users
        SET data = v_data,
@@ -113,7 +117,21 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
+-- Released grid facade. Baseline is read under the membership lock.
 CREATE OR REPLACE FUNCTION public.save_occasion_user_for_edit(input_data jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.save_occasion_user_for_edit_internal_v1(input_data);
-$$;
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE oc bigint:=(input_data->>'occasion')::bigint; usr uuid:=(input_data->>'user')::uuid; ver bigint; r jsonb;
+BEGIN
+ IF auth.uid() IS NULL OR NOT(public.get_is_manager_on_occasion(oc) OR public.get_is_admin_on_occasion(oc)) THEN RETURN jsonb_build_object('code',403); END IF;
+ PERFORM 1 FROM public.user_info WHERE id=usr FOR UPDATE;
+ PERFORM 1 FROM public.occasion_users WHERE occasion=oc AND "user"=usr FOR UPDATE;
+ IF NOT FOUND THEN RETURN jsonb_build_object('code',404); END IF;
+ SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
+ ON v.aggregate_type='occasion_user' AND v.scope_type='occasion' AND v.scope_id=oc AND v.aggregate_id=usr::text;
+ input_data:=jsonb_set(input_data,'{data}',CASE WHEN jsonb_typeof(input_data->'data')='object' THEN (input_data->'data')-'is_invited' ELSE '{}' END);
+ r:=public.save_profile_client_sync_v1(oc,usr,extensions.gen_random_uuid(),ver,input_data);
+ RETURN jsonb_build_object('code',r->'code','message',r#>'{data,message}');
+END $$;
+REVOKE ALL ON FUNCTION public.save_occasion_user_for_edit_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.save_occasion_user_for_edit(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.save_occasion_user_for_edit(jsonb) TO authenticated;

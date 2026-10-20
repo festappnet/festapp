@@ -62,37 +62,15 @@ class DbInformation {
   static Future<List<InformationModel>> getAllInformationForDataGridForUnit(
       int unitId,
       [String? type]) async {
-    var select = "${Tb.information.id},"
-        "${Tb.information.unit},"
-        "${Tb.information.occasion},"
-        "${Tb.information.created_at},"
-        "${Tb.information.updated_at},"
-        "${Tb.information.is_hidden},"
-        "${Tb.information.title},"
-        "${Tb.information.description},"
-        "${Tb.information.order},"
-        "${Tb.information.type},"
-        "${Tb.information.data},"
-        "${Tb.information_hidden.table}(*)";
-    List<Map<String, dynamic>> data = [];
-    if (type != null) {
-      data = await _supabase
-          .from(Tb.information.table)
-          .select(select)
-          .or("${Tb.information.occasion}.is.null")
-          .eq(Tb.information.unit, unitId)
-          .filter(Tb.information.type, "eq", type);
-    } else {
-      data = await _supabase
-          .from(Tb.information.table)
-          .select(select)
-          .or("${Tb.information.occasion}.is.null")
-          .eq(Tb.information.unit, unitId)
-          .or("${Tb.information.type}.eq.,${Tb.information.type}.is.null");
-    }
-    var infoList = List<InformationModel>.from(
-        data.map((x) => InformationModel.fromJson(x)));
-    return _sortViaDatetime(infoList);
+    final rows =
+        await _supabase.rpc('get_unit_information_for_edit_v1', params: {
+      'p_unit': unitId,
+      'p_type': type,
+    }) as List;
+    return _sortViaDatetime(rows
+        .map((row) =>
+            InformationModel.fromJson(Map<String, dynamic>.from(row as Map)))
+        .toList());
   }
 
   static Future<List<InformationModel>> getAllActiveInformation() async {
@@ -124,95 +102,32 @@ class DbInformation {
   }
 
   static Future<void> updateInformation(InformationModel info) async {
-    if (info.unit == null) {
-      final result =
-          await _commands.save(RightsService.currentOccasionId()!, info);
-      if (result.status == InformationCommandStatus.conflict) {
-        throw StateError('Information was changed by another editor');
-      }
-      if (result.status == InformationCommandStatus.rejected ||
-          result.information == null) {
-        throw StateError('Information save was rejected');
-      }
-      final updated = result.information!;
-      info
-        ..id = updated.id
-        ..informationHidden = updated.informationHidden
-        ..updatedAt = updated.updatedAt
-        ..aggregateVersion = result.version;
-      return;
+    final result = await _commands.save(
+        info.unit ?? RightsService.currentOccasionId()!, info);
+    if (result.status == InformationCommandStatus.conflict) {
+      throw StateError('Information was changed by another editor');
     }
-    if (info.type == InformationModel.gameType) {
-      Map<String, dynamic> upsertObj = {
-        Tb.information_hidden.data: info.informationHidden?.data,
-        Tb.information_hidden.occasion: RightsService.currentOccasionId()!
-      };
-      Map<String, dynamic> ref;
-      if (info.informationHidden?.id != null) {
-        upsertObj.addAll({
-          Tb.information_hidden.id: info.informationHidden?.id,
-        });
-        ref = await _supabase
-            .from(Tb.information_hidden.table)
-            .update(upsertObj)
-            .eq(Tb.information_hidden.id, info.informationHidden!.id!)
-            .select(Tb.information_hidden.id)
-            .single();
-      } else {
-        ref = await _supabase
-            .from(Tb.information_hidden.table)
-            .insert(upsertObj)
-            .select(Tb.information_hidden.id)
-            .single();
-      }
-
-      info.informationHidden =
-          InformationHiddenModel(id: ref[Tb.information_hidden.id]);
+    if (result.status == InformationCommandStatus.rejected ||
+        result.information == null) {
+      throw StateError('Information save was rejected');
     }
-    var upsertObj = {
-      Tb.information.title: info.title,
-      Tb.information.type: info.type,
-      Tb.information.is_hidden: info.isHidden,
-      Tb.information.order: info.order,
-      Tb.information.data: info.data,
-      Tb.information.information_hidden: info.informationHidden?.id
-    };
-    if (info.description != null) {
-      upsertObj.addAll({Tb.information.description: info.description});
-    }
-    if (info.id != null) {
-      upsertObj.addAll({Tb.information.id: info.id});
-      await _supabase
-          .from(Tb.information.table)
-          .update(upsertObj)
-          .eq(Tb.information.id, info.id!);
-    } else {
-      if (info.unit == null) {
-        upsertObj.addAll(
-            {Tb.information.occasion: RightsService.currentOccasionId()!});
-      } else {
-        upsertObj.addAll({Tb.information.unit: info.unit});
-      }
-      await _supabase.from(Tb.information.table).insert(upsertObj);
-    }
+    final updated = result.information!;
+    info
+      ..id = updated.id
+      ..informationHidden = updated.informationHidden
+      ..updatedAt = updated.updatedAt
+      ..aggregateVersion = result.version;
   }
 
   static Future<void> deleteInformation(InformationModel info) async {
-    if (ClientSyncRuntime.isV1Selected && info.unit == null) {
-      final result =
-          await _commands.delete(RightsService.currentOccasionId()!, info);
-      if (result.status == InformationCommandStatus.conflict) {
-        throw StateError('Information was changed by another editor');
-      }
-      if (result.status == InformationCommandStatus.rejected) {
-        throw StateError('Information delete was rejected');
-      }
-      return;
+    final result = await _commands.delete(
+        info.unit ?? RightsService.currentOccasionId()!, info);
+    if (result.status == InformationCommandStatus.conflict) {
+      throw StateError('Information was changed by another editor');
     }
-    await _supabase
-        .from(Tb.information.table)
-        .delete()
-        .eq(Tb.information.id, info.id!);
+    if (result.status == InformationCommandStatus.rejected) {
+      throw StateError('Information delete was rejected');
+    }
   }
 
   static Future<void> fillDescriptionFromOffline(InformationModel info) async {
