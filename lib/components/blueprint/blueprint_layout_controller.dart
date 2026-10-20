@@ -260,7 +260,7 @@ class BlueprintLayoutController extends ChangeNotifier
     _preferredSeatProductId = productId;
   }
 
-  void renameCommercialNode(String nodeId, String title) {
+  VenueLayoutDocument commercialRenameDocument(String nodeId, String title) {
     if (layout.readOnly || isBusy) throw StateError('blueprint_read_only');
     final value = title.trim();
     if (value.isEmpty) throw ArgumentError('name_required');
@@ -269,18 +269,16 @@ class BlueprintLayoutController extends ChangeNotifier
       throw ArgumentError('not_commercial_node');
     if (node.kind == 'seat' && isProtected(nodeId))
       throw StateError('protected_spot');
-    if (!layout.apply(
-        layout.document.copyWith(nodes: [
-          for (final n in layout.document.nodes)
-            n.id == nodeId ||
-                    (node.kind == 'group' &&
-                        n.kind == 'table' &&
-                        blueprintCommercialGroupFor(n, layout.document,
-                                groupProducts: _draft.groupProducts) ==
-                            nodeId)
-                ? n.copyWith(label: value)
-                : n
-        ]),
+    return layout.document.copyWith(nodes: [
+      for (final n in layout.document.nodes)
+        n.id == nodeId ? n.copyWith(label: value) : n
+    ]);
+  }
+
+  void renameCommercialNode(String nodeId, String title,
+      {Map<String, dynamic>? preparedResources}) {
+    if (!layout.apply(commercialRenameDocument(nodeId, title),
+        preparedResources: preparedResources,
         label: 'Rename commercial item')) {
       throw StateError(layout.error ?? 'invalid_name');
     }

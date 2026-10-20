@@ -37,6 +37,7 @@ class BlueprintPlanEditor extends StatefulWidget {
       this.toolbarTrailing,
       this.footerTrailing,
       this.canvasBottomOverlay,
+      this.canvasHeader,
       this.onRenameNode,
       this.inspectorOverride,
       this.libraryOverride,
@@ -60,6 +61,7 @@ class BlueprintPlanEditor extends StatefulWidget {
       toolbarTrailing,
       footerTrailing,
       canvasBottomOverlay,
+      canvasHeader,
       inspectorOverride,
       libraryOverride;
   final void Function(LayoutNode, String)? onRenameNode;
@@ -459,18 +461,30 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
             shape: const Border(),
             collapsedShape: const Border(),
             childrenPadding: const EdgeInsets.only(top: 8, bottom: 8)),
+        textButtonTheme: TextButtonThemeData(
+            style: (Theme.of(context).textButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
+        filledButtonTheme: FilledButtonThemeData(
+            style: (Theme.of(context).filledButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
         outlinedButtonTheme: OutlinedButtonThemeData(
             style: (Theme.of(context).outlinedButtonTheme.style ??
                     const ButtonStyle())
                 .copyWith(
-                    shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6))))),
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
         segmentedButtonTheme: SegmentedButtonThemeData(
             style: (Theme.of(context).segmentedButtonTheme.style ??
                     const ButtonStyle())
                 .copyWith(
-                    shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6))))),
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
       ),
       child: Column(children: [
         if (_error != null)
@@ -550,6 +564,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                     inspectorOverride: widget.inspectorOverride,
                     libraryOverride: widget.libraryOverride,
                     canvasBottomOverlay: widget.canvasBottomOverlay,
+                    canvasHeader: widget.canvasHeader,
                     viewSelection: widget.viewSelection,
                     onViewSelectionChanged: widget.onViewSelectionChanged,
                     viewSelectionTarget: widget.viewSelectionTarget,

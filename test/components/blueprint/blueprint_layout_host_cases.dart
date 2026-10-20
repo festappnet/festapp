@@ -615,7 +615,7 @@ void main() {
     c.renameCommercialNode(groupA, 'Front table');
     expect(c.layout.document.nodes.first.label, 'Front table');
     expect(c.layout.document.nodes.firstWhere((n) => n.id == tableA).label,
-        'Front table');
+        'A', reason: 'renaming a group does not dual-write an independent object name');
     expect(c.snapshot.seatBindings[inheritedA]!.title, 'A1');
     c.layout.undo();
     c.renameCommercialNode(inheritedA, 'A-special');

@@ -859,15 +859,43 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               ],
             ));
     if (!mounted || value == null) return;
-    await _run(() async => controller.renameCommercialNode(node.id, value));
+    await _run(() => _commitCommercialRename(node.id, value));
   }
 
   void _renameFromInspector(LayoutNode node, String name) {
     if (!_editingPlan || !_canEdit || _busy) {
       throw StateError('blueprint_read_only');
     }
-    controller.renameCommercialNode(
-        node.kind == 'table' ? _commercialId(node) : node.id, name);
+    _run(() => _commitCommercialRename(
+        node.kind == 'table' ? _commercialId(node) : node.id, name));
+  }
+
+  Future<void> _commitCommercialRename(String nodeId, String name) async {
+    final session = controller;
+    final before = session.layout.document;
+    final next = session.commercialRenameDocument(nodeId, name);
+    setState(() => _operationPending = true);
+    try {
+      final provider = await _fonts;
+      final result = await BlueprintTextPreparation(provider.prepareTextBatch)
+          .prepare(
+              next,
+              {for (final f in provider.families) f['id'] as String: f},
+              session.layout.resources,
+              stillCurrent: () =>
+                  mounted &&
+                  identical(session, controller) &&
+                  identical(before, session.layout.document));
+      if (!mounted || !identical(session, controller)) return;
+      if (result is BlueprintTextSuperseded) {
+        throw StateError(BlueprintStrings.draftChanged);
+      }
+      if (result is BlueprintTextFailed) throw result.error;
+      session.renameCommercialNode(nodeId, name,
+          preparedResources: (result as BlueprintTextReady).resources);
+    } finally {
+      if (mounted) setState(() => _operationPending = false);
+    }
   }
 
   Future<void> _editAreaProduct(LayoutNode area) async {
@@ -1420,7 +1448,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         .toList();
     final products = members.map((seat) => seat.productId).toSet();
     return [
-      table.label,
+      controller.layout.document.nodes
+          .firstWhere((node) => node.id == id)
+          .label,
       BlueprintStrings.seatCount(members.length),
       products.length > 1
           ? BlueprintStrings.mixedProducts
@@ -1457,42 +1487,52 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           },
       };
 
-  Widget _modeSelector() => Padding(
-        padding: const EdgeInsets.only(right: 16),
-        child: SegmentedButton<_BlueprintScreenMode>(
-          key: const ValueKey('blueprint-screen-mode'),
-          showSelectedIcon: true,
-          style: ButtonStyle(
-            minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
-            textStyle: const WidgetStatePropertyAll(
-                TextStyle(fontWeight: FontWeight.w700)),
-            backgroundColor: WidgetStateProperty.resolveWith((states) =>
-                states.contains(WidgetState.selected)
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.surface),
-            foregroundColor: WidgetStateProperty.resolveWith((states) =>
-                states.contains(WidgetState.selected)
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.primary),
-            side: WidgetStatePropertyAll(
-                BorderSide(color: Theme.of(context).colorScheme.primary)),
-          ),
-          segments: [
-            ButtonSegment(
-                value: _BlueprintScreenMode.reservations,
-                icon: const Icon(Icons.event_seat_outlined),
-                label: Text(BlueprintStrings.reservationsAndOrders,
-                    key: const ValueKey('blueprint-reservations-mode'))),
-            if (_canEdit)
+  Widget _modeSelector() => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: LayoutBuilder(
+          builder: (context, constraints) =>
+              SegmentedButton<_BlueprintScreenMode>(
+            direction:
+                constraints.maxWidth < 400 ? Axis.vertical : Axis.horizontal,
+            key: const ValueKey('blueprint-screen-mode'),
+            showSelectedIcon: true,
+            style: ButtonStyle(
+              minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+              textStyle: const WidgetStatePropertyAll(
+                  TextStyle(fontWeight: FontWeight.w700)),
+              backgroundColor: WidgetStateProperty.resolveWith((states) =>
+                  states.contains(WidgetState.selected)
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).colorScheme.surface),
+              foregroundColor: WidgetStateProperty.resolveWith((states) =>
+                  states.contains(WidgetState.disabled)
+                      ? Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: .38)
+                      : states.contains(WidgetState.selected)
+                          ? Theme.of(context).colorScheme.onPrimaryContainer
+                          : Theme.of(context).colorScheme.onSurfaceVariant),
+              side: WidgetStatePropertyAll(BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant)),
+            ),
+            segments: [
               ButtonSegment(
-                  value: _BlueprintScreenMode.edit,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(BlueprintStrings.editPlan,
-                      key: const ValueKey('blueprint-edit-mode'))),
-          ],
-          selected: {_screenMode},
-          onSelectionChanged:
-              _busy ? null : (modes) => _setScreenMode(modes.single),
+                  value: _BlueprintScreenMode.reservations,
+                  icon: const Icon(Icons.event_seat_outlined),
+                  label: Text(BlueprintStrings.reservationsAndOrders,
+                      key: const ValueKey('blueprint-reservations-mode'))),
+              if (_canEdit)
+                ButtonSegment(
+                    value: _BlueprintScreenMode.edit,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(BlueprintStrings.editPlan,
+                        key: const ValueKey('blueprint-edit-mode'))),
+            ],
+            selected: {_screenMode},
+            onSelectionChanged:
+                _busy ? null : (modes) => _setScreenMode(modes.single),
+          ),
         ),
       );
 
@@ -1524,7 +1564,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           required String label,
           required IconData icon,
           VoidCallback? onPressed}) =>
-      TextButton.icon(
+      OutlinedButton.icon(
           key: key,
           onPressed: onPressed,
           icon: Icon(icon, size: 18),
@@ -1546,21 +1586,21 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   Widget _toolbarActions() => Wrap(
         key: const ValueKey('blueprint-toolbar-actions'),
         crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 4,
-        runSpacing: 4,
+        spacing: 8,
+        runSpacing: 8,
         children: [
           if (!_editingPlan &&
               _canOrder &&
               controller.mode == BlueprintLayoutMode.manage) ...[
             Tooltip(
               message: BlueprintStrings.legendCreateOrder,
-              child: TextButton.icon(
+              child: _reservationAction(
                 key: const ValueKey('blueprint-start-order'),
                 onPressed: _busy
                     ? null
                     : () => _startOperation(BlueprintLayoutMode.order),
-                icon: const Icon(Icons.add_shopping_cart, size: 18),
-                label: Text(BlueprintStrings.orderAction),
+                icon: Icons.add_shopping_cart,
+                label: BlueprintStrings.orderAction,
               ),
             ),
             _reservationAction(
@@ -1723,6 +1763,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                 controller: controller.layout,
                                 footerTrailing: _seatHelp(),
                                 canvasBottomOverlay: _operationPanel(),
+                                canvasHeader: _editingPlan
+                                    ? null
+                                    : BlueprintLayoutLegend(
+                                        compact: true,
+                                        states: controller
+                                            .snapshot.seatBindings.values
+                                            .map(controller.adapter.state),
+                                      ),
                                 toolbarPrefix: _modeSelector(),
                                 toolbarLeading: _toolbarActions(),
                                 onRenameNode: _renameFromInspector,
@@ -1748,31 +1796,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                     : _reservationsPanel(tables),
                                 inspectorOverride: _editingPlan
                                     ? null
-                                    : LayoutBuilder(
-                                        builder:
-                                            (context, constraints) =>
-                                                Column(children: [
-                                                  Expanded(
-                                                      child:
-                                                          _reservationDetails(
-                                                              tables)),
-                                                  const Divider(height: 1),
-                                                  ConstrainedBox(
-                                                    constraints: BoxConstraints(
-                                                        maxHeight: constraints
-                                                                .maxHeight *
-                                                            .48),
-                                                    child: SingleChildScrollView(
-                                                        child: BlueprintLayoutLegend(
-                                                      states: controller
-                                                          .snapshot
-                                                          .seatBindings
-                                                          .values
-                                                          .map(controller
-                                                              .adapter.state),
-                                                    )),
-                                                  ),
-                                                ])),
+                                    : _reservationDetails(tables),
                                 viewSelection: _editingPlan
                                     ? null
                                     : controller.mode ==

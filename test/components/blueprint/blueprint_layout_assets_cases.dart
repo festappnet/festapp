@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_table_titles.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -349,6 +350,38 @@ void main() {
     expect(c.showPlacementWarnings().single.code, 'outside_canvas');
   });
 
+  test(
+      'unbound imported furniture recovers a single native name from rotated caption pieces',
+      () {
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        surface: {'type': 'rect'},
+        width: 40,
+        height: 160);
+    final document = VenueLayoutDocument(nodes: [
+      table,
+      for (final entry in ['Stůl', '1', '2'].asMap().entries)
+        LayoutNode(
+            id: newLayoutId(),
+            kind: 'text',
+            parentId: table.id,
+            x: 0,
+            y: -20.0 * entry.key,
+            rotation: -90,
+            label: entry.value,
+            properties: {'text': entry.value}),
+    ]);
+    final result = normalizeBlueprintTableTitles(document);
+    expect(result.nodes.length, 1);
+    expect(result.nodes.single.id, table.id);
+    expect(result.nodes.single.label, '12');
+    expect(result.nodes.single.width, 160);
+    expect(result.nodes.single.height, 40);
+    expect(result.nodes.single.rotation, -90);
+    expect(normalizeBlueprintTableTitles(result).toJson(), result.toJson());
+  });
+
   test('reviewed native furniture preserves stable chairs and moves together',
       () {
     final source = BlueprintModel(
@@ -379,6 +412,30 @@ void main() {
           'shape': 'rect'
         },
         {
+          'id': 'caption1',
+          'parentId': 'table1',
+          'kind': 'text',
+          'label': '1',
+          'text': '1',
+          'transform': {'x': 0, 'y': 0, 'rotation': -90},
+          'width': 60,
+          'height': 30,
+          'size': 24,
+          'role': 'decoration'
+        },
+        {
+          'id': 'caption1-duplicate',
+          'parentId': 'table1',
+          'kind': 'text',
+          'label': '1',
+          'text': '1',
+          'transform': {'x': 0, 'y': 0, 'rotation': -90},
+          'width': 60,
+          'height': 30,
+          'size': 24,
+          'role': 'decoration'
+        },
+        {
           'id': 'label1',
           'kind': 'text',
           'label': 'Stůl 9',
@@ -390,7 +447,7 @@ void main() {
           'align': 'left'
         }
       ],
-      'tableGroups': {'1': 'table1'}
+      'tableGroups': <String, dynamic>{}
     };
     final conversion = convertLegacyBlueprint(source,
         fontFamilies: blueprintFontRegistryFixture(),
@@ -403,10 +460,14 @@ void main() {
     expect(text.width, 80);
     expect(text.x, 2200);
     final table = result.document.nodes.singleWhere((n) => n.kind == 'table');
+    expect(table.label, '1');
+    expect(result.document.nodes.where((n) => n.kind == 'text').length, 1,
+        reason: 'the imported caption is replaced by the editable table name');
     final seat = result.document.nodes.singleWhere((n) => n.kind == 'seat');
     expect(seat.parentId, table.id);
     expect(result.seatBindings[seat.id]!.spotId, 4);
-    expect(result.seatBindings[seat.id]!.groupNodeId, table.parentId);
+    expect(result.seatBindings[seat.id]!.groupNodeId, table.id);
+    expect(result.document.nodes.where((n) => n.kind == 'group'), isEmpty);
     final before = worldMatrix(result.document, seat);
     expect(before[4], closeTo(120, .002));
     expect(before[5], closeTo(168, .002));

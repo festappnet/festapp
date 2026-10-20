@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 // Explicit offline migration gate. Input/output stay private; writes no backend.
 import 'dart:convert';
 import 'dart:io';
@@ -69,29 +70,65 @@ void main() {
         expect(effectiveNodeProperties(result.document, table)['cornerRadius'], 8, reason: 'blueprint$id styles=${result.document.styles} local=${table.style}');
         expect(effectiveNodeProperties(result.document, table)['stroke'], '#000000FF');
       }
-      // Semantic names must survive appearance normalization. SVG labels that
-      // are already separate text nodes remain separate and are not duplicated.
-      final expectedTableLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
-          .where((node) => node['kind'] == 'table')
-          .map((node) => node['label'] ?? (node['properties'] as Map?)?['label'])
-          .whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
-      final actualTableLabels = result.document.nodes.where((node) => node.kind == 'table')
-          .map((node) => node.label).whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
-      expect(actualTableLabels, expectedTableLabels, reason: 'authored table names blueprint$id');
+      // Reviewed table captions become native editable names. Other artwork
+      // survives exactly once; every absorbed caption is recorded in the receipt.
+      final rawNativeTables = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'table').toList();
+      final authoredNames = <String>{
+        for (final group in (source['groups'] as List? ?? const []).cast<Map>())
+          if (group['title'] is String) group['title'] as String,
+        for (final node in rawNativeTables)
+          if ((node['label'] ?? (node['properties'] as Map?)?['label']) is String)
+            (node['label'] ?? (node['properties'] as Map?)?['label']) as String,
+      };
+      String normalized(String value) => value.trim().toLowerCase()
+          .replaceFirst(RegExp(r'^(stůl|stul|table)\s*'), '').replaceAll(RegExp(r'\s+'), '');
+      final authoredText = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'text').toList();
+      for (final table in rawNativeTables) {
+        final captions = authoredText.where((node) => node['parentId'] == table['id']).toList();
+        if (captions.isEmpty) continue;
+        final angle = ((captions.first['transform'] as Map)['rotation'] as num) * math.pi / 180;
+        captions.sort((a,b) {
+          final at=a['transform'] as Map,bt=b['transform'] as Map;
+          return (((at['x'] as num)-(bt['x'] as num))*math.cos(angle) +
+              ((at['y'] as num)-(bt['y'] as num))*math.sin(angle)).compareTo(0);
+        });
+        String text(Map node) => '${node['text'] ?? (node['properties'] as Map?)?['text'] ?? node['label'] ?? ''}';
+        authoredNames.add(normalized(captions.map(text).join('')));
+        authoredNames.addAll(captions.map((node) => normalized(text(node))));
+      }
+      final nativeTables = result.document.nodes.where((node) => node.kind == 'table').toList();
+      expect(nativeTables.length, rawNativeTables.length,
+          reason: 'one native object per authored table blueprint$id');
+      for (final table in nativeTables) {
+        if (table.label.isNotEmpty) expect(authoredNames, contains(table.label),
+            reason: 'native names come from authored commercial identities blueprint$id');
+      }
+      for (final groupId in (nativePlan?['tableGroups'] as Map? ?? const {}).keys) {
+        final name = (source['groups'] as List).cast<Map>()
+            .singleWhere((g) => g['id'].toString() == groupId.toString())['title'];
+        expect(nativeTables.map((table) => table.label), contains(name),
+            reason: 'reviewed commercial table name retained blueprint$id');
+      }
       final expectedTextLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
           .where((node) => node['kind'] == 'text')
           .map((node) => node['text'] ?? node['label'] ?? (node['properties'] as Map?)?['text'] ?? (node['properties'] as Map?)?['label'] ?? '')
           .toList()..sort((a,b)=>a.toString().compareTo(b.toString()));
+      for (final absorbed in conversion.receipt['absorbedTableCaptions'] as List) {
+        expect(expectedTextLabels.remove(absorbed['text']), isTrue,
+            reason: 'only authored table captions may be absorbed blueprint$id');
+      }
       final actualTextLabels = result.document.nodes.where((node) => node.kind == 'text')
-          .map((node) => node.label ?? '').toList()..sort();
+          .map((node) => node.label).toList()..sort();
       expect(actualTextLabels, expectedTextLabels, reason: 'existing artwork labels neither lost nor duplicated blueprint$id');
-      for (final table in result.document.nodes.where((node) => node.kind == 'table' && (node.label?.isNotEmpty ?? false))) {
+      for (final table in result.document.nodes.where((node) => node.kind == 'table' && node.label.isNotEmpty)) {
         final request = nodeTextRequest(result.document, table, families).toJson();
         expect(request['align'], 'center', reason: 'default horizontal table centering blueprint$id');
         expect(request['fit'], 'shrink', reason: 'automatic vertical centered label box blueprint$id');
         for (final entry in (nativePlan?['tableLabelStyle'] as Map? ?? const {}).entries) {
           expect(resolveNodeAppearance(result.document, table).label[entry.key], entry.value, reason: 'reviewed typography blueprint$id');
-          expect((table.style?['label'] as Map? ?? const {}).containsKey(entry.key), isFalse, reason: 'kind style inheritance blueprint$id');
+          expect((table.style['label'] as Map? ?? const {}).containsKey(entry.key), isFalse, reason: 'kind style inheritance blueprint$id');
         }
       }
       if (nativePlan != null) nativeCount++;

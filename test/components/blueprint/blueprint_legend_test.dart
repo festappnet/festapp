@@ -18,41 +18,51 @@ void main() {
                 as Map<String, dynamic>);
   });
   for (final brightness in Brightness.values) {
-    testWidgetsWithEnvironment(() => environment,
-        'legend explains map markers with readable text in $brightness at narrow width and large type',
-        (tester) async {
-      await environment.pumpWidget(
-          tester,
-          MaterialApp(
-            theme: ThemeData(brightness: brightness),
-            home: Scaffold(
-                body: Center(
-                    child: SizedBox(
-              width: 260,
-              child: MediaQuery(
-                  data: const MediaQueryData(
-                      textScaler: TextScaler.linear(1.6),
-                      disableAnimations: true),
-                  child: const SingleChildScrollView(
-                      child: BlueprintLayoutLegend(states: [
-                    BlueprintSeatState.available,
-                    BlueprintSeatState.available,
-                    BlueprintSeatState.used,
-                    BlueprintSeatState.blocked,
-                  ]))),
-            ))),
-          ));
-      expect(find.text(BlueprintStrings.helpSeatStates), findsOneWidget);
-      expect(find.text('${BlueprintStrings.seatState('available')} (2)'),
-          findsOneWidget);
-      expect(find.text(BlueprintStrings.seatStateDescription('used')),
-          findsOneWidget);
-      expect(find.text(BlueprintStrings.seatStateDescription('blocked')),
-          findsOneWidget);
-      expect(find.byIcon(Icons.check), findsOneWidget);
-      expect(find.byIcon(Icons.close), findsOneWidget);
-      expect(find.textContaining('FeatureBlueprint.'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+    for (final compact in [false, true]) {
+      testWidgetsWithEnvironment(() => environment,
+          'legend compact=$compact explains markers in $brightness at narrow width and large type',
+          (tester) async {
+        await environment.pumpWidget(
+            tester,
+            MaterialApp(
+              theme: ThemeData(brightness: brightness),
+              home: Scaffold(
+                  body: Center(
+                      child: SizedBox(
+                width: 260,
+                child: MediaQuery(
+                    data: const MediaQueryData(
+                        textScaler: TextScaler.linear(1.6),
+                        disableAnimations: true),
+                    child: SingleChildScrollView(
+                        child: BlueprintLayoutLegend(
+                            compact: compact,
+                            states: const [
+                          BlueprintSeatState.available,
+                          BlueprintSeatState.available,
+                          BlueprintSeatState.used,
+                          BlueprintSeatState.blocked,
+                        ]))),
+              ))),
+            ));
+        expect(find.text(BlueprintStrings.helpSeatStates),
+            compact ? findsNothing : findsOneWidget);
+        expect(find.text('${BlueprintStrings.seatState('available')} (2)'),
+            findsOneWidget);
+        for (final state in ['used', 'blocked']) {
+          final description = BlueprintStrings.seatStateDescription(state);
+          if (compact) {
+            expect(find.text(description), findsNothing);
+            expect(find.byTooltip(description), findsOneWidget);
+          } else {
+            expect(find.text(description), findsOneWidget);
+          }
+        }
+        expect(find.byIcon(Icons.check), findsOneWidget);
+        expect(find.byIcon(Icons.close), findsOneWidget);
+        expect(find.textContaining('FeatureBlueprint.'), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 }

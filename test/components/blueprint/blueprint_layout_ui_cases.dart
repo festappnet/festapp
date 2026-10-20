@@ -51,26 +51,46 @@ late WidgetEnvironmentFixture environment;
 FutureOr<http.Response> Function(http.Request)? pickerResponse;
 const pickerNode = '10000000-0000-4000-8000-000000000011';
 Map<String, dynamic> pickerPayload(String state, {DateTime? expiry}) => {
-  ...BlueprintLayoutSnapshot(blueprintId: 4, occasionId: 8, title: 'Hall',
-    revision: 1, document: VenueLayoutDocument(nodes: [
-      LayoutNode(id: pickerNode, kind: 'seat', x: 100, y: 100, label: 'A1')]),
-    seatBindings: {pickerNode: const BlueprintSeatBinding(nodeId: pickerNode,
-      spotId: 11, productId: 1, title: 'A1')}).toJson(),
-  'layoutResources': blueprintPreparedResourcesFixture(VenueLayoutDocument(nodes: [LayoutNode(id: pickerNode, kind: 'seat', x: 100, y: 100, label: 'A1')])),
-  'expiresAt': expiry?.toIso8601String(),
-  'spots': [{'id': 11, 'title': 'A1', 'product': 1, 'state': state}],
-  'products': [{'id': 1, 'title': 'Standard', 'price': 100, 'is_available': true}],
-};
-http.Response pickerRead(http.Request request, String state, {DateTime? expiry}) => http.Response(
-  jsonEncode({'code': 200, 'data': pickerPayload(state, expiry: expiry)}), 200,
-  headers: {'content-type': 'application/json'}, request: request);
+      ...BlueprintLayoutSnapshot(
+          blueprintId: 4,
+          occasionId: 8,
+          title: 'Hall',
+          revision: 1,
+          document: VenueLayoutDocument(nodes: [
+            LayoutNode(
+                id: pickerNode, kind: 'seat', x: 100, y: 100, label: 'A1')
+          ]),
+          seatBindings: {
+            pickerNode: const BlueprintSeatBinding(
+                nodeId: pickerNode, spotId: 11, productId: 1, title: 'A1')
+          }).toJson(),
+      'layoutResources': blueprintPreparedResourcesFixture(
+          VenueLayoutDocument(nodes: [
+        LayoutNode(id: pickerNode, kind: 'seat', x: 100, y: 100, label: 'A1')
+      ])),
+      'expiresAt': expiry?.toIso8601String(),
+      'spots': [
+        {'id': 11, 'title': 'A1', 'product': 1, 'state': state}
+      ],
+      'products': [
+        {'id': 1, 'title': 'Standard', 'price': 100, 'is_available': true}
+      ],
+    };
+http.Response pickerRead(http.Request request, String state,
+        {DateTime? expiry}) =>
+    http.Response(
+        jsonEncode({'code': 200, 'data': pickerPayload(state, expiry: expiry)}),
+        200,
+        headers: {'content-type': 'application/json'},
+        request: request);
 
 void main() {
   WidgetEnvironmentFixture.register();
   late RootSupabaseFixture backend;
   setUpAll(() async {
-    backend = await RootSupabaseFixture.open(
-        (request) => pickerResponse?.call(request) ?? (throw StateError('Unexpected UI fixture request')));
+    backend = await RootSupabaseFixture.open((request) =>
+        pickerResponse?.call(request) ??
+        (throw StateError('Unexpected UI fixture request')));
   });
   tearDownAll(() => backend.dispose());
   setUpAll(() {
@@ -80,66 +100,99 @@ void main() {
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
   });
-  tearDown(() { pickerResponse = null; });
+  tearDown(() {
+    pickerResponse = null;
+  });
   testWidgetsWithEnvironment(() => environment,
-      'public picker reconciles lost hold response before enabling Continue', (tester) async {
+      'public picker reconciles lost hold response before enabling Continue',
+      (tester) async {
     var reads = 0;
     var holds = 0;
     final response = Completer<http.Response>();
     final selections = <List<BlueprintSeat>>[];
     final busy = <bool>[];
     pickerResponse = (request) {
-      if (request.url.path.endsWith('select_spot')) { holds++; return response.future; }
+      if (request.url.path.endsWith('select_spot')) {
+        holds++;
+        return response.future;
+      }
       reads++;
       return pickerRead(request, reads == 1 ? 'available' : 'selected_by_me');
     };
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(body:
-      SeatReservationWidget(blueprintId: 4, secret: 'buyer', formDataKey: 'form',
-        selectedSeats: const [], onSelectionChanged: selections.add,
-        onPendingChanged: busy.add))));
-    await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 40)));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SeatReservationWidget(
+                    blueprintId: 4,
+                    secret: 'buyer',
+                    formDataKey: 'form',
+                    selectedSeats: const [],
+                    onSelectionChanged: selections.add,
+                    onPendingChanged: busy.add))));
+    await tester.runAsync(
+        () async => Future<void>.delayed(const Duration(milliseconds: 40)));
     await tester.pumpAndSettle();
-    final picker = tester.widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker));
+    final picker =
+        tester.widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker));
     LayoutSelectionResult? outcome;
-    picker.onSelectionRequested({pickerNode}, true).then((value) => outcome = value);
+    picker.onSelectionRequested(
+        {pickerNode}, true).then((value) => outcome = value);
     await tester.pump();
     expect(busy.last, isTrue);
     expect(find.text(CommonStrings.loading), findsOneWidget);
     response.completeError(StateError('lost response after commit'));
     for (var attempt = 0; attempt < 10 && outcome == null; attempt++) {
-      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
       await tester.pump();
     }
     expect(outcome, isNotNull);
-    await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 40)));
+    await tester.runAsync(
+        () async => Future<void>.delayed(const Duration(milliseconds: 40)));
     await tester.pumpAndSettle();
     expect(reads, 2);
     expect(holds, 1);
     expect(selections.last.map((seat) => seat.seatId), [11]);
     expect(busy.last, isFalse);
-    expect(tester.widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker))
-      .seatPresentation[pickerNode]!['selected'], isTrue);
+    expect(
+        tester
+            .widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker))
+            .seatPresentation[pickerNode]!['selected'],
+        isTrue);
   });
   testWidgetsWithEnvironment(() => environment,
-      'public picker expiry refresh removes expired seats from form payload', (tester) async {
+      'public picker expiry refresh removes expired seats from form payload',
+      (tester) async {
     var reads = 0;
     final selections = <List<BlueprintSeat>>[];
     final expiry = DateTime.now().add(const Duration(seconds: 2));
     pickerResponse = (request) => ++reads == 1
-      ? pickerRead(request, 'selected_by_me', expiry: expiry) : pickerRead(request, 'ordered');
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(body:
-      SeatReservationWidget(blueprintId: 4, secret: 'buyer', formDataKey: 'form',
-        selectedSeats: const [], onSelectionChanged: selections.add))));
-    await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 40)));
+        ? pickerRead(request, 'selected_by_me', expiry: expiry)
+        : pickerRead(request, 'ordered');
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SeatReservationWidget(
+                    blueprintId: 4,
+                    secret: 'buyer',
+                    formDataKey: 'form',
+                    selectedSeats: const [],
+                    onSelectionChanged: selections.add))));
+    await tester.runAsync(
+        () async => Future<void>.delayed(const Duration(milliseconds: 40)));
     await tester.pumpAndSettle();
     expect(selections.last.map((seat) => seat.seatId), [11]);
     await tester.pump(const Duration(seconds: 3));
-    await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 40)));
+    await tester.runAsync(
+        () async => Future<void>.delayed(const Duration(milliseconds: 40)));
     await tester.pumpAndSettle();
     expect(reads, 2);
     expect(selections.last, isEmpty);
-    final seat = tester.widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker))
-      .seatPresentation[pickerNode]!;
+    final seat = tester
+        .widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker))
+        .seatPresentation[pickerNode]!;
     expect(seat['selected'], isFalse);
     expect(seat['selectable'], isFalse);
     expect(seat['status'], 'occupied');
@@ -786,8 +839,8 @@ void main() {
       await tester.pump();
       expect(controller.document.toJson(), document.toJson(),
           reason: 'composition has not yet committed into the valid scene');
-      final dynamic modeControl = tester.widget(
-          find.byKey(const ValueKey('blueprint-screen-mode')));
+      final dynamic modeControl =
+          tester.widget(find.byKey(const ValueKey('blueprint-screen-mode')));
       final dynamic nextMode = modeControl.selected.toSet();
       nextMode.clear();
       nextMode.add(modeControl.segments.first.value);
@@ -1657,7 +1710,8 @@ void main() {
       await tester.pump();
       expect(controller.document.toJson(), document.toJson(),
           reason: 'composition has not yet committed into the valid scene');
-      final dynamic view = tester.widget(find.byKey(const ValueKey('blueprint-screen-mode')));
+      final dynamic view =
+          tester.widget(find.byKey(const ValueKey('blueprint-screen-mode')));
       final modes = view.selected.toSet();
       modes.clear();
       modes.add(view.segments.first.value);
@@ -1968,7 +2022,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
-      'blueprint inspector renames native table and commercial group together',
+      'blueprint inspector renames the single canonical native table',
       (tester) async {
     await tester.runAsync(TicketFontCatalog.load);
     tester.view.physicalSize = const Size(1280, 900);
@@ -1979,18 +2033,16 @@ void main() {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
-    final group = LayoutNode(id: newLayoutId(), kind: 'group', label: 'S7');
     final table = LayoutNode(
         id: newLayoutId(),
         kind: 'table',
         surface: {'type': 'rect'},
-        parentId: group.id,
         x: 400,
         y: 400,
         width: 200,
         height: 100,
         label: 'S7');
-    final original = VenueLayoutDocument(nodes: [group, table]);
+    final original = VenueLayoutDocument(nodes: [table]);
     final source = BlueprintModel(
         layoutSnapshot: BlueprintLayoutSnapshot(
             blueprintId: 1,
@@ -1999,14 +2051,39 @@ void main() {
             revision: 1,
             document: original,
             seatBindings: {},
-            groupProducts: {group.id: 1}));
+            groupProducts: {table.id: 1}));
     source.layoutResources =
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
+    final provider = await tester.runAsync(() => BlueprintTextResources.load(1,
+            service: TicketLayoutService(transport: (body) async {
+          final batch = body['batch'] as Map;
+          return {
+            'protocol': 2,
+            'fontFamilies': source.layoutResources['fontFamilies'],
+            'numberSymbols': {},
+            'textLayouts': {
+              for (final raw in batch['requests'] as List)
+                LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
+                  'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
+                  'descriptor':
+                      LayoutTextRequest(Map<String, dynamic>.from(raw))
+                          .resourceDescriptor,
+                  'path': [
+                    ['M', 0, 0],
+                    ['L', 10, 10]
+                  ],
+                  'clip': raw['box'],
+                },
+            },
+          };
+        })));
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
+                source: source,
+                reload: () async => source,
+                loadTextResources: () async => provider!)));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     expect(find.byKey(const ValueKey('layout-tool-Select')), findsNothing);
@@ -2019,7 +2096,7 @@ void main() {
     expect(find.byKey(const ValueKey('layout-tool-Pan')), findsOneWidget);
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    // The physical tabletop and its wrapper must use the same business rename.
+    // The same native table owns the visible and commercial name.
     editor.controller.select({table.id});
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
@@ -2057,6 +2134,11 @@ void main() {
     await tester.pump();
     expect(editor.controller.document.nodes.map((n) => n.label),
         everyElement('Front table'));
+    expect(
+        compileScene(editor.controller.document,
+            resources: editor.controller.resources)['issues'],
+        isEmpty);
+
     await tester.enterText(name, '   ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump(const Duration(milliseconds: 500));
