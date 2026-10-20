@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "079d9ed832b8e6ee0d3556a9c1c42ec42d935865",
+  "release": {
+    "version": "0.20.298+790",
+    "note": "Add organizer access to MCP connections"
+  }
+}
