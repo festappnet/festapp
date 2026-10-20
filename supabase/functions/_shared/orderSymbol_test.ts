@@ -35,15 +35,17 @@ for (const code of ["TICKET_ORDER_CONFIRMATION", "TICKET_ORDER_UPDATE", "TICKET_
         const template = { id: 1, subject: `${lang === "cs" ? "Objednávka" : "Order"}${hasIdentity ? " {{orderSymbol}}" : ""}`, html: `<div style="color:#123456">{{variableSymbol}} / {{reference}}${hasIdentity ? " {{orderSymbol}}" : ""}</div>` };
         const before = JSON.stringify(template);
         const mail = await renderEmail({ to: "own@example.invalid", templateCode: code, context: { organization: 2 }, substitutions: { orderSymbol: "7G4K9M2R6A", variableSymbol: "12345", reference: "RF18539007547034" } }, async () => ({ template, wrapper: { html: "<main>{{content}}</main>" } }));
+        // Plain-value spans may split markup while preserving visible identity.
+        const visibleHtml = mail.html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]*>/g, '');
         if (hasIdentity) {
-          assertStringIncludes(mail.subject, "7G4K9M2R6A"); assertStringIncludes(mail.html, "7G4K9M2R6A");
+          assertStringIncludes(mail.subject, "7G4K9M2R6A"); assertStringIncludes(visibleHtml, "7G4K9M2R6A");
         } else {
           assertEquals(mail.subject.includes("7G4K9M2R6A"), false);
-          assertEquals(mail.html.includes("7G4K9M2R6A"), false);
+          assertEquals(visibleHtml.includes("7G4K9M2R6A"), false);
         }
-        assertStringIncludes(mail.html, "color:#123456"); assertStringIncludes(mail.html, "12345 / RF18539007547034");
+        assertStringIncludes(mail.html, "color:#123456"); assertStringIncludes(visibleHtml, "12345 / RF18539007547034");
         assertEquals(JSON.stringify(template), before);
-        assertEquals(mail.html.split("7G4K9M2R6A").length, hasIdentity ? 2 : 1);
+        assertEquals(visibleHtml.split("7G4K9M2R6A").length, hasIdentity ? 2 : 1);
       }
     });
   }
