@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "239b5bfc85252c780d2fd4364199b19dc6cff96e",
+  "release": {
+    "version": "0.20.301+794",
+    "note": "Blueprint titles and native labels"
+  }
+}
