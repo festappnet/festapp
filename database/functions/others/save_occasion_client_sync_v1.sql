@@ -29,7 +29,11 @@ BEGIN
   FROM public.occasions o
   WHERE o.id = p_occasion;
 
-  IF auth.uid() IS NULL OR NOT public.can_edit_occasion(p_occasion,(p_config->>'unit')::bigint) THEN
+  IF auth.uid() IS NULL OR NOT (
+    public.get_is_editor_on_occasion(p_occasion)
+    OR public.get_is_admin_on_occasion(p_occasion)
+    OR (v_unit IS NOT NULL AND public.get_is_editor_on_unit(v_unit))
+  ) THEN
     RAISE insufficient_privilege USING MESSAGE = 'occasion editor required';
   END IF;
 

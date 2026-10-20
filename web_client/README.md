@@ -16,8 +16,8 @@ configuration from the repository root:
 Then, inside `web_client/`:
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm run dev
+npm ci
+npm run dev
 ```
 
 `src/app_config.js` and `src/theme_config.css` are generated. Put changes in
@@ -25,8 +25,8 @@ pnpm run dev
 of browser assets. SQL tests use the [isolated local database](../docs/setup/local_development.md).
 
 ```bash
-pnpm test
-pnpm run build
+npm test
+npm run build
 ```
 
 The build above produces only this client. A tenant production release combines

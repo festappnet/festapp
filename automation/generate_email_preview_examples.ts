@@ -360,29 +360,6 @@ for (const record of records) {
     ]),
   );
   record.contextTemplates = contextualize(templates);
-  const applicationFeatures = fixture.features.map((feature: any) => feature.code === "ticket"
-    ? { ...feature, is_enabled: false } : feature);
-  const singleChanges = structuredClone(changes);
-  for (const change of singleChanges.productChanges) {
-    change.ticket_symbol = tickets[0].ticket_symbol;
-    for (const item of change.changed ?? []) {
-      item.from.title = "{{preview_product_0_title}}";
-      item.to.title = "{{preview_product_0_title}}";
-      item.to.price = zero ? 0 : 450;
-    }
-  }
-  singleChanges.referenceTotal = zero ? 0 : 250;
-  singleChanges.currentTotal = zero ? 0 : 450;
-  record.singleApplicationTemplates = contextualize({
-    fullOrder: generateFullOrder(fixture.orderData, tickets.slice(0, 1),
-      applicationFeatures, record.locale as "cs" | "en", fixture.orderSymbol),
-    changeOverview: zero ? "" : generateChangeOverview(singleChanges, record.locale as "cs" | "en"),
-  });
-  record.singleApplicationDefaults = {
-    preview_total: formatCurrency(zero ? 0 : 450),
-    preview_remaining: formatCurrency(zero ? 0 : 150),
-    preview_reference_total: formatCurrency(zero ? 0 : 250),
-  };
   record.applicationContextTemplates = contextualize({
     fullOrder: generateFullOrder(
       fixture.orderData,
@@ -468,6 +445,8 @@ const compositionFixtures = [
 }));
 const output = JSON.stringify(
   { version: 1, sourceDigest, sources, records, compositionFixtures },
+  null,
+  2,
 ) + "\n";
 const rawReferenceHtml =
   `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Ukázky e-mailů</title><style>body{font:16px/1.5 sans-serif;margin:24px;color:#202020;background:#fff}article{max-width:720px;margin:0 auto 40px}a{pointer-events:none}h1{font-size:24px}</style><h1>Obsah e-mailu - ukázková data</h1>` +

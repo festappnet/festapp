@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -95,15 +94,10 @@ class _NewsPageState extends State<NewsPage> {
   }
 
   void _showMessageDialog(BuildContext context) {
-    context.router.root
-        .push<bool>(NewsFormRoute(
-            occasionLink: context.routeData.inheritedPathParams
-                .getString('{occasionLink}'),
-            onSubmit: (submission) =>
-                DbNews.publishSubmission(context, submission)))
-        .then((saved) async {
-      if (saved == true && mounted) await loadData();
-    });
+    context.router.root.push<bool>(NewsFormRoute(occasionLink: context.routeData.inheritedPathParams.getString('{occasionLink}'), onSubmit: (submission) =>
+      DbNews.publishSubmission(context, submission))).then((saved) async {
+        if (saved == true && mounted) await loadData();
+      });
   }
 
   Future<void> loadNewsMessages() async {
@@ -136,8 +130,7 @@ class _NewsPageState extends State<NewsPage> {
       });
 
   @override
-  Widget build(BuildContext context) => HtmlEditingScope(
-      coordinator: _htmlSave, child: _buildHtmlParent(context));
+  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   Widget _buildHtmlParent(BuildContext context) {
     return Scaffold(
@@ -230,30 +223,21 @@ class _NewsPageState extends State<NewsPage> {
                                       Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: EditableHtmlField(
-                                          key: ValueKey(
-                                              'news-html-${message.id}'),
+                                          key: ValueKey('news-html-${message.id}'),
                                           html: message.message,
-                                          enabled: RightsService.hasCapability(
-                                              AuthorizationCapabilities
-                                                  .newsWrite),
-                                          owner: HtmlMediaOwner.occasion(
-                                              RightsService
-                                                  .currentOccasionId()),
+                                          enabled: RightsService.isEditor(),
+                                          owner: HtmlMediaOwner.occasion(RightsService.currentOccasionId()),
                                           onChanged: (_) {},
                                           onSave: (html) async {
-                                            final snapshot = NewsModel(
-                                                id: message.id,
-                                                message: html,
-                                                createdAt: message.createdAt,
-                                                createdBy: message.createdBy,
-                                                views: message.views,
-                                                aggregateVersion: htmlVersion);
-                                            await DbNews.updateNewsMessage(
-                                                snapshot,
+                                            final snapshot = NewsModel(id: message.id,
+                                              message: html, createdAt: message.createdAt,
+                                              createdBy: message.createdBy, views: message.views,
+                                              aggregateVersion: htmlVersion);
+                                            await DbNews.updateNewsMessage(snapshot,
                                                 originalMessage: htmlOriginal);
                                             if (!mounted) return;
-                                            ToastHelper.Show(this.context,
-                                                NewsStrings.messageChanged);
+                                            ToastHelper.Show(
+                                                this.context, NewsStrings.messageChanged);
                                             await loadData();
                                           },
                                         ),
@@ -287,14 +271,13 @@ class _NewsPageState extends State<NewsPage> {
                                   ),
                                 ),
                               ),
-                              if (RightsService.hasCapability(
-                                  AuthorizationCapabilities.newsWrite))
+                              if (RightsService.isEditor())
                                 PopupMenuButton<ContextMenuChoice>(
                                   onSelected: (choice) async {
                                     await DbNews.deleteNewsMessage(message);
                                     if (!mounted) return;
-                                    ToastHelper.Show(this.context,
-                                        NewsStrings.messageRemoved);
+                                    ToastHelper.Show(
+                                        this.context, NewsStrings.messageRemoved);
                                     await loadData();
                                   },
                                   icon: const Icon(Icons.more_horiz),
@@ -316,8 +299,7 @@ class _NewsPageState extends State<NewsPage> {
         ),
       ),
       floatingActionButton: Visibility(
-        visible:
-            RightsService.hasCapability(AuthorizationCapabilities.newsWrite),
+        visible: RightsService.isEditor(),
         child: FloatingActionButton(
           onPressed: () => _showMessageDialog(context),
           child: const Icon(Icons.add),

@@ -3,11 +3,11 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-pnpm run typecheck
-pnpm test
+npm run typecheck
+npm test
 DRY_RUN_DIR="$(mktemp -d)"
 trap 'rm -rf "$DRY_RUN_DIR"' EXIT
-pnpm exec wrangler deploy --dry-run --outdir "$DRY_RUN_DIR" >/dev/null
+npx wrangler deploy --dry-run --outdir "$DRY_RUN_DIR" >/dev/null
 echo "image-worker local validation and dry-run passed"
 
 if [[ "${1:-}" != "--deploy-control" ]]; then
@@ -26,5 +26,5 @@ if [[ "$FESTAPP_IMAGE_DEPLOY_AUTHORITY" != "approved" ]]; then
   exit 1
 fi
 
-pnpm exec wrangler deploy
+npx wrangler deploy
 node ../../automation/verify_image_service.mjs --all-tenants

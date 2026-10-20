@@ -1,9 +1,7 @@
 import 'dart:ui' as ui;
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-
 import 'editor_image_palette.dart';
 import 'editor_dialog.dart';
 
@@ -112,24 +110,6 @@ class _SwatchPainter extends CustomPainter {
       oldDelegate.color != color ||
       oldDelegate.border != border ||
       oldDelegate.selected != selected;
-}
-
-/// Host-owned dialog shell, captured by Flutter when opening a dialog route.
-class EditorColorDialogTheme extends InheritedTheme {
-  const EditorColorDialogTheme({
-    super.key,
-    required this.builder,
-    required super.child,
-  });
-  final Widget Function(BuildContext, AlertDialog) builder;
-  static EditorColorDialogTheme? of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<EditorColorDialogTheme>();
-  @override
-  Widget wrap(BuildContext context, Widget child) =>
-      EditorColorDialogTheme(builder: builder, child: child);
-  @override
-  bool updateShouldNotify(EditorColorDialogTheme oldWidget) =>
-      builder != oldWidget.builder;
 }
 
 /// A draft-only single or paired color editor. Cancel returns null; hosts decide
@@ -472,8 +452,7 @@ class _EditorColorDialogState extends State<EditorColorDialog> {
         ),
       ],
     );
-    return (widget.dialogBuilder ?? EditorColorDialogTheme.of(context)?.builder)
-            ?.call(context, dialog) ??
+    return widget.dialogBuilder?.call(context, dialog) ??
         EditorDialogDismissal(child: dialog);
   }
 }

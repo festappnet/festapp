@@ -1,5 +1,4 @@
 import 'package:fstapp/services/time_helper.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -20,7 +19,6 @@ class ProductPriceWavesDialog extends StatefulWidget {
   final ProductsEditBundle initialBundle;
   final bool canEdit;
   final ProductPriceWaveActions? actions;
-  final DateTime? occasionEnd;
   final Future<ProductsEditBundle> Function()? loader;
   const ProductPriceWavesDialog(
       {super.key,
@@ -28,7 +26,6 @@ class ProductPriceWavesDialog extends StatefulWidget {
       required this.initialBundle,
       required this.canEdit,
       this.loader,
-      this.occasionEnd,
       this.actions});
   @override
   State<ProductPriceWavesDialog> createState() =>
@@ -68,29 +65,11 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
   }
 
   Future<void> term([ProductPriceWave? wave]) async {
-    final occasion = RightsService.currentOccasion();
-    final end = widget.occasionEnd ??
-        (occasion?.link == widget.occasionLink ? occasion?.endTime : null);
-    final suggested = wave?.time ??
-        ProductPriceWave.suggestTime(
-            now: DateTime.now(),
-            end: end,
-            terms: ProductPriceWave.columns(bundle.priceWaves, bundle.products)
-                .map((w) => w.time));
-    if (wave == null && suggested == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(end == null
-              ? 'Nejprve doplňte konec akce.'
-              : 'Před koncem akce už není volný termín pro další vlnu.')));
-      return;
-    }
     setState(() => busy = true);
     final changed = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (_) => _WaveTermDialog(
-            initialTime: suggested,
-            end: end,
             wave: wave,
             save: (time) async {
               if (wave == null) {
@@ -132,19 +111,12 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
               }
               if (wave.id == null) {
                 await DbEshop.saveNewProductWaveTarget(
-                    widget.occasionLink,
-                    wave,
-                    product.id!,
-                    price,
-                    hidden,
+                    widget.occasionLink, wave, product.id!, price, hidden,
                     wave.prices(product).firstOrNull?.revision,
                     wave.visibility(product).firstOrNull?.revision);
               } else {
                 await DbEshop.saveProductWaveTarget(
-                    wave,
-                    product.id!,
-                    price,
-                    hidden,
+                    wave, product.id!, price, hidden,
                     wave.prices(product).firstOrNull?.revision,
                     wave.visibility(product).firstOrNull?.revision);
               }
@@ -708,25 +680,21 @@ class _WaveProductTargetDialogState extends State<WaveProductTargetDialog> {
 
 class _WaveTermDialog extends StatefulWidget {
   final ProductPriceWave? wave;
-  final DateTime? initialTime, end;
   final Future<void> Function(DateTime) save;
-  const _WaveTermDialog(
-      {this.wave, this.initialTime, this.end, required this.save});
+  const _WaveTermDialog({this.wave, required this.save});
   @override
   State<_WaveTermDialog> createState() => _WaveTermDialogState();
 }
 
 class _WaveTermDialogState extends State<_WaveTermDialog> {
   late final date = TextEditingController(
-      text: (widget.wave?.time ?? widget.initialTime) == null
+      text: widget.wave == null
           ? ''
-          : DateFormat('dd.MM.yyyy')
-              .format((widget.wave?.time ?? widget.initialTime)!.toLocal()));
+          : DateFormat('dd.MM.yyyy').format(widget.wave!.time.toLocal()));
   late final time = TextEditingController(
-      text: (widget.wave?.time ?? widget.initialTime) == null
+      text: widget.wave == null
           ? ''
-          : DateFormat('HH:mm')
-              .format((widget.wave?.time ?? widget.initialTime)!.toLocal()));
+          : DateFormat('HH:mm').format(widget.wave!.time.toLocal()));
   bool busy = false;
   String? error;
   @override
@@ -739,9 +707,7 @@ class _WaveTermDialogState extends State<_WaveTermDialog> {
   Future<void> submit() async {
     final instant =
         localScheduleTime(date.text, time.text, existing: widget.wave?.time);
-    if (instant == null ||
-        !instant.isAfter(DateTime.now().toUtc()) ||
-        (widget.end != null && !instant.isBefore(widget.end!))) {
+    if (instant == null || !instant.isAfter(DateTime.now().toUtc())) {
       setState(() => error = OrdersStrings.priceInvalid);
       return;
     }

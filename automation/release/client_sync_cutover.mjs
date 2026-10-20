@@ -283,7 +283,7 @@ export async function executeDisableLifecycle(actions) {
 }
 
 async function runPublisherOnce() {
-  await execFileAsync('pnpm', ['run', 'once'], {
+  await execFileAsync('npm', ['run', 'once'], {
     cwd: path.join(projectRoot, 'workers/sync-publisher'),
     env: process.env,
   });

@@ -1255,7 +1255,7 @@ class _MapPageState extends State<MapPage>
               label: Text(MapStrings.navigate),
             ),
           ],
-          canEdit: RightsService.canMovePlace(place.id),
+          canEdit: RightsService.isEditor(),
           onEditPressed: () {
             if (selectedPlace == null) runEditPositionMode(marker);
           },

@@ -21,7 +21,13 @@ BEGIN
   END IF;
 
   -- Verify admin status
-  IF public.can_manage_organization_settings(organization_id) THEN
+  IF EXISTS (
+    SELECT 1
+    FROM organization_users
+    WHERE "user" = auth.uid()
+      AND organization = organization_id
+      AND is_admin = true
+  ) THEN
     -- Update the organization record
     RETURN QUERY
     UPDATE organizations

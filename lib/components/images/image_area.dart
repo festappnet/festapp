@@ -26,8 +26,6 @@ class ImageArea extends StatefulWidget {
 
   /// Controls if the user can change or remove the image.
   final bool enabled;
-  final bool dropEnabled;
-  final List<String>? allowedExtensions;
 
   const ImageArea({
     super.key,
@@ -37,8 +35,6 @@ class ImageArea extends StatefulWidget {
     this.hint,
     this.preview,
     this.enabled = true,
-    this.dropEnabled = true,
-    this.allowedExtensions,
   });
 
   @override
@@ -66,7 +62,7 @@ class _ImageAreaState extends State<ImageArea> {
   }
 
   Future<void> _handleFileSelected(XFile file) async {
-    if (!mounted || !widget.enabled || _uploading) return;
+    if (!mounted) return;
     setState(() {
       _uploading = true;
       _error = null;
@@ -75,7 +71,7 @@ class _ImageAreaState extends State<ImageArea> {
       final uploadedUrl = await widget.onFileSelected(file);
       if (!mounted) return;
       setState(() {
-        if (uploadedUrl != null) _currentUrl = uploadedUrl;
+        _currentUrl = uploadedUrl;
       });
     } catch (e) {
       AppLogger.error("Error: $e");
@@ -189,9 +185,7 @@ class _ImageAreaState extends State<ImageArea> {
         opacity: widget.enabled ? 1.0 : 0.5,
         child: DropFile(
           hint: widget.hint,
-          dropEnabled: widget.enabled && widget.dropEnabled,
-          allowedExtensions: widget.allowedExtensions ??
-              const ['jpg', 'jpeg', 'png', 'webp', 'heic'],
+          allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'heic'],
           onFilePathChanged: (file) => _handleFileSelected(file),
         ),
       ),

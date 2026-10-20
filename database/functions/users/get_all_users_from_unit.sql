@@ -20,7 +20,12 @@ BEGIN
   END IF;
 
   -- Step 2: Permission Check
-  IF NOT public.can_read_unit_users(unit_id) THEN
+  IF NOT EXISTS (
+      SELECT 1 FROM public.unit_users
+      WHERE "user" = auth.uid()
+        AND unit = unit_id
+        AND (is_manager = true OR is_editor = true OR is_editor_view = true)
+  ) THEN
     RETURN jsonb_build_object('code', 403);
   END IF;
 

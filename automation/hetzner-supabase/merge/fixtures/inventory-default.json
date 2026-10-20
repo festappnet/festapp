@@ -1,0 +1,11 @@
+{
+  "source": { "alias": "default", "project_ref": "kjdpmixlnhntmxjedpxh" },
+  "schema_fingerprint_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "catalog": {
+    "postgres_version": "15.8",
+    "postgres_version_num": "150008",
+    "relations": [{ "schema_name": "public", "table_name": "organizations", "relkind": "r", "total_bytes": 100, "estimated_rows": 1 }],
+    "columns": [{ "schema_name": "public", "table_name": "organizations", "column_name": "id", "data_type": "bigint" }],
+    "constraints": [], "routines": [], "policies": [], "extensions": []
+  }
+}

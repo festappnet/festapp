@@ -112,7 +112,7 @@ must remain disabled until the source allowlist and negative P2 probes succeed.
 
 ```bash
 cd workers/image-worker
-pnpm install --frozen-lockfile
+npm ci
 ./deploy.sh --check
 ```
 

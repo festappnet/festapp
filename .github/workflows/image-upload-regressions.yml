@@ -38,17 +38,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: pnpm
-          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+          cache: npm
+          cache-dependency-path: workers/image-worker/package-lock.json
+      - run: npm ci
         working-directory: workers/image-worker
-      - run: pnpm run typecheck && pnpm run test:unit
+      - run: npm run typecheck && npm run test:unit
         working-directory: workers/image-worker
   client-contract:
     runs-on: ubuntu-latest
@@ -79,5 +76,5 @@ jobs:
           test/components/ticket_layout/ticket_canvas_selection_cases.dart
           test/widgets/app_text_selection_cases.dart
       - run: >-
-          fvm flutter test --no-pub --concurrency=1 --platform chrome
-          test/components/html/html_image_preview_cases.dart
+          fvm flutter test --no-pub --platform chrome
+          test/components/html/html_image_preview_test.dart

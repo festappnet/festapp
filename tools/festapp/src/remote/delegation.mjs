@@ -46,12 +46,15 @@ export class DelegatedOwner {
             check(access.occasionIds.includes(args.occasionId), 'FORBIDDEN');
         }
     }
-    // Domain SQL checks the live binding atomically; this only projects the
-    // consent's narrowing constraints into that same request.
-    delegatedContext() {
+    async authorizeContext(id, args, client) {
         const access = this.current().access;
-        return { organizationId: this.config.profile.organizationId,
-            unitId: access.type === 'unit' ? access.unitId : null };
+        if (['context.inspect', 'access.inspect'].includes(id) || access.type === 'occasions') return;
+        const live = await operatorAccess(client, this.config.profile,
+            { unitId: access.unitId, occasionId: args.occasionId });
+        const unit = live.units.find(u => u.id === access.unitId);
+        check(unit, 'FORBIDDEN');
+        if (id === 'occasions.create') check(unit.canCreateOccasions, 'FORBIDDEN');
+        else check(live.occasions.some(o => o.id === args.occasionId && o.unitId === access.unitId), 'FORBIDDEN');
     }
     async listAccess(client) {
         const access = this.current().access;

@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import { extractFunctionBody } from './lib/sql_function_body.mjs';
-import { readHistoricalSql } from './lib/historical_sql.mjs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -53,7 +51,8 @@ const requiredSources = [
   'docs/plans/offline-sync-revision-cache-plan-2026-08-02.md',
   'docs/plans/offline-sync-revision-cache-EXECUTION-PROMPT-2026-08-02.md',
   'docs/plans/offline-sync-preflight-baseline-2026-08-02.md',
-  'automation/historical-sql-manifest.json',
+  'supabase/migrations/20260806100000_client_sync_production_hardening.sql',
+  'supabase/migrations/20260807150000_allow_admin_feedback_deletion.sql',
   'automation/release/client_sync_health.mjs',
   'automation/release/configure_client_sync_publisher_schedule.mjs',
   'automation/release/client_sync_cutover.mjs',
@@ -100,6 +99,12 @@ const feedbackTableContract = {
   },
 };
 
+function extractFunctionBody(sql) {
+  const match = sql.match(/\$function\$([\s\S]*)\$function\$/);
+  if (!match) throw new Error('SQL source has no $function$ body');
+  return match[1].replace(/\s+/g, '');
+}
+
 function normalizeSqlFragment(value) {
   return value.replace(/\s+/g, ' ').replace(/\s*,\s*/g, ', ').trim();
 }
@@ -138,7 +143,7 @@ function parseLocalFunctionContract(sql, functionName) {
         ? 'i'
         : 'v',
     securityDefiner: /\bSECURITY\s+DEFINER\b/i.test(sql),
-    searchPath: /\bSET\s+search_path\s*(?:=\s*public\s*,\s*extensions\b|TO\s+'public'\s*,\s*'extensions')/i.test(sql),
+    searchPath: /\bSET\s+search_path\s*=\s*public\s*,\s*extensions\b/i.test(sql),
     revokePublic,
     executeRoles,
     body: extractFunctionBody(sql),
@@ -182,10 +187,7 @@ function runLocalChecks() {
         !contract.securityDefiner ||
         !contract.searchPath ||
         !contract.revokePublic ||
-        // This editor command is actor-bound; the public feedback wrappers also
-        // expose service execution. Do not demand broader grants for the command.
-        (functionName === 'delete_event_feedback_for_edit_client_sync_v1'
-          ? ['authenticated'] : ['authenticated', 'service_role']).some(
+        ['authenticated', 'service_role'].some(
           (role) => !contract.executeRoles.includes(role),
         )
       ) {
@@ -210,7 +212,13 @@ function runLocalChecks() {
         .filter(([, present]) => !present)
         .map(([clause]) => clause)
     : [];
-  const hardening = readHistoricalSql('supabase/migrations/20260806100000_client_sync_production_hardening.sql');
+  const hardeningPath = path.join(
+    projectRoot,
+    'supabase/migrations/20260806100000_client_sync_production_hardening.sql',
+  );
+  const hardening = fs.existsSync(hardeningPath)
+    ? fs.readFileSync(hardeningPath, 'utf8')
+    : '';
   const publisherPackage = fs.readFileSync(
     path.join(projectRoot, 'workers/sync-publisher/package.json'),
     'utf8',

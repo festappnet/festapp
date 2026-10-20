@@ -1,4 +1,3 @@
--- One transaction retains the injected scanner fixture across every DO block.
 BEGIN;
 DO $$
 DECLARE s record; r jsonb;
@@ -12,6 +11,8 @@ BEGIN
  END LOOP;
  BEGIN PERFORM public.scanner_session_internal(gen_random_uuid(),'invalid');PERFORM assert_fail('invalid bearer denied');EXCEPTION WHEN SQLSTATE 'PT401' THEN NULL;END;
 END $$;
+ROLLBACK;
+BEGIN;
 DO $$
 DECLARE a jsonb; b jsonb; sa jsonb; sb jsonb; dto jsonb; snapshot jsonb; response jsonb; original_state text; foreign_ticket bigint;
 BEGIN

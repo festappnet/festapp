@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'order_delete_dialog.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -44,10 +43,11 @@ class OrdersContent extends StatefulWidget {
 }
 
 bool canSaveOrderGridChanges({
-  required bool canWriteOrders,
-  required bool canDeleteOrders,
+  required bool isOrderEditor,
+  required bool isUnitManager,
+  required bool isUnitEditor,
 }) =>
-    canWriteOrders || canDeleteOrders;
+    isOrderEditor || isUnitManager || isUnitEditor;
 
 /// Waiting registrations remain available for offers when the Active filter hides them.
 List<OrderModel> waitingOrdersForOffers(
@@ -105,7 +105,7 @@ Widget waitlistOffersToolbarButton(
 }) {
   final count = availableWaitlistOffers(
       forms, grid.rows.map(OrderGridFilters.order).whereType<OrderModel>());
-  if (!RightsService.canUpdateOrders() || count == 0) {
+  if (!RightsService.isEditorOrder() || count == 0) {
     return const SizedBox.shrink();
   }
   final action = createWaitlistOffersAction(context,
@@ -135,7 +135,7 @@ DataGridAction createWaitlistOffersAction(
       requiresSelection: false,
       isEnabled: () {
         final grid = controller();
-        return RightsService.canUpdateOrders() &&
+        return RightsService.isEditorOrder() &&
             grid != null &&
             grid.isGridLoaded &&
             !grid.hasUnsavedChanges &&
@@ -144,7 +144,7 @@ DataGridAction createWaitlistOffersAction(
                 0;
       },
       action: (SingleDataGridController grid, [_]) async {
-        if (!RightsService.canUpdateOrders() || grid.hasUnsavedChanges) return;
+        if (!RightsService.isEditorOrder() || grid.hasUnsavedChanges) return;
         final checked = checkedWaitingOrdersForOffers(grid, forms());
         final selected = checked.isNotEmpty
             ? checked
@@ -366,7 +366,7 @@ class _OrdersContentState extends State<OrdersContent> {
                 WaitlistOffersDialog(form: chosen, orders: bundle.orders));
         await refreshData();
       },
-      isEnabled: RightsService.canUpdateOrders,
+      isEnabled: RightsService.isEditorOrder,
     );
 
     final newController = SingleDataGridController<OrderModel>(
@@ -399,7 +399,7 @@ class _OrdersContentState extends State<OrdersContent> {
         forms = newBundle.forms;
         final actions = controller?.headerChildren;
         actions?.removeWhere((action) => identical(action, sendOffersAction));
-        if (RightsService.canUpdateOrders() &&
+        if (RightsService.isEditorOrder() &&
             forms.any((f) => f.definition.waitlistEnabled)) {
           actions?.insert(0, sendOffersAction);
         }
@@ -407,21 +407,21 @@ class _OrdersContentState extends State<OrdersContent> {
       },
       fromPlutoJson: OrderModel.fromPlutoJson,
       firstColumnType:
-          RightsService.hasCapability(AuthorizationCapabilities.ordersDelete)
+          (RightsService.isUnitManager() || RightsService.isUnitEditor())
               ? DataGridFirstColumn.deleteAndCheck
               : DataGridFirstColumn.check,
       idColumn: TbEshop.orders.id,
       actionsExtended: DataGridActionsController(
         areAllActionsEnabled: () => canSaveOrderGridChanges(
-          canWriteOrders: RightsService.canUpdateOrders(),
-          canDeleteOrders: RightsService.hasCapability(
-              AuthorizationCapabilities.ordersDelete),
+          isOrderEditor: RightsService.isEditorOrder(),
+          isUnitManager: RightsService.isUnitManager(),
+          isUnitEditor: RightsService.isUnitEditor(),
         ),
         canDeleteRow: OrderGridFilters.orderCanBeDeleted,
         isAddActionPossible: () => false,
       ),
       headerChildren: [
-        if (RightsService.canUpdateOrders() &&
+        if (RightsService.isEditorOrder() &&
             forms.any((f) => f.definition.waitlistEnabled))
           sendOffersAction,
         DataGridAction(
@@ -430,7 +430,7 @@ class _OrdersContentState extends State<OrdersContent> {
           action: (SingleDataGridController singleDataGrid, [_]) =>
               cancelOrders(singleDataGrid),
           isEnabled: () =>
-              RightsService.canUpdateOrders() &&
+              RightsService.isOrderEditor() &&
               (controller?.visibleCheckedRows
                       .every((row) => OrderGridFilters.allows(row, 'cancel')) ??
                   false),
@@ -441,7 +441,7 @@ class _OrdersContentState extends State<OrdersContent> {
           action: (SingleDataGridController singleDataGrid, [_]) =>
               sendTicketsOrConfirmations(singleDataGrid),
           isEnabled: () =>
-              RightsService.canUpdateOrders() &&
+              RightsService.isOrderEditor() &&
               (controller?.visibleCheckedRows.every((row) =>
                       OrderGridFilters.allows(row, 'send') ||
                       OrderGridFilters.allows(row, 'paid')) ??

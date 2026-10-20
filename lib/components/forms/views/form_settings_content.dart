@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'form_variable_symbol_settings.dart';
 
 import 'package:flutter/foundation.dart';
@@ -62,13 +61,11 @@ class FormSettingsContent extends StatefulWidget {
 
 class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
-  bool _deadlineInherited = true;
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
         _titleController.text,
         _linkController.text,
         _deadlineDaysController.text,
-        _deadlineInherited,
         _startingNumberController.text,
         _reminderMode,
         _reminderDaysController.text,
@@ -241,13 +238,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           ? savedTone as String
           : 'inherit';
 
-      _deadlineInherited = _form!.definition.deadlineDurationSeconds == null;
-      _deadlineDaysController.text = (_form!.definition
-                  .effectiveDeadlineDurationSeconds(
-                      occasionDefault: _formFeature.deadlineDurationSeconds) /
-              86400)
-          .round()
-          .toString();
+      if (_form!.definition.deadlineDurationSeconds != null &&
+          _form!.definition.deadlineDurationSeconds! >= 0) {
+        final days =
+            (_form!.definition.deadlineDurationSeconds! / (24 * 3600)).round();
+        _deadlineDaysController.text = days.toString();
+      } else {
+        _deadlineDaysController.text = '';
+      }
     } else {
       _form = null;
     }
@@ -336,9 +334,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     final days = int.tryParse(_deadlineDaysController.text);
     _form!.definition = _form!.definition.copyWith(
       data: metadata,
-      deadlineDurationSeconds: !_deadlineInherited && days != null && days >= 0
-          ? days * 86400
-          : null,
+      deadlineDurationSeconds: days != null && days >= 0 ? days * 86400 : null,
     );
 
     try {
@@ -505,9 +501,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         .toList()
       ..sort();
     final unitId = RightsService.currentUnit()?.id;
-    final canManageAccounts = unitId != null &&
-        RightsService.hasCapability(
-            AuthorizationCapabilities.bankAccountsUnitManage);
+    final canManageAccounts = unitId != null && RightsService.isUnitEditor();
 
     final guidance = missingCurrencies.isNotEmpty
         ? (canManageAccounts
@@ -797,28 +791,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                   TextFormField(
                                     enabled: _canEdit,
                                     controller: _deadlineDaysController,
-                                    onChanged: (value) => setState(() =>
-                                        _deadlineInherited = value.isEmpty),
                                     decoration: InputDecoration(
                                       labelText: FormStrings.labelDeadlineDays,
-                                      suffixIcon: IconButton(
-                                        tooltip: FormStrings.inheritDays(
-                                            (_formFeature
-                                                        .deadlineDurationSeconds ??
-                                                    604800) /
-                                                86400),
-                                        icon: const Icon(Icons.restore),
-                                        onPressed: () => setState(() {
-                                          _deadlineInherited = true;
-                                          _deadlineDaysController
-                                              .text = ((_formFeature
-                                                          .deadlineDurationSeconds ??
-                                                      604800) /
-                                                  86400)
-                                              .round()
-                                              .toString();
-                                        }),
-                                      ),
                                       border: const OutlineInputBorder(),
                                       helperText: FormStrings.inheritDays(
                                         (_formFeature.deadlineDurationSeconds ??

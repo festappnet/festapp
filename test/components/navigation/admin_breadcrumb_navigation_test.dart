@@ -98,7 +98,6 @@ void main() {
           isHidden: false,
           isPromoted: false),
       occasionUser: OccasionUserModel(isEditorView: true),
-      capabilities: const {'navigation.administration': true},
     );
     addTearDown(() {
       RightsService.occasionLinkModelNotifier.value = previous;
