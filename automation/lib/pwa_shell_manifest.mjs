@@ -73,8 +73,21 @@ export async function collectPwaShellManifest(buildDir) {
     if (error.code !== 'ENOENT') throw error;
   }
   const collected = await collectFiles(buildDir);
+  let canvasKitOnly = false;
+  try {
+    const bootstrap = await readFile(path.join(buildDir, 'flutter_bootstrap.js'), 'utf8');
+    const config = bootstrap.match(/^_flutter\.buildConfig\s*=\s*(\{.*\});\s*$/m)?.[1];
+    const builds = config && JSON.parse(config).builds;
+    canvasKitOnly = Array.isArray(builds) && builds.length > 0 &&
+      builds.every(build => build.compileTarget === 'dart2js' && build.renderer === 'canvaskit');
+  } catch (_) {
+    // Unknown/older bootstrap formats retain the conservative complete set.
+  }
   const filesWithImmutableChunks = new Set(collected.map(entry => entry.url));
   const files = collected.filter(entry => {
+    // Flutter ships both engines even for a CanvasKit-only build. Skwasm and
+    // Wimp cannot be selected by that build; retain every CanvasKit variant.
+    if (canvasKitOnly && /^\/canvaskit\/(?:skwasm(?:_heavy)?|wimp)\.(?:js|wasm)$/.test(entry.url)) return false;
     if (!/^\/main\.dart\..*js_\d+\.part\.js$/.test(entry.url)) return true;
     // Keep only this release's chunk when its immutable alias exists.
     const suffix = entry.url.match(/js_(\d+\.part\.js)$/)[1];

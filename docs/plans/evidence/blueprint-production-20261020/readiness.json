@@ -11,7 +11,8 @@
     "organization": 3,
     "reviewedGeometryAndCatalogMatchCurrentSource": true,
     "otherTenantDataExcluded": true,
-    "canonicalPreparedText": true
+    "canonicalPreparedText": true,
+    "textResourcesRegisteredOnlyForExactDependencies": true
   },
   "verification": {
     "packageCore": 263,
@@ -47,7 +48,15 @@
     "realPostgresRaces": 19,
     "freshForwardPreservesSoldHeldAndReplay": true,
     "generatedProductionCutoverQualification": true,
-    "publishedMigrationDrift": false
+    "publishedMigrationDrift": false,
+    "pwaRendererCacheTestsPass": 7,
+    "candidateCacheBytes": {
+      "core": 23175043,
+      "known": 52733107,
+      "coreLimit": 26214400,
+      "knownLimit": 62914560
+    },
+    "reviewedProductionDocsSqlAndTextDependencies": 22
   },
   "releaseIntegrationFix": "Standing capacity passes only canonical pool DTO fields to existing inventory owner. Implicit blueprint offers retain current main hold locks, expiry and receipt recovery. Explicit optional cancellation email stays separate from cancellation command.",
   "productionWritesPerformed": false
