@@ -1,4 +1,5 @@
 import '../../support/fixtures/localization_log_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/features/ticket_feature.dart';
@@ -17,10 +18,11 @@ void main() {
       () async {
     late Map<String, dynamic> sent;
     final commands = SupabaseOccasionCommands.withTransport(
-        ClientCommandTransport((name, parameters) async {
+        ClientCommandTransport((name, params) async {
       expect(name, 'save_occasion_client_sync_v1');
-      sent = parameters;
+      sent = params;
       return {
+        ...commandResponseFixture(params['p_command_id']),
         'status': 'applied',
         'code': 200,
         'data': {
@@ -56,6 +58,7 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': {
@@ -103,6 +106,7 @@ void main() {
       config =
           jsonDecode(jsonEncode(params['p_config'])) as Map<String, dynamic>;
       return {
+        ...commandResponseFixture(params['p_command_id']),
         'status': 'applied',
         'code': 200,
         'data': {
@@ -138,6 +142,7 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': name.startsWith('duplicate')
@@ -164,6 +169,7 @@ void main() {
         expect(params['p_target_unit'], 23);
         expect(params['p_locale'], 'cs');
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': {'occasionId': 12},
@@ -180,6 +186,7 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': {
@@ -212,6 +219,7 @@ void main() {
       ClientCommandTransport((name, params) async {
         functionName = name;
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': {'message': 'deleted'},
@@ -230,6 +238,7 @@ void main() {
       ClientCommandTransport((name, params) async {
         calls.add(name);
         return {
+          ...commandResponseFixture(params['p_command_id']),
           'status': 'applied',
           'code': 200,
           'data': <String, dynamic>{},

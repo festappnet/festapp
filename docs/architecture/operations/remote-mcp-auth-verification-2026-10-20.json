@@ -1,0 +1,61 @@
+{
+  "status": "implementation_and_isolated_acceptance_passed_public_activation_pending",
+  "scope": {
+    "tenant": "festapptickets",
+    "domain": "vstupenky.online",
+    "issuer": "https://mcp.festapp.net",
+    "resource": "https://mcp.festapp.net/mcp",
+    "pilotOperators": 1,
+    "pilotOccasions": 5,
+    "operations": ["context.inspect", "ticket_layouts.inspect"],
+    "blueprintV2Included": false
+  },
+  "source": {
+    "mainBase": "49f3d0e0603973e75f41f1c83c47a45285a3f72d",
+    "runtimeCommit": "466a7a75b3f3255c0c7944d2bfd2668d41da9400",
+    "composeCommit": "8b58adc82232f39014879b0d88322b5e3342a5f7",
+    "pullRequest": "https://github.com/festappnet/festapp/pull/529"
+  },
+  "verification": {
+    "runtime": "Node 24.20.0",
+    "nodeCasesPassed": 37,
+    "nodeCasesSkipped": 0,
+    "realDisposablePostgresOwnerIntegration": true,
+    "realIssuerAndOfficialSdkHttpClient": true,
+    "authBoundaryInHttpTests": "mocked ordinary Auth/REST responses",
+    "staticLoginAndConsentAxeViolations": 0,
+    "mobileWidthPx": 320,
+    "horizontalOverflow": false,
+    "keyboardFocusVerified": true,
+    "privatePilotConfigValid": true,
+    "productionBusinessWrites": false,
+    "realGoTrueLoginTested": false,
+    "realChatGptConnectionTested": false,
+    "mfaGoogleAndDeviceLoginImplemented": false
+  },
+  "image": {
+    "platform": "linux/arm64",
+    "id": "sha256:3b35dd42fb9ef8b625c56acd0dbdc0c8857fa7251b022a4ae1b5ea4c696aacfd",
+    "base": "node:24.20.0-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e",
+    "runtimeInputsUnchangedThroughComposeCommit": true,
+    "exactComposeHealthcheckPassed": true,
+    "discoveryAndUnauthenticatedChallengePassed": true,
+    "composeAndCaddyValidationPassed": true,
+    "isolatedNoNetworkOrPublishedPorts": true,
+    "startupRssKb": 96180,
+    "capacityLoadTest": false,
+    "fixtureContainersVolumesAndSecretsRemoved": true
+  },
+  "activation": {
+    "publicEndpointDeployed": false,
+    "mainReviewRequired": 1,
+    "dnsRecordPresent": false,
+    "availableCloudflareDnsAccess": "read only",
+    "remaining": [
+      "required approving PR review and canonical-main publication",
+      "DNS-edit capability or operator-created approved DNS record",
+      "protected host provisioning and immutable sidecar deployment",
+      "exact ChatGPT callback confirmation and real operator login/consent/read/revocation"
+    ]
+  }
+}

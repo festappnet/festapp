@@ -1,4 +1,9 @@
-CREATE OR REPLACE FUNCTION public.save_profile_companion_internal_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb)
+-- Canonical profile ownership cleanup. Installed migration history is immutable.
+BEGIN;
+
+-- Source: database/functions/users/save_profile_client_sync_v1.sql
+-- Canonical profile command: receipt, version and companion effects have one owner.
+CREATE OR REPLACE FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -64,4 +69,30 @@ BEGIN
     '{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.save_profile_companion_internal_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) TO authenticated;
+
+DO $retired_implementation_guard$
+DECLARE retired_name text;
+BEGIN
+ FOREACH retired_name IN ARRAY ARRAY[
+  'advance_group_profile_heads_internal_v1',
+  'save_profile_companion_internal_v1','import_profiles_companion_internal_v1',
+  'replace_group_assignments_companion_internal_v1','delete_occasion_user_companion_internal_v1'
+ ] LOOP
+  IF EXISTS(SELECT 1 FROM pg_proc p WHERE p.prokind='f'
+   AND p.proname<>ALL(ARRAY['advance_group_profile_heads_internal_v1','save_profile_companion_internal_v1','import_profiles_companion_internal_v1',
+    'replace_group_assignments_companion_internal_v1','delete_occasion_user_companion_internal_v1'])
+   AND position(retired_name||'(' IN regexp_replace(p.prosrc,'\s','','g'))>0) THEN
+   RAISE EXCEPTION 'Retired implementation % still has a stored caller',retired_name;
+  END IF;
+ END LOOP;
+END $retired_implementation_guard$;
+DROP FUNCTION IF EXISTS public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb) RESTRICT;
+DROP FUNCTION IF EXISTS public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb) RESTRICT;
+DROP FUNCTION IF EXISTS public.replace_group_assignments_companion_internal_v1(bigint,uuid,jsonb) RESTRICT;
+DROP FUNCTION IF EXISTS public.delete_occasion_user_companion_internal_v1(bigint,uuid,uuid,bigint) RESTRICT;
+
+DROP FUNCTION IF EXISTS public.advance_group_profile_heads_internal_v1(bigint,uuid[]) RESTRICT;
+
+COMMIT;

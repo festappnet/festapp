@@ -14,6 +14,7 @@ test('runtime exposes Google and signed email proof endpoints and fails on upstr
     const source=fs.readFileSync(file,'utf8');
     assert.match(source,/google-auth-start/);assert.match(source,/google-auth-callback/);assert.match(source,/google-auth-complete/);
     assert.match(source,/process-email-queue/);assert.match(source,/auth-email-hook/);assert.match(source,/email-provider-events/);assert.match(source,/email-confirmation-status/);
+    assert.match(source,/mcp-session-exchange/);
     assert.match(source,/emailWorkerEnvironment\(service_name, envVarsObj\)/);
     assert.doesNotMatch(source,/send-email-gateway/);
     assert.doesNotMatch(source,/"register"|"send-email"/);

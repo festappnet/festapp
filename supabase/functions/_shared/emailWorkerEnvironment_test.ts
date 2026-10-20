@@ -57,3 +57,11 @@ Deno.test('only account confirmation receives the dedicated asset deletion capab
     assertEquals(Object.fromEntries(emailWorkerEnvironment(service, environment)), { DEFAULT_EMAIL: 'sender' });
   }
 });
+
+Deno.test('only the first-party MCP broker receives the protected tenant registry', () => {
+  const environment = { FESTAPP_MCP_TENANTS_JSON: 'secret registry', DEFAULT_EMAIL: 'sender' };
+  assertEquals(Object.fromEntries(emailWorkerEnvironment('mcp-session-exchange', environment)), environment);
+  for (const service of ['process-email-queue', 'google-auth-start', 'fetch-http-data', 'unknown']) {
+    assertEquals(Object.fromEntries(emailWorkerEnvironment(service, environment)), { DEFAULT_EMAIL: 'sender' });
+  }
+});

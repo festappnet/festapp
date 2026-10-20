@@ -1,3 +1,4 @@
+import 'package:fstapp/components/mcp/mcp_connection_page.dart';
 import 'package:fstapp/components/navigation/platform_route_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -83,6 +84,8 @@ class AppRouter extends RootStackRouter {
         AutoRoute(
             page: LoginQrScannerRoute.page, path: sl(LoginQrScannerPage.ROUTE)),
         AutoRoute(page: SignupRoute.page, path: sl(SignupPage.ROUTE)),
+        AutoRoute(
+            page: McpConnectionRoute.page, path: McpConnectionPage.routePath),
         AutoRoute(page: SettingsRoute.page, path: sl(SettingsPage.ROUTE)),
         AutoRoute(
             page: BankAccountConnectionSettingsRoute.page,

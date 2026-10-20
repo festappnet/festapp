@@ -277,6 +277,14 @@
         "canonical-email-enqueue"
       ],
       "mutates_authority": true
+    },
+    "mcp-session-exchange": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "auth-session-create"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {

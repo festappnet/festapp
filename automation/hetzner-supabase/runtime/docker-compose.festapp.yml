@@ -94,6 +94,7 @@ services:
   functions:
     image: supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7
     environment:
+      FESTAPP_MCP_TENANTS_JSON: ${FESTAPP_MCP_TENANTS_JSON:-[]}
       FESTAPP_TRUSTED_IP_HEADER: X-Festapp-Client-IP
       GOOGLE_AUTH_TRUSTED_IP_HEADER: X-Festapp-Client-IP
       FESTAPP_ALLOWED_WEB_ORIGINS: ${FESTAPP_ALLOWED_WEB_ORIGINS:-https://festapp-rehearsal.invalid}

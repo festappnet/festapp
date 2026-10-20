@@ -1,0 +1,25 @@
+{
+  "name": "@festapp/operator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "bin": {
+    "festapp": "src/cli/main.mjs"
+  },
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@napi-rs/canvas": "1.0.11",
+    "@napi-rs/keyring": "2.1.2",
+    "@supabase/supabase-js": "2.118.0",
+    "express": "5.3.0",
+    "oidc-provider": "9.12.2",
+    "pdfjs-dist": "6.4.299",
+    "zod": "4.6.7"
+  }
+}

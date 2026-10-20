@@ -414,6 +414,21 @@
         "email.actor",
         "email.ordinary"
       ]
+    },
+    "mcp-session-exchange": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/mcp-session-exchange/handler_test.ts",
+        "supabase/functions/_shared/issueExistingUserSession_test.ts",
+        "supabase/functions/mcp-session-exchange/config_test.ts"
+      ],
+      "abusePolicy": [
+        "auth.mcp.single-use-request",
+        "auth.mcp.exact-origin",
+        "auth.mcp.issuer-budget"
+      ]
     }
   },
   "excluded": {
