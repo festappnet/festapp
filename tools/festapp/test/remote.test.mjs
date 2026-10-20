@@ -150,6 +150,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     r = await broker('prepare', { accessToken: supabaseToken, occasions: [7] });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
+    assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal((await broker('prepare', { accessToken: supabaseToken, occasions: [7] })).status, 403);
     assert.equal((await broker('complete', { lease: 'wrong', session: {} })).status, 403);
     r = await broker('complete', { lease: prepared.lease,
@@ -166,6 +167,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     }
     const callback = new URL(target, f.issuer);
     assert(callback.searchParams.get('code'));
+    assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
         grant_type: 'authorization_code', code: callback.searchParams.get('code'), client_id: 'chatgpt-fixture',
         redirect_uri: f.issuer + '/callback', code_verifier: verifier, resource: f.config.resource,
@@ -173,6 +175,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert.equal(r.status, 200, await r.clone().text());
     const tokens = await r.json();
     assert(tokens.access_token);
+    assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);
     assert.deepEqual(f.storage.values('Delegation')[0].occasions, [7]);
     const client = new Client({ name: 'tenant-consent-test', version: '1' });
@@ -180,8 +183,11 @@ test('tenant consent uses app access proof, an independent session and the origi
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
     }));
     t.after(() => client.close());
+    assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'connected' });
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
     assert.equal(result.isError, undefined);
+    f.storage.revoke(f.storage.values('Delegation')[0].id);
+    assert.equal((await broker('status', { accessToken: supabaseToken })).status, 403);
 });
 
 test('tenant cancellation and expired requests cannot issue or prepare a grant', async t => {

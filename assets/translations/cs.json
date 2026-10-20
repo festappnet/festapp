@@ -3425,6 +3425,14 @@
     "cancel": "Zrušit",
     "connecting": "Propojuji…",
     "error": "Propojení se nepodařilo. Požadavek mohl vypršet nebo účet nemá přístup. Spusť propojení znovu v připojované aplikaci.",
-    "retry": "Zkusit znovu"
+    "retry": "Zkusit znovu",
+    "connected": "Propojeno",
+    "connectedClient": "{client} má povolený přístup k tvému účtu.",
+    "closeHint": "Toto okno můžeš zavřít a vrátit se do připojené aplikace.",
+    "closeWindow": "Zavřít okno",
+    "backToTenant": "Zpět na {tenant}",
+    "waitingForClient": "Dokončujeme propojení. Potvrzení se otevřelo v pomocném okně.",
+    "completionUnknown": "Přístup byl povolen, ale aplikace zatím nepotvrdila dokončení. Zkontroluj ji a případně spusť propojení znovu.",
+    "finishing": "Dokončujeme propojení"
   }
 }

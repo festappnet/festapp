@@ -27,6 +27,19 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
             req.body?.organizationId === config.profile.organizationId &&
             req.body?.tenantOrigin === config.tenantOrigin, 'FORBIDDEN');
         const { request, operation, accessToken } = req.body ?? {};
+        if (operation === 'status') {
+            check(typeof request === 'string' && /^[A-Za-z0-9_-]{43}$/.test(request), 'FORBIDDEN');
+            const result = storage.get('TenantResult', digest(request));
+            const pending = !result && read(request);
+            const uid = result?.uid ?? pending.uid;
+            const userId = result?.userId ?? pending.flow.userId;
+            await owner(uid).withAccessToken(accessToken, async (_backend, context) =>
+                check(context.userId === userId, 'FORBIDDEN'));
+            if (!result) return res.json({ status: 'pending' });
+            const grant = storage.get('Delegation', result.grantId);
+            if (!grant || grant.revoked || grant.expiresAt <= Date.now()) return res.json({ status: 'revoked' });
+            return res.json({ status: grant.clientConnectedAt ? 'connected' : 'pending' });
+        }
         const { uid, flow } = read(request);
         if (operation === 'cancel') {
             check(!['completing', 'approved', 'finishing'].includes(flow.state), 'FORBIDDEN');
@@ -53,7 +66,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         }));
         const client = config.clients.find(c => c.id === flow.clientId);
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
-            tenantOrigin: config.tenantOrigin, occasions: proof.occasions, expiresAt: flow.expiresAt });
+            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, occasions: proof.occasions, expiresAt: flow.expiresAt });
         const selected = req.body.occasions;
         check(Array.isArray(selected) && selected.length > 0 && selected.length <= 100 &&
             selected.every(id => Number.isSafeInteger(id) && proof.occasions.some(o => o.id === id)), 'FORBIDDEN');

@@ -3424,6 +3424,14 @@
     "cancel": "Cancel",
     "connecting": "Connecting…",
     "error": "Connection failed. The request may have expired or the account lacks access. Start connecting again in the application.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "connected": "Connected",
+    "connectedClient": "{client} has access to your account.",
+    "closeHint": "You can close this window and return to the connected application.",
+    "closeWindow": "Close window",
+    "backToTenant": "Back to {tenant}",
+    "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",
+    "completionUnknown": "Access was approved, but completion has not been confirmed yet. Check the application and start connecting again if needed.",
+    "finishing": "Finishing the connection"
   }
 }
