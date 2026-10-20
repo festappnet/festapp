@@ -418,7 +418,7 @@ BEGIN
             );
         END LOOP;
 
-        order_data := input_data - 'ticket' || JSONB_BUILD_OBJECT('tickets', ticket_details);
+        order_data := input_data - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
 
         -- Determine the bank account details based on the form and supported currency fallback using unit accounts only
         -- Modified Bank Account Selection: Exclude CASH Accounts

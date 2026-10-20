@@ -3180,6 +3180,8 @@
     "weekend": "Víkendovka"
   },
   "OrderOverview": {
+    "table": "Stůl",
+    "seat": "Místo",
     "unavailableTitle": "Objednávka není dostupná",
     "unavailable": "Objednávka mohla být smazána nebo odkaz již není platný. Pokud potřebujete pomoc, kontaktujte pořadatele akce.",
     "title": "Přehled objednávky",

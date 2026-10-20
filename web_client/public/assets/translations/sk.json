@@ -840,6 +840,8 @@
     }
   },
   "OrderOverview": {
+    "table": "Stôl",
+    "seat": "Miesto",
     "unavailableTitle": "Objednávka nie je dostupná",
     "unavailable": "Objednávka mohla byť vymazaná alebo odkaz už nie je platný. Ak potrebujete pomoc, kontaktujte organizátora podujatia.",
     "title": "Prehľad objednávky",

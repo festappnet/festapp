@@ -162,7 +162,7 @@ BEGIN
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data
+                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))
                 ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email')
             END,
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden

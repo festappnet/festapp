@@ -1058,6 +1058,8 @@
     "back": "Zurück zu Ihren Veranstaltungen"
   },
   "OrderOverview": {
+    "table": "Tisch",
+    "seat": "Sitzplatz",
     "unavailableTitle": "Bestellung nicht verfügbar",
     "unavailable": "Die Bestellung wurde möglicherweise gelöscht oder der Link ist nicht mehr gültig. Wenn Sie Hilfe benötigen, wenden Sie sich an den Veranstalter.",
     "title": "Bestellübersicht",

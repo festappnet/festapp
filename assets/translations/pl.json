@@ -1058,6 +1058,8 @@
     "back": "Powrót do własnych wydarzeń"
   },
   "OrderOverview": {
+    "table": "Stół",
+    "seat": "Miejsce",
     "unavailableTitle": "Zamówienie jest niedostępne",
     "unavailable": "Zamówienie mogło zostać usunięte lub link jest już nieważny. Jeśli potrzebujesz pomocy, skontaktuj się z organizatorem wydarzenia.",
     "title": "Przegląd zamówienia",

@@ -118,9 +118,19 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                           '${text('orderState')}: ${text(order['state'] ?? 'unknown')}'),
                                       paragraph(
                                           '${text('total')}: ${money(order['total'], order['currency'])}'),
-                                      for (final item in order['items'] ?? [])
+                                      for (final item in order['items'] ?? []) ...[
                                         paragraph(
                                             '${item['title'] ?? ''}: ${money(item['price'], item['currency'])}'),
+                                        if ([item['spotGroupTitle'], item['spotTitle']]
+                                            .any((value) => value != null && value.toString().trim().isNotEmpty))
+                                          Text([
+                                            if (item['spotGroupTitle']?.toString().trim().isNotEmpty == true)
+                                              '${text('table')}: ${item['spotGroupTitle']}',
+                                            if (item['spotTitle']?.toString().trim().isNotEmpty == true)
+                                              '${text('seat')}: ${item['spotTitle']}',
+                                          ].join(' · '), style: Theme.of(context).textTheme.bodyMedium
+                                              ?.copyWith(fontWeight: FontWeight.w600)),
+                                      ],
                                       if (order['payment'] != null)
                                         ..._payment(order['payment'] as Map,
                                             order['currency']),

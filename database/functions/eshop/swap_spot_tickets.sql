@@ -48,7 +48,7 @@ BEGIN
         'type_title', product_data.type_title,
         'description', product_data.description,
         'currency_code', product_data.currency_code
-    ));
+    )) || coalesce(public.order_spot_metadata_internal(p_spot_id), '{}'::jsonb);
 END;
 $$;
 
