@@ -1,3 +1,4 @@
+import 'blueprint_table_titles.dart';
 import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -274,7 +275,7 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
   }, fontFamilies: fontFamilies, sourceRevision: 0);
   if (!imported.isReady)
     throw StateError('legacy_conversion_invalid:${imported.receipt['issues']}');
-  var document = imported.document!;
+  var document = normalizeBlueprintTableTitles(imported.document!);
   final labelProfile = nativePlan?['tableLabelStyle'] as Map?;
   if (labelProfile != null) {
     // Explicitly reviewed typography applies to the table kind, so later
@@ -304,5 +305,15 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
     'sourceOccasionId': source.occasion,
     'reviewedSourceSha256': reviewedSourceSha256,
     'documentImport': imported.receipt,
+    'absorbedTableCaptions': [
+      for (final node in imported.document!.nodes)
+        if (node.kind == 'text' &&
+            !document.nodes.any((current) => current.id == node.id))
+          {
+            'nodeId': node.id,
+            'tableId': node.parentId,
+            'text': node.properties['text'] ?? node.label
+          },
+    ],
   });
 }

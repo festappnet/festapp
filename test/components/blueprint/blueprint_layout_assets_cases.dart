@@ -379,6 +379,30 @@ void main() {
           'shape': 'rect'
         },
         {
+          'id': 'caption1',
+          'parentId': 'table1',
+          'kind': 'text',
+          'label': '1',
+          'text': '1',
+          'transform': {'x': 0, 'y': 0, 'rotation': -90},
+          'width': 60,
+          'height': 30,
+          'size': 24,
+          'role': 'decoration'
+        },
+        {
+          'id': 'caption1-duplicate',
+          'parentId': 'table1',
+          'kind': 'text',
+          'label': '1',
+          'text': '1',
+          'transform': {'x': 0, 'y': 0, 'rotation': -90},
+          'width': 60,
+          'height': 30,
+          'size': 24,
+          'role': 'decoration'
+        },
+        {
           'id': 'label1',
           'kind': 'text',
           'label': 'Stůl 9',
@@ -390,7 +414,7 @@ void main() {
           'align': 'left'
         }
       ],
-      'tableGroups': {'1': 'table1'}
+      'tableGroups': <String, dynamic>{}
     };
     final conversion = convertLegacyBlueprint(source,
         fontFamilies: blueprintFontRegistryFixture(),
@@ -403,10 +427,14 @@ void main() {
     expect(text.width, 80);
     expect(text.x, 2200);
     final table = result.document.nodes.singleWhere((n) => n.kind == 'table');
+    expect(table.label, '1');
+    expect(result.document.nodes.where((n) => n.kind == 'text').length, 1,
+        reason: 'the imported caption is replaced by the editable table name');
     final seat = result.document.nodes.singleWhere((n) => n.kind == 'seat');
     expect(seat.parentId, table.id);
     expect(result.seatBindings[seat.id]!.spotId, 4);
-    expect(result.seatBindings[seat.id]!.groupNodeId, table.parentId);
+    expect(result.seatBindings[seat.id]!.groupNodeId, table.id);
+    expect(result.document.nodes.where((n) => n.kind == 'group'), isEmpty);
     final before = worldMatrix(result.document, seat);
     expect(before[4], closeTo(120, .002));
     expect(before[5], closeTo(168, .002));

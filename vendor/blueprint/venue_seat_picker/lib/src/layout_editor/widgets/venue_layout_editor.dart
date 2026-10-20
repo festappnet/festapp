@@ -29,6 +29,7 @@ class VenueLayoutEditor extends StatefulWidget {
     this.libraryOverride,
     this.footerTrailing,
     this.canvasBottomOverlay,
+    this.canvasHeader,
     this.showGallery = true,
     this.onTemplateSelected,
     this.onImportBackground,
@@ -68,6 +69,9 @@ class VenueLayoutEditor extends StatefulWidget {
 
   /// Host-owned operation summary, anchored within the canvas, outside tools.
   final Widget? canvasBottomOverlay;
+
+  /// Host-owned information above the canvas, reserving space outside the scene.
+  final Widget? canvasHeader;
 
   /// Transient host state. Does not enter document, dirty state or history.
   final Map<String, dynamic> seatPresentation, capacityPresentation;
@@ -3012,244 +3016,277 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                       const VerticalDivider(width: 1),
                     ],
                     Expanded(
-                      child: ColoredBox(
-                        color: layoutWorkspaceColor(context),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Focus(
-                                focusNode: _focus,
-                                onKeyEvent: _key,
-                                // Keyboard focus can move when inspector controls
-                                // rebuild. Pointer cancellation and Escape own
-                                // gesture rollback, not incidental focus changes.
-                                child: Semantics(
-                                  container: true,
-                                  explicitChildNodes: true,
-                                  label: VenueLayoutStrings.text(
-                                    context,
-                                    widget.interactionEnabled
-                                        ? 'Layout canvas. Select an object, then use arrow keys to move. Shift moves ten steps. Escape cancels.'
-                                        : _viewHint,
-                                  ),
-                                  child: LayoutSceneSurface(
-                                    retainPendingTextPreview: _canEdit,
-                                    key: ValueKey(_templateViewport),
-                                    document: c.document,
-                                    canvasSelected:
-                                        _canEdit &&
-                                        _editingCanvas &&
-                                        !c.readOnly &&
-                                        !c.saving,
-                                    inlineNode: _inlineId == null
-                                        ? null
-                                        : c.document.nodes
-                                              .where((n) => n.id == _inlineId)
-                                              .firstOrNull,
-                                    inlineTextStyleBuilder:
-                                        widget.inlineTextStyleBuilder,
-                                    onInlineSubmit: _finishInline,
-                                    onInlineCancel: () => _finishInline(null),
-                                    onInlineUndo: () => _inlineHistory(false),
-                                    onInlineRedo: () => _inlineHistory(true),
-                                    onDoubleTapAt: _canEdit && _tool == 'Select'
-                                        ? _doubleTap
-                                        : null,
-                                    animate:
-                                        !c.gestureActive &&
-                                        widget.inlineTextStyleBuilder == null,
-                                    marquee:
-                                        _marquee != null && _marqueeEnd != null
-                                        ? Rect.fromPoints(
-                                            _marquee!,
-                                            _marqueeEnd!,
-                                          )
-                                        : null,
-                                    resources: c.resources,
-                                    presentation: {
-                                      ...widget.seatPresentation,
-                                      ...widget.capacityPresentation,
-                                    },
-                                    showSeatSelectionChecks: false,
-                                    selected: widget.interactionEnabled
-                                        ? c.selection
-                                        : _viewSelection,
-                                    selectableIds: widget.interactionEnabled
-                                        ? null
-                                        : widget.viewSelectableIds,
-                                    highlightedIds: {
-                                      ...c.hoveredIds,
-                                      if (_seatTargetId != null) _seatTargetId!,
-                                    },
-                                    warningIds: c.placementWarningIds,
-                                    blockedPlacementHulls:
-                                        _blockedPlacementHulls,
-                                    snapGuides: _snapGuides,
-                                    showGrid:
-                                        _canEdit &&
-                                        (_surfaceTool
-                                            ? _surfaceBrush != null
-                                            : _showGrid),
-                                    gridOrigin:
-                                        _surfaceTool && _surfaceBrush != null
-                                        ? Offset(
-                                            _surfaceBrush!.originX,
-                                            _surfaceBrush!.originY,
-                                          )
-                                        : Offset.zero,
-                                    gridStep: _surfaceTool
-                                        ? _surfaceModuleSize
-                                        : 8,
-                                    onViewportScaleChanged: (value) =>
-                                        _viewportScale = value,
-                                    transientForegroundIds: c.gestureActive
-                                        ? (_dropFragment != null
-                                              ? _dropFragment!.nodes
-                                                    .map((n) => n.id)
-                                                    .toSet()
-                                              : layoutSubtree(
-                                                  c.document,
-                                                  c.selection,
-                                                ))
-                                        : const {},
-                                    pan: _tool == 'Pan' || !_canEdit,
-                                    onSelectDown: _selectDown,
-                                    onContextMenu:
-                                        (!_canEdit || _tool != 'Select')
-                                        ? null
-                                        : _contextMenu,
-                                    onTap: !_canEdit && _tool == 'Pan'
-                                        ? null
-                                        : [
-                                            'Line',
-                                            'Arrow',
-                                            'Polyline',
-                                            'Polygon',
-                                            'Draw table',
-                                            'Draw bar',
-                                          ].contains(_tool)
-                                        ? null
-                                        : _tap,
-                                    onPointTap:
-                                        [
-                                          'Line',
-                                          'Arrow',
-                                          'Polyline',
-                                          'Polygon',
-                                          'Draw table',
-                                          'Draw bar',
-                                        ].contains(_tool)
-                                        ? _tap
-                                        : null,
-                                    onHover: _pathPoints.isNotEmpty
-                                        ? _drawHover
-                                        : null,
-                                    pathPoints: _pathPoints
-                                        .map((p) => Offset(p[0], p[1]))
-                                        .toList(),
-                                    onDragStart: _canEdit ? _dragStart : null,
-                                    onDragUpdate: _canEdit ? _dragUpdate : null,
-                                    onDragEnd: _canEdit ? _endGesture : null,
-                                    onDragCancel: () {
-                                      if (_startDocument != null ||
-                                          _marquee != null) {
-                                        _cancelGesture();
-                                      }
-                                    },
-                                    onHandleStart:
-                                        (!_canEdit || _inlineId != null)
-                                        ? null
-                                        : _handleStart,
-                                    onDropPreview: _canEdit
-                                        ? _dropPreview
-                                        : null,
-                                    onDrop: !_canEdit ? null : _drop,
-                                    onDropCancel: _cancelGesture,
-                                    onDoubleTap: _pathPoints.isNotEmpty
-                                        ? _finishPath
-                                        : null,
-                                  ),
-                                ),
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.canvasHeader != null)
+                            ColoredBox(
+                              color: layoutWorkspaceColor(context),
+                              child: widget.canvasHeader!,
                             ),
-                            if (_pathPoints.isNotEmpty || _surfaceTool)
-                              Positioned(
-                                top: 12,
-                                left: 16,
-                                right: 16,
-                                child: Align(
-                                  alignment: Alignment.topCenter,
-                                  child: Material(
-                                    elevation: 2,
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surface,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 4,
-                                      ),
-                                      child: Wrap(
-                                        spacing: 8,
-                                        crossAxisAlignment:
-                                            WrapCrossAlignment.center,
-                                        children: [
-                                          if (_surfaceTool) ...[
-                                            LayoutText(
-                                              _tool == 'Draw bar'
-                                                  ? 'Narrow bar modules'
-                                                  : 'One cell = one table for 4',
-                                            ),
-                                          ],
-                                          if (!_surfaceTool)
-                                            LayoutText(
-                                              '${_pathPoints.length} vertices. Tap to add; Enter to finish.',
-                                            ),
-                                          if (!_surfaceTool)
-                                            TextButton(
-                                              onPressed: _finishPath,
-                                              child: const LayoutText(
-                                                'Finish path',
-                                              ),
-                                            ),
-                                          TextButton(
-                                            onPressed: () {
+                          Expanded(
+                            child: ColoredBox(
+                              color: layoutWorkspaceColor(context),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Focus(
+                                      focusNode: _focus,
+                                      onKeyEvent: _key,
+                                      // Keyboard focus can move when inspector controls
+                                      // rebuild. Pointer cancellation and Escape own
+                                      // gesture rollback, not incidental focus changes.
+                                      child: Semantics(
+                                        container: true,
+                                        explicitChildNodes: true,
+                                        label: VenueLayoutStrings.text(
+                                          context,
+                                          widget.interactionEnabled
+                                              ? 'Layout canvas. Select an object, then use arrow keys to move. Shift moves ten steps. Escape cancels.'
+                                              : _viewHint,
+                                        ),
+                                        child: LayoutSceneSurface(
+                                          retainPendingTextPreview: _canEdit,
+                                          key: ValueKey(_templateViewport),
+                                          document: c.document,
+                                          canvasSelected:
+                                              _canEdit &&
+                                              _editingCanvas &&
+                                              !c.readOnly &&
+                                              !c.saving,
+                                          inlineNode: _inlineId == null
+                                              ? null
+                                              : c.document.nodes
+                                                    .where(
+                                                      (n) => n.id == _inlineId,
+                                                    )
+                                                    .firstOrNull,
+                                          inlineTextStyleBuilder:
+                                              widget.inlineTextStyleBuilder,
+                                          onInlineSubmit: _finishInline,
+                                          onInlineCancel: () =>
+                                              _finishInline(null),
+                                          onInlineUndo: () =>
+                                              _inlineHistory(false),
+                                          onInlineRedo: () =>
+                                              _inlineHistory(true),
+                                          onDoubleTapAt:
+                                              _canEdit && _tool == 'Select'
+                                              ? _doubleTap
+                                              : null,
+                                          animate:
+                                              !c.gestureActive &&
+                                              widget.inlineTextStyleBuilder ==
+                                                  null,
+                                          marquee:
+                                              _marquee != null &&
+                                                  _marqueeEnd != null
+                                              ? Rect.fromPoints(
+                                                  _marquee!,
+                                                  _marqueeEnd!,
+                                                )
+                                              : null,
+                                          resources: c.resources,
+                                          presentation: {
+                                            ...widget.seatPresentation,
+                                            ...widget.capacityPresentation,
+                                          },
+                                          showSeatSelectionChecks: false,
+                                          selected: widget.interactionEnabled
+                                              ? c.selection
+                                              : _viewSelection,
+                                          selectableIds:
+                                              widget.interactionEnabled
+                                              ? null
+                                              : widget.viewSelectableIds,
+                                          highlightedIds: {
+                                            ...c.hoveredIds,
+                                            if (_seatTargetId != null)
+                                              _seatTargetId!,
+                                          },
+                                          warningIds: c.placementWarningIds,
+                                          blockedPlacementHulls:
+                                              _blockedPlacementHulls,
+                                          snapGuides: _snapGuides,
+                                          showGrid:
+                                              _canEdit &&
+                                              (_surfaceTool
+                                                  ? _surfaceBrush != null
+                                                  : _showGrid),
+                                          gridOrigin:
+                                              _surfaceTool &&
+                                                  _surfaceBrush != null
+                                              ? Offset(
+                                                  _surfaceBrush!.originX,
+                                                  _surfaceBrush!.originY,
+                                                )
+                                              : Offset.zero,
+                                          gridStep: _surfaceTool
+                                              ? _surfaceModuleSize
+                                              : 8,
+                                          onViewportScaleChanged: (value) =>
+                                              _viewportScale = value,
+                                          transientForegroundIds:
+                                              c.gestureActive
+                                              ? (_dropFragment != null
+                                                    ? _dropFragment!.nodes
+                                                          .map((n) => n.id)
+                                                          .toSet()
+                                                    : layoutSubtree(
+                                                        c.document,
+                                                        c.selection,
+                                                      ))
+                                              : const {},
+                                          pan: _tool == 'Pan' || !_canEdit,
+                                          onSelectDown: _selectDown,
+                                          onContextMenu:
+                                              (!_canEdit || _tool != 'Select')
+                                              ? null
+                                              : _contextMenu,
+                                          onTap: !_canEdit && _tool == 'Pan'
+                                              ? null
+                                              : [
+                                                  'Line',
+                                                  'Arrow',
+                                                  'Polyline',
+                                                  'Polygon',
+                                                  'Draw table',
+                                                  'Draw bar',
+                                                ].contains(_tool)
+                                              ? null
+                                              : _tap,
+                                          onPointTap:
+                                              [
+                                                'Line',
+                                                'Arrow',
+                                                'Polyline',
+                                                'Polygon',
+                                                'Draw table',
+                                                'Draw bar',
+                                              ].contains(_tool)
+                                              ? _tap
+                                              : null,
+                                          onHover: _pathPoints.isNotEmpty
+                                              ? _drawHover
+                                              : null,
+                                          pathPoints: _pathPoints
+                                              .map((p) => Offset(p[0], p[1]))
+                                              .toList(),
+                                          onDragStart: _canEdit
+                                              ? _dragStart
+                                              : null,
+                                          onDragUpdate: _canEdit
+                                              ? _dragUpdate
+                                              : null,
+                                          onDragEnd: _canEdit
+                                              ? _endGesture
+                                              : null,
+                                          onDragCancel: () {
+                                            if (_startDocument != null ||
+                                                _marquee != null) {
                                               _cancelGesture();
-                                              setState(() {});
-                                            },
-                                            child: const LayoutText(
-                                              'Cancel path',
-                                            ),
-                                          ),
-                                        ],
+                                            }
+                                          },
+                                          onHandleStart:
+                                              (!_canEdit || _inlineId != null)
+                                              ? null
+                                              : _handleStart,
+                                          onDropPreview: _canEdit
+                                              ? _dropPreview
+                                              : null,
+                                          onDrop: !_canEdit ? null : _drop,
+                                          onDropCancel: _cancelGesture,
+                                          onDoubleTap: _pathPoints.isNotEmpty
+                                              ? _finishPath
+                                              : null,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                  if (_pathPoints.isNotEmpty || _surfaceTool)
+                                    Positioned(
+                                      top: 12,
+                                      left: 16,
+                                      right: 16,
+                                      child: Align(
+                                        alignment: Alignment.topCenter,
+                                        child: Material(
+                                          elevation: 2,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 4,
+                                            ),
+                                            child: Wrap(
+                                              spacing: 8,
+                                              crossAxisAlignment:
+                                                  WrapCrossAlignment.center,
+                                              children: [
+                                                if (_surfaceTool) ...[
+                                                  LayoutText(
+                                                    _tool == 'Draw bar'
+                                                        ? 'Narrow bar modules'
+                                                        : 'One cell = one table for 4',
+                                                  ),
+                                                ],
+                                                if (!_surfaceTool)
+                                                  LayoutText(
+                                                    '${_pathPoints.length} vertices. Tap to add; Enter to finish.',
+                                                  ),
+                                                if (!_surfaceTool)
+                                                  TextButton(
+                                                    onPressed: _finishPath,
+                                                    child: const LayoutText(
+                                                      'Finish path',
+                                                    ),
+                                                  ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    _cancelGesture();
+                                                    setState(() {});
+                                                  },
+                                                  child: const LayoutText(
+                                                    'Cancel path',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (widget.canvasBottomOverlay != null)
+                                    Positioned(
+                                      left: 12,
+                                      right: 12,
+                                      bottom: 20,
+                                      child: Align(
+                                        alignment: Alignment.bottomCenter,
+                                        child: widget.canvasBottomOverlay!,
+                                      ),
+                                    ),
+                                  if (c.error != null ||
+                                      _resizeRemovedSeats > 0)
+                                    Positioned(
+                                      left: 16,
+                                      right: 16,
+                                      bottom: 16,
+                                      child: Align(
+                                        alignment: Alignment.bottomCenter,
+                                        child: _canvasNotice(),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            if (widget.canvasBottomOverlay != null)
-                              Positioned(
-                                left: 12,
-                                right: 12,
-                                bottom: 20,
-                                child: Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: widget.canvasBottomOverlay!,
-                                ),
-                              ),
-                            if (c.error != null || _resizeRemovedSeats > 0)
-                              Positioned(
-                                left: 16,
-                                right: 16,
-                                bottom: 16,
-                                child: Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: _canvasNotice(),
-                                ),
-                              ),
-                          ],
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     if (wide) ...[
