@@ -371,6 +371,13 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "embedAction": "Vložit na vlastní web",
+    "embedTitle": "Objednávkový formulář",
+    "embedFallback": "Otevřít objednávku v nové záložce",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
+    "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
+    "embedAutomatic": "Automatická výška (doporučeno)",
+    "embedFixed": "Pevná výška bez skriptu",
     "labelShowBeforeStartMessage": "Zobrazit informace před zahájením",
     "helperBeforeStartMessage": "Pod odpočtem můžete zveřejnit informace o akci, obrázky nebo plánek sálu. Přihlašování se otevře až v nastavený čas.",
     "labelBeforeStartMessage": "Informace před zahájením",

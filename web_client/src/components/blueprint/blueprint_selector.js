@@ -1,3 +1,4 @@
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import { RouterService } from '../../services/router_service.js';
 
 import { FormStrings } from '../forms/form_strings.js';
@@ -67,6 +68,9 @@ export class BlueprintSelector {
         // Push a new state so the back button closes the modal instead of navigating away
         const stateId = 'seat-selection';
         RouterService.pushOverlayState(stateId);
+        const previousFocus = document.activeElement;
+        revealEmbedStep(container);
+        confirmBtn.focus({ preventScroll: true });
         let closed = false;
         let closing = false;
 
@@ -103,6 +107,8 @@ export class BlueprintSelector {
              document.body.classList.remove('blueprint-active');
              document.documentElement.classList.remove('blueprint-active');
              container.remove();
+             previousFocus?.focus({ preventScroll: true });
+             revealEmbedStep(previousFocus);
              window.removeEventListener('popstate', popHandler);
              document.removeEventListener('keydown', escHandler);
         };

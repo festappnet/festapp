@@ -171,3 +171,12 @@ describe('FormSession', () => {
     });
 
 });
+
+test('selected seat satisfies the saved required field without changing reservation identity', () => {
+    const session = new FormSession({key:'form',secret:'same-reservation',
+        relatedFields:[], visibleFields:[{id:1,type:'ticket',subFields:[{id:17,type:'spot',isRequired:true}]}]});
+    session.addTicket({spot:42});
+    assert.equal(session.payload.secret, 'same-reservation');
+    assert.equal(session.payload.ticket[0].spot, 42);
+    assert.deepEqual(session.payload.ticket[0].fields.find(field => field[17]), {17:42});
+});

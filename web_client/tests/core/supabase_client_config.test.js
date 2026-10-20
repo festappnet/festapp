@@ -26,7 +26,7 @@ test('unsupported-app header data loads only after Supabase initialization', asy
     'main must provide the configured Supabase and rights services to canonical startup');
   const initializeAt = startupSource.indexOf('await supabaseService.initialize()');
   const rightsAt = startupSource.indexOf(
-    'if (!isAppSupported) await rightsService.updateAppData()',
+    'if (!publicEmbed && !isAppSupported) await rightsService.updateAppData()',
   );
   assert.ok(initializeAt >= 0, 'canonical startup must initialize Supabase');
   assert.ok(rightsAt > initializeAt, 'rights fetch must happen after Supabase initialization');

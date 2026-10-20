@@ -1,3 +1,5 @@
+import 'package:fstapp/components/forms/views/form_embed_code.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:flutter/foundation.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -30,6 +32,61 @@ void main() {
       translations:
           jsonDecode(File('assets/translations/cs.json').readAsStringSync())
               as Map<String, dynamic>));
+
+  test('embed code uses tenant, escaped attributes and one public saved URL',
+      () {
+    for (final automatic in [true, false]) {
+      final code = formEmbedCode(
+          tenantUrl: 'https://tenant.example/',
+          savedLink: 'Legacy &/č',
+          title: 'Order "tickets"',
+          fallbackLabel: 'Open <order>',
+          automatic: automatic);
+      expect(
+          code,
+          contains(
+              'https://tenant.example/form/Legacy%20%26%2F%C4%8D?embed=1'));
+      expect(code, contains('Order &quot;tickets&quot;'));
+      expect(code, contains('Open &lt;order&gt;'));
+      expect(code.contains('data-festapp-embed'), automatic);
+      expect(code.contains('<script'), automatic);
+      expect(code, contains('height="800"'));
+      expect(code, isNot(contains('sandbox')));
+    }
+    expect(
+        () => formEmbedCode(
+            tenantUrl: 'https://tenant.example',
+            savedLink: '',
+            title: 'Order',
+            fallbackLabel: 'Open'),
+        throwsArgumentError);
+  });
+
+  testWidgetsWithEnvironment(() => _environment,
+      'embed action copies only saved address and is absent for a new form',
+      (tester) async {
+    await _environment.pumpWidget(
+        tester,
+        const MaterialApp(
+            home: Scaffold(
+                body: FormPublicLink(link: 'draft', savedLink: 'saved'))));
+    await tester.tap(find.text(FormStrings.embedAction));
+    await tester.pumpAndSettle();
+    final copies = tester
+        .widgetList<CopyButton>(find.byType(CopyButton))
+        .map((w) => w.value);
+    expect(copies.any((v) => v.contains('/form/saved?embed=1')), isTrue);
+    expect(copies.any((v) => v.contains('/form/draft')), isFalse);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    await _environment.pumpWidget(
+        tester,
+        const MaterialApp(
+            home: Scaffold(body: FormPublicLink(link: 'new-draft'))));
+    await tester.pumpAndSettle();
+    expect(find.text(FormStrings.embedAction), findsNothing);
+    expect(find.text(FormStrings.embedSaveFirst), findsOneWidget);
+  });
 
   testWidgetsWithEnvironment(() => _environment,
       'failed rename retains saved address and discard restores it',

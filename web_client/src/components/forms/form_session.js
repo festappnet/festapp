@@ -510,7 +510,14 @@ export class FormSession extends EventTarget {
             };
             
             // Map special top-level props expected by Backend/Calc
-            if (t.spot) ticketObj.spot = t.spot;
+            if (t.spot) {
+                ticketObj.spot = t.spot;
+                // The shared required-answer validator uses saved field IDs;
+                // the seat finalizer still owns the authoritative top-level spot.
+                const spotDefinition = this.formModel.visibleFields
+                    .find(field => field.type === 'ticket')?.subFields?.find(field => field.type === 'spot');
+                if (spotDefinition) ticketObj.fields.push({ [spotDefinition.id]: t.spot });
+            }
 
             if (t.spotPrice) ticketObj.spotPrice = t.spotPrice;
             // Recover from cache if missing

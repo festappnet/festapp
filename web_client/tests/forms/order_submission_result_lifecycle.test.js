@@ -106,9 +106,9 @@ test('demo checkout and waitlist use the normal result without sending or storin
   }
 });
 
-for (const viewFails of [false, true]) {
-  test(`waitlist registration opens the shared overview and preserves confirmation on view failure=${viewFails}`, async t => {
-    const dom = new JSDOM('<div id="form-page-container"></div>', {url: 'https://example.test/form/test'});
+for (const embedded of [false, true]) for (const viewFails of [false, true]) {
+  test(`waitlist registration opens the shared overview and preserves confirmation on view failure=${viewFails}, embed=${embedded}`, async t => {
+    const dom = new JSDOM('<div id="form-page-container"></div>', {url: `https://example.test/form/test${embedded ? '?embed=1' : ''}`});
     Object.assign(globalThis, {window: dom.window, document: dom.window.document,
       HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent});
     window.scrollTo = () => {};
@@ -139,8 +139,9 @@ for (const viewFails of [false, true]) {
     assert.equal(registrations, 1);
     assert.equal(reads, 1);
     assert.ok(document.querySelector('.fullscreen-result-overlay .success-color'), 'committed registration stays successful');
-    assert.equal(window.location.search, `?order_id=12&token=${token}`);
+    assert.equal(window.location.search, `?order_id=12&token=${token}${embedded ? "&embed=1" : ""}`);
     assert.equal(window.location.hash, '');
+    assert.equal(RouterService._lastPath, '/order');
     assert.equal(JSON.stringify(window.history.state).includes(token), false);
     assert.ok(viewFails ? page.host.querySelector('[role=alert]') : page.host.textContent.includes('REGISTERED'));
     document.querySelector('.btn-back-to-form').click();

@@ -1,7 +1,10 @@
+import { isEmbed, applyEmbedContext } from './services/embed_context.js';
+import './embed.css';
 import { handleOrganizerIntent } from './startup/organizer_intent.js';
 import { GoogleAuthService } from './services/google_auth_service.js';
 import { LoginModal } from './components/users/login_modal.js';
-const googleCallback = GoogleAuthService.takeCallback();
+applyEmbedContext();
+const googleCallback = isEmbed() ? null : GoogleAuthService.takeCallback();
 import './theme_config.css';
 import { AppConfig } from './app_config.js';
 import { SupabaseService } from './services/supabase_service.js';
@@ -38,6 +41,7 @@ class Main {
                 rightsService: RightsService,
                 // Content pages need account context without a later router fetch.
                 isAppSupported: AppConfig.isAppSupported && document.body.dataset.page !== 'organizers',
+                publicEmbed: isEmbed(),
             });
             ImageLoader.init(); // Initialize Image Loader
 
@@ -55,7 +59,7 @@ class Main {
                 return;
             }
 
-            const organizerIntent = await handleOrganizerIntent();
+            const organizerIntent = isEmbed() ? null : await handleOrganizerIntent();
             if (organizerIntent === 'navigated') {
                 window.markFestappAppReady?.();
                 return;

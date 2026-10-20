@@ -239,6 +239,13 @@
     "orderLabel": "Zamówienie"
   },
   "FeatureFormSettings": {
+    "embedAction": "Osadź na swojej stronie",
+    "embedTitle": "Formularz zamówienia",
+    "embedFallback": "Otwórz zamówienie w nowej karcie",
+    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość wymaga zewnętrznego skryptu. Jeśli strona go blokuje, użyj stałej wysokości.",
+    "embedSaveFirst": "Zapisz formularz przed osadzeniem.",
+    "embedAutomatic": "Automatyczna wysokość (zalecana)",
+    "embedFixed": "Stała wysokość bez skryptu",
     "labelShowBeforeStartMessage": "Pokaż informacje przed rozpoczęciem zapisów",
     "helperBeforeStartMessage": "Pod odliczaniem możesz opublikować informacje o wydarzeniu, zdjęcia lub plan sali. Zapisy otworzą się dopiero o ustalonej godzinie.",
     "labelBeforeStartMessage": "Informacje przed rozpoczęciem zapisów",
