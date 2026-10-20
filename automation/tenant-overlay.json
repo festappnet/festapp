@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "48d8b6db0479818b556e3852c7ea50ead4035d11",
+  "release": {
+    "version": "0.20.298+791",
+    "note": "Group MCP consent occasions by unit"
+  }
+}
