@@ -17,10 +17,9 @@ VenueLayoutDocument normalizeBlueprintTableTitles(
       .replaceAll(RegExp(r'\s+'), '');
   for (final table in document.nodes.where((node) => node.kind == 'table')) {
     final parent = nodes[table.parentId];
-    final name = parent?.kind == 'group' && parent!.label.trim().isNotEmpty
+    var name = parent?.kind == 'group' && parent!.label.trim().isNotEmpty
         ? parent.label.trim()
         : table.label.trim();
-    if (name.isEmpty) continue;
     final captions = document.nodes
         .where((node) => node.kind == 'text' && node.parentId == table.id)
         .toList();
@@ -33,6 +32,15 @@ VenueLayoutDocument normalizeBlueprintTableTitles(
     final caption = captions
         .map((node) => '${node.properties['text'] ?? node.label}')
         .join('');
+    if (name.isEmpty && captions.isNotEmpty) {
+      final complete = captions
+          .map((node) => normalized('${node.properties['text'] ?? node.label}'))
+          .toSet();
+      final recovered =
+          complete.length == 1 ? complete.single : normalized(caption);
+      if (RegExp(r'^\d+[a-z]?$').hasMatch(recovered)) name = recovered;
+    }
+    if (name.isEmpty) continue;
     final matches = captions.isNotEmpty &&
         (normalized(caption) == normalized(name) ||
             captions.every((node) =>

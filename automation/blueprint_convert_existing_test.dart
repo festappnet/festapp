@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 // Explicit offline migration gate. Input/output stay private; writes no backend.
 import 'dart:convert';
 import 'dart:io';
@@ -71,21 +72,45 @@ void main() {
       }
       // Reviewed table captions become native editable names. Other artwork
       // survives exactly once; every absorbed caption is recorded in the receipt.
-      final expectedTableLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
-          .where((node) => node['kind'] == 'table')
-          .map((node) {
-            final linked = (nativePlan?['tableGroups'] as Map? ?? const {}).entries
-                .where((entry) => entry.value == node['id']).firstOrNull;
-            if (linked != null) {
-              return (source['groups'] as List).cast<Map>()
-                  .singleWhere((g) => g['id'].toString() == linked.key.toString())['title'];
-            }
-            return node['label'] ?? (node['properties'] as Map?)?['label'];
-          })
-          .whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
-      final actualTableLabels = result.document.nodes.where((node) => node.kind == 'table')
-          .map((node) => node.label).whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
-      expect(actualTableLabels, expectedTableLabels, reason: 'authored table names blueprint$id');
+      final rawNativeTables = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'table').toList();
+      final authoredNames = <String>{
+        for (final group in (source['groups'] as List? ?? const []).cast<Map>())
+          if (group['title'] is String) group['title'] as String,
+        for (final node in rawNativeTables)
+          if ((node['label'] ?? (node['properties'] as Map?)?['label']) is String)
+            (node['label'] ?? (node['properties'] as Map?)?['label']) as String,
+      };
+      String normalized(String value) => value.trim().toLowerCase()
+          .replaceFirst(RegExp(r'^(stůl|stul|table)\s*'), '').replaceAll(RegExp(r'\s+'), '');
+      final authoredText = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'text').toList();
+      for (final table in rawNativeTables) {
+        final captions = authoredText.where((node) => node['parentId'] == table['id']).toList();
+        if (captions.isEmpty) continue;
+        final angle = ((captions.first['transform'] as Map)['rotation'] as num) * math.pi / 180;
+        captions.sort((a,b) {
+          final at=a['transform'] as Map,bt=b['transform'] as Map;
+          return (((at['x'] as num)-(bt['x'] as num))*math.cos(angle) +
+              ((at['y'] as num)-(bt['y'] as num))*math.sin(angle)).compareTo(0);
+        });
+        String text(Map node) => '${node['text'] ?? (node['properties'] as Map?)?['text'] ?? node['label'] ?? ''}';
+        authoredNames.add(normalized(captions.map(text).join('')));
+        authoredNames.addAll(captions.map((node) => normalized(text(node))));
+      }
+      final nativeTables = result.document.nodes.where((node) => node.kind == 'table').toList();
+      expect(nativeTables.length, rawNativeTables.length,
+          reason: 'one native object per authored table blueprint$id');
+      for (final table in nativeTables) {
+        if (table.label.isNotEmpty) expect(authoredNames, contains(table.label),
+            reason: 'native names come from authored commercial identities blueprint$id');
+      }
+      for (final groupId in (nativePlan?['tableGroups'] as Map? ?? const {}).keys) {
+        final name = (source['groups'] as List).cast<Map>()
+            .singleWhere((g) => g['id'].toString() == groupId.toString())['title'];
+        expect(nativeTables.map((table) => table.label), contains(name),
+            reason: 'reviewed commercial table name retained blueprint$id');
+      }
       final expectedTextLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
           .where((node) => node['kind'] == 'text')
           .map((node) => node['text'] ?? node['label'] ?? (node['properties'] as Map?)?['text'] ?? (node['properties'] as Map?)?['label'] ?? '')

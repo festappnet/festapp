@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_table_titles.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -347,6 +348,38 @@ void main() {
     expect(c.showPlacementWarnings().single.code, 'outside_canvas');
     expect(c.setResources({}), isTrue);
     expect(c.showPlacementWarnings().single.code, 'outside_canvas');
+  });
+
+  test(
+      'unbound imported furniture recovers a single native name from rotated caption pieces',
+      () {
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        surface: {'type': 'rect'},
+        width: 40,
+        height: 160);
+    final document = VenueLayoutDocument(nodes: [
+      table,
+      for (final entry in ['Stůl', '1', '2'].asMap().entries)
+        LayoutNode(
+            id: newLayoutId(),
+            kind: 'text',
+            parentId: table.id,
+            x: 0,
+            y: -20.0 * entry.key,
+            rotation: -90,
+            label: entry.value,
+            properties: {'text': entry.value}),
+    ]);
+    final result = normalizeBlueprintTableTitles(document);
+    expect(result.nodes.length, 1);
+    expect(result.nodes.single.id, table.id);
+    expect(result.nodes.single.label, '12');
+    expect(result.nodes.single.width, 160);
+    expect(result.nodes.single.height, 40);
+    expect(result.nodes.single.rotation, -90);
+    expect(normalizeBlueprintTableTitles(result).toJson(), result.toJson());
   });
 
   test('reviewed native furniture preserves stable chairs and moves together',
