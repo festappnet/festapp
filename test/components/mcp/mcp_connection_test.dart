@@ -216,6 +216,63 @@ void main() {
     expect(approved, {'type': 'unit', 'unitId': 3, 'canCreateOccasions': true});
     expect(callback.closed, true);
   });
+  testWidgets(
+      'occasions are grouped by unit and sorted without broadening selection',
+      (tester) async {
+    Map<String, dynamic>? approved;
+    await tester.pumpWidget(MaterialApp(
+        home: McpConnectionPage(
+      request: List.filled(43, 'r').join(),
+      isLoggedIn: () => true,
+      accountEmail: 'fixture@invalid',
+      openCallbackWindow: () => _CallbackWindow(),
+      requester: (_, operation, access) async {
+        if (operation == 'details')
+          return {
+            'client': 'Codex',
+            'applicationType': 'native',
+            'units': [
+              {
+                'id': 8,
+                'title': 'Žlutý pořadatel',
+                'canCreateOccasions': false
+              },
+              {'id': 3, 'title': 'Alfa pořadatel', 'canCreateOccasions': false},
+            ],
+            'occasions': [
+              {'id': 7, 'title': 'Zimní ples', 'unitId': 3},
+              {'id': 8, 'title': 'Letní ples', 'unitId': 8},
+              {'id': 9, 'title': 'Červnový ples', 'unitId': 3},
+            ],
+          };
+        if (operation == 'approve') {
+          approved = access;
+          return {
+            'resumeUrl':
+                'https://mcp.festapp.net/connect/uid/finish?resume=${List.filled(43, 'r').join()}'
+          };
+        }
+        return {'status': 'connected'};
+      },
+    )));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('Alfa pořadatel')).dy,
+        lessThan(tester.getTopLeft(find.text('Žlutý pořadatel')).dy));
+    expect(tester.getTopLeft(find.text('Červnový ples')).dy,
+        lessThan(tester.getTopLeft(find.text('Zimní ples')).dy));
+    expect(tester.getTopLeft(find.text('Zimní ples')).dy,
+        lessThan(tester.getTopLeft(find.text('Žlutý pořadatel')).dy));
+    await tester.ensureVisible(find.text('Červnový ples'));
+    await tester.tap(find.text('Červnový ples'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('McpConnection.approve'));
+    await tester.tap(find.text('McpConnection.approve'));
+    await tester.pumpAndSettle();
+    expect(approved, {
+      'type': 'occasions',
+      'occasionIds': [9]
+    });
+  });
 }
 
 class _CallbackWindow implements McpCallbackWindow {

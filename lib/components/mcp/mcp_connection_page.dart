@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';
+import 'package:fstapp/services/utilities_all.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'mcp_connection_service.dart';
@@ -164,6 +165,25 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
   Widget build(BuildContext context) {
     final occasions = (_details?['occasions'] as List? ?? []).cast<Map>();
     final units = (_details?['units'] as List? ?? []).cast<Map>();
+    final unitTitles = <int, String>{
+      for (final unit in units) unit['id'] as int: unit['title'].toString(),
+    };
+    final occasionsByUnit = <int?, List<Map>>{};
+    for (final occasion in occasions) {
+      (occasionsByUnit[occasion['unitId'] as int?] ??= []).add(occasion);
+    }
+    String unitTitle(int? id) =>
+        unitTitles[id] ??
+        (id == null ? text('organizer') : '${text('organizer')} #$id');
+    int byName(String a, String b) =>
+        Utilities.removeDiacritics(a.toLowerCase())
+            .compareTo(Utilities.removeDiacritics(b.toLowerCase()));
+    final groups = occasionsByUnit.entries.toList()
+      ..sort((a, b) => byName(unitTitle(a.key), unitTitle(b.key)));
+    for (final group in groups) {
+      group.value
+          .sort((a, b) => byName(a['title'].toString(), b['title'].toString()));
+    }
     final unitCanCreate =
         units.any((u) => u['id'] == _unitId && u['canCreateOccasions'] == true);
     return Scaffold(
@@ -262,21 +282,33 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                             Text(text('choose'),
                                 style: Theme.of(context).textTheme.titleMedium),
                           if (!_wholeUnit)
-                            ...occasions.map((occasion) => CheckboxListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(occasion['title'].toString()),
-                                  value: _selected.contains(occasion['id']),
-                                  onChanged: _busy
-                                      ? null
-                                      : (selected) => setState(() {
-                                            if (selected == true) {
-                                              _selected
-                                                  .add(occasion['id'] as int);
-                                            } else {
-                                              _selected.remove(occasion['id']);
-                                            }
-                                          }),
-                                )),
+                            for (final group in groups) ...[
+                              const SizedBox(height: 20),
+                              Semantics(
+                                header: true,
+                                child: Text(unitTitle(group.key),
+                                    key: ValueKey('mcp-unit-${group.key}'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium),
+                              ),
+                              ...group.value.map((occasion) => CheckboxListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(occasion['title'].toString()),
+                                    value: _selected.contains(occasion['id']),
+                                    onChanged: _busy
+                                        ? null
+                                        : (selected) => setState(() {
+                                              if (selected == true) {
+                                                _selected
+                                                    .add(occasion['id'] as int);
+                                              } else {
+                                                _selected
+                                                    .remove(occasion['id']);
+                                              }
+                                            }),
+                                  )),
+                            ],
                           const SizedBox(height: 16),
                           Text(text('duration')),
                           const SizedBox(height: 16),
