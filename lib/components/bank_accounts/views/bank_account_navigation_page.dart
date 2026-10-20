@@ -1,5 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 import '../../eshop/orders_strings.dart';
 import 'package:fstapp/app_router.gr.dart';
 
@@ -181,15 +179,14 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
               unitId: _unitId!,
               account: _account!,
               onUpdated: (account) => setState(() => _account = account),
-              readOnly: !RightsService.hasBankCapability(
-                  _account!.id, AuthorizationCapabilities.bankAccountsWrite),
+              readOnly: !_account!.isAdmin,
               routed: true,
             ),
     );
   }
 }
 
-/// The direct entry point uses the same account and linked-unit capability.
+/// This account-owned entry point does not require organization/unit management.
 @RoutePage()
 class BankAccountConnectionSettingsPage extends StatefulWidget {
   final String accountId;
@@ -230,11 +227,7 @@ class _BankAccountConnectionSettingsPageState
       BankAccountModel? account;
       for (final candidate in accounts) {
         // The server RPC returns only accounts administered by this user.
-        if (candidate.id == id &&
-            RightsService.hasBankCapability(
-                id, AuthorizationCapabilities.bankSyncManage)) {
-          account = candidate.copyWith(isAdmin: true);
-        }
+        if (candidate.id == id) account = candidate.copyWith(isAdmin: true);
       }
       if (!mounted || generation != _generation) return;
       setState(() {

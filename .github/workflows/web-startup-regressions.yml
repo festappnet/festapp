@@ -15,24 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: pnpm
-          cache-dependency-path: web_client/pnpm-lock.yaml
+          cache: npm
+          cache-dependency-path: web_client/package-lock.json
       - name: Install isolated Chromium test runner
-        run: |
-          # pnpm 11 places global executables in PNPM_HOME/bin.
-          export PATH="$PNPM_HOME/bin:$PATH"
-          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
-          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
-          agent-browser install --with-deps
+        run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
       - name: Install web test dependencies
         working-directory: web_client
-        run: pnpm install --frozen-lockfile
+        run: npm ci --no-audit --no-fund
       - name: Verify restricted WebViews and production module identity
         run: bash automation/test_web_startup.sh
       - name: Verify deployment gates

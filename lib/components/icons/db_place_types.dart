@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/map/map_commands.dart';
@@ -12,7 +11,7 @@ class DbPlaceTypes {
 
   static Future<List<PlaceTypeModel>> getPlaceTypes([int? occasionId]) async {
     final occ = occasionId ?? RightsService.currentOccasionId();
-    if (!RightsService.hasCapability(AuthorizationCapabilities.mapEditorRead)) {
+    if (!RightsService.isEditorView() && !RightsService.isEditor()) {
       final rows = await _supabase
           .from(Tb.place_types.table)
           .select()

@@ -1,6 +1,6 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.1",
+  "version": "0.20.302",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
@@ -8,14 +8,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "prestart": "node ../automation/configure_version.js",
-    "start": "pnpm run dev",
+    "start": "npm run dev",
     "test": "node --test tests/**/*.test.js",
     "test:security-browser": "node scripts/test_web_security_browser.mjs",
     "test:seat-checkout-browser": "node scripts/test_seat_checkout_browser.mjs",
     "test:form-access-browser": "node scripts/test_form_access_browser.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.0-2179ed4858ec.tgz",
     "@supabase/supabase-js": "^2.117.3",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",
@@ -31,11 +31,9 @@
     "fake-indexeddb": "^6.2.6",
     "jsdom": "^27.4.0",
     "parse5": "^8.0.1",
-    "vite": "^7.3.7",
-    "esbuild": "0.27.1"
+    "vite": "^7.3.7"
   },
-  "packageManager": "pnpm@11.24.0",
-  "engines": {
-    "pnpm": "11.24.0"
+  "overrides": {
+    "rollup": "^4.62.4"
   }
 }

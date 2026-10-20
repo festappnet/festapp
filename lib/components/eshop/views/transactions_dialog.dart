@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -40,9 +39,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
   bool _isLoading = true;
   String? _orderState;
   bool get _canEdit =>
-      !RightsService.isDemoReadOnly &&
-      !_isLoading &&
-      OrderModel.canChangePaymentInState(_orderState);
+      !RightsService.isDemoReadOnly && !_isLoading && OrderModel.canChangePaymentInState(_orderState);
 
   @override
   void initState() {
@@ -74,9 +71,8 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
 
   void _addTransaction() async {
     if (!_canEdit) return;
-    var accountIds = RightsService.banksWithCapability(
-        AuthorizationCapabilities.bankTransactionsManage);
-    if (accountIds.isEmpty) {
+    List<int>? accountIds = RightsService.bankAccountAdmin();
+    if (accountIds == null || accountIds.isEmpty) {
       accountIds = [0];
     }
 
@@ -84,7 +80,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
       context: context,
       builder: (context) => SearchTransactionsDialog(
         paymentInfoId: _payment!.id!,
-        bankAccount: _payment!.bankAccount ?? accountIds.first,
+        bankAccount: _payment!.bankAccount ?? accountIds!.first,
       ),
     );
 
@@ -102,7 +98,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
         currency: _payment!.currencyCode!,
         variableSymbol: _payment!.variableSymbol?.toString() ?? "",
         paymentInfoId: _payment!.id!,
-        canManageBankTransactions: _canManageBankTransactions(),
+        isBankAdmin: _isBankAdmin(),
       ),
     );
 
@@ -148,12 +144,13 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
     }
   }
 
-  bool _canManageBankTransactions() {
+  bool _isBankAdmin() {
     if (_payment == null || _payment!.bankAccount == null) {
       return false;
     }
-    return RightsService.hasBankCapability(_payment!.bankAccount,
-        AuthorizationCapabilities.bankTransactionsManage);
+    return RightsService.bankAccountAdmin()
+            ?.any((i) => _payment!.bankAccount == i) ??
+        false;
   }
 
   @override
@@ -409,7 +406,7 @@ class _TransactionsDialogState extends State<TransactionsDialog> {
                                               ],
                                             ),
                                           ),
-                                          if (_canManageBankTransactions())
+                                          if (_isBankAdmin())
                                             IconButton(
                                               icon: Icon(Icons.delete),
                                               tooltip: OrdersStrings

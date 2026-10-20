@@ -1,5 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/drag_handle_dots.dart';
@@ -15,7 +13,6 @@ class UnitBankAccountCard extends StatelessWidget {
   final VoidCallback? onOpen;
   final VoidCallback? onUnlink;
   final Widget? selection;
-  final bool showSyncHelp;
 
   const UnitBankAccountCard({
     super.key,
@@ -25,7 +22,6 @@ class UnitBankAccountCard extends StatelessWidget {
     this.onOpen,
     this.onUnlink,
     this.selection,
-    this.showSyncHelp = true,
   });
 
   @override
@@ -37,15 +33,11 @@ class UnitBankAccountCard extends StatelessWidget {
         if (selection != null) selection!,
         if (onOpen != null)
           IconButton(
-            tooltip: RightsService.hasBankCapability(
-                    account.id, AuthorizationCapabilities.bankAccountsWrite)
+            tooltip: account.isAdmin
                 ? CommonStrings.edit
                 : BankAccountStrings.bankAccountSettingsTitle,
             icon: Icon(
-              RightsService.hasBankCapability(
-                      account.id, AuthorizationCapabilities.bankAccountsWrite)
-                  ? Icons.edit_outlined
-                  : Icons.visibility_outlined,
+              account.isAdmin ? Icons.edit_outlined : Icons.visibility_outlined,
             ),
             onPressed: onOpen,
           ),
@@ -55,9 +47,7 @@ class UnitBankAccountCard extends StatelessWidget {
             icon: const Icon(Icons.link_off),
             onPressed: onUnlink,
           ),
-        if (selection == null &&
-            RightsService.hasCapability(
-                AuthorizationCapabilities.bankAccountsUnitManage))
+        if (selection == null && account.isAdmin)
           ReorderableDragStartListener(
             index: index,
             child: const SizedBox(
@@ -80,7 +70,7 @@ class UnitBankAccountCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(number, style: Theme.of(context).textTheme.bodyMedium),
         ],
-        BankAccountSyncStatus(account: account, showHelp: showSyncHelp),
+        BankAccountSyncStatus(account: account),
         if (account.supportedCurrencies.isNotEmpty) ...[
           const SizedBox(height: 4),
           Wrap(

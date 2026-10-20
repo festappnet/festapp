@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -31,8 +30,7 @@ class UsersTab extends StatefulWidget {
 
 class _UsersTabState extends State<UsersTab> {
   static bool get _hasCsmAppLinks => AppConfig.organization == 9;
-  static bool get _canManageCompanions =>
-      RightsService.hasCapability(AuthorizationCapabilities.companionsAssign);
+  static bool get _canManageCompanions => RightsService.isEditor();
 
   static List<String> getColumnIdentifiers() {
     final identifiers = [
@@ -65,9 +63,7 @@ class _UsersTabState extends State<UsersTab> {
       if (FeatureService.isFeatureEnabled(FeatureConstants.reception))
         UserColumns.RECEPTIONIST,
       UserColumns.INVITED,
-      if (RightsService.hasCapability(
-          AuthorizationCapabilities.navigationEmailHistory))
-        UserColumns.EMAIL_HISTORY,
+      if (RightsService.isAdmin()) UserColumns.EMAIL_HISTORY,
       UserColumns.CREATED_AT,
       UserColumns.LAST_SIGN_IN_AT,
     ];
@@ -116,8 +112,7 @@ class _UsersTabState extends State<UsersTab> {
 
   SingleDataGridController<OccasionUserModel> _createController() {
     final headerActions = [
-      if (RightsService.hasCapability(
-          AuthorizationCapabilities.participantsWrite))
+      if (RightsService.isManager())
         DataGridAction(
           name: CommonStrings.addExisting,
           action: (SingleDataGridController p0, [_]) async {

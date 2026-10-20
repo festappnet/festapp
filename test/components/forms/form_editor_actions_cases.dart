@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/foundation.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:festapp_core/eshop.dart';
@@ -26,10 +25,7 @@ late WidgetEnvironmentFixture _environment;
 
 late ValueNotifier<({int accountId, int revision})> _bankChanges;
 void main() {
-  setUp(() {
-    _bankChanges = ValueNotifier((accountId: 0, revision: 0));
-    addTearDown(_bankChanges.dispose);
-  });
+  setUp(() { _bankChanges = ValueNotifier((accountId: 0, revision: 0)); addTearDown(_bankChanges.dispose); });
   WidgetEnvironmentFixture.register();
   setUpAll(() {
     _environment = WidgetEnvironmentFixture(
@@ -48,11 +44,6 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
         RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          capabilities: {
-            AuthorizationCapabilities.ordersWrite: true,
-            AuthorizationCapabilities.occasionsWrite: true,
-            AuthorizationCapabilities.bankAccountsUnitManage: canManage
-          },
           unit: UnitModel(id: 5),
           unitUser: OccasionUserModel(isEditor: canManage),
           occasionUser: OccasionUserModel(isEditor: true),
@@ -77,8 +68,7 @@ void main() {
         await _environment.pumpWidget(
             tester,
             MaterialApp(
-                home: FormSettingsContent(
-              bankConnectionChanges: _bankChanges,
+                home: FormSettingsContent(bankConnectionChanges: _bankChanges,
               formLink: 'test',
               loadBundle: (_) async => FormEditBundle(
                 form: FormEditorDraft(
@@ -158,10 +148,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     RightsService.occasionLinkModelNotifier.value =
-        OccasionLinkModel(capabilities: {
-      AuthorizationCapabilities.ordersWrite: true,
-      AuthorizationCapabilities.occasionsWrite: true
-    }, occasionUser: OccasionUserModel(isEditorOrder: true));
+        OccasionLinkModel(occasionUser: OccasionUserModel(isEditorOrder: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
     final navigator = GlobalKey<NavigatorState>();
     await _environment.pumpWidget(
@@ -220,10 +207,6 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          capabilities: {
-            AuthorizationCapabilities.ordersWrite: true,
-            AuthorizationCapabilities.occasionsWrite: true
-          },
           occasionUser: OccasionUserModel(isEditor: true),
           occasion: OccasionModel(
               isOpen: true,
@@ -254,8 +237,7 @@ void main() {
                       formLink: 'test',
                       loadBundle: load,
                       onActionCompleted: () => closes++)
-                  : FormSettingsContent(
-                      bankConnectionChanges: _bankChanges,
+                  : FormSettingsContent(bankConnectionChanges: _bankChanges,
                       formLink: 'test',
                       loadBundle: load,
                       onActionCompleted: () => closes++)));

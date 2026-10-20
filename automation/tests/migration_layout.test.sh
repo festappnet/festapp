@@ -24,8 +24,12 @@ if [[ -n "$duplicate_versions" ]]; then
   exit 1
 fi
 
-python3 "$PROJECT_ROOT/automation/baseline.py" check
-baseline_file="$(python3 "$PROJECT_ROOT/automation/baseline.py" field schema)"
+baseline_version="$(sed -n 's/.*BASELINE_VERSION="\([0-9]\{14\}\)".*/\1/p' "$BOOTSTRAP")"
+baseline_file="$PROJECT_ROOT/supabase/baseline/${baseline_version}_production_schema.sql"
+if [[ -z "$baseline_version" || ! -f "$baseline_file" ]]; then
+  echo "Bootstrap baseline version does not resolve to a schema file." >&2
+  exit 1
+fi
 
 if grep -Eq '^(COPY|INSERT INTO)[[:space:]]' "$baseline_file"; then
   echo "Schema baseline contains data statements." >&2

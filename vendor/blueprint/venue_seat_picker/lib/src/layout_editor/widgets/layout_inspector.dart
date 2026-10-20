@@ -4,6 +4,7 @@ import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'layout_scene_surface.dart';
 import 'layout_style.dart';
 import 'layout_number_slider_control.dart';
 import 'canonical_appearance_panel.dart';
@@ -23,8 +24,6 @@ class LayoutInspector extends StatefulWidget {
     this.globalFontPickerBuilder,
     this.onOpenGlobalStyle,
     this.canvasSelected = false,
-    this.backgroundSelected = false,
-    this.onSelectBackground,
     this.onImportBackground,
     this.onClearSelection,
     this.onCopyStyle,
@@ -40,8 +39,7 @@ class LayoutInspector extends StatefulWidget {
   final VoidCallback? onOpenGlobalStyle;
   final Set<String> readOnlyLabelNodeIds;
   final bool cornerPivot;
-  final bool canvasSelected, backgroundSelected;
-  final VoidCallback? onSelectBackground;
+  final bool canvasSelected;
   final Future<void> Function()? onImportBackground;
   final VoidCallback? onCopyStyle, onPasteStyle, onClearSelection;
   final ValueChanged<bool> onPivotChanged;
@@ -675,46 +673,29 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             ),
       count + remaining,
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _number(couch ? 'Seats on couch' : 'Seats', count, (
-                value,
-              ) {
-                if (value != value.roundToDouble() || value < minimum) {
-                  throw const FormatException(
-                    'Enter a valid whole seat count.',
-                  );
-                }
-                c.setSeatCount(node.id, value.toInt());
-              }),
-            ),
-            IconButton(
-              tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
-              onPressed: enabled && count > minimum
-                  ? () => c.setSeatCount(node.id, count - 1)
-                  : null,
-              icon: const Icon(Icons.remove_circle_outline),
-            ),
-            IconButton(
-              tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
-              onPressed: enabled && count < maximum
-                  ? () => c.setSeatCount(node.id, count + 1)
-                  : null,
-              icon: const Icon(Icons.add_circle_outline),
-            ),
-          ],
+        Expanded(
+          child: _number(couch ? 'Seats on couch' : 'Seats', count, (value) {
+            if (value != value.roundToDouble() || value < minimum) {
+              throw const FormatException('Enter a valid whole seat count.');
+            }
+            c.setSeatCount(node.id, value.toInt());
+          }),
         ),
-        const SizedBox(height: 4),
-        Text(
-          '${VenueLayoutStrings.text(context, 'Maximum seats')}: $maximum',
-          key: const ValueKey('table-maximum-seats'),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        IconButton(
+          tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
+          onPressed: enabled && count > minimum
+              ? () => c.setSeatCount(node.id, count - 1)
+              : null,
+          icon: const Icon(Icons.remove_circle_outline),
+        ),
+        IconButton(
+          tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
+          onPressed: enabled && count < maximum
+              ? () => c.setSeatCount(node.id, count + 1)
+              : null,
+          icon: const Icon(Icons.add_circle_outline),
         ),
       ],
     );
@@ -1356,6 +1337,23 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                   },
             child: const LayoutText('Crop image'),
           ),
+        if (node.kind == 'seat' &&
+            c.document.nodes.any(
+              (parent) => parent.id == node.parentId && parent.kind == 'table',
+            ) &&
+            seatAttachment(c.document, node.id)?['placement']?['mode'] !=
+                'automatic')
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: OutlinedButton.icon(
+              key: const ValueKey('restore-automatic-chair'),
+              onPressed: c.readOnly || c.saving || node.locked
+                  ? null
+                  : () => c.restoreAutomaticChairPosition(node.id),
+              icon: const Icon(Icons.restart_alt, size: 18),
+              label: const LayoutText('Restore automatic position'),
+            ),
+          ),
         _quickObjectStyles(node),
         CanonicalAppearancePanel(
           controller: c,
@@ -1590,6 +1588,118 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     }
   }
 
+  Future<void> _registerBackground() async {
+    final base = c.document, background = c.document.background!;
+    final source = <List<double>>[], target = <List<double>>[];
+    Map<String, dynamic>? registered;
+    String? error;
+    final width = (background['width'] as num).toDouble(),
+        height = (background['height'] as num).toDouble();
+    final sourceDoc = VenueLayoutDocument.empty().copyWith(
+      canvas: {
+        'x': 0,
+        'y': 0,
+        'width': width < 64 ? 64 : width,
+        'height': height < 64 ? 64 : height,
+        'fill': '#FFFFFFFF',
+      },
+      background: {
+        ...background,
+        'x': width / 2,
+        'y': height / 2,
+        'rotation': 0,
+        'scale': 1,
+        'crop': {'x': 0, 'y': 0, 'width': 1, 'height': 1},
+      },
+    );
+    final apply = await showEditorDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) {
+          void pick(List<List<double>> list, Offset point) => update(() {
+            if (list.length == 2) list.clear();
+            list.add([point.dx, point.dy]);
+            registered = null;
+            error = null;
+            if (source.length == 2 && target.length == 2) {
+              try {
+                registered = registerBackground(
+                  background,
+                  source[0],
+                  source[1],
+                  target[0],
+                  target[1],
+                );
+              } catch (e) {
+                error = '$e';
+              }
+            }
+          });
+          return AlertDialog(
+            title: const LayoutText('Align background with two points'),
+            content: SizedBox(
+              width: 620,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LayoutText(
+                      '1. Tap two recognizable points on the source image (${source.length}/2).',
+                    ),
+                    SizedBox(
+                      height: 190,
+                      child: LayoutSceneSurface(
+                        document: sourceDoc,
+                        resources: c.resources,
+                        onTap: (p) => pick(source, p),
+                      ),
+                    ),
+                    LayoutText(
+                      '2. Tap the matching plan positions in the same order (${target.length}/2).',
+                    ),
+                    SizedBox(
+                      height: 190,
+                      child: LayoutSceneSurface(
+                        document: registered == null
+                            ? base
+                            : base.copyWith(background: registered),
+                        resources: c.resources,
+                        onTap: (p) => pick(target, p),
+                      ),
+                    ),
+                    if (registered != null)
+                      const LayoutText(
+                        'Preview aligned. Seats have not moved. Tap again to restart a point pair.',
+                      ),
+                    if (error != null) LayoutText(error!),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const LayoutText('Cancel'),
+              ),
+              FilledButton(
+                onPressed: registered == null
+                    ? null
+                    : () => Navigator.pop(context, true),
+                child: const LayoutText('Apply alignment'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (apply == true && registered != null) {
+      c.apply(
+        base.copyWith(background: registered),
+        label: 'Register background',
+      );
+    }
+  }
+
   Widget _backgroundControls() {
     final b = c.document.background;
     return Column(
@@ -1615,6 +1725,10 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             child: LayoutText(b == null ? 'Choose image' : 'Replace image'),
           ),
         if (b != null) ...[
+          OutlinedButton(
+            onPressed: (c.readOnly || c.saving) ? null : _registerBackground,
+            child: const LayoutText('Align using two points'),
+          ),
           Wrap(
             children: [
               for (final mode in ['contain', 'fill'])
@@ -1643,40 +1757,34 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                 ),
             ],
           ),
-          for (final field in [
-            'X',
-            'Y',
-            'Width',
-            'Height',
-            'Rotation',
-            'Opacity',
-          ])
-            _number(
-              field,
-              switch (field) {
-                'X' => b['x'] as num? ?? 0,
-                'Y' => b['y'] as num? ?? 0,
-                'Width' => (b['width'] as num) * (b['scale'] as num? ?? 1),
-                'Height' => (b['height'] as num) * (b['scale'] as num? ?? 1),
-                'Rotation' => b['rotation'] as num? ?? 0,
-                _ => b['opacity'] as num? ?? 1,
-              },
-              (value) => c.apply(
-                c.document.copyWith(
-                  background: {
-                    ...b,
-                    if (field == 'X') 'x': value,
-                    if (field == 'Y') 'y': value,
-                    if (field == 'Width') 'scale': value / (b['width'] as num),
-                    if (field == 'Height')
-                      'scale': value / (b['height'] as num),
-                    if (field == 'Rotation') 'rotation': value,
-                    if (field == 'Opacity') 'opacity': value,
+          OutlinedButton(
+            onPressed: (c.readOnly || c.saving)
+                ? null
+                : () {
+                    final base = c.document;
+                    _preview(
+                      'Transform background',
+                      (v) => base.copyWith(
+                        background: {
+                          ...b,
+                          'x': v['X'],
+                          'y': v['Y'],
+                          'scale': v['Scale'],
+                          'rotation': v['Rotation'],
+                          'opacity': v['Opacity'],
+                        },
+                      ),
+                      {
+                        'X': (b['x'] as num? ?? 0).toDouble(),
+                        'Y': (b['y'] as num? ?? 0).toDouble(),
+                        'Scale': (b['scale'] as num? ?? 1).toDouble(),
+                        'Rotation': (b['rotation'] as num? ?? 0).toDouble(),
+                        'Opacity': (b['opacity'] as num? ?? 1).toDouble(),
+                      },
+                    );
                   },
-                ),
-                label: 'Transform background',
-              ),
-            ),
+            child: const LayoutText('Transform image'),
+          ),
           OutlinedButton(
             onPressed: (c.readOnly || c.saving)
                 ? null
@@ -1797,7 +1905,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
       LayoutFloorStyleField(controller: c),
       const LayoutText('Schematic size. No physical measurements required.'),
       const SizedBox(height: 8),
-      if (!widget.backgroundSelected) _backgroundControls(),
+      _backgroundControls(),
     ],
   );
   Widget _canvasColor() => _field(
@@ -1820,8 +1928,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
         .where((n) => selection.contains(n.id))
         .toList();
     final ids = selected.map((node) => node.id).toList()..sort();
-    final selectionContext =
-        '${widget.canvasSelected}:${widget.backgroundSelected}:${ids.join(',')}';
+    final selectionContext = '${widget.canvasSelected}:${ids.join(',')}';
     if (_selectionContext != selectionContext) {
       _selectionContext = selectionContext;
       _error = null;
@@ -1875,8 +1982,6 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                               : selected.single.label)
                         : selected.length > 1
                         ? '${selected.length} objects selected. Individual values vary.'
-                        : widget.backgroundSelected
-                        ? 'Background image'
                         : widget.canvasSelected
                         ? 'Canvas'
                         : 'Properties',
@@ -1886,9 +1991,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                     ),
                   ),
                 ),
-                if (selected.isNotEmpty ||
-                    widget.canvasSelected ||
-                    widget.backgroundSelected)
+                if (selected.isNotEmpty || widget.canvasSelected)
                   IconButton(
                     key: const ValueKey('clear-layout-selection'),
                     tooltip: VenueLayoutStrings.text(
@@ -1915,9 +2018,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                   ),
                 ),
               ),
-            if (widget.backgroundSelected && c.document.background != null)
-              _backgroundControls(),
-            if (selected.isEmpty && !widget.backgroundSelected)
+            if (selected.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: LayoutText(
@@ -1926,36 +2027,6 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                       : 'Select an object on the plan or in Layers to edit it.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            if (c.automaticChairTargets.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    key: const ValueKey('restore-automatic-chair'),
-                    onPressed: c.readOnly || c.saving
-                        ? null
-                        : () => c.restoreAutomaticChairPositions(
-                            c.automaticChairTargets,
-                          ),
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(0, 44),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      textStyle: Theme.of(context).textTheme.labelLarge,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.restart_alt, size: 20),
-                    label: Text(
-                      '${VenueLayoutStrings.text(context, 'Reset placement')} (${c.automaticChairTargets.length})',
-                    ),
                   ),
                 ),
               ),
@@ -2285,16 +2356,6 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                     onChanged: (v) => setState(() => _search = v),
                   ),
                   _rows(layers, selection),
-                  if (c.document.background != null)
-                    ListTile(
-                      key: const ValueKey('layout-background-layer'),
-                      selected: widget.backgroundSelected,
-                      leading: const Icon(Icons.image_outlined),
-                      title: const LayoutText('Background image'),
-                      onTap: c.readOnly || c.saving
-                          ? null
-                          : widget.onSelectBackground,
-                    ),
                 ],
               ],
             ),

@@ -85,6 +85,18 @@ String _czechLayoutText(String text) {
   if (remaining != null) {
     return 'Další objekty: ${remaining[1]}. Upřesni hledání.';
   }
+  final sourcePoint = RegExp(
+    r'^1\. Tap two recognizable points on the source image \((\d+)/2\)\.$',
+  ).firstMatch(text);
+  if (sourcePoint != null) {
+    return '1. Vyber dva rozpoznatelné body v podkladovém obrázku (${sourcePoint[1]}/2).';
+  }
+  final targetPoint = RegExp(
+    r'^2\. Tap the matching plan positions in the same order \((\d+)/2\)\.$',
+  ).firstMatch(text);
+  if (targetPoint != null) {
+    return '2. Ve stejném pořadí vyber odpovídající body v plánku (${targetPoint[1]}/2).';
+  }
   final template = RegExp(
     r'^Use (.+)\. Your current plan can be restored with Undo\.$',
   ).firstMatch(text);
@@ -173,8 +185,6 @@ String _czechLayoutText(String text) {
     r'^(\d+) objects selected\. Individual values vary\.$',
   ).firstMatch(text);
   if (multiple != null) return 'Vybrané objekty: ${multiple[1]}';
-  final compactSelected = RegExp(r'^(\d+) selected$').firstMatch(text);
-  if (compactSelected != null) return 'Vybráno: ${compactSelected[1]}';
   final selected = RegExp(r'^(\d+) selected ·').firstMatch(text);
   if (selected != null) {
     return 'Vybráno: ${selected[1]} · Shift + klik přidá do výběru · Alt vybere jednotlivý prvek';
@@ -244,8 +254,6 @@ const _cs = <String, String>{
   'Galaxy cinema': 'Galaktické kino',
   'Dark cinema with seven rows, 84 seats and four two-seat sofas':
       'Tmavé kino se sedmi řadami, 84 místy a čtyřmi dvojmístnými gauči',
-  'Reset placement': 'Obnovit rozmístění',
-  'Maximum seats': 'Maximum míst',
   'Restore automatic position': 'Vrátit k automatickému rozmístění',
   'Insert image / SVG': 'Vložit obrázek / SVG',
   'Set as default font for the plan': 'Použít písmo v celém plánku',
@@ -515,6 +523,7 @@ const _cs = <String, String>{
   "Import preset": "Importovat vlastní objekt",
   "Rename preset": "Přejmenovat vlastní objekt",
   "Fit seats": "Rozmístit sedadla",
+  "Register background": "Zarovnat podklad",
   "Remove background": "Odstranit podklad",
   "Canvas width": "Šířka plátna",
   "Canvas height": "Výška plátna",
@@ -565,6 +574,9 @@ const _cs = <String, String>{
 
   'Table and seats': 'Stůl a sedadla',
   "Adjust assembly": "Upravit sestavu",
+  "Align background with two points": "Zarovnat podklad pomocí dvou bodů",
+  "Align using two points": "Zarovnat pomocí dvou bodů",
+  "Apply alignment": "Použít zarovnání",
   "Apply preview": "Použít náhled",
   "Bold": "Tučné",
   "Cancel path": "Zrušit kreslení",
@@ -572,8 +584,7 @@ const _cs = <String, String>{
   "Copy fragment JSON": "Zkopírovat JSON objektu",
   "Crop image": "Oříznout obrázek",
   "Text is not ready yet.": "Text ještě není připravený.",
-  "The selected font could not be loaded.":
-      "Vybraný font se nepodařilo načíst.",
+  "The selected font could not be loaded.": "Vybraný font se nepodařilo načíst.",
   "Retry font": "Zkusit znovu",
   "Part of the plan could not be displayed.":
       "Část plánku se nepodařilo zobrazit.",
@@ -587,6 +598,8 @@ const _cs = <String, String>{
   "Import reusable object": "Importovat vlastní objekt",
   "Italic": "Kurzíva",
   "Physical obstacle": "Fyzická překážka",
+  "Preview aligned. Seats have not moved. Tap again to restart a point pair.":
+      "Podklad je zarovnaný. Sedadla zůstala na místě. Dalším kliknutím vybereš novou dvojici bodů.",
   "Preview count": "Náhled počtu",
   "Preview placement": "Náhled rozmístění",
   "Remove image": "Odstranit obrázek",
@@ -597,6 +610,7 @@ const _cs = <String, String>{
   "Save reusable object": "Uložit vlastní objekt",
   "Search incomplete. This is the best result found so far.":
       "Hledání není dokončené. Toto je zatím nejlepší nalezené rozmístění.",
+  "Transform image": "Upravit obrázek",
   "Use image": "Použít obrázek",
   "Validate fragment": "Zkontrolovat objekt",
 
@@ -686,10 +700,6 @@ const _cs = <String, String>{
   'group': 'Skupina',
   'Drag onto the plan, or click to place':
       'Přetáhni do sálu nebo vyber a klikni do plánku',
-  'Tap an object to add it. Drawing tools continue on the plan.':
-      'Klepnutím přidáte objekt. Kreslení pokračuje v plánku.',
-  'No free space found. Tap the plan to choose a position.':
-      'Volné místo nenalezeno. Klepnutím do plánku vyberte umístění.',
   'Seating': 'Sezení',
   'Paint a connected surface.': 'Namaluj souvislou plochu.',
   'Surface brush limit reached.': 'Plocha dosáhla maximální velikosti.',

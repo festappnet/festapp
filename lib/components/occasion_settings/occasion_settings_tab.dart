@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import '../ticket_layout/ticket_layout_saver.dart';
 import 'dart:async';
@@ -388,7 +387,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   }
 
   Future<void> _removeImage() async {
-    if (!RightsService.canEditOccasion()) return;
+    if (!RightsService.isUnitEditor()) return;
     final imageUrl = occasion!.data?[Tb.occasions.data_image];
     if (imageUrl == null) return;
     final confirmation = await DialogHelper.showConfirmationDialog(
@@ -396,7 +395,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       OccasionSettingsStrings.confirmRemoval,
       OccasionSettingsStrings.deleteImageConfirmation,
     );
-    if (!mounted || !confirmation || !RightsService.canEditOccasion()) return;
+    if (!mounted || !confirmation || !RightsService.isUnitEditor()) return;
     // Detach only in the draft. Deleting the object here breaks the saved
     // cover when the user discards changes or leaves this occasion.
     setState(() {
@@ -411,7 +410,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final bool isEditingEnabled = RightsService.canEditOccasion();
+    final bool isEditingEnabled = RightsService.isUnitEditor();
     final imageUrl = occasion!.data?[Tb.occasions.data_image];
 
     // <-- MODIFIED (Added) -->
@@ -626,16 +625,14 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                         TicketLayoutSaver().save(occasion!, draft),
                   ),
                   const SizedBox(height: 24),
-                  if (RightsService.hasCapability(
-                      AuthorizationCapabilities.occasionsDelete))
+                  if (RightsService.isUnitManager())
                     Center(
                       child: Tooltip(
                         message: hasOrders
                             ? OccasionSettingsStrings.cannotDeleteWithOrders
                             : "",
                         child: TextButton(
-                          onPressed: RightsService.hasCapability(
-                                  AuthorizationCapabilities.occasionsDelete)
+                          onPressed: isEditingEnabled
                               ? () {
                                   if (hasOrders) {
                                     ToastHelper.Show(

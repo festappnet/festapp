@@ -50,7 +50,6 @@ class UserGroupInfoModel extends ITrinaRowModel {
   bool persistedPlaceWasPrivate;
   bool shouldSavePlace = false;
   int aggregateVersion;
-  final Map<String, bool> capabilities;
 
   UserGroupInfoModel({
     required this.id,
@@ -65,8 +64,7 @@ class UserGroupInfoModel extends ITrinaRowModel {
     this.persistedPlaceId,
     this.persistedPlaceWasPrivate = false,
     this.aggregateVersion = 0,
-    Map<String, bool> capabilities = const {},
-  }) : capabilities = Map.unmodifiable(capabilities);
+  });
 
   factory UserGroupInfoModel.fromJson(Map<String, dynamic> json) {
     final place = json[Tb.places.table] != null
@@ -76,10 +74,6 @@ class UserGroupInfoModel extends ITrinaRowModel {
                 json[PlaceModel.placeObjectColumn] ?? json['placeData'])
             : null;
     return UserGroupInfoModel(
-      capabilities: {
-        for (final entry in (json['capabilities'] as Map? ?? {}).entries)
-          if (entry.key is String) entry.key as String: entry.value == true,
-      },
       id: json[Tb.user_group_info.id],
       title: json[Tb.user_group_info.title],
       type: json[Tb.user_group_info.type],

@@ -98,7 +98,7 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
     }
     final capacity = _capacityForm?.definition.capacity;
     final canSendOffers = _capacityForm?.definition.waitlistEnabled == true &&
-        RightsService.canUpdateOrders();
+        RightsService.isEditorOrder();
     return Column(children: [
       if (_capacityForm?.definition.capacity case final capacity?)
         Padding(
@@ -107,7 +107,7 @@ class _FormResponsesContentState extends State<FormResponsesContent> {
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               if (capacity.enabled) WaitlistCapacitySummary(capacity: capacity),
               if (_capacityForm!.definition.waitlistEnabled &&
-                  RightsService.canUpdateOrders())
+                  RightsService.isEditorOrder())
                 TextButton(
                     onPressed: () async {
                       await showDialog(

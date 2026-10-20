@@ -36,7 +36,6 @@ test('the Admin header button opens the admin route', async () => {
     RightsService.canSeeReservations = () => false;
     RightsService.getUserDisplayInfo = () => ({ initial: 'A', name: 'Admin' });
     RightsService._context = {
-      user_info: { id: 'admin-user' },
       occasion: { link: 'hvezdamorska' },
       unit: { id: 5 },
     };

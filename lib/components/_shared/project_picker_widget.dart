@@ -83,8 +83,7 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
         datelessItems.add(item);
         continue;
       }
-      final endTime =
-          (item is OccasionModel) ? (item.endTime ?? startTime) : startTime;
+      final endTime = (item is OccasionModel) ? item.endTime! : startTime;
 
       if (startTime.isBefore(now) && endTime.isAfter(now)) {
         presentItems.add(item);
@@ -102,12 +101,10 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     });
 
     pastItems.sort((a, b) {
-      final dateA = (a is OccasionModel)
-          ? (a.endTime ?? widget.itemDateBuilder!(a)!)
-          : widget.itemDateBuilder!(a)!;
-      final dateB = (b is OccasionModel)
-          ? (b.endTime ?? widget.itemDateBuilder!(b)!)
-          : widget.itemDateBuilder!(b)!;
+      final dateA =
+          (a is OccasionModel) ? a.endTime! : widget.itemDateBuilder!(a)!;
+      final dateB =
+          (b is OccasionModel) ? b.endTime! : widget.itemDateBuilder!(b)!;
       return dateB.compareTo(dateA); // descending
     });
 
