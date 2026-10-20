@@ -13,16 +13,17 @@ export const loginForm = ({ csrf, client, action, error = '', consent = false })
     <small>Heslo ani přihlašovací token Festapp se nepředává připojené aplikaci.</small>`,
 );
 
-export const consentForm = ({ csrf, client, action, occasions, selectedTenant }) => page('Povolit přístup',
+export const consentForm = ({ csrf, client, action, occasions, units = [], canRequestCreate = false, selectedTenant }) => page('Povolit přístup',
     `<p>Aplikace <strong>${escape(client)}</strong> žádá o přístup k účtu v ${escape(selectedTenant)}.</p>
-    <p>Může číst tvoji identitu a vzhled vstupenek u akcí, které vybereš. Nemůže měnit vstupenky, spustit prodej ani odesílat e-maily.</p>
+    <p>Může číst tvoji identitu a vzhled vstupenek u akcí, které vybereš. Nemůže měnit vstupenky, spustit prodej ani odesílat e-maily. Zakládání skrytých akcí můžeš povolit zvlášť pro celého pořadatele.</p>
     <form method="post" action="${escape(action)}"><input type="hidden" name="csrf" value="${escape(csrf)}">
     <fieldset><legend>Vyber akce, ke kterým povolíš přístup</legend>${occasions.map(o => `<label><input type="checkbox" name="occasion" value="${o.id}">${escape(o.title)}</label>`).join('')}</fieldset>
+    ${units.length ? `<label>Celý pořadatel (místo jednotlivých akcí, včetně budoucích)<select name="unit"><option value="">Jen vybrané akce</option>${units.map(u => `<option value="${u.id}">${escape(u.title)}</option>`).join('')}</select></label>${canRequestCreate ? '<label><input type="checkbox" name="create" value="1">Povolit zakládání skrytých akcí se zavřeným prodejem</label>' : ''}` : ''}
     <p>Přístup vyprší za 7 dní. Kdykoliv jej můžeš odvolat ve <a href="/connections" target="_blank" rel="noopener">správě připojení</a>.</p>
     <button type="submit">Povolit přístup</button><button class="secondary" name="cancel" value="1">Nepovolit</button></form>`,
 );
 
 export const connectionsPage = (csrf, grants, clients) => page('Připojené aplikace',
-    `${grants.length ? grants.map(g => `<section><h2>${escape(clients.find(c => c.id === g.clientId)?.name ?? 'Aplikace')}</h2><p>Čtení vzhledu vstupenek pro ${g.occasions.length} akcí. Platnost do ${escape(new Date(g.expiresAt).toLocaleDateString('cs-CZ'))}.</p><form method="post" action="/connections/revoke"><input type="hidden" name="csrf" value="${escape(csrf)}"><input type="hidden" name="grant" value="${escape(g.id)}"><button type="submit">Odpojit</button></form></section>`).join('') : '<p>Nemáš žádné aktivní připojení.</p>'}
+    `${grants.length ? grants.map(g => `<section><h2>${escape(clients.find(c => c.id === g.clientId)?.name ?? 'Aplikace')}</h2><p>${g.access.type === 'unit' ? `Celý pořadatel #${g.access.unitId}, včetně budoucích akcí${g.access.canCreateOccasions ? ' a zakládání skrytých akcí' : ''}.` : `Čtení vzhledu vstupenek pro ${g.access.occasionIds.length} akcí.`} Platnost do ${escape(new Date(g.expiresAt).toLocaleDateString('cs-CZ'))}.</p><form method="post" action="/connections/revoke"><input type="hidden" name="csrf" value="${escape(csrf)}"><input type="hidden" name="grant" value="${escape(g.id)}"><button type="submit">Odpojit</button></form></section>`).join('') : '<p>Nemáš žádné aktivní připojení.</p>'}
     <form method="post" action="/connections/logout"><input type="hidden" name="csrf" value="${escape(csrf)}"><button class="secondary" type="submit">Odhlásit správu připojení</button></form>`,
 );

@@ -1,11 +1,49 @@
 # Remote MCP authorization pilot
 
-Date: 2026-10-20. Status: public issuer active and verified; first-party consent
-integration implemented, real operator/account consent remains pending. Selected origin: `https://mcp.festapp.net`.
-Scope: `festapptickets` / vstupenky.online only, the approved pilot account and
-the five current occasions of its Testovací organizace unit. Private actor IDs,
-labels, public backend profile and exact resource allowlist live outside Git.
-No future occasion is automatically included. Blueprint V2 remains excluded.
+Date: 2026-10-20. Public issuer: `https://mcp.festapp.net`.
+Deployment scope: `festapptickets` / vstupenky.online. Blueprint V2 is excluded.
+Access choices come from the authenticated actor's live domain rights, not a
+second per-user/event allowlist. Tenant identity remains pinned by the existing
+registry and ordinary-user organization check.
+
+## Delegation scope and creation
+
+Consent chooses either explicit occasion IDs or one whole organizer (`unit`).
+A whole-organizer grant includes current and future occasions in that unit;
+it does not include other organizers or the entire tenant (`organization`).
+The canonical `get_operator_access_v1` projection exposes only authorized units
+and occasions visible to editors/managers. Artwork reads retain their narrower canonical permission check. It accepts no caller-supplied actor identity.
+Every operation still uses the ordinary session and canonical domain checks.
+Moving an occasion to another organizer removes it from a unit grant.
+
+Creating occasions is a separate unchecked choice. It requires all of:
+requested OAuth scope `festapp:occasions:create`, explicit whole-organizer consent,
+its `canCreateOccasions` flag and current unit-manager rights (the canonical
+unit mutation command requires a manager). Read-only clients do not advertise
+the create tool. The existing read scope is `festapp:ticket-layouts:read`.
+`festapp_access_inspect` lists only the connection's current authorized scope.
+`festapp_occasions_create` calls `create_occasion_client_sync_v1` unchanged, with
+an explicit command UUID, hidden=true and sales closed. It cannot publish, send
+messages, copy Blueprint V2 or alter another organizer. An uncertain result must
+retry the identical UUID and payload; canonical receipts prevent duplicate writes.
+An expired/mismatching receipt is an error, never permission to generate a new ID.
+
+Remote config schema 2 removes `operators` and `occasionLabels`. Before switching
+the image, back up the protected config, set schemaVersion=2 and remove those
+fields; do not change profile, client callbacks, storage/signing/cookie keys or
+broker secret. Startup upgrades existing persisted selected-occasion grants to
+`access: {type: 'occasions', occasionIds: [...]}` once, preserving their expiry,
+identity and restrictions. Existing tokens/consents never acquire create scope
+or whole-organizer access. In-flight old consent pages must reload the new UI.
+Apply `20261020210000_operator_access_projection.sql` before the new MCP image,
+then deploy the first-party UI. Add both requested scopes in clients that should
+show the optional creation choice; a new explicit consent is required.
+
+Cloudflare Browser Integrity Check is disabled only for the MCP host's machine
+routes `/mcp`, `/token`, `/token/revocation`, `/jwks`, `/healthz` and
+`/.well-known/*` using a Configuration Rule. Browser consent routes and other
+hosts retain their settings. Default TLS verification stays enabled; probes
+must verify OAuth JSON responses for non-browser User-Agents as well.
 
 ## Identity and ownership
 
@@ -18,7 +56,7 @@ No unsupported GoTrue OAuth-server capability is assumed or enabled.
 
 The user clicks Connect in the MCP client and continues to the configured
 first-party tenant. Its existing app login identifies the actor; the user chooses
-individual allowed occasions and consents. The first-party broker reuses the
+individual allowed occasions or one organizer and consents. The first-party broker reuses the
 existing session-issuance owner and identity/MFA/organization checks with a
 separate encrypted server store. It does not read workstation Keychain/browser
 credentials. Passwords are transient request input, never persisted or audited.
@@ -51,7 +89,7 @@ This does not widen web-client redirects or enable dynamic registration.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and
-the selected occasion IDs for seven days. The MCP token and the Supabase token
+the selected access scope for seven days. The MCP token and the Supabase token
 remain separate. The adapter has no service-role key and never relays a supplied
 MCP bearer to Supabase. Existing SQL/RPC permissions remain the final domain
 authority. The OAuth grant narrows access; the stored ordinary Supabase session
@@ -89,7 +127,7 @@ token is denied immediately. A read revoked in flight is discarded before
 return; already returned data cannot be recalled. Downstream identity/membership
 is checked through Auth/user-scoped SQL on invocation, not JWT claims alone.
 An invalid downstream session revokes the connection and supplies the standard
-MCP OAuth challenge for relinking. No remote domain write is admitted.
+MCP OAuth challenge for relinking. Only explicitly consented occasion creation is admitted as a remote write.
 
 Fixed HTTP/body/token/storage/concurrency bounds apply. Audit records contain
 hashed actor/connection, client, tenant, operation, request ID and outcome only.

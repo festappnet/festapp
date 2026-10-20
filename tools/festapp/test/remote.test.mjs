@@ -8,7 +8,7 @@ import { randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { fixture, profile, actor, token as supabaseToken, reply } from './fixture.mjs';
-import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
+import { parseRemoteConfig, READ_SCOPE, CREATE_SCOPE } from '../src/remote/config.mjs';
 import { openRemoteStorage } from '../src/remote/storage.mjs';
 import { createRemoteApp } from '../src/remote/server.mjs';
 import { DelegatedOwner, boundOwner } from '../src/remote/delegation.mjs';
@@ -20,9 +20,8 @@ const secrets = { cookieKeys: ['a'.repeat(48), 'b'.repeat(48)], jwks: { keys: [{
 }] } };
 const csrf = html => html.match(/name="csrf" value="([^"]+)"/)[1];
 const rawProfile = () => { const { binding, ...p } = profile(); return p; };
-const configuration = (issuer) => ({ schemaVersion: 1, issuer, profile: rawProfile(),
+const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
-    operators: [{ userId: actor, occasions: [7] }],
 });
 async function setup(t, { native = false, tenant = false } = {}) {
     const base = await fixture(t, { fetchImpl: url => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
@@ -55,10 +54,10 @@ async function setup(t, { native = false, tenant = false } = {}) {
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback' } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, create = false } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
-        redirect_uri: callbackUri, scope: `openid offline_access ${READ_SCOPE}`,
+        redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         code_challenge_method: 'S256', resource: f.config.resource, state: 'fixture-state' });
     let r = await f.browser('/auth?' + params);
@@ -75,7 +74,7 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     assert.match(consent, /Povolit přístup/);
     assert.match(consent, /value="7"/);
     assert.doesNotMatch(consent, /value="8"/);
-    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), occasion: '7' });
+    r = await f.browser(`/connect/${uid}/consent`, { csrf: csrf(consent), ...(unitId ? { unit: String(unitId), ...(create ? { create: '1' } : {}) } : { occasion: '7' }) });
     assert.equal(r.status, 303);
     let redirect = r.headers.get('location');
     for (let i = 0; i < 8 && !new URL(redirect, f.issuer).pathname.startsWith('/callback'); i++) {
@@ -143,15 +142,15 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert.equal(r.status, 200, await r.clone().text());
     const info = await r.json();
     assert.deepEqual(info.occasions.map(o => o.id), [7]);
-    assert.equal((await broker('prepare', { accessToken: supabaseToken, occasions: [8] })).status, 403);
+    assert.equal((await broker('prepare', { accessToken: supabaseToken, access: { type: 'occasions', occasionIds: [8] } })).status, 403);
     // Merely displaying consent never mints or adopts a backend refresh session.
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
     assert.equal(f.storage.values('Delegation').length, 0);
-    r = await broker('prepare', { accessToken: supabaseToken, occasions: [7] });
+    r = await broker('prepare', { accessToken: supabaseToken, access: { type: 'occasions', occasionIds: [7] } });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
-    assert.equal((await broker('prepare', { accessToken: supabaseToken, occasions: [7] })).status, 403);
+    assert.equal((await broker('prepare', { accessToken: supabaseToken, access: { type: 'occasions', occasionIds: [7] } })).status, 403);
     assert.equal((await broker('complete', { lease: 'wrong', session: {} })).status, 403);
     r = await broker('complete', { lease: prepared.lease,
         session: { access_token: supabaseToken, refresh_token: 'independent-broker-refresh' } });
@@ -177,7 +176,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert(tokens.access_token);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);
-    assert.deepEqual(f.storage.values('Delegation')[0].occasions, [7]);
+    assert.deepEqual(f.storage.values('Delegation')[0].access.occasionIds, [7]);
     const client = new Client({ name: 'tenant-consent-test', version: '1' });
     await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
@@ -208,7 +207,7 @@ test('tenant cancellation and expired requests cannot issue or prepare a grant',
     const { resumeUrl } = await r.json();
     r = await f.browser(resumeUrl);
     assert.equal(r.status, 303);
-    assert.equal((await broker(first.request, 'prepare', { accessToken: supabaseToken, occasions: [7] })).status, 403);
+    assert.equal((await broker(first.request, 'prepare', { accessToken: supabaseToken, access: { type: 'occasions', occasionIds: [7] } })).status, 403);
     assert.equal(f.storage.values('Delegation').length, 0);
     const second = await start();
     f.storage.put('Connect', second.uid, { ...f.storage.get('Connect', second.uid), expiresAt: Date.now() - 1 }, 60);
@@ -255,7 +254,7 @@ test('OAuth discovery, exact callbacks, browser CSRF and PKCE fail closed', asyn
     const { response } = await connect(f, { badVerifier: true });
     assert.equal(response.status, 400);
     const flow = f.storage.values('Delegation')[0];
-    assert.equal(flow.occasions.join(','), '7');
+    assert.equal(flow.access.occasionIds.join(','), '7');
     assert(!JSON.stringify(f.audit).includes('fixture-password'));
 });
 
@@ -271,7 +270,7 @@ test('real OAuth code exchange and SDK HTTP reads, rotating refresh and browser 
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
     }));
     const list = await client.listTools();
-    assert.deepEqual(list.tools.map(t => t.name), ['festapp_context_inspect', 'festapp_ticket_layouts_inspect']);
+    assert.deepEqual(list.tools.map(t => t.name), ['festapp_access_inspect', 'festapp_context_inspect', 'festapp_ticket_layouts_inspect']);
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
     assert.equal(result.structuredContent.ok, true);
     assert.equal(result.structuredContent.data.writesEnabled, false);
@@ -314,7 +313,7 @@ test('delegated handlers deny other occasions and writes and discard a revoked i
     const bound = boundOwner(f.config, f.storage, 'grant-binding', { fetchImpl: f.owner.fetch });
     await bound.login('fixture@example.test', 'fixture-password');
     const grant = { id: 'grant-1', userId: actor, clientId: 'chatgpt-fixture', binding: 'grant-binding',
-        profileBinding: f.config.profile.binding, occasions: [7], expiresAt: Date.now() + 60000, revoked: false };
+        profileBinding: f.config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, revoked: false };
     f.storage.put('Delegation', grant.id, grant);
     const token = { grantId: grant.id, accountId: actor, clientId: grant.clientId, aud: f.config.resource,
         exp: Math.floor(Date.now() / 1000) + 300, scope: READ_SCOPE };
@@ -323,7 +322,7 @@ test('delegated handlers deny other occasions and writes and discard a revoked i
         assert.throws(() => new DelegatedOwner(f.config, f.storage, { ...token, ...bad }), /FORBIDDEN/);
     const owner = new DelegatedOwner(f.config, f.storage, token, { fetchImpl: f.owner.fetch });
     const ops = new Operations(owner);
-    assert.deepEqual(ops.catalog.map(d => d.id), ['context.inspect', 'ticket_layouts.inspect']);
+    assert.deepEqual(ops.catalog.map(d => d.id), ['access.inspect', 'context.inspect', 'ticket_layouts.inspect']);
     const before = f.calls.length;
     assert.equal((await ops.invoke('ticket_layouts.inspect', { occasionId: 8 })).error.code, 'FORBIDDEN');
     assert.equal(f.calls.length, before);
@@ -341,14 +340,14 @@ test('two delegated actors on one process keep their refresh sessions and identi
     const f = await setup(t);
     const otherActor = '00000000-0000-4000-8000-000000000002';
     const other = await fixture(t, { userId: otherActor });
-    const config = { ...f.config, operators: [...f.config.operators, { userId: otherActor, occasions: [7] }] };
+    const config = f.config;
     const owners = [];
     for (const [userId, upstream] of [[actor, f.owner.fetch], [otherActor, other.owner.fetch]]) {
         const binding = `actor-${userId}`;
         await boundOwner(config, f.storage, binding, { fetchImpl: upstream }).login('fixture@example.test', 'fixture-password');
         const id = `grant-${userId}`;
         f.storage.put('Delegation', id, { id, userId, clientId: 'chatgpt-fixture', binding,
-            profileBinding: config.profile.binding, occasions: [7], expiresAt: Date.now() + 60000, revoked: false });
+            profileBinding: config.profile.binding, access: { type: 'occasions', occasionIds: [7] }, expiresAt: Date.now() + 60000, revoked: false });
         owners.push(new DelegatedOwner(config, f.storage, { grantId: id, accountId: userId,
             clientId: 'chatgpt-fixture', aud: config.resource, scope: READ_SCOPE, exp: Date.now() / 1000 + 300 }, { fetchImpl: upstream }));
     }
@@ -356,4 +355,24 @@ test('two delegated actors on one process keep their refresh sessions and identi
     assert.deepEqual(results.map(r => r.data.userId), [actor, otherActor]);
     f.storage.revoke(`grant-${actor}`);
     assert.equal((await new Operations(owners[1]).invoke('context.inspect', {})).data.userId, otherActor);
+});
+
+test('organizer consent needs requested create scope; read consent never exposes creation', async t => {
+    const denied = await setup(t);
+    await assert.rejects(connect(denied, { unitId: 3, create: true }), /403/);
+    const f = await setup(t);
+    const { tokens } = await connect(f, { unitId: 3 });
+    const token = await f.provider.AccessToken.find(tokens.access_token);
+    const owner = new DelegatedOwner(f.config, f.storage, token, { fetchImpl: f.owner.fetch });
+    assert(!owner.allowedOperations.includes('occasions.create'));
+    const listed = await new Operations(owner).invoke('access.inspect', {});
+    assert.equal(listed.ok, true);
+    assert.equal(listed.data.units[0].canCreateOccasions, false);
+    const withScope = await setup(t);
+    const connected = await connect(withScope, { unitId: 3, create: true, scope: `${READ_SCOPE} ${CREATE_SCOPE}` });
+    const authorized = new DelegatedOwner(withScope.config, withScope.storage,
+        await withScope.provider.AccessToken.find(connected.tokens.access_token), { fetchImpl: withScope.owner.fetch });
+    assert(authorized.allowedOperations.includes('occasions.create'));
+    assert.throws(() => authorized.authorizeOperation('occasions.create', { unitId: 4 }), /FORBIDDEN/);
+    await authorized.authorizeOperation('occasions.create', { unitId: 3 });
 });

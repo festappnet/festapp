@@ -1521,7 +1521,7 @@
     "loginHint": "Sign in to your account, then choose occasions and confirm access.",
     "login": "Sign in",
     "client": "Connecting {client}",
-    "scope": "The application can read information and ticket layouts for selected occasions. It cannot change data or send tickets.",
+    "scope": "The connected application can read your identity, accessible occasions and ticket artwork within the selected access. Allow occasion creation separately below.",
     "choose": "Choose occasions to allow:",
     "duration": "Access lasts 7 days. You can revoke it earlier in Festapp connection management.",
     "approve": "Allow and connect",
@@ -1536,6 +1536,11 @@
     "backToTenant": "Back to {tenant}",
     "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",
     "completionUnknown": "Access was approved, but completion has not been confirmed yet. Check the application and start connecting again if needed.",
-    "finishing": "Finishing the connection"
+    "finishing": "Finishing the connection",
+    "wholeOrganizer": "Access to the entire organizer",
+    "wholeOrganizerHint": "Includes current and future occasions. Your current permissions always apply.",
+    "organizer": "Organizer",
+    "allowCreate": "Allow creating new occasions",
+    "allowCreateHint": "New occasions will be hidden, with sales closed."
   }
 }
