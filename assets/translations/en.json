@@ -491,8 +491,7 @@
     "embedHelp": "Paste the code into your website HTML. Automatic height requires an external script. If your website blocks it, use fixed height.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
-    "embedFixed": "Fixed height without script",
-    "productsAndPrices": "Products and prices"
+    "embedFixed": "Fixed height without script"
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -655,6 +654,9 @@
     "setDefaultProduct": "Click to make this product the default option for customers."
   },
   "FeatureOrders": {
+    "cancellationEmailTitle": "Order cancelled",
+    "cancellationEmailQuestion": "Send confirmation of the entire order cancellation to {email}?",
+    "skipCancellationEmail": "Not now",
     "deleteOrderNotice": "The order will be permanently deleted and the customer will no longer see it. To keep the record, cancel the order instead.",
     "deleteFakturoidInvoice": "Also delete the invoice in Fakturoid",
     "deleteFakturoidInvoiceHelp": "Applies to orders connected to Fakturoid. If invoice deletion fails, the order is kept.",
@@ -1401,12 +1403,7 @@
       "blocked": "blocked",
       "unavailable": "unavailable",
       "disabled": "disabled",
-      "sold": "sold",
-      "addOne": "Add one",
-      "removeOne": "Remove one",
-      "standingNotConfigured": "Standing admission is not configured yet.",
-      "standingUnavailable": "Standing places are no longer available.",
-      "standingSaleClosed": "Standing admission is not on sale."
+      "sold": "sold"
     },
     "demoGeometryNotice": "Demo layout. Edits and saves apply only within this demonstration. Orders, reservations and the catalog are unchanged.",
     "seatStates": {
@@ -1417,6 +1414,15 @@
       "ordered": "Ordered",
       "used": "Used",
       "blocked": "Blocked"
+    },
+    "seatStateDescriptions": {
+      "available": "Available to order.",
+      "selected": "Temporarily held by another customer.",
+      "ordered": "Included in an order.",
+      "used": "The ticket has already been checked in.",
+      "blocked": "Not available for sale.",
+      "empty": "No product is assigned to this seat.",
+      "selection": "Seat in your current selection."
     },
     "draftGeometryNotice": "Layout in the event draft. Saving updates this draft only. The live layout is created when the event is created.",
     "releaseTemporaryReservation": "Release temporary reservation",
@@ -1486,26 +1492,7 @@
     "helpEscapeEdit": "Cancel dragging or selection; close a dialog",
     "helpEscapeView": "Exit order or swap mode; close a dialog",
     "helpSeatStates": "Seat states",
-    "orderSelectionTitle": "Select seats for an order",
-    "imageUploadUncertain": "The upload result could not be verified. Before retrying, check whether the image was added.",
-    "seatStateDescriptions": {
-      "available": "Available to order.",
-      "selected": "Temporarily held by another customer.",
-      "ordered": "Included in an order.",
-      "used": "The ticket has already been checked in.",
-      "blocked": "Not available for sale.",
-      "empty": "No product is assigned to this seat.",
-      "selection": "Seat in your current selection."
-    },
-    "standingSalesLimit": "Sale limit",
-    "standingSupplyHint": "The sale limit does not add inventory supply. To increase the supply, edit the capacity group in Inventory.",
-    "standingNoAdmissionType": "First create a ticket form for this event. It prepares the admission product type needed here.",
-    "standingPreparationRetained": "Prepared products and inventory remain saved if you close this dialog. You can manage them in Products and Inventory. Retry keeps the prepared capacity.",
-    "assignStandingProduct": "Assign admission product",
-    "standingSetupSaveHint": "Products and inventory are saved immediately. The area assignment and capacity changes take effect when you save the plan.",
-    "standingCapacityGroup": "Capacity group",
-    "standingSharedCapacityHint": "This capacity belongs to the inventory pool. Changes affect every product and area sharing that pool.",
-    "standingRequiresProduct": "The area capacity is ready. To sell admission, assign a ticket product and its inventory capacity."
+    "orderSelectionTitle": "Select seats for an order"
   },
   "OccasionSettings": {
     "title": "Title",
@@ -1980,11 +1967,7 @@
     "keepEditing": "Keep editing",
     "copy": "Copy",
     "copied": "Copied",
-    "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity.",
-    "contextLoadFailed": "Could not verify access. Please try again.",
-    "copyManually": "Copy manually",
-    "clipboardUnavailable": "Clipboard access failed. The text is selected - copy it with your keyboard shortcut or selection menu.",
-    "saving": "Saving…"
+    "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity."
   },
   "BankAccount": {
     "organizationSettings": "organization settings",
@@ -2967,8 +2950,8 @@
     "story": {
       "communicationIncomplete": "Communication settings are incomplete. Check the reply-to email and reminder lead time.",
       "communicationQuestion": "How should participant communication be configured?",
-      "bankAccountNotConfirmed": "Select a valid account to receive payments.",
-      "bankAccountRequired": "A paid event requires a valid selected bank account.",
+      "bankAccountNotConfirmed": "Bank account not confirmed",
+      "bankAccountRequired": "A paid event requires a selected and confirmed bank account.",
       "configureScanningHint": "Optional ticket scanning settings. These do not change the ticket design and can be adjusted later.",
       "configureScanning": "Configure on-site check-in",
       "scannerQuestion": "How should on-site check-in work? (optional)",
@@ -3016,12 +2999,7 @@
       "endTime": "Event end time",
       "endBeforeStart": "The event must end at or after its start.",
       "incomplete": "This answer is incomplete. Required details and settings need to be checked.",
-      "questionNumber": "Question {current} of {total}",
-      "saleTimingQuestion": "When should sales start?",
-      "listingTitle": "List the event publicly",
-      "listingHint": "Applied only when you explicitly publish the created event. This does not open sales.",
-      "publishEvent": "Publish event with these settings",
-      "publishedEvent": "Event publication saved."
+      "questionNumber": "Question {current} of {total}"
     },
     "draft": "Draft",
     "cancelDraft": "Discard draft",
@@ -3029,18 +3007,7 @@
     "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
     "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
-    "withoutWizard": "Without wizard",
-    "copy": {
-      "source": "Source",
-      "fromScratch": "From scratch",
-      "referencesTitle": "Connect the new form",
-      "referencesBody": "Choose replacements for products used by the seating plan and ticket. The layout and ticket content will be kept. Cancel to keep the current form.",
-      "seatProduct": "Seats: {title}",
-      "ticketType": "Ticket field: {title}",
-      "duplicateTypes": "Two ticket fields cannot refer to the same product group within one template. Choose different groups.",
-      "invalidReferences": "The seating plan or ticket refers to products missing from the selected form. Choose their replacements in the form step.",
-      "repairReferences": "Connect products"
-    }
+    "withoutWizard": "Without wizard"
   },
   "Waitlist": {
     "settings": "Capacity and waitlist",
@@ -3628,155 +3595,5 @@
     "switchAccount": "Sign in with a different account",
     "legacyInviteHint": "The selected users will receive an invitation. Team members receive a link without changing their password.",
     "legacyReinviteConfirm": "Some users have already received an invitation. Send it again?"
-  },
-  "EditorFileDrop": {
-    "hint": "Drop an image to replace the background",
-    "singleFile": "Drop exactly one file, not a folder.",
-    "unsupported": "This file type is not supported.",
-    "tooLarge": "The image exceeds the 20 MB limit."
-  },
-  "OccasionSales": {
-    "admission": "Admission",
-    "standardTicket": "Standard ticket",
-    "customerPreview": "Customer preview",
-    "previewSafe": "Try the fields and price. This preview saves nothing, opens no sales, reserves no seats and sends no orders or emails.",
-    "previewSeats": "Selecting specific seats is disabled here. Check the ticket appearance in the Ticket step.",
-    "previewTotal": "Total for selected products: {amount}",
-    "previewEmail": "Confirmation email examples",
-    "previewEmailSample": "The sample order uses draft products and inherited templates. It is independent of the form selection above.",
-    "previewUnavailable": "The email preview could not be loaded. Your settings remain saved; check email templates before opening sales.",
-    "manualPaymentsHelp": "Without a bank connection, payments require manual confirmation. Open Orders in administration, find the order and confirm the received payment. Confirmation triggers paid ticket delivery. Configure the connection through Manage bank accounts.",
-    "senderUnavailable": "System sender - the exact address is currently unavailable",
-    "preparation": "In preparation",
-    "scheduled": "Sale scheduled",
-    "selling": "On sale",
-    "waitlist": "Waitlist",
-    "soldOut": "Sold out",
-    "paused": "Paused",
-    "ended": "Sale ended",
-    "finished": "Event finished",
-    "startsIn": "Sale starts in {duration}",
-    "endsIn": "Sale ends in {duration}",
-    "startsSoon": "Sale starts within a minute",
-    "endsSoon": "Sale ends within a minute",
-    "startsOn": "Sale from {date}",
-    "days": {
-      "one": "{count} day",
-      "few": "{count} days",
-      "many": "{count} days",
-      "other": "{count} days"
-    },
-    "hours": "{count} h",
-    "minutes": "{count} min",
-    "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
-    "startAt": "Sale starts: {date}",
-    "endAt": "Sale ends: {date}",
-    "mode": {
-      "preparation": "Keep in preparation",
-      "scheduled": "Schedule opening",
-      "immediate": "Open immediately after creation"
-    },
-    "help": {
-      "preparation": "The form stays closed. Open sales later.",
-      "scheduled": "Sales open automatically at the selected time.",
-      "immediate": "The form will accept orders immediately."
-    },
-    "saleStart": "Sale start",
-    "saleEnd": "Sale end",
-    "time": "Time",
-    "endDefault": "Default: event end. You can choose an earlier time.",
-    "useEventEnd": "Use event end",
-    "countdown": "Show sale countdowns",
-    "countdownHelp": "Optional. Turning countdowns off does not change sale times.",
-    "invalidTiming": "Check sale times. The start must be in the future and before sale end; sales must end by event end.",
-    "create": "Create event",
-    "createScheduled": "Create and schedule sale",
-    "createOpen": "Create and open sale",
-    "products": "Products and prices",
-    "productsHelp": "Tickets are form products. Edit names, prices and variants below.",
-    "created": "Event created",
-    "completion": {
-      "preparation": "The sales form is ready. Sales are not open yet.",
-      "scheduled": "Sales will open automatically at the scheduled time.",
-      "immediate": "The sales form is open and ready to accept orders."
-    },
-    "salesLink": "Sales form link",
-    "openForm": "View form",
-    "backToList": "Go to event list",
-    "manage": "Manage event",
-    "privacy": "The event stays hidden in the catalogue. The selected sale settings control access to the sales form.",
-    "saveAndLeave": "Save draft and leave",
-    "previewSelectedEmails": "Preview emails for this selection",
-    "previewEmailSelection": "Emails show the selected products, price and entered contact details. This is a preview; nothing is sent.",
-    "retrySender": "Reload sender address",
-    "seatSelection": "Seat selection",
-    "previousQuestion": "Previous question",
-    "shortStartsIn": "Starts in {duration}",
-    "ticketing": {
-      "scheduled": "Ticket sale scheduled",
-      "selling": "On ticket sale",
-      "soldOut": "Sold out",
-      "startsIn": "Ticket sale starts in {duration}",
-      "endsIn": "Ticket sale ends in {duration}",
-      "startsSoon": "Ticket sale starts within a minute",
-      "endsSoon": "Ticket sale ends within a minute",
-      "startsOn": "Ticket sale from {date}",
-      "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
-      "startAt": "Ticket sale starts: {date}",
-      "endAt": "Ticket sale ends: {date}",
-      "saleStart": "Ticket sale start",
-      "saleEnd": "Ticket sale end",
-      "countdown": "Show ticket sale countdowns",
-      "countdownHelp": "Optional. Turning countdowns off does not change ticket sale times.",
-      "invalidTiming": "Check ticket sale times. The start must be in the future and before ticket sale end; ticket sales must end by event end.",
-      "createScheduled": "Create and schedule ticket sale",
-      "createOpen": "Create and open ticket sale",
-      "salesLink": "Ticket sales form link",
-      "privacy": "The event stays hidden in the catalogue. The selected ticket sale settings control access to the ticket sales form.",
-      "help": {
-        "preparation": "The form stays closed. Open ticket sales later.",
-        "scheduled": "Ticket sales open automatically at the selected time.",
-        "immediate": "The form will accept orders immediately."
-      },
-      "completion": {
-        "preparation": "The ticket sales form is ready. Ticket sales are not open yet.",
-        "scheduled": "Ticket sales will open automatically at the scheduled time.",
-        "immediate": "The ticket sales form is open and ready to accept orders."
-      },
-      "question": "When should ticket sales start?"
-    },
-    "registration": {
-      "scheduled": "Registration scheduled",
-      "selling": "On registration",
-      "soldOut": "Sold out",
-      "startsIn": "Registration starts in {duration}",
-      "endsIn": "Registration ends in {duration}",
-      "startsSoon": "Registration starts within a minute",
-      "endsSoon": "Registration ends within a minute",
-      "startsOn": "Registration from {date}",
-      "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
-      "startAt": "Registration starts: {date}",
-      "endAt": "Registration ends: {date}",
-      "saleStart": "Registration start",
-      "saleEnd": "Registration end",
-      "countdown": "Show registration countdowns",
-      "countdownHelp": "Optional. Turning countdowns off does not change registration times.",
-      "invalidTiming": "Check registration times. The start must be in the future and before registration end; registration must end by event end.",
-      "createScheduled": "Create and schedule registration",
-      "createOpen": "Create and open registration",
-      "salesLink": "Registration form link",
-      "privacy": "The event stays hidden in the catalogue. The selected registration settings control access to the registration form.",
-      "help": {
-        "preparation": "The form stays closed. Open registration later.",
-        "scheduled": "Registration open automatically at the selected time.",
-        "immediate": "The form will accept orders immediately."
-      },
-      "completion": {
-        "preparation": "The registration form is ready. Registration are not open yet.",
-        "scheduled": "Registration will open automatically at the scheduled time.",
-        "immediate": "The registration form is open and ready to accept orders."
-      },
-      "question": "When should registration start?"
-    }
   }
 }

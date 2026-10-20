@@ -8,9 +8,7 @@ export const accessSchema = z.discriminatedUnion('type', [
 ]);
 export const accessProjection = z.strictObject({
     units: z.array(z.strictObject({ id, title: z.string(), canCreateOccasions: z.boolean() })),
-    occasions: z.array(z.strictObject({ id, title: z.string(), unitId: id,
-        capabilities: z.strictObject({ 'ticket_layouts.read': z.boolean() }),
-    })),
+    occasions: z.array(z.strictObject({ id, title: z.string(), unitId: id })),
 });
 export async function operatorAccess(client, profile, { unitId, occasionId } = {}) {
     const { data, error } = await client.rpc('get_operator_access_v1', {

@@ -7,7 +7,7 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_global_style.
 
 void main() {
   testWidgets(
-    'global style hover previews without choosing; click commits and Escape restores',
+    'global style hover restores; click commits one undo; Escape restores',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -38,7 +38,6 @@ void main() {
       await tester.pump();
       expect(c.gestureActive, isTrue);
       expect(c.document.styles['kinds']['seat']['seatStyle'], 'wood');
-      expect(c.canUndo, isFalse);
       await mouse.moveTo(const Offset(10, 10));
       await tester.pump();
       expect(c.document.toJson(), original.toJson());

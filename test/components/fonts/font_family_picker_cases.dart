@@ -33,7 +33,6 @@ void main() {
             chosen.add(family);
           }),
     ))));
-    expect(find.text(FormStrings.moreFonts), findsNothing);
     await tester.tap(find.byType(InputDecorator).first);
     await tester.pumpAndSettle();
     expect(

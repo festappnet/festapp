@@ -12,7 +12,7 @@ export async function emailRpc(
 ) {
   const { supabaseAdmin } = await import("./supabaseUtil.ts");
   const { data, error } = await supabaseAdmin.rpc(name, args);
-  if (error) throw Object.assign(new Error(`email_rpc_${name}`), {code: error.code});
+  if (error) throw new Error(`email_rpc_${name}`);
   return data;
 }
 export async function awaitEmailAccepted(
@@ -39,7 +39,6 @@ export async function enqueueAndAwaitEmail(
     kind?: EmailKind;
     expiresAt?: string;
   },
-  options: { enqueuePrepared?: (parameters: Record<string, unknown>) => Promise<{message_id: string}> } = {},
 ): Promise<EmailDeliveryResult> {
   const kind = input.kind ?? kindForTemplate(input.templateCode ?? "");
   await admitEmailPreparation(input);
@@ -63,9 +62,7 @@ export async function enqueueAndAwaitEmail(
   ).join("");
   const sealed = await sealEmail(prepared);
   // Dedupe hash derives from the plaintext digest; random encryption nonce must not cause collision.
-  const enqueue = options.enqueuePrepared ?? ((parameters: Record<string, unknown>) =>
-    emailRpc("enqueue_prepared_email", parameters));
-  const message = await enqueue({
+  const message = await emailRpc("enqueue_prepared_email", {
     p_kind: kind,
     p_context: { ...input.context, recipient_user: input.recipientUser },
     p_recipient: input.to,

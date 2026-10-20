@@ -7,88 +7,6 @@ import 'geometry.dart';
 import 'node_outline.dart';
 export 'node_outline.dart' show ScenePath, nodePath, nodeOutlineContours;
 
-// Center object labels by their visible outlines rather than font ascent and
-// line-box whitespace. Prepared resources stay immutable and authored text keeps
-// its original baseline. Evaluate curve extrema, not off-curve control points.
-List<dynamic> _centerLabelInk(List path) {
-  var low = double.infinity, high = double.negativeInfinity;
-  var y = 0.0, startY = 0.0;
-  void include(double value) {
-    low = min(low, value);
-    high = max(high, value);
-  }
-
-  for (final raw in path) {
-    final c = raw as List;
-    if (c[0] == 'M') {
-      y = startY = (c[2] as num).toDouble();
-    } else if (c[0] == 'L') {
-      include(y);
-      y = (c[2] as num).toDouble();
-      include(y);
-    } else if (c[0] == 'Q') {
-      final a = y, b = (c[2] as num).toDouble(), end = (c[4] as num).toDouble();
-      include(a);
-      include(end);
-      final denominator = a - 2 * b + end;
-      if (denominator.abs() > 1e-12) {
-        final t = (a - b) / denominator;
-        if (t > 0 && t < 1)
-          include((1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * end);
-      }
-      y = end;
-    } else if (c[0] == 'C') {
-      final a = y,
-          b = (c[2] as num).toDouble(),
-          d = (c[4] as num).toDouble(),
-          end = (c[6] as num).toDouble();
-      include(a);
-      include(end);
-      final qa = -a + 3 * b - 3 * d + end, qb = 2 * (a - 2 * b + d), qc = b - a;
-      final roots = <double>[];
-      if (qa.abs() < 1e-12) {
-        if (qb.abs() > 1e-12) roots.add(-qc / qb);
-      } else {
-        final discriminant = qb * qb - 4 * qa * qc;
-        if (discriminant >= 0) {
-          roots.addAll([
-            (-qb + sqrt(discriminant)) / (2 * qa),
-            (-qb - sqrt(discriminant)) / (2 * qa),
-          ]);
-        }
-      }
-      for (final t in roots) {
-        if (t > 0 && t < 1) {
-          final u = 1 - t;
-          include(
-            u * u * u * a +
-                3 * u * u * t * b +
-                3 * u * t * t * d +
-                t * t * t * end,
-          );
-        }
-      }
-      y = end;
-    } else if (c[0] == 'Z') {
-      include(y);
-      include(startY);
-      y = startY;
-    }
-  }
-  if (!low.isFinite) return path;
-  final center = (low + high) / 2;
-  return [
-    for (final raw in path)
-      [
-        (raw as List)[0],
-        for (var i = 1; i < raw.length; i += 2) ...[
-          raw[i],
-          (raw[i + 1] as num) - center,
-        ],
-      ],
-  ];
-}
-
 // Offset each contour towards the filled surface. Unlike scaling a bounding
 // box, this keeps the rim inside concave branches and outside authored holes.
 ScenePath _polygonMaterialPath(LayoutNode n, {required bool wood}) {
@@ -215,31 +133,6 @@ class _SceneGeometry {
       }
     }
   }
-}
-
-/// Visible background bounds use the same crop and transform as rendering.
-List<List<double>> backgroundHull(VenueLayoutDocument document) {
-  if (document.background == null) return const [];
-  final scene = compileSceneNodes(document, const {}, includeCanvas: true);
-  final items = (scene['items'] as List).where(
-    (item) => item['id'] == 'background',
-  );
-  if (items.isEmpty) return const [];
-  final item = items.first as Map;
-  final rect = item['destinationRect'] as Map;
-  final matrix = List<double>.from(item['matrix'] as List);
-  final x = (rect['x'] as num).toDouble(), y = (rect['y'] as num).toDouble();
-  final right = x + (rect['width'] as num),
-      bottom = y + (rect['height'] as num);
-  return [
-    for (final p in [
-      [x, y],
-      [right, y],
-      [right, bottom],
-      [x, bottom],
-    ])
-      transformPoint(matrix, p[0], p[1]),
-  ];
 }
 
 Map<String, dynamic> compileSceneNodes(
@@ -806,9 +699,7 @@ Map<String, dynamic> _compileScene(
           'kind': 'glyphs',
           'minZoom': 0,
           'matrix': labelRenderMatrix(n, label, matrix),
-          'path': n.kind == 'text'
-              ? prepared['path']
-              : _centerLabelInk(prepared['path'] as List),
+          'path': prepared['path'],
           'localClip': prepared['clip'],
           'fill': label['color'],
           'stroke': '#00000000',
@@ -858,26 +749,6 @@ Map<String, dynamic> _compileScene(
         'fill': '#00000000',
         'stroke': selected ? '#FFFFFFFF' : '#444444FF',
         'strokeWidth': quantize(unit * (selected ? 3 : 1.5)),
-      });
-    }
-    if (n.kind == 'seat' && state['highlighted'] == true) {
-      final w = n.width / 2 + 3, h = n.height / 2 + 3;
-      items.add({
-        'id': '${n.id}:highlight',
-        'nodeId': n.id,
-        'kind': 'state',
-        'matrix': matrix,
-        'path': [
-          ['M', -w, -h],
-          ['L', w, -h],
-          ['L', w, h],
-          ['L', -w, h],
-          ['Z'],
-        ],
-        'fill': '#00000000',
-        'stroke': '#2563EBFF',
-        'strokeWidth': 3,
-        'screenStrokeWidth': 2.5,
       });
     }
     final capacity = state['capacity'] ?? cached.furnitureCapacity[n.id];

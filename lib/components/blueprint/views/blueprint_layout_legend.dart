@@ -5,8 +5,7 @@ import '../blueprint_strings.dart';
 /// Matching map markers and counts, with compact tooltip or detailed meanings.
 class BlueprintLayoutLegend extends StatelessWidget {
   const BlueprintLayoutLegend(
-      {super.key, required this.states, this.compact = false, this.onHover});
-  final ValueChanged<BlueprintSeatState?>? onHover;
+      {super.key, required this.states, this.compact = false});
   final bool compact;
   final Iterable<BlueprintSeatState> states;
 
@@ -48,25 +47,18 @@ class BlueprintLayoutLegend extends StatelessWidget {
     final description = BlueprintStrings.seatStateDescription(
         selection ? 'selection' : state.name);
     if (compact) {
-      return MouseRegion(
-          key: ValueKey('blueprint-legend-hover-${state.name}'),
-          onEnter: (_) => onHover?.call(state),
-          onExit: (_) => onHover?.call(null),
-          child: Focus(
-              canRequestFocus: onHover != null,
-              onFocusChange: (focused) => onHover?.call(focused ? state : null),
-              child: Tooltip(
-                message: description,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    marker,
-                    Flexible(
-                        child: Text(title,
-                            style: Theme.of(context).textTheme.labelLarge)),
-                  ]),
-                ),
-              )));
+      return Tooltip(
+        message: description,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            marker,
+            Flexible(
+                child:
+                    Text(title, style: Theme.of(context).textTheme.labelLarge)),
+          ]),
+        ),
+      );
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -107,21 +99,7 @@ class BlueprintLayoutLegend extends StatelessWidget {
       key: const ValueKey('blueprint-seat-legend'),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 6 : 16),
       child: compact
-          ? LayoutBuilder(builder: (context, constraints) {
-              if (constraints.maxWidth > 600)
-                return Wrap(spacing: 16, runSpacing: 0, children: entries);
-              return ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: SingleChildScrollView(
-                      key: const ValueKey('blueprint-legend-scroll'),
-                      scrollDirection: Axis.horizontal,
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        for (var i = 0; i < entries.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 16),
-                          entries[i],
-                        ]
-                      ])));
-            })
+          ? Wrap(spacing: 16, runSpacing: 0, children: entries)
           : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(BlueprintStrings.helpSeatStates,
                   style: Theme.of(context).textTheme.titleSmall),

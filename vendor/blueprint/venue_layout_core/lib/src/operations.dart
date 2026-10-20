@@ -1706,6 +1706,26 @@ VenueLayoutDocument renumberSeats(
   );
 }
 
+Map<String, dynamic> registerBackground(
+  Map<String, dynamic> background,
+  List<double> a1,
+  List<double> a2,
+  List<double> b1,
+  List<double> b2,
+) {
+  final m = registerTwoPoints(a1, a2, b1, b2),
+      w = (background['width'] as num).toDouble(),
+      h = (background['height'] as num).toDouble(),
+      center = transformPoint(m, w / 2, h / 2);
+  return {
+    ...background,
+    'x': center[0],
+    'y': center[1],
+    'scale': sqrt(m[0] * m[0] + m[1] * m[1]),
+    'rotation': atan2(m[1], m[0]) * 180 / pi,
+  };
+}
+
 VenueLayoutDocument reconcileAssembly(
   VenueLayoutDocument d,
   String rootId,
@@ -1834,7 +1854,6 @@ LayoutSnapResult snapTranslation(
   String? previousMagnet,
   double? axisRotation,
   bool disabled = false,
-  Map<String, double>? sourceBounds,
 }) {
   if (disabled) return LayoutSnapResult(dx, dy, [], null);
   if (!zoom.isFinite || zoom <= 0) throw ArgumentError('Zoom must be positive');
@@ -1866,11 +1885,9 @@ LayoutSnapResult snapTranslation(
           )
           .expand((n) => worldHull(n, matrices[n.id]!))
           .toList(),
-      source =
-          sourceBounds ??
-          boundsOfPoints(
-            worldPoints.map((p) => transformPoint(frame, p[0], p[1])).toList(),
-          );
+      source = boundsOfPoints(
+        worldPoints.map((p) => transformPoint(frame, p[0], p[1])).toList(),
+      );
   final targets =
       d.nodes
           .where(
@@ -1945,7 +1962,7 @@ LayoutSnapResult snapTranslation(
   // A pair of consecutive table bodies defines a reusable edge gap. Only
   // consider the row/column currently under the moving table, so an unrelated
   // row elsewhere in the hall cannot attract it to an accidental interval.
-  if (sourceBounds == null && tableBodies && ids.length == 1) {
+  if (tableBodies && ids.length == 1) {
     final tableBounds = targetBounds
         .where((target) => byId[target.$1]?.kind == 'table')
         .toList();
@@ -2054,52 +2071,6 @@ LayoutSnapResult snapTranslation(
         if (spacingY != null) 'spacing': spacingY,
       },
   ], keyX ?? keyY);
-}
-
-/// Snap the dragged edge/corner in the object's axes. The opposite edge stays
-/// fixed, and the moving subtree never attracts its own resize handle.
-({double width, double height, List<Map<String, dynamic>> guides}) snapResize(
-  VenueLayoutDocument document,
-  LayoutNode node,
-  double width,
-  double height, {
-  required double sx,
-  required double sy,
-  double zoom = 1,
-  double? grid,
-  bool disabled = false,
-  Map<String, double>? localBounds,
-}) {
-  if (disabled) return (width: width, height: height, guides: const []);
-  final matrix = worldMatrix(document, node);
-  final angle = atan2(matrix[1], matrix[0]);
-  final frame = [cos(angle), -sin(angle), sin(angle), cos(angle), 0.0, 0.0];
-  final point = transformPoint(
-    matrix,
-    (localBounds == null ? 0 : localBounds['x']! + localBounds['width']! / 2) +
-        sx * (width - (localBounds?['width'] ?? node.width) / 2),
-    (localBounds == null ? 0 : localBounds['y']! + localBounds['height']! / 2) +
-        sy * (height - (localBounds?['height'] ?? node.height) / 2),
-  );
-  final local = transformPoint(frame, point[0], point[1]);
-  final result = snapTranslation(
-    document,
-    {node.id},
-    0,
-    0,
-    zoom: zoom,
-    grid: grid,
-    axisRotation: angle * 180 / pi,
-    sourceBounds: {'x': local[0], 'y': local[1], 'width': 0, 'height': 0},
-  );
-  final delta = transformPoint(frame, result.dx, result.dy);
-  return (
-    width: max(1.0, width + sx * delta[0]),
-    height: max(1.0, height + sy * delta[1]),
-    guides: result.guides
-        .where((g) => g['axis'] == 'x' ? sx != 0 : sy != 0)
-        .toList(),
-  );
 }
 
 class LayoutFitVariant {

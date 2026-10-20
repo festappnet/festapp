@@ -26,8 +26,8 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
-`pnpm add --global agent-browser@0.33.1 && agent-browser install`.
-`pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
+`npm install -g agent-browser@0.33.1 && agent-browser install`.
+`npm --prefix web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin
 handoffs are simulated; element visibility is checked in the browser.
@@ -41,20 +41,18 @@ GOOGLE_AUTH_DATABASE_URL="$DATABASE_URL" deno test --allow-env --allow-net --all
 
 This mode rejects remote/unmarked databases and rolls back admission counters.
 
-The database must already be running; this command does not start it. Every
-selected lane reports PASS, FAIL or INCOMPLETE with monotonic elapsed time.
-Missing required tools, credentials or files make the run incomplete and nonzero.
-Failures do not prevent later selected lanes from running. Established optional
-skips inside individual tests retain their own test-runner semantics.
-A JSON summary is written under `FESTAPP_ALL_RESULTS` (a fresh temporary directory
-by default). The web lane retains its 60-second timeout and executes `pnpm test`;
-timeout and interruption terminate the owned process group, including descendants.
-Use pnpm 11.24.0 for JavaScript packages; install with
-`pnpm install --frozen-lockfile` in the package directory.
+The database must already be running; this command does not start it. Missing
+tools/credentials can skip lanes. Web failures/timeouts and image integration
+failures currently print warnings and may leave the wrapper exit status zero.
+Client, SQL, Deno and selected automation failures propagate. Review each lane;
+"Done" alone is not a full pass. For a reliable JS or image integration result,
+run `npm test --prefix web_client` or
+`npm run test:integration --prefix workers/image-worker` directly with their
+required isolated fixtures.
 
 Scopes are `web`, `db`, `flutter`, `integration` and `automation`. Both `db` and
-`integration` also run the Deno lane. `automation` uses `automation/test_all_commands.json` as its explicit
-command list; it does not discover every test in that directory.
+`integration` also run the Deno lane. `automation` uses the script's explicit
+file list; it does not discover every test in that directory.
 
 ### B. Running Only Database Tests
 
@@ -95,7 +93,7 @@ from `DATABASE_URL`, so concurrent web tests cannot block its database copy.
 ./automation/test_client.sh flutter      # Partial: Flutter lane only
 (cd packages/festapp_core && fvm dart test test/sync) # One core area
 fvm dart test test_dart                  # Dart/VM adapters and SDK contracts, no engine
-fvm flutter test --concurrency=1 test/sessions/shared_czech_test.dart # One environment group
+fvm flutter test --concurrency=2 test/sessions/shared_czech_test.dart # One environment group
 fvm flutter test test/components/forms/default_values_cases.dart # One suite
 ```
 
@@ -111,9 +109,10 @@ resolved during measured test runs. `fvm flutter test` alone covers only the
 Flutter lane. Pure rules belong in the core package; application composition
 chooses their storage, network and platform adapters explicitly.
 
-The client runner uses one worker per lane. `FESTAPP_CLIENT_CONCURRENCY=1`
-is accepted; other positive values are rejected under the workstation policy.
-Run only one Flutter task across the workstation at a time.
+The client runner uses at most two workers per lane (fewer on smaller CPU
+hosts). This cap follows measured memory peaks: three simultaneous shared-session compilations exceeded the local
+3 GB budget. For an explicit experiment, set `FESTAPP_CLIENT_CONCURRENCY=5`;
+only positive integers are accepted. Overrides can exceed the memory budget.
 Small compatible suites share an engine through `registerClientSuites`; verify
 both normal and `FESTAPP_FIXTURE_ORDER=reverse` group orders when changing them.
 
@@ -311,9 +310,9 @@ Flutter app but shares the same Supabase backend.
 
 ```bash
 cd web_client
-pnpm install
-pnpm run dev    # Vite dev server
-pnpm test       # Node.js native test runner
+npm install
+npm run dev    # Vite dev server
+npm test       # Node.js native test runner
 ```
 
 ### Component Pattern

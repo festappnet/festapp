@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
@@ -83,7 +82,6 @@ void main() {
                 as Map<String, dynamic>);
     final previous = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-      capabilities: {AuthorizationCapabilities.ordersWrite: true},
       occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
     );
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);

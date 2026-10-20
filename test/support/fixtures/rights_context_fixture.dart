@@ -1,5 +1,3 @@
-import 'package:fstapp/components/occasion/occasion_link_model.dart';
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/synchro_service.dart';
 import 'package:fstapp/data_services/update_service.dart';
@@ -16,28 +14,9 @@ class RightsContextFixture {
   final _settings = SynchroService.globalSettingsModel;
   final _time = TimeHelper.currentTime;
   final _zone = tz.local;
-  RightsContextFixture.bankAccounts({
-    Set<int> manageableAccounts = const {},
-    bool canManageUnit = false,
-  }) : this(
-            context: OccasionLinkModel(
-          capabilities: {
-            AuthorizationCapabilities.bankAccountsUnitManage: canManageUnit
-          },
-          bankCapabilities: {
-            for (final id in manageableAccounts)
-              id: {
-                AuthorizationCapabilities.bankAccountsWrite: true,
-                AuthorizationCapabilities.bankAccountsUsersWrite: true,
-                AuthorizationCapabilities.bankSyncManage: true,
-                AuthorizationCapabilities.bankTransactionsManage: true,
-              },
-          },
-        ));
-
-  RightsContextFixture({OccasionLinkModel? context}) {
+  RightsContextFixture() {
     RightsService.currentLink = null;
-    RightsService.occasionLinkModelNotifier.value = context;
+    RightsService.occasionLinkModelNotifier.value = null;
     RouterService.currentOccasionLink = '';
     SynchroService.globalSettingsModel = null;
     TimeHelper.currentTime = null;

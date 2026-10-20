@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/event_feedback/db_event_feedback.dart';
@@ -38,15 +37,13 @@ class _EventFeedbackAdminContentState extends State<EventFeedbackAdminContent> {
       context: context,
       loadData: _loadRows,
       fromPlutoJson: EventFeedbackAdminRow.fromPlutoJson,
-      firstColumnType: RightsService.hasCapability(
-              AuthorizationCapabilities.scheduleFeedbackDelete)
+      firstColumnType: RightsService.isAdmin()
           ? DataGridFirstColumn.delete
           : DataGridFirstColumn.none,
       idColumn: EventFeedbackAdminRow.feedbackIdColumn,
       actionsExtended: DataGridActionsController(
         isAddActionPossible: () => false,
-        areAllActionsEnabled: () => RightsService.hasCapability(
-            AuthorizationCapabilities.scheduleFeedbackDelete),
+        areAllActionsEnabled: RightsService.isAdmin,
       ),
       exportOptions: ExportOptions(fileName: 'event_feedback'),
       columns: [

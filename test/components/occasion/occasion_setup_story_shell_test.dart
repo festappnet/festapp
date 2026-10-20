@@ -60,6 +60,7 @@ void main() {
                 currentIndex: 1,
                 eventTitle: 'Koncept · Podzimní slavnost',
                 status: 'Uloženo',
+                readiness: 'Dokončené nastavení: 20 %',
                 questionCount: 'Otázka 2 z 10',
                 segmentStates: const ['Dokončeno', 'Právě teď', 'Následuje'],
                 leaveLabel: 'Odejít',
@@ -105,36 +106,6 @@ void main() {
     });
   }
 
-  testWidgets(
-      'named question list supports touch navigation without a second percentage',
-      (tester) async {
-    var selected = -1;
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: OccasionSetupStoryShell(
-      questionTitles: const ['Source', 'Name', 'Review'],
-      currentIndex: 0,
-      eventTitle: 'Draft',
-      status: 'Saved',
-      questionCount: 'Question 1 of 3',
-      segmentStates: const ['Completed', 'Current', 'Upcoming'],
-      leaveLabel: 'Leave',
-      backLabel: 'Back',
-      onLeave: () {},
-      onBack: null,
-      onQuestionSelected: (index) => selected = index,
-      child: const Text('Content'),
-    ))));
-    await tester.tap(find.text('Question 1 of 3'));
-    await tester.pumpAndSettle();
-    expect(find.widgetWithText(ListTile, 'Review'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ListTile, 'Review'));
-    await tester.pumpAndSettle();
-    expect(selected, 2);
-    expect(find.byType(ListTile), findsNothing);
-    expect(find.textContaining('%'), findsNothing);
-  });
-
   testWidgets('segments expose current position and journey states',
       (tester) async {
     final semantics = tester.ensureSemantics();
@@ -145,6 +116,7 @@ void main() {
           currentIndex: 1,
           eventTitle: 'Draft',
           status: 'Saved',
+          readiness: 'Required setup: 20 %',
           questionCount: 'Question 2 of 3',
           segmentStates: const ['Completed', 'Current', 'Upcoming'],
           leaveLabel: 'Leave',
@@ -166,7 +138,7 @@ void main() {
           widget.properties.value == pair.$2);
       expect(segment, findsOneWidget);
     }
-    expect(find.textContaining('%'), findsNothing);
+    expect(find.text('Required setup: 20 %'), findsOneWidget);
     semantics.dispose();
   });
   testWidgets('segments navigate directly to upcoming and previous questions',
@@ -180,6 +152,7 @@ void main() {
             currentIndex: current,
             eventTitle: 'Draft',
             status: 'Saved',
+            readiness: 'Required setup: 20 %',
             questionCount: 'Question ${current + 1} of 3',
             segmentStates: const ['Completed', 'Current', 'Upcoming'],
             leaveLabel: 'Leave',
@@ -195,11 +168,12 @@ void main() {
     await tester.tap(find.byTooltip('Review'));
     await tester.pumpAndSettle();
     expect(find.text('Content 2'), findsOneWidget);
-    expect(find.textContaining('%'), findsNothing);
+    expect(find.text('Required setup: 20 %'), findsOneWidget);
     await tester.tap(find.byTooltip('Source'));
     await tester.pumpAndSettle();
     expect(find.text('Content 0'), findsOneWidget);
     expect(tester.getSize(find.byTooltip('Source')).height,
         greaterThanOrEqualTo(44));
   });
+
 }

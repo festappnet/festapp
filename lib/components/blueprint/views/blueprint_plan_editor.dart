@@ -1,12 +1,4 @@
-import 'dart:typed_data';
-import '../../images/image_control_client.dart';
-import 'package:cross_file/cross_file.dart';
-import '../../_shared/editor_file_drop_region.dart';
-import '../../_shared/editor_file_drop_strings.dart';
 import '../blueprint_font_selection.dart';
-import 'blueprint_editor_feedback.dart';
-import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:venue_seat_picker/editor_ui.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -56,22 +48,13 @@ class BlueprintPlanEditor extends StatefulWidget {
       this.readOnlyLabelNodeIds = const {},
       this.seatPresentation = const {},
       this.interactionEnabled = true,
-      this.nativeTextPreview = false,
       this.showGallery = true,
       this.onEditRequested,
-      this.onNodeActivated,
-      this.uploadBitmap,
-      this.assetResolver});
+      this.onNodeActivated});
   final VenueLayoutController controller;
-  final Future<ImageUploadResult> Function(Uint8List)? uploadBitmap;
-  final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final int? occasionId, unitId;
   final bool busy, interactionEnabled, showGallery;
-
-  /// Authorized editor hosts may preview draft labels in reservation mode.
-  /// This never enables geometry tools or replaces canonical save preparation.
-  final bool nativeTextPreview;
   final ValueChanged<bool>? onBusyChanged;
   final Widget? toolbarPrefix,
       toolbarLeading,
@@ -96,7 +79,7 @@ class BlueprintPlanEditor extends StatefulWidget {
 class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
   VenueLayoutController get controller => widget.controller;
   Future<BlueprintTextResources> get _fonts => widget.loadTextResources!();
-  late final _assets = widget.assetResolver ?? BlueprintLayoutAssetResolver();
+  final _assets = BlueprintLayoutAssetResolver();
   int _fontGeneration = 0;
   Timer? _debounce;
   VenueLayoutDocument? _observed;
@@ -218,56 +201,40 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
   }
 
   Future<void> _upload({required bool graphic}) async {
-    if (_busy || !_editing || !editorFileDropIsActive(context)) return;
     final session = controller;
+    final selection = await showBlueprintBackgroundPicker(context,
+        graphic: graphic,
+        extensions: graphic ? blueprintGraphicExtensions : null);
+    if (selection == null ||
+        !mounted ||
+        !identical(session, controller) ||
+        _busy) return;
     await _run(() async {
-      final selection = await showBlueprintBackgroundPicker(context,
-          graphic: graphic,
-          extensions: graphic ? blueprintGraphicExtensions : null);
-      if (selection == null ||
-          !mounted ||
-          !identical(session, controller) ||
-          !_editing) return;
-      await _importSelection(selection, graphic: graphic);
+      if (graphic) {
+        await uploadBlueprintGraphic(
+            selection: selection,
+            controller: controller,
+            assets: _assets,
+            isMounted: () => mounted && identical(session, controller),
+            occasionId: widget.occasionId,
+            unitId: widget.unitId,
+            prepareText: (text) async {
+              final provider = await _fonts;
+              return BlueprintSvgTextPreparation(
+                      {for (final f in provider.families) f['id'] as String: f},
+                      provider.prepareTextBatch)
+                  .call(text);
+            });
+      } else {
+        await uploadBlueprintBackground(
+            selection: selection,
+            controller: controller,
+            assets: _assets,
+            isMounted: () => mounted && identical(session, controller),
+            occasionId: widget.occasionId,
+            unitId: widget.unitId);
+      }
     });
-  }
-
-  Future<void> _importSelection(XFile selection,
-      {required bool graphic}) async {
-    final session = controller;
-    if (graphic) {
-      await uploadBlueprintGraphic(
-          selection: selection,
-          controller: controller,
-          assets: _assets,
-          uploadBitmap: widget.uploadBitmap,
-          isMounted: () =>
-              mounted && _editing && identical(session, controller),
-          occasionId: widget.occasionId,
-          unitId: widget.unitId,
-          prepareText: (text) async {
-            final provider = await _fonts;
-            return BlueprintSvgTextPreparation(
-                    {for (final f in provider.families) f['id'] as String: f},
-                    provider.prepareTextBatch)
-                .call(text);
-          });
-    } else {
-      await uploadBlueprintBackground(
-          selection: selection,
-          controller: controller,
-          assets: _assets,
-          uploadBitmap: widget.uploadBitmap,
-          isMounted: () =>
-              mounted && _editing && identical(session, controller),
-          occasionId: widget.occasionId,
-          unitId: widget.unitId);
-    }
-  }
-
-  Future<void> _dropBackground(XFile selection) async {
-    if (_busy || !_editing || !editorFileDropIsActive(context)) return;
-    await _run(() => _importSelection(selection, graphic: false));
   }
 
   Future<void> _prepareFonts(
@@ -417,242 +384,196 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
           final scope =
               node != null ? 'node:${node.id}' : 'kind:$appearanceKind';
           final selected = catalog.where((font) => font['id'] == id);
-          return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    FontFamilyPicker(
-                      value: selected.isEmpty
+          return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FontFamilyPicker(
+                  value: selected.isEmpty
+                      ? null
+                      : selected.first['family'] as String,
+                  enabled: !_busy &&
+                      !controller.readOnly &&
+                      !(node?.locked ?? false),
+                  families:
+                      catalog.map((font) => font['family'] as String).toList(),
+                  extraFamilies: catalog
+                      .where((font) => font['source'] == 'bundled')
+                      .map((font) => font['family'] as String)
+                      .toList(),
+                  previewStyle: (family) => _fontPreviewStyle(provider, family),
+                  onPreview: (family) => _previewFont(
+                      family == null
                           ? null
-                          : selected.first['family'] as String,
-                      enabled: !_busy &&
-                          !controller.readOnly &&
-                          !(node?.locked ?? false),
-                      families: catalog
-                          .map((font) => font['family'] as String)
-                          .toList(),
-                      extraFamilies: catalog
-                          .where((font) => font['source'] == 'bundled')
-                          .map((font) => font['family'] as String)
-                          .toList(),
-                      previewStyle: (family) =>
-                          _fontPreviewStyle(provider, family),
-                      onPreview: (family) => _previewFont(
-                          family == null
-                              ? null
-                              : catalog.firstWhere(
-                                      (font) => font['family'] == family)['id']
-                                  as String,
+                          : catalog.firstWhere(
+                                  (font) => font['family'] == family)['id']
+                              as String,
+                      nodeId: node?.id,
+                      kind: appearanceKind),
+                  onPreviewEnd: _cancelFontPreview,
+                  onSelected: (family) async {
+                    _cancelFontPreview();
+                    final selectedId = family == null
+                        ? null
+                        : catalog.firstWhere(
+                            (font) => font['family'] == family)['id'] as String;
+                    await _run(() async {
+                      await _prepareFonts(
+                          selectedFont: selectedId,
                           nodeId: node?.id,
-                          kind: appearanceKind),
-                      onPreviewEnd: _cancelFontPreview,
-                      onSelected: (family) async {
-                        _cancelFontPreview();
-                        final selectedId = family == null
-                            ? null
-                            : catalog.firstWhere(
-                                    (font) => font['family'] == family)['id']
-                                as String;
-                        await _run(() async {
-                          await _prepareFonts(
-                              selectedFont: selectedId,
-                              nodeId: node?.id,
-                              appearanceKind: appearanceKind);
-                          if (mounted &&
-                              selectedId != null &&
-                              selectedId != id) {
-                            setState(() => _changedFonts[scope] = selectedId);
-                          }
-                        });
-                      },
-                    ),
-                    if (id is String &&
-                        appearanceKind != 'document' &&
-                        _changedFonts[scope] == id &&
-                        (document.styles['label'] as Map?)?['fontFamilyId'] !=
-                            id)
-                      Padding(
-                          padding: const EdgeInsets.only(top: 8, bottom: 16),
-                          child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton.icon(
-                                key: const ValueKey('set-default-plan-font'),
-                                icon: const Icon(Icons.text_fields, size: 18),
-                                label: Text(VenueLayoutStrings.text(context,
-                                    'Set as default font for the plan')),
-                                onPressed: _busy ||
-                                        controller.readOnly ||
-                                        (controller.document.styles['label']
-                                                as Map?)?['fontFamilyId'] ==
-                                            id
-                                    ? null
-                                    : () => _run(() => _prepareFonts(
-                                        selectedFont: id as String,
-                                        appearanceKind: 'document')),
-                              ))),
-                  ]));
+                          appearanceKind: appearanceKind);
+                      if (mounted && selectedId != null && selectedId != id) {
+                        setState(() => _changedFonts[scope] = selectedId);
+                      }
+                    });
+                  },
+                ),
+                if (id is String &&
+                    appearanceKind != 'document' &&
+                    _changedFonts[scope] == id &&
+                    (document.styles['label'] as Map?)?['fontFamilyId'] != id)
+                  Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 16),
+                      child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            key: const ValueKey('set-default-plan-font'),
+                            icon: const Icon(Icons.text_fields, size: 18),
+                            label: Text(VenueLayoutStrings.text(
+                                context, 'Set as default font for the plan')),
+                            onPressed: _busy ||
+                                    controller.readOnly ||
+                                    (controller.document.styles['label']
+                                            as Map?)?['fontFamilyId'] ==
+                                        id
+                                ? null
+                                : () => _run(() => _prepareFonts(
+                                    selectedFont: id as String,
+                                    appearanceKind: 'document')),
+                          ))),
+              ]);
         },
       );
 
-  Widget _dropRegion(Widget child) => EditorFileDropRegion(
-      enabled: _editing &&
-          !_busy &&
-          !_preparing &&
-          (widget.occasionId != null || widget.unitId != null),
-      active: TickerMode.valuesOf(context).enabled,
-      hint: EditorFileDropStrings.hint,
-      allowedExtensions: blueprintBackgroundExtensions,
-      onFileDropped: _dropBackground,
-      child: child);
-
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final controlStyle = ButtonStyle(
-      shape: const WidgetStatePropertyAll(RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)))),
-      minimumSize: const WidgetStatePropertyAll(Size(44, 44)),
-      textStyle: WidgetStatePropertyAll(
-          theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
-      iconSize: const WidgetStatePropertyAll(20),
-      tapTargetSize: MaterialTapTargetSize.padded,
-    );
-    return Theme(
-        data: theme.copyWith(
-          expansionTileTheme: Theme.of(context).expansionTileTheme.copyWith(
-              shape: const Border(),
-              collapsedShape: const Border(),
-              childrenPadding: const EdgeInsets.only(top: 8, bottom: 8)),
-          textButtonTheme: TextButtonThemeData(
-              style: controlStyle.merge(theme.textButtonTheme.style)),
-          filledButtonTheme: FilledButtonThemeData(
-              style: controlStyle.merge(theme.filledButtonTheme.style)),
-          outlinedButtonTheme: OutlinedButtonThemeData(
-              style: controlStyle.merge(theme.outlinedButtonTheme.style)),
-          chipTheme: Theme.of(context).chipTheme.copyWith(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                labelStyle: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w600),
-                selectedColor: Theme.of(context).colorScheme.secondaryContainer,
-                checkmarkColor:
-                    Theme.of(context).colorScheme.onSecondaryContainer,
-                side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant),
-              ),
-          iconButtonTheme: IconButtonThemeData(
-              style: controlStyle.merge(theme.iconButtonTheme.style)),
-          segmentedButtonTheme: SegmentedButtonThemeData(
-              style: controlStyle.merge(theme.segmentedButtonTheme.style)),
-        ),
-        child: _dropRegion(EditorColorDialogTheme(
-            builder: (context, dialog) => AppAlertDialog(
-                title: dialog.title,
-                content: dialog.content,
-                actions: dialog.actions,
-                alignment: MediaQuery.sizeOf(context).width >= 900
-                    ? Alignment.centerRight
-                    : Alignment.center,
-                insetPadding: const EdgeInsets.all(16)),
-            child: BlueprintEditorFeedback(
-                message: _error,
-                onDismiss: () => setState(() => _error = null),
-                child: Column(children: [
-                  if (_failed)
-                    TextButton(
-                        onPressed: () {
-                          _observed = null;
-                          _schedule();
-                        },
-                        child: Text(CommonStrings.retry)),
-                  Expanded(
-                      child: AbsorbPointer(
-                          absorbing: _pending,
-                          child: VenueLayoutEditor(
-                              controller: controller,
-                              toolbarPrefix: widget.toolbarPrefix,
-                              toolbarLeading: widget.toolbarLeading,
-                              footerTrailing: widget.footerTrailing,
-                              libraryActions: _editing &&
-                                      (widget.occasionId != null ||
-                                          widget.unitId != null)
-                                  ? Column(children: [
-                                      ListTile(
-                                          dense: true,
-                                          contentPadding: EdgeInsets.zero,
-                                          leading: const Icon(Icons
-                                              .add_photo_alternate_outlined),
-                                          title: Text(VenueLayoutStrings.text(
-                                              context, 'Insert image / SVG')),
-                                          onTap: _busy
-                                              ? null
-                                              : () => _upload(graphic: true)),
-                                      ListTile(
-                                          dense: true,
-                                          contentPadding: EdgeInsets.zero,
-                                          leading:
-                                              const Icon(Icons.image_outlined),
-                                          title:
-                                              Text(BlueprintStrings.background),
-                                          onTap: _busy
-                                              ? null
-                                              : () => _upload(graphic: false)),
-                                      if (controller.document.background !=
-                                          null)
-                                        ListTile(
-                                            dense: true,
-                                            contentPadding: EdgeInsets.zero,
-                                            leading: const Icon(
-                                                Icons.hide_image_outlined),
-                                            title: Text(BlueprintStrings
-                                                .removeBackground),
-                                            onTap: _busy
-                                                ? null
-                                                : () => controller.apply(
-                                                    controller.document
-                                                        .copyWith(
-                                                            clearBackground:
-                                                                true),
-                                                    label: BlueprintStrings
-                                                        .removeBackground)),
-                                    ])
-                                  : null,
-                              toolbarTrailing: widget.toolbarTrailing,
-                              onRenameNode: widget.onRenameNode,
-                              inlineTextStyleBuilder:
-                                  widget.loadTextResources == null
+  Widget build(BuildContext context) => Theme(
+      data: Theme.of(context).copyWith(
+        expansionTileTheme: Theme.of(context).expansionTileTheme.copyWith(
+            shape: const Border(),
+            collapsedShape: const Border(),
+            childrenPadding: const EdgeInsets.only(top: 8, bottom: 8)),
+        textButtonTheme: TextButtonThemeData(
+            style: (Theme.of(context).textButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
+        filledButtonTheme: FilledButtonThemeData(
+            style: (Theme.of(context).filledButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+            style: (Theme.of(context).outlinedButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
+        segmentedButtonTheme: SegmentedButtonThemeData(
+            style: (Theme.of(context).segmentedButtonTheme.style ??
+                    const ButtonStyle())
+                .copyWith(
+                    shape: const WidgetStatePropertyAll(StadiumBorder()),
+                    minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
+      ),
+      child: Column(children: [
+        if (_error != null)
+          Padding(
+              padding: const EdgeInsets.all(8),
+              child: Semantics(
+                  liveRegion: true,
+                  child: Text(_error!,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)))),
+        if (_failed)
+          TextButton(
+              onPressed: () {
+                _observed = null;
+                _schedule();
+              },
+              child: Text(CommonStrings.retry)),
+        Expanded(
+            child: AbsorbPointer(
+                absorbing: _pending,
+                child: VenueLayoutEditor(
+                    controller: controller,
+                    toolbarPrefix: widget.toolbarPrefix,
+                    toolbarLeading: widget.toolbarLeading,
+                    footerTrailing: widget.footerTrailing,
+                    libraryActions: _editing &&
+                            (widget.occasionId != null || widget.unitId != null)
+                        ? Column(children: [
+                            ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(
+                                    Icons.add_photo_alternate_outlined),
+                                title: Text(VenueLayoutStrings.text(
+                                    context, 'Insert image / SVG')),
+                                onTap: _busy
+                                    ? null
+                                    : () => _upload(graphic: true)),
+                            ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                leading: const Icon(Icons.image_outlined),
+                                title: Text(BlueprintStrings.background),
+                                onTap: _busy
+                                    ? null
+                                    : () => _upload(graphic: false)),
+                            if (controller.document.background != null)
+                              ListTile(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  leading:
+                                      const Icon(Icons.hide_image_outlined),
+                                  title:
+                                      Text(BlueprintStrings.removeBackground),
+                                  onTap: _busy
                                       ? null
-                                      : _inlineTextStyle,
-                              fontPickerBuilder:
-                                  widget.loadTextResources == null
-                                      ? null
-                                      : _objectFontPicker,
-                              globalFontPickerBuilder:
-                                  widget.loadTextResources == null
-                                      ? null
-                                      : _globalFontPicker,
-                              inspectorOverride: widget.inspectorOverride,
-                              libraryOverride: widget.libraryOverride,
-                              canvasBottomOverlay: widget.canvasBottomOverlay,
-                              canvasHeader: widget.canvasHeader,
-                              viewSelection: widget.viewSelection,
-                              onViewSelectionChanged:
-                                  widget.onViewSelectionChanged,
-                              viewSelectionTarget: widget.viewSelectionTarget,
-                              viewSelectableIds: widget.viewSelectableIds,
-                              readOnlyLabelNodeIds: widget.readOnlyLabelNodeIds,
-                              seatPresentation: widget.seatPresentation,
-                              interactionEnabled: widget.interactionEnabled,
-                              nativeTextPreview: widget.nativeTextPreview,
-                              showGallery: widget.showGallery,
-                              onEditRequested: widget.onEditRequested,
-                              onNodeActivated: widget.onNodeActivated))),
-                ])))));
-  }
+                                      : () => controller.apply(
+                                          controller.document
+                                              .copyWith(clearBackground: true),
+                                          label: BlueprintStrings
+                                              .removeBackground)),
+                          ])
+                        : null,
+                    toolbarTrailing: widget.toolbarTrailing,
+                    onRenameNode: widget.onRenameNode,
+                    inlineTextStyleBuilder: widget.loadTextResources == null
+                        ? null
+                        : _inlineTextStyle,
+                    fontPickerBuilder: widget.loadTextResources == null
+                        ? null
+                        : _objectFontPicker,
+                    globalFontPickerBuilder: widget.loadTextResources == null
+                        ? null
+                        : _globalFontPicker,
+                    inspectorOverride: widget.inspectorOverride,
+                    libraryOverride: widget.libraryOverride,
+                    canvasBottomOverlay: widget.canvasBottomOverlay,
+                    canvasHeader: widget.canvasHeader,
+                    viewSelection: widget.viewSelection,
+                    onViewSelectionChanged: widget.onViewSelectionChanged,
+                    viewSelectionTarget: widget.viewSelectionTarget,
+                    viewSelectableIds: widget.viewSelectableIds,
+                    readOnlyLabelNodeIds: widget.readOnlyLabelNodeIds,
+                    seatPresentation: widget.seatPresentation,
+                    interactionEnabled: widget.interactionEnabled,
+                    showGallery: widget.showGallery,
+                    onEditRequested: widget.onEditRequested,
+                    onNodeActivated: widget.onNodeActivated))),
+      ]));
 }
