@@ -1042,7 +1042,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                                             Text('@', textScaler: TextScaler.noScaling,
                                                                                 style: style.copyWith(color: colors.primary, fontWeight: FontWeight.normal)),
                                                                             const SizedBox(width: 4),
-                                                                            Flexible(child: Text(sample, maxLines: provider.singleLine ? 1 : null, overflow: provider.singleLine ? TextOverflow.ellipsis : null, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface))),
+                                                                            Flexible(child: Text(sample, softWrap: true, textScaler: TextScaler.noScaling, style: style.copyWith(color: colors.onSurface))),
                                                                           ]))));
                                                         }
                                                       ],
