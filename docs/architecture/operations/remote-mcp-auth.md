@@ -107,9 +107,27 @@ Headless static login/consent checks passed at 320px with no horizontal overflow
 keyboard focus and zero axe WCAG2 A/AA violations. Browser session was closed.
 The local stdio/client path is unchanged and covered by existing SDK acceptance.
 
+The actual target reports aarch64. The locally built linux/arm64 image is
+`sha256:3b35dd42fb9ef8b625c56acd0dbdc0c8857fa7251b022a4ae1b5ea4c696aacfd`,
+from runtime source `466a7a75b3f3255c0c7944d2bfd2668d41da9400`. Its identical
+runtime inputs were verified through Compose fix
+`8b58adc82232f39014879b0d88322b5e3342a5f7`. Packaged startup, exact Compose
+healthcheck, discovery and 401 challenge passed in an isolated container with
+no network/published ports. Compose and pinned Caddy validation passed. Startup
+RSS was 96,180 kB (one sample, not a load test). The initial Node-fetch health
+probe rewrote Host; the final core-HTTP probe preserves the required exact Host.
+Temporary containers, volumes and fixture secrets were removed.
+
 Logs: `/tmp/festapp-mcp-oauth-full-tests-20261020.log`; screenshots and synthetic
 static views: `/tmp/festapp-mcp-oauth-ui/`. Private reviewed pilot configuration:
 `~/Library/Application Support/Festapp MCP/remote-config.json` (0600).
+Container evidence: `/tmp/festapp-mcp-oauth-image-preparation-20261020.json`.
+
+External activation blockers at this checkpoint: main's required approving PR
+review is outstanding, `mcp.festapp.net` has no DNS answer, and the available
+Cloudflare OAuth login has `zone:read` without DNS-edit permission. No credential
+was exported or broadened. These are concrete activation prerequisites, not a
+claim that a real ChatGPT connection already works.
 
 Production reads verified canonical activation/runtime/org 3, the named user's
 unit membership and the five current unit occasions. No business records or
