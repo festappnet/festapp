@@ -28,6 +28,50 @@ void main() {
                 as Map<String, dynamic>);
   });
 
+  for (final blueprintEnabled in [false, true]) {
+    testWidgetsWithEnvironment(() => _environment,
+        'order limit is editable without ticket feature; blueprint: $blueprintEnabled',
+        (tester) async {
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [
+            SimpleFeature(
+                code: FeatureConstants.blueprint, isEnabled: blueprintEnabled),
+          ]));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final ticket = FormFieldDraft(type: FormMetadata.fieldTypeTicket);
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+            body: SingleChildScrollView(
+                child: Builder(
+                    builder: (context) => TicketEditorWidgets.buildTicketEditor(
+                        context, form, ticket, [], () {}))),
+          )));
+      final limit = find.widgetWithText(
+          TextFormField, FormStrings.labelMaxTicketsPerOrder);
+      expect(limit, findsOneWidget);
+      await tester.enterText(limit, '4');
+      expect(ticket.definition.data?[FormMetadata.maxTickets], 4);
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+            body: Builder(
+                builder: (context) =>
+                    TicketEditorWidgets.buildTicketEditorReadOnly(
+                        context, form, ticket)),
+          )));
+      expect(find.text(FormStrings.labelMaxTicketsPerOrder), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+    });
+  }
+
   for (final depositEnabled in [false, true]) {
     testWidgetsWithEnvironment(() => _environment,
         'deposit description menu requires enabled deposit feature: $depositEnabled',

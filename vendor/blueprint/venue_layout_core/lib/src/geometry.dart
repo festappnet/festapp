@@ -366,7 +366,12 @@ class LayoutSpatialIndex {
 
   /// [tolerance] is a world-space radius for open strokes. Editors can supply
   /// a screen-pixel radius divided by viewport zoom. Filled shapes are unchanged.
-  String? hitTest(double x, double y, {double? tolerance}) {
+  String? hitTest(
+    double x,
+    double y, {
+    double? tolerance,
+    bool Function(LayoutNode)? accept,
+  }) {
     if (tolerance != null && (!tolerance.isFinite || tolerance < 0)) {
       throw ArgumentError('Hit tolerance must be finite and nonnegative');
     }
@@ -381,6 +386,7 @@ class LayoutSpatialIndex {
           }).map((id) => _nodes[id]!).toList();
     candidates.sort((a, b) => _paintRanks[b.id]!.compareTo(_paintRanks[a.id]!));
     for (final n in candidates) {
+      if (accept != null && !accept(n)) continue;
       final inverse = _hitInverse.putIfAbsent(
         n.id,
         () => inverseMatrix(matrices[n.id]!.map(quantize).toList()),
@@ -470,7 +476,8 @@ String? hitTest(
   double x,
   double y, {
   double? tolerance,
-}) => spatialIndexFor(d).hitTest(x, y, tolerance: tolerance);
+  bool Function(LayoutNode)? accept,
+}) => spatialIndexFor(d).hitTest(x, y, tolerance: tolerance, accept: accept);
 bool _convexOverlap(List<List<double>> a, List<List<double>> b) {
   for (final poly in [a, b]) {
     for (var i = 0; i < poly.length; i++) {

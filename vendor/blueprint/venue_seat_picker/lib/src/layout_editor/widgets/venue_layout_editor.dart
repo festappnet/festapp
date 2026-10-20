@@ -223,6 +223,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.addEarlyKeyEventHandler(_globalHistoryKey);
     _stopPaste = paste.listenForLayoutPaste((text) {
       if (!mounted || !_focus.hasFocus || _editingText || !_canEdit) {
         return false;
@@ -251,6 +252,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
 
   @override
   void dispose() {
+    FocusManager.instance.removeEarlyKeyEventHandler(_globalHistoryKey);
     _globalStyleOpen.dispose();
     _discardDragPreview();
     _stopPaste();
@@ -296,6 +298,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       point.dx,
       point.dy,
       tolerance: 8 / _viewportScale,
+      // Labels and decoration must not intercept reservation selection.
+      accept: _canEdit ? null : _viewSelectable,
     );
     if (!identical(_hitBoundsDocument, c.document)) {
       _hitBoundsDocument = c.document;
@@ -1623,6 +1627,17 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     _focus.requestFocus();
   }
 
+  KeyEventResult _globalHistoryKey(KeyEvent event) {
+    // History belongs to the visible editor route, even when surrounding
+    // controls own focus. Dialogs, inactive tabs and text inputs retain theirs.
+    if (!mounted ||
+        !TickerMode.of(context) ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return KeyEventResult.ignored;
+    }
+    return _historyKey(event);
+  }
+
   KeyEventResult _historyKey(KeyEvent event) {
     if (event is! KeyDownEvent || _editingText || !_canEdit) {
       return KeyEventResult.ignored;
@@ -2765,8 +2780,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     builder: (context, _) => LayoutBuilder(
       builder: (context, size) {
         final wide = size.maxWidth >= 900;
-        return Focus(
-          canRequestFocus: false,
+        // Unfocusing an inspector field must keep keyboard events in the
+        // editor, including when the pointer lands on a non-focusable heading.
+        return FocusScope(
           onKeyEvent: (_, event) {
             if (_historyKey(event) == KeyEventResult.handled) {
               return KeyEventResult.handled;

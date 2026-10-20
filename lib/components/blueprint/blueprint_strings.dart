@@ -3,7 +3,8 @@ import 'package:venue_seat_picker/venue_seat_picker.dart'
     show GraphicImportFailure;
 
 class BlueprintStrings {
-  static String get reservationExpired => 'FeatureBlueprint.reservationExpired'.tr();
+  static String get reservationExpired =>
+      'FeatureBlueprint.reservationExpired'.tr();
   static String get releaseTemporaryReservation =>
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>
@@ -100,6 +101,9 @@ class BlueprintStrings {
       'FeatureBlueprint.areaCount'.tr(namedArgs: {'count': '$count'});
   static String get draftGeometryNotice =>
       'FeatureBlueprint.draftGeometryNotice'.tr();
+  static String seatStateDescription(String state) =>
+      'FeatureBlueprint.seatStateDescriptions.$state'.tr();
+
   static String seatState(String state) =>
       'FeatureBlueprint.seatStates.$state'.tr();
   static String get demoGeometryNotice =>

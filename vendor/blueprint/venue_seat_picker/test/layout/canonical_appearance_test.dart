@@ -9,6 +9,65 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_inspector.dar
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_style.dart';
 
 void main() {
+  testWidgets(
+    'default style restores inherited rounded corners after minimal and supports undo',
+    (tester) async {
+      var document = tableLayout(shape: 'rect', count: 4);
+      document = setKindStyleLeaf(document, 'table', [
+        'cornerRadius',
+      ], value: 8);
+      final table = document.nodes.firstWhere((n) => n.kind == 'table');
+      final c = VenueLayoutController(document);
+      c.select({table.id});
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AnimatedBuilder(
+              animation: c,
+              builder: (_, __) => LayoutInspector(
+                controller: c,
+                cornerPivot: false,
+                onPivotChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      final minimal = find.byKey(const ValueKey('layout-style-minimal'));
+      await tester.ensureVisible(minimal);
+      await tester.tap(minimal.hitTestable());
+      await tester.pumpAndSettle();
+      double radius() =>
+          (resolveNodeAppearance(
+                    c.document,
+                    c.document.nodes.firstWhere((n) => n.id == table.id),
+                  ).values['cornerRadius']
+                  as num)
+              .toDouble();
+      expect(radius(), 0);
+      final reset = find.byKey(const ValueKey('layout-style-default'));
+      await tester.ensureVisible(reset);
+      await tester.tap(reset.hitTestable());
+      await tester.pumpAndSettle();
+      expect(radius(), 8);
+      final restored = c.document.nodes.firstWhere((n) => n.id == table.id);
+      expect(restored.style, isEmpty);
+      expect(restored.childStyles, table.childStyles);
+      expect(restored.x, table.x);
+      expect(restored.width, table.width);
+      expect(restored.label, table.label);
+      expect(
+        c.document.nodes.map((n) => n.id),
+        document.nodes.map((n) => n.id),
+      );
+      c.undo();
+      expect(radius(), 0);
+      c.redo();
+      expect(radius(), 8);
+    },
+  );
+
   testWidgets('material chooser previews then cancels or commits once', (
     tester,
   ) async {

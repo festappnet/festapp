@@ -5,6 +5,73 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_table_selection.dart';
 
 void main() {
+  for (final editing in [false, true]) {
+    testWidgets(
+      'table number overlay selects ${editing ? 'text in editor' : 'table in reservations'}',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final table = LayoutNode(
+          id: newLayoutId(),
+          kind: 'table',
+          surface: const {'type': 'rect'},
+          x: 400,
+          y: 300,
+          width: 200,
+          height: 120,
+        );
+        final number = LayoutNode(
+          id: newLayoutId(),
+          kind: 'text',
+          x: 400,
+          y: 300,
+          width: 50,
+          height: 50,
+          label: '3',
+          properties: {'text': '3'},
+        );
+        final doc = VenueLayoutDocument.empty().copyWith(
+          nodes: [table, number],
+        );
+        expect(hitTest(doc, 400, 300), number.id);
+        final controller = VenueLayoutController(doc);
+        addTearDown(controller.dispose);
+        Set<String>? selection;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: VenueLayoutEditor(
+                controller: controller,
+                interactionEnabled: editing,
+                viewSelectableIds: {table.id},
+                onViewSelectionChanged: (ids) => selection = ids,
+                showGallery: false,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final surface = find.byType(LayoutSceneSurface);
+        final painter = tester
+            .widgetList<CustomPaint>(
+              find.descendant(of: surface, matching: find.byType(CustomPaint)),
+            )
+            .map((w) => w.painter)
+            .whereType<LayoutScenePainter>()
+            .single;
+        final point = MatrixUtils.transformPoint(
+          painter.camera!.value,
+          painter.offset + const Offset(400, 300) * painter.scale,
+        );
+        await tester.tapAt(tester.getTopLeft(surface) + point);
+        await tester.pumpAndSettle();
+        expect(editing ? controller.selection : selection, {
+          editing ? number.id : table.id,
+        });
+      },
+    );
+  }
+
   test(
     'only connected seats get short boundary links, including rotated and round tables',
     () {

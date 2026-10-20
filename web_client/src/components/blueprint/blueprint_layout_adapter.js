@@ -8,7 +8,7 @@ const basicSeatFills = {
     [SeatStates.AVAILABLE]: '#267329FF', [SeatStates.SELECTED_BY_ME]: '#267329FF',
     [SeatStates.SELECTED]: '#00000042', [SeatStates.ORDERED]: '#0000001F',
     [SeatStates.USED]: '#412673FF', [SeatStates.TAKEN]: '#412673FF',
-    [SeatStates.BLACK]: '#000000DE', [SeatStates.EMPTY]: '#267329FF',
+    [SeatStates.BLACK]: '#0000001F', [SeatStates.EMPTY]: '#267329FF',
 };
 
 /** Public commerce/session adapter. All geometry and gestures belong to the package. */
@@ -81,7 +81,7 @@ export class BlueprintLayoutAdapter {
             return [id, {
                 status: own ? 'available' : model.state === SeatStates.SELECTED ? 'reserved'
                     : [SeatStates.ORDERED, SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'occupied'
-                    : model.state === SeatStates.BLACK ? 'blocked' : available ? 'available' : 'unavailable',
+                    : model.state === SeatStates.BLACK ? 'occupied' : available ? 'available' : 'unavailable',
                 selectable: own || (available && model.productModel != null && model.productModel.isAvailable !== false && model.productModel.is_dynamically_available !== false && model.productModel.is_available_dynamic_capacity !== false),
                 stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'none' : 'auto',
                 selected: own, label: model.title, fill: basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY],

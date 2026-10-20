@@ -51,11 +51,8 @@ class TicketEditorWidgets {
       children.add(const SizedBox(height: 8));
     }
 
-    // Show "Max tickets per order" only if ticket feature be enabled.
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      children.add(_buildMaxTicketsReadOnly(context, ticketField));
-      children.add(const SizedBox(height: 8));
-    }
+    children.add(_buildMaxTicketsReadOnly(context, ticketField));
+    children.add(const SizedBox(height: 8));
 
     final productTypeFields = form.relatedFields
         .where((f) =>
@@ -115,11 +112,8 @@ class TicketEditorWidgets {
       children.add(const SizedBox(height: 16));
     }
 
-    // Show "Max tickets per order" only if ticket feature be enabled.
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
-      children.add(_buildMaxTicketsEditor(context, ticketField, refresh));
-      children.add(const SizedBox(height: 24));
-    }
+    children.add(_buildMaxTicketsEditor(context, ticketField, refresh));
+    children.add(const SizedBox(height: 24));
 
     final productTypeFields = form.relatedFields
         .where((f) =>
@@ -271,7 +265,8 @@ class TicketEditorWidgets {
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
                 if (value == 'deposit') {
-                  ticketField.definition = ticketField.definition.copyWith(data: {
+                  ticketField.definition =
+                      ticketField.definition.copyWith(data: {
                     ...?ticketField.definition.data,
                     TicketHolder.metaShowDepositDescription: !showDeposit
                   });

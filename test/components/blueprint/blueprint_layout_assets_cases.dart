@@ -294,6 +294,61 @@ void main() {
         resolver.resolve(_resources(width: 3)), throwsFormatException);
     expect((await resolver.resolve(_resources()))['images'], isNotEmpty);
   });
+  test(
+      'prepared label ink inside canvas is valid even when imported text box overflows',
+      () {
+    final fixture = jsonDecode(
+        File('test/fixtures/blueprint/canonical-text-scene.json')
+            .readAsStringSync()) as Map;
+    final original = VenueLayoutDocument.fromJson(
+        Map<String, dynamic>.from(fixture['document']));
+    final families =
+        Map<String, dynamic>.from(fixture['resources']['fontFamilies']);
+    final label = original.nodes.first.copyWith(
+        x: 1000,
+        y: 100,
+        width: 500,
+        height: 100,
+        properties: {'text': 'Stůl 9'});
+    final document = original.copyWith(canvas: {
+      'x': 0,
+      'y': 0,
+      'width': 1100,
+      'height': 800,
+      'fill': '#FFFFFFFF',
+    }, nodes: [
+      label
+    ]);
+    final request = nodeTextRequest(document, label, families);
+    Map<String, dynamic> resources(double start) => {
+          'protocol': 2,
+          'fontFamilies': families,
+          'numberSymbols': {},
+          'textLayouts': {
+            request.id: {
+              'id': request.id, 'descriptor': request.resourceDescriptor,
+              // Deterministic prepared outline, including empty alignment space.
+              'path': [
+                ['M', start, -10],
+                ['L', start + 50, -10],
+                ['L', start + 50, 10],
+                ['L', start, 10],
+                ['Z']
+              ],
+              'clip': request.descriptor['box'],
+            }
+          },
+        };
+    final c = VenueLayoutController(document, resources: resources(-250));
+    addTearDown(c.dispose);
+    expect(c.showPlacementWarnings(), isEmpty);
+    expect(c.document.toJson(), document.toJson());
+    expect(c.setResources(resources(150)), isTrue);
+    expect(c.showPlacementWarnings().single.code, 'outside_canvas');
+    expect(c.setResources({}), isTrue);
+    expect(c.showPlacementWarnings().single.code, 'outside_canvas');
+  });
+
   test('reviewed native furniture preserves stable chairs and moves together',
       () {
     final source = BlueprintModel(
@@ -322,6 +377,17 @@ void main() {
           'width': 120,
           'height': 40,
           'shape': 'rect'
+        },
+        {
+          'id': 'label1',
+          'kind': 'text',
+          'label': 'Stůl 9',
+          'text': 'Stůl 9',
+          'transform': {'x': 2200, 'y': 180, 'rotation': 0},
+          'width': 80,
+          'height': 40,
+          'size': 24,
+          'align': 'left'
         }
       ],
       'tableGroups': {'1': 'table1'}
@@ -333,6 +399,9 @@ void main() {
     final result = conversion.snapshot;
     expect(conversion.receipt['documentImport']['targetSchema'], 2);
     expect(result.document.background, isNull);
+    final text = result.document.nodes.singleWhere((n) => n.kind == 'text');
+    expect(text.width, 80);
+    expect(text.x, 2200);
     final table = result.document.nodes.singleWhere((n) => n.kind == 'table');
     final seat = result.document.nodes.singleWhere((n) => n.kind == 'seat');
     expect(seat.parentId, table.id);

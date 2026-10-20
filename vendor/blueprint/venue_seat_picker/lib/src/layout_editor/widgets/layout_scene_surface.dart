@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import '../layout_scene_cache.dart';
+import '../layout_path.dart';
 import '../layout_native_text.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
@@ -263,6 +264,10 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
     if (bounds == null || size == null) return value;
     final zoom = _cameraScale(value);
     double translation(double value, double start, double end, double extent) {
+      // Keep an axis centered until the plan fills it, as in the web picker.
+      if ((end - start) * zoom <= extent - 32) {
+        return (extent - (start + end) * zoom) / 2;
+      }
       final a = 16 - start * zoom, b = extent - 16 - end * zoom;
       return value.clamp(math.min(a, b), math.max(a, b));
     }
@@ -947,8 +952,13 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                         ),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      textStyle: Theme.of(context).textTheme.bodySmall
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      textStyle: Theme.of(context).textTheme.bodyLarge
                           ?.copyWith(
+                            fontSize: 16,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                       triggerMode: TooltipTriggerMode.manual,
@@ -1679,26 +1689,7 @@ class LayoutScenePainter extends CustomPainter {
         : Color(0xff000000 | n);
   }
 
-  static Path path(List commands) {
-    final p = Path();
-    for (final raw in commands) {
-      final c = raw as List;
-      double v(int i) => (c[i] as num).toDouble();
-      switch (c.first) {
-        case 'M':
-          p.moveTo(v(1), v(2));
-        case 'L':
-          p.lineTo(v(1), v(2));
-        case 'Q':
-          p.quadraticBezierTo(v(1), v(2), v(3), v(4));
-        case 'C':
-          p.cubicTo(v(1), v(2), v(3), v(4), v(5), v(6));
-        case 'Z':
-          p.close();
-      }
-    }
-    return p;
-  }
+  static Path path(List commands) => layoutPath(commands);
 
   @override
   void paint(Canvas canvas, Size size) {

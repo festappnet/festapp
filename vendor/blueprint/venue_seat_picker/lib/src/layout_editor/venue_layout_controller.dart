@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+import 'layout_path.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
@@ -78,12 +80,55 @@ class LayoutPlacementIssue {
 // Imported SVG edges may straddle the canvas by a fraction of a layout unit.
 const _canvasEdgeTolerance = .5;
 
+// Text boxes include alignment space, which is not painted artwork. Imported
+// labels can have generous boxes extending past the canvas while every glyph
+// remains inside. Use the same prepared outlines and clip as the renderer.
+List<List<double>> _placementHull(
+  VenueLayoutDocument document,
+  LayoutNode node,
+  List<double> matrix,
+  Map<String, dynamic> resources,
+) {
+  if (node.kind != 'text') return worldHull(node, matrix);
+  final text =
+      '${effectiveNodeProperties(document, node)['text'] ?? node.label}';
+  final prepared = preparedNodeText(document, node, resources, [], text: text);
+  if (prepared == null) return worldHull(node, matrix);
+  final clip = prepared['clip'] as Map;
+  final bounds = layoutPath(prepared['path'] as List).getBounds().intersect(
+    ui.Rect.fromLTWH(
+      (clip['x'] as num).toDouble(),
+      (clip['y'] as num).toDouble(),
+      (clip['width'] as num).toDouble(),
+      (clip['height'] as num).toDouble(),
+    ),
+  );
+  if (bounds.isEmpty) return const [];
+  final transform = labelRenderMatrix(
+    node,
+    resolveNodeAppearance(document, node).label,
+    matrix,
+  );
+  return [
+    for (final point in [
+      bounds.topLeft,
+      bounds.topRight,
+      bounds.bottomRight,
+      bounds.bottomLeft,
+    ])
+      transformPoint(transform, point.dx, point.dy),
+  ];
+}
+
 double _canvasOverflow(
   VenueLayoutDocument document,
   LayoutNode node,
   List<double> matrix,
+  Map<String, dynamic> resources,
 ) {
-  final bounds = boundsOfPoints(worldHull(node, matrix));
+  final hull = _placementHull(document, node, matrix, resources);
+  if (hull.isEmpty) return 0;
+  final bounds = boundsOfPoints(hull);
   final canvas = document.canvas;
   final left = (canvas['x'] as num? ?? 0).toDouble();
   final top = (canvas['y'] as num? ?? 0).toDouble();
@@ -192,7 +237,7 @@ class VenueLayoutController extends ChangeNotifier {
     final matrices = worldMatrices(document);
     for (final node in document.nodes) {
       if (node.kind == 'group') continue;
-      if (worldHull(node, matrices[node.id]!).any(
+      if (_placementHull(document, node, matrices[node.id]!, _resources).any(
         (p) =>
             p[0] < left - _canvasEdgeTolerance ||
             p[0] > right + _canvasEdgeTolerance ||
@@ -390,14 +435,25 @@ class VenueLayoutController extends ChangeNotifier {
         nextWorld = worldMatrices(next);
     for (final node in next.nodes) {
       if (node.kind == 'group') continue;
-      final overflow = _canvasOverflow(next, node, nextWorld[node.id]!);
+      final overflow = _canvasOverflow(
+        next,
+        node,
+        nextWorld[node.id]!,
+        _resources,
+      );
       if (overflow <= _canvasEdgeTolerance) continue;
       final prior = priorById[node.id];
       // Old drafts can be repaired progressively, but no new or worsened
       // placement may leave the canvas, including rotation/resize/insert.
       if (prior == null ||
           overflow >
-              _canvasOverflow(_document, prior, priorWorld[node.id]!) + .02) {
+              _canvasOverflow(
+                    _document,
+                    prior,
+                    priorWorld[node.id]!,
+                    _resources,
+                  ) +
+                  .02) {
         error = 'Object must stay inside the canvas. Enlarge the canvas first.';
         notifyListeners();
         return false;

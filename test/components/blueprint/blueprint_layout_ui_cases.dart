@@ -2730,6 +2730,7 @@ void main() {
     expect(
         find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget,
         reason: 'Canvas table clicks reveal the table and open its detail');
+    expect(find.byKey(const ValueKey('blueprint-seat-legend')), findsOneWidget);
     expect(find.text('T18'), findsWidgets);
     expect(find.byType(AlertDialog), findsNothing);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -2756,6 +2757,7 @@ void main() {
     final editingEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     expect(editingEditor.interactionEnabled, isTrue);
+    expect(find.byKey(const ValueKey('blueprint-seat-legend')), findsNothing);
     expect(editingEditor.controller.selection, {seatId});
     expect(editingEditor.onEditRequested, isNull);
     final beforeHelp = editingEditor.controller.document.toJson();

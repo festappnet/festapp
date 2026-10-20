@@ -1748,7 +1748,31 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                     : _reservationsPanel(tables),
                                 inspectorOverride: _editingPlan
                                     ? null
-                                    : _reservationDetails(tables),
+                                    : LayoutBuilder(
+                                        builder:
+                                            (context, constraints) =>
+                                                Column(children: [
+                                                  Expanded(
+                                                      child:
+                                                          _reservationDetails(
+                                                              tables)),
+                                                  const Divider(height: 1),
+                                                  ConstrainedBox(
+                                                    constraints: BoxConstraints(
+                                                        maxHeight: constraints
+                                                                .maxHeight *
+                                                            .48),
+                                                    child: SingleChildScrollView(
+                                                        child: BlueprintLayoutLegend(
+                                                      states: controller
+                                                          .snapshot
+                                                          .seatBindings
+                                                          .values
+                                                          .map(controller
+                                                              .adapter.state),
+                                                    )),
+                                                  ),
+                                                ])),
                                 viewSelection: _editingPlan
                                     ? null
                                     : controller.mode ==

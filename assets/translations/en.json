@@ -1415,6 +1415,15 @@
       "used": "Used",
       "blocked": "Blocked"
     },
+    "seatStateDescriptions": {
+      "available": "Available to order.",
+      "selected": "Temporarily held by another customer.",
+      "ordered": "Included in an order.",
+      "used": "The ticket has already been checked in.",
+      "blocked": "Not available for sale.",
+      "empty": "No product is assigned to this seat.",
+      "selection": "Seat in your current selection."
+    },
     "draftGeometryNotice": "Layout in the event draft. Saving updates this draft only. The live layout is created when the event is created.",
     "releaseTemporaryReservation": "Release temporary reservation",
     "releaseTemporaryReservationConfirm": "Release the selected seats? The customer will need to select them again. A shared seat releases the entire pair.",

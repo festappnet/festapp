@@ -113,8 +113,8 @@ test('unassigned available seat is empty while protected live state survives mis
     assert.equal(adapter.seatPresentation.b.status,'occupied');
 });
 
-test('Basic status palette preserves seven distinct domain states through generic presentation', () => {
-    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#000000DE'],['empty','#267329FF']];
+test('public status palette renders blocked seats like ordered seats', () => {
+    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
     for (const [state, fill] of cases) {
         const fixture = data(); fixture.spots[0].state = state;
         if (state === 'black') fixture.seatBindings[0].blocked = true;
@@ -124,6 +124,7 @@ test('Basic status palette preserves seven distinct domain states through generi
         assert.equal(item.stateMarker, state === 'used' ? 'none' : 'auto');
         assert.equal(item.selected, state === 'selected_by_me');
         if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'unavailable'); }
+        if (state === 'black') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
     }
 });
 

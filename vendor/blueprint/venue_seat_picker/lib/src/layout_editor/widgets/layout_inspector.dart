@@ -1069,6 +1069,33 @@ class _LayoutInspectorState extends State<LayoutInspector> {
               ),
           ],
         ),
+        OutlinedButton.icon(
+          key: const ValueKey('layout-style-default'),
+          icon: const Icon(Icons.restart_alt),
+          label: const LayoutText('Default'),
+          onPressed: c.readOnly || c.saving || node.locked
+              ? null
+              : () => _run(
+                  () => c.apply(
+                    c.document.copyWith(
+                      nodes: [
+                        for (final current in c.document.nodes)
+                          if (current.id == node.id)
+                            current.copyWith(
+                              style: const {},
+                              childStyles: current.kind == 'table'
+                                  ? ({...current.childStyles}..remove('seat'))
+                                  : current.childStyles,
+                            )
+                          else
+                            current,
+                      ],
+                    ),
+                    label: 'Reset style',
+                  ),
+                ),
+        ),
+        const SizedBox(height: 8),
         if (node.kind == 'table' || custom.isNotEmpty)
           LayoutStylePresets(
             controller: c,

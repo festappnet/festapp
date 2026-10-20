@@ -1415,6 +1415,15 @@
       "used": "Použité",
       "blocked": "Blokované"
     },
+    "seatStateDescriptions": {
+      "available": "Místo lze objednat.",
+      "selected": "Dočasně ho drží jiný zákazník.",
+      "ordered": "Je součástí objednávky.",
+      "used": "Vstupenka už byla použita při vstupu.",
+      "blocked": "Místo není v prodeji.",
+      "empty": "Místo nemá přiřazený produkt.",
+      "selection": "Místo ve vašem aktuálním výběru."
+    },
     "draftGeometryNotice": "Plánek v návrhu události. Uložení mění pouze tento návrh. Živý plánek vznikne až při vytvoření události.",
     "releaseTemporaryReservation": "Uvolnit dočasnou rezervaci",
     "releaseTemporaryReservationConfirm": "Uvolnit vybraná místa? Zákazník je bude muset vybrat znovu. U společného sedadla se uvolní celá dvojice.",

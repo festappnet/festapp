@@ -89,21 +89,26 @@ class BlueprintLayoutAdapter {
           if (protected(binding)) binding.nodeId,
       };
 
+  /// Customers only need to know that a blocked seat is unavailable.
+  Map<String, dynamic> customerPresentation(BlueprintSeatBinding binding) {
+    final presentation = publicPresentation(binding);
+    if (state(binding) != BlueprintSeatState.blocked) return presentation;
+    return {
+      ...presentation,
+      'fill': blueprintSeatStateFills[BlueprintSeatState.ordered]!,
+      'status': 'occupied',
+      'state': BlueprintSeatState.ordered.name,
+      'selectable': false,
+      'selected': false,
+    };
+  }
+
   /// Public presentation deliberately excludes all order/customer metadata.
   Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) => {
         'stateMarker':
             state(binding) == BlueprintSeatState.used ? 'none' : 'auto',
         'label': binding.title,
-        'fill': switch (state(binding)) {
-          BlueprintSeatState.available ||
-          BlueprintSeatState.selectedByMe =>
-            '#267329FF',
-          BlueprintSeatState.selected => '#00000042',
-          BlueprintSeatState.ordered => '#0000001F',
-          BlueprintSeatState.used => '#412673FF',
-          BlueprintSeatState.blocked => '#000000DE',
-          BlueprintSeatState.empty => '#267329FF',
-        },
+        'fill': blueprintSeatStateFills[state(binding)]!,
         'status': switch (state(binding)) {
           BlueprintSeatState.ordered || BlueprintSeatState.used => 'occupied',
           BlueprintSeatState.selected => 'reserved',

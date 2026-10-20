@@ -155,7 +155,8 @@ void main() {
     expect(resolveNodeAppearance(unchanged, table).label['italic'], true);
   });
 
-  test('permission loss blocks draft save and retains the confirmed layout', () async {
+  test('permission loss blocks draft save and retains the confirmed layout',
+      () async {
     var calls = 0;
     final controller = BlueprintLayoutController(
       source: BlueprintModel(layoutSnapshot: snapshot()),
@@ -172,7 +173,8 @@ void main() {
     expect(controller.layout.document, same(confirmed));
     expect(controller.saver.pending, isNull);
   });
-  test('public blueprint preserves authoritative reservation expiry on reopen', () {
+  test('public blueprint preserves authoritative reservation expiry on reopen',
+      () {
     final model = BlueprintModel.fromJson({
       ...snapshot().toJson(),
       'expiresAt': '2026-10-20T11:12:13Z',
@@ -180,7 +182,8 @@ void main() {
       'products': [],
     });
     expect(model.reservationExpiresAt, DateTime.utc(2026, 10, 20, 11, 12, 13));
-    expect(model.layoutSnapshot!.document.toJson(), snapshot().document.toJson());
+    expect(
+        model.layoutSnapshot!.document.toJson(), snapshot().document.toJson());
   });
   test('new row seats retain generated row-letter commercial titles', () {
     final source = BlueprintModel(
@@ -198,7 +201,10 @@ void main() {
               price: 100,
               productTypeString: ProductModel.spotType)
         ]);
-    final c = BlueprintLayoutController(source: source);
+    final c = BlueprintLayoutController(
+        source: source,
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
     addTearDown(c.dispose);
     final rows = rowLayout(rows: 2, seatsPerRow: 3);
     expect(c.layout.apply(rows, label: 'Add rows'), true);
@@ -684,6 +690,28 @@ void main() {
     expect(controller.snapshot.seatBindings[node]!.title, 'Custom');
     expect(controller.snapshot.seatBindings[node]!.productId, 99);
   });
+  test(
+      'customer sees blocked seats like ordered seats while admin retains blocked state',
+      () {
+    final existing = snapshot();
+    final binding = existing.seatBindings[node]!.copyWith(blocked: true);
+    final controller = BlueprintLayoutController(
+        source: BlueprintModel(
+            layoutSnapshot: existing.copyWith(seatBindings: {node: binding})),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(controller.dispose);
+    final admin = controller.adapter.publicPresentation(binding);
+    final customer = controller.adapter.customerPresentation(binding);
+    expect(admin['status'], 'blocked');
+    expect(admin['fill'], '#000000DE');
+    expect(customer['status'], 'occupied');
+    expect(customer['fill'], '#0000001F');
+    expect(customer['state'], 'ordered');
+    expect(customer['selectable'], false);
+    expect(customer['selected'], false);
+  });
+
   test('persisted empty seats save while new unassigned seats require a choice',
       () async {
     var calls = 0;
@@ -769,7 +797,9 @@ void main() {
         const BlueprintAreaBinding(
             nodeId: 'standing', inventoryContextId: 3, productId: 9),
         2,
-        available: 5, product: ProductModel(id: 9, title: 'Standing', price: 80, currencyCode: 'CZK'));
+        available: 5,
+        product: ProductModel(
+            id: 9, title: 'Standing', price: 80, currencyCode: 'CZK'));
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
     expect(
@@ -849,22 +879,36 @@ void main() {
     expect(controller.snapshot.seatBindings[node]!.title, 'A');
   });
 
-  test('standing uses bound blueprint catalog without duplicate form product fields', () {
-    final key=GlobalKey<FormBuilderState>();
-    final tickets=TicketHolder(fieldType:'ticket',maxTickets:5,id:99,fields:[]);
-    final holder=FormHolder(fields:[tickets],isCardDesign:false)..controller=FormHolderController(globalKey:key);
-    final form=FormSession(form:FormBundle(definition:FormDefinition()),formHolder:holder,formKey:key);
+  test(
+      'standing uses bound blueprint catalog without duplicate form product fields',
+      () {
+    final key = GlobalKey<FormBuilderState>();
+    final tickets =
+        TicketHolder(fieldType: 'ticket', maxTickets: 5, id: 99, fields: []);
+    final holder = FormHolder(fields: [tickets], isCardDesign: false)
+      ..controller = FormHolderController(globalKey: key);
+    final form = FormSession(
+        form: FormBundle(definition: FormDefinition()),
+        formHolder: holder,
+        formKey: key);
     addTearDown(form.dispose);
-    const area=BlueprintAreaBinding(nodeId:'standing',inventoryContextId:3,productId:9);
-    final product=ProductModel(id:9,title:'Bound standing',price:80,currencyCode:'CZK');
-    form.setAreaQuantity(area,2,available:3,product:product);
-    final payload=FormHelper.getFieldData(key,tickets) as List;
-    expect(payload.length,2);
-    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id,'9');
-    expect(form.totalPrice,160);
-    expect(()=>form.setAreaQuantity(area,1,available:3,product:ProductModel(id:10,price:80)),throwsStateError);
-    form.setAreaQuantity(area,0,available:0,product:null);
-    expect(tickets.tickets,isEmpty);
+    const area = BlueprintAreaBinding(
+        nodeId: 'standing', inventoryContextId: 3, productId: 9);
+    final product = ProductModel(
+        id: 9, title: 'Bound standing', price: 80, currencyCode: 'CZK');
+    form.setAreaQuantity(area, 2, available: 3, product: product);
+    final payload = FormHelper.getFieldData(key, tickets) as List;
+    expect(payload.length, 2);
+    expect(
+        (payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id,
+        '9');
+    expect(form.totalPrice, 160);
+    expect(
+        () => form.setAreaQuantity(area, 1,
+            available: 3, product: ProductModel(id: 10, price: 80)),
+        throwsStateError);
+    form.setAreaQuantity(area, 0, available: 0, product: null);
+    expect(tickets.tickets, isEmpty);
   });
 
   test(
@@ -892,17 +936,23 @@ void main() {
     addTearDown(form.dispose);
     const area = BlueprintAreaBinding(
         nodeId: 'standing', inventoryContextId: 3, productId: 9);
-    final boundProduct=ProductModel(id: 9,title:'Standing',price:80,currencyCode:'CZK');
+    final boundProduct =
+        ProductModel(id: 9, title: 'Standing', price: 80, currencyCode: 'CZK');
     form.setAreaQuantity(area, 2, available: 3, product: boundProduct);
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
-    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id, option.id);
+    expect(
+        (payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id,
+        option.id);
     expect(form.totalPrice, 160);
     form.updateSeats([]);
     expect(tickets.tickets.length, 2);
     form.setAreaQuantity(area, 1, available: 3, product: boundProduct);
     expect(form.totalPrice, 80);
-    expect(() => form.setAreaQuantity(area, 4, available: 3, product: boundProduct), throwsStateError);
+    expect(
+        () =>
+            form.setAreaQuantity(area, 4, available: 3, product: boundProduct),
+        throwsStateError);
     expect(tickets.tickets.length, 1);
   });
 

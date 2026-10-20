@@ -15,16 +15,20 @@ class BlueprintLegacyConversion {
 
 Map<String, List<double>> _legacyInputMatrices(List<LayoutNode> input) {
   final nodes = {for (final node in input) node.id: node},
-      result = <String, List<double>>{}, active = <String>{};
+      result = <String, List<double>>{},
+      active = <String>{};
   List<double> resolve(LayoutNode node) {
     if (result.containsKey(node.id)) return result[node.id]!;
-    if (!active.add(node.id)) throw const FormatException('legacy_parent_cycle');
+    if (!active.add(node.id))
+      throw const FormatException('legacy_parent_cycle');
     final parent = nodes[node.parentId];
     final local = localMatrix(node);
-    final matrix = parent == null ? local : multiplyMatrix(resolve(parent), local);
+    final matrix =
+        parent == null ? local : multiplyMatrix(resolve(parent), local);
     active.remove(node.id);
     return result[node.id] = matrix;
   }
+
   for (final node in input) resolve(node);
   return result;
 }
@@ -33,7 +37,8 @@ Map<String, List<double>> _legacyInputMatrices(List<LayoutNode> input) {
 /// submit it through the normal aggregate command; runtime readers never use it.
 BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
     {required Map<String, Map<String, dynamic>> fontFamilies,
-    Map<String, dynamic>? nativePlan, String? reviewedSourceSha256}) {
+    Map<String, dynamic>? nativePlan,
+    String? reviewedSourceSha256}) {
   if (source.id == null || source.occasion == null) {
     throw StateError('legacy_blueprint_identity_missing');
   }
@@ -101,26 +106,46 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
   if (hasArtwork && nativePlan == null) {
     throw StateError('legacy_artwork_requires_reviewed_native_geometry');
   }
-  if (nativePlan != null && (!hasArtwork || nativePlan['complete'] != true ||
-      (nativePlan['issues'] as List? ?? const ['unreviewed']).isNotEmpty ||
-      reviewedSourceSha256 == null || nativePlan['sourceSha256'] != reviewedSourceSha256)) {
+  if (nativePlan != null &&
+      (!hasArtwork ||
+          nativePlan['complete'] != true ||
+          (nativePlan['issues'] as List? ?? const ['unreviewed']).isNotEmpty ||
+          reviewedSourceSha256 == null ||
+          nativePlan['sourceSha256'] != reviewedSourceSha256)) {
     throw StateError('legacy_native_geometry_review_invalid');
   }
   final attachments = <Map<String, dynamic>>[];
-  final tableStyle = <String, dynamic>{...({...basic.object}..remove('label')), 'color': (basic.object['label'] as Map)['color'], 'cornerRadius': 8};
+  final tableStyle = <String, dynamic>{
+    ...({...basic.object}..remove('label')),
+    'color': (basic.object['label'] as Map)['color'],
+    'cornerRadius': 8
+  };
   if (nativePlan != null) {
     final rawNodes = (nativePlan['nodes'] as List).cast<Map>();
     final fills = <String, int>{}, colors = <String, int>{};
     for (final raw in rawNodes.where((node) => node['kind'] == 'table')) {
-      final props = {...Map<String, dynamic>.from(raw['properties'] as Map? ?? const {}), ...raw};
+      final props = {
+        ...Map<String, dynamic>.from(raw['properties'] as Map? ?? const {}),
+        ...raw
+      };
       final fill = (props['fill'] ?? basic.object['fill']) as String;
-      final color = (props['color'] ?? (basic.object['label'] as Map)['color']) as String;
-      fills[fill] = (fills[fill] ?? 0) + 1; colors[color] = (colors[color] ?? 0) + 1;
+      final color =
+          (props['color'] ?? (basic.object['label'] as Map)['color']) as String;
+      fills[fill] = (fills[fill] ?? 0) + 1;
+      colors[color] = (colors[color] ?? 0) + 1;
     }
     // Keep the reviewed hall palette in the document style, not per-table
     // overrides. This includes the original purple and white hall exceptions.
-    if (fills.isNotEmpty) tableStyle['fill'] = (fills.entries.toList()..sort((a,b) => b.value.compareTo(a.value))).first.key;
-    if (colors.isNotEmpty) tableStyle['color'] = (colors.entries.toList()..sort((a,b) => b.value.compareTo(a.value))).first.key;
+    if (fills.isNotEmpty)
+      tableStyle['fill'] = (fills.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value)))
+          .first
+          .key;
+    if (colors.isNotEmpty)
+      tableStyle['color'] = (colors.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value)))
+          .first
+          .key;
     final nativeIds = <String, String>{};
     for (final raw in rawNodes) {
       final key = raw['id'] as String;
@@ -153,22 +178,8 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
         }
         wire['lineHeight'] = 1;
       }
-      if (wire['kind'] == 'text') {
-        // The chosen native font may be wider than an imported SVG font. Keep
-        // each explicit source line intact without changing its anchor point.
-        final text = (wire['text'] ?? wire['label'] ?? '').toString();
-        final size = (wire['size'] as num? ?? 24).toDouble();
-        final longest = text.split('\n').fold<int>(0, (n, line) => math.max(n, line.runes.length));
-        final oldWidth = (wire['width'] as num).toDouble();
-        final width = math.max(oldWidth, longest * size);
-        final anchor = wire['align'] ?? 'center';
-        final shift = anchor == 'left' ? (width - oldWidth) / 2 : anchor == 'right' ? -(width - oldWidth) / 2 : 0.0;
-        final t = Map<String, dynamic>.from(wire['transform'] as Map);
-        final angle = (t['rotation'] as num? ?? 0) * math.pi / 180;
-        t['x'] = (t['x'] as num) + math.cos(angle) * shift;
-        t['y'] = (t['y'] as num) + math.sin(angle) * shift;
-        wire['width'] = width; wire['transform'] = t;
-      }
+      // Preserve reviewed text boxes and anchors. Character count is not a
+      // font measurement and widening here can push labels outside the canvas.
       if (wire['pathPattern'] == 'zigzag') {
         // The source starts at a tooth, not a half-tooth baseline. Retain its
         // exact native editable polyline vertices, including both end points.
@@ -184,16 +195,24 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
     for (final entry in (nativePlan['tableGroups'] as Map).entries) {
       final group = int.tryParse(entry.key.toString());
       final tableId = nativeIds[entry.value];
-      if (group == null || groups[group] == null || tableId == null || !tableIds.add(tableId)) {
+      if (group == null ||
+          groups[group] == null ||
+          tableId == null ||
+          !tableIds.add(tableId)) {
         throw StateError('legacy_native_table_group_invalid');
       }
       final table = nativeNodes.firstWhere((node) => node.id == tableId);
-      if (table.kind != 'table') throw StateError('legacy_native_table_required');
+      if (table.kind != 'table')
+        throw StateError('legacy_native_table_required');
       final matrix = nativeMatrices[table.id]!;
-      tables[groups[group]!] = table.copyWith(parentId: groups[group],
-        x: matrix[4], y: matrix[5], rotation: math.atan2(matrix[1], matrix[0]) * 180 / math.pi);
+      tables[groups[group]!] = table.copyWith(
+          parentId: groups[group],
+          x: matrix[4],
+          y: matrix[5],
+          rotation: math.atan2(matrix[1], matrix[0]) * 180 / math.pi);
     }
-    nodes.addAll(nativeNodes.map((node) => tables.values.where((t) => t.id == node.id).firstOrNull ?? node));
+    nodes.addAll(nativeNodes.map((node) =>
+        tables.values.where((t) => t.id == node.id).firstOrNull ?? node));
     final geometry = _legacyInputMatrices(nodes);
     for (var i = 0; i < nodes.length; i++) {
       final seat = nodes[i];
@@ -202,32 +221,59 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
       final matrix = geometry[table.id]!;
       final point = transformPoint(inverseMatrix(matrix), seat.x, seat.y);
       final rotation = -math.atan2(matrix[1], matrix[0]) * 180 / math.pi;
-      nodes[i] = seat.copyWith(parentId: table.id, x: point[0], y: point[1], rotation: rotation);
-      final side = point[0].abs() / (table.width / 2) > point[1].abs() / (table.height / 2);
-      final edge = side ? (point[0] < 0 ? 'left' : 'right') : (point[1] < 0 ? 'top' : 'bottom');
+      nodes[i] = seat.copyWith(
+          parentId: table.id, x: point[0], y: point[1], rotation: rotation);
+      final side = point[0].abs() / (table.width / 2) >
+          point[1].abs() / (table.height / 2);
+      final edge = side
+          ? (point[0] < 0 ? 'left' : 'right')
+          : (point[1] < 0 ? 'top' : 'bottom');
       attachments.add({
-        'id': identity('attachment:${seat.id}'), 'seatId': seat.id, 'targetId': table.id,
-        'kind': 'edge', 'edge': edge, 'manual': true,
-        'x': point[0], 'y': point[1], 'rotation': rotation,
-        'gap': ((side ? point[0].abs() - table.width / 2 : point[1].abs() - table.height / 2) - seat.width / 2).clamp(0, 1000000),
-        't': ((side ? point[1] / table.height : point[0] / table.width) + .5).clamp(0, 1),
+        'id': identity('attachment:${seat.id}'),
+        'seatId': seat.id,
+        'targetId': table.id,
+        'kind': 'edge',
+        'edge': edge,
+        'manual': true,
+        'x': point[0],
+        'y': point[1],
+        'rotation': rotation,
+        'gap': ((side
+                    ? point[0].abs() - table.width / 2
+                    : point[1].abs() - table.height / 2) -
+                seat.width / 2)
+            .clamp(0, 1000000),
+        't': ((side ? point[1] / table.height : point[0] / table.width) + .5)
+            .clamp(0, 1),
       });
     }
   }
   final imported = importLegacyLayout({
-    'schemaVersion': 1, 'symbolSetVersion': 1,
+    'schemaVersion': 1,
+    'symbolSetVersion': 1,
     'nodes': [for (final node in nodes) node.toJson()],
     'attachments': attachments,
-    'defaultTextStyle': {'fontId': TicketFontCatalog.defaultLayoutFontId, 'size': 24, 'color': '#222222FF'},
+    'defaultTextStyle': {
+      'fontId': TicketFontCatalog.defaultLayoutFontId,
+      'size': 24,
+      'color': '#222222FF'
+    },
     'appearance': {'table': tableStyle, 'seat': basic.seats ?? basic.object},
-    'canvas': {'x': 0, 'y': 0,
+    'canvas': {
+      'x': 0,
+      'y': 0,
       'width': (source.configuration?.width ?? 50) * 48,
       'height': (source.configuration?.height ?? 35) * 48,
-      'fill': basic.canvasFill ?? '#FFFFFFFF'},
-    'sections': [], 'selectionUnits': [], 'presets': [], 'generators': [],
+      'fill': basic.canvasFill ?? '#FFFFFFFF'
+    },
+    'sections': [],
+    'selectionUnits': [],
+    'presets': [],
+    'generators': [],
     'background': null,
   }, fontFamilies: fontFamilies, sourceRevision: 0);
-  if (!imported.isReady) throw StateError('legacy_conversion_invalid:${imported.receipt['issues']}');
+  if (!imported.isReady)
+    throw StateError('legacy_conversion_invalid:${imported.receipt['issues']}');
   var document = imported.document!;
   final labelProfile = nativePlan?['tableLabelStyle'] as Map?;
   if (labelProfile != null) {
@@ -235,9 +281,12 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
     // styling continues through the same canonical inheritance as new tables.
     for (final entry in labelProfile.entries) {
       final key = entry.key as String;
-      document = setKindStyleLeaf(document, 'table', ['label', key], value: entry.value);
-      for (final table in document.nodes.where((node) => node.kind == 'table').toList()) {
-        document = setNodeStyleLeaf(document, table.id, ['label', key], unset: true);
+      document = setKindStyleLeaf(document, 'table', ['label', key],
+          value: entry.value);
+      for (final table
+          in document.nodes.where((node) => node.kind == 'table').toList()) {
+        document =
+            setNodeStyleLeaf(document, table.id, ['label', key], unset: true);
       }
     }
   }

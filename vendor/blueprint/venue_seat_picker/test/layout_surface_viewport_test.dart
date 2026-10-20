@@ -6,6 +6,74 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {
+  testWidgets(
+    'tall plan stays horizontally centered through off-center zoom and pan',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LayoutSceneSurface(
+              document: VenueLayoutDocument.empty().copyWith(
+                canvas: {
+                  'x': 100.0,
+                  'y': 200.0,
+                  'width': 400.0,
+                  'height': 1600.0,
+                },
+              ),
+              compactZoomControls: true,
+              pan: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final surface = find.byType(LayoutSceneSurface);
+      LayoutScenePainter painter() => tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .map((w) => w.painter)
+          .whereType<LayoutScenePainter>()
+          .single;
+      void expectCentered() {
+        final p = painter();
+        final point = MatrixUtils.transformPoint(
+          p.camera!.value,
+          p.offset + const Offset(300, 1000) * p.scale,
+        );
+        expect(point.dx, closeTo(500, .001));
+      }
+
+      expectCentered();
+      await tester.sendEventToBinding(
+        const PointerScrollEvent(
+          position: Offset(150, 250),
+          scrollDelta: Offset(0, -180),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expectCentered();
+      await tester.drag(surface, const Offset(-300, 80));
+      await tester.pumpAndSettle();
+      expectCentered();
+      await tester.sendEventToBinding(
+        const PointerScrollEvent(
+          position: Offset(800, 450),
+          scrollDelta: Offset(0, 1000),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expectCentered();
+      final p = painter();
+      final center = MatrixUtils.transformPoint(
+        p.camera!.value,
+        p.offset + const Offset(300, 1000) * p.scale,
+      );
+      expect(center.dy, closeTo(300, .001));
+    },
+  );
+
   testWidgets('changing mode viewport preserves zoom and world center', (
     tester,
   ) async {
