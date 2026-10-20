@@ -42,6 +42,12 @@ issuer in the callback. The prepared callback is
 actual ChatGPT management page before activation. A different client/callback
 must be explicitly registered, never accepted from arbitrary request metadata.
 
+The separately registered public native client `festapp-codex` uses
+`applicationType: native` and `http://127.0.0.1/callback`. Its callback port may
+vary as required for a local listener; the path is exact, and non-loopback hosts
+are rejected. Native callback configuration rejects userinfo, query and fragment.
+This does not widen web-client redirects or enable dynamic registration.
+
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and
 the selected occasion IDs for seven days. The MCP token and the Supabase token

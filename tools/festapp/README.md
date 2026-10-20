@@ -249,3 +249,18 @@ operator's per-profile refresh lock while it is active.
 References: [MCP SDK v1 server documentation](https://ts.sdk.modelcontextprotocol.io/server),
 [Supabase password authentication](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
 [Keychain binding](https://github.com/Brooooooklyn/keyring-node).
+
+### Codex remote connection
+
+Register a separate public client `festapp-codex` with `applicationType: "native"`
+and redirect URI `http://127.0.0.1/callback`. Native clients accept only literal
+IP loopback HTTP callbacks; the maintained provider permits a variable port,
+while the callback path remains exact. Web clients retain their HTTPS policy.
+
+```sh
+codex mcp add festapp --url https://mcp.festapp.net/mcp --oauth-client-id festapp-codex --oauth-resource https://mcp.festapp.net/mcp
+codex mcp login festapp --scopes festapp:ticket-layouts:read
+```
+
+Complete the fresh browser login and occasion consent for this client. The
+native client uses the same scoped read handlers and separate OAuth grant.

@@ -23,6 +23,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl =
     const provider = new Provider(config.issuer, {
         adapter: model => storage.adapter(model),
         clients: config.clients.map(c => ({ client_id: c.id, client_name: c.name,
+            application_type: c.applicationType,
             redirect_uris: c.redirectUris, response_types: ['code'],
             grant_types: ['authorization_code', 'refresh_token'], token_endpoint_auth_method: 'none', })),
         cookies: { keys: cookieKeys }, jwks,

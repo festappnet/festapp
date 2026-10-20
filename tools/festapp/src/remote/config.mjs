@@ -11,6 +11,7 @@ const schema = z.strictObject({
     clients: z.array(z.strictObject({
         id: identifier,
         name: identifier,
+        applicationType: z.enum(['web', 'native']).default('web'),
         redirectUris: z.array(z.url()).min(1).max(4),
     })).min(1).max(10),
     operators: z.array(z.strictObject({
@@ -34,8 +35,10 @@ export function parseRemoteConfig(raw) {
         throw new Error('DUPLICATE_REMOTE_IDENTITY');
     for (const client of config.clients) for (const uri of client.redirectUris) {
         const u = new URL(uri);
-        if (!validOrigin(u) || (u.protocol !== 'https:' &&
-            !(local && u.protocol === 'http:' && u.hostname === '127.0.0.1')))
+        const loopback = u.protocol === 'http:' && ['127.0.0.1', '[::1]'].includes(u.hostname);
+        if (!validOrigin(u) || (client.applicationType === 'native'
+            ? !loopback
+            : u.protocol !== 'https:' && !(local && loopback)))
             throw new Error('INVALID_REMOTE_REDIRECT');
     }
     return Object.freeze({ ...config, profile, issuer: url.origin, resource: url.origin + '/mcp' });
