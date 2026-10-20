@@ -97,7 +97,7 @@ dependencies:
   venue_seat_picker:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 277d65ec4c1cfd190c1859dbcc8ee6004a163f06
+      ref: c829a33d07de9a8fa376b407658875d22abd246e
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -133,11 +133,6 @@ dev_dependencies:
 # iOS. The iOS copy also exposes the plugin class during a clean Release build.
 # Each package documents its removal condition in FESTAPP_PATCH.md.
 dependency_overrides:
-  venue_layout_core:
-    git:
-      url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 277d65ec4c1cfd190c1859dbcc8ee6004a163f06
-      path: packages/venue_layout_core
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:

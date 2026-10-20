@@ -1,4 +1,3 @@
-import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -50,7 +49,7 @@ class SupabaseTicketCommands implements TicketCommands {
       }),
     );
     if (response.code != 200) {
-      throw BlueprintCommandRejection(response.code, response.data);
+      throw StateError('Ticket cancellation was rejected');
     }
     await applyClientCommandReplacements(response);
     return TicketCancellationOutcome.fromJson(response.data);
@@ -65,7 +64,7 @@ class SupabaseTicketCommands implements TicketCommands {
       }),
     );
     if (response.code != 200) {
-      throw BlueprintCommandRejection(response.code, response.data);
+      throw StateError('Spot ticket swap was rejected');
     }
     await applyClientCommandReplacements(response);
   }

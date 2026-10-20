@@ -9,7 +9,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
- blueprint_id bigint; v_commit public.client_commits%ROWTYPE;
+ blueprint_id bigint; objects jsonb := '[]'; obj jsonb; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
@@ -80,8 +80,7 @@ BEGIN
     ||'{"code":"ticket","is_enabled":true}'::jsonb);
  END IF;
  IF coalesce((payload->>'formEnabled')::boolean,true) AND payload->>'blueprintMode' IN ('Nový','Převzít')
-   AND jsonb_array_length(coalesce(payload#>'{blueprintLayoutDraft,seatBindings}','[]'))+
-       jsonb_array_length(coalesce(payload#>'{blueprintLayoutDraft,areaBindings}','[]'))=0 THEN
+   AND jsonb_array_length(coalesce(payload->'blueprintObjects','[]'))=0 THEN
   RAISE invalid_parameter_value USING MESSAGE='Selected blueprint has no places'; END IF;
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN
   features := features || jsonb_build_array(jsonb_build_object('code','form','is_enabled',true) ||
@@ -133,9 +132,6 @@ BEGIN
    result := public.create_form_internal_v1(new_id,NULL,form_data->>'title'); form_id := (result->>'id')::bigint;
   END IF;
   form_link:=nullif(form_data->>'link','');
-  IF source_id IS NOT NULL AND EXISTS(SELECT 1 FROM public.forms source_form WHERE source_form.occasion=source_id AND source_form.link=form_link) THEN
-   form_link:=(SELECT link FROM public.forms WHERE id=form_id);
-  END IF;
   IF coalesce((payload->>'formLinkAutomatic')::boolean,false) THEN
    FOR j IN 1..20 LOOP
     -- Preserve the preview where still free; re-suggest if another writer won.
@@ -189,16 +185,21 @@ BEGIN
     IF old_products->idx->>'id' IS NOT NULL THEN product_map := product_map || jsonb_build_object(old_products->idx->>'id',new_products->idx->'id'); END IF;
    END LOOP;
   END IF;
-  IF coalesce(payload->>'blueprintMode','')<>'Bez plánku' AND
-   (payload->>'blueprintMode' IN ('Nový','Převzít') OR
-    (payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb)) THEN
-  IF payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb THEN
-   blueprint_id:=public.materialize_setup_blueprint_layout_internal(payload->'blueprintLayoutDraft',product_map,source_id,new_id,d.unit);
+  IF coalesce(payload->>'blueprintMode','')<>'Bez plánku'
+    AND jsonb_array_length(coalesce(payload->'blueprintObjects','[]'))>0 THEN
+   FOR obj IN SELECT value FROM jsonb_array_elements(payload->'blueprintObjects') LOOP
+    obj := obj-'id'-'order_product_ticket'-'secret';
+    IF obj->>'product' IS NOT NULL THEN obj := jsonb_set(obj,'{product}',coalesce(product_map->(obj->>'product'),'null'::jsonb)); END IF;
+    objects := objects || jsonb_build_array(obj);
+   END LOOP;
+   result := public.update_blueprint_internal_v1(jsonb_build_object('occasion',new_id,'organization',d.organization,
+    'title',payload->>'blueprintTitle','configuration',jsonb_build_object('dimensions',jsonb_build_object(
+     'width',coalesce((payload->>'blueprintWidth')::numeric,12),'height',coalesce((payload->>'blueprintHeight')::numeric,8))),
+    'groups',coalesce(payload->'blueprintGroups','[]'),'objects',objects,'background_svg',payload->>'blueprintBackground'));
+   IF (result->>'code')::int NOT IN (200,201) THEN RAISE EXCEPTION '%',result; END IF;
+   blueprint_id := (result->>'blueprint_id')::bigint;
    UPDATE public.forms SET blueprint=blueprint_id WHERE id=form_id;
-   features:=features||'[{"code":"blueprint","is_enabled":true}]';
-  ELSE
-   RAISE check_violation USING MESSAGE='BLUEPRINT_LAYOUT_REQUIRED';
-  END IF;
+   features := features || '[{"code":"blueprint","is_enabled":true}]';
   END IF;
  END IF;
  -- Plans are materialized through the existing price-wave commands, using

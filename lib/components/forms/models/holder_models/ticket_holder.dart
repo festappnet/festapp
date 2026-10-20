@@ -19,7 +19,6 @@ class TicketHolder extends FieldHolder {
   bool fixedTickets = false;
   final bool showDepositDescription;
   final List<FieldHolder> fields;
-  List<OptionsFieldProductHolder> offeredProductFields = const [];
 
   TicketHolder({
     required super.fieldType,
@@ -45,8 +44,7 @@ class TicketHolder extends FieldHolder {
   void updateTickets(List<BlueprintSeat> seats) {
     // Create a map of existing tickets for fast lookup.
     final existingTicketsMap = {
-      for (var ticket in tickets)
-        if (ticket.seat != null) ticket.seat!.seat!.id!: ticket
+      for (var ticket in tickets) ticket.seat!.seat!.id!: ticket
     };
 
     // Build the new list of tickets.
@@ -69,10 +67,7 @@ class TicketHolder extends FieldHolder {
     }
 
     // Replace the old tickets with the updated list.
-    tickets = [
-      ...tickets.where((ticket) => ticket.seat == null),
-      ...updatedTickets
-    ];
+    tickets = updatedTickets;
   }
 
   // Helper getter to check if any of the fields is a "spot".

@@ -5,12 +5,6 @@ import { loadLayoutResources } from '../_shared/ticketGeneration.ts';
 import { handlePreview } from './handler.ts';
 import { loadPreviewProducts } from './products.ts';
 Deno.serve(req=>handlePreview(req,{
-  authorizeSetupDraft:async(header,draftId,bytes)=>{
-    const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});
-    const {data,error}=await client.rpc('admit_occasion_setup_blueprint_resources_v1',{p_draft:draftId,p_bytes:bytes});
-    if(error?.code==='PT429')throw Object.assign(new Error('Usage limited'),{status:429});
-    return !error&&data?.abuseLimits?data:false;
-  },
   authorize:async(header,occasionId,bytes,readOnly=false)=>{
     const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});
     const {data,error}=await client.rpc('admit_ticket_preview_limits_v1',{p_occasion:occasionId,p_bytes:bytes,p_read_only:readOnly});
@@ -21,8 +15,4 @@ Deno.serve(req=>handlePreview(req,{
   products:id=>loadPreviewProducts(supabaseAdmin,id),
   resources:loadLayoutResources,
   font:resolveTicketFont,layout:parseRegisteredTicketLayout,
-  registerLayoutFont:async(id,outline)=>{
-    const {error}=await supabaseAdmin.rpc('register_blueprint_layout_font',{p_font_id:id,p_outline:outline});
-    if(error)throw error;
-  },
 }));

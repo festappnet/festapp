@@ -5,7 +5,7 @@ Festapp is an event management platform: Flutter (mobile+web) + Supabase (Postgr
 ## Critical: Resolve the Live Supabase Target from Activation
 
 Since the 2026-09-10 production activation, `https://api.festapp.net` is the
-canonical live Auth, REST, Storage and Function endpoint. For a tenant, verify
+canonical live Auth, REST and Function endpoint. For a tenant, verify
 `BACKEND_ACTIVATION_PHASE=canonical` in its `automation/project.conf` and read
 its current `WEB_LINK/backend-activation.json` before investigating live data.
 The document must match the tenant ID and canonical generation. Verify the
@@ -26,9 +26,20 @@ Business logic is split between **SQL functions** (`database/functions/`) and Da
 - Search for `supabase.rpc('...')` in Dart/JS to find which SQL function handles the operation
 - **In SQL**: Order creation, permissions, payments, ticket scanning, sign-ups, inventory
 - **In Dart/JS**: UI, navigation, file operations (image upload/copy via `workers/image-worker/`)
-- **Hybrid**: Occasion duplication - SQL copies DB rows, Dart copies image bytes
-  through the image Worker into R2. Occasion deletion uses the SQL command;
-  the client does not scan or remove orphaned Storage objects.
+- **Hybrid**: Occasion duplication/deletion - SQL copies DB rows; Dart uses the canonical image Worker for asset copies/deletion.
+
+## Critical: Canonical Asset Authority
+
+Festapp files and fonts use the shared image Worker and one public/private R2
+bucket pair. Existing `a` URLs translate at that boundary; AKH retains its own
+bucket and Auth/DB. Never introduce a new Supabase Storage producer or legacy
+URL fallback. The 2026-10-18 production reference rewrite and scoped adapters are
+active. Independent v2 recovery passed and local Storage/imgproxy and its
+source volume are retired. All three redundant buckets and their dedicated
+source-reader grants are retired; existing R2 URLs and AKH remain intact.
+The measured 4 GB capacity decision remains explicit.
+See `docs/operations/supabase-self-hosted/storage-authority.md` and its linked
+execution receipt for the current deployment boundary.
 
 ## Critical: Post-Cutover Database Authority
 
@@ -158,17 +169,6 @@ Canonical SQL is in `database/functions/eshop_bank_sync/`; regenerate its scoped
 
 BankAccountAdmin control uses `bank-sync-manage` with durable, fenced operation intents; encrypted token recovery uses `bank-sync-reconcile` and versioned protected control keys. Paid ticket intent creation is atomic with the SQL paid transition and immediately wakes the globally gated queue. Failed transition receipts abort payment recalculation, keeping the bank webhook retryable. See [implementation and production gates](../operations/banksync/IMPLEMENTATION-2026-10-04.md). See the [full cutover runbook](../operations/banksync/FULL-CUTOVER-2026-10-04.md) for the ordered account rollout and retirement proof. Unproven bank email identities remain quarantined observations until the required real-email evidence is established.
 
-## Payment-reference ownership
-
-Festapp owns VS allocation and reservation under `database/functions/eshop_payment_references/`.
-Activated organizations reserve against a canonical receiving-account namespace in
-same-transaction checkout SQL; BankSync is not a reservation or invoice dependency.
-The registry retains committed symbols after cancellation/deletion, with form
-watermarks and private exact/sequence/random allocation. Unactivated organizations
-retain the guarded legacy allocator until separately authorized activation. The
-preexisting BankSync issuance API is retired in source; its historical registry
-is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
-
 ## Form capacity and waitlist ownership
 
 `eshop.tickets` is the sole entity for an individual admission or waiting item.
@@ -191,6 +191,17 @@ checks. Clients replace only resolved slugs and copy only saved public URLs.
 
 Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
 New writes cannot claim those slugs; canonical links and titles are never bulk renamed.
+
+## Payment-reference ownership
+
+Festapp owns VS allocation and reservation under `database/functions/eshop_payment_references/`.
+Activated organizations reserve against a canonical receiving-account namespace in
+same-transaction checkout SQL; BankSync is not a reservation or invoice dependency.
+The registry retains committed symbols after cancellation/deletion, with form
+watermarks and private exact/sequence/random allocation. Unactivated organizations
+retain the guarded legacy allocator until separately authorized activation. The
+preexisting BankSync issuance API is retired in source; its historical registry
+is retained for audit/backup. See [local cutover and operational gates](../operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
 
 ## Native offline maps
 
