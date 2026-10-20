@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+await import(process.env.BLUEPRINT_KERNEL_FILE ?? '@festapp/venue-layout/kernel');
 import {FormModel} from '../../src/components/forms/form_models.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -59,6 +61,7 @@ test('standing quantity uses offered admission fields and leaves unrelated ticke
     const form=new FormSession({key:'form',secret:'s',visibleFields:[{type:'ticket',subFields:[{id:23,type:'product_type',data:{product_type_data:{products:[{id:9,title:'Standing',price:80,currency_code:'CZK'}]}}}]}],relatedFields:[{type:'ticket',data:{max_tickets:5}}]});
     form.addTicket({spot:99,spotPrice:50});
     const source=data();source.areaBindings=[{nodeId:'standing',productId:9,inventoryContextId:3}];source.areaAvailability=[{nodeId:'standing',available:3}];
+    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
     const adapter=new BlueprintLayoutAdapter(source,{session:form});
     assert.equal((await adapter.requestQuantity('standing',2)).accepted,true);
     assert.equal(form.payload.ticket.length,3);
@@ -91,13 +94,13 @@ test('raw form retains separately offered spot admission catalog only for area r
     assert.equal(Object.isFrozen(model.offeredTicketProductFields),true);
     assert.deepEqual(model.offeredTicketProductFields.map(field=>field.id),[21,23]);
     form.addTicket({spot:11,spotPrice:100});
-    form.setAreaQuantity({nodeId:'standing',productId:9},2,5);
+    form.setAreaQuantity({nodeId:'standing',productId:9},2,5,{id:9,title:'Standing',price:80,currency_code:'CZK'});
     assert.equal(form.payload.ticket.length,3);
     assert.equal(form.payload.ticket[0].spot,11);
     assert.equal(form.payload.ticket[1].fields[0].product_type,9);
     assert.equal(form.payload.ticket[1].fields[0]._subFieldId,23);
     assert.equal(form.state.totalPrice,260);
-    assert.throws(()=>form.setAreaQuantity({nodeId:'hidden',productId:10},1,5),/area_product_not_offered/);
+    assert.throws(()=>form.setAreaQuantity({nodeId:'hidden',productId:10},1,5),/area_product_unavailable/);
 });
 
 test('unassigned available seat is empty while protected live state survives missing product',()=>{
@@ -135,4 +138,57 @@ test('atomic seat unit over the form ticket limit sends no hold and creates no p
  const adapter=new BlueprintLayoutAdapter(data(),{session:form});
  assert.equal((await adapter.requestSelection(new Set(['a','b']),true)).accepted,false);
  assert.equal(calls,0);assert.equal(form.state.tickets.length,0);assert.equal(adapter.selectedSeats.length,0);
+});
+
+
+test('distributed kernel renders the SQL canonical whole-text save/read/setup/copy corpus', () => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    assert.deepEqual(Object.keys(corpus).sort(), ['admin', 'copy', 'public', 'setup']);
+    for (const [reader, {document, resources}] of Object.entries(corpus)) {
+        const kernel = globalThis.VenueLayoutKernel;
+        assert.deepEqual(JSON.parse(kernel.validate(JSON.stringify(document))), [], `${reader} document`);
+        assert.deepEqual(JSON.parse(kernel.validateResources(JSON.stringify(resources))), [], `${reader} resources`);
+        const scene = JSON.parse(kernel.compileScene(JSON.stringify(document), JSON.stringify(resources), '{}'));
+        assert.deepEqual(scene.issues, [], `${reader} scene`);
+        const labels = scene.items.filter(item => item.kind === 'glyphs');
+        assert.ok(labels.length > 0, `${reader} prepared paragraphs`);
+        assert.ok(labels.every(item => item.path.length > 0), `${reader} glyph paths`);
+    }
+});
+
+
+test('distributed kernel matches exact Dart scenes from fresh SQL canonical readbacks', () => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    const expected = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-scenes.json', import.meta.url), 'utf8'));
+    for (const [reader, {document, resources}] of Object.entries(corpus)) {
+        const scene = JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(document), JSON.stringify(resources), '{}'));
+        assert.deepEqual(scene.issues, [], `${reader} scene`);
+        assert.deepEqual(scene, expected[reader].scene, `${reader}: paths, matrices, bounds, clips, paint order`);
+        assert.deepEqual(document.selectionUnits, expected[reader].selectionUnits);
+        assert.ok(scene.items.some(item => item.kind === 'glyphs'));
+    }
+});
+
+test('distributed core rejects historical masks and malformed canonical styles', () => {
+    const {admin: {document}} = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    for (const style of [{label: {weight: 'bold'}}, {unknown: 1}, {opacity: 2}]) {
+        const candidate = structuredClone(document);
+        candidate.nodes[0].style = style;
+        assert.ok(JSON.parse(globalThis.VenueLayoutKernel.validate(JSON.stringify(candidate))).length > 0);
+    }
+    const candidate = structuredClone(document);
+    candidate.nodes[0].appearanceOverrides = ['fontId'];
+    assert.ok(JSON.parse(globalThis.VenueLayoutKernel.validate(JSON.stringify(candidate))).length > 0);
+});
+
+test('capacity callback uses the bound blueprint catalog without admission form fields',async()=>{
+    const form=new FormSession(new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}},{id:17,type:'spot',is_ticket_field:true}]}));
+    const source=data();source.areaBindings=[{nodeId:'standing',productId:9}];source.areaAvailability=[{nodeId:'standing',available:3}];source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
+    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
+    const adapter=new BlueprintLayoutAdapter(source,{session:form});
+    assert.equal((await adapter.requestQuantity('standing',2)).accepted,true);
+    assert.equal(form.payload.ticket.length,2);
+    assert.equal(form.state.totalPrice,160);
+    assert.equal(form.payload.ticket[0].fields[0].product_type,9);
+    assert.equal((await adapter.requestQuantity('unknown',1)).accepted,false);
 });

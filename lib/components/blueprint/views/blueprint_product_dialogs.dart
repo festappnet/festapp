@@ -147,7 +147,8 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.canEditCatalog) Text(BlueprintStrings.catalogSaveNotice),
+                if (widget.canEditCatalog)
+                  Text(BlueprintStrings.assignmentSaveNotice),
                 if (_busy) const LinearProgressIndicator(),
                 if (_error != null)
                   Semantics(

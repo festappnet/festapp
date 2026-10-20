@@ -21,18 +21,18 @@ BEGIN
  grp:=extensions.uuid_generate_v5('6ba7b811-9dad-11d1-80b4-00c04fd430c8',format('festapp:occasion:%s:blueprint:%s:group:7',f.occasion,bid));
  nodes:=jsonb_build_array(jsonb_build_object('id',grp,'kind','group','label','Legacy reviewed group','transform',jsonb_build_object('x',0,'y',0,'rotation',0),'width',200,'height',100));
  native_table:=extensions.uuid_generate_v5('6ba7b811-9dad-11d1-80b4-00c04fd430c8',format('festapp:occasion:%s:blueprint:%s:native:table-1',f.occasion,bid));
- nodes:=nodes||jsonb_build_array(jsonb_build_object('id',native_table,'kind','table','parentId',grp,'label','Editable native table','transform',jsonb_build_object('x',10,'y',20,'rotation',0),'width',200,'height',60));
+ nodes:=nodes||jsonb_build_array(jsonb_build_object('id',native_table,'kind','table','parentId',grp,'label','','surface',jsonb_build_object('type','rect'),'transform',jsonb_build_object('x',10,'y',20,'rotation',0),'width',200,'height',60));
  FOREACH i IN ARRAY ARRAY[1,2,3] LOOP
   SELECT * INTO spot FROM eshop.spots WHERE id=ids[i];
   node:=extensions.uuid_generate_v5('6ba7b811-9dad-11d1-80b4-00c04fd430c8',format('festapp:occasion:%s:blueprint:%s:spot:%s',f.occasion,bid,spot.id));
   old_objects:=old_objects||jsonb_build_array(jsonb_build_object('id',spot.id,'type','spot','group',7,'x',i-1,'y',0));
   nodes:=nodes||jsonb_build_array(jsonb_build_object('id',node,'kind','seat','parentId',native_table,'label',coalesce(spot.title,''),'transform',jsonb_build_object('x',(i-1)*48+14,'y',4,'rotation',0),'width',36,'height',36));
-  changes:=changes||jsonb_build_array(jsonb_build_object('nodeId',node,'spotId',spot.id,'productId',spot.product,'title',coalesce(spot.title,''),'groupNodeId',grp,'selectionUnitId',NULL,'blocked',coalesce(spot.state='black',false),'operation','upsert'));
+  changes:=changes||jsonb_build_array(jsonb_build_object('nodeId',node,'spotId',spot.id,'productId',spot.product,'title',coalesce(spot.title,''),'groupNodeId',grp,'selectionUnitId',NULL,'blocked',coalesce(spot.state='black',false),'productAssignmentMode','override','operation','upsert'));
  END LOOP;
  UPDATE eshop.blueprints SET objects=old_objects WHERE id=bid;
  source_text:=public.blueprint_legacy_migration_source_internal(bid)::text;source_sha:=encode(extensions.digest(convert_to(source_text,'UTF8'),'sha256'),'hex');
  request:=jsonb_build_object('id',bid,'occasion',f.occasion,'organization',(SELECT organization FROM public.occasions WHERE id=f.occasion),'title','Reviewed migration regression','expected_layout_revision',0,
-  'layout',jsonb_build_object('schemaVersion',1,'symbolSetVersion',1,'canvas',jsonb_build_object('x',0,'y',0,'width',400,'height',200,'fill','#FFFFFFFF'),'defaultTextStyle',jsonb_build_object('fontId','builtin:futura-pt-book:571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44','size',24,'color','#222222FF'),'nodes',nodes),'seatChanges',changes,'groupProductChanges','[]'::jsonb,'areaBindingChanges','[]'::jsonb);
+  'layout',jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,'canvas',jsonb_build_object('x',0,'y',0,'width',400,'height',200,'fill','#FFFFFFFF'),'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,'textPolicy',jsonb_build_object('language','und','direction','auto'),'nodes',nodes),'textResourceIds','[]'::jsonb,'seatChanges',changes,'groupProductChanges','[]'::jsonb,'areaBindingChanges','[]'::jsonb);
  -- Live reservation churn after review is deliberately outside its hash.
  UPDATE eshop.spots SET secret=gen_random_uuid(),secret_expiration_time=statement_timestamp()+interval '7 minutes' WHERE id=held_id;
  SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) INTO before_spots FROM eshop.spots s WHERE s.id=ANY(ids);

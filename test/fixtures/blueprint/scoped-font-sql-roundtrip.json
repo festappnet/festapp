@@ -1,0 +1,722 @@
+{
+  "copy": {
+    "document": {
+      "nodes": [
+        {
+          "id": "6564d970-6485-4909-bace-0525ce56a7d9",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "41879738-340b-426f-9565-e5ef605f13d9",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "40b03da3-d9cf-4c25-97b4-e01b1b26c54d",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "573e6673-1a17-4899-8c2f-4bfe14b2eb7a",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "0aede662-cd04-48cc-baa7-ff00abaceedc",
+          "kind": "table",
+          "label": "B",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 200,
+            "y": 200,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "4eeedd0f-690c-4b06-8890-28d721cbbc2f",
+          "kind": "table",
+          "label": "C",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 500,
+            "y": 200,
+            "rotation": 0
+          },
+          "appearanceOverrides": [
+            "fontId"
+          ]
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "appearance": {
+        "table": {
+          "fontId": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46"
+        }
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884": {
+          "id": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "C": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66": {
+          "id": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {},
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46": {
+          "id": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "B": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "admin": {
+    "document": {
+      "nodes": [
+        {
+          "id": "6e5aeda0-8773-4e51-a910-60c918ee82f4",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "133643c5-ccf5-4755-88f3-3fe7ce10a387",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c4f13038-1882-43ba-9c06-835b67675c7d",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "540bd9f0-2055-46bb-9181-471fb2eaa2dc",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "6150a554-c586-451f-9069-b7d7a98333d9",
+          "kind": "table",
+          "label": "B",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 200,
+            "y": 200,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c8e77848-30fa-4f63-974f-c83ee346b5f5",
+          "kind": "table",
+          "label": "C",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 500,
+            "y": 200,
+            "rotation": 0
+          },
+          "appearanceOverrides": [
+            "fontId"
+          ]
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "appearance": {
+        "table": {
+          "fontId": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46"
+        }
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884": {
+          "id": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "C": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66": {
+          "id": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {},
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46": {
+          "id": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "B": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "setup": {
+    "document": {
+      "nodes": [
+        {
+          "id": "6e5aeda0-8773-4e51-a910-60c918ee82f4",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "133643c5-ccf5-4755-88f3-3fe7ce10a387",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c4f13038-1882-43ba-9c06-835b67675c7d",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "540bd9f0-2055-46bb-9181-471fb2eaa2dc",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "6150a554-c586-451f-9069-b7d7a98333d9",
+          "kind": "table",
+          "label": "B",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 200,
+            "y": 200,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c8e77848-30fa-4f63-974f-c83ee346b5f5",
+          "kind": "table",
+          "label": "C",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 500,
+            "y": 200,
+            "rotation": 0
+          },
+          "appearanceOverrides": [
+            "fontId"
+          ]
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "appearance": {
+        "table": {
+          "fontId": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46"
+        }
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884": {
+          "id": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "C": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66": {
+          "id": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {},
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46": {
+          "id": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "B": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  },
+  "public": {
+    "document": {
+      "nodes": [
+        {
+          "id": "6e5aeda0-8773-4e51-a910-60c918ee82f4",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 60,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "133643c5-ccf5-4755-88f3-3fe7ce10a387",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 120,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c4f13038-1882-43ba-9c06-835b67675c7d",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 180,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "540bd9f0-2055-46bb-9181-471fb2eaa2dc",
+          "kind": "seat",
+          "width": 40,
+          "height": 40,
+          "transform": {
+            "x": 240,
+            "y": 60,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "6150a554-c586-451f-9069-b7d7a98333d9",
+          "kind": "table",
+          "label": "B",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 200,
+            "y": 200,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "c8e77848-30fa-4f63-974f-c83ee346b5f5",
+          "kind": "table",
+          "label": "C",
+          "width": 200,
+          "fontId": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "height": 100,
+          "transform": {
+            "x": 500,
+            "y": 200,
+            "rotation": 0
+          },
+          "appearanceOverrides": [
+            "fontId"
+          ]
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "fill": "#ffffffff",
+        "width": 1000,
+        "height": 1000
+      },
+      "appearance": {
+        "table": {
+          "fontId": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46"
+        }
+      },
+      "schemaVersion": 1,
+      "selectionUnits": [],
+      "defaultTextStyle": {
+        "size": 24,
+        "color": "#222222FF",
+        "fontId": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66"
+      },
+      "symbolSetVersion": 1
+    },
+    "resources": {
+      "fonts": {
+        "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884": {
+          "id": "gf:0802df9e3cf3d8c99494702a0d5557feb4d384773dc998d21563c3edb1487884",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "C": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66": {
+          "id": "gf:40d6c8e9b7085705b7bf7773815b8240816787452f746ce4b9809862f219ee66",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {},
+          "descent": -300,
+          "unitsPerEm": 1000
+        },
+        "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46": {
+          "id": "gf:fc5848e0b3a6e3a4ccb21e1647f3d2d13d7bc0f08f32fd3e4b72c25d376c3e46",
+          "hash": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+          "ascent": 982,
+          "family": "Futura PT",
+          "glyphs": {
+            "B": {
+              "path": [
+                [
+                  "M",
+                  0,
+                  0
+                ],
+                [
+                  "L",
+                  400,
+                  0
+                ],
+                [
+                  "L",
+                  200,
+                  600
+                ],
+                [
+                  "Z"
+                ]
+              ],
+              "advance": 500
+            }
+          },
+          "descent": -300,
+          "unitsPerEm": 1000
+        }
+      },
+      "assets": {},
+      "protocol": 1
+    }
+  }
+}

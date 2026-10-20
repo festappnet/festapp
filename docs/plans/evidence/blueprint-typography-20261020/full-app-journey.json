@@ -1,0 +1,29 @@
+{
+  "blueprint": 374,
+  "revision": 7,
+  "vectors": 5,
+  "images": 2,
+  "sourceSvgRetainedExactly": true,
+  "rotatedPng": true,
+  "originalPhysicalNodesUnchanged": true,
+  "snapshotSha256": "db82ab28eee7dba67cb1c0fc130809d56832b1f2a99fdc4a2e5cedd76cd678df",
+  "pngAndJpegUpload": true,
+  "svgTextThroughActualWholeTextEngine": true,
+  "browserCompositionSaved": true,
+  "actualRobotoBoldItalicSaved": true,
+  "unsupportedScriptSvgRejectedAtomically": true,
+  "reopenedWithBothBitmapReads200": true,
+  "publicOriginalSvgRemoved": true,
+  "publicReadSha256": "b6a98a58ba5bd68ac820c44e724f3bd9fdcfda886d2dea313aaab333e0be5343",
+  "authBoundary": "Real local Auth session seeded in the supported auth storage key; UI login is not claimed. Native chooser intercepted only in the task-owned headless browser.",
+  "publicActualSelector": {
+    "viewers": 1,
+    "svgGroups": 60,
+    "verifiedEmbeddedBitmaps": 2,
+    "inlineScriptsOrForeignObjects": 0,
+    "renderErrors": []
+  },
+  "finalAdminReopened": true,
+  "finalSavedSnapshotSha256": "148ca478bdf4124b36d91be09ea8e1b589d4bf0a4809bbf07c3b1ce31a2dca68",
+  "originalLocalAcceptanceCompletedAt": "2026-10-20T12:50:07.224268+00:00"
+}

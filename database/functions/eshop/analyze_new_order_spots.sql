@@ -9,7 +9,7 @@ DECLARE
   v_conflicts jsonb;
   v_new_order_items jsonb;
   v_occasion_id BIGINT;
-  v_total numeric; v_currency text;
+  v_total numeric; v_currency text; v_order_form jsonb;
 BEGIN
   -- =======================================================================
   -- 0. VALIDATION & SECURITY
@@ -130,10 +130,16 @@ BEGIN
 
   IF (SELECT count(DISTINCT item->>'currency') FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item)>1 THEN RAISE EXCEPTION 'BLUEPRINT_CURRENCY_MISMATCH'; END IF;
   SELECT coalesce(sum((item->>'price')::numeric),0),min(item->>'currency') INTO v_total,v_currency FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item;
+  SELECT jsonb_build_object('key',f.key,'phone_prefixes',public.get_effective_form_data(f.id)->'phone_prefixes',
+    'fields',coalesce((SELECT jsonb_agg(to_jsonb(ff) ORDER BY coalesce(ff."order",0),ff.id)
+      FROM public.form_fields ff WHERE ff.form=f.id AND ff.is_required=true
+      AND ff.is_hidden=false AND ff.type NOT IN ('ticket','spot','product_type')),'[]'::jsonb))
+    INTO v_order_form FROM public.forms f WHERE f.occasion=v_occasion_id AND f.is_open=true
+    ORDER BY f.type='ticket' DESC,f.id DESC LIMIT 1;
   RETURN jsonb_build_object(
     'conflicts', COALESCE(v_conflicts, '[]'::jsonb),
     'new_order_items', COALESCE(v_new_order_items, '[]'::jsonb),
-    'total_price',v_total,'currency',v_currency
+    'total_price',v_total,'currency',v_currency,'order_form',v_order_form
   );
 END;
 $$;

@@ -1,3 +1,5 @@
+import 'package:fstapp/components/blueprint/blueprint_font_selection.dart';
+import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/widgets.dart';
@@ -32,6 +34,7 @@ BlueprintLayoutSnapshot snapshot() => BlueprintLayoutSnapshot(
         title: 'Hall',
         revision: 2,
         document: VenueLayoutDocument(nodes: [
+          LayoutNode(id: group, kind: 'group'),
           LayoutNode(id: node, kind: 'seat', x: 100, y: 100, label: 'A')
         ]),
         seatBindings: {
@@ -65,6 +68,399 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
       'areaBindings': []
     };
 void main() {
+  test(
+      'font family change drops unsupported bold italic but preserves independent fonts',
+      () {
+    const oldId = '10000000-0000-4000-8000-000000000010';
+    const plainId = '10000000-0000-4000-8000-000000000011';
+    final families = <String, dynamic>{
+      oldId: {
+        'faces': {'400:normal': 'old-regular', '700:italic': 'old-bold-italic'}
+      },
+      plainId: {
+        'faces': {'400:normal': 'plain-regular'}
+      }
+    };
+    final a = LayoutNode(id: newLayoutId(), kind: 'text', properties: const {
+      'text': 'A'
+    }, style: const {
+      'label': {'fontFamilyId': oldId, 'weight': 700, 'italic': true}
+    });
+    final b = LayoutNode(
+        id: newLayoutId(),
+        kind: 'text',
+        properties: const {'text': 'B'},
+        style: a.style);
+    final before = VenueLayoutDocument(nodes: [a, b]);
+    final chosen = setNodeStyleLeaf(before, a.id, ['label', 'fontFamilyId'],
+        value: plainId);
+    final next =
+        normalizeBlueprintFontSelection(before, chosen, families, nodeId: a.id);
+    final label = resolveNodeAppearance(next, next.nodes.first).label;
+    expect(label['weight'], 400);
+    expect(label['italic'], false);
+    expect(resolvedLayoutFontFace(label, families), 'plain-regular');
+    expect(next.nodes.last.toJson(), b.toJson());
+    final italicAvailable = <String, dynamic>{
+      ...families,
+      plainId: {
+        'faces': {'400:normal': 'plain-regular', '400:italic': 'plain-italic'}
+      }
+    };
+    final withItalic = normalizeBlueprintFontSelection(
+        before, chosen, italicAvailable,
+        nodeId: a.id);
+    final italicLabel =
+        resolveNodeAppearance(withItalic, withItalic.nodes.first).label;
+    expect(italicLabel['weight'], 400);
+    expect(italicLabel['italic'], true);
+    expect(
+        resolvedLayoutFontFace(italicLabel, italicAvailable), 'plain-italic');
+  });
+  test(
+      'document font choice normalizes inherited kind faces and keeps supported bold',
+      () {
+    const oldId = '10000000-0000-4000-8000-000000000010';
+    const plainId = '10000000-0000-4000-8000-000000000011';
+    final families = <String, dynamic>{
+      oldId: {
+        'faces': {'400:normal': 'old-regular', '700:italic': 'old-bold-italic'}
+      },
+      plainId: {
+        'faces': {'400:normal': 'plain-regular'}
+      }
+    };
+    final table = LayoutNode(
+        id: newLayoutId(), kind: 'table', label: 'T', x: 100, y: 100);
+    final before = VenueLayoutDocument(nodes: [
+      table
+    ], styles: const {
+      'label': {'fontFamilyId': oldId, 'weight': 700, 'italic': true},
+      'kinds': {
+        'table': {
+          'label': {'weight': 700}
+        }
+      }
+    });
+    final chosen = setDocumentLabelLeaf(before, 'fontFamilyId', value: plainId);
+    final next = normalizeBlueprintFontSelection(before, chosen, families,
+        appearanceKind: 'document');
+    final label = resolveNodeAppearance(next, table).label;
+    expect(resolvedLayoutFontFace(label, families), 'plain-regular');
+    expect((next.styles['label'] as Map)['weight'], 400);
+    expect((next.styles['kinds']['table']['label'] as Map)['weight'], 400);
+    final unchanged = normalizeBlueprintFontSelection(before, before, families,
+        appearanceKind: 'document');
+    expect(resolveNodeAppearance(unchanged, table).label['weight'], 700);
+    expect(resolveNodeAppearance(unchanged, table).label['italic'], true);
+  });
+
+  test('new row seats retain generated row-letter commercial titles', () {
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+          blueprintId: 1,
+          occasionId: 1,
+          title: 'Rows',
+          revision: 1,
+          document: VenueLayoutDocument.empty(),
+        ),
+        products: [
+          ProductModel(
+              id: 1,
+              title: 'Seat',
+              price: 100,
+              productTypeString: ProductModel.spotType)
+        ]);
+    final c = BlueprintLayoutController(source: source);
+    addTearDown(c.dispose);
+    final rows = rowLayout(rows: 2, seatsPerRow: 3);
+    expect(c.layout.apply(rows, label: 'Add rows'), true);
+    expect(c.snapshot.seatBindings.values.map((s) => s.title).toSet(),
+        {'1A', '1B', '1C', '2A', '2B', '2C'});
+    c.layout.undo();
+    expect(c.snapshot.seatBindings, isEmpty);
+    c.layout.redo();
+    expect(c.snapshot.seatBindings.values.map((s) => s.title).toSet(),
+        {'1A', '1B', '1C', '2A', '2B', '2C'});
+  });
+
+  test(
+      'standing capacity is explicit undoable frozen inventory intent including zero',
+      () async {
+    final id = newLayoutId();
+    final area =
+        BlueprintAreaBinding(nodeId: id, inventoryContextId: 3, productId: 9);
+    final requests = <Map<String, dynamic>>[];
+    var revision = 2;
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 4,
+            occasionId: 8,
+            title: 'Hall',
+            revision: 2,
+            document: VenueLayoutDocument(nodes: [
+              LayoutNode(
+                  id: id,
+                  kind: 'capacityArea',
+                  x: 400,
+                  y: 300,
+                  width: 200,
+                  height: 100,
+                  properties: {'capacity': 0})
+            ]),
+            seatBindings: {},
+            groupProducts: {},
+            areaBindings: {id: area}),
+        areaAvailability: {
+          id: {'capacity': 30, 'available': 12}
+        },
+        products: [
+          ProductModel(id: 9, title: 'Standing', price: 80)
+        ]);
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
+    final c = BlueprintLayoutController(
+        source: source,
+        saver: BlueprintLayoutSaver(Commands((input) async {
+          requests.add(input);
+          return {
+            ...accepted(input),
+            'layout_revision': ++revision,
+            'areaBindings': input['areaBindingChanges']
+          };
+        })));
+    addTearDown(c.dispose);
+    expect(c.areaCapacity(id), 30);
+    expect(c.isDirty, isFalse);
+    c.setAreaCapacity(id, 0);
+    expect(c.areaCapacity(id), 0);
+    expect(c.isDirty, isTrue);
+    c.layout.undo();
+    expect(c.areaCapacity(id), 30);
+    expect(c.isDirty, isFalse);
+    c.layout.redo();
+    expect(c.areaCapacity(id), 0);
+    await c.save();
+    expect(requests.last['areaBindingChanges'][0]['capacity'], 0);
+    c.layout.undo();
+    expect(c.areaCapacity(id), 30);
+    await c.save();
+    expect(requests.last['areaBindingChanges'][0]['capacity'], 30);
+    final captured = c.snapshot, capacities = c.areaCapacities;
+    c.setAreaCapacity(id, 40);
+    await c.save(captured: captured, capturedAreaCapacities: capacities);
+    expect(
+        (requests.last['areaBindingChanges'][0] as Map).containsKey('capacity'),
+        isFalse);
+    expect(c.areaCapacity(id), 40);
+    expect(c.isDirty, isTrue);
+  });
+
+  test(
+      'new table inherits a priced product and explicit whole-table assignment replaces exceptions only in draft',
+      () {
+    final base = snapshot();
+    var saves = 0;
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: base, products: [
+          for (final id in [1, 2])
+            ProductModel(
+                id: id,
+                title: 'P$id',
+                price: id * 100.0,
+                productTypeString: ProductModel.spotType)
+        ]),
+        saver: BlueprintLayoutSaver(Commands((input) async {
+          saves++;
+          return accepted(input);
+        })));
+    addTearDown(c.dispose);
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        label: 'New table',
+        x: 600,
+        y: 400,
+        width: 220,
+        height: 160,
+        surface: const {'type': 'rect'});
+    final a = LayoutNode(
+        id: newLayoutId(), kind: 'seat', parentId: table.id, x: 0, y: -120);
+    final b = LayoutNode(
+        id: newLayoutId(), kind: 'seat', parentId: table.id, x: 0, y: 120);
+    expect(
+        c.layout.apply(c.layout.document
+            .copyWith(nodes: [...c.layout.document.nodes, table, a, b])),
+        isTrue);
+    expect(c.snapshot.groupProducts[table.id], 1);
+    expect(c.snapshot.seatBindings[a.id]!.productId, 1);
+    expect(c.snapshot.seatBindings[a.id]!.productAssignmentMode, 'inherit');
+    c.assignSeatProduct(a.id, 2);
+    c.applyGroupProduct(table.id, 1, replaceOverrides: true);
+    expect(c.snapshot.seatBindings[a.id]!.productId, 1);
+    expect(c.snapshot.seatBindings[a.id]!.productAssignmentMode, 'inherit');
+    expect(c.snapshot.seatBindings[b.id]!.productId, 1);
+    expect(saves, 0);
+    expect(c.isDirty, isTrue);
+    c.layout.undo();
+    expect(c.snapshot.seatBindings[a.id]!.productId, 2);
+    expect(c.snapshot.seatBindings[a.id]!.productAssignmentMode, 'override');
+    expect(saves, 0);
+    c.assignSeatProduct(a.id, 2);
+    expect(c.suggestedSeatProductId, 2);
+    final beforeProtected = c.snapshot.toJson();
+    c.refreshLive(BlueprintModel(
+        layoutSnapshot: base,
+        products: c.products.values.toList(),
+        spots: [BlueprintObjectModel(id: 11, type: 'spot', state: 'ordered')]));
+    expect(() => c.applyGroupProduct(group, 2, replaceOverrides: true),
+        throwsStateError);
+    expect(c.snapshot.toJson(), beforeProtected);
+    expect(saves, 0);
+  });
+
+  test(
+      'default product suggestion uses latest priced spot catalog product when no seats exist',
+      () {
+    final base = BlueprintLayoutSnapshot(
+        blueprintId: 4,
+        occasionId: 8,
+        title: 'Empty',
+        revision: 2,
+        document: VenueLayoutDocument.empty());
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: base, products: [
+          ProductModel(
+              id: 1,
+              title: 'Old',
+              price: 100,
+              productTypeString: ProductModel.spotType,
+              createdAt: DateTime(2026, 1)),
+          ProductModel(
+              id: 2,
+              title: 'New',
+              price: 200,
+              productTypeString: ProductModel.spotType,
+              createdAt: DateTime(2026, 2)),
+          ProductModel(
+              id: 3,
+              title: 'Food',
+              price: 200,
+              productTypeString: ProductModel.foodType,
+              createdAt: DateTime(2026, 3)),
+          ProductModel(
+              id: 4,
+              title: 'Unpriced',
+              productTypeString: ProductModel.spotType,
+              createdAt: DateTime(2026, 4)),
+        ]),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    expect(c.suggestedSeatProductId, 2);
+    final table = LayoutNode(
+        id: newLayoutId(),
+        kind: 'table',
+        x: 300,
+        y: 300,
+        width: 220,
+        height: 160,
+        surface: const {'type': 'rect'});
+    expect(c.layout.apply(c.layout.document.copyWith(nodes: [table])), isTrue);
+    expect(c.snapshot.groupProducts[table.id], 2);
+  });
+
+  test('live occupancy rejects old business undo without popping history', () {
+    final base = snapshot();
+    final products = [
+      for (final id in [1, 2])
+        ProductModel(
+            id: id,
+            title: 'P$id',
+            price: 100,
+            productTypeString: ProductModel.spotType)
+    ];
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: base, products: products),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    c.assignSeatProduct(node, 2);
+    final acceptedSnapshot = c.snapshot.toJson();
+    c.refreshLive(BlueprintModel(
+        layoutSnapshot: base,
+        products: products,
+        spots: [BlueprintObjectModel(id: 11, type: 'spot', state: 'ordered')]));
+    c.layout.undo();
+    expect(c.snapshot.toJson(), acceptedSnapshot);
+    expect(c.layout.canUndo, isTrue);
+    expect(c.layout.canRedo, isFalse);
+    expect(c.layout.error, 'protected_spot');
+    c.refreshLive(
+        BlueprintModel(layoutSnapshot: base, products: products, spots: []));
+    c.layout.undo();
+    expect(c.snapshot.seatBindings[node]!.productId, 1);
+    expect(c.layout.canRedo, isTrue);
+  });
+
+  test(
+      'explicit attach adopts target default atomically while a visual reparent preserves commercial intent',
+      () {
+    final secondGroup = newLayoutId(), table = newLayoutId();
+    final base = snapshot().copyWith(
+        document: VenueLayoutDocument(schemaVersion: 2, nodes: [
+          LayoutNode(id: group, kind: 'group'),
+          LayoutNode(id: secondGroup, kind: 'group'),
+          LayoutNode(
+              id: table,
+              kind: 'table',
+              parentId: secondGroup,
+              x: 700,
+              y: 400,
+              width: 300,
+              height: 180,
+              surface: {'type': 'rect'}),
+          LayoutNode(id: node, kind: 'seat', x: 200, y: 200, label: 'A'),
+        ]),
+        groupProducts: {group: 1, secondGroup: 2});
+    final products = [
+      for (final id in [1, 2])
+        ProductModel(
+            id: id,
+            title: 'P$id',
+            price: 100,
+            productTypeString: ProductModel.spotType)
+    ];
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(layoutSnapshot: base, products: products),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    c.layout.updateNode(c.layout.document.nodes
+        .firstWhere((n) => n.id == node)
+        .copyWith(parentId: table, x: 0, y: -132));
+    expect(c.layout.error, isNull);
+    expect(c.snapshot.seatBindings[node]!.groupNodeId, group);
+    expect(c.snapshot.seatBindings[node]!.productId, 1);
+    c.layout.undo();
+    expect(c.layout.attachChairToTable(node, table), isTrue,
+        reason: c.layout.error);
+    expect(c.snapshot.seatBindings[node]!.groupNodeId, secondGroup);
+    expect(c.snapshot.seatBindings[node]!.productId, 2);
+    expect(c.snapshot.seatBindings[node]!.productAssignmentMode, 'inherit');
+    c.layout.undo();
+    expect(c.snapshot.seatBindings[node]!.groupNodeId, group);
+    expect(c.snapshot.seatBindings[node]!.productAssignmentMode, 'override');
+    c.refreshLive(BlueprintModel(
+        layoutSnapshot: base,
+        products: products,
+        spots: [BlueprintObjectModel(id: 11, type: 'spot', state: 'ordered')]));
+    c.layout.redo();
+    expect(c.snapshot.seatBindings[node]!.productId, 1);
+    expect(c.layout.canRedo, isTrue);
+    expect(c.layout.error, 'protected_spot');
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   test('save highlights overlap before reporting missing products', () async {
     final other = newLayoutId();
@@ -111,7 +507,12 @@ void main() {
         document: VenueLayoutDocument(nodes: [
           LayoutNode(id: groupA, kind: 'group', label: 'A', x: 300, y: 300),
           LayoutNode(id: groupB, kind: 'group', label: 'B', x: 600, y: 300),
-          LayoutNode(id: tableA, kind: 'table', parentId: groupA, label: 'A'),
+          LayoutNode(
+              id: tableA,
+              kind: 'table',
+              surface: {'type': 'rect'},
+              parentId: groupA,
+              label: 'A'),
           LayoutNode(
               id: inheritedA, kind: 'seat', parentId: groupA, label: 'A1'),
           LayoutNode(
@@ -130,6 +531,7 @@ void main() {
         seatBindings: {
           inheritedA: BlueprintSeatBinding(
               nodeId: inheritedA,
+              productAssignmentMode: 'inherit',
               spotId: 11,
               groupNodeId: groupA,
               productId: 1,
@@ -142,6 +544,7 @@ void main() {
               title: 'A2'),
           inheritedB: BlueprintSeatBinding(
               nodeId: inheritedB,
+              productAssignmentMode: 'inherit',
               spotId: 13,
               groupNodeId: groupB,
               productId: 1,
@@ -156,7 +559,9 @@ void main() {
             productTypeString: ProductModel.spotType)
     ];
     final c = BlueprintLayoutController(
-        source: BlueprintModel(layoutSnapshot: base, products: products));
+        source: BlueprintModel(layoutSnapshot: base, products: products),
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
     addTearDown(c.dispose);
     c.applyGroupsProduct({groupA, groupB}, 3);
     expect(c.snapshot.groupProducts, {groupA: 3, groupB: 3});
@@ -164,9 +569,11 @@ void main() {
     expect(c.snapshot.seatBindings[inheritedB]!.productId, 3);
     expect(c.snapshot.seatBindings[overrideA]!.productId, 2);
     expect(c.layout.document, same(base.document));
-    final payload =
-        BlueprintLayoutSaveRequest(snapshot: c.snapshot, baseline: base)
-            .toJson();
+    final payload = BlueprintLayoutSaveRequest(
+            snapshot: c.snapshot,
+            baseline: base,
+            resources: blueprintPreparedResourcesFixture(c.snapshot.document))
+        .toJson();
     expect((payload['groupProductChanges'] as List).length, 2);
     c.layout.undo();
     expect(c.snapshot.groupProducts, base.groupProducts);
@@ -208,6 +615,7 @@ void main() {
           LayoutNode(
               id: table,
               kind: 'table',
+              surface: {'type': 'rect'},
               parentId: group,
               x: 100,
               y: 100,
@@ -334,7 +742,7 @@ void main() {
         const BlueprintAreaBinding(
             nodeId: 'standing', inventoryContextId: 3, productId: 9),
         2,
-        available: 5);
+        available: 5, product: ProductModel(id: 9, title: 'Standing', price: 80, currencyCode: 'CZK'));
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
     expect(
@@ -398,6 +806,7 @@ void main() {
     const parent = '10000000-0000-4000-8000-000000000003';
     final source = snapshot().copyWith(
         document: VenueLayoutDocument(nodes: [
+          LayoutNode(id: group, kind: 'group'),
           LayoutNode(id: parent, kind: 'group'),
           LayoutNode(id: node, kind: 'seat', parentId: parent, x: 100, y: 100)
         ]),
@@ -411,6 +820,24 @@ void main() {
     expect(controller.snapshot.seatBindings[node]!.groupNodeId, group);
     expect(controller.effectiveProductId(node), 1);
     expect(controller.snapshot.seatBindings[node]!.title, 'A');
+  });
+
+  test('standing uses bound blueprint catalog without duplicate form product fields', () {
+    final key=GlobalKey<FormBuilderState>();
+    final tickets=TicketHolder(fieldType:'ticket',maxTickets:5,id:99,fields:[]);
+    final holder=FormHolder(fields:[tickets],isCardDesign:false)..controller=FormHolderController(globalKey:key);
+    final form=FormSession(form:FormBundle(definition:FormDefinition()),formHolder:holder,formKey:key);
+    addTearDown(form.dispose);
+    const area=BlueprintAreaBinding(nodeId:'standing',inventoryContextId:3,productId:9);
+    final product=ProductModel(id:9,title:'Bound standing',price:80,currencyCode:'CZK');
+    form.setAreaQuantity(area,2,available:3,product:product);
+    final payload=FormHelper.getFieldData(key,tickets) as List;
+    expect(payload.length,2);
+    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id,'9');
+    expect(form.totalPrice,160);
+    expect(()=>form.setAreaQuantity(area,1,available:3,product:ProductModel(id:10,price:80)),throwsStateError);
+    form.setAreaQuantity(area,0,available:0,product:null);
+    expect(tickets.tickets,isEmpty);
   });
 
   test(
@@ -438,16 +865,17 @@ void main() {
     addTearDown(form.dispose);
     const area = BlueprintAreaBinding(
         nodeId: 'standing', inventoryContextId: 3, productId: 9);
-    form.setAreaQuantity(area, 2, available: 3);
+    final boundProduct=ProductModel(id: 9,title:'Standing',price:80,currencyCode:'CZK');
+    form.setAreaQuantity(area, 2, available: 3, product: boundProduct);
     final payload = FormHelper.getFieldData(key, tickets) as List;
     expect(payload.length, 2);
-    expect(payload[0]['fields'][0]['product_type'], same(option));
+    expect((payload[0]['fields'][0]['product_type'] as FormOptionProductModel).id, option.id);
     expect(form.totalPrice, 160);
     form.updateSeats([]);
     expect(tickets.tickets.length, 2);
-    form.setAreaQuantity(area, 1, available: 3);
+    form.setAreaQuantity(area, 1, available: 3, product: boundProduct);
     expect(form.totalPrice, 80);
-    expect(() => form.setAreaQuantity(area, 4, available: 3), throwsStateError);
+    expect(() => form.setAreaQuantity(area, 4, available: 3, product: boundProduct), throwsStateError);
     expect(tickets.tickets.length, 1);
   });
 
@@ -474,8 +902,12 @@ void main() {
           spotProduct: 2,
           state: 'ordered'),
     ]);
-    final first = convertLegacyBlueprint(original),
-        second = convertLegacyBlueprint(original);
+    final first = convertLegacyBlueprint(original,
+                fontFamilies: blueprintFontRegistryFixture())
+            .snapshot,
+        second = convertLegacyBlueprint(original,
+                fontFamilies: blueprintFontRegistryFixture())
+            .snapshot;
     expect(first.seatBindings.keys, second.seatBindings.keys);
     expect(first.seatBindings.values.map((s) => s.spotId), [11, 12]);
     expect(first.groupProducts, isEmpty);
@@ -560,15 +992,19 @@ void main() {
     expect(controller.effectiveProductId(node), 1);
     expect(controller.products[2]!.title, 'Updated');
     final saving = controller.save();
-    controller.layout.apply(controller.layout.document.copyWith(
-        nodes: [controller.layout.document.nodes.single.copyWith(x: 180)]));
+    controller.layout.apply(controller.layout.document.copyWith(nodes: [
+      for (final n in controller.layout.document.nodes)
+        n.id == node ? n.copyWith(x: 180) : n
+    ]));
     response.complete(accepted(submitted));
     await saving;
-    expect(controller.layout.document.nodes.single.x, 180);
+    expect(controller.layout.document.nodes.firstWhere((n) => n.id == node).x,
+        180);
     expect(controller.snapshot.revision, 3);
     expect(controller.isDirty, isTrue);
     controller.cancel();
-    expect(controller.layout.document.nodes.single.x, 100);
+    expect(controller.layout.document.nodes.firstWhere((n) => n.id == node).x,
+        100);
     expect(controller.products[2]!.title, 'Updated');
     expect(controller.isDirty, isFalse);
   });
@@ -605,17 +1041,67 @@ void main() {
     final binding = c.snapshot.seatBindings[node]!;
     final document = c.layout.document;
     expect(
-        c.layout.apply(
-            document.copyWith(nodes: [document.nodes.single.copyWith(x: 180)])),
+        c.layout.apply(document.copyWith(nodes: [
+          for (final n in document.nodes) n.id == node ? n.copyWith(x: 180) : n
+        ])),
         isTrue);
     expect(identical(c.snapshot.seatBindings[node], binding), isTrue);
     expect(c.snapshot.seatBindings[node]!.spotId, 11);
     expect(
         c.layout.apply(c.layout.document.copyWith(nodes: [
-          c.layout.document.nodes.single.copyWith(label: 'Renamed')
+          for (final n in c.layout.document.nodes)
+            n.id == node ? n.copyWith(label: 'Renamed') : n
         ])),
         isTrue);
     expect(c.snapshot.seatBindings[node]!.title, 'Renamed');
+  });
+  test('bulk blocking is atomic undoable and rejects a protected sofa member',
+      () {
+    final doc = couchLayout(count: 2);
+    final root = doc.nodes.firstWhere(isCouchNode);
+    final seats = doc.nodes.where((n) => n.kind == 'seat').toList();
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+          blueprintId: 1,
+          occasionId: 8,
+          title: 'Hall',
+          revision: 2,
+          document: doc,
+          seatBindings: {
+            for (var i = 0; i < seats.length; i++)
+              seats[i].id: BlueprintSeatBinding(
+                  nodeId: seats[i].id,
+                  spotId: 11 + i,
+                  productId: 1,
+                  groupNodeId: root.id)
+          },
+          groupProducts: {root.id: 1},
+        ),
+        products: [
+          ProductModel(
+              id: 1,
+              title: 'Seat',
+              price: 100,
+              productTypeString: ProductModel.spotType)
+        ],
+        spots: [
+          BlueprintObjectModel(id: 11, state: 'available'),
+          BlueprintObjectModel(id: 12, state: 'available')
+        ]);
+    final c = BlueprintLayoutController(
+        source: source,
+        saver:
+            BlueprintLayoutSaver(Commands((input) async => accepted(input))));
+    addTearDown(c.dispose);
+    c.setBlockedForSeats({seats.first.id}, true);
+    expect(c.snapshot.seatBindings.values.every((s) => s.blocked), isTrue);
+    c.layout.undo();
+    expect(c.snapshot.seatBindings.values.every((s) => !s.blocked), isTrue);
+    expect(c.layout.canUndo, isFalse);
+    c.adapter.spots[12]!.setSeatState(BlueprintSeatState.selected);
+    expect(
+        () => c.setBlockedForSeats({seats.first.id}, true), throwsStateError);
+    expect(c.snapshot.seatBindings.values.every((s) => !s.blocked), isTrue);
   });
   test('live holds protect products while movement retains spot identity', () {
     final controller = BlueprintLayoutController(
@@ -632,9 +1118,14 @@ void main() {
             BlueprintLayoutSaver(Commands((input) async => accepted(input))));
     addTearDown(controller.dispose);
     expect(() => controller.assignSeatProduct(node, 1), throwsStateError);
-    expect(() => controller.applyGroupProduct(group, 1), throwsStateError);
-    controller.layout.apply(controller.layout.document.copyWith(
-        nodes: [controller.layout.document.nodes.single.copyWith(x: 180)]));
+    controller.applyGroupProduct(group, 1);
+    expect(controller.snapshot.seatBindings[node]!.productAssignmentMode,
+        'override');
+    expect(controller.snapshot.seatBindings[node]!.productId, 1);
+    controller.layout.apply(controller.layout.document.copyWith(nodes: [
+      for (final n in controller.layout.document.nodes)
+        n.id == node ? n.copyWith(x: 180) : n
+    ]));
     expect(controller.snapshot.seatBindings[node]!.spotId, 11);
     expect(
         controller.layout.apply(controller.layout.document.copyWith(nodes: [])),

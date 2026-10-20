@@ -17,6 +17,8 @@ void main() {
     const reviewedPath = String.fromEnvironment('BLUEPRINT_LEGACY_REVIEWED');
     const nativePath = String.fromEnvironment('BLUEPRINT_LEGACY_NATIVE');
     const fontsPath = String.fromEnvironment('BLUEPRINT_LEGACY_FONTS');
+    const requestsPath=String.fromEnvironment('BLUEPRINT_LEGACY_REQUESTS_OUTPUT');
+    final requests=<String,Map<String,dynamic>>{};
     if (inputPath.isEmpty || assetsPath.isEmpty || outputPath.isEmpty) {
       throw StateError('Explicit private input, processed assets and output required');
     }
@@ -25,6 +27,10 @@ void main() {
     final reviewed = jsonDecode(File(reviewedPath).readAsStringSync()) as Map;
     final assets = (jsonDecode(File(assetsPath).readAsStringSync()) as Map)['assets'] as Map;
     final fontResources = Map<String, dynamic>.from(jsonDecode(File(fontsPath).readAsStringSync()) as Map);
+    final catalog = jsonDecode(File('supabase/functions/_shared/ticket-assets/font-catalog.json').readAsStringSync()) as Map;
+    final families = {for (final family in catalog['families'] as List)
+      family['id'] as String: Map<String, dynamic>.from(family as Map)};
+    if (fontResources['protocol'] != 2) throw StateError('canonical_text_resources_required');
     final nativePlans = (jsonDecode(File(nativePath).readAsStringSync()) as Map)['blueprints'] as Map;
     final records = (input['blueprints'] as List).cast<Map>();
     expect(records.length, input['allBlueprintCount']);
@@ -37,8 +43,9 @@ void main() {
       final assetEntry = assets['$id'] as Map?;
       final model = BlueprintModel.fromLegacyJson(source);
       final nativePlan = nativePlans['$id'] == null ? null : Map<String, dynamic>.from(nativePlans['$id'] as Map);
-      final result = convertLegacyBlueprint(model,
+      final conversion = convertLegacyBlueprint(model, fontFamilies: families,
           nativePlan: nativePlan, reviewedSourceSha256: source['conversionSourceSha256'] as String);
+      final result = conversion.snapshot;
       final sourceSpots = (source['spots'] as List? ?? const []).cast<Map>();
       final sourceById = {for (final spot in sourceSpots) spot['id']: spot};
       expect(result.seatBindings.values.map((s) => s.spotId).toSet(), sourceById.keys.toSet(), reason: 'stable identities blueprint$id');
@@ -54,12 +61,38 @@ void main() {
         final originalPoints = raw['points'] ?? (raw['properties'] as Map?)?['points'];
         expect(result.document.nodes.any((n) => n.kind == 'shape' && n.properties['shape'] == 'polyline' && jsonEncode(n.properties['points']) == jsonEncode(originalPoints)), isTrue, reason: 'exact zigzag endpoints blueprint$id');
       }
-      expect(compileScene(result.document, resources: fontResources)['issues'], isEmpty, reason: 'real font and scene blueprint$id');
+      if(requestsPath.isEmpty) {expect(compileScene(result.document,resources:fontResources)['issues'],isEmpty,reason:'real font and scene blueprint$id');}
+      else {for(final request in collectTextRequests(result.document,families,includePresets:true).values)requests[request.id]=request.toJson();}
       for (final table in result.document.nodes.where((n) => n.kind == 'table')) {
         final expectedFill = const {22:'#574569FF',32:'#574569FF',87:'#574569FF',25:'#FFFFFFFF',33:'#FFFFFFFF',59:'#FFFFFFFF',27:'#D4D4D4FF',91:'#D4D4D4FF'}[id] ?? '#D0D5C9FF';
         expect(effectiveNodeProperties(result.document, table)['fill'], expectedFill);
-        expect(effectiveNodeProperties(result.document, table)['cornerRadius'], 8);
+        expect(effectiveNodeProperties(result.document, table)['cornerRadius'], 8, reason: 'blueprint$id styles=${result.document.styles} local=${table.style}');
         expect(effectiveNodeProperties(result.document, table)['stroke'], '#000000FF');
+      }
+      // Semantic names must survive appearance normalization. SVG labels that
+      // are already separate text nodes remain separate and are not duplicated.
+      final expectedTableLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'table')
+          .map((node) => node['label'] ?? (node['properties'] as Map?)?['label'])
+          .whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
+      final actualTableLabels = result.document.nodes.where((node) => node.kind == 'table')
+          .map((node) => node.label).whereType<String>().where((label) => label.isNotEmpty).toList()..sort();
+      expect(actualTableLabels, expectedTableLabels, reason: 'authored table names blueprint$id');
+      final expectedTextLabels = (nativePlan?['nodes'] as List? ?? const []).cast<Map>()
+          .where((node) => node['kind'] == 'text')
+          .map((node) => node['text'] ?? node['label'] ?? (node['properties'] as Map?)?['text'] ?? (node['properties'] as Map?)?['label'] ?? '')
+          .toList()..sort((a,b)=>a.toString().compareTo(b.toString()));
+      final actualTextLabels = result.document.nodes.where((node) => node.kind == 'text')
+          .map((node) => node.label ?? '').toList()..sort();
+      expect(actualTextLabels, expectedTextLabels, reason: 'existing artwork labels neither lost nor duplicated blueprint$id');
+      for (final table in result.document.nodes.where((node) => node.kind == 'table' && (node.label?.isNotEmpty ?? false))) {
+        final request = nodeTextRequest(result.document, table, families).toJson();
+        expect(request['align'], 'center', reason: 'default horizontal table centering blueprint$id');
+        expect(request['fit'], 'shrink', reason: 'automatic vertical centered label box blueprint$id');
+        for (final entry in (nativePlan?['tableLabelStyle'] as Map? ?? const {}).entries) {
+          expect(resolveNodeAppearance(result.document, table).label[entry.key], entry.value, reason: 'reviewed typography blueprint$id');
+          expect((table.style?['label'] as Map? ?? const {}).containsKey(entry.key), isFalse, reason: 'kind style inheritance blueprint$id');
+        }
       }
       if (nativePlan != null) nativeCount++;
       tables += result.document.nodes.where((n) => n.kind == 'table').length;
@@ -71,18 +104,18 @@ void main() {
         expect(world[4], closeTo((old['x'] as num) * 48 + 24, .005));
         expect(world[5], closeTo((old['y'] as num) * 48 + 24, .005));
       }
-      expect(result.document.appearance['seat'], layoutAppearancePresets['Original']!.seats);
+      expect(result.document.styles['kinds']?['seat'], layoutAppearancePresets['Original']!.seats);
       expect(result.document.nodes.where((n) => n.kind == 'seat').every((n) => n.properties['shape'] == 'roundedRect'), true);
       final reopened = VenueLayoutDocument.fromJson(result.document.toJson());
       expect(reopened.toJson(), result.document.toJson(), reason: 'canonical roundtrip blueprint$id');
-      expect(convertLegacyBlueprint(model, nativePlan: nativePlan, reviewedSourceSha256: source['conversionSourceSha256'] as String).document.toJson(), result.document.toJson(), reason: 'deterministic blueprint$id');
+      expect(convertLegacyBlueprint(model, fontFamilies: families, nativePlan: nativePlan, reviewedSourceSha256: source['conversionSourceSha256'] as String).snapshot.document.toJson(), result.document.toJson(), reason: 'deterministic blueprint$id');
       expect(jsonEncode(source), before, reason: 'source immutable blueprint$id');
-      final request = BlueprintLayoutSaveRequest(snapshot: result,
-          baseline: result.copyWith(seatBindings: {}, groupProducts: {})).toJson();
+      final request=requestsPath.isEmpty?BlueprintLayoutSaveRequest(snapshot:result,baseline:result.copyWith(seatBindings:{},groupProducts:{}),resources:fontResources).toJson():{'layout':result.document.toJson()};
       final layoutBytes = utf8.encode(jsonEncode(result.document.toJson()));
       converted.add({
         'blueprintId': id, 'occasionId': source['occasion'], 'organizationId': source['organization'],
         'sourceSha256': source['conversionSourceSha256'],
+        'importReceipt': conversion.receipt,
         'reviewedSourceText': reviewed['$id'],
         'layoutSha256': sha256.convert(layoutBytes).toString(),
         'appearancePreset': 'Original', 'appearanceName': 'Basic',
@@ -99,11 +132,12 @@ void main() {
       'allBlueprintCount': records.length, 'convertedCount': converted.length,
       'stableSpotCount': seats, 'unassignedSpotCount': unassigned,
       'backgroundCount': backgrounds, 'nativeArtworkCount': nativeCount, 'nativeTableCount': tables, 'emptyBlueprintCount': empty,
-      'productionApplied': false, 'blueprints': converted,
+      'productionApplied':false,'textPreparationPending':requestsPath.isNotEmpty,'blueprints':converted,
     };
     File(outputPath).writeAsStringSync(jsonEncode(output));
+    if(requestsPath.isNotEmpty)File(requestsPath).writeAsStringSync(jsonEncode(requests.values.toList()));
     expect(converted.length, records.length);
     // Geometry/business source only. No customer/order/hold data is imported.
-    print('PASS ${converted.length}/${records.length} canonical Basic layouts; $seats stable spots; $unassigned unassigned; $nativeCount native halls/$tables tables, $backgrounds raster backgrounds; $empty empty layouts');
+    print('${requestsPath.isEmpty?'PASS':'PREPARED GEOMETRY - TEXT PENDING'} ${converted.length}/${records.length} canonical Basic layouts; $seats stable spots; $unassigned unassigned; $nativeCount native halls/$tables tables, $backgrounds raster backgrounds; $empty empty layouts');
   });
 }

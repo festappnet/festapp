@@ -266,7 +266,6 @@ class DbForms {
     return b;
   }
 
-
   static Future<List<FormResponseModel>> getAllResponses(
       String formLink) async {
     var allFields = await getAllFormFields(formLink);

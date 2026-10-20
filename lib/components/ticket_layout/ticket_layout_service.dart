@@ -263,30 +263,25 @@ class TicketLayoutService {
             'fontId': id
           }));
 
-  /// The same registered font bytes, projected to the portable layout protocol.
-  Future<Map<String, dynamic>> layoutFont(int occasionId, String id,
-          {String characters = ''}) =>
-      _request({
-        'occasionId': occasionId,
-        'mode': 'font',
-        'fontProtocol': 2,
-        'fontId': id,
-        'outline': true,
-        'characters': characters,
-      });
+  /// Native editing uses the same immutable bytes before an occasion exists.
+  Future<TicketFontResource> fontForSetupDraft(String draftId, String id) =>
+      _cache(
+          id,
+          () => _request({
+                'setupDraftId': draftId,
+                'mode': 'font',
+                'fontProtocol': 2,
+                'fontId': id,
+              }));
 
-  /// Reuses the same font resolver before an occasion exists. The server checks
-  /// the private draft's unit and charges the same preview budget.
-  Future<Map<String, dynamic>> layoutFontForSetupDraft(
-          String draftId, String id,
-          {String characters = ''}) =>
+  Future<Map<String, dynamic>> layoutTextBatch(Map<String, dynamic> batch,
+          {int? occasionId, String? setupDraftId}) =>
       _request({
-        'setupDraftId': draftId,
-        'mode': 'font',
-        'fontProtocol': 2,
-        'fontId': id,
-        'outline': true,
-        'characters': characters,
+        if (occasionId != null) 'occasionId': occasionId,
+        if (setupDraftId != null) 'setupDraftId': setupDraftId,
+        'mode': 'layout-text',
+        'resourceProtocol': 2,
+        'batch': batch,
       });
 
   Future<bool> openTemplatePickerOnce(int occasionId, String userId,

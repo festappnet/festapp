@@ -95,9 +95,7 @@ dependencies:
   google_fonts: ^8.0.1
   file_picker: ^11.0.3
   venue_seat_picker:
-    git:
-      url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 0b881853bd9071784fd66102a03a1606a81afa79
+    path: vendor/blueprint/venue_seat_picker
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -134,10 +132,7 @@ dev_dependencies:
 # Each package documents its removal condition in FESTAPP_PATCH.md.
 dependency_overrides:
   venue_layout_core:
-    git:
-      url: https://github.com/festappnet/venue_seat_picker.git
-      ref: 0b881853bd9071784fd66102a03a1606a81afa79
-      path: packages/venue_layout_core
+    path: vendor/blueprint/venue_layout_core
   maplibre_android:
     path: packages/maplibre_android
   maplibre_ios:

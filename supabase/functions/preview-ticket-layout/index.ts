@@ -21,8 +21,8 @@ Deno.serve(req=>handlePreview(req,{
   products:id=>loadPreviewProducts(supabaseAdmin,id),
   resources:loadLayoutResources,
   font:resolveTicketFont,layout:parseRegisteredTicketLayout,
-  registerLayoutFont:async(id,outline)=>{
-    const {error}=await supabaseAdmin.rpc('register_blueprint_layout_font',{p_font_id:id,p_outline:outline});
+  registerLayoutTextResources:async(scope,resources)=>{
+    const {error}=await supabaseAdmin.rpc('register_blueprint_text_resources',{p_occasion:scope.occasionId??null,p_setup_draft:scope.setupDraftId??null,p_resources:resources});
     if(error)throw error;
   },
 }));

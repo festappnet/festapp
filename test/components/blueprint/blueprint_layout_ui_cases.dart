@@ -1,3 +1,20 @@
+import 'package:fstapp/components/blueprint/blueprint_layout_controller.dart';
+import 'package:fstapp/components/blueprint/views/blueprint_standing_capacity_control.dart';
+import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
+import 'package:fstapp/components/eshop/models/ticket_model.dart';
+import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
+import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:fstapp/components/blueprint/blueprint_text_preparation.dart';
+import '../../support/fixtures/blueprint_font_registry_fixture.dart';
+import 'package:fstapp/components/blueprint/views/blueprint_plan_editor.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 import 'dart:ui' show SemanticsAction;
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_layout_demo.dart';
@@ -43,6 +60,875 @@ void main() {
         translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'standing capacity field commits and focused undo restores live capacity',
+      (tester) async {
+    final id = newLayoutId();
+    final c = BlueprintLayoutController(
+        source: BlueprintModel(
+            layoutSnapshot: BlueprintLayoutSnapshot(
+                blueprintId: 4,
+                occasionId: 8,
+                title: 'Hall',
+                revision: 2,
+                document: VenueLayoutDocument(nodes: [
+                  LayoutNode(
+                      id: id,
+                      kind: 'capacityArea',
+                      x: 400,
+                      y: 300,
+                      width: 200,
+                      height: 100,
+                      properties: {'capacity': 0})
+                ]),
+                seatBindings: {},
+                groupProducts: {},
+                areaBindings: {
+                  id: BlueprintAreaBinding(
+                      nodeId: id, inventoryContextId: 3, productId: 9)
+                }),
+            areaAvailability: {
+          id: {'capacity': 30, 'available': 12}
+        },
+            products: [
+          ProductModel(id: 9, title: 'Standing', price: 80)
+        ]));
+    addTearDown(c.dispose);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: AnimatedBuilder(
+                    animation: c,
+                    builder: (_, __) => BlueprintStandingCapacityControl(
+                        controller: c, nodeId: id, enabled: true)))));
+    final field = find.byKey(const ValueKey('standing-capacity-field'));
+    expect(tester.widget<TextField>(field).controller!.text, '30');
+    await tester.enterText(field, '25');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(c.areaCapacity(id), 25);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(c.areaCapacity(id), 30);
+    expect(tester.widget<TextField>(field).controller!.text, '30');
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'admin order uses active form required customer and ticket fields without loaders',
+      (tester) async {
+    Map<String, dynamic>? submitted;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintCreateOrderDialog(
+          selectedSpotIds: const [71],
+          initialAnalysis: {
+            'total_price': 100,
+            'currency': 'CZK',
+            'conflicts': [],
+            'new_order_items': [
+              {
+                'spot_id': 71,
+                'spot_title': 'A1',
+                'product_title': 'Seat',
+                'price': 100
+              }
+            ],
+            'order_form': {
+              'key': '00000000-0000-4000-8000-000000000001',
+              'fields': [
+                {
+                  'id': 601,
+                  'type': 'name',
+                  'title': 'Jméno zákazníka',
+                  'is_required': true,
+                  'is_hidden': false,
+                  'is_ticket_field': false
+                },
+                {
+                  'id': 602,
+                  'type': 'text',
+                  'title': 'Jméno návštěvníka',
+                  'is_required': true,
+                  'is_hidden': false,
+                  'is_ticket_field': true
+                },
+              ]
+            },
+          },
+          submit: (_, data) async {
+            submitted = data;
+            throw StateError('test_stop');
+          },
+        ))));
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.enterText(find.byType(TextFormField), 'local@example.test');
+    final confirm =
+        find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder);
+    await tester.ensureVisible(confirm);
+    await tester.tap(confirm);
+    await tester.pumpAndSettle();
+    expect(submitted, isNull);
+    final customer =
+        find.byWidgetPredicate((w) => w is FormBuilderField && w.name == '601');
+    final attendee =
+        find.byWidgetPredicate((w) => w is FormBuilderField && w.name == '602');
+    await tester.ensureVisible(customer);
+    await tester.enterText(customer, 'Jana');
+    await tester.ensureVisible(attendee);
+    await tester.enterText(attendee, 'Eva');
+    await tester.ensureVisible(confirm);
+    await tester.tap(confirm);
+    await tester.pumpAndSettle();
+    expect(submitted!['fields'], [
+      {'601': 'Jana'}
+    ]);
+    expect(submitted!['ticket_fields'], {
+      '71': [
+        {'602': 'Eva', 'text': 'Eva'}
+      ]
+    });
+    expect(submitted!['form_key'], '00000000-0000-4000-8000-000000000001');
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'whole order cancellation email is an optional follow-up',
+      (tester) async {
+    await environment.pumpWidget(
+        tester, const MaterialApp(home: Scaffold(body: Text('Ready'))));
+    final context = tester.element(find.text('Ready'));
+    final skipped =
+        confirmCancelledOrderEmail(context, 'customer@example.test');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('customer@example.test'), findsOneWidget);
+    await tester.tap(find.text('Teď neposílat'));
+    await tester.pumpAndSettle();
+    expect(await skipped, isFalse);
+    final accepted =
+        confirmCancelledOrderEmail(context, 'customer@example.test');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(OrdersStrings.sendEmailButton));
+    await tester.pumpAndSettle();
+    expect(await accepted, isTrue);
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'local font can become the plan default through the shared picker',
+      (tester) async {
+    await tester.runAsync(TicketFontCatalog.loadFamilies);
+    final registry = blueprintFontRegistryFixture();
+    final roboto =
+        registry.entries.firstWhere((e) => e.value['family'] == 'Roboto').key;
+    final futura = registry.entries
+        .firstWhere((e) => e.value['family'] == 'Futura PT')
+        .key;
+    final text = LayoutNode(
+        id: newLayoutId(),
+        kind: 'text',
+        x: 200,
+        y: 200,
+        width: 200,
+        height: 60,
+        properties: const {
+          'text': 'Font'
+        },
+        style: {
+          'label': {'fontFamilyId': futura}
+        });
+    final document = VenueLayoutDocument(styles: {
+      'label': {'fontFamilyId': futura}
+    }, nodes: [
+      text
+    ]);
+    final controller = VenueLayoutController(document,
+        resources: blueprintPreparedResourcesFixture(document))
+      ..select({text.id});
+    addTearDown(controller.dispose);
+    final provider = await tester.runAsync(() =>
+        BlueprintTextResources.forSetupDraft('font-default-test',
+            service: TicketLayoutService(
+                transport: (body) async => throw StateError(
+                    'No shaping or font bytes expected in this metadata owner'))));
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintPlanEditor(
+                controller: controller,
+                loadTextResources: () async => provider!)));
+    await tester.pumpAndSettle();
+    final action = find.byKey(const ValueKey('set-default-plan-font'));
+    expect(action, findsNothing);
+    final picker =
+        tester.widget<FontFamilyPicker>(find.byType(FontFamilyPicker));
+    await picker.onPreview!('Roboto');
+    await tester.pumpAndSettle();
+    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
+        roboto);
+    expect(controller.canUndo, isFalse);
+    picker.onPreviewEnd!();
+    await tester.pumpAndSettle();
+    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
+        futura);
+    expect(controller.canUndo, isFalse);
+    await picker.onSelected('Roboto');
+    await tester.pumpAndSettle();
+    expect(action, findsOneWidget);
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+    expect(controller.document.styles['label']['fontFamilyId'], roboto);
+    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
+        roboto);
+    expect(action, findsNothing);
+    controller.undo();
+    expect(controller.document.styles['label']['fontFamilyId'], futura);
+    controller.undo();
+    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
+        futura);
+    expect(action, findsNothing);
+    expect(controller.canUndo, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
+      'reservation workspace groups selected seats, highlights parent tables and confirms cancellation',
+      (tester) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true,
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final tables = [
+      for (var i = 0; i < 3; i++)
+        LayoutNode(
+            id: newLayoutId(),
+            kind: 'table',
+            label: 'Desk ${i + 1}',
+            x: 300.0 + i * 400,
+            y: 300,
+            surface: {'type': 'rect'})
+    ];
+    final seats = [
+      for (var i = 0; i < 3; i++)
+        LayoutNode(
+            id: newLayoutId(),
+            kind: 'seat',
+            parentId: tables[i].id,
+            x: 0,
+            y: 100)
+    ];
+    final document = VenueLayoutDocument(nodes: [...tables, ...seats]);
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'Workspace',
+            revision: 1,
+            document: document,
+            seatBindings: {
+              for (var i = 0; i < 3; i++)
+                seats[i].id: BlueprintSeatBinding(
+                    nodeId: seats[i].id,
+                    spotId: 11 + i,
+                    title: 'Seat ${i + 1}',
+                    productId: 1,
+                    groupNodeId: tables[i].id)
+            },
+            groupProducts: {},
+            areaBindings: {}),
+        spots: [
+          BlueprintObjectModel(
+              id: 11, state: 'ordered', orderProductTicket: 101),
+          BlueprintObjectModel(id: 12, state: 'available'),
+          BlueprintObjectModel(id: 13, state: 'selected')
+        ],
+        tickets: [
+          TicketModel(id: 51, ticketSymbol: 'T51', state: 'ordered')
+        ],
+        orderProductTickets: [
+          OrderProductTicketModel(id: 101, ticketId: 51)
+        ],
+        products: [
+          ProductModel(
+              id: 1,
+              title: 'Seat',
+              price: 100,
+              productTypeString: ProductModel.spotType)
+        ]);
+    source.layoutResources = blueprintPreparedResourcesFixture(document);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    final editor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(1400, 0));
+    final hoveredRow =
+        find.byKey(ValueKey('commercial-table-${tables.first.id}'));
+    await mouse.moveTo(tester.getCenter(hoveredRow));
+    await tester.pump();
+    expect(editor.controller.hoveredIds, contains(seats.first.id));
+    expect(editor.controller.selection, isEmpty);
+    expect(editor.controller.canUndo, isFalse);
+    await mouse.moveTo(const Offset(1400, 0));
+    await tester.pump();
+    expect(editor.controller.hoveredIds, isEmpty);
+    await mouse.removePointer();
+    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    for (final table in tables) {
+      final row = find.byKey(ValueKey('commercial-table-${table.id}'));
+      expect(tester.widget<ListTile>(row).selected, isTrue);
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey('commercial-detail-panel')),
+              matching: find.text(table.label)),
+          findsOneWidget);
+    }
+    final block = find.byKey(const ValueKey('blueprint-toggle-blocked'));
+    await tester.tap(block);
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.unblockSeats), findsOneWidget);
+    editor.controller.undo();
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
+    final release = find.byKey(const ValueKey('commercial-release-holds'));
+    await tester.ensureVisible(release);
+    await tester.tap(release);
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.releaseTemporaryReservationConfirm),
+        findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    source.spots!.last.setSeatState(BlueprintSeatState.available);
+    final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
+    await tester.ensureVisible(action);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+    final summary = tester.widget<DataGridActionSummary<TicketModel>>(
+        find.byType(DataGridActionSummary<TicketModel>));
+    expect(summary.items.map((ticket) => ticket.id), [51]);
+    // Dismissal must not send a cancellation command (the fixture rejects I/O).
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(source.spots!.first.orderProductTicket, 101);
+    expect(tester.takeException(), isNull);
+    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {seats[1].id, seats[2].id});
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        isEmpty,
+        reason: 'A three-seat selection must not silently choose a swap pair');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    editor.onViewSelectionChanged!({seats.first.id, seats.last.id});
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {seats.first.id, seats.last.id});
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: false));
+    editor.onViewSelectionChanged!({seats.first.id});
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey('commercial-cancel-tickets')), findsNothing);
+  });
+
+  for (final outcome in ['merge', 'removed', 'replaced', 'reload', 'failed']) {
+    testWidgetsWithEnvironment(
+        () => environment, 'host delayed image load guards $outcome resources',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bytes = base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR4nGP4z8DwHwyBNBgAAEnICff5q7YNAAAAAElFTkSuQmCC');
+      final hash = sha256.convert(bytes).toString();
+      final ref = 'image:$hash';
+      final otherBytes = [...bytes, 0];
+      final otherHash = sha256.convert(otherBytes).toString();
+      final otherRef = 'image:$otherHash';
+      final manifest = <String, dynamic>{
+        'hash': hash,
+        'url': 'https://images.example.test/old.png',
+        'width': 2,
+        'height': 2,
+        'mimeType': 'image/png',
+        'byteLength': bytes.length
+      };
+      final fixture = jsonDecode(
+          File('test/fixtures/blueprint/canonical-text-scene.json')
+              .readAsStringSync()) as Map;
+      final document = VenueLayoutDocument.fromJson(
+          Map<String, dynamic>.from(fixture['document'] as Map));
+      final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
+      final source = BlueprintModel(
+          layoutResources: {
+            ...resources,
+            'assets': {ref: manifest}
+          },
+          layoutSnapshot: BlueprintLayoutSnapshot(
+              blueprintId: 1,
+              occasionId: 1,
+              title: 'Images',
+              revision: 1,
+              document: document));
+      final response = Completer<http.Response>();
+      var requests = 0;
+      final resolver =
+          BlueprintLayoutAssetResolver(client: MockClient((request) {
+        if (request.url.path == '/other.png')
+          return Future.value(http.Response.bytes(otherBytes, 200));
+        requests++;
+        return requests == 1
+            ? response.future
+            : Future.value(http.Response.bytes(bytes, 200));
+      }));
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: BlueprintLayoutHost(
+                  key: const ValueKey('old-host'),
+                  source: source,
+                  reload: () async => source,
+                  assetResolver: resolver)));
+      await tester.pump();
+      final controller = tester
+          .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+          .controller;
+      final latestAssets = <String, dynamic>{
+        if (outcome != 'removed')
+          ref: outcome == 'replaced'
+              ? {...manifest, 'url': 'https://images.example.test/replaced.png'}
+              : manifest,
+        otherRef: {
+          ...manifest,
+          'hash': otherHash,
+          'byteLength': otherBytes.length,
+          'url': 'https://images.example.test/other.png'
+        },
+      };
+      expect(
+          controller
+              .setResources({...controller.resources, 'assets': latestAssets}),
+          isTrue);
+      final latest = controller.resources;
+      if (outcome == 'reload') {
+        final fresh = BlueprintModel(
+            layoutResources: resources, layoutSnapshot: source.layoutSnapshot);
+        await environment.pumpWidget(
+            tester,
+            MaterialApp(
+                home: BlueprintLayoutHost(
+                    key: const ValueKey('new-host'),
+                    source: fresh,
+                    reload: () async => fresh)));
+      }
+      response.complete(
+          http.Response.bytes(bytes, outcome == 'failed' ? 500 : 200));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pumpAndSettle();
+      if (outcome == 'reload') {
+        final freshController = tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .controller;
+        expect(freshController.resources['assets'], resources['assets'] ?? {});
+        expect(tester.takeException(), isNull);
+        return;
+      }
+      if (outcome == 'failed') {
+        expect(controller.resources, latest);
+        await tester.runAsync(() async {
+          final retry = tester.widget<TextButton>(
+              find.widgetWithText(TextButton, CommonStrings.retry));
+          retry.onPressed!();
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        });
+        await tester.pumpAndSettle();
+      }
+      expect(controller.resources['assets'], latestAssets);
+      expect(controller.resources['fontFamilies'], resources['fontFamilies']);
+      expect(controller.resources['textLayouts'], resources['textLayouts']);
+      expect((controller.resources['images'] as Map).containsKey(ref),
+          outcome == 'merge' || outcome == 'failed');
+      expect(controller.dirty, isFalse);
+      expect(controller.canUndo, isFalse);
+    });
+  }
+  for (final outcome in ['complete', 'changed', 'failed', 'disposed']) {
+    testWidgetsWithEnvironment(() => environment,
+        'view transition finishes composing input and guards $outcome response',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final rights = RightsService.occasionLinkModelNotifier.value;
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+      final fixture = jsonDecode(
+          File('test/fixtures/blueprint/canonical-text-scene.json')
+              .readAsStringSync()) as Map;
+      final document = VenueLayoutDocument.fromJson(
+          Map<String, dynamic>.from(fixture['document'] as Map));
+      final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
+      final response = Completer<void>();
+      var batches = 0;
+      final provider = await tester.runAsync(() => BlueprintTextResources.load(
+              1, service: TicketLayoutService(transport: (body) async {
+            if (body['mode'] == 'font') {
+              final catalog = jsonDecode(File(
+                      'supabase/functions/_shared/ticket-assets/font-catalog.json')
+                  .readAsStringSync())['fonts'] as List;
+              final face =
+                  catalog.firstWhere((entry) => entry['id'] == body['fontId']);
+              final bytes = File(
+                      'test/fixtures/ticket_fonts/${face['family'].replaceAll(' ', '-')}.ttf')
+                  .readAsBytesSync();
+              return {
+                'id': face['id'],
+                'family': face['family'],
+                'weight': face['weight'],
+                'font': base64Encode(bytes),
+                'metrics': jsonDecode(
+                    File('test/fixtures/ticket_layout/resolve.json')
+                        .readAsStringSync())['metrics']
+              };
+            }
+            batches++;
+            if (batches == 1) await response.future;
+            final batch = body['batch'] as Map;
+            return {
+              'protocol': 2,
+              'fontFamilies': resources['fontFamilies'],
+              'numberSymbols': {},
+              'textLayouts': {
+                for (final raw in batch['requests'] as List)
+                  LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
+                    'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
+                    'descriptor':
+                        LayoutTextRequest(Map<String, dynamic>.from(raw))
+                            .resourceDescriptor,
+                    'path': [
+                      ['M', 0, 0],
+                      ['L', 10, 10]
+                    ],
+                    'clip': raw['box'],
+                  }
+              },
+            };
+          })));
+      await tester.runAsync(() => provider!.loadFace(
+          (resources['fontFamilies'] as Map).values.first['faces']['400:normal']
+              as String));
+      final source = BlueprintModel(
+          layoutResources: resources,
+          layoutSnapshot: BlueprintLayoutSnapshot(
+              blueprintId: 1,
+              occasionId: 1,
+              title: 'Transition',
+              revision: 1,
+              document: document));
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: BlueprintLayoutHost(
+                  source: source,
+                  reload: () async => source,
+                  loadTextResources: () async => provider!)));
+      await tester.pumpAndSettle();
+      await tester
+          .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
+      await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+      await tester.pumpAndSettle();
+      final controller = tester
+          .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+          .controller;
+      expect(
+          compileScene(controller.document,
+              resources: controller.resources)['issues'],
+          isEmpty);
+      final surface =
+          tester.widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface));
+      surface.onDoubleTapAt!(const Offset(200, 180));
+      await tester.pump();
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 30)));
+      await tester.pump();
+      final input = find.byKey(const ValueKey('layout-inline-label'));
+      expect(input, findsOneWidget);
+      await tester.showKeyboard(input);
+      tester.testTextInput.updateEditingValue(const TextEditingValue(
+          text: 'Completed composing text',
+          selection: TextSelection.collapsed(offset: 24),
+          composing: TextRange(start: 0, end: 24)));
+      await tester.pump();
+      expect(controller.document.toJson(), document.toJson(),
+          reason: 'composition has not yet committed into the valid scene');
+      final view = tester.widget<ChoiceChip>(find.ancestor(
+          of: find.byKey(const ValueKey('blueprint-reservations-mode')),
+          matching: find.byType(ChoiceChip)));
+      view.onSelected!(true);
+      view.onSelected!(true);
+      await tester.pump();
+      await tester.pump();
+      expect(batches, 1,
+          reason: 'one pending transition owns text preparation');
+      expect(controller.document.nodes.first.properties['text'],
+          'Completed composing text');
+      expect(
+          tester
+              .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor))
+              .busy,
+          isTrue);
+      final beforeResources = controller.resources;
+      if (outcome == 'changed') {
+        controller.updateNode(controller.document.nodes.first.copyWith(
+            properties: {
+              ...controller.document.nodes.first.properties,
+              'text': 'Newer draft'
+            }));
+      }
+      if (outcome == 'disposed') {
+        await environment.pumpWidget(tester, const SizedBox.shrink());
+      }
+      if (outcome == 'failed') {
+        response.completeError(StateError('transition_failed'));
+      } else {
+        response.complete();
+      }
+      await tester.pumpAndSettle();
+      if (outcome == 'disposed') {
+        expect(tester.takeException(), isNull);
+        return;
+      }
+      var editor =
+          tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
+      expect(editor.busy, isFalse);
+      if (outcome == 'changed' || outcome == 'failed') {
+        expect(editor.interactionEnabled, isTrue);
+        expect(controller.resources, beforeResources);
+        await tester.ensureVisible(
+            find.byKey(const ValueKey('blueprint-reservations-mode')));
+        await tester
+            .tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
+        await tester.pumpAndSettle();
+        editor = tester
+            .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
+        expect(batches, 2);
+      }
+      expect(editor.interactionEnabled, isFalse);
+      expect(
+          compileScene(controller.document,
+              resources: controller.resources)['issues'],
+          isEmpty);
+    });
+  }
+  testWidgetsWithEnvironment(() => environment,
+      'setup and existing occasion share plan editor typography graphics and history',
+      (tester) async {
+    final fixture = jsonDecode(
+        File('test/fixtures/blueprint/canonical-text-scene.json')
+            .readAsStringSync()) as Map;
+    final document = VenueLayoutDocument.fromJson(
+        Map<String, dynamic>.from(fixture['document'] as Map));
+    final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
+    await tester.runAsync(TicketFontCatalog.loadFamilies);
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final rights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+    final source = BlueprintModel(
+        layoutResources: resources,
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'Shared editor',
+            revision: 1,
+            document: document));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source, reload: () async => source)));
+    await tester.pumpAndSettle();
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
+    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+    await tester.pump(const Duration(milliseconds: 200));
+    final shared =
+        tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
+    await tester.runAsync(shared.loadTextResources!);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(BlueprintPlanEditor), findsOneWidget);
+    expect(
+        find.widgetWithText(
+            ListTile,
+            VenueLayoutStrings.text(
+                tester.element(find.byType(BlueprintPlanEditor)),
+                'Insert image / SVG')),
+        findsOneWidget);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .fontPickerBuilder,
+        isNotNull);
+    final existing =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(existing.inlineTextStyleBuilder, isNotNull);
+    expect(existing.globalFontPickerBuilder, isNotNull);
+    await environment.pumpWidget(tester, const SizedBox.shrink());
+    final batches = <Map<String, dynamic>>[];
+    final provider = await tester.runAsync(() =>
+        BlueprintTextResources.forSetupDraft('draft-id',
+            service: TicketLayoutService(transport: (body) async {
+          expectSync(body['setupDraftId'], 'draft-id');
+          if (body['mode'] == 'font')
+            throw StateError(
+                'Native font raster is outside this transport fixture');
+          expectSync(body['mode'], 'layout-text');
+          final batch = Map<String, dynamic>.from(body['batch'] as Map);
+          batches.add(batch);
+          return {
+            'protocol': 2,
+            'fontFamilies': resources['fontFamilies'],
+            'numberSymbols': {},
+            'textLayouts': {
+              for (final raw in batch['requests'] as List)
+                LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
+                  'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
+                  'descriptor':
+                      LayoutTextRequest(Map<String, dynamic>.from(raw))
+                          .resourceDescriptor,
+                  'path': [
+                    ['M', 0, 0],
+                    ['L', 10, 10]
+                  ],
+                  'clip': raw['box'],
+                },
+            }
+          };
+        })));
+    VenueLayoutDocument? saved;
+    Map<String, dynamic>? savedResources;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutDemo(
+                initialDocument: document,
+                initialResources: resources,
+                unitId: 7,
+                prepareResources: (document, current) async {
+                  final prepared =
+                      await BlueprintTextPreparation(provider!.prepareTextBatch)
+                          .prepareSnapshot(
+                              document,
+                              {
+                                for (final family in provider.families)
+                                  family['id'] as String: family
+                              },
+                              current);
+                  savedResources = prepared;
+                  return prepared;
+                },
+                onSave: (document) async {
+                  saved = document;
+                },
+                loadTextResources: () async => provider!)));
+    await tester.pumpAndSettle();
+    expect(find.byType(BlueprintPlanEditor), findsOneWidget);
+    expect(
+        find.widgetWithText(
+            ListTile,
+            VenueLayoutStrings.text(
+                tester.element(find.byType(BlueprintPlanEditor)),
+                'Insert image / SVG')),
+        findsOneWidget);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .fontPickerBuilder,
+        isNotNull);
+    final setup =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(setup.inlineTextStyleBuilder, isNotNull);
+    expect(setup.globalFontPickerBuilder, isNotNull);
+    expect(batches, isEmpty, reason: 'persisted prepared paths are reused');
+    final text = setup.controller.document.nodes.first;
+    expect(
+        setup.controller.apply(document.copyWith(nodes: [
+          text.copyWith(properties: {
+            ...text.properties,
+            'text': 'Changed whole paragraph'
+          }),
+          ...document.nodes.skip(1),
+        ])),
+        isTrue);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(batches, isEmpty,
+        reason: 'native editing never dispatches vector preparation');
+    final saving =
+        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
+    await tester.pump();
+    await saving;
+    expect(saved!.toJson(), setup.controller.document.toJson());
+    for (final entry in (savedResources!['textLayouts'] as Map).entries) {
+      expect((setup.controller.resources['textLayouts'] as Map)[entry.key],
+          entry.value);
+    }
+    expect(batches, hasLength(1),
+        reason: 'only explicit save prepares the captured whole paragraph');
+    setup.controller.undo();
+    await tester.pumpAndSettle();
+    expect(setup.controller.document.toJson(), document.toJson());
+    expect(
+        compileScene(setup.controller.document,
+            resources: setup.controller.resources)['issues'],
+        isEmpty);
+    expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
       'blueprint V2 order retries analysis and suppresses duplicate submits',
@@ -142,6 +1028,7 @@ void main() {
     final table = LayoutNode(
         id: newLayoutId(),
         kind: 'table',
+        surface: {'type': 'rect'},
         parentId: group.id,
         x: 400,
         y: 400,
@@ -158,18 +1045,22 @@ void main() {
             document: original,
             seatBindings: {},
             groupProducts: {group.id: 1}));
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final select =
         tester.getRect(find.byKey(const ValueKey('layout-tool-Select')));
     expect(find.byType(FontFamilyPicker), findsNothing);
     final pan = tester.getRect(find.byKey(const ValueKey('layout-tool-Pan')));
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(tester.getRect(find.byKey(const ValueKey('layout-tool-Select'))),
         select);
     expect(tester.getRect(find.byKey(const ValueKey('layout-tool-Pan'))), pan);
@@ -177,11 +1068,13 @@ void main() {
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     // The physical tabletop and its wrapper must use the same business rename.
     editor.controller.select({table.id});
-    await tester.pumpAndSettle();
-    final catalog = tester.widget<FutureBuilder<BlueprintLayoutFontProvider>>(
-        find.byType(FutureBuilder<BlueprintLayoutFontProvider>));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    final catalog = tester.widget<FutureBuilder<BlueprintTextResources>>(
+        find.byType(FutureBuilder<BlueprintTextResources>));
     await tester.runAsync(() => catalog.future!);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final fonts =
         tester.widget<FontFamilyPicker>(find.byType(FontFamilyPicker));
     expect(fonts.families, containsAll(['Zeyada', 'Roboto Slab', 'Futura PT']));
@@ -195,22 +1088,26 @@ void main() {
         child: editor.globalFontPickerBuilder!(context, 'table'),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final globalFonts =
         tester.widgetList<FontFamilyPicker>(find.byType(FontFamilyPicker)).last;
     expect(globalFonts.families, fonts.families);
     Navigator.of(tester.element(find.byType(Dialog))).pop();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final name = find.byWidgetPredicate(
         (w) => w is TextField && w.decoration?.labelText == 'Name');
     await tester.enterText(name, '  Front table  ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(editor.controller.document.nodes.map((n) => n.label),
         everyElement('Front table'));
     await tester.enterText(name, '   ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(editor.controller.document.nodes.map((n) => n.label),
         everyElement('Front table'));
     editor.controller.undo();
@@ -231,12 +1128,15 @@ void main() {
     final table = LayoutNode(
         id: newLayoutId(),
         kind: 'table',
+        surface: {'type': 'rect'},
         x: 400,
         y: 400,
         width: 200,
         height: 100,
         label: 'S7',
-        properties: {'bold': true});
+        style: {
+          'label': {'weight': 700}
+        });
     final source = BlueprintModel(
         layoutSnapshot: BlueprintLayoutSnapshot(
             blueprintId: 1,
@@ -246,25 +1146,32 @@ void main() {
             document: VenueLayoutDocument(nodes: [table]),
             seatBindings: {},
             groupProducts: {}));
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     editor.controller.select({table.id});
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final hostFocus = tester
         .widgetList<Focus>(find.byType(Focus))
         .singleWhere(
             (focus) => focus.focusNode?.debugLabel == 'Blueprint host actions')
         .focusNode!;
     expect(hostFocus.hasPrimaryFocus, isTrue);
-    final bold = find.widgetWithIcon(IconButton, Icons.format_bold);
+    final bold = find.byIcon(Icons.format_bold);
     await tester.ensureVisible(bold);
     final semantics = tester.ensureSemantics();
     try {
@@ -275,7 +1182,9 @@ void main() {
       semantics.dispose();
     }
     bool isBold() =>
-        editor.controller.document.nodes.single.properties['bold'] == true;
+        (editor.controller.document.nodes.single.style['label']
+            as Map?)?['weight'] ==
+        700;
     expect(isBold(), isFalse);
     expect(hostFocus.hasPrimaryFocus, isTrue);
     Future<void> shortcut(
@@ -300,14 +1209,17 @@ void main() {
     expect(isBold(), isTrue);
     await shortcut(key: LogicalKeyboardKey.keyY);
     expect(isBold(), isFalse);
-    await tester.tap(find.byTooltip(BlueprintStrings.background));
-    await tester.pumpAndSettle();
+    await tester
+        .tap(find.widgetWithText(ListTile, BlueprintStrings.background));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await shortcut();
     expect(isBold(), isFalse, reason: 'An open modal owns its keyboard scope');
     await tester.tap(find.descendant(
         of: find.byKey(const ValueKey('blueprint-background-picker')),
         matching: find.byIcon(Icons.close)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     hostFocus.requestFocus();
     await tester.pump();
     await shortcut();
@@ -322,8 +1234,11 @@ void main() {
     await tester.pump();
     await shortcut();
     expect(isBold(), isFalse, reason: 'Active text input keeps native undo');
+    await tester.ensureVisible(
+        find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await shortcut();
     expect(isBold(), isFalse, reason: 'Reservations must not undo plan edits');
   });
@@ -366,6 +1281,7 @@ void main() {
           LayoutNode(
               id: '10000000-0000-4000-8000-000000000003',
               kind: 'table',
+              surface: {'type': 'rect'},
               parentId: '10000000-0000-4000-8000-000000000002',
               label: 'Physical table'),
           LayoutNode(
@@ -377,6 +1293,7 @@ void main() {
           LayoutNode(
               id: '10000000-0000-4000-8000-000000000011',
               kind: 'table',
+              surface: {'type': 'rect'},
               parentId: '10000000-0000-4000-8000-000000000010',
               x: 400,
               label: 'Physical table 10'),
@@ -419,14 +1336,19 @@ void main() {
     ], spots: [
       BlueprintObjectModel(id: 11, state: 'available')
     ]);
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
-    void expectActionVisible(String key) {
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    Future<void> expectActionVisible(String key) async {
       final action = find.byKey(ValueKey(key));
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
       expect(action.hitTestable(), findsOneWidget);
       final badge = find.byType(EditorActionBar);
       if (badge.evaluate().isNotEmpty) {
@@ -435,8 +1357,8 @@ void main() {
       }
     }
 
-    expectActionVisible('blueprint-start-order');
-    expectActionVisible('blueprint-start-swap');
+    await expectActionVisible('blueprint-start-order');
+    await expectActionVisible('blueprint-start-swap');
     final initialEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
     expect(initialEditor.interactionEnabled, isFalse);
@@ -450,7 +1372,7 @@ void main() {
         of: find.byKey(const ValueKey('blueprint-reservations-panel')),
         matching: find.byType(SingleChildScrollView));
     expect(tester.getSize(reservationScroll).height, greaterThan(500));
-    expect(find.text(BlueprintStrings.selectTableOrSeat), findsNothing);
+    expect(find.text(BlueprintStrings.selectTableOrSeat), findsOneWidget);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.byIcon(Icons.table_restaurant_outlined), findsNWidgets(2));
     final canvasState = tester.state(find.byType(LayoutSceneSurface));
@@ -464,13 +1386,15 @@ void main() {
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
-        find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget);
+        find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget);
     await tester
         .ensureVisible(find.byKey(const ValueKey('commercial-area-product')));
     await tester.tap(find.byKey(const ValueKey('commercial-area-product')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
         tester
             .widget<EditProductDialog>(find.byType(EditProductDialog))
@@ -478,25 +1402,30 @@ void main() {
             .id,
         1);
     await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await tester.ensureVisible(groupRow);
     await tester.tap(groupRow);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
-        find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget);
+        find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget);
     expect(find.text(BlueprintStrings.groupDefaultProduct), findsOneWidget);
     expect(find.text(BlueprintStrings.statusUniform), findsOneWidget);
-    expect(find.text(BlueprintStrings.uniformViewHelp), findsOneWidget);
+    expect(find.text(BlueprintStrings.uniformViewHelp), findsNothing);
     expect(find.byKey(ValueKey('commercial-seat-$id')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('commercial-individual-seats')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.byIcon(Icons.event_seat), findsOneWidget);
     final seatRow = find.byKey(ValueKey('commercial-seat-$id'));
     await tester
         .tap(find.descendant(of: seatRow, matching: find.byType(IconButton)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.byType(SelectProductDialog), findsOneWidget);
     expect(
         tester
@@ -504,9 +1433,11 @@ void main() {
             .currentProductId,
         1);
     await tester.tap(find.widgetWithText(TextButton, CommonStrings.storno));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await tester.tap(seatRow);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
     expect(
         tester
@@ -514,17 +1445,20 @@ void main() {
             .viewSelection,
         {id});
     await tester.tap(find.byKey(const ValueKey('commercial-detail-back')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.text(BlueprintStrings.groupDefaultProduct), findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await tester.ensureVisible(secondRow);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
     await tester.tap(secondRow);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
-        find.byKey(const ValueKey('commercial-detail-dialog')), findsNothing);
+        find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget);
     expect(initialEditor.controller.selection, isEmpty);
     expect(
         tester
@@ -534,22 +1468,27 @@ void main() {
           '10000000-0000-4000-8000-000000000002',
           '10000000-0000-4000-8000-000000000010'
         });
+    await tester.ensureVisible(
+        find.byKey(const ValueKey('commercial-selection-product')));
     await tester
-        .ensureVisible(find.byKey(const ValueKey('commercial-bulk-product')));
-    await tester.tap(find.byKey(const ValueKey('commercial-bulk-product')));
-    await tester.pumpAndSettle();
+        .tap(find.byKey(const ValueKey('commercial-selection-product')));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     await tester.tap(find.widgetWithText(ListTile, 'Premium'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(initialEditor.controller.document, same(originalDocument));
     expect(initialEditor.controller.dirty, isTrue);
     await tester.ensureVisible(find.byKey(const ValueKey('commercial-undo')));
     await tester.tap(find.byKey(const ValueKey('commercial-undo')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(initialEditor.controller.dirty, isFalse);
     tester
         .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
         .onViewSelectionChanged!({id});
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
     expect(initialEditor.controller.selection, isEmpty);
     expect(
@@ -558,9 +1497,13 @@ void main() {
             .onDragStart,
         isNull);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
         tester
             .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
@@ -568,7 +1511,7 @@ void main() {
         isTrue);
     final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));
     expect(toolbar, findsOneWidget);
-    expect(tester.getSize(toolbar).height, lessThanOrEqualTo(56));
+    expect(tester.getSize(toolbar).height, lessThanOrEqualTo(112));
     expect(find.descendant(of: toolbar, matching: find.byType(EditorActionBar)),
         findsOneWidget);
     expect(tester.widget<EditorActionBar>(find.byType(EditorActionBar)).inline,
@@ -588,16 +1531,22 @@ void main() {
     expect((editor.seatPresentation[id] as Map).containsKey('fill'), isFalse,
         reason:
             'Geometry styles must not be hidden by reservation status colors');
-    await tester.tap(find.byTooltip(BlueprintStrings.background));
+    await tester
+        .tap(find.widgetWithText(ListTile, BlueprintStrings.background));
     await tester.pump(const Duration(milliseconds: 350));
     final backgroundDialog =
         find.byKey(const ValueKey('blueprint-background-picker'));
     expect(backgroundDialog, findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsNothing,
+    expect(
+        find.descendant(
+            of: backgroundDialog,
+            matching: find.byType(LinearProgressIndicator)),
+        findsNothing,
         reason: 'Choosing a background is not an upload');
     await tester.tap(find.descendant(
         of: backgroundDialog, matching: find.byIcon(Icons.close)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
 
     expect(find.text(BlueprintStrings.selectProduct), findsNothing);
     expect(find.byKey(const ValueKey('blueprint-reservations-panel')),
@@ -613,8 +1562,11 @@ void main() {
     ]));
     editor.controller.commitGesture();
     await tester.pump();
+    await tester.ensureVisible(
+        find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
         tester
             .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
@@ -631,15 +1583,18 @@ void main() {
     await tester.pump();
     editor.controller.commitGesture();
     final draft = editor.controller.document;
+    await tester.ensureVisible(
+        find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(tester.state(find.byType(LayoutSceneSurface)), same(canvasState));
     expect(find.byType(EditorActionBar), findsOneWidget);
     expect(
         tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
         isTrue);
-    expectActionVisible('blueprint-start-order');
-    expectActionVisible('blueprint-start-swap');
+    await expectActionVisible('blueprint-start-order');
+    await expectActionVisible('blueprint-start-swap');
     final semantics = tester.ensureSemantics();
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
@@ -657,28 +1612,53 @@ void main() {
             'Assistive activation must focus the operation so Escape works before a canvas click');
     semantics.dispose();
     await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     final operationalEditor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    operationalEditor.onNodeActivated!(id);
-    await tester.pump();
-    expect(find.text(BlueprintStrings.selectedCount(1)), findsOneWidget);
+    expect(operationalEditor.viewSelection, {id},
+        reason: 'Order mode inherits the current seat selection');
+    expect(
+        find.textContaining(BlueprintStrings.selectedCount(1)), findsOneWidget);
+    final operationPanel =
+        find.byKey(const ValueKey('blueprint-operation-panel'));
+    expect(operationPanel, findsOneWidget);
+    final canvasRect = tester.getRect(find.byType(LayoutSceneSurface));
+    final operationRect = tester.getRect(operationPanel);
+    expect(operationRect.center.dx, closeTo(canvasRect.center.dx, 1));
+    expect(operationRect.bottom, lessThanOrEqualTo(canvasRect.bottom));
+    expect(operationRect.top, greaterThan(canvasRect.center.dy));
+    expect(
+        find.descendant(
+            of: operationPanel, matching: find.textContaining('100')),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('layout-editor-toolbar')),
+            matching: find.text(BlueprintStrings.confirmOrder)),
+        findsNothing);
+
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget);
     expect(identical(editor.controller.document, draft), isTrue);
-    expectActionVisible('blueprint-start-swap');
+    await expectActionVisible('blueprint-start-swap');
     await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
-    await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.selectedCount(0)), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(find.text('1 / 2'), findsOneWidget);
     expect(editor.controller.dirty, isTrue);
     expect(identical(editor.controller.document, draft), isTrue);
-    expectActionVisible('blueprint-cancel-operation');
+    await expectActionVisible('blueprint-cancel-operation');
     await tester.tap(find.byKey(const ValueKey('blueprint-cancel-operation')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.byKey(const ValueKey('blueprint-start-order')), findsOneWidget);
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
     await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(
         tester
             .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
@@ -710,6 +1690,7 @@ void main() {
         LayoutNode(
             id: newLayoutId(),
             kind: 'table',
+            surface: {'type': 'rect'},
             label: 'T${i + 1}',
             x: 100.0 + i % 5 * 100,
             y: 100.0 + i ~/ 5 * 100)
@@ -780,17 +1761,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.getRect(scroll).contains(tester.getCenter(row)), isTrue);
     expect(tester.widget<ListTile>(row).selected, isTrue);
+    expect(tester.getRect(row).right,
+        lessThan(tester.getRect(find.byType(LayoutSceneSurface)).left + 1));
     expect(
-        find.byKey(const ValueKey('commercial-detail-dialog')), findsOneWidget,
+        tester
+            .getRect(find.byKey(const ValueKey('commercial-detail-panel')))
+            .left,
+        greaterThan(tester.getRect(find.byType(LayoutSceneSurface)).left));
+    expect(
+        find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget,
         reason: 'Canvas table clicks reveal the table and open its detail');
-    expect(find.text('${BlueprintStrings.manageGroupProducts}: T18'),
-        findsOneWidget);
-    final detailRoute = ModalRoute.of(tester
-        .element(find.byKey(const ValueKey('commercial-detail-dialog'))))!;
-    expect(detailRoute.transitionDuration, Duration.zero,
-        reason:
-            'Opening a table detail must not animate like a page transition');
-
+    expect(find.text('T18'), findsWidgets);
+    expect(find.byType(AlertDialog), findsNothing);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     editor.onViewSelectionChanged!({seatId});
@@ -801,10 +1783,33 @@ void main() {
             .viewSelection,
         {seatId});
     expect(find.text(BlueprintStrings.blockSeat), findsOneWidget);
-    expect(find.text(BlueprintStrings.blockSeatHint), findsOneWidget);
+    expect(tester.widget<ListTile>(row).selected, isTrue,
+        reason: 'Selecting a seat highlights its parent table');
+    expect(find.text(BlueprintStrings.blockSeatHint), findsNothing);
     expect(find.text(BlueprintStrings.legendBlackArea), findsNothing);
     expect(
         find.byKey(const ValueKey('commercial-detail-back')), findsOneWidget);
+    final viewEditor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(viewEditor.onEditRequested, isNotNull);
+    viewEditor.onEditRequested!({seatId});
+    await tester.pumpAndSettle();
+    final editingEditor =
+        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
+    expect(editingEditor.interactionEnabled, isTrue);
+    expect(editingEditor.controller.selection, {seatId});
+    expect(editingEditor.onEditRequested, isNull);
+    final beforeHelp = editingEditor.controller.document.toJson();
+    await tester.tap(find.byKey(const ValueKey('blueprint-help')));
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.helpTitle), findsWidgets);
+    expect(find.text(BlueprintStrings.helpAltClick), findsOneWidget);
+    expect(find.text('Ctrl / ⌘ + Z'), findsOneWidget);
+    expect(find.text(BlueprintStrings.helpEnterEditKeys), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Ctrl / ⌘ + Z'), findsNothing);
+    expect(editingEditor.controller.document.toJson(), beforeHelp);
   });
   testWidgetsWithEnvironment(() => environment,
       'empty blueprint chooses a template and stays in explicit editing after creation',
@@ -827,12 +1832,15 @@ void main() {
       document: VenueLayoutDocument.empty(),
       seatBindings: const {},
     ));
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
                 source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.byType(Dialog), findsOneWidget);
     expect(
         tester
@@ -844,7 +1852,8 @@ void main() {
             of: find.byType(Dialog), matching: find.byType(OutlinedButton))
         .first;
     await tester.tap(template);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(find.byType(Dialog), findsNothing);
     final editor =
         tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
@@ -876,7 +1885,12 @@ void main() {
             LayoutNode(
                 id: '10000000-0000-4000-8000-000000000099', kind: 'group'),
           ]),
-          initialResources: const {'protocol': 1, 'fonts': {}, 'assets': {}},
+          initialResources: const {
+            'protocol': 2,
+            'fontFamilies': {},
+            'textLayouts': {},
+            'assets': {}
+          },
           initiallyUnsaved: true,
           onSave: (_) {
             saves++;

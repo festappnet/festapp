@@ -21,11 +21,40 @@ BEGIN
  RETURN jsonb_build_object('capacity',capacity,'available',CASE WHEN p.is_hidden THEN 0 ELSE available END,
   'reason',CASE WHEN p.is_hidden THEN 'PRODUCT_HIDDEN' WHEN available=0 THEN 'PRODUCT_CAPACITY_EXCEEDED' ELSE NULL END);
 END $$;
+-- Assigning a blueprint to a form offers its bound seats and capacity areas.
+-- Form fields configure additional questions/products, not a second seat allowlist.
+CREATE OR REPLACE FUNCTION public.blueprint_form_products_internal(p_form bigint)
+RETURNS TABLE(product bigint,has_seats boolean,has_capacity boolean)
+LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT offered.product,bool_or(offered.has_seats),bool_or(offered.has_capacity)
+ FROM public.forms f JOIN eshop.blueprints b ON b.id=f.blueprint AND b.occasion=f.occasion
+ CROSS JOIN LATERAL (
+  SELECT s.product,true AS has_seats,false AS has_capacity
+  FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
+  WHERE sb.blueprint=b.id AND s.blueprint=b.id AND s.occasion=f.occasion
+  UNION ALL
+  SELECT ab.product,false,true FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id
+ ) offered
+ JOIN eshop.products p ON p.id=offered.product AND p.occasion=f.occasion
+ WHERE f.id=p_form GROUP BY offered.product
+$$;
+CREATE OR REPLACE FUNCTION public.blueprint_form_product_catalog_internal(p_form bigint)
+RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'title',p.title,'price',p.price,
+  'currency_code',p.currency_code,'maximum',p.maximum,
+  'ordered_count',(SELECT count(*) FROM eshop.order_product_ticket opt WHERE opt.product=p.id),
+  'is_dynamically_available',public.is_product_dynamically_available(p.id),
+  'isAvailable',(availability.value->>'available')::bigint>0 AND public.is_product_dynamically_available(p.id)
+ ) ORDER BY p.id),'[]'::jsonb)
+ FROM public.blueprint_form_products_internal(p_form) offered JOIN eshop.products p ON p.id=offered.product
+ CROSS JOIN LATERAL (SELECT public.blueprint_product_availability_internal(p.id) AS value) availability
+ WHERE NOT p.is_hidden
+$$;
+REVOKE ALL ON FUNCTION public.blueprint_form_products_internal(bigint),public.blueprint_form_product_catalog_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.blueprint_area_availability_internal(p_blueprint bigint,p_form bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(jsonb_build_object('nodeId',b.node_id,'productId',b.product,'inventoryContextId',b.inventory_context)||
-  CASE WHEN p_form IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
-   WHERE ff.form=p_form AND p.id=b.product AND ff.type='product_type' AND ff.is_ticket_field AND NOT ff.is_hidden)
+  CASE WHEN p_form IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.forms f WHERE f.id=p_form AND f.blueprint=b.blueprint)
   THEN jsonb_build_object('capacity',(public.blueprint_product_availability_internal(b.product)->'capacity'),'available',0,'reason','PRODUCT_NOT_IN_FORM')
   ELSE public.blueprint_product_availability_internal(b.product) END ORDER BY b.node_id),'[]')
  FROM eshop.blueprint_area_bindings b WHERE b.blueprint=p_blueprint

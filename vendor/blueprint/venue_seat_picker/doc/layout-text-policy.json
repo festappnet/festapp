@@ -1,0 +1,19 @@
+{
+  "revision": 1,
+  "identityCodec": "layout-json-decimal-v1",
+  "engine": {
+    "shaper": "harfbuzz",
+    "package": "harfbuzzjs@1.6.3",
+    "version": "14.6.0",
+    "clusterEncoding": "utf8",
+    "clusterLevel": "monotone-graphemes",
+    "featurePolicy": "opentype-defaults-v1"
+  },
+  "bidi": "bidi-js@1.1.0/unicode-13",
+  "lineBreak": "linebreak@1.1.0/unicode-13",
+  "graphemes": "unicode-segmenter@0.17.3/unicode-17",
+  "script": "unicode-properties@2.0.1/unicode-12",
+  "scriptAliases": "unicode-match-property-value-ecmascript@2.2.1",
+  "wrap": "unicode-opportunities-long-token-clip",
+  "baseline": "font-ascent-with-ink-containment"
+}

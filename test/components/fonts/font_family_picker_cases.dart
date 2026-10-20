@@ -1,5 +1,7 @@
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
+import 'dart:ui' show PointerDeviceKind;
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,26 +13,86 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  testWidgets('menu and search preview actual fonts without changing the selection', (tester) async {
+  testWidgets(
+      'live font route previews hover, cancels on Escape and commits only a click',
+      (tester) async {
+    String? previewed;
+    final chosen = <String?>[];
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SizedBox(
+      width: 320,
+      child: FontFamilyPicker(
+          value: 'Roboto',
+          families: const ['Roboto', 'Inter'],
+          onPreview: (family) async {
+            previewed = family;
+          },
+          onPreviewEnd: () => previewed = null,
+          onSelected: (family) async {
+            chosen.add(family);
+          }),
+    ))));
+    await tester.tap(find.byType(InputDecorator).first);
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widgetList<ModalBarrier>(find.byType(ModalBarrier))
+            .every((barrier) => (barrier.color?.a ?? 0) == 0),
+        isTrue);
+    final row = find.widgetWithText(ListTile, 'Inter');
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(1, 1));
+    await mouse.moveTo(tester.getCenter(row));
+    await tester.pumpAndSettle();
+    expect(previewed, 'Inter');
+    expect(chosen, isEmpty);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(previewed, isNull);
+    await tester.tap(find.byType(InputDecorator).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Inter'));
+    await tester.pumpAndSettle();
+    expect(chosen, ['Inter']);
+    expect(previewed, isNull);
+    await mouse.removePointer();
+  });
+
+  testWidgets(
+      'menu and search preview actual fonts without changing the selection',
+      (tester) async {
     final calls = <String>[];
     final pending = Completer<TextStyle>();
     var changes = 0;
-    await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(), home: Scaffold(
-      body: FontFamilyPicker(value: 'Roboto', families: const ['Roboto', 'Inter', 'Custom Font'],
-        previewStyle: (family) {
-          calls.add(family);
-          return family == 'Inter' ? pending.future :
-              Future.value(TextStyle(fontFamily: 'Loaded_$family'));
-        }, onSelected: (_) async { changes++; }))));
+    await tester.pumpWidget(MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+            body: FontFamilyPicker(
+                value: 'Roboto',
+                families: const ['Roboto', 'Inter', 'Custom Font'],
+                previewStyle: (family) {
+                  calls.add(family);
+                  return family == 'Inter'
+                      ? pending.future
+                      : Future.value(TextStyle(fontFamily: 'Loaded_$family'));
+                },
+                onSelected: (_) async {
+                  changes++;
+                }))));
     await tester.pumpAndSettle();
-    expect(calls, isEmpty, reason: 'Closed picker must not load unselected fonts');
+    expect(calls, isEmpty,
+        reason: 'Closed picker must not load unselected fonts');
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pump(const Duration(milliseconds: 400));
     expect(calls.toSet(), {'Roboto', 'Inter'});
-    pending.complete(const TextStyle(fontFamily: 'Loaded_Inter', color: Colors.black));
+    pending.complete(
+        const TextStyle(fontFamily: 'Loaded_Inter', color: Colors.black));
     await tester.pumpAndSettle();
-    expect(tester.widget<Text>(find.text('Inter').last).style!.fontFamily, 'Loaded_Inter');
-    expect(tester.widget<Text>(find.text('Inter').last).style!.color, ThemeData.dark().colorScheme.onSurface);
+    expect(tester.widget<Text>(find.text('Inter').last).style!.fontFamily,
+        'Loaded_Inter');
+    expect(tester.widget<Text>(find.text('Inter').last).style!.color,
+        ThemeData.dark().colorScheme.onSurface);
     expect(changes, 0);
     await tester.tapAt(const Offset(5, 590));
     await tester.pumpAndSettle();
@@ -38,7 +100,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Custom');
     await tester.pumpAndSettle();
-    expect(tester.widget<Text>(find.text('Custom Font')).style!.fontFamily, 'Loaded_Custom Font');
+    expect(tester.widget<Text>(find.text('Custom Font')).style!.fontFamily,
+        'Loaded_Custom Font');
     expect(changes, 0);
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();

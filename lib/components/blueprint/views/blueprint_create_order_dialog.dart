@@ -1,3 +1,7 @@
+import 'package:festapp_core/forms.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
+import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +14,14 @@ import 'package:fstapp/styles/styles_config.dart';
 
 class BlueprintCreateOrderDialog extends StatefulWidget {
   final List<int> selectedSpotIds;
+  final Map<String, dynamic>? initialAnalysis;
   final Future<Map<String, dynamic>> Function(List<int>)? analyze;
   final Future<void> Function(List<int>, Map<String, dynamic>)? submit;
 
   const BlueprintCreateOrderDialog({
     super.key,
     required this.selectedSpotIds,
+    this.initialAnalysis,
     this.analyze,
     this.submit,
   });
@@ -59,11 +65,57 @@ class _BlueprintCreateOrderDialogState
 
   double _sumCur = 0;
   String? _currency;
+  String? _orderFormKey;
+  _OrderFormFields? _customerFields;
+  final _ticketFields = <int, _OrderFormFields>{};
+
+  void _acceptAnalysis(Map<String, dynamic> data) {
+    final total = data[_kTotalPrice], currency = data['currency'];
+    if (total is! num ||
+        !total.isFinite ||
+        currency is! String ||
+        currency.isEmpty) {
+      throw const FormatException('Missing authoritative order total');
+    }
+    _conflicts = data[_kConflicts] ?? [];
+    _newItems = data[_kNewItems] ?? [];
+    _sumCur = total.toDouble();
+    _currency = currency;
+    final form = data['order_form'] as Map?;
+    _orderFormKey = form?['key'] as String?;
+    final fields = (form?['fields'] as List? ?? const [])
+        .map((json) =>
+            FormFieldDefinition.fromJson(Map<String, dynamic>.from(json)))
+        .where((f) =>
+            f.isRequired == true &&
+            f.isHidden != true &&
+            !{'ticket', 'spot', 'product_type'}.contains(f.type))
+        .toList();
+    final customer = fields
+        .where((f) => f.isTicketField != true && f.type != 'email')
+        .toList();
+    _customerFields = customer.isEmpty
+        ? null
+        : _OrderFormFields(customer, form?['phone_prefixes']);
+    final ticket = fields.where((f) => f.isTicketField == true).toList();
+    _ticketFields.clear();
+    if (ticket.isNotEmpty) {
+      for (final id in widget.selectedSpotIds) {
+        _ticketFields[id] = _OrderFormFields(ticket, form?['phone_prefixes']);
+      }
+    }
+    _analysisReady = true;
+    _loading = false;
+  }
 
   @override
   void initState() {
     super.initState();
-    _analyze();
+    if (widget.initialAnalysis != null) {
+      _acceptAnalysis(widget.initialAnalysis!);
+    } else {
+      _analyze();
+    }
   }
 
   @override
@@ -82,24 +134,7 @@ class _BlueprintCreateOrderDialogState
     try {
       final data = await (widget.analyze ??
           DbEshop.analyzeNewOrderSpots)(widget.selectedSpotIds);
-      final total = data[_kTotalPrice];
-      final currency = data['currency'];
-      if (total is! num ||
-          !total.isFinite ||
-          currency is! String ||
-          currency.isEmpty) {
-        throw const FormatException('Missing authoritative order total');
-      }
-      if (mounted) {
-        setState(() {
-          _conflicts = data[_kConflicts] ?? [];
-          _newItems = data[_kNewItems] ?? [];
-          _sumCur = total.toDouble();
-          _currency = currency;
-          _analysisReady = true;
-          _loading = false;
-        });
-      }
+      if (mounted) setState(() => _acceptAnalysis(data));
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -112,7 +147,14 @@ class _BlueprintCreateOrderDialogState
 
   Future<void> _confirm() async {
     if (_loading || _isSubmitting || !_analysisReady) return;
-    if (!_formKey.currentState!.validate()) {
+    var valid = _formKey.currentState!.validate();
+    for (final group in [
+      if (_customerFields != null) _customerFields!,
+      ..._ticketFields.values
+    ]) {
+      if (!(group.key.currentState?.saveAndValidate() ?? false)) valid = false;
+    }
+    if (!valid) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
@@ -128,6 +170,14 @@ class _BlueprintCreateOrderDialogState
 
     final inputData = {
       'email': _emailController.text.trim(),
+      if (_orderFormKey != null) 'form_key': _orderFormKey,
+      if (_customerFields != null)
+        'fields': _customerFields!.values(ticket: false),
+      if (_ticketFields.isNotEmpty)
+        'ticket_fields': {
+          for (final entry in _ticketFields.entries)
+            entry.key.toString(): entry.value.values(ticket: true),
+        },
     };
 
     try {
@@ -168,8 +218,8 @@ class _BlueprintCreateOrderDialogState
         ],
       ),
       content: _loading
-          ? const SizedBox(
-              height: 150, child: Center(child: CircularProgressIndicator()))
+          ? SizedBox(
+              height: 150, child: Center(child: Text(OrdersStrings.processing)))
           : !_analysisReady
               ? Column(mainAxisSize: MainAxisSize.min, children: [
                   Semantics(
@@ -293,6 +343,23 @@ class _BlueprintCreateOrderDialogState
                               },
                             ),
                           ),
+                          if (_customerFields != null) ...[
+                            const SizedBox(height: 16),
+                            _requiredFields(_customerFields!),
+                          ],
+                          for (final entry in _ticketFields.entries) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                                _newItems
+                                            .where((item) =>
+                                                item['spot_id'] == entry.key)
+                                            .firstOrNull?['spot_title']
+                                        as String? ??
+                                    '${entry.key}',
+                                style: theme.textTheme.titleSmall),
+                            const SizedBox(height: 8),
+                            _requiredFields(entry.value),
+                          ],
                         ],
                       ),
                     ),
@@ -311,25 +378,27 @@ class _BlueprintCreateOrderDialogState
             foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
-          // Swap label/icon for ProgressIndicator when submitting
-          child: _isSubmitting
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: theme.colorScheme.onPrimary))
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check, size: 18),
-                    const SizedBox(width: 8),
-                    Text(BlueprintStrings.confirmOrder),
-                  ],
-                ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check, size: 18),
+              const SizedBox(width: 8),
+              Text(BlueprintStrings.confirmOrder),
+            ],
+          ),
         ),
       ],
     );
   }
+
+  Widget _requiredFields(_OrderFormFields group) => FormBuilder(
+        key: group.key,
+        enabled: !_isSubmitting,
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children:
+                FormHelper.getAllFormFields(context, group.key, group.holder)),
+      );
 
   Widget _buildOrderConflictCard(dynamic orderId, List<dynamic> tickets) {
     return _buildOrderConflictCardOriginal(orderId, tickets);
@@ -526,4 +595,24 @@ class _BlueprintCreateOrderDialogState
       ),
     );
   }
+}
+
+class _OrderFormFields {
+  _OrderFormFields(List<FormFieldDefinition> definitions, Object? prefixes)
+      : holder = FormHolder(
+            fields: definitions.map(FormHolder.createFieldHolder).toList(),
+            isCardDesign: false,
+            phonePrefixes:
+                prefixes is List ? prefixes.cast<String>() : const []) {
+    holder.controller = FormHolderController(globalKey: key);
+  }
+  final key = GlobalKey<FormBuilderState>();
+  final FormHolder holder;
+  List<Map<String, dynamic>> values({required bool ticket}) => [
+        for (final field in holder.fields)
+          {
+            field.id.toString(): FormHelper.getFieldData(key, field),
+            if (ticket) field.fieldType: FormHelper.getFieldData(key, field),
+          },
+      ];
 }

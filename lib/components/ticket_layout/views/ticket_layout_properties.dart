@@ -1,8 +1,9 @@
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'ticket_color_suggestions.dart';
+import 'package:venue_seat_picker/editor_ui.dart';
+import 'package:venue_seat_picker/venue_seat_picker.dart'
+    show VenueLayoutLocalizations;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../ticket_layout_controller.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_text.dart';
@@ -97,41 +98,38 @@ class TicketLayoutProperties extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium),
                   if (productControl != null) productControl!,
                   if (['text', 'footer'].contains(e.binding)) ...[
-                    TicketFreeTextInput(key: ValueKey('text-${e.id}'), controller: controller,
-                        element: e, value: e.text ?? data?[e.id] ?? ''),
-                    Align(alignment: Alignment.centerRight, child: TextButton.icon(
-                        onPressed: e.locked ? null : () => controller.removeTextField(e),
-                        icon: const Icon(Icons.delete_outline), label: Text(TicketLayoutStrings.removeText))),
+                    TicketFreeTextInput(
+                        key: ValueKey('text-${e.id}'),
+                        controller: controller,
+                        element: e,
+                        value: e.text ?? data?[e.id] ?? ''),
+                    Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                            onPressed: e.locked
+                                ? null
+                                : () => controller.removeTextField(e),
+                            icon: const Icon(Icons.delete_outline),
+                            label: Text(TicketLayoutStrings.removeText))),
                   ],
                   if (text) ...[
                     if (fontControl != null) fontControl!,
                     const SizedBox(height: 12),
                     Text(TicketLayoutStrings.textStyle),
                     const SizedBox(height: 6),
-                    SegmentedButton<String>(
-                        multiSelectionEnabled: true,
-                        emptySelectionAllowed: true,
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                              value: 'bold',
-                              tooltip: TicketLayoutStrings.bold,
-                              icon: const Icon(Icons.format_bold)),
-                          ButtonSegment(
-                              value: 'italic',
-                              tooltip: TicketLayoutStrings.italic,
-                              icon: const Icon(Icons.format_italic)),
-                          ButtonSegment(
-                              value: 'underline',
-                              tooltip: TicketLayoutStrings.underline,
-                              icon: const Icon(Icons.format_underlined)),
-                        ],
+                    EditorTextStyleControl(
+                        translate: (value) => switch (value) {
+                              'Bold' => TicketLayoutStrings.bold,
+                              'Italic' => TicketLayoutStrings.italic,
+                              'Underline' => TicketLayoutStrings.underline,
+                              _ => value
+                            },
                         selected: {
                           if (e.bold) 'bold',
                           if (e.italic) 'italic',
                           if (e.underline) 'underline'
                         },
-                        onSelectionChanged: e.locked
+                        onChanged: e.locked
                             ? null
                             : (values) => controller.change(e.copyWith(
                                 bold: values.contains('bold'),
@@ -140,27 +138,18 @@ class TicketLayoutProperties extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(TicketLayoutStrings.align),
                     const SizedBox(height: 6),
-                    SegmentedButton<String>(
-                        showSelectedIcon: false,
-                        segments: [
-                          ButtonSegment(
-                              value: 'left',
-                              tooltip: TicketLayoutStrings.left,
-                              icon: const Icon(Icons.format_align_left)),
-                          ButtonSegment(
-                              value: 'center',
-                              tooltip: TicketLayoutStrings.center,
-                              icon: const Icon(Icons.format_align_center)),
-                          ButtonSegment(
-                              value: 'right',
-                              tooltip: TicketLayoutStrings.right,
-                              icon: const Icon(Icons.format_align_right)),
-                        ],
-                        selected: {e.align},
-                        onSelectionChanged: e.locked
+                    EditorTextAlignmentControl(
+                        value: e.align,
+                        translate: (value) => switch (value) {
+                              'Left' => TicketLayoutStrings.left,
+                              'Center' => TicketLayoutStrings.center,
+                              'Right' => TicketLayoutStrings.right,
+                              _ => value
+                            },
+                        onChanged: e.locked
                             ? null
-                            : (values) => controller
-                                .change(e.copyWith(align: values.single))),
+                            : (value) =>
+                                controller.change(e.copyWith(align: value))),
                     const SizedBox(height: 8),
                   ],
                   if (text || e.binding == 'qr')
@@ -191,8 +180,7 @@ class TicketLayoutProperties extends StatelessWidget {
                             : () async {
                                 final original = controller.document;
                                 controller.beginGesture();
-                                final color = await showDialog<
-                                        ({String foreground, String background})>(
+                                final choice = await showDialog<EditorColorResult>(
                                     context: context,
                                     builder: (_) => _TicketColorDialog(
                                         element: e,
@@ -207,11 +195,19 @@ class TicketLayoutProperties extends StatelessWidget {
                                                     as String? ??
                                                 'FFFFFF',
                                         onPreview: (foreground, background) =>
-                                            controller.previewDocument(e.binding == 'qr'
+                                            controller.previewDocument(e.binding ==
+                                                    'qr'
                                                 ? original.withQrColors(
                                                     foreground, background)
-                                                : original.replace(
-                                                    e.copyWith(color: foreground)))));
+                                                : original.replace(e.copyWith(
+                                                    color: foreground)))));
+                                final color = choice == null
+                                    ? null
+                                    : (
+                                        foreground: choice.primary.hex,
+                                        background:
+                                            choice.secondary?.hex ?? 'FFFFFF'
+                                      );
                                 if (color == null) {
                                   controller.cancelGesture();
                                 } else {
@@ -248,8 +244,8 @@ class TicketLayoutProperties extends StatelessWidget {
                             onDoubleTap: e.locked || original == null
                                 ? null
                                 : () {
-                                    controller.change(
-                                        e.copyWith(maxLines: original.maxLines));
+                                    controller.change(e.copyWith(
+                                        maxLines: original.maxLines));
                                     finishSliderGesture();
                                   },
                             child: Slider(
@@ -282,167 +278,62 @@ class TicketLayoutProperties extends StatelessWidget {
       });
 }
 
-class _TicketColorDialog extends StatefulWidget {
-  final TicketElement element;
-  final String background;
-  final List<String> usedColors;
-  final ui.Image? backgroundImage;
-  final void Function(String foreground, String background)? onPreview;
+/// Ticket-specific QR policy around the shared editor color control.
+class _TicketColorDialog extends StatelessWidget {
   const _TicketColorDialog(
       {required this.element,
       required this.background,
       required this.usedColors,
       this.backgroundImage,
       this.onPreview});
+  final TicketElement element;
+  final String background;
+  final List<String> usedColors;
+  final ui.Image? backgroundImage;
+  final void Function(String foreground, String background)? onPreview;
   @override
-  State<_TicketColorDialog> createState() => _TicketColorDialogState();
-}
-
-class _TicketColorDialogState extends State<_TicketColorDialog> {
-  late Color foreground =
-      Color(int.parse('ff${widget.element.color}', radix: 16));
-  late Color background = Color(int.parse('ff${widget.background}', radix: 16));
-  bool editingBackground = false;
-  bool get isQr => widget.element.binding == 'qr';
-  Color get color => editingBackground ? background : foreground;
-  String colorHex(Color value) => value
-      .toARGB32()
-      .toRadixString(16)
-      .padLeft(8, '0')
-      .substring(2)
-      .toUpperCase();
-  bool get readable =>
-      ticketQrColorReadable(colorHex(foreground), colorHex(background));
-  void selectBackground(bool selected) => setState(() {
-        focus.unfocus();
-        editingBackground = selected;
-        hex.text = value;
-      });
-  void swapColors() => setState(() {
-        focus.unfocus();
-        final previous = foreground;
-        foreground = background;
-        background = previous;
-        hex.text = value;
-        widget.onPreview?.call(colorHex(foreground), colorHex(background));
-      });
-  late final hex =
-      TextEditingController(text: widget.element.color.toUpperCase());
-  final focus = FocusNode();
-  String get value => color
-      .toARGB32()
-      .toRadixString(16)
-      .padLeft(8, '0')
-      .substring(2)
-      .toUpperCase();
-  @override
-  void dispose() {
-    hex.dispose();
-    focus.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final qr = element.binding == 'qr';
+    return EditorColorDialog(
+      value: EditorColorValue(hex: element.color),
+      secondaryValue: qr ? EditorColorValue(hex: background) : null,
+      title: qr ? TicketLayoutStrings.qrColors : TicketLayoutStrings.color,
+      translate: (value) => switch (value) {
+        'Cancel' => TicketLayoutStrings.cancel,
+        'Apply' => TicketLayoutStrings.apply,
+        'Used colors' => TicketLayoutStrings.usedColors,
+        'From artwork' => TicketLayoutStrings.imageColors,
+        'Basic colors' => TicketLayoutStrings.basicColors,
+        'Foreground' => TicketLayoutStrings.qrForeground,
+        'Background' => TicketLayoutStrings.qrBackground,
+        'Swap colors' => TicketLayoutStrings.swapColors,
+        _ => VenueLayoutLocalizations.of(context).text(value)
+      },
+      dialogBuilder: (context, dialog) => AppAlertDialog(
+          title: dialog.title,
+          content: dialog.content,
+          actions: dialog.actions),
+      basicColors: ticketQrColors,
+      usedColors: usedColors,
+      image: backgroundImage,
+      enableOpacity: false,
+      validator: qr
+          ? (result) =>
+              ticketQrColorReadable(result.primary.hex, result.secondary!.hex)
+                  ? null
+                  : TicketLayoutStrings.qrContrast
+          : null,
+      onPreview: (result) => onPreview?.call(
+          result.primary.hex, result.secondary?.hex ?? background),
+      previewBuilder: qr
+          ? (context, result) => Container(
+              padding: const EdgeInsets.all(12),
+              color: result.secondary!.color,
+              child:
+                  Icon(Icons.qr_code_2, size: 56, color: result.primary.color))
+          : null,
+    );
   }
-
-  void pick(Color c, {bool fromHex = false}) => setState(() {
-        if (editingBackground) {
-          background = c;
-        } else {
-          foreground = c;
-        }
-        if (!fromHex) {
-          hex.text = value;
-        }
-        widget.onPreview?.call(colorHex(foreground), colorHex(background));
-      });
-  @override
-  Widget build(BuildContext context) => AppAlertDialog(
-          onClose: () => Navigator.pop(context),
-          title: Text(widget.element.binding == 'qr'
-              ? TicketLayoutStrings.qrColors
-              : TicketLayoutStrings.color),
-          content: SizedBox(
-              width: 300,
-              child: SingleChildScrollView(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                if (isQr) ...[
-                  Container(
-                      padding: const EdgeInsets.all(8),
-                      color: background,
-                      child:
-                          Icon(Icons.qr_code_2, size: 56, color: foreground)),
-                  const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
-                        child: SegmentedButton<bool>(
-                            segments: [
-                          ButtonSegment(
-                              value: false,
-                              label: Text(TicketLayoutStrings.qrForeground)),
-                          ButtonSegment(
-                              value: true,
-                              label: Text(TicketLayoutStrings.qrBackground)),
-                        ],
-                            selected: {
-                          editingBackground
-                        },
-                            onSelectionChanged: (value) =>
-                                selectBackground(value.single))),
-                    IconButton(
-                        onPressed: swapColors,
-                        tooltip: TicketLayoutStrings.swapColors,
-                        icon: const Icon(Icons.swap_horiz)),
-                  ]),
-                  const SizedBox(height: 8),
-                  Text(TicketLayoutStrings.qrBackgroundHint),
-                  const SizedBox(height: 12),
-                ],
-                TicketColorSuggestions(
-                    usedColors: widget.usedColors,
-                    image: widget.backgroundImage,
-                    selected: value,
-                    onSelect: (color) {
-                      focus.unfocus();
-                      pick(color);
-                    }),
-                ColorPicker(
-                    pickerColor: color,
-                    enableAlpha: false,
-                    labelTypes: const [],
-                    portraitOnly: true,
-                    pickerAreaHeightPercent: .8,
-                    onColorChanged: pick),
-                TextField(
-                    controller: hex,
-                    focusNode: focus,
-                    maxLength: 6,
-                    decoration: const InputDecoration(
-                        prefixText: '#', labelText: 'HEX'),
-                    onChanged: (v) {
-                      if (RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(v)) {
-                        pick(Color(int.parse('ff$v', radix: 16)),
-                            fromHex: true);
-                      } else {
-                        setState(() {});
-                      }
-                    }),
-                if (isQr && !readable)
-                  Text(TicketLayoutStrings.qrContrast,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)),
-              ]))),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(TicketLayoutStrings.cancel)),
-            FilledButton(
-                onPressed: !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(hex.text) ||
-                        isQr && !readable
-                    ? null
-                    : () => Navigator.pop(context, (
-                          foreground: colorHex(foreground),
-                          background: colorHex(background)
-                        )),
-                child: Text(TicketLayoutStrings.apply)),
-          ]);
 }
 
 class TicketProductLabelInput extends StatefulWidget {
@@ -469,7 +360,9 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
   @override
   void didUpdateWidget(covariant TicketProductLabelInput old) {
     super.didUpdateWidget(old);
-    if ((!focus.hasFocus || historyRevision != widget.controller.historyRevision) && text.text != widget.element.label) {
+    if ((!focus.hasFocus ||
+            historyRevision != widget.controller.historyRevision) &&
+        text.text != widget.element.label) {
       text.text = widget.element.label ?? '';
     }
     historyRevision = widget.controller.historyRevision;
@@ -519,12 +412,15 @@ class _TicketProductLabelInputState extends State<TicketProductLabelInput> {
       );
 }
 
-
 class TicketFreeTextInput extends StatefulWidget {
   final TicketLayoutController controller;
   final TicketElement element;
   final String value;
-  const TicketFreeTextInput({super.key, required this.controller, required this.element, required this.value});
+  const TicketFreeTextInput(
+      {super.key,
+      required this.controller,
+      required this.element,
+      required this.value});
   @override
   State<TicketFreeTextInput> createState() => _TicketFreeTextInputState();
 }
@@ -535,26 +431,39 @@ class _TicketFreeTextInputState extends State<TicketFreeTextInput> {
   void _focusChanged() {
     if (!focus.hasFocus) widget.controller.endGesture();
   }
+
   @override
   void didUpdateWidget(covariant TicketFreeTextInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (text.text != widget.value) {
-      text.value = TextEditingValue(text: widget.value,
+      text.value = TextEditingValue(
+          text: widget.value,
           selection: TextSelection.collapsed(offset: widget.value.length));
     }
   }
+
   @override
   void dispose() {
     focus.removeListener(_focusChanged);
-    focus.dispose(); text.dispose(); super.dispose();
+    focus.dispose();
+    text.dispose();
+    super.dispose();
   }
+
   @override
   Widget build(BuildContext context) => TextField(
-      key: const ValueKey('ticket-free-text'), controller: text, focusNode: focus,
-      enabled: !widget.element.locked, minLines: 2, maxLines: 5, maxLength: 2000,
+      key: const ValueKey('ticket-free-text'),
+      controller: text,
+      focusNode: focus,
+      enabled: !widget.element.locked,
+      minLines: 2,
+      maxLines: 5,
+      maxLength: 2000,
       decoration: InputDecoration(labelText: TicketLayoutStrings.textContent),
       onChanged: (value) {
         widget.controller.beginGesture();
-        widget.controller.change(widget.element.copyWith(binding: 'text', text: value));
-      }, onTapOutside: (_) => focus.unfocus());
+        widget.controller
+            .change(widget.element.copyWith(binding: 'text', text: value));
+      },
+      onTapOutside: (_) => focus.unfocus());
 }

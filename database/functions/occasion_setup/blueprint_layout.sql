@@ -16,18 +16,25 @@ GRANT EXECUTE ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uui
 
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_blueprint_resources(p_draft uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE d public.occasion_setup_drafts; doc jsonb; source_id bigint; resource_occasion bigint; resource_unit bigint;
+DECLARE d public.occasion_setup_drafts; doc jsonb; source_id bigint; resources jsonb; source_resources jsonb;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_draft;
  IF d.id IS NULL OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  source_id:=(d.data->>'sourceId')::bigint;
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
- doc:=coalesce(d.data#>'{blueprintLayoutDraft,layout}',jsonb_build_object('nodes','[]'::jsonb,'defaultTextStyle',jsonb_build_object('fontId',
-  'builtin:futura-pt-book:571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44')));
- IF source_id IS NULL OR EXISTS(SELECT 1 FROM public.blueprint_image_assets WHERE unit=d.unit AND asset_ref=doc#>>'{background,assetRef}' AND state='ready') THEN
-  resource_unit:=d.unit;
- ELSE resource_occasion:=source_id; END IF;
- RETURN public.bound_document_data_v1(jsonb_build_object('resources',public.blueprint_layout_resources_internal(doc,resource_occasion,resource_unit)));
+ doc:=coalesce(d.data#>'{blueprintLayoutDraft,layout}',jsonb_build_object(
+  'schemaVersion',2,'symbolSetVersion',1,'canvas',jsonb_build_object('x',0,'y',0,'width',2400,'height',1600,'fill','#FFFFFFFF'),
+  'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,'textPolicy',jsonb_build_object('language','und','direction','auto'),
+  'nodes','[]'::jsonb,'sections','[]'::jsonb,'selectionUnits','[]'::jsonb,'attachments','[]'::jsonb,'presets','[]'::jsonb));
+ IF doc->>'schemaVersion' IS DISTINCT FROM '2' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_LAYOUT_MIGRATION_REQUIRED';END IF;
+  resources:=public.blueprint_canonical_text_resources_internal(doc,NULL,p_draft,true);
+  source_resources:=CASE WHEN source_id IS NULL THEN '{}'::jsonb ELSE public.blueprint_canonical_text_resources_internal(doc,source_id,NULL,true) END;
+  resources:=resources||jsonb_build_object(
+   'fontFamilies',coalesce(source_resources->'fontFamilies','{}')||(resources->'fontFamilies'),
+   'textLayouts',coalesce(source_resources->'textLayouts','{}')||(resources->'textLayouts'),
+   'numberSymbols',coalesce(source_resources->'numberSymbols','{}')||(resources->'numberSymbols'),
+   'assets',public.blueprint_canonical_asset_resources_internal(doc,source_id,NULL)||public.blueprint_canonical_asset_resources_internal(doc,NULL,d.unit));
+  RETURN public.bound_document_data_v1(jsonb_build_object('resources',resources));
 END $$;
 REVOKE ALL ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) TO authenticated;
@@ -116,20 +123,16 @@ BEGIN
   SELECT coalesce(jsonb_object_agg(value->>'id',extensions.gen_random_uuid()),'{}') INTO ids FROM records WHERE jsonb_typeof(value)='object' AND value ? 'id';
   doc:=public.remap_blueprint_layout_ids_internal(doc,ids);
  END IF;
- -- A new draft may use an authenticated unit-owned processed background.
- IF doc#>>'{background,assetRef}' LIKE 'image:%' THEN
-  IF EXISTS(SELECT 1 FROM public.blueprint_image_assets WHERE unit=p_unit AND asset_ref=doc#>>'{background,assetRef}' AND state='ready') THEN
-   PERFORM public.copy_blueprint_unit_image_resources_internal(p_unit,p_target,doc);
-  ELSIF p_source IS NOT NULL THEN
-   PERFORM public.copy_blueprint_image_resources_internal(p_source,p_target,doc);
-  ELSE RAISE check_violation USING MESSAGE='BLUEPRINT_IMAGE_RESOURCE_NOT_READY'; END IF;
- END IF;
+ PERFORM public.validate_blueprint_layout_internal(doc);
+ IF p_source IS NOT NULL THEN PERFORM public.copy_blueprint_text_resources_internal(p_source,NULL,p_target,doc);END IF;
+ PERFORM public.check_blueprint_text_resources_internal(doc,p_target);
+ PERFORM public.copy_blueprint_canonical_bitmap_resources_internal(p_source,p_unit,p_target,doc);
  FOR seat IN SELECT value FROM jsonb_array_elements(coalesce(p_draft->'seatBindings','[]')) LOOP
-  IF seat ? 'spotId' OR EXISTS(SELECT 1 FROM jsonb_object_keys(seat) k WHERE k NOT IN('nodeId','productId','title','groupNodeId','selectionUnitId','blocked')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_BINDING_IDENTITY'; END IF;
+  IF seat ? 'spotId' OR EXISTS(SELECT 1 FROM jsonb_object_keys(seat) k WHERE k NOT IN('nodeId','productId','title','groupNodeId','selectionUnitId','blocked','productAssignmentMode')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_BINDING_IDENTITY'; END IF;
   product_id:=(p_product_map->>(seat->>'productId'))::bigint;
   IF seat->>'productId' IS NOT NULL AND product_id IS NULL THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_PRODUCT_NOT_IN_FORM'; END IF;
   seats:=seats||jsonb_build_array(seat||jsonb_build_object('nodeId',coalesce(ids->> (seat->>'nodeId'),seat->>'nodeId'),
-   'groupNodeId',coalesce(ids->>(seat->>'groupNodeId'),seat->>'groupNodeId'),'selectionUnitId',coalesce(ids->>(seat->>'selectionUnitId'),seat->>'selectionUnitId'),
+   'productAssignmentMode',coalesce(seat->>'productAssignmentMode','override'),'groupNodeId',coalesce(ids->>(seat->>'groupNodeId'),seat->>'groupNodeId'),'selectionUnitId',coalesce(ids->>(seat->>'selectionUnitId'),seat->>'selectionUnitId'),
    'spotId',NULL,'productId',product_id,'operation','upsert'));
  END LOOP;
  FOR grp IN SELECT value FROM jsonb_array_elements(coalesce(p_draft->'groupProducts','[]')) LOOP
@@ -145,7 +148,7 @@ BEGIN
   ELSE context_id:=public.materialize_setup_area_inventory_internal(area,product_id,p_target); END IF;
   areas:=areas||jsonb_build_array(jsonb_build_object('nodeId',coalesce(ids->>(area->>'nodeId'),area->>'nodeId'),'productId',product_id,'inventoryContextId',context_id,'operation','upsert'));
  END LOOP;
- result:=public.save_blueprint_layout_internal_v1(jsonb_build_object('occasion',p_target,'expected_layout_revision',0,'title','Blueprint','layout',doc,'seatChanges',seats,'groupProductChanges',groups,'areaBindingChanges',areas));
+ result:=public.save_blueprint_layout_internal_v1(jsonb_build_object('occasion',p_target,'expected_layout_revision',0,'title','Blueprint','layout',doc,'seatChanges',seats,'groupProductChanges',groups,'areaBindingChanges',areas)||jsonb_build_object('textResourceIds',to_jsonb(public.blueprint_text_resource_ids_internal(doc,p_target))));
  RETURN (result->>'blueprint_id')::bigint;
 END $$;
 REVOKE ALL ON FUNCTION public.materialize_setup_blueprint_layout_internal(jsonb,jsonb,bigint,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

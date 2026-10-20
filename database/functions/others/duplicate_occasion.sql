@@ -219,11 +219,13 @@ BEGIN
       SELECT coalesce(jsonb_object_agg(old_id::text,new_id),'{}') INTO v_layout_ids FROM tmp_blueprint_layout_ids WHERE blueprint=rec.id;
       v_copied_layout:=public.remap_blueprint_layout_ids_internal(rec.layout,v_layout_ids);
       PERFORM public.validate_blueprint_layout_internal(v_copied_layout);
+       PERFORM public.copy_blueprint_text_resources_internal(oc,NULL,new_occ,v_copied_layout);
+       PERFORM public.check_blueprint_text_resources_internal(v_copied_layout,new_occ);
       PERFORM public.check_blueprint_image_resource_internal(v_copied_layout,new_occ);
     END IF;
     INSERT INTO eshop.blueprints
-      (created_at, data, title, organization, occasion, updated_at,layout,layout_revision)
-    VALUES (now(), rec.data, rec.title, v_organization, new_occ, now(),v_copied_layout,0)
+      (created_at, data, title, organization, occasion, updated_at,layout,layout_revision,layout_text_resource_ids)
+    VALUES (now(), rec.data, rec.title, v_organization, new_occ, now(),v_copied_layout,0,CASE WHEN v_copied_layout IS NULL THEN '{}'::text[] ELSE public.blueprint_text_resource_ids_internal(v_copied_layout,new_occ) END)
     RETURNING id INTO v_new_id;
 
     INSERT INTO tmp_blueprints (old_id, new_id)
@@ -319,8 +321,8 @@ BEGIN
   ------------------------------------------------------------------
   -- Copied geometry and commercial state share the same new UUID mapping.
   -- Holds/orders are deliberately absent and numeric spots/products remap too.
-  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,selection_unit,group_node,blocked)
-  SELECT bp.new_id,node_map.new_id,sp.new_id,unit_map.new_id,group_map.new_id,sb.blocked
+  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,selection_unit,group_node,blocked,product_assignment_mode)
+  SELECT bp.new_id,node_map.new_id,sp.new_id,unit_map.new_id,group_map.new_id,sb.blocked,sb.product_assignment_mode
   FROM eshop.blueprint_seat_bindings sb JOIN tmp_blueprints bp ON bp.old_id=sb.blueprint JOIN tmp_spots sp ON sp.old_id=sb.spot
   JOIN tmp_blueprint_layout_ids node_map ON node_map.blueprint=sb.blueprint AND node_map.old_id=sb.node_id
   LEFT JOIN tmp_blueprint_layout_ids unit_map ON unit_map.blueprint=sb.blueprint AND unit_map.old_id=sb.selection_unit

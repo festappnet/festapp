@@ -289,7 +289,7 @@ export class TicketFieldBuilder {
                     for (const value of ticketData.fields || []) {
                         const offered = (formModel.offeredTicketProductFields || [])
                             .find(item => String(item.id) === String(value._subFieldId));
-                        const product = offered?.productTypeData?.products
+                        const product = ticketData._blueprintProduct || offered?.productTypeData?.products
                             ?.find(item => String(item.id) === String(value.product_type));
                         if (!product) continue;
                         const summary = document.createElement('p');

@@ -186,10 +186,12 @@ BEGIN
             ticket_note := NULL;
 
             IF ticket_data->>'spot' IS NOT NULL THEN
-                SELECT * INTO spot_data
-                FROM eshop.spots
-                WHERE id = (ticket_data->>'spot')::BIGINT
-                  AND occasion = occasion_id;
+                SELECT s.* INTO spot_data
+                FROM eshop.spots s
+                JOIN public.forms f ON f.id=form_id AND f.blueprint=s.blueprint AND f.occasion=s.occasion
+                JOIN eshop.blueprint_seat_bindings sb ON sb.spot=s.id AND sb.blueprint=f.blueprint
+                WHERE s.id = (ticket_data->>'spot')::BIGINT
+                  AND s.occasion = occasion_id;
 
                 IF spot_data IS NULL THEN
                     RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1007, 'message', 'Invalid or unrelated spot')::TEXT;
@@ -264,7 +266,9 @@ BEGIN
                   AND it.occasion = occasion_id;
 
                 IF product_data.id IS NOT NULL AND spot_id IS NULL AND NOT EXISTS(SELECT 1 FROM public.form_fields ff
-                  WHERE ff.form=form_id AND ff.product_type=product_data.product_type AND NOT ff.is_hidden) THEN
+                  WHERE ff.form=form_id AND ff.product_type=product_data.product_type AND NOT ff.is_hidden)
+                  AND NOT EXISTS(SELECT 1 FROM public.blueprint_form_products_internal(form_id) offered
+                    WHERE offered.product=product_data.id AND offered.has_capacity) THEN
                   RAISE EXCEPTION '%',jsonb_build_object('code',400,'errorCode','PRODUCT_SCOPE_MISMATCH','productId',product_id)::text;
                 END IF;
                 IF product_data IS NULL THEN

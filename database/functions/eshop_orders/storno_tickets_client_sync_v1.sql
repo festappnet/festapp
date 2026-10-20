@@ -31,7 +31,7 @@ BEGIN
   SELECT array_agg(DISTINCT opt."order") INTO v_changed_orders
     FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
     WHERE t.id=ANY(p_tickets) AND t.state IS DISTINCT FROM 'storno';
-  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets);
+  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets, false);
   SELECT coalesce(jsonb_agg(o.id ORDER BY o.id) FILTER(WHERE o.state='storno'),'[]'::jsonb),
     coalesce(jsonb_agg(jsonb_build_object('id',o.id,'email',o.data->>'email') ORDER BY o.id)
       FILTER(WHERE o.state IS DISTINCT FROM 'storno'),'[]'::jsonb)

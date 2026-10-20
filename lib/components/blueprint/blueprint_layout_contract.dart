@@ -10,6 +10,12 @@ Map<String, dynamic> _map(Object? value) =>
     Map<String, dynamic>.from(value as Map);
 int? _id(Object? value) => value == null ? null : (value as num).toInt();
 
+String _assignmentMode(Object? value){
+  if(value==null)return 'override';
+  if(value!='inherit'&&value!='override')throw const FormatException('invalid_product_assignment_mode');
+  return value as String;
+}
+
 class BlueprintSeatBinding {
   const BlueprintSeatBinding(
       {required this.nodeId,
@@ -18,12 +24,14 @@ class BlueprintSeatBinding {
       this.title = '',
       this.groupNodeId,
       this.selectionUnitId,
-      this.blocked = false});
+      this.blocked = false,
+      this.productAssignmentMode='override'});
   final String nodeId;
   final int? spotId, productId;
   final String title;
   final String? groupNodeId, selectionUnitId;
   final bool blocked;
+  final String productAssignmentMode;
   factory BlueprintSeatBinding.fromJson(Map<String, dynamic> json) =>
       BlueprintSeatBinding(
           nodeId: json['nodeId'] as String,
@@ -32,7 +40,8 @@ class BlueprintSeatBinding {
           title: json['title'] as String? ?? '',
           groupNodeId: json['groupNodeId'] as String?,
           selectionUnitId: json['selectionUnitId'] as String?,
-          blocked: json['blocked'] == true);
+          blocked: json['blocked'] == true,
+          productAssignmentMode: _assignmentMode(json['productAssignmentMode']));
   Map<String, dynamic> toJson() => {
         'nodeId': nodeId,
         'spotId': spotId,
@@ -40,7 +49,8 @@ class BlueprintSeatBinding {
         'title': title,
         'groupNodeId': groupNodeId,
         'selectionUnitId': selectionUnitId,
-        'blocked': blocked
+        'blocked': blocked,
+        'productAssignmentMode':productAssignmentMode
       };
   BlueprintSeatBinding copyWith(
           {int? spotId,
@@ -49,6 +59,7 @@ class BlueprintSeatBinding {
           String? groupNodeId,
           String? selectionUnitId,
           bool? blocked,
+          String? productAssignmentMode,
           bool clearProduct = false,
           bool clearGroup = false,
           bool clearUnit = false}) =>
@@ -60,7 +71,8 @@ class BlueprintSeatBinding {
           groupNodeId: clearGroup ? null : groupNodeId ?? this.groupNodeId,
           selectionUnitId:
               clearUnit ? null : selectionUnitId ?? this.selectionUnitId,
-          blocked: blocked ?? this.blocked);
+          blocked: blocked ?? this.blocked,
+          productAssignmentMode:productAssignmentMode??this.productAssignmentMode);
 }
 
 class BlueprintGroupProduct {
@@ -201,8 +213,10 @@ class BlueprintLayoutSaveRequest {
   BlueprintLayoutSaveRequest(
       {required this.snapshot,
       required this.baseline,
-      Map<String, int> areaCapacities = const {}})
-      : expectedRevision = baseline.revision {
+      Map<String, int> areaCapacities = const {},
+      Map<String,dynamic> resources=const {}})
+      : expectedRevision = baseline.revision,
+        textResourceIds=List.unmodifiable(collectLayoutTextResourceIds(snapshot.document,resources)) {
     if ([...snapshot.areaBindings.values, ...baseline.areaBindings.values]
         .any((binding) => binding.inventoryContextId == null)) {
       throw StateError('public_blueprint_cannot_be_saved');
@@ -211,6 +225,7 @@ class BlueprintLayoutSaveRequest {
   }
   final BlueprintLayoutSnapshot snapshot, baseline;
   final int expectedRevision;
+  final List<String> textResourceIds;
   late final String _payload;
   Map<String, dynamic> _build(Map<String, int> areaCapacities) => {
         'id': snapshot.blueprintId,
@@ -219,6 +234,7 @@ class BlueprintLayoutSaveRequest {
         'title': snapshot.title,
         'expected_layout_revision': expectedRevision,
         'layout': snapshot.document.toJson(),
+        'textResourceIds':textResourceIds,
         'seatChanges': [
           for (final binding in snapshot.seatBindings.values)
             BlueprintSeatChange(binding).toJson(),

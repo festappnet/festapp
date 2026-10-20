@@ -10,15 +10,16 @@ class BlueprintLayoutAdapter {
     refresh(source);
   }
   Map<int, ProductModel> products = {};
+  Map<String, Map<String, dynamic>> areaAvailability = {};
   Map<int, BlueprintObjectModel> spots = {};
   void refresh(BlueprintModel source) {
+    areaAvailability = Map.from(source.areaAvailability);
     products = {
       for (final p in source.products ?? <ProductModel>[])
         if (p.id != null) p.id!: p
     };
     spots = {
-      for (final s
-          in source.spots ?? <BlueprintObjectModel>[])
+      for (final s in source.spots ?? <BlueprintObjectModel>[])
         if (s.id != null) s.id!: s
     };
     for (final spot in spots.values) {
@@ -29,8 +30,12 @@ class BlueprintLayoutAdapter {
 
   BlueprintSeatState state(BlueprintSeatBinding binding) {
     final live = spots[binding.spotId]?.stateEnum;
-    if (const {BlueprintSeatState.selected, BlueprintSeatState.selectedByMe,
-      BlueprintSeatState.ordered, BlueprintSeatState.used}.contains(live)) {
+    if (const {
+      BlueprintSeatState.selected,
+      BlueprintSeatState.selectedByMe,
+      BlueprintSeatState.ordered,
+      BlueprintSeatState.used
+    }.contains(live)) {
       return live!;
     }
     if (binding.blocked || live == BlueprintSeatState.blocked) {
@@ -41,6 +46,7 @@ class BlueprintLayoutAdapter {
     }
     return live ?? BlueprintSeatState.available;
   }
+
   bool protected(BlueprintSeatBinding binding) => const {
         BlueprintSeatState.selected,
         BlueprintSeatState.selectedByMe,
@@ -56,10 +62,13 @@ class BlueprintLayoutAdapter {
 
   /// Public presentation deliberately excludes all order/customer metadata.
   Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) => {
-        'stateMarker': state(binding) == BlueprintSeatState.used ? 'none' : 'auto',
+        'stateMarker':
+            state(binding) == BlueprintSeatState.used ? 'none' : 'auto',
         'label': binding.title,
         'fill': switch (state(binding)) {
-          BlueprintSeatState.available || BlueprintSeatState.selectedByMe => '#267329FF',
+          BlueprintSeatState.available ||
+          BlueprintSeatState.selectedByMe =>
+            '#267329FF',
           BlueprintSeatState.selected => '#00000042',
           BlueprintSeatState.ordered => '#0000001F',
           BlueprintSeatState.used => '#412673FF',

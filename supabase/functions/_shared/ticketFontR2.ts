@@ -4,7 +4,9 @@ const ENDPOINT = 'https://image-api.festapp.net/service/ticket-fonts/';
 const MAX_BYTES = 8 * 1024 * 1024;
 
 /** Transport only. Font IDs, catalog metadata and validation stay in resolver. */
-export function createTicketFontR2Store(secret: () => string | undefined, request: typeof fetch = fetch): FontStore {
+export function createTicketFontR2Store(secret: () => string | undefined, request: typeof fetch = fetch, endpoint = ENDPOINT): FontStore {
+  const target = new URL(endpoint);
+  if ((target.protocol !== 'https:' && !(target.protocol === 'http:' && ['127.0.0.1', 'localhost', 'host.lima.internal', 'host.docker.internal'].includes(target.hostname))) || target.username || target.password || target.search || target.hash || !target.pathname.endsWith('/service/ticket-fonts/')) throw new TicketFontError('font_storage_config');
   async function send(key: string, bytes?: Uint8Array): Promise<Response> {
     if (!/^sha256\/[a-f0-9]{64}\.(ttf|woff)$/.test(key)) throw new TicketFontError('font_storage_key');
     const token = secret();
@@ -15,7 +17,7 @@ export function createTicketFontR2Store(secret: () => string | undefined, reques
       headers['Content-Type'] = 'application/octet-stream';
       headers['Content-Length'] = String(bytes.length);
     }
-    return request(ENDPOINT + key, {
+    return request(target.href + key, {
       method: bytes ? 'PUT' : 'GET', headers,
       body: bytes ? new Uint8Array(bytes).buffer : undefined,
       redirect: 'error', signal: AbortSignal.timeout(15000),

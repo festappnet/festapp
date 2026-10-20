@@ -1,39 +1,92 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
+import 'package:collection/collection.dart';
 import 'package:http/http.dart' as http;
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../fonts/ticket_font_catalog.dart';
 import '../ticket_layout/ticket_layout_service.dart';
 
-/// Reuses Ticket Editor's catalog, authorized resolver and immutable font IDs.
-class BlueprintLayoutFontProvider implements LayoutFontProvider {
-  BlueprintLayoutFontProvider._(this.occasionId, this.catalog, this._service,
-      {this.setupDraftId});
+/// Commit only decoded images whose verified manifests still belong to this
+/// session. The caller guards controller/session liveness after awaiting I/O.
+/// Uploads resolve only their new manifest and may add it atomically with bytes.
+/// The resolver retains ownership of every ui.Image, including rejected ones.
+bool commitBlueprintImages(VenueLayoutController controller,
+    {required Map<String, dynamic> requestedResources,
+    required Map<String, dynamic> resolvedResources,
+    bool addAssets = false}) {
+  final current = controller.resources;
+  final assets = <String, dynamic>{...current['assets'] as Map? ?? {}};
+  final images = <String, dynamic>{...current['images'] as Map? ?? {}};
+  final resolvedAssets = resolvedResources['assets'] as Map? ?? const {};
+  final resolvedImages = resolvedResources['images'] as Map? ?? const {};
+  const equality = DeepCollectionEquality();
+  for (final entry
+      in (requestedResources['assets'] as Map? ?? const {}).entries) {
+    final ref = entry.key as String;
+    if (!equality.equals(entry.value, resolvedAssets[ref]) ||
+        !resolvedImages.containsKey(ref)) continue;
+    if (addAssets &&
+        assets.containsKey(ref) &&
+        !equality.equals(entry.value, assets[ref])) return false;
+    if (!assets.containsKey(ref) && addAssets) {
+      assets[ref] = entry.value;
+    }
+    if (equality.equals(entry.value, assets[ref])) {
+      images[ref] = resolvedImages[ref];
+    }
+  }
+  if (assets.isEmpty && images.isEmpty && current.isEmpty) return true;
+  return controller.setResources({
+    'protocol': 2,
+    'fontFamilies': const <String, dynamic>{},
+    'textLayouts': const <String, dynamic>{},
+    ...current,
+    'assets': assets,
+    'images': images,
+  });
+}
+
+/// Prepared text is an immutable contribution, not a replacement for resources
+/// that may have arrived while shaping. Frozen save payloads remain untouched.
+bool commitBlueprintTextResources(
+    VenueLayoutController controller, Map<String, dynamic> preparedResources) {
+  final current = controller.resources;
+  return controller.setResources({
+    ...current,
+    'protocol': 2,
+    for (final key in ['fontFamilies', 'textLayouts', 'numberSymbols'])
+      key: {
+        ...current[key] as Map? ?? {},
+        ...preparedResources[key] as Map? ?? {},
+      },
+  });
+}
+
+/// Blueprint uses the shared immutable font registry and whole-text service.
+/// The Ticket editor retains its independent character-outline API.
+class BlueprintTextResources {
+  BlueprintTextResources._(this.occasionId, this._service,
+      {this.setupDraftId, required this.families});
   final int? occasionId;
   final String? setupDraftId;
-  @override
-  final List<Map<String, dynamic>> catalog;
   final TicketLayoutService _service;
-  String characters = '';
-  static Future<BlueprintLayoutFontProvider> load(int occasionId,
+  final List<Map<String, dynamic>> families;
+  Future<Map<String, dynamic>> prepareTextBatch(Map<String, dynamic> batch) =>
+      _service.layoutTextBatch(batch,
+          occasionId: occasionId, setupDraftId: setupDraftId);
+  Future<TicketFontResource> loadFace(String id) => setupDraftId == null
+      ? _service.font(occasionId!, id)
+      : _service.fontForSetupDraft(setupDraftId!, id);
+  static Future<BlueprintTextResources> load(int occasionId,
           {TicketLayoutService? service}) async =>
-      BlueprintLayoutFontProvider._(occasionId, await TicketFontCatalog.load(),
-          service ?? TicketLayoutService());
-  static Future<BlueprintLayoutFontProvider> forSetupDraft(String draftId,
+      BlueprintTextResources._(occasionId, service ?? TicketLayoutService(),
+          families: await TicketFontCatalog.loadFamilies());
+  static Future<BlueprintTextResources> forSetupDraft(String draftId,
           {TicketLayoutService? service}) async =>
-      BlueprintLayoutFontProvider._(null, await TicketFontCatalog.load(),
-          service ?? TicketLayoutService(),
-          setupDraftId: draftId);
-  @override
-  Future<Map<String, dynamic>> resolve(String fontId) {
-    // Repeated seat labels do not consume the endpoint's unique-glyph envelope.
-    final needed = String.fromCharCodes(characters.runes.toSet());
-    return setupDraftId == null
-        ? _service.layoutFont(occasionId!, fontId, characters: needed)
-        : _service.layoutFontForSetupDraft(setupDraftId!, fontId,
-            characters: needed);
-  }
+      BlueprintTextResources._(null, service ?? TicketLayoutService(),
+          setupDraftId: draftId,
+          families: await TicketFontCatalog.loadFamilies());
 }
 
 /// Resolves the existing image service's verified public manifests. Decoded

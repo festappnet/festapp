@@ -11,7 +11,7 @@ registerHooks({ resolve(specifier, context, nextResolve) {
 globalThis.self = globalThis;
 await import('@festapp/venue-layout/kernel');
 
-export const emptyLayout = {schemaVersion: 1, symbolSetVersion: 1,
+export const emptyLayout = {schemaVersion: 2, symbolSetVersion: 1,
     canvas: {x: 0, y: 0, width: 600, height: 400, fill: '#FFFFFFFF'},
-    defaultTextStyle: {fontId: 'fixture:sans', size: 24, color: '#222222FF'},
-    nodes: [], sections: [], selectionUnits: [], attachments: [], generators: [], presets: [], background: null};
+    textPolicy: {language: 'und', direction: 'auto'}, styles: {}, seatingDefaults: {},
+    nodes: [], sections: [], selectionUnits: [], attachments: [], presets: [], background: null};

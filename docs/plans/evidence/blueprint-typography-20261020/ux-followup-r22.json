@@ -1,0 +1,9 @@
+{
+  "revision": "r22",
+  "status": "Built and verified; incorporated into r23 before preview update after new user steering",
+  "selection_tests_passed": 11,
+  "test_log": "/tmp/blueprint-r22-selection-tests.log",
+  "archive_gate": "/tmp/blueprint-r22-archive.log",
+  "host_build": "/tmp/blueprint-r22-host-build.log",
+  "production_writes": false
+}

@@ -10,14 +10,13 @@ def main():
     manifest=BACKEND/'fixture.json'
     if manifest.exists():
         existing=json.loads(manifest.read_text())
-        if sql("SELECT count(*) FROM public.forms WHERE key='"+existing['formKey']+"'::uuid",capture=True).strip()=='1':
+        if sql("SELECT count(*) FROM public.forms form JOIN eshop.blueprints blueprint ON blueprint.id=form.blueprint WHERE blueprint.layout->>'schemaVersion'='2' AND form.key='"+existing['formKey']+"'::uuid",capture=True).strip()=='1':
             print('Existing owned fixture preserved');return
-    outline=json.loads(run(['deno','run','--allow-read','--allow-env',str(ROOT/'automation/blueprint_local_e2e_font.ts')],capture=True))
-    sql("BEGIN; SELECT set_config('request.jwt.claim.role','service_role',true); SELECT (public.register_blueprint_layout_font('"+outline['id']+"','"+json.dumps(outline).replace("'","''")+"'::jsonb))->>'id'; COMMIT;")
+    prepared=json.loads(run(['deno','run','--allow-read','--allow-env',str(ROOT/'automation/blueprint_local_e2e_font.ts')],capture=True))
     file_sql(ROOT/'database/tests/blueprint/fixtures.sql')
     file_sql(ROOT/'database/tests/blueprint/e2e_fixture.sql')
     file_sql(ROOT/'database/tests/blueprint/e2e_business_fixture.sql')
-    fixture=json.loads(sql("SELECT public.blueprint_seed_business_e2e_fixture(public.blueprint_seed_e2e_fixture('"+outline['id']+"',(SELECT id FROM public.organizations WHERE title='Test Organization' ORDER BY id LIMIT 1)))",capture=True))
+    fixture=json.loads(sql("BEGIN; DO $fixture$ BEGIN PERFORM set_config('festapp.fixture_text_resources','"+json.dumps(prepared['resources']).replace("'","''")+"',true); END $fixture$; SELECT public.blueprint_seed_business_e2e_fixture(public.blueprint_seed_e2e_fixture('"+prepared['fontId']+"',(SELECT id FROM public.organizations WHERE title='Test Organization' ORDER BY id LIMIT 1))); COMMIT;",capture=True))
     private_json(manifest,fixture)
     # HMAC registration key is local-only; never log it or reuse service-role keys.
     secret=secrets.token_hex(32)

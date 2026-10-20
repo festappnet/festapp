@@ -19,3 +19,8 @@ node web_client/scripts/run_db_tests.js database/tests/my_test.sql # Specific DB
 - `docs/architecture/SERVICES.md` — RightsService, OfflineDataService, SynchroService
 - `docs/backend/edge_functions.md` — Edge function auth patterns, deployment
 - `CONTRIBUTING.md` — Testing workflow, security checklist, commit rules
+
+## Czech action wording
+
+Use “Zrušit” for cancel/dismiss actions in Czech UI, never “Stornovat” or “Storno”.
+This is UI wording; existing backend command names and accounting states stay unchanged.

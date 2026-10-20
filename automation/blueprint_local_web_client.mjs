@@ -7,10 +7,11 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const backend=resolve(root,'../festapp-blueprint-b-e2e-20261019');
 const definitions=JSON.parse(await readFile(resolve(backend,'private-defines.json'),'utf8'));
 if(definitions.FESTAPP_SUPABASE_URL!=='http://127.0.0.1:59521')throw Error('Owned loopback backend required');
-const config=`import fs from 'node:fs';
+const config=`import {blueprintPreviewPlugin} from ${JSON.stringify(resolve(root,'automation/blueprint_web_preview.mjs'))};
+import fs from 'node:fs';
 const definitions=JSON.parse(fs.readFileSync(new URL('./private-defines.json',import.meta.url)));
 if(definitions.FESTAPP_SUPABASE_URL!=='http://127.0.0.1:59521')throw Error('Owned loopback backend required');
-export default {root:${JSON.stringify(resolve(root,'web_client'))},server:{host:'127.0.0.1',port:59601,strictPort:true},plugins:[{
+export default {root:${JSON.stringify(resolve(root,'web_client'))},server:{host:'127.0.0.1',port:59601,strictPort:true},plugins:[blueprintPreviewPlugin({backend:${JSON.stringify(backend)},artifact:${JSON.stringify('/Users/miakh/source/venue-seat-picker-blueprint-b-20261019/build/qa/canonical-0.3.0-20261020-r38')}}),{
 name:'blueprint-disposable-backend',transform(source,id){
 if(!id.endsWith('/src/app_config.js'))return;
 return source.replace(/static supabaseUrl = [^;]+;/,'static supabaseUrl = '+JSON.stringify(definitions.FESTAPP_SUPABASE_URL)+';').replace(/static anonKey = [^;]+;/,'static anonKey = '+JSON.stringify(definitions.FESTAPP_SUPABASE_ANON_KEY)+';');
@@ -22,7 +23,7 @@ return source.replace(/static supabaseUrl = [^;]+;/,'static supabaseUrl = '+JSON
  if(!control&&!image)return original(input,init);
  if(uri.protocol!=='https:')throw Error('Invalid local image transport');
  const mapped='http://127.0.0.1:59525'+(image?'/public':'')+uri.pathname+uri.search;
- return original(input instanceof Request?new Request(mapped,input):mapped,init);
+ return original(input instanceof Request?new Request(mapped,input):mapped,{...init,cache:'no-store'});
 };})();\`}];}
 }]};
 `;

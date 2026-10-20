@@ -1,4 +1,4 @@
-import {layoutFontOutline} from '../_shared/layoutFontOutline.ts';
+import {prepareLayoutTextResources} from '../_shared/layoutTextResources.ts';
 import { documentLimits, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { AuthError } from '../_shared/authError.ts';
 import QRCode from 'npm:qrcode';
@@ -16,7 +16,7 @@ export interface PreviewDependencies {
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
-  registerLayoutFont?:(id:string,outline:Awaited<ReturnType<typeof layoutFontOutline>>)=>Promise<void>;
+  registerLayoutTextResources?:(scope:{occasionId?:number;setupDraftId?:string},resources:Awaited<ReturnType<typeof prepareLayoutTextResources>>)=>Promise<void>;
   layout?:(value:unknown)=>ReturnType<typeof parseLayout>|Promise<ReturnType<typeof parseLayout>>;
   resources:typeof loadLayoutResources;
 }
@@ -44,9 +44,9 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const {occasionId,setupDraftId,mode,type,scenario='normal'}=body;
     const setup=setupDraftId!==undefined;
     const validContext=setup
-      ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&mode==='font'&&body.outline===true&&!('layout' in body)&&!('background' in body)&&!('borrowResourcesOnly' in body)
+      ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&(mode==='layout-text'||mode==='font')&&!('layout' in body)&&!('background' in body)&&!('borrowResourcesOnly' in body)
       : Number.isSafeInteger(occasionId)&&occasionId>0;
-    if(!validContext||!['resolve','pdf','font','catalog'].includes(mode)||(!['font','catalog'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
+    if(!validContext||!['resolve','pdf','font','catalog','layout-text'].includes(mode)||(!['font','catalog','layout-text'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
     const readOnly=body.readOnly===true;
     if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
@@ -59,16 +59,16 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       if(new TextEncoder().encode(JSON.stringify(body)).byteLength>limits.outputBytes)throw new AuthError('Preview output too large',429);
       return reply(status,body);
     };
+    if(mode==='layout-text'){
+      if(body.resourceProtocol!==2||!deps.font||!deps.registerLayoutTextResources||Object.keys(body).some(k=>!['occasionId','setupDraftId','mode','resourceProtocol','batch'].includes(k)))return reply(400,{error:'layout_text_request'});
+      const resources=await prepareLayoutTextResources(body.batch,deps.font);
+      const response=boundedReply(200,resources);
+      await deps.registerLayoutTextResources(setup?{setupDraftId}:{occasionId},resources);
+      return response;
+    }
     if(mode==='font'){
-      if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font)return reply(400,{error:'Invalid font request'});
+      if(body.fontProtocol!==2||typeof body.fontId!=='string'||!deps.font||'outline' in body||'characters' in body)return reply(400,{error:'Invalid font request'});
       const font=await deps.font(body.fontId);
-      if(body.outline===true){
-        if(typeof body.characters!=='string'||!deps.registerLayoutFont)return reply(400,{error:'Invalid outline request'});
-        const outline=await layoutFontOutline(font,body.characters);
-        const response=boundedReply(200,outline);
-        await deps.registerLayoutFont(font.id,outline);
-        return response;
-      }
       return boundedReply(200,fontReply(font));
     }
     const occasion=await deps.occasion(occasionId);

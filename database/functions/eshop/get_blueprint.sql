@@ -13,7 +13,6 @@ DECLARE
     spotsData JSONB;
     productsData JSONB;
     valid_spots JSONB;
-    form_bundle JSONB;
 BEGIN
     -- Validate the form and blueprint association
     IF NOT EXISTS (
@@ -46,8 +45,8 @@ BEGIN
         'created_at', b.created_at,
         'data', b.data,
         'title', b.title,
-        'layout', b.layout, 'layout_revision', b.layout_revision,
-        'layoutResources', public.blueprint_layout_resources_internal(b.layout,b.occasion)
+        'layout', public.blueprint_public_document_internal(b.layout), 'layout_revision', b.layout_revision,
+        'layoutResources', public.blueprint_layout_resources_internal(public.blueprint_public_document_internal(b.layout),b.occasion)
     )
     INTO blueprintData
     FROM eshop.blueprints b
@@ -79,22 +78,10 @@ BEGIN
         SELECT occasion FROM public.forms WHERE key = form_key
       );
 
-    -- Reuse the form's public catalog projection, including current wave-applied
-    -- price, visible offers, product maximum and inventory availability.
-    form_bundle:=public.get_form_bundle_internal((SELECT id FROM public.forms WHERE key=form_key),true)::jsonb;
-    SELECT coalesce(jsonb_agg(product||jsonb_build_object('isAvailable',
-        coalesce((product->>'is_dynamically_available')::boolean,true) AND
-        (coalesce((product->>'maximum')::bigint,0)<=0 OR
-         coalesce((product->>'ordered_count')::bigint,0)<(product->>'maximum')::bigint))),'[]')
-    INTO productsData
-    FROM (SELECT DISTINCT ON (offered_product.value->>'id') offered_product.value AS product
-      FROM jsonb_array_elements(coalesce(nullif(form_bundle#>'{data,fields}','null'::jsonb),'[]'::jsonb)) field
-      CROSS JOIN LATERAL jsonb_array_elements(coalesce(nullif(field#>'{product_type_data,products}','null'::jsonb),'[]'::jsonb)) AS offered_product(value)
-      WHERE (field->>'type'='ticket' OR ((field->>'is_ticket_field')::boolean AND field->>'type'='product_type'))
-        AND (offered_product.value->>'id')::bigint IN (
-          SELECT s.product FROM eshop.spots s WHERE s.id=ANY(SELECT jsonb_array_elements_text(valid_spots)::bigint)
-          UNION SELECT ab.product FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=blueprint_id)
-      ORDER BY offered_product.value->>'id') offered;
+    -- The associated blueprint is the seat/area offer authority. Product and
+    -- inventory availability remain shared with reservation and checkout.
+    productsData:=public.blueprint_form_product_catalog_internal(
+      (SELECT id FROM public.forms WHERE key=form_key));
 
     -- Add spots data to the blueprint object
     blueprintData = jsonb_set(

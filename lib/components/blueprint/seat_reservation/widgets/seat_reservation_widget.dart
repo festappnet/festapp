@@ -1,3 +1,4 @@
+import 'package:festapp_core/eshop.dart';
 import 'package:flutter/material.dart';
 import '../../blueprint_layout_resources.dart';
 import 'package:fstapp/services/app_logger.dart';
@@ -27,7 +28,7 @@ class SeatReservationWidget extends StatefulWidget {
   final List<BlueprintSeat> selectedSeats;
   final int? maxTickets;
   final bool demoSimulation;
-  final Future<void> Function(BlueprintAreaBinding, int, int)?
+  final Future<void> Function(BlueprintAreaBinding, int, int, ProductModel?)?
       onQuantityRequested;
   final int Function(String)? selectedAreaQuantity;
 
@@ -238,7 +239,7 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
       final available =
           (_blueprint!.areaAvailability[id]?['available'] as num?)?.toInt() ??
               0;
-      await widget.onQuantityRequested!(binding, quantity, available);
+      await widget.onQuantityRequested!(binding, quantity, available, _adapter!.products[binding.productId]);
       return LayoutSelectionResult(
           accepted: mounted && generation == _generation);
     } catch (error) {

@@ -1,0 +1,61 @@
+{
+  "revision": "r23",
+  "scope": "local preview only",
+  "incorporates": "r22 constant-width strong selection outlines",
+  "changes": [
+    "Templates at left top and plan style at right top",
+    "Selected font can become document default through existing preparation owner",
+    "New groups/empty tables and seats get a priced spot-product suggestion",
+    "Explicit group product UI replaces free-seat overrides in one undoable draft transaction",
+    "Product-selection notice correctly states assignment is saved with plan; catalog edit notice remains in catalog editor"
+  ],
+  "main_js_sha256": "b906b0b0ef6f11a9dd45ea61ce25f4120270ce414367743d76e092c888c77da9",
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "037c78a24f28824f9aaad7cfd01e53d05c8602244e1eda79b6b5ee79ac06f5d5",
+    "lib/src/layout_editor/widgets/layout_scene_surface.dart": "51ab73977e7233604d9a9af84e6a4c0e8c984cd1c35e8dd3e1ad8c8535ce1663",
+    "lib/src/layout_editor/layout_localizations.dart": "37a24943cf2c6b912d5f624865d75b9c24c856408f06752d7f6908b1d5af9942"
+  },
+  "host_source_sha256": {
+    "lib/components/blueprint/blueprint_layout_controller.dart": "61cb5bf67ba30a173d7f0d65c84a3abeffe691af4d71b5287a12b100bc9bc7ef",
+    "lib/components/blueprint/views/blueprint_layout_host.dart": "22dd0a4672318f0d0ab0e6697268853360314e4aadee9e4e0cccd95d28864680",
+    "lib/components/blueprint/views/blueprint_plan_editor.dart": "c8142be3efb1cf267bab91163cf5b981d83134ab7081529f37532eb4eb47faa6",
+    "lib/components/blueprint/views/blueprint_product_dialogs.dart": "32ddc8cc83c82ca95a787ca2111c964157c098656eb45fdeede77c782e937811"
+  },
+  "tests": {
+    "panel_modes": {
+      "passed": 5,
+      "log": "/tmp/blueprint-r23-panel-tests.log"
+    },
+    "commercial": {
+      "passed": 19,
+      "log": "/tmp/blueprint-r23-business-tests-final.log"
+    },
+    "explicit_replacement_protection_owner": {
+      "passed": 1,
+      "log": "/tmp/blueprint-r23-protected-product-test.log"
+    },
+    "default_font_ui": {
+      "passed": 1,
+      "log": "/tmp/blueprint-r23-default-font-test.log"
+    },
+    "selection": {
+      "passed": 11,
+      "log": "/tmp/blueprint-r22-selection-tests.log"
+    }
+  },
+  "host_analysis": "/tmp/blueprint-r23-host-analyze.log",
+  "archive_gate": "/tmp/blueprint-r23-archive.log",
+  "host_build": "/tmp/blueprint-r23-host-build.log",
+  "translation_json_valid_locales": [
+    "cs",
+    "en",
+    "sk",
+    "pl",
+    "de",
+    "uk"
+  ],
+  "served_bytes_verified": true,
+  "interactive_browser_walkthrough": false,
+  "production_writes": false,
+  "persistence_limit": "Tests verify existing save-command contract and zero saves during assignment; no live backend save claimed for these synthetic draft transactions"
+}

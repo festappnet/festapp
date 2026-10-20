@@ -27,3 +27,7 @@ REVOKE ALL ON eshop.blueprint_seat_bindings,eshop.blueprint_group_products,eshop
 ALTER TABLE eshop.blueprint_seat_bindings OWNER TO postgres;
 ALTER TABLE eshop.blueprint_group_products OWNER TO postgres;
 ALTER TABLE eshop.blueprint_area_bindings OWNER TO postgres;
+
+ALTER TABLE eshop.blueprint_seat_bindings ADD COLUMN IF NOT EXISTS product_assignment_mode text NOT NULL DEFAULT 'override' CHECK(product_assignment_mode IN ('inherit','override'));
+
+ALTER TABLE eshop.blueprints ADD COLUMN IF NOT EXISTS layout_text_resource_ids text[] NOT NULL DEFAULT '{}';

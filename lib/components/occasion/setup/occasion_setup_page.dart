@@ -1,6 +1,7 @@
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'blueprint_setup_layout_draft.dart';
 import '../../blueprint/blueprint_layout_resources.dart';
+import '../../blueprint/blueprint_text_preparation.dart';
 import '../../blueprint/blueprint_strings.dart';
 import '../../blueprint/views/blueprint_layout_demo.dart';
 import '../../blueprint/views/blueprint_product_dialogs.dart';
@@ -380,7 +381,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['blueprintMode'] = 'Převzít';
     draft.remove('blueprintLayoutDraft');
     if (plan['blueprintLayoutDraft'] is Map) {
-      draft['blueprintLayoutDraft'] = jsonDecode(jsonEncode(plan['blueprintLayoutDraft']));
+      draft['blueprintLayoutDraft'] =
+          jsonDecode(jsonEncode(plan['blueprintLayoutDraft']));
     }
     draft['blueprintTitle'] = plan['title'];
   }
@@ -653,7 +655,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   bool _blueprintReady(Map<String, dynamic> d) =>
       d['blueprintMode'] == 'Bez plánku' ||
-      (d['formEnabled'] == true && _layoutSeatCount(d) + _layoutAreaCount(d) > 0);
+      (d['formEnabled'] == true &&
+          _layoutSeatCount(d) + _layoutAreaCount(d) > 0);
 
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
@@ -781,24 +784,33 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<void> _openBlueprint() async {
     if (_openingBlueprint) return;
-    setState(() { _openingBlueprint = true; _error = null; });
+    setState(() {
+      _openingBlueprint = true;
+      _error = null;
+    });
     final assets = BlueprintLayoutAssetResolver();
     try {
       if (!await _flush() || !mounted) return;
       final data = _active!;
       final formData = data['formDraft'];
       final products = formData is Map
-          ? draftFormBundle(Map<String, dynamic>.from(formData)).products
-              .where((p) => p.productTypeString == ProductModel.spotType).toList()
+          ? draftFormBundle(Map<String, dynamic>.from(formData))
+              .products
+              .where((p) => p.productTypeString == ProductModel.spotType)
+              .toList()
           : <ProductModel>[];
-      if (products.isEmpty) throw StateError(BlueprintStrings.toastNoTemplateProduct);
+      if (products.isEmpty)
+        throw StateError(BlueprintStrings.toastNoTemplateProduct);
       ProductModel? defaultProduct;
       if (products.length == 1) {
         defaultProduct = products.single;
       } else {
-        defaultProduct = await showDialog<ProductModel>(context: context,
-          builder: (_) => SelectProductDialog.catalog(products: products,
-            onProductSaved: (_) {}, canEditCatalog: false));
+        defaultProduct = await showDialog<ProductModel>(
+            context: context,
+            builder: (_) => SelectProductDialog.catalog(
+                products: products,
+                onProductSaved: (_) {},
+                canEditCatalog: false));
         if (defaultProduct == null || !mounted) return;
       }
       final raw = data['blueprintLayoutDraft'];
@@ -807,63 +819,99 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       }
       var draft = raw is Map
           ? BlueprintSetupLayoutDraft.fromJson(Map<String, dynamic>.from(raw))
-          : BlueprintSetupLayoutDraft.empty(document: VenueLayoutTemplates.byId(
-              VenueLayoutTemplates.defaultId).create(
-                localize: VenueLayoutLocalizations.of(context).text), resources: const {});
-      final provider = await BlueprintLayoutFontProvider.forSetupDraft(_stored.id);
-      Future<Map<String, dynamic>> prepare(VenueLayoutDocument document) async {
-        provider.characters = document.nodes.map((n) =>
-            '${n.label} ${n.properties['text'] ?? ''}').join(' ');
-        final fontIds = <String>{};
-        void collect(dynamic value) {
-          if (value is Map) {
-            if (value['fontId'] is String) fontIds.add(value['fontId'] as String);
-            for (final child in value.values) { collect(child); }
-          } else if (value is List) { for (final child in value) { collect(child); } }
-        }
-        collect(document.toJson());
-        final fonts = <String, dynamic>{};
-        for (final id in fontIds) { fonts[id] = await provider.resolve(id); }
-        final resources = await _store.blueprintResources(_stored);
-        return assets.resolve({...resources, 'fonts': {...resources['fonts'] as Map? ?? {}, ...fonts}});
+          : BlueprintSetupLayoutDraft.empty(
+              document:
+                  VenueLayoutTemplates.byId(VenueLayoutTemplates.defaultId)
+                      .create(
+                          localize: VenueLayoutLocalizations.of(context).text),
+              resources: const {});
+      final provider = await BlueprintTextResources.forSetupDraft(_stored.id);
+      Future<Map<String, dynamic>> prepare(
+          VenueLayoutDocument document, Map<String, dynamic> resources) async {
+        final prepared =
+            await BlueprintTextPreparation(provider.prepareTextBatch)
+                .prepareSnapshot(
+                    document,
+                    {
+                      for (final family in provider.families)
+                        family['id'] as String: family
+                    },
+                    resources);
+        return assets.resolve(prepared);
       }
-      final resources = await prepare(draft.document);
+
+      final resources = await prepare(
+          draft.document, await _store.blueprintResources(_stored));
       if (!mounted) return;
-      await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => Scaffold(
-        appBar: AppBar(title: Text(CommonStrings.blueprint)),
-        body: BlueprintLayoutDemo(initialDocument: draft.document, initiallyUnsaved: raw is! Map,
-          initialResources: resources, prepareResources: prepare, unitId: _stored.unit,
-          normalizeDocument: BlueprintSetupLayoutDraft.normalizeFontReferences,
-          onSave: (document) async {
-            var next = draft.reconcile(document, defaultProductId: defaultProduct!.id);
-            final unassigned = next.seatBindings.values.where((seat) =>
-                seat.productId == null && !draft.seatBindings.containsKey(seat.nodeId)).toList();
-            for (final group in unassigned.map((seat) => seat.groupNodeId).whereType<String>().toSet()) {
-              final product = await showDialog<ProductModel>(context: context,
-                builder: (_) => SelectProductDialog.catalog(products: products,
-                  onProductSaved: (_) {}, canEditCatalog: false));
-              if (product == null) throw StateError(CommonStrings.storno);
-              next = next.withGroupProduct(group, product.id!, assignNodeIds:
-                unassigned.where((seat) => seat.groupNodeId == group).map((seat) => seat.nodeId).toSet());
-            }
-            for (final area in document.nodes.where((n) => n.kind == 'capacityArea')) {
-              if (next.areaBindings.any((b) => b['nodeId'] == area.id)) continue;
-              final product = await showDialog<ProductModel>(context: context,
-                builder: (_) => SelectProductDialog.catalog(products: products,
-                  onProductSaved: (_) {}, canEditCatalog: false));
-              if (product == null) throw StateError(CommonStrings.storno);
-              final capacity = area.properties['capacity'];
-              if (capacity is! num || capacity < 0 || capacity != capacity.round()) {
-                throw StateError(CommonStrings.invalidFormat);
-              }
-              next = next.withArea(nodeId: area.id, productId: product.id!, capacity: capacity.toInt());
-            }
-            _change((value) => value['blueprintLayoutDraft'] = next.toJson(),
-                changesConfiguration: true);
-            if (!await _flush()) throw StateError(_error ?? CommonStrings.unexpectedError);
-            draft = next;
-          }),
-      )));
+      await Navigator.of(context).push<void>(MaterialPageRoute(
+          builder: (_) => Scaffold(
+                appBar: AppBar(title: Text(CommonStrings.blueprint)),
+                body: BlueprintLayoutDemo(
+                    initialDocument: draft.document,
+                    initiallyUnsaved: raw is! Map,
+                    initialResources: resources,
+                    loadTextResources: () async => provider,
+                    prepareResources: prepare,
+                    unitId: _stored.unit,
+                    onSave: (document) async {
+                      var next = draft.reconcile(document,
+                          defaultProductId: defaultProduct!.id);
+                      final unassigned = next.seatBindings.values
+                          .where((seat) =>
+                              seat.productId == null &&
+                              !draft.seatBindings.containsKey(seat.nodeId))
+                          .toList();
+                      for (final group in unassigned
+                          .map((seat) => seat.groupNodeId)
+                          .whereType<String>()
+                          .toSet()) {
+                        final product = await showDialog<ProductModel>(
+                            context: context,
+                            builder: (_) => SelectProductDialog.catalog(
+                                products: products,
+                                onProductSaved: (_) {},
+                                canEditCatalog: false));
+                        if (product == null)
+                          throw StateError(CommonStrings.storno);
+                        next = next.withGroupProduct(group, product.id!,
+                            assignNodeIds: unassigned
+                                .where((seat) => seat.groupNodeId == group)
+                                .map((seat) => seat.nodeId)
+                                .toSet());
+                      }
+                      for (final area in document.nodes
+                          .where((n) => n.kind == 'capacityArea')) {
+                        if (next.areaBindings
+                            .any((b) => b['nodeId'] == area.id)) continue;
+                        final product = await showDialog<ProductModel>(
+                            context: context,
+                            builder: (_) => SelectProductDialog.catalog(
+                                products: products,
+                                onProductSaved: (_) {},
+                                canEditCatalog: false));
+                        if (product == null)
+                          throw StateError(CommonStrings.storno);
+                        final capacity = area.properties['capacity'];
+                        if (capacity is! num ||
+                            capacity < 0 ||
+                            capacity != capacity.round()) {
+                          throw StateError(CommonStrings.invalidFormat);
+                        }
+                        next = next.withArea(
+                            nodeId: area.id,
+                            productId: product.id!,
+                            capacity: capacity.toInt());
+                      }
+                      _change(
+                          (value) =>
+                              value['blueprintLayoutDraft'] = next.toJson(),
+                          changesConfiguration: true);
+                      if (!await _flush())
+                        throw StateError(
+                            _error ?? CommonStrings.unexpectedError);
+                      draft = next;
+                    }),
+              )));
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
@@ -872,11 +920,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
   }
 
-  int _layoutSeatCount(Map<String, dynamic> data) => data['blueprintLayoutDraft'] is Map
-      ? ((data['blueprintLayoutDraft'] as Map)['seatBindings'] as List? ?? []).length
-      : 0;
-  int _layoutAreaCount(Map<String, dynamic> data) => data['blueprintLayoutDraft'] is Map
-      ? ((data['blueprintLayoutDraft'] as Map)['areaBindings'] as List? ?? []).length : 0;
+  int _layoutSeatCount(Map<String, dynamic> data) =>
+      data['blueprintLayoutDraft'] is Map
+          ? ((data['blueprintLayoutDraft'] as Map)['seatBindings'] as List? ??
+                  [])
+              .length
+          : 0;
+  int _layoutAreaCount(Map<String, dynamic> data) =>
+      data['blueprintLayoutDraft'] is Map
+          ? ((data['blueprintLayoutDraft'] as Map)['areaBindings'] as List? ??
+                  [])
+              .length
+          : 0;
 
   Widget _choice(Map<String, dynamic> d, String keyName, String label,
           List<String> options) =>
@@ -1316,7 +1371,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final canvas = layout?['canvas'] as Map?;
     final groups = [
       for (final node in layout?['nodes'] as List? ?? const [])
-        if (const ['table', 'group', 'row', 'section'].contains((node as Map)['kind']))
+        if (const ['table', 'group', 'row', 'section']
+            .contains((node as Map)['kind']))
           {'title': node['label']}
     ];
     final seatCount = _layoutSeatCount(d);
@@ -1959,19 +2015,24 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
 
   Widget _blueprintSettings(Map<String, dynamic> d) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _choice(d, 'blueprintMode', CommonStrings.blueprint,
-          ['Bez plánku', 'Nový', 'Převzít']),
-      TextButton.icon(icon: const Icon(Icons.science_outlined),
-        label: Text(BlueprintStrings.tryLayoutDemo),
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => Scaffold(appBar: AppBar(title: Text(BlueprintStrings.tryLayoutDemo)),
-            body: const BlueprintLayoutDemo())))),
-      if (d['blueprintMode'] != 'Bez plánku') ...[
-        Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
-        if (_layoutAreaCount(d) > 0) Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _choice(d, 'blueprintMode', CommonStrings.blueprint,
+            ['Bez plánku', 'Nový', 'Převzít']),
+        TextButton.icon(
+            icon: const Icon(Icons.science_outlined),
+            label: Text(BlueprintStrings.tryLayoutDemo),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => Scaffold(
+                    appBar: AppBar(title: Text(BlueprintStrings.tryLayoutDemo)),
+                    body: const BlueprintLayoutDemo())))),
+        if (d['blueprintMode'] != 'Bez plánku') ...[
+          Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
+          if (_layoutAreaCount(d) > 0)
+            Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
             onPressed: _openingBlueprint ? null : _openBlueprint,
             icon: const Icon(Icons.grid_on),
             label: const Text('Otevřít editor plánku'),

@@ -1,0 +1,86 @@
+{
+  "productionApplied": false,
+  "fullClientAndBackend": true,
+  "emailDeliveryPaused": true,
+  "bankFetchingDisabled": true,
+  "cases": [
+    {
+      "sourceBlueprint": 44,
+      "url": "http://127.0.0.1:59601/form/preview-country-bal-2026",
+      "seats": 192,
+      "states": {
+        "ordered": 80,
+        "available": 112
+      },
+      "sourceSnapshotAt": "2026-10-20T20:03:41.152Z",
+      "spotIdentityTitleProductStateParity": true,
+      "actualLocalCheckout": {
+        "orderId": 16,
+        "price": 310,
+        "acceptedInBrowser": true,
+        "probeCancelledAfterCheck": true
+      }
+    },
+    {
+      "sourceBlueprint": 87,
+      "url": "http://127.0.0.1:59601/form/preview-ples-akh-2026",
+      "seats": 228,
+      "states": {
+        "ordered": 56,
+        "available": 172
+      },
+      "sourceSnapshotAt": "2026-10-20T20:03:41.930Z",
+      "spotIdentityTitleProductStateParity": true,
+      "actualLocalCheckout": {
+        "orderId": 17,
+        "price": 450,
+        "acceptedInBrowser": true,
+        "probeCancelledAfterCheck": true
+      }
+    }
+  ],
+  "offerRule": "The form offers all seat/capacity products bound to its associated blueprint. No duplicate form-field product-type assignment is required; actual product availability, blocked/occupied places and exact blueprint scope remain enforced.",
+  "supersedes": "The temporary local ticket product-type workaround was removed.",
+  "databaseChecks": {
+    "passed": 7,
+    "owners": [
+      "legacy_ticket_offer_test.sql",
+      "form_bound_checkout_test.sql",
+      "authorization_test.sql",
+      "capacity_resources_test.sql",
+      "finance_integration_test.sql",
+      "public_hold_availability_test.sql",
+      "addressed_hold_context_admission_test.sql"
+    ],
+    "covers": [
+      "Implicit bound seat offer without product fields",
+      "Implicit capacity offer and mixed actual checkout",
+      "Unbound same-type products omitted",
+      "Another blueprint seat rejected in hold and checkout",
+      "Addressed product cannot be bought as a standalone product",
+      "Product hidden/max/inventory/atomic unit admission preserved"
+    ]
+  },
+  "migration": "20261021010000_blueprint_form_bound_offers.sql",
+  "browserCheckoutWithoutFormProductType": {
+    "id": 23,
+    "price": 450.0,
+    "state": "ordered",
+    "sourceBlueprint": 87,
+    "originalTicketProductTypeNull": true,
+    "probeCancelledAfterCheck": true,
+    "sourceSnapshotParityRestored": true
+  },
+  "clientChecks": {
+    "webTests": 16,
+    "nativeStandingTests": 6,
+    "dartSceneReference": "24 default seat fill differences only, refreshed from the independent Dart core (--sql-corpus).",
+    "nativeBuild": "not rebuilt; web client is served directly by Vite",
+    "nativeAnalyzer": {
+      "errors": 0,
+      "warnings": 2,
+      "infos": 35,
+      "note": "Existing unnecessary_non_null_assertion and mutable FormPage warnings; lint infos remain."
+    }
+  }
+}

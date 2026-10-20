@@ -261,8 +261,9 @@ class _FormPageState extends State<FormPage> {
             selectedSeats: formSession!.currentSeats,
             maxTickets: formHolder!.getTicket()?.maxTickets,
             selectedAreaQuantity: (id) => formSession!.areaQuantity(id),
-            onQuantityRequested: (binding, quantity, available) async {
-              formSession!.setAreaQuantity(binding, quantity, available: available);
+            onQuantityRequested: (binding, quantity, available, product) async {
+              formSession!
+                  .setAreaQuantity(binding, quantity, available: available, product: product);
             },
             onSessionChanged: (secret, expiry) {
               formHolder!.controller!.updateReservationSession(secret, expiry);
@@ -479,7 +480,8 @@ class _FormPageState extends State<FormPage> {
 
     var data = FormHelper.getDataFromForm(formHolder!);
     data = FormHelper.replaceSpotWithId(data);
-    data[FormMetadata.metaSecret] = formHolder?.controller?.secret ?? form!.definition.secret;
+    data[FormMetadata.metaSecret] =
+        formHolder?.controller?.secret ?? form!.definition.secret;
     data[FormMetadata.metaForm] = form!.definition.key;
     if (formHolder!.paymentType != null) {
       data['payment_type'] = formHolder!.paymentType;
@@ -778,7 +780,8 @@ class _FormPageState extends State<FormPage> {
                     _buildOverview(),
                     _buildWaitlistPeople(manage: true),
                     OrganizationIdentityFooter(
-                        identity: form?.organizationIdentity ?? _terminalIdentity)
+                        identity:
+                            form?.organizationIdentity ?? _terminalIdentity)
                   ]))));
     }
     if (form?.definition.registrationMode == 'full' && !isClosed) {
@@ -957,7 +960,8 @@ class _FormPageState extends State<FormPage> {
                                 }),
                               ),
                             OrganizationIdentityFooter(
-                                identity: form?.organizationIdentity ?? _terminalIdentity),
+                                identity: form?.organizationIdentity ??
+                                    _terminalIdentity),
                           ],
                         ),
                       ),
@@ -977,7 +981,8 @@ class _FormPageState extends State<FormPage> {
       data: theme,
       child: Scaffold(
         body: showCountdown
-            ? SafeArea(child: SingleChildScrollView(child: _withIdentity(bodyContent)))
+            ? SafeArea(
+                child: SingleChildScrollView(child: _withIdentity(bodyContent)))
             : bodyContent,
         floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         floatingActionButton: Padding(

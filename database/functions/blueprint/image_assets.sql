@@ -103,6 +103,9 @@ REVOKE ALL ON FUNCTION public.check_blueprint_image_resource_internal(jsonb,bigi
 CREATE OR REPLACE FUNCTION public.copy_blueprint_image_resources_internal(p_source_occasion bigint,p_target_occasion bigint,p_layout jsonb)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
+ IF p_layout->>'schemaVersion'='2' THEN
+  PERFORM public.copy_blueprint_canonical_bitmap_resources_internal(p_source_occasion,NULL,p_target_occasion,p_layout);RETURN;
+ END IF;
  IF p_source_occasion=p_target_occasion THEN
   PERFORM public.check_blueprint_image_resource_internal(p_layout,p_source_occasion);RETURN;
  END IF;
@@ -121,6 +124,9 @@ CREATE OR REPLACE FUNCTION public.copy_blueprint_unit_image_resources_internal(p
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 DECLARE a public.blueprint_image_assets;
 BEGIN
+ IF p_layout->>'schemaVersion'='2' THEN
+  PERFORM public.copy_blueprint_canonical_bitmap_resources_internal(NULL,p_source_unit,p_target_occasion,p_layout);RETURN;
+ END IF;
  IF p_layout->'background' IS NULL OR p_layout->'background'='null'::jsonb THEN RETURN;END IF;
  SELECT * INTO a FROM public.blueprint_image_assets WHERE unit=p_source_unit AND asset_ref=p_layout#>>'{background,assetRef}' AND state='ready';
  IF NOT FOUND OR NOT EXISTS(SELECT 1 FROM public.occasions o WHERE o.id=p_target_occasion AND o.unit=p_source_unit AND o.organization=a.organization) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_ASSET_RESOURCE_NOT_READY';END IF;

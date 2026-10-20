@@ -18,7 +18,7 @@ assert(vars.IMAGE_PROCESSING_SERVICE_SECRET?.length>=32 && vars.SUPABASE_ANON_KE
 const state=resolve(args['state-dir']);assert(state.includes('blueprint'),'task-specific state directory required');mkdirSync(state,{recursive:true,mode:0o700});
 await build({entryPoints:[resolve(root,'src/index.ts')],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:resolve(state,'worker.mjs')});
 const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:readFileSync(resolve(state,'worker.mjs'),'utf8'),compatibilityDate:'2025-01-01',port:0,
- r2Buckets:{IMAGES_BUCKET:'blueprint-local-public',IMAGES_PRIVATE_BUCKET:'blueprint-local-private',IMAGES_BUCKET_AKHWEB:'blueprint-local-akh'},r2Persist:resolve(state,'r2'),
+ r2Buckets:{IMAGES_BUCKET:'blueprint-local-public',IMAGES_PRIVATE_BUCKET:'blueprint-local-private',IMAGES_BUCKET_AKHWEB:'blueprint-local-akh'},resourcePersistencePath:resolve(state,'resources'),
  images:{binding:'IMAGES'},ratelimits:{IMAGE_READ_MISS_BUDGET:{namespace_id:'1001',simple:{limit:1000,period:60}}},
  bindings:{...vars,SUPABASE_URL:'https://api.festapp.net',SUPABASE_URL_A:'https://api.festapp.net',SUPABASE_ANON_KEY_A:vars.SUPABASE_ANON_KEY,
   SUPABASE_URL_SLUNOVRAT:'https://api.festapp.net',SUPABASE_ANON_KEY_SLUNOVRAT:vars.SUPABASE_ANON_KEY},
@@ -32,20 +32,22 @@ const server=createServer(async(req,res)=>{
  try{
   const local=new URL(req.url,'http://127.0.0.1:59525');
   if(local.pathname==='/health'){res.writeHead(200,{'Content-Type':'application/json'});res.end('{"project":"festapp-blueprint-b-image-local","processor":"miniflare-images","remote":false}');return;}
-  if(!['GET','HEAD','POST','OPTIONS'].includes(req.method)){res.writeHead(405);res.end();return;}
+  if(!['GET','HEAD','POST','PUT','OPTIONS'].includes(req.method)){res.writeHead(405);res.end();return;}
   const origin=req.headers.origin;
   if(origin&&!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)){res.writeHead(403);res.end();return;}
   const publicRead=local.pathname.startsWith('/public/');
-  if(!publicRead&&!['/upload','/delete'].includes(local.pathname)){res.writeHead(404);res.end();return;}
+  const fontService=local.pathname.startsWith('/service/ticket-fonts/');
+  if(fontService&&origin){res.writeHead(403);res.end();return;}
+  if(!publicRead&&!fontService&&!['/upload','/delete'].includes(local.pathname)){res.writeHead(404);res.end();return;}
   const cors=origin?{'Access-Control-Allow-Origin':origin,Vary:'Origin'}:{};
   if(req.method==='OPTIONS'){res.writeHead(204,{...cors,'Access-Control-Allow-Methods':'GET,HEAD,POST,OPTIONS','Access-Control-Allow-Headers':'authorization,content-type'});res.end();return;}
   const path=publicRead?local.pathname.slice('/public'.length):local.pathname;
   const canonical=`https://${publicRead?'img.festapp.net':'image-api.festapp.net'}${path}${local.search}`;
   const headers=new Headers(Object.entries(req.headers).flatMap(([k,v])=>v===undefined?[]:[[k,Array.isArray(v)?v.join(','):v]]));headers.delete('host');
-  const result=await mf.dispatchFetch(canonical,{method:req.method,headers,...(['POST'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})});
+  const result=await mf.dispatchFetch(canonical,{method:req.method,headers,...(['POST','PUT'].includes(req.method)?{body:Readable.toWeb(req),duplex:'half'}:{})});
   const responseHeaders=new Headers(result.headers);for(const [name,value] of Object.entries(cors))responseHeaders.set(name,value);
   res.writeHead(result.status,Object.fromEntries(responseHeaders));if(result.body)Readable.fromWeb(result.body).pipe(res);else res.end();
  }catch{res.writeHead(500,{'Content-Type':'application/json'});res.end('{"error":"owned local image bridge failed"}');}
 });
-await new Promise(resolve=>server.listen(port,'127.0.0.1',resolve));console.log('READY owned image bridge127.0.0.1:59525; real local Images/R2; all non-owned outbound network blocked');
+await new Promise(resolve=>server.listen(port,args.host??'127.0.0.1',resolve));console.log('READY owned image bridge127.0.0.1:59525; real local Images/R2; all non-owned outbound network blocked');
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{server.close();await mf.dispose();process.exit(0);});

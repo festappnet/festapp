@@ -193,6 +193,9 @@ BEGIN
    (payload->>'blueprintMode' IN ('Nový','Převzít') OR
     (payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb)) THEN
   IF payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb THEN
+   IF payload#>>'{blueprintLayoutDraft,layout,schemaVersion}'='2' THEN
+    PERFORM public.copy_blueprint_text_resources_internal(NULL,d.id,new_id,payload#>'{blueprintLayoutDraft,layout}');
+   END IF;
    blueprint_id:=public.materialize_setup_blueprint_layout_internal(payload->'blueprintLayoutDraft',product_map,source_id,new_id,d.unit);
    UPDATE public.forms SET blueprint=blueprint_id WHERE id=form_id;
    features:=features||'[{"code":"blueprint","is_enabled":true}]';

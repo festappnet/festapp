@@ -32,6 +32,7 @@ class TicketCancellationOutcome {
 abstract interface class TicketCommands {
   Future<void> swapSpots(int firstSpotId, int secondSpotId);
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds);
+  Future<void> releaseHolds(List<int> spotIds);
 }
 
 class SupabaseTicketCommands implements TicketCommands {
@@ -54,6 +55,18 @@ class SupabaseTicketCommands implements TicketCommands {
     }
     await applyClientCommandReplacements(response);
     return TicketCancellationOutcome.fromJson(response.data);
+  }
+
+  @override
+  Future<void> releaseHolds(List<int> spotIds) async {
+    final response = ClientCommandResponse.from(await _transport.invoke(
+      'release_blueprint_holds_client_sync_v1',
+      {'p_spots': spotIds},
+    ));
+    if (response.code != 200) {
+      throw BlueprintCommandRejection(response.code, response.data);
+    }
+    await applyClientCommandReplacements(response);
   }
 
   @override

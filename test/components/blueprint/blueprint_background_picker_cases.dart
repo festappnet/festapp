@@ -11,6 +11,21 @@ import 'package:fstapp/widgets/drop_file.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
+  test(
+      'graphic recognition preserves SVG with a long authoring prefix and sniffs bitmap signatures',
+      () {
+    final source =
+        '<!--${'original ' * 500}--><svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect width="100" height="50"/></svg>';
+    expect(blueprintGraphicFormat(Uint8List.fromList(utf8.encode(source))).name,
+        'svg');
+    expect(
+        blueprintGraphicFormat(Uint8List.fromList([0xff, 0xd8, 0xff, 0x00]))
+            .name,
+        'jpeg');
+    expect(() => blueprintGraphicFormat(Uint8List.fromList([0x00, 0x01, 0x02])),
+        throwsFormatException);
+  });
+
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   setUpAll(() {
@@ -22,15 +37,18 @@ void main() {
   });
 
   Future<void> open(WidgetTester tester, Future<XFile?> Function() picker,
-      void Function(XFile?) complete) async {
+      void Function(XFile?) complete,
+      {bool graphic = false}) async {
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: Builder(
           builder: (context) => Scaffold(
               body: TextButton(
-            onPressed: () async => complete(
-                await showBlueprintBackgroundPicker(context, pickFile: picker)),
+            onPressed: () async => complete(await showBlueprintBackgroundPicker(
+                context,
+                pickFile: picker,
+                graphic: graphic)),
             child: const Text('Open background'),
           )),
         )));
@@ -54,7 +72,7 @@ void main() {
         findsOneWidget);
     expect(find.byType(DropFile), findsOneWidget);
     expect(tester.widget<DropFile>(find.byType(DropFile)).allowedExtensions,
-        ['png', 'jpg', 'jpeg', 'webp', 'svg']);
+        ['png', 'jpg', 'jpeg', 'webp']);
     expect(picks, 0);
     expect(
         find.descendant(
@@ -117,7 +135,7 @@ void main() {
     await open(tester, () async {
       picks++;
       return null;
-    }, (value) => result = value);
+    }, (value) => result = value, graphic: true);
     final target = tester.widget<DropTarget>(find.byType(DropTarget));
     target.onDragDone!(DropDoneDetails(files: [
       DropItemFile.fromData(Uint8List(0),

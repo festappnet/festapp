@@ -1,0 +1,20 @@
+{
+  "revision": "r19",
+  "scope": "local preview only",
+  "changes": [
+    "Centered footer hint alignment and wrapped text",
+    "Expansion section padding prevents floating labels meeting clipping edge",
+    "Single toolbar retained in viewing and editing modes"
+  ],
+  "main_js_sha256": "f1ddf360e8d34902d280b6c0d698f32a4c423954e117bf167ee1f181923092e4",
+  "source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "345d69dfbea4893fbd50a882b8a3a32b04169b0c7faf6bb6fb1a749c1a61df0e",
+    "lib/src/layout_editor/widgets/layout_inspector.dart": "dad9f544cc7d7c621a81f8e145845dd22091721231b4f52fbddda07dfc6d0d31",
+    "lib/src/layout_editor/widgets/canonical_appearance_panel.dart": "8deabef32945f50a7f54b79af08d15ab7272afd85b93ce79f884026bc652f10c"
+  },
+  "verification": "Narrow visual change: no additional widget tests or interactive browser walkthrough; archive/consumer/compilation gates passed",
+  "archive_gate": "/tmp/blueprint-r19-archive.log",
+  "host_build": "/tmp/blueprint-r19-host-build.log",
+  "served_bytes_verified": true,
+  "production_writes": false
+}

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[])
+CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[], p_send_email BOOLEAN DEFAULT TRUE)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -77,7 +77,7 @@ BEGIN
             PERFORM update_order_and_tickets_to_storno_ws_internal_v1(v_order_id);
             -- Commit cancellation and its durable email intent together. Replays
             -- cannot reach this branch once the active tickets are cancelled.
-            IF EXISTS (SELECT 1 FROM eshop.orders WHERE id=v_order_id
+            IF p_send_email AND EXISTS (SELECT 1 FROM eshop.orders WHERE id=v_order_id
                 AND position('@' in data->>'email')>0 AND length(data->>'email')<=320) THEN
             PERFORM public.enqueue_order_email('TICKET_ORDER_STORNO',
                 jsonb_build_object('order_id', v_order_id),
@@ -164,4 +164,4 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM PUBLIC, anon, authenticated;

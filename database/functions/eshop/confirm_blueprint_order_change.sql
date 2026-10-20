@@ -64,11 +64,10 @@ BEGIN
   END IF;
 
   -- Find a suitable Form
-  SELECT key INTO v_form_key
-  FROM public.forms
-  WHERE occasion = v_occasion_id AND is_open = true
-  ORDER BY type = 'ticket' DESC, id DESC
-  LIMIT 1;
+  v_form_key := (v_analysis->'order_form'->>'key')::uuid;
+  IF p_input_data->>'form_key' IS NOT NULL AND p_input_data->>'form_key' IS DISTINCT FROM v_form_key::text THEN
+    RAISE EXCEPTION 'The active order form changed. Reopen the order.';
+  END IF;
 
   IF v_form_key IS NULL THEN
       RAISE EXCEPTION 'No open form found for this occasion to create the new order.';
@@ -82,7 +81,7 @@ BEGIN
   LOOP
       v_ticket_payloads := v_ticket_payloads || JSONB_BUILD_OBJECT(
           'spot', v_new_spot_rec.id,
-          'fields', '[]'::JSONB
+          'fields', coalesce(p_input_data->'ticket_fields'->v_new_spot_rec.id::text,'[]'::jsonb)
       );
   END LOOP;
 
@@ -93,7 +92,7 @@ BEGIN
       'form', v_form_key,
       'ticket', v_ticket_payloads,
       'lang', 'cs'
-  ) || p_input_data;
+  ) || (p_input_data - 'ticket_fields' - 'form_key' - 'form' - 'ticket');
 
   -- Return Success + Payload
   RETURN JSONB_BUILD_OBJECT(

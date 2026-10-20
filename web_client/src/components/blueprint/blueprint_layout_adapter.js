@@ -25,6 +25,7 @@ export class BlueprintLayoutAdapter {
         this.areaBindings = new Map((data.areaBindings || []).map(binding => [binding.nodeId, {...binding}]));
         this.areaAvailability = new Map((data.areaAvailability || []).map(area => [area.nodeId, area.reason ? 0 : area.available]));
         const products = new Map((data.products || []).map(p => [String(p.id), p]));
+        this.areaProducts = new Map([...this.areaBindings].map(([id, binding]) => [id, products.get(String(binding.productId))]));
         const spots = new Map((data.spots || []).map(s => [String(s.id), s]));
         const initial = new Set(initialSeats.map(s => String(s.id)));
         for (const binding of data.seatBindings || []) {
@@ -78,7 +79,7 @@ export class BlueprintLayoutAdapter {
         const binding = this.areaBindings.get(nodeId), available = this.areaAvailability.get(nodeId);
         if (this.disposed || !binding || !Number.isInteger(available)) return {accepted: false, message: 'area_quantity_unavailable'};
         try {
-            this.session.setAreaQuantity(binding, quantity, available);
+            this.session.setAreaQuantity(binding, quantity, available, this.areaProducts.get(nodeId));
             this.onCapacityChanged?.(this.capacityPresentation);
             return {accepted: true};
         } catch (error) { return {accepted: false, message: error.message}; }

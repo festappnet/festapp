@@ -257,39 +257,59 @@ Deno.test('draft preview rejects identity, asset, malformed and unbounded contex
   }
 });
 
-Deno.test('layout font projection reuses authorized ticket resolver and registers only bounded valid output',async()=>{
-  const s=setup();let resolved=0,registered=0;
-  s.deps.font=async id=>{resolved++;assertEquals(id,futuraId);return {id,bytes:font,metrics,family:'Futura PT',weight:400};};
-  s.deps.registerLayoutFont=async(id,outline)=>{registered++;assertEquals(id,futuraId);assertEquals(outline.hash,id.split(':').at(-1));assert(outline.glyphs['Ž']);};
-  const request={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId,outline:true,characters:'Židle'};
-  assertEquals((await handlePreview(req(request,false),s.deps)).status,401);
-  assertEquals([resolved,registered],[0,0]);
-  const rejected=setup(false);rejected.deps.font=s.deps.font;rejected.deps.registerLayoutFont=s.deps.registerLayoutFont;
-  assertEquals((await handlePreview(req(request),rejected.deps)).status,403);
-  assertEquals([resolved,registered],[0,0]);
-  const reply=await handlePreview(req(request),s.deps);assertEquals(reply.status,200);
-  const outline=await reply.json();assertEquals(outline.id,futuraId);assertEquals(outline.font,undefined);
-  assertEquals([resolved,registered],[1,1]);
-  s.deps.authorize=async()=>({abuseLimits:{...admission.abuseLimits,'document.output.bytes':1}});
-  assertEquals((await handlePreview(req(request),s.deps)).status,429);
-  assertEquals(registered,1);
+Deno.test('native editing uses authorized immutable font bytes and rejects removed character outlines',async()=>{
+ const s=setup();let resolved=0;
+ s.deps.font=async id=>{resolved++;assertEquals(id,futuraId);return {id,bytes:font,metrics,family:'Futura PT',weight:400};};
+ const request={occasionId:7,mode:'font',fontProtocol:2,fontId:futuraId};
+ assertEquals((await handlePreview(req(request,false),s.deps)).status,401);
+ assertEquals(resolved,0);
+ const rejected=setup(false);rejected.deps.font=s.deps.font;
+ assertEquals((await handlePreview(req(request),rejected.deps)).status,403);
+ assertEquals(resolved,0);
+ const reply=await handlePreview(req(request),s.deps);assertEquals(reply.status,200);
+ const actual=await reply.json();assertEquals(actual.id,futuraId);
+ assertEquals(Uint8Array.from(atob(actual.font),c=>c.charCodeAt(0)),font);
+ assertEquals(resolved,1);
+ for(const legacy of [{outline:true,characters:'Židle'},{outline:false},{characters:'AV'}])
+  assertEquals((await handlePreview(req({...request,...legacy}),s.deps)).status,400);
+ assertEquals(resolved,1);
+ s.deps.authorize=async()=>({abuseLimits:{...admission.abuseLimits,'document.output.bytes':1}});
+ assertEquals((await handlePreview(req(request),s.deps)).status,429);
 });
 
-Deno.test('private setup draft authorizes only bounded font outlines through the same resolver',async()=>{
- const s=setup();let admitted=0,resolved=0,registered=0;
+Deno.test('setup uses the same native face bytes with draft authorization and output bounds',async()=>{
+ const s=setup();let admitted=0,resolved=0;
  const draft='00000000-0000-4000-8000-000000000001';
  s.deps.authorize=async()=>{throw Error('Occasion authorization must not be used for a setup draft');};
  s.deps.authorizeSetupDraft=async(_header,id,bytes)=>{admitted++;assertEquals(id,draft);assert(bytes>0);return admission;};
  s.deps.font=async id=>{resolved++;return {id,bytes:font,metrics,family:'Futura PT',weight:400};};
- s.deps.registerLayoutFont=async()=>{registered++;};
- const request={setupDraftId:draft,mode:'font',fontProtocol:2,fontId:futuraId,outline:true,characters:'Židle'};
- assertEquals((await handlePreview(req(request),s.deps)).status,200);
- assertEquals([admitted,resolved,registered],[1,1,1]);
- for(const changed of [{occasionId:7},{mode:'pdf',type:'wide'},{outline:false},{layout:{}},{setupDraftId:'invalid'}]){
+ const request={setupDraftId:draft,mode:'font',fontProtocol:2,fontId:futuraId};
+ const response=await handlePreview(req(request),s.deps);assertEquals(response.status,200);
+ assertEquals((await response.json()).id,futuraId);
+ assertEquals([admitted,resolved],[1,1]);
+ for(const changed of [{occasionId:7},{mode:'pdf',type:'wide'},{outline:true,characters:'AV'},{layout:{}},{setupDraftId:'invalid'}])
   assertEquals((await handlePreview(req({...request,...changed}),s.deps)).status,400);
- }
- assertEquals([admitted,resolved,registered],[1,1,1]);
+ assertEquals(resolved,1);
  s.deps.authorizeSetupDraft=async()=>false;
  assertEquals((await handlePreview(req(request),s.deps)).status,403);
- assertEquals([resolved,registered],[1,1]);
+ assertEquals(resolved,1);
+});
+Deno.test('canonical layout text admits scope before fonts, bounds output before registration and avoids ticket reads',async()=>{
+ const {fontFamilyCatalog}=await import('../_shared/ticketFonts.ts');
+ const family=fontFamilyCatalog.find(f=>Object.values(f.faces).includes(futuraId))!;
+ const request={text:'AV fi Židle',role:'text',fontFamilyId:family.id,fontFaceId:futuraId,size:24,language:'und',direction:'auto',lineHeight:1.2,align:'left',box:{x:-100,y:-50,width:200,height:100},fit:'wrap'};
+ const input={occasionId:7,mode:'layout-text',resourceProtocol:2,batch:{requests:[request],numericFaces:[{fontFamilyId:family.id,fontFaceId:futuraId}]}};
+ let resolved=0,registered=0;const s=setup();
+ s.deps.font=async()=>{resolved++;return {id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400};};
+ s.deps.registerLayoutTextResources=async(scope,resources)=>{registered++;assertEquals(scope,{occasionId:7});assertEquals(resources.protocol,2);assertEquals(Object.keys(resources.textLayouts).length,1);assertEquals(Object.keys(resources.numberSymbols[futuraId].tokens).length,11);};
+ const denied=setup(false);denied.deps.font=s.deps.font;denied.deps.registerLayoutTextResources=s.deps.registerLayoutTextResources;
+ assertEquals((await handlePreview(req(input),denied.deps)).status,403);assertEquals([resolved,registered],[0,0]);
+ const response=await handlePreview(req(input),s.deps);assertEquals(response.status,200);assertEquals([resolved,registered],[1,1]);assertEquals(s.counts(),[0,0,0]);
+ const result=await response.json();assert(Object.values(result.textLayouts).every((r:any)=>r.path.length>0));
+ s.deps.authorize=async()=>({abuseLimits:{...admission.abuseLimits,'document.output.bytes':10}});
+ assertEquals((await handlePreview(req(input),s.deps)).status,429);assertEquals(registered,1);
+ const draft=setup();draft.deps.font=s.deps.font;draft.deps.authorizeSetupDraft=async()=>admission;draft.deps.registerLayoutTextResources=async(scope)=>{assertEquals(scope,{setupDraftId:'10000000-0000-4000-8000-000000000001'});};
+ const {occasionId:_,...withoutOccasion}=input;
+ assertEquals((await handlePreview(req({...withoutOccasion,setupDraftId:'10000000-0000-4000-8000-000000000001'}),draft.deps)).status,200);
+ for(const extra of [{batch:{...input.batch,requests:Array(33).fill(request)}},{batch:{...input.batch,numericFaces:[{fontFamilyId:family.id,fontFaceId:'foreign'}]}},{camera:{}},{readOnly:true}])assertEquals((await handlePreview(req({...input,...extra}),s.deps)).status,400);
 });

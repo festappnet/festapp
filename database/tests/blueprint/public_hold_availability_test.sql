@@ -58,9 +58,10 @@ BEGIN
  UPDATE eshop.products SET is_hidden=false WHERE id=p;
  UPDATE public.form_fields SET is_hidden=true WHERE form=f.id AND product_type=(SELECT product_type FROM eshop.products WHERE id=p);
  response:=public.select_spot(f.key,hold_secret,pair[1],true);
- IF response->>'reason'<>'PRODUCT_NOT_IN_FORM' THEN RAISE EXCEPTION 'unoffered product held %',response; END IF;
+ IF response->>'code'<>'200' THEN RAISE EXCEPTION 'bound product requires redundant form field %',response; END IF;
+ PERFORM public.select_spot(f.key,hold_secret,pair[1],false);
  response:=public.get_blueprint(hold_secret,f.key,f.blueprint);
- IF EXISTS(SELECT 1 FROM jsonb_array_elements(response#>'{data,products}') WHERE (value->>'id')::bigint=p) THEN RAISE EXCEPTION 'unoffered product exposed'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(response#>'{data,products}') WHERE (value->>'id')::bigint=p) THEN RAISE EXCEPTION 'bound product absent without form field'; END IF;
  UPDATE public.form_fields SET is_hidden=false WHERE form=f.id AND product_type=(SELECT product_type FROM eshop.products WHERE id=p);
  -- Mixed products requiring one shared remaining context cannot each pass alone.
  SELECT inventory_context,inventory_pool INTO context_id,pool_id FROM eshop.blueprint_area_bindings a JOIN public.inventory_contexts c ON c.id=a.inventory_context WHERE a.blueprint=f.blueprint LIMIT 1;

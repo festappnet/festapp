@@ -46,6 +46,9 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
+  static Future<void> releaseBlueprintHolds(List<int> spotIds) =>
+      _commands.releaseHolds(spotIds);
+
   /// One canonical mutation for the complete selection, including email outcomes.
   static Future<TicketCancellationOutcome> stornoTickets(
       List<int> ticketIds) async {
