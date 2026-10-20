@@ -24,7 +24,7 @@ const configuration = (issuer) => ({ schemaVersion: 1, issuer, profile: rawProfi
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
     operators: [{ userId: actor, occasions: [7] }],
 });
-async function setup(t, { native = false } = {}) {
+async function setup(t, { native = false, tenant = false } = {}) {
     const base = await fixture(t, { fetchImpl: url => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? reply({ presets: {}, fonts: {} }) : undefined });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
@@ -35,9 +35,10 @@ async function setup(t, { native = false } = {}) {
     const issuer = `http://127.0.0.1:${server.address().port}`;
     const raw = configuration(issuer);
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
+    if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
     const config = parseRemoteConfig(raw);
     const audit = [];
-    const service = createRemoteApp(config, storage, { ...secrets, fetchImpl: base.owner.fetch, audit: r => audit.push(r) });
+    const service = createRemoteApp(config, storage, { ...secrets, brokerSecret: 'b'.repeat(43), fetchImpl: base.owner.fetch, audit: r => audit.push(r) });
     server.on('request', service.app);
     t.after(async () => { await new Promise(resolve => server.close(resolve)); await storage.close(); await rm(root, { recursive: true, force: true }); });
     const jar = new Map();
@@ -115,6 +116,98 @@ test('native OAuth accepts only explicit IP loopback callbacks and honors an eph
     const request = new URLSearchParams({ client_id: 'codex-fixture', response_type: 'code', redirect_uri: 'http://127.0.0.1:51789/other',
         scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) });
     assert.equal((await f.browser('/auth?' + request)).status, 400);
+});
+
+test('tenant consent uses app access proof, an independent session and the original OAuth browser', async t => {
+    const f = await setup(t, { tenant: true });
+    const verifier = 'v'.repeat(43);
+    const query = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
+        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: READ_SCOPE,
+        code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
+    let r = await f.browser('/auth?' + query);
+    const connectPath = r.headers.get('location');
+    r = await f.browser(connectPath);
+    assert.equal(r.status, 303);
+    const tenant = new URL(r.headers.get('location'));
+    assert.equal(tenant.origin, f.config.tenantOrigin);
+    assert.equal(tenant.pathname, '/settings/mcp-connect');
+    const request = tenant.searchParams.get('request');
+    const broker = (operation, extra = {}, secret = 'b'.repeat(43)) => fetch(f.issuer + '/tenant-connection', {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': secret },
+        body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId, organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }),
+    });
+    assert.equal((await broker('details', { accessToken: supabaseToken }, 'wrong')).status, 403);
+    assert.equal((await broker('details', { accessToken: supabaseToken, organizationId: 999 })).status, 403);
+    assert.equal((await broker('details', { accessToken: supabaseToken, tenantOrigin: 'https://other.invalid' })).status, 403);
+    r = await broker('details', { accessToken: supabaseToken });
+    assert.equal(r.status, 200, await r.clone().text());
+    const info = await r.json();
+    assert.deepEqual(info.occasions.map(o => o.id), [7]);
+    assert.equal((await broker('prepare', { accessToken: supabaseToken, occasions: [8] })).status, 403);
+    // Merely displaying consent never mints or adopts a backend refresh session.
+    assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
+    assert.equal(f.storage.values('Delegation').length, 0);
+    r = await broker('prepare', { accessToken: supabaseToken, occasions: [7] });
+    const prepared = await r.json();
+    assert.equal(prepared.userId, actor);
+    assert.equal((await broker('prepare', { accessToken: supabaseToken, occasions: [7] })).status, 403);
+    assert.equal((await broker('complete', { lease: 'wrong', session: {} })).status, 403);
+    r = await broker('complete', { lease: prepared.lease,
+        session: { access_token: supabaseToken, refresh_token: 'independent-broker-refresh' } });
+    assert.equal(r.status, 200, await r.clone().text());
+    const { resumeUrl } = await r.json();
+    assert.equal((await broker('complete', { lease: prepared.lease })).status, 403);
+    assert.equal((await fetch(resumeUrl, { redirect: 'manual' })).status, 400);
+    r = await f.browser(resumeUrl);
+    assert.equal(r.status, 303);
+    let target = r.headers.get('location');
+    for (let i = 0; i < 8 && !new URL(target, f.issuer).pathname.startsWith('/callback'); i++) {
+        r = await f.browser(target); target = r.headers.get('location');
+    }
+    const callback = new URL(target, f.issuer);
+    assert(callback.searchParams.get('code'));
+    r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'authorization_code', code: callback.searchParams.get('code'), client_id: 'chatgpt-fixture',
+        redirect_uri: f.issuer + '/callback', code_verifier: verifier, resource: f.config.resource,
+    }) });
+    assert.equal(r.status, 200, await r.clone().text());
+    const tokens = await r.json();
+    assert(tokens.access_token);
+    assert.equal(f.storage.values('Delegation').length, 1);
+    assert.deepEqual(f.storage.values('Delegation')[0].occasions, [7]);
+    const client = new Client({ name: 'tenant-consent-test', version: '1' });
+    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+        requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
+    }));
+    t.after(() => client.close());
+    const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
+    assert.equal(result.isError, undefined);
+});
+
+test('tenant cancellation and expired requests cannot issue or prepare a grant', async t => {
+    const f = await setup(t, { tenant: true });
+    const start = async () => {
+        const q = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
+            redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: READ_SCOPE,
+            code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' });
+        let r = await f.browser('/auth?' + q);
+        const path = r.headers.get('location'); r = await f.browser(path);
+        return { uid: path.split('/').at(-1), request: new URL(r.headers.get('location')).searchParams.get('request') };
+    };
+    const first = await start();
+    const broker = (request, operation, extra = {}) => fetch(f.issuer + '/tenant-connection', { method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) },
+        body: JSON.stringify({ request, operation, tenantId: f.config.profile.tenantId, organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }) });
+    let r = await broker(first.request, 'cancel');
+    const { resumeUrl } = await r.json();
+    r = await f.browser(resumeUrl);
+    assert.equal(r.status, 303);
+    assert.equal((await broker(first.request, 'prepare', { accessToken: supabaseToken, occasions: [7] })).status, 403);
+    assert.equal(f.storage.values('Delegation').length, 0);
+    const second = await start();
+    f.storage.put('Connect', second.uid, { ...f.storage.get('Connect', second.uid), expiresAt: Date.now() - 1 }, 60);
+    assert.equal((await broker(second.request, 'details', { accessToken: supabaseToken })).status, 403);
+    assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
 });
 
 test('encrypted durable adapter survives restart and refuses another process or key', async t => {

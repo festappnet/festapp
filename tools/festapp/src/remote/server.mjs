@@ -1,4 +1,5 @@
 import express from 'express';
+import { tenantBridge } from './tenant-bridge.mjs';
 import { Provider, errors } from 'oidc-provider';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -13,7 +14,7 @@ import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
 const nonce = () => randomBytes(32).toString('base64url');
 const cookieName = 'festapp_mcp_management';
 
-export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl = fetch, audit = () => {} } = {}) {
+export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecret, fetchImpl = fetch, audit = () => {} } = {}) {
     check(cookieKeys?.length >= 2 && cookieKeys.every(k => typeof k === 'string' && k.length >= 32), 'INVALID_COOKIE_KEYS');
     check(jwks?.keys?.length > 0, 'INVALID_ISSUER_KEYS');
     const binding = digest(JSON.stringify([config.issuer, config.profile.binding]));
@@ -113,30 +114,54 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl =
     const flow = (uid) => storage.get('Connect', uid);
     const loginOwner = uid => boundOwner(config, storage, connectionBinding(config.profile, uid), { fetchImpl });
     const eligible = (userId) => config.operators.find(o => o.userId === userId);
+    const availableOccasions = async (userOwner, backend, userId) => {
+        const policy = eligible(userId);
+        check(policy, 'FORBIDDEN');
+        const operations = new Operations(userOwner);
+        const found = [];
+        for (const id of policy.occasions) {
+            try {
+                await operations.inspect(backend, id);
+                found.push({ id, title: config.occasionLabels?.[id] ? `${config.occasionLabels[id]} (#${id})` : `Akce #${id}` });
+            } catch (error) {
+                if (!['FORBIDDEN', 'NOT_FOUND_OR_INACCESSIBLE'].includes(error.code)) throw error;
+            }
+        }
+        check(found.length > 0, 'FORBIDDEN');
+        return found;
+    };
+    const completeConsent = async (req, res, d, f, selected) => {
+        check(selected.length > 0 && selected.every(id => f.available.includes(id) && eligible(f.userId)?.occasions.includes(id)), 'FORBIDDEN');
+        await loginOwner(d.uid).authorized(async () => {});
+        const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
+        grant.addOIDCScope(`openid offline_access ${READ_SCOPE}`);
+        grant.addResourceScope(config.resource, READ_SCOPE);
+        const grantId = await grant.save();
+        const sessionBinding = connectionBinding(config.profile, d.uid);
+        storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
+            profileBinding: config.profile.binding, binding: sessionBinding,
+            occasions: [...new Set(selected)], expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
+        storage.put('Binding', sessionBinding, { id: grantId }, 86400 * 8);
+        await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
+        storage.remove('Connect', d.uid);
+        audit({ event: 'consent', connection: digest(grantId), client: d.params.client_id });
+        return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
+    };
+    const tenantRedirect = tenantBridge(app, { config, storage, brokerSecret,
+        owner: loginOwner, available: availableOccasions, complete: completeConsent, details, provider });
     const renderConnect = async (req, res, error = '') => {
         const d = await details(req);
         let f = flow(d.uid);
         if (!f) { f = { csrf: nonce() }; storage.put('Connect', d.uid, f, 600); }
+        if (tenantRedirect) return tenantRedirect(res, d, f);
         const client = config.clients.find(c => c.id === d.params.client_id).name;
         if (!f.userId) return res.type('html').send(loginForm({ csrf: f.csrf, client,
             action: `/connect/${d.uid}/login`, consent: true, error }));
         const policy = eligible(f.userId);
         check(policy, 'FORBIDDEN');
-        // Probe only explicitly configured occasions under the ordinary user.
         const consentOwner = loginOwner(d.uid);
-        const consentOperations = new Operations(consentOwner);
-        const available = await consentOwner.authorized(async backend => {
-            const found = [];
-            for (const id of policy.occasions) {
-                try {
-                    await consentOperations.inspect(backend, id);
-                    found.push({ id, title: config.occasionLabels?.[id] ? `${config.occasionLabels[id]} (#${id})` : `Akce #${id}` });
-                } catch (error) {
-                    if (!['FORBIDDEN', 'NOT_FOUND_OR_INACCESSIBLE'].includes(error.code)) throw error;
-                }
-            }
-            return found;
-        });
+        const available = await consentOwner.authorized((backend, context) =>
+            availableOccasions(consentOwner, backend, context.userId));
         check(available.length > 0, 'FORBIDDEN');
         f.available = available.map(o => o.id);
         storage.put('Connect', d.uid, f, 600);
@@ -145,6 +170,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl =
     };
     app.get('/connect/:uid', (req, res) => renderConnect(req, res));
     app.post('/connect/:uid/login', form, async (req, res) => {
+        check(!tenantRedirect, 'FORBIDDEN');
         const d = await details(req), f = flow(d.uid);
         check(f, 'FORBIDDEN'); csrfCheck(req, f);
         if (req.body.cancel) return provider.interactionFinished(req, res, { error: 'access_denied' }, { mergeWithLastSubmission: false });
@@ -164,6 +190,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl =
         res.redirect(303, `/connect/${d.uid}`);
     });
     app.post('/connect/:uid/consent', form, async (req, res) => {
+        check(!tenantRedirect, 'FORBIDDEN');
         const d = await details(req), f = flow(d.uid);
         check(f?.userId, 'FORBIDDEN'); csrfCheck(req, f);
         if (req.body.cancel) {
@@ -172,20 +199,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, fetchImpl =
         }
         const selected = [req.body.occasion].flat().map(Number);
         check(selected.length > 0 && selected.every(id => f.available.includes(id) && eligible(f.userId)?.occasions.includes(id)), 'FORBIDDEN');
-        await loginOwner(d.uid).authorized(async () => {});
-        const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
-        grant.addOIDCScope(`openid offline_access ${READ_SCOPE}`);
-        grant.addResourceScope(config.resource, READ_SCOPE);
-        const grantId = await grant.save();
-        const sessionBinding = connectionBinding(config.profile, d.uid);
-        storage.put('Delegation', grantId, { id: grantId, userId: f.userId, clientId: d.params.client_id,
-            profileBinding: config.profile.binding, binding: sessionBinding,
-            occasions: [...new Set(selected)], expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
-        storage.put('Binding', sessionBinding, { id: grantId }, 86400 * 8);
-        await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
-        storage.remove('Connect', d.uid);
-        audit({ event: 'consent', connection: digest(grantId), client: d.params.client_id });
-        return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
+        return completeConsent(req, res, d, f, selected);
     });
     const manage = (req, res) => {
         const value = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith(cookieName + '='))?.slice(cookieName.length + 1);

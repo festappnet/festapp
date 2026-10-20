@@ -3410,5 +3410,21 @@
     "switchAccount": "Přihlásit se jiným účtem",
     "legacyInviteHint": "Vybraným uživatelům odešleme pozvánku. Členům týmu pošleme odkaz bez změny hesla.",
     "legacyReinviteConfirm": "Někteří uživatelé již obdrželi pozvánku. Odeslat ji znovu?"
+  },
+  "McpConnection": {
+    "title": "Propojení aplikace",
+    "heading": "Povolit přístup k účtu?",
+    "invalid": "Požadavek chybí nebo není platný. Spusť propojení znovu v připojované aplikaci.",
+    "loginHint": "Přihlas se ke svému účtu. Potom vybereš akce a potvrdíš přístup.",
+    "login": "Přihlásit se",
+    "client": "Připojuješ aplikaci {client}",
+    "scope": "Aplikace bude moci číst informace o vybraných akcích a jejich šablony vstupenek. Nebude moci měnit data ani odesílat vstupenky.",
+    "choose": "Vyber akce, ke kterým povolíš přístup:",
+    "duration": "Přístup platí 7 dní. Dříve ho můžeš odvolat ve správě propojení Festapp.",
+    "approve": "Povolit a propojit",
+    "cancel": "Zrušit",
+    "connecting": "Propojuji…",
+    "error": "Propojení se nepodařilo. Požadavek mohl vypršet nebo účet nemá přístup. Spusť propojení znovu v připojované aplikaci.",
+    "retry": "Zkusit znovu"
   }
 }

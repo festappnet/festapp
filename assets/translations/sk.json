@@ -1520,5 +1520,21 @@
     "switchAccount": "Prihlásiť sa iným účtom",
     "legacyInviteHint": "Vybraným používateľom odošleme pozvánku. Členom tímu pošleme odkaz bez zmeny hesla.",
     "legacyReinviteConfirm": "Niektorí používatelia už dostali pozvánku. Odoslať ju znova?"
+  },
+  "McpConnection": {
+    "title": "Connect application",
+    "heading": "Allow access to your account?",
+    "invalid": "The request is missing or invalid. Start connecting again in the application.",
+    "loginHint": "Sign in to your account, then choose occasions and confirm access.",
+    "login": "Sign in",
+    "client": "Connecting {client}",
+    "scope": "The application can read information and ticket layouts for selected occasions. It cannot change data or send tickets.",
+    "choose": "Choose occasions to allow:",
+    "duration": "Access lasts 7 days. You can revoke it earlier in Festapp connection management.",
+    "approve": "Allow and connect",
+    "cancel": "Cancel",
+    "connecting": "Connecting…",
+    "error": "Connection failed. The request may have expired or the account lacks access. Start connecting again in the application.",
+    "retry": "Try again"
   }
 }

@@ -205,26 +205,25 @@ Hosted preview/writes and issued-ticket actions remain separate waves.
 
 ## Hosted OAuth pilot: connect in a browser
 
-The selected endpoint is `https://mcp.festapp.net/mcp`. Implementation and local
-acceptance do not mean the endpoint has been activated. The release record must
-confirm DNS/TLS, the exact image/config and the real ChatGPT connection first.
+The public endpoint is `https://mcp.festapp.net/mcp`. DNS/TLS and OAuth discovery
+are active; a real user connection still requires login and explicit consent.
 
-After activation, add that URL as a custom remote MCP server in ChatGPT, choose
+Add that URL as a custom remote MCP server in ChatGPT, choose
 OAuth and the pre-registered public client `festapp-chatgpt` with no client secret.
 Register the exact callback shown by ChatGPT's server management page. The
 prepared configuration uses its stable callback
 `https://chatgpt.com/connector_platform_oauth_redirect`; issuer identification is
 advertised and verified locally. Automatic/open client registration is disabled.
 
-Click connect, log into Festapp in the browser, select allowed occasions and
-confirm access. No API key or refresh token is copied into ChatGPT. The first
+Click connect. The configured first-party tenant page reuses the application
+login, then lets you select allowed occasions and confirm access. No API key or refresh token is copied into ChatGPT. The first
 pilot allows only `context.inspect` and `ticket_layouts.inspect`; the configured
 operator/resource list is checked again for every call. Disconnect at
 `https://mcp.festapp.net/connections`, independently of the Festapp application.
 
-The browser currently supports ordinary Festapp password authentication. MFA
-accounts fail explicitly; Google/SSO and device login are not implemented in
-this pilot. The local terminal login is unchanged. Mendelio Voice's remote
+The first-party page uses the application's existing login choices. MFA accounts
+currently fail closed at independent session issuance. The local terminal login
+is unchanged. Mendelio Voice's remote
 OAuth and local device-login pattern informed the connection UX, not shared
 credentials or identity-provider configuration.
 
@@ -264,3 +263,13 @@ codex mcp login festapp --scopes festapp:ticket-layouts:read
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
+
+### First-party consent
+
+The pilot redirects OAuth connections to the configured tenant's
+`/settings/mcp-connect` page. On vstupenky.online, use the existing application
+login, select occasions and approve. The tenant exchanges the app access proof
+for a separate MCP-owned Auth session over the first-party Edge broker. No app
+refresh token is shared and no token is placed in a redirect URL. Deployment
+variables and security boundaries are documented in the
+[first-party consent contract](../../docs/architecture/operations/remote-mcp-auth.md#first-party-tenant-consent).

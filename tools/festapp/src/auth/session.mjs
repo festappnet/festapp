@@ -89,7 +89,7 @@ export class SessionOwner {
             await rmdir(path);
         }
     }
-    client() {
+    client(accessToken) {
         return createClient(
             this.profile.backendOrigin,
             this.profile.publicApiKey,
@@ -99,18 +99,18 @@ export class SessionOwner {
                     autoRefreshToken: false,
                     detectSessionInUrl: false,
                 },
-                global: { fetch: this.fetch },
+                global: { fetch: this.fetch, ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}) },
             },
         );
     }
-    async identity(client, expectedUser) {
-        const { data, error } = await client.auth.getUser();
+    async identity(client, expectedUser, accessToken) {
+        const { data, error } = await client.auth.getUser(accessToken);
         authenticationError(error);
         check(data.user, 'AUTHENTICATION_REQUIRED');
         if (expectedUser)
             check(data.user.id === expectedUser, 'AUTHENTICATION_REQUIRED');
         const assurance =
-            await client.auth.mfa.getAuthenticatorAssuranceLevel();
+            await client.auth.mfa.getAuthenticatorAssuranceLevel(accessToken);
         upstream(assurance.error);
         const requiresMfa =
             assurance.data?.nextLevel === 'aal2' ||
@@ -131,6 +131,26 @@ export class SessionOwner {
             'TARGET_MISMATCH',
         );
         return data.user.id;
+    }
+    // First-party proof is transient; the browser's refresh token is never adopted.
+    async withAccessToken(accessToken, action) {
+        check(typeof accessToken === 'string' && accessToken.length < 8192, 'AUTHENTICATION_REQUIRED');
+        await verifyActivation(this.profile, this.fetch);
+        const client = this.client(accessToken);
+        const userId = await this.identity(client, undefined, accessToken);
+        return action(client, { userId });
+    }
+    async adoptSession(session, expectedUser) {
+        return this.locked(async () => {
+            await verifyActivation(this.profile, this.fetch);
+            check(session?.access_token && session?.refresh_token && expectedUser, 'AUTHENTICATION_REQUIRED');
+            const client = this.client();
+            const { data, error } = await client.auth.setSession(session);
+            authenticationError(error);
+            const userId = await this.identity(client, expectedUser);
+            await this.store.write(this.profile.binding, { userId, refreshToken: data.session.refresh_token });
+            return { userId };
+        });
     }
     async login(email, password) {
         return this.locked(async () => {
