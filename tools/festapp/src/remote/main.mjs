@@ -16,6 +16,7 @@ try {
         const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
         const secrets = { schemaVersion: 1,
             storageKey: randomBytes(32).toString('base64url'),
+            brokerSecret: randomBytes(32).toString('base64url'),
             cookieKeys: [randomBytes(48).toString('base64url'), randomBytes(48).toString('base64url')],
             jwks: { keys: [{ ...privateKey.export({ format: 'jwk' }), kid: randomUUID(), use: 'sig', alg: 'RS256' }] } };
         const f = await open(args[2], 'wx', 0o600);

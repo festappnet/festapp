@@ -8,6 +8,8 @@ const testEnvironment = {
   SUPABASE_SERVICE_ROLE_KEY: "edge-test-service-role-key",
   DEFAULT_EMAIL: "noreply@example.invalid",
   PROJECT_URL: "https://edge-test.invalid",
+  FESTAPP_MCP_TENANTS_JSON: JSON.stringify([{ tenantId: "fixture", tenantOrigin: "https://tenant.invalid",
+    issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) }]),
   FESTAPP_ALLOWED_WEB_ORIGINS: "https://app.example.invalid",
   NOTIFY_WEBHOOK_TOKEN: "edge-test-webhook-token",
 };
@@ -417,4 +419,13 @@ Deno.test("send-occasion-team-invitations requires a bearer identity before priv
     }),
   );
   assertEquals(response.status, 401);
+});
+
+Deno.test("MCP session exchange entrypoint rejects a foreign origin without privileged work", async () => {
+  const handler = await loadHandler("mcp-session-exchange");
+  const result = await handler(new Request("https://edge-test.invalid/mcp-session-exchange", {
+    method: "POST", headers: { Origin: "https://evil.invalid", "Content-Type": "application/json" },
+    body: "{}",
+  }));
+  assertEquals(result.status, 403);
 });

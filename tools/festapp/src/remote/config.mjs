@@ -8,6 +8,7 @@ const schema = z.strictObject({
     schemaVersion: z.literal(1),
     issuer: z.url(),
     profile: z.unknown(),
+    tenantOrigin: z.url().optional(),
     clients: z.array(z.strictObject({
         id: identifier,
         name: identifier,
@@ -25,6 +26,11 @@ export function parseRemoteConfig(raw) {
     const config = schema.parse(raw);
     const profile = parseProfile(config.profile);
     const url = new URL(config.issuer);
+    if (config.tenantOrigin) {
+        const tenant = new URL(config.tenantOrigin);
+        if (tenant.origin !== config.tenantOrigin || tenant.protocol !== 'https:')
+            throw new Error('INVALID_TENANT_ORIGIN');
+    }
     const local = profile.kind === 'disposable-local';
     const validOrigin = (u) => !u.username && !u.password && !u.search && !u.hash;
     if (!validOrigin(url) || url.pathname !== '/' ||

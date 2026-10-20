@@ -1,7 +1,7 @@
 # Remote MCP authorization pilot
 
-Date: 2026-10-20. Status: implemented and locally verified; public activation and
-real ChatGPT/account login remain pending. Selected origin: `https://mcp.festapp.net`.
+Date: 2026-10-20. Status: public issuer active and verified; first-party consent
+integration implemented, real operator/account consent remains pending. Selected origin: `https://mcp.festapp.net`.
 Scope: `festapptickets` / vstupenky.online only, the approved pilot account and
 the five current occasions of its Testovací organizace unit. Private actor IDs,
 labels, public backend profile and exact resource allowlist live outside Git.
@@ -16,13 +16,14 @@ Both are pinned in the existing package lock. Node 24 LTS is the hosted runtime;
 the existing self-hosted GoTrue v2.189.0 remains ordinary downstream Auth.
 No unsupported GoTrue OAuth-server capability is assumed or enabled.
 
-The user clicks Connect in ChatGPT, logs into Festapp in our browser interaction,
-chooses individual allowed occasions and consents. The initial interaction uses
-the existing `SessionOwner.login` and identity/MFA/organization checks with a
+The user clicks Connect in the MCP client and continues to the configured
+first-party tenant. Its existing app login identifies the actor; the user chooses
+individual allowed occasions and consents. The first-party broker reuses the
+existing session-issuance owner and identity/MFA/organization checks with a
 separate encrypted server store. It does not read workstation Keychain/browser
 credentials. Passwords are transient request input, never persisted or audited.
-Current supported login is password; MFA fails closed. Google/SSO and local
-device authorization are explicitly outside this pilot.
+The tenant retains its existing login choices; MFA session issuance currently
+fails closed. MCP does not implement a parallel Google or device identity provider.
 
 Issuer and resource are respectively `https://mcp.festapp.net` and
 `https://mcp.festapp.net/mcp`. Resource metadata is available at both the root and
@@ -186,3 +187,47 @@ Primary guidance: [OpenAI authentication](https://developers.openai.com/plugins/
 [maintained issuer](https://github.com/panva/node-oidc-provider),
 [MCP SDK HTTP transport](https://ts.sdk.modelcontextprotocol.io/),
 [Supabase user sessions](https://supabase.com/docs/guides/auth/sessions).
+
+## First-party tenant consent
+
+The public MCP issuer stays on `mcp.festapp.net`. With `tenantOrigin` configured,
+its connection interaction redirects to `/settings/mcp-connect` on the exact
+first-party tenant origin. The app reuses its ordinary session and login page
+(including its existing provider choices), displays the requesting client and
+read-only scope, and requires an explicit occasion selection and approval.
+The opaque request expires with the interaction. No app refresh token or
+password is sent to the MCP issuer and no Auth token is placed in a URL.
+
+`mcp-session-exchange` accepts only the configured tenant Origin. The issuer's
+private broker secret authenticates the Edge-to-MCP backchannel. Details use a
+transient verified user access proof and the existing `Operations` permission
+checks. Approval consumes a single-use preparation lease bound to that actor,
+client, profile and occasion selection. The Edge function resolves only the
+verified actor and uses the existing `issueExistingUserSession` owner and lease
+to issue an independent ordinary Auth session. It sends this session directly
+to MCP, never to the browser. MFA accounts remain explicitly unsupported by
+this session-issuance boundary and fail closed. The MCP process still has no
+service-role key. Failed/uncertain transfers revoke only the new session.
+
+OAuth completion requires the original issuer interaction cookie and a short
+opaque continuation. The tenant cannot supply an OAuth callback or completion
+destination. Consent, downstream authorization and grant issuance have one
+shared owner; tenant consent cannot expand the configured pilot allowlist.
+The production tenant UI is released before enabling `tenantOrigin` routing.
+The Edge runtime needs a protected `FESTAPP_MCP_TENANTS_JSON` registry: an array
+of `{tenantId, tenantOrigin, organizationId, issuer, brokerSecret}`. Origins are
+exact HTTPS origins, unique within the registry. Only the HTTP Origin selects a
+registry entry; client bodies cannot select an organization, issuer or credential.
+Every backchannel call carries the resolved tenant identity; the issuer checks
+it against its bound backend profile before inspecting a request or minting.
+The `brokerSecret` matches the separately protected issuer secrets file. Never
+rotate storage/signing/cookie keys as part of adding this bridge secret.
+
+The Flutter confirmation page, Edge handler and issuer bridge are reusable
+adapters; none chooses a tenant from an email, URL parameter or hardcoded brand.
+Adding another approved website requires registering its exact origin/profile
+and issuer routing, plus that tenant's own release. The current issuer remains
+bound to the single approved `festapptickets` profile; the registry does not
+silently enable a second tenant or share a grant across organizations. A future
+multi-profile issuer must resolve that same tenant boundary before constructing
+its operation/session owner, rather than making a current-tenant singleton.

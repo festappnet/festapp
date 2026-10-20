@@ -238,3 +238,13 @@ A persisted client command ID and authorized receipt lookup recover a lost succe
 response without another provider mutation. Configure/release the SQL migration,
 Function bundle and client together; local tests stub Fakturoid and never delete
 real invoices.
+
+## MCP first-party connection
+
+`mcp-session-exchange` fronts the tenant's explicit MCP consent page. It enforces
+an exact tenant Origin, verifies the existing app user access token and relays
+only an opaque, expiring issuer request over a secret-authenticated backchannel.
+It reuses `issueExistingUserSession` for an independent session of that verified
+actor only; browser refresh tokens, passwords and caller-supplied identity fields
+are never used. New Auth credentials go server-to-server to MCP, not to the app.
+See [the contract and runtime variables](../architecture/operations/remote-mcp-auth.md#first-party-tenant-consent).
