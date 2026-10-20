@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { parseProfile } from '../context/profile.mjs';
 
 export const READ_SCOPE = 'festapp:ticket-layouts:read';
-export const READ_OPERATIONS = Object.freeze(['context.inspect', 'ticket_layouts.inspect']);
+export const CREATE_SCOPE = 'festapp:occasions:create';
+export const READ_OPERATIONS = Object.freeze(['context.inspect', 'access.inspect', 'ticket_layouts.inspect']);
 const identifier = z.string().min(1).max(200);
 const schema = z.strictObject({
-    schemaVersion: z.literal(1),
+    schemaVersion: z.literal(2),
     issuer: z.url(),
     profile: z.unknown(),
     tenantOrigin: z.url().optional(),
@@ -15,11 +16,7 @@ const schema = z.strictObject({
         applicationType: z.enum(['web', 'native']).default('web'),
         redirectUris: z.array(z.url()).min(1).max(4),
     })).min(1).max(10),
-    operators: z.array(z.strictObject({
-        userId: z.uuid(),
-        occasions: z.array(z.number().int().positive()).min(1).max(100),
-    })).min(1).max(20),
-    occasionLabels: z.record(z.string().regex(/^[1-9][0-9]*$/), z.string().min(1).max(200)).optional(),
+
 });
 
 export function parseRemoteConfig(raw) {
@@ -36,8 +33,7 @@ export function parseRemoteConfig(raw) {
     if (!validOrigin(url) || url.pathname !== '/' ||
         (local ? url.protocol !== 'http:' || url.hostname !== '127.0.0.1' : url.protocol !== 'https:'))
         throw new Error('INVALID_REMOTE_ISSUER');
-    if (new Set(config.clients.map(c => c.id)).size !== config.clients.length ||
-        new Set(config.operators.map(o => o.userId)).size !== config.operators.length)
+    if (new Set(config.clients.map(c => c.id)).size !== config.clients.length)
         throw new Error('DUPLICATE_REMOTE_IDENTITY');
     for (const client of config.clients) for (const uri of client.redirectUris) {
         const u = new URL(uri);

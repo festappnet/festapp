@@ -191,7 +191,7 @@ test('unprepared canonical profiles never advertise or admit the write family', 
     });
     const f = await fixture(t, { profileValue: parseProfile(value) });
     const ops = new Operations(f.owner);
-    assert.equal(ops.catalog.length, 3);
+    assert.equal(ops.catalog.length, 4);
     assert(!ops.catalog.some((d) => d.id === 'ticket_layouts.save'));
     const result = await ops.invoke(
         'ticket_layouts.save',
