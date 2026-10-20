@@ -1,5 +1,7 @@
 # Canonical backend integration, 2026-10-20
 
+Production release is complete; see the [verified release result](backend-refactor-release-result-2026-10-20.md). The following integration record describes the pre-publication snapshot.
+
 The selected backend refactor is integrated over canonical main 77e5987413ca9b28f1fc1fb9ee91f4bac696b03c in an isolated checkout. The original dirty feature checkout was preserved. User authorization now includes publication to main and deployment of prod/festapptickets only.
 
 The deterministic forward assembly gives each selected SQL signature one authored owner. Existing main activity graph/history/UTC handling, actor/context guards, group ownership and companion projections, safe waitlist-order deletion, Auth admission, free-text ticket layout and product price/delivery behavior were retained while porting the refactor. New commands cover atomic authoring, inventory reconciliation, cancellation notification intent, additive membership and receipt recovery after teardown. Current Dart callers use those commands and durable principal-bound intents.

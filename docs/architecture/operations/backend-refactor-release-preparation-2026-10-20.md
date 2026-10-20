@@ -1,10 +1,6 @@
 # Backend refactor release preparation, 2026-10-20
 
-Status: canonical-main integration validated; publication and selected-tenant
-release authorized for vstupenky.online (prod/festapptickets). Production has
-not yet been changed. The earlier feature-checkout receipt is superseded by
-[the current verification receipt](backend-refactor-verification-2026-10-20.json).
-The unrelated dirty feature checkout remains untouched.
+Status: **production release complete** for vstupenky.online, version 0.20.296+785. See the [verified release result](backend-refactor-release-result-2026-10-20.md) and [production receipt](backend-refactor-release-result-2026-10-20.json). The integration receipt and preparation decisions below record the state before publication. The unrelated dirty feature checkout was preserved.
 
 ## Repaired repository gates
 
@@ -94,8 +90,8 @@ workflow. Do not restore competing writers, reset receipts, undo consumed
 budgets or roll back financial facts to make an older client work. Keep writes
 fenced if a cutover check fails.
 
-The remaining facts are external execution inputs, not unresolved local test
-failures: the chosen release SHA/tenant, live installed-client and pending-intent
-inventory, approved compatibility/fencing decision, migration execution and
-live-version readback. They were intentionally not collected or executed under
-the user's local-only scope.
+The canonical source and selected tenant revisions, protected rollback evidence,
+atomic migration execution and coherent live-version readback are now verified
+in the production receipt. Installed-client and offline pending-intent inventories
+remain incomplete; retained compatibility signatures and MCP contraction remain
+gated as described in the release result.

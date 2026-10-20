@@ -1,0 +1,37 @@
+{
+  "status": "production_verified",
+  "tenant": "festapptickets",
+  "origin": "https://vstupenky.online",
+  "version": "0.20.296+785",
+  "mainSha": "5b82540b6bfe86cbb10c9ca639c6f5d676745d7f",
+  "tenantSha": "493fdb569c9590a1a90370b16a41260cbe8eb435",
+  "migration": "20261020120000",
+  "migrationSha256": "83709f07dadf93094974385d4c2c43605c936ccd79112780c8533454e34f2a60",
+  "buildTreeSha256": "83f2e472f166186e94d20523386ed7f652696e16f7734ae9ac852c5f1be76a9e",
+  "deployment": "https://6f70848a.vstupenkyonline.pages.dev",
+  "liveVersionConsecutiveProbes": 3,
+  "catalogDefinitionsVerified": 326,
+  "ordinaryWriteFencesVerified": true,
+  "readOnlySqlRoleProbes": [
+    "scoped editor read",
+    "foreign principal denial",
+    "exact retained completed deletion receipt recovery"
+  ],
+  "releaseGate": {
+    "minimumBuild": 620,
+    "paused": false,
+    "preserved": true
+  },
+  "mcpWritesEnabled": false,
+  "compatibility": "Thin released-signature adapters retain canonical owners; unsafe two-step activity publishing fenced426. Installed/offline inventories incomplete, so global contraction remains gated.",
+  "checks": {
+    "sql": 71,
+    "concurrencyAndCatalog": 26,
+    "flutterSelected": 36,
+    "core": 8,
+    "deno": 28,
+    "sourcePolicyInventory": 20
+  },
+  "provisioningRun": "https://github.com/festappnet/festapp/actions/runs/39422949761",
+  "evidence": "Protected server release evidence and local executed logs were retained; no credentials or customer records are included."
+}
