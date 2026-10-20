@@ -751,6 +751,26 @@ Map<String, dynamic> _compileScene(
         'strokeWidth': quantize(unit * (selected ? 3 : 1.5)),
       });
     }
+    if (n.kind == 'seat' && state['highlighted'] == true) {
+      final w = n.width / 2 + 3, h = n.height / 2 + 3;
+      items.add({
+        'id': '${n.id}:highlight',
+        'nodeId': n.id,
+        'kind': 'state',
+        'matrix': matrix,
+        'path': [
+          ['M', -w, -h],
+          ['L', w, -h],
+          ['L', w, h],
+          ['L', -w, h],
+          ['Z'],
+        ],
+        'fill': '#00000000',
+        'stroke': '#2563EBFF',
+        'strokeWidth': 3,
+        'screenStrokeWidth': 2.5,
+      });
+    }
     final capacity = state['capacity'] ?? cached.furnitureCapacity[n.id];
     if (!isCouch && capacity is num && capacity > 1) {
       final outlineBounds = boundsOfPoints(worldHull(n, matrices[n.id]!));

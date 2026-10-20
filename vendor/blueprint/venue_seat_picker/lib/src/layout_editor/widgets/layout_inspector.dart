@@ -664,7 +664,13 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     final remaining =
         layoutMaxSeats - c.document.nodes.where((n) => n.kind == 'seat').length;
     final maximum = math.min(
-      couch ? layoutMaxSeats : tableCapacity(node),
+      couch
+          ? layoutMaxSeats
+          : tableCapacity(
+              node.copyWith(
+                seating: TableSeating.fromDocument(c.document, node).record,
+              ),
+            ),
       count + remaining,
     );
     return Row(

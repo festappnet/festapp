@@ -254,26 +254,27 @@ class _FontFamilyPickerState extends State<FontFamilyPicker> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
-        TextButton.icon(
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(FormStrings.moreFonts),
-          style: TextButton.styleFrom(
-            minimumSize: const Size(48, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+        if (widget.onPreview == null)
+          TextButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(FormStrings.moreFonts),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            onPressed: widget.enabled && !busy
+                ? () => FontFamilyPicker.showChoices(
+                      context,
+                      families: widget.families,
+                      extraFamilies: widget.extraFamilies,
+                      value: widget.value,
+                      onSelected: choose,
+                      previewStyle: widget.previewStyle,
+                      onPreview: widget.onPreview,
+                      onPreviewEnd: widget.onPreviewEnd,
+                    )
+                : null,
           ),
-          onPressed: widget.enabled && !busy
-              ? () => FontFamilyPicker.showChoices(
-                    context,
-                    families: widget.families,
-                    extraFamilies: widget.extraFamilies,
-                    value: widget.value,
-                    onSelected: choose,
-                    previewStyle: widget.previewStyle,
-                    onPreview: widget.onPreview,
-                    onPreviewEnd: widget.onPreviewEnd,
-                  )
-              : null,
-        ),
       ],
     );
   }

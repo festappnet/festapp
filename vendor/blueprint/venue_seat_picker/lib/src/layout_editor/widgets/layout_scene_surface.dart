@@ -1968,7 +1968,9 @@ class LayoutScenePainter extends CustomPainter {
                   ? StrokeJoin.bevel
                   : StrokeJoin.miter
               ..strokeMiterLimit = (item['miterLimit'] as num? ?? 4).toDouble()
-              ..strokeWidth = item['kind'] == 'floor'
+              ..strokeWidth = item['screenStrokeWidth'] is num
+                  ? (item['screenStrokeWidth'] as num).toDouble() / zoom
+                  : item['kind'] == 'floor'
                   ? strokeWidth / zoom
                   : strokeWidth
               ..color = itemColor(item['stroke'])

@@ -45,7 +45,7 @@ void main() {
                   ).values['cornerRadius']
                   as num)
               .toDouble();
-      expect(radius(), 0);
+      expect(radius(), 3);
       final reset = find.byKey(const ValueKey('layout-style-default'));
       await tester.ensureVisible(reset);
       await tester.tap(reset.hitTestable());
@@ -62,7 +62,7 @@ void main() {
         document.nodes.map((n) => n.id),
       );
       c.undo();
-      expect(radius(), 0);
+      expect(radius(), 3);
       c.redo();
       expect(radius(), 8);
     },

@@ -5,7 +5,8 @@ import '../blueprint_strings.dart';
 /// Matching map markers and counts, with compact tooltip or detailed meanings.
 class BlueprintLayoutLegend extends StatelessWidget {
   const BlueprintLayoutLegend(
-      {super.key, required this.states, this.compact = false});
+      {super.key, required this.states, this.compact = false, this.onHover});
+  final ValueChanged<BlueprintSeatState?>? onHover;
   final bool compact;
   final Iterable<BlueprintSeatState> states;
 
@@ -47,18 +48,25 @@ class BlueprintLayoutLegend extends StatelessWidget {
     final description = BlueprintStrings.seatStateDescription(
         selection ? 'selection' : state.name);
     if (compact) {
-      return Tooltip(
-        message: description,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            marker,
-            Flexible(
-                child:
-                    Text(title, style: Theme.of(context).textTheme.labelLarge)),
-          ]),
-        ),
-      );
+      return MouseRegion(
+          key: ValueKey('blueprint-legend-hover-${state.name}'),
+          onEnter: (_) => onHover?.call(state),
+          onExit: (_) => onHover?.call(null),
+          child: Focus(
+              canRequestFocus: onHover != null,
+              onFocusChange: (focused) => onHover?.call(focused ? state : null),
+              child: Tooltip(
+                message: description,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    marker,
+                    Flexible(
+                        child: Text(title,
+                            style: Theme.of(context).textTheme.labelLarge)),
+                  ]),
+                ),
+              )));
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),

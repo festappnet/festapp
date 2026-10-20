@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -16,6 +17,29 @@ void main() {
         translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'legend hover highlights its state without selecting seats',
+      (tester) async {
+    BlueprintSeatState? hovered;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintLayoutLegend(
+                    compact: true,
+                    states: const [BlueprintSeatState.available],
+                    onHover: (state) => hovered = state))));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(799, 599));
+    await mouse.moveTo(tester.getCenter(
+        find.byKey(const ValueKey('blueprint-legend-hover-available'))));
+    await tester.pump();
+    expect(hovered, BlueprintSeatState.available);
+    await mouse.moveTo(const Offset(799, 599));
+    await tester.pump();
+    expect(hovered, isNull);
+    await mouse.removePointer();
   });
   for (final brightness in Brightness.values) {
     for (final compact in [false, true]) {

@@ -7,7 +7,7 @@ const layoutMaterialFamilies = <String, Map<String, dynamic>>{
     'construction': 'simple',
     'seatStyle': 'plain',
     'floorStyle': 'plain',
-    'radius': 0.0,
+    'radius': 3.0,
     'seatRadius': 8.0,
     'strokeWidth': 1.0,
     'seatStrokeWidth': 0.0,
@@ -122,7 +122,7 @@ VenueLayoutDocument withLayoutMinimalStyle(VenueLayoutDocument document) {
         'fill': '#FFFFFFFF',
         'stroke': '#000000FF',
         'strokeWidth': 1,
-        'cornerRadius': 0,
+        'cornerRadius': 3.0,
       };
     kinds['table'] = {
       ...kinds['table'] as Map,
