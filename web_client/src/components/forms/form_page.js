@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { OrganizationIdentityFooter } from './organization_identity_footer.js';
 import { parseOrderLocation, orderOverviewSearch, loadOrderOverview, stopOrderOverview, overviewText } from './order_overview.js';
 import { WaitlistCommands, parseWaitlistLocation, waitlistRegistrationPayload } from './waitlist_commands.js';
@@ -50,7 +52,15 @@ export class FormPage extends Component {
         this._previewModulePromise = null;
     }
 
-    clear() { this.loadGeneration = (this.loadGeneration || 0) + 1; this.cleanup(); this.pageHost?.replaceChildren(); }
+    clear() {
+        this.embedBridge?.destroy();
+        this.embedBridge = null;
+        window.removeEventListener('festapp-embed-step', this.embedStep);
+        this.embedStep = null;
+        this.loadGeneration = (this.loadGeneration || 0) + 1;
+        this.cleanup();
+        this.pageHost?.replaceChildren();
+    }
 
     cleanup({ preserveEditButton = false } = {}) {
         CountdownWidget.stop();
@@ -112,6 +122,11 @@ export class FormPage extends Component {
         window.scrollTo(0, 0);
 
         this.currentLink = link;
+        if (isEmbed() && !this.embedBridge) {
+            this.embedBridge = new EmbedBridge(); this.embedBridge.start();
+            this.embedStep = event => this.embedBridge.scrollTo(event.detail);
+            window.addEventListener('festapp-embed-step', this.embedStep);
+        }
 
         // Configuration
         this.onBack = this.onBack || (() => window.history.back()); // Default fallback
@@ -147,6 +162,7 @@ export class FormPage extends Component {
         try {
             // 3. Fetch Data
             const personalParams = new URLSearchParams(window.location.search);
+            if (isEmbed() && personalParams.get('admin') === '1') throw new Error('INVALID_CAPABILITY');
             if (window.location.pathname !== '/order' &&
                 (['order_id', 'offer_id', 'token', 'waitlist'].some(key => personalParams.has(key)) ||
                  /^#(?:order|waitlist)\?/.test(window.location.hash))) throw new Error('INVALID_CAPABILITY');
@@ -204,7 +220,7 @@ export class FormPage extends Component {
 
 
             // Editors need access even when sales are closed or not yet open.
-            RightsService.updateAppData({ formLink: link }).then(() => {
+            if (!isEmbed()) RightsService.updateAppData({ formLink: link }).then(() => {
                 if (loadGeneration !== this.loadGeneration) return;
                 if (RightsService.canSeeReservations()) this.renderEditButton(link);
             });
@@ -215,7 +231,7 @@ export class FormPage extends Component {
 
             // Check URL params/Rules for preview
             const urlParams = new URLSearchParams(window.location.search);
-            const isPreviewParam = urlParams.get('preview') === 'true';
+            const isPreviewParam = !isEmbed() && urlParams.get('preview') === 'true';
             if (isPreviewParam) await RightsService.updateAppData({ formLink: link });
             const canPreview = RightsService.canSeeReservations();
             const showPreview = canPreview && isPreviewParam;
@@ -700,13 +716,14 @@ export class FormPage extends Component {
 
     validateAndSubmit(form, formModel) {
         if (this.currentSession.state.tickets.length > this.currentSession.maxTickets) {
-            const error = document.createElement('p'); error.setAttribute('role', 'alert'); error.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'); form.prepend(error); return;
+            const error = document.createElement('p'); error.setAttribute('role', 'alert'); error.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'); form.prepend(error); revealEmbedStep(error); return;
         }
         if (formModel.offerBundle && !formModel.selectedTicketIds?.length) {
-            const message = document.createElement('p'); message.setAttribute('role', 'alert'); message.textContent = WaitlistStrings.selectPeople; form.prepend(message); return;
+            const message = document.createElement('p'); message.setAttribute('role', 'alert'); message.textContent = WaitlistStrings.selectPeople; form.prepend(message); revealEmbedStep(message); return;
         }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
 
+        if (!isValid) revealEmbedStep(form.querySelector('.invalid, [aria-invalid="true"]') || form);
         if (isValid) {
             this.handlePreview(form, formModel);
         }
@@ -841,7 +858,8 @@ export class FormPage extends Component {
                          const link = this.currentLink;
                          const url = new URL(result.data.orderOverviewUrl);
                          const viewScope = parseOrderLocation(url);
-                         window.history.replaceState({}, '', `/order${orderOverviewSearch(viewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(viewScope)}${isEmbed() ? "&embed=1" : ""}`);
+                         RouterService._lastPath = window.location.pathname;
                          this.currentLink = null;
                          await this.init(link);
                      } catch {
@@ -855,7 +873,8 @@ export class FormPage extends Component {
                      const link = this.currentLink;
                      if (this.overviewScope) {
                          this.continuationScope = this.waitlistScope;
-                         window.history.replaceState({}, '', `/order${orderOverviewSearch(this.overviewScope)}`);
+                         window.history.replaceState({}, '', `/order${orderOverviewSearch(this.overviewScope)}${isEmbed() ? "&embed=1" : ""}`);
+                         RouterService._lastPath = window.location.pathname;
                      }
                      this.currentLink = null;
                      await this.init(link);
@@ -912,7 +931,7 @@ export class FormPage extends Component {
         `;
 
         document.body.appendChild(loader);
-        document.body.style.overflow = 'hidden'; // Ensure scroll locked
+        if (!isEmbed()) document.body.style.overflow = 'hidden'; // Ensure scroll locked
 
         // Ensure Spinner CSS
         if (!document.getElementById('spinner-style')) {
@@ -935,6 +954,7 @@ export class FormPage extends Component {
             document.head.appendChild(style);
         }
 
+        revealEmbedStep(loader);
         return loader;
     }
 
@@ -961,12 +981,19 @@ export class FormPage extends Component {
         container.style.alignItems = 'center'; /* Center Horizontally */
 
         document.body.appendChild(container);
-        document.body.style.overflow = 'hidden'; // Ensure scroll locked
+        if (!isEmbed()) document.body.style.overflow = 'hidden'; // Ensure scroll locked
+
+        const previousFocus = document.activeElement;
+        container.addEventListener('keydown', event => {
+            if (isEmbed() && event.key === 'Escape') RouterService.goBackProgrammatically();
+        });
 
         // Cleanup Function
         const cleanup = () => {
             if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
             container.remove();
+            previousFocus?.focus({ preventScroll: true });
+            revealEmbedStep(previousFocus);
             document.body.style.overflow = ''; // Restore scroll
 
             if (success) {
@@ -994,5 +1021,6 @@ export class FormPage extends Component {
             this.identityFooter.render(formModel.organizationIdentity);
             container.append(this.identityFooter.host);
         }
+        revealEmbedStep(container);
     }
 }

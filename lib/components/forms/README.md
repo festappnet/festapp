@@ -171,3 +171,7 @@ persisted in the command/draft; SQL alone owns the localized copy title.
 
 Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
 New writes cannot claim those slugs; canonical links and titles are never bulk renamed.
+
+Veřejné vložení formuláře používá stejný checkout. URL, integrační varianty,
+bezpečný protokol a limity obnovy vlastní
+[embedded checkout contract](../../../docs/integrations/embedded-checkout.md).

@@ -484,7 +484,14 @@
     "publicLinkPreview": "Unsaved link preview",
     "automaticPublicLink": "A short link will be created when saved. You can enter a custom slug.",
     "publicLinkHistoryHelp": "Previous addresses will continue to work.",
-    "fontLoadFailed": "Could not load fonts. Please try again."
+    "fontLoadFailed": "Could not load fonts. Please try again.",
+    "embedAction": "Embed on your website",
+    "embedTitle": "Order form",
+    "embedFallback": "Open order in a new tab",
+    "embedHelp": "Paste the code into your website HTML. Automatic height requires an external script. If your website blocks it, use fixed height.",
+    "embedSaveFirst": "Save the form before embedding it.",
+    "embedAutomatic": "Automatic height (recommended)",
+    "embedFixed": "Fixed height without script"
   },
   "OrderGridColumns": {
     "id": "Id",

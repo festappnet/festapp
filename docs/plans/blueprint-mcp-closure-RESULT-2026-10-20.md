@@ -1,6 +1,6 @@
 # Blueprint + MCP closure: lokální výsledek
 
-Stav: původní plán dokončen v autorizovaném lokálním rozsahu. Commit, push, produkční migrace, deploy a publikace package neproběhly.
+Stav: původní plán dokončen v autorizovaném lokálním rozsahu. Níže je původní lokální kvalifikace před publikací; navazující uživatelem autorizované začlenění do main a jeho dodatečné kontroly popisuje [integrační záznam](evidence/blueprint-mcp-closure-20261020/main-integration-readiness.json). Produkční migrace, deploy a publikace package neproběhly.
 
 Kandidát: `/Users/miakh/source/festapp-blueprint-mcp-closure-20261020`, detached base `48d8b6db0479818b556e3852c7ea50ead4035d11`. Sdílený package: `/Users/miakh/source/venue-seat-picker-blueprint-mcp-closure-20261020`, runtime sjednocený s předaným r37 a integritní deltou. Původní rozpracovaný strom a souběžné sessions nejsou přepsané. Pozdější samostatné změny r38, importu skutečných akcí a implicitních blueprint nabídek nejsou součástí této zmrazené closure.
 

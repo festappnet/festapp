@@ -1,3 +1,4 @@
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import kernelUrl from '@festapp/venue-layout/kernel?url';
 import { loadKernel, loadLayoutAssets, mount } from '@festapp/venue-layout';
 import { FormStrings } from '../forms/form_strings.js';
@@ -79,6 +80,7 @@ export class BlueprintSelector {
         document.body.classList.add('blueprint-active'); document.documentElement.classList.add('blueprint-active');
         const stateId = `seat-selection-${Date.now()}`;
         window.history.pushState({ ...window.history.state, blueprintOverlay: stateId }, '', '#seat-selection');
+        revealEmbedStep(container);
         let closed = false, closing = false, loading = false, pending = 0;
         const assetAbort = new AbortController();
         const refreshActions = () => {
@@ -95,7 +97,10 @@ export class BlueprintSelector {
             container.remove();
             document.body.classList.remove('blueprint-active'); document.documentElement.classList.remove('blueprint-active');
             window.removeEventListener('popstate', popHandler); document.removeEventListener('keydown', keyHandler);
-            if (previousFocus?.isConnected) previousFocus.focus();
+            if (previousFocus?.isConnected) {
+                previousFocus.focus({ preventScroll: true });
+                revealEmbedStep(previousFocus);
+            }
         };
         const requestClose = () => {
             if (closed || closing || pending > 0) return;
@@ -116,7 +121,7 @@ export class BlueprintSelector {
         this.close = cleanup;
         confirmBtn.onclick = requestClose;
         document.addEventListener('keydown', keyHandler); window.addEventListener('popstate', popHandler);
-        confirmBtn.focus();
+        confirmBtn.focus({ preventScroll: true });
 
         const load = async () => {
             if (closed || loading) return;

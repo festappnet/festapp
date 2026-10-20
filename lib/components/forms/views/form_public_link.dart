@@ -1,3 +1,5 @@
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'form_embed_code.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
 import '../../_shared/copy_button.dart';
@@ -17,8 +19,8 @@ class PublicLink extends StatelessWidget {
   final String link;
   final String? savedLink;
   final bool isForm;
-  const PublicLink({super.key, required this.link, this.savedLink,
-    this.isForm = true});
+  const PublicLink(
+      {super.key, required this.link, this.savedLink, this.isForm = true});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,10 @@ class PublicLink extends StatelessWidget {
         ]),
       ],
       if (link != saved) ...[
-        Text(link.isEmpty ? FormStrings.automaticPublicLink : FormStrings.publicLinkPreview,
+        Text(
+            link.isEmpty
+                ? FormStrings.automaticPublicLink
+                : FormStrings.publicLinkPreview,
             style: const TextStyle(fontSize: 12)),
         if (link.isNotEmpty)
           SelectableText(publicLinkUrl(link, isForm: isForm)),
@@ -47,5 +52,72 @@ class FormPublicLink extends StatelessWidget {
   const FormPublicLink({super.key, required this.link, this.savedLink});
 
   @override
-  Widget build(BuildContext context) => PublicLink(link: link, savedLink: savedLink);
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        PublicLink(link: link, savedLink: savedLink),
+        if (savedLink != null && savedLink!.isNotEmpty)
+          TextButton.icon(
+            icon: const Icon(Icons.code),
+            label: Text(FormStrings.embedAction),
+            onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) => _EmbedDialog(savedLink: savedLink!)),
+          )
+        else
+          Text(FormStrings.embedSaveFirst),
+      ]);
+}
+
+class _EmbedDialog extends StatefulWidget {
+  final String savedLink;
+  const _EmbedDialog({required this.savedLink});
+
+  @override
+  State<_EmbedDialog> createState() => _EmbedDialogState();
+}
+
+class _EmbedDialogState extends State<_EmbedDialog> {
+  bool automatic = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final code = formEmbedCode(
+        tenantUrl: AppConfig.webLink,
+        savedLink: widget.savedLink,
+        title: FormStrings.embedTitle,
+        fallbackLabel: FormStrings.embedFallback,
+        automatic: automatic);
+    return AppAlertDialog(
+      title: Text(FormStrings.embedAction),
+      content: SizedBox(
+          width: 600,
+          child: SingleChildScrollView(
+              child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(FormStrings.embedHelp),
+              const SizedBox(height: 12),
+              DropdownButton<bool>(
+                value: automatic,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(
+                      value: true, child: Text(FormStrings.embedAutomatic)),
+                  DropdownMenuItem(
+                      value: false, child: Text(FormStrings.embedFixed)),
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => automatic = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              SelectableText(code),
+              Align(
+                  alignment: Alignment.centerRight,
+                  child: CopyButton(value: code)),
+            ],
+          ))),
+    );
+  }
 }

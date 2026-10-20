@@ -484,7 +484,14 @@
     "publicLinkPreview": "Náhled neuloženého odkazu",
     "automaticPublicLink": "Krátký odkaz se vytvoří po uložení. Adresní název můžete zadat ručně.",
     "publicLinkHistoryHelp": "Původní adresy budou dále fungovat.",
-    "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu."
+    "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu.",
+    "embedAction": "Vložit na vlastní web",
+    "embedTitle": "Objednávkový formulář",
+    "embedFallback": "Otevřít objednávku v nové záložce",
+    "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
+    "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
+    "embedAutomatic": "Automatická výška (doporučeno)",
+    "embedFixed": "Pevná výška bez skriptu"
   },
   "OrderGridColumns": {
     "id": "Id",

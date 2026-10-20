@@ -239,6 +239,13 @@
     "orderLabel": "Objednávka"
   },
   "FeatureFormSettings": {
+    "embedAction": "Vložiť na vlastný web",
+    "embedTitle": "Objednávkový formulár",
+    "embedFallback": "Otvoriť objednávku na novej karte",
+    "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška vyžaduje povolený externý skript. Ak ho váš web blokuje, použite pevnú výšku.",
+    "embedSaveFirst": "Pred vložením na web formulár uložte.",
+    "embedAutomatic": "Automatická výška (odporúčané)",
+    "embedFixed": "Pevná výška bez skriptu",
     "labelShowBeforeStartMessage": "Zobraziť informácie pred začiatkom",
     "helperBeforeStartMessage": "Pod odpočtom môžete zverejniť informácie o podujatí, obrázky alebo plán sály. Prihlasovanie sa otvorí až v nastavenom čase.",
     "labelBeforeStartMessage": "Informácie pred začiatkom",
