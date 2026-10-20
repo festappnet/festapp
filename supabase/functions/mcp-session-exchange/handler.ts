@@ -32,7 +32,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     const bytes = new Uint8Array(size); let offset = 0;
     for (const c of chunks) { bytes.set(c, offset); offset += c.length; }
     const body = JSON.parse(new TextDecoder().decode(bytes));
-    if (!/^[A-Za-z0-9_-]{43}$/.test(body.request) || !["details", "approve", "cancel"].includes(body.operation)) throw new Error();
+    if (!/^[A-Za-z0-9_-]{43}$/.test(body.request) || !["details", "approve", "cancel", "status"].includes(body.operation)) throw new Error();
     const broker = async (payload: Record<string, unknown>) => {
       const result = await (deps.fetch ?? fetch)(`${config.issuer}/tenant-connection`, {
         method: "POST", redirect: "error", signal: AbortSignal.timeout(15000),
@@ -48,7 +48,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     if (!accessToken || accessToken.length > 8192) return json({ error: "authentication_required" }, 401);
     const { data, error } = await admin.auth.getUser(accessToken);
     if (error || !data.user) return json({ error: "authentication_required" }, 401);
-    if (body.operation === "details") return json(await broker({ operation: "details", accessToken }));
+    if (["details", "status"].includes(body.operation)) return json(await broker({ operation: body.operation, accessToken }));
     const prepared = await broker({ operation: "prepare", accessToken, occasions: body.occasions });
     if (prepared.userId !== data.user.id || prepared.organizationId !== config.organizationId || !prepared.lease) throw new Error();
     // Resolve from the verified actor, never a caller-supplied email/user ID.

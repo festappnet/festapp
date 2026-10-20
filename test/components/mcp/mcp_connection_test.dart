@@ -2,6 +2,8 @@ import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/mcp/mcp_callback_window.dart';
 import 'package:fstapp/components/mcp/mcp_connection_page.dart';
 import 'package:fstapp/components/mcp/mcp_connection_service.dart';
 
@@ -68,7 +70,7 @@ void main() {
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
-      accountEmail: 'fixture@invalid',
+      accountEmail: AppConfig.getUserPrefix('fixture@invalid'),
       requester: (_, operation, selected) async {
         calls++;
         expect(operation, 'details');
@@ -100,11 +102,75 @@ void main() {
         home: McpConnectionPage(
       request: List.filled(43, 'r').join(),
       isLoggedIn: () => true,
-      accountEmail: 'fixture@invalid',
+      accountEmail: AppConfig.getUserPrefix('fixture@invalid'),
       requester: (_, __, ___) async => throw StateError('expired'),
     )));
     await tester.pumpAndSettle();
     expect(find.text('McpConnection.error'), findsOneWidget);
     expect(find.text('McpConnection.approve'), findsNothing);
   });
+  testWidgets(
+      'native completion stays on the tenant and waits for verified exchange',
+      (tester) async {
+    final callback = _CallbackWindow();
+    var confirmed = false;
+    await tester.pumpWidget(MaterialApp(
+        home: McpConnectionPage(
+      request: List.filled(43, 'r').join(),
+      isLoggedIn: () => true,
+      accountEmail: AppConfig.getUserPrefix('fixture@invalid'),
+      openCallbackWindow: () => callback,
+      requester: (_, operation, selected) async {
+        if (operation == 'details')
+          return {
+            'client': 'Codex',
+            'applicationType': 'native',
+            'occasions': [
+              {'id': 7, 'title': 'Test event'}
+            ]
+          };
+        if (operation == 'approve') {
+          expect(selected, [7]);
+          return {
+            'resumeUrl':
+                'https://mcp.festapp.net/connect/uid/finish?resume=${List.filled(43, 'a').join()}'
+          };
+        }
+        expect(operation, 'status');
+        return {'status': confirmed ? 'connected' : 'pending'};
+      },
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(CheckboxListTile));
+    await tester.pump();
+    await tester.ensureVisible(find.text('McpConnection.approve'));
+    await tester.tap(find.text('McpConnection.approve'));
+    await tester.pump();
+    expect(callback.target?.host, 'mcp.festapp.net');
+    expect(find.text('McpConnection.connected'), findsNothing);
+    expect(find.text('McpConnection.waitingForClient'), findsOneWidget);
+    expect(callback.closed, false);
+    confirmed = true;
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.text('McpConnection.connected'), findsOneWidget);
+    expect(find.text('McpConnection.closeHint'), findsOneWidget);
+    expect(find.text('fixture@invalid'), findsOneWidget);
+    expect(find.text(AppConfig.getUserPrefix('fixture@invalid')), findsNothing);
+    expect(callback.closed, true);
+  });
+}
+
+class _CallbackWindow implements McpCallbackWindow {
+  Uri? target;
+  bool closed = false;
+  @override
+  void navigate(Uri uri) {
+    target = uri;
+  }
+
+  @override
+  void close() {
+    closed = true;
+  }
 }

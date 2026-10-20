@@ -67,10 +67,11 @@ import 'package:fstapp/components/inventory/views/user_stay_page.dart' as _i70;
 import 'package:fstapp/components/map/map_page.dart' as _i30;
 import 'package:fstapp/components/map/places_navigation_page.dart' as _i45;
 import 'package:fstapp/components/map/places_tab.dart' as _i44;
+import 'package:fstapp/components/mcp/mcp_callback_window.dart' as _i80;
 import 'package:fstapp/components/mcp/mcp_connection_page.dart' as _i31;
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart' as _i33;
 import 'package:fstapp/components/navigation/unit_administration_access.dart'
-    as _i80;
+    as _i81;
 import 'package:fstapp/components/news/news_form_page.dart' as _i34;
 import 'package:fstapp/components/news/news_page.dart' as _i35;
 import 'package:fstapp/components/occasion/admin_page.dart' as _i1;
@@ -1436,6 +1437,7 @@ class McpConnectionRoute extends _i73.PageRouteInfo<McpConnectionRouteArgs> {
     _i31.McpConnectionRequester? requester,
     bool Function()? isLoggedIn,
     String? accountEmail,
+    _i80.McpCallbackWindow? Function()? openCallbackWindow,
     List<_i73.PageRouteInfo>? children,
   }) : super(
           McpConnectionRoute.name,
@@ -1445,6 +1447,7 @@ class McpConnectionRoute extends _i73.PageRouteInfo<McpConnectionRouteArgs> {
             requester: requester,
             isLoggedIn: isLoggedIn,
             accountEmail: accountEmail,
+            openCallbackWindow: openCallbackWindow,
           ),
           rawQueryParams: {'request': request},
           initialChildren: children,
@@ -1466,6 +1469,7 @@ class McpConnectionRoute extends _i73.PageRouteInfo<McpConnectionRouteArgs> {
         requester: args.requester,
         isLoggedIn: args.isLoggedIn,
         accountEmail: args.accountEmail,
+        openCallbackWindow: args.openCallbackWindow,
       );
     },
   );
@@ -1478,6 +1482,7 @@ class McpConnectionRouteArgs {
     this.requester,
     this.isLoggedIn,
     this.accountEmail,
+    this.openCallbackWindow,
   });
 
   final _i74.Key? key;
@@ -1490,9 +1495,11 @@ class McpConnectionRouteArgs {
 
   final String? accountEmail;
 
+  final _i80.McpCallbackWindow? Function()? openCallbackWindow;
+
   @override
   String toString() {
-    return 'McpConnectionRouteArgs{key: $key, request: $request, requester: $requester, isLoggedIn: $isLoggedIn, accountEmail: $accountEmail}';
+    return 'McpConnectionRouteArgs{key: $key, request: $request, requester: $requester, isLoggedIn: $isLoggedIn, accountEmail: $accountEmail, openCallbackWindow: $openCallbackWindow}';
   }
 
   @override
@@ -2688,7 +2695,7 @@ class UnitAdminRoute extends _i73.PageRouteInfo<UnitAdminRouteArgs> {
   UnitAdminRoute({
     _i74.Key? key,
     required int? id,
-    _i80.UnitAdministrationAccess? access,
+    _i81.UnitAdministrationAccess? access,
     List<_i73.PageRouteInfo>? children,
   }) : super(
           UnitAdminRoute.name,
@@ -2722,7 +2729,7 @@ class UnitAdminRouteArgs {
 
   final int? id;
 
-  final _i80.UnitAdministrationAccess? access;
+  final _i81.UnitAdministrationAccess? access;
 
   @override
   String toString() {

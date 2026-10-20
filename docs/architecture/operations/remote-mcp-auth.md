@@ -231,3 +231,23 @@ bound to the single approved `festapptickets` profile; the registry does not
 silently enable a second tenant or share a grant across organizations. A future
 multi-profile issuer must resolve that same tenant boundary before constructing
 its operation/session owner, rather than making a current-tenant singleton.
+
+## Native completion experience
+
+Native clients complete their loopback callback in a short-lived helper window,
+opened synchronously from the user's approval gesture with its opener severed.
+The tenant never reads that cross-origin window, callback URL or authorization
+code. A blocked popup retains the standard top-level callback behavior. Web
+clients retain their own top-level OAuth completion.
+
+The original tenant page observes its own opaque request through the same
+origin-bound Edge broker. Status requires the existing app actor proof, matches
+the request's actor and expires after ten minutes. It returns only a lifecycle
+status, never credentials or grant IDs. Consent alone and token issuance alone
+remain pending: `connected` requires an accepted MCP bearer request from the
+client. Revoked grants cannot produce a successful completion screen. Only after
+that proof does the tenant close its app-owned helper and render the branded
+completion page. An uncertain observation stays explicitly unconfirmed.
+
+Display email uses the existing `AppConfig.removeUserPrefix` tenant adapter;
+raw Auth addresses and account identity used by the protocol remain unchanged.

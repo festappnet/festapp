@@ -143,6 +143,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             occasions: [...new Set(selected)], expiresAt: Date.now() + 86400 * 7000, revoked: false }, 86400 * 7);
         storage.put('Binding', sessionBinding, { id: grantId }, 86400 * 8);
         await storage.backendStore.write(sessionBinding, await storage.backendStore.read(sessionBinding));
+        if (f.request) storage.put('TenantResult', digest(f.request), { grantId, userId: f.userId, uid: d.uid }, 600);
         storage.remove('Connect', d.uid);
         audit({ event: 'consent', connection: digest(grantId), client: d.params.client_id });
         return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
@@ -253,7 +254,9 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             if (typeof h !== 'string' || !/^Bearer [A-Za-z0-9_-]{20,512}$/.test(h)) return challenge(res);
             token = await provider.AccessToken.find(h.slice(7));
             if (!token) return challenge(res);
-            new DelegatedOwner(config, storage, token, { fetchImpl }).current();
+            const grant = new DelegatedOwner(config, storage, token, { fetchImpl }).current();
+            if (!grant.clientConnectedAt) storage.put('Delegation', token.grantId,
+                { ...grant, clientConnectedAt: Date.now() }, Math.max(1, (grant.expiresAt - Date.now()) / 1000));
         } catch { return challenge(res); }
         const count = active.get(token.grantId) ?? 0;
         if (count >= 2 || totalActive >= 16) return res.sendStatus(429);

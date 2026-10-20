@@ -48,8 +48,8 @@ Deno.test("foreign origin and invalid identity cannot reach privileged mint", as
   const f = fixture(); assertEquals((await f.request("approve", "https://evil.invalid")).status, 403); assertEquals(f.calls, []);
   const invalid = fixture({ invalidProof: true }); assertEquals((await invalid.request()).status, 401); assert(!invalid.calls.includes("mint"));
 });
-Deno.test("reading consent metadata and cancelling never mint a session", async () => {
-  const f = fixture(); assertEquals((await f.request("details")).status, 200); assertEquals((await f.request("cancel")).status, 200);
+Deno.test("reading consent metadata or status and cancelling never mint a session", async () => {
+  const f = fixture(); assertEquals((await f.request("details")).status, 200); assertEquals((await f.request("status")).status, 200); assertEquals((await f.request("cancel")).status, 200);
   assert(!f.calls.includes("mint"));
 });
 Deno.test("actor or tenant mismatch rejects before session issuance", async () => {
