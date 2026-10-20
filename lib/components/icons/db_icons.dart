@@ -1,6 +1,5 @@
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/map/icon_model.dart';
-import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/icons/icon_commands.dart';
@@ -25,7 +24,8 @@ class DbIcons {
   static Future<List<IconModel>> getManagedIcons() async {
     final unitId = RightsService.currentUnit()?.id;
     final org = AppConfig.organization;
-    if (ClientSyncRuntime.isV1Selected) {
+    if (ClientSyncRuntime.isV1Selected &&
+        RightsService.currentOccasionId() != null) {
       final response = await _supabase.rpc('get_map_editor_bundle_v1', params: {
         'p_occasion': RightsService.currentOccasionId()!,
       });
@@ -52,63 +52,28 @@ class DbIcons {
     if (unitId == null) {
       throw Exception('no_unit');
     }
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.create(
-        occasionId: RightsService.currentOccasionId()!,
-        link: link,
-        svg: svgData,
-      );
-      if (result.status != IconCommandStatus.applied || result.icon == null) {
-        throw StateError('Icon save was rejected');
-      }
-      return result.icon!;
+    final result =
+        await _commands.create(unitId: unitId, link: link, svg: svgData);
+    if (result.status != IconCommandStatus.applied || result.icon == null) {
+      throw StateError('Icon save was rejected');
     }
-    final row = await _supabase
-        .from(Tb.icons.table)
-        .insert({
-          Tb.icons.link: link,
-          Tb.icons.data: svgData,
-          Tb.icons.unit: unitId,
-          Tb.icons.organization: AppConfig.organization,
-          Tb.icons.created_by: AuthService.currentUserId(),
-        })
-        .select()
-        .single();
-    return IconModel.fromJson(row);
+    return result.icon!;
   }
 
   /// Deletes an icon via the delete_icon RPC (handles permission + ref checks).
   static Future<void> deleteIcon(int iconId) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final result = await _commands.delete(
-        occasionId: RightsService.currentOccasionId()!,
-        iconId: iconId,
-      );
-      if (result.status == IconCommandStatus.applied ||
-          result.status == IconCommandStatus.unchanged) {
-        return;
-      }
-      if (result.status == IconCommandStatus.rejected && result.refs != null) {
-        throw IconInUseException(
+    final unitId = RightsService.currentUnit()?.id;
+    if (unitId == null)
+      throw StateError('Icon deletion requires its unit context');
+    final result = await _commands.delete(unitId: unitId, iconId: iconId);
+    if (result.status == IconCommandStatus.applied ||
+        result.status == IconCommandStatus.unchanged) return;
+    if (result.status == IconCommandStatus.rejected && result.refs != null) {
+      throw IconInUseException(
           (result.refs!['places'] as num?)?.toInt() ?? 0,
           (result.refs!['path_groups'] as num?)?.toInt() ?? 0,
-          (result.refs!['place_types'] as num?)?.toInt() ?? 0,
-        );
-      }
-      throw StateError('Icon delete was rejected');
+          (result.refs!['place_types'] as num?)?.toInt() ?? 0);
     }
-    final res =
-        await _supabase.rpc('delete_icon', params: {'p_icon_id': iconId});
-    final code = (res is Map) ? res['code'] : null;
-    if (code == 200) return;
-    if (code == 409) {
-      final refs = (res['refs'] as Map?) ?? const {};
-      throw IconInUseException(
-        (refs['places'] as num?)?.toInt() ?? 0,
-        (refs['path_groups'] as num?)?.toInt() ?? 0,
-        (refs['place_types'] as num?)?.toInt() ?? 0,
-      );
-    }
-    throw Exception('delete_icon failed: $code');
+    throw StateError('Icon delete was rejected');
   }
 }

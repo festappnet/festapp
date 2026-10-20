@@ -162,7 +162,7 @@ BEGIN
   UPDATE public.email_messages SET workflow_state='cancelled',last_error='fakturoid_aborted' WHERE id=v_queue_id;
   IF NOT public.abort_waitlist_acceptance_internal(p_order_id,p_command_id) THEN
     UPDATE eshop.orders SET state='ordered' WHERE id=p_order_id;
-    PERFORM public.update_order_and_tickets_to_storno_221(p_order_id);
+    PERFORM public.cancel_order_domain_internal_v1(p_order_id,false);
   END IF;
   PERFORM public.complete_profile_inventory_membership_mutation_v1(
     v_abort_command,v_occasion,'inventory.order.fakturoid_abort',

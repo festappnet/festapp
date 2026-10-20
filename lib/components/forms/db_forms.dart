@@ -10,7 +10,6 @@ import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 
 // Bundle class to hold all related data for editing a form
 class FormEditBundle {
@@ -41,20 +40,8 @@ class DbForms {
     required int sourceFormId,
     required String targetOccasionLink,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.duplicate(
-        sourceFormId: sourceFormId,
-        targetOccasionLink: targetOccasionLink,
-      );
-      return;
-    }
-    await _supabase.rpc(
-      'duplicate_form_to_occasion',
-      params: {
-        'source_form_id': sourceFormId,
-        'target_occasion_link': targetOccasionLink,
-      },
-    );
+    await _commands.duplicate(
+        sourceFormId: sourceFormId, targetOccasionLink: targetOccasionLink);
   }
 
   static Future<List<FormBundle>> getAllFormsByOccasionLink(String occasionLink,
@@ -85,58 +72,21 @@ class DbForms {
     required String link,
     required String occasionLink,
   }) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.create(
-        title: title,
-        link: link,
-        occasionLink: occasionLink,
-      );
-      return;
-    }
-    final response = await _supabase.rpc(
-      'create_form_ws',
-      params: {
-        'input_data': {
-          'title': title,
-          'link': link,
-          'occasion_link': occasionLink
-        },
-      },
-    );
-
-    if (response["code"] != 201) {
-      // 201 Created
-      throw Exception(response["message"]);
-    }
+    await _commands.create(
+        title: title, link: link, occasionLink: occasionLink);
   }
 
   static Future<FormEditorDraft> updateForm(FormEditorDraft form) async {
-    final Map<String, dynamic> response;
-    if (ClientSyncRuntime.isV1Selected) {
-      response = await _commands.save(form.toEditedJson());
-    } else {
-      response = Map<String, dynamic>.from(await _supabase
-          .rpc('update_form', params: {'input_data': form.toEditedJson()}));
-      if (response['code'] != 200) throw Exception(response['message']);
-    }
+    final response = await _commands.save(form.toEditedJson());
+    form.aggregateVersion = (response['aggregate_version'] as num).toInt();
+    form.acceptProductVersions(response);
     form.definition =
         form.definition.copyWith(link: response['link'] as String);
     return form;
   }
 
-  static Future<void> deleteForm(int formId) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.delete(formId);
-      return;
-    }
-    final response = await _supabase.rpc(
-      'delete_form_ws',
-      params: {'p_form_id': formId},
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
-    }
+  static Future<void> deleteForm(int formId, {required int expectedVersion}) async {
+    await _commands.delete(formId, expectedVersion: expectedVersion);
   }
 
   static Future<FormBundle?> getFormFromLink(String link) async {
@@ -192,6 +142,7 @@ class DbForms {
 
     // Assign the fully populated fields list to the form.
     form.relatedFields = formFields;
+    form.captureProductCatalog(catalog.types);
 
     // Find and assign the selected bank account model to the form.
     if (availableBankAccounts.isNotEmpty) {
@@ -250,19 +201,12 @@ class DbForms {
   }
 
   static Future<void> updateBlueprint(BlueprintModel blueprint) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.saveBlueprint(blueprint.toJson());
-      return;
-    }
-    final response = await _supabase.rpc(
-      'update_blueprint',
-      params: {
-        'input_data': blueprint,
-      },
-    );
-
-    if (response["code"] != 200) {
-      throw Exception(response["message"]);
+    final result = await _commands.saveBlueprint(blueprint.toSaveJson());
+    blueprint.id = (result['blueprint_id'] as num).toInt();
+    blueprint.aggregateVersion = (result['aggregate_version'] as num).toInt();
+    final savedObjects = result['updated_objects'] as List;
+    for (var index = 0; index < savedObjects.length; index++) {
+      blueprint.objects![index].id = savedObjects[index]['id'] as int?;
     }
   }
 

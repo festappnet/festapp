@@ -31,6 +31,12 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE='invalid profile import'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,
     'rows',p_rows,'deleteUserIds',p_delete_user_ids)::text,'UTF8'),'sha256'),'hex');
+  PERFORM 1 FROM public.user_info ui WHERE ui.id=ANY(ARRAY(
+    SELECT (r->>'user_id')::uuid FROM jsonb_array_elements(p_rows) r
+    WHERE nullif(r->>'user_id','') IS NOT NULL))
+    OR lower(btrim(ui.email_readonly))=ANY(ARRAY(
+      SELECT lower(btrim(r#>>'{data,email}')) FROM jsonb_array_elements(p_rows) r))
+    ORDER BY ui.id FOR UPDATE;
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.users.import',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
@@ -147,6 +153,7 @@ BEGIN
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,
     'userId',p_user,'expectedVersion',p_expected_version)::text,'UTF8'),'sha256'),'hex');
+  PERFORM 1 FROM public.user_info WHERE id=p_user FOR UPDATE;
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.user.delete',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
@@ -196,7 +203,7 @@ CREATE OR REPLACE FUNCTION public.delete_owned_companion_internal_v1(p_occasion 
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO public, extensions
+ SET search_path=public,extensions
 AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_event_ids bigint[];
   v_group_ids bigint[]; v_private_impacts jsonb; v_replacements jsonb;
@@ -204,26 +211,32 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_event_ids bigint
 BEGIN
   IF v_actor IS NULL OR p_companion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid companion delete'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM public.user_companions uc
-    JOIN public.occasion_users ou ON ou."user"=uc.companion AND ou.occasion=p_occasion
-    WHERE uc."user"=v_actor AND uc.companion=p_companion) THEN
-    RAISE insufficient_privilege USING MESSAGE='companion owner required'; END IF;
-  IF EXISTS (SELECT 1 FROM public.occasion_users ou
-    WHERE ou."user"=p_companion AND ou.occasion<>p_occasion) THEN
-    RAISE invalid_parameter_value USING MESSAGE='cross-occasion companion requires manual cleanup'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=v_actor)
+    OR NOT coalesce((public.get_companion_feature_policy_v1(p_occasion)->>'is_enabled')::boolean,false)
+    OR NOT coalesce((public.get_companion_feature_policy_v1(p_occasion)->>'allow_user_create')::boolean,true) THEN
+    RAISE insufficient_privilege USING MESSAGE='self-created companion lifecycle disabled'; END IF;
   SELECT NOT o.is_hidden INTO v_is_publishable FROM public.occasions o
     WHERE o.id=p_occasion;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',p_occasion,'companion',p_companion)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.companion.delete',
     p_occasion,v_actor,v_hash);
-  PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'companion-owner:'||v_actor::text||':'||p_occasion::text,0));
+  PERFORM pg_advisory_xact_lock(hashtextextended('attendance-user:'||p_companion::text||':'||p_occasion::text,0));
+  PERFORM pg_advisory_xact_lock(hashtextextended('saved-program:'||p_companion::text||':'||p_occasion::text,0));
+  PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
+  PERFORM 1 FROM public.user_group_info WHERE occasion=p_occasion ORDER BY id FOR UPDATE;
   PERFORM 1 FROM public.user_info ui WHERE ui.id=p_companion FOR UPDATE;
   IF NOT FOUND THEN RETURN public.complete_client_mutation_outcome_v1(
     p_command_id,'unchanged',200,jsonb_build_object('companion',NULL)); END IF;
+  PERFORM 1 FROM public.occasion_users WHERE "user"=p_companion ORDER BY occasion FOR UPDATE;
+  PERFORM 1 FROM public.user_companions WHERE occasion=p_occasion AND companion=p_companion FOR UPDATE;
+  PERFORM public.delete_owned_companion_guard_v1(p_occasion,p_companion);
+  IF EXISTS(SELECT 1 FROM public.occasion_users WHERE "user"=p_companion AND occasion<>p_occasion) THEN
+    RAISE invalid_parameter_value USING MESSAGE='cross-occasion companion requires manual cleanup'; END IF;
+
   SELECT COALESCE(array_agg(DISTINCT event_id ORDER BY event_id),'{}'::bigint[])
     INTO v_event_ids FROM (
       SELECT eu.event event_id FROM public.event_users eu JOIN public.events e
@@ -242,13 +255,9 @@ BEGIN
         WHERE ug."group"=ANY(v_group_ids) AND ug."user"<>p_companion
     ) impacted JOIN public.occasion_users ou ON ou.occasion=p_occasion
       AND ou."user"=impacted.user_id;
-  v_private_impacts:=v_private_impacts||public.remove_user_activity_internal_v1(p_occasion,ARRAY[p_companion]);
-  UPDATE public.news SET created_by=NULL WHERE created_by=p_companion;
-  DELETE FROM public.user_groups WHERE "user"=p_companion;
-  DELETE FROM public.event_users WHERE "user"=p_companion;
-  DELETE FROM public.user_news WHERE "user"=p_companion;
-  DELETE FROM public.event_users_saved WHERE "user"=p_companion;
-  DELETE FROM public.occasion_users WHERE "user"=p_companion;
+  SELECT coalesce(jsonb_agg(DISTINCT item),'[]') INTO v_private_impacts FROM jsonb_array_elements(
+    public.remove_occasion_user_domain_internal_v1(p_occasion,p_companion)||
+    jsonb_build_array(jsonb_build_object('component','private_profile','userId',v_actor))) item;
   DELETE FROM public.client_aggregate_versions WHERE aggregate_type='occasion_user'
     AND scope_type='occasion' AND scope_id=p_occasion
     AND aggregate_id=p_companion::text;
@@ -257,10 +266,6 @@ BEGIN
   DELETE FROM public.user_info WHERE id=p_companion;
   DELETE FROM auth.identities WHERE user_id=p_companion;
   DELETE FROM auth.users WHERE id=p_companion;
-  UPDATE public.client_aggregate_versions SET version=version+1,
-    updated_at=clock_timestamp() WHERE aggregate_type='user_group'
-    AND scope_type='occasion' AND scope_id=p_occasion
-    AND aggregate_id=ANY(ARRAY(SELECT id::text FROM unnest(v_group_ids) id));
   v_replacements:=jsonb_build_array(jsonb_build_object(
     'component','private_profile','userId',v_actor,
     'payload',public.get_private_profile_payload_v1(p_occasion,v_actor)));
@@ -276,6 +281,7 @@ BEGIN
     jsonb_build_object('companion',NULL),'{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
+
 CREATE OR REPLACE FUNCTION public.game_guess_client_sync_v1(p_checkpoint bigint, p_guess text, p_command_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql

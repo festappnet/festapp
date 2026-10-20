@@ -17,8 +17,20 @@ BEGIN
  v_version:=CASE WHEN v_kind='order_reminder' THEN v_pi.email_reminder_version ELSE v_order.email_payment_version END;
  v_recipient:=coalesce(p_data->>'recipient',v_order.data->>'email');
  v_key:=coalesce(p_request,p_data->>'command_id',v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':'||coalesce(p_data->>'is_deposit_reminder','false'));
- IF v_kind='order_storno' AND NOT p_data ? 'requested_by' THEN
+ IF v_kind='order_storno' AND coalesce(p_request,'') NOT LIKE 'manual:%' THEN
+  -- requested_by is audit metadata, never proof of an explicit resend.
+  v_recipient:=v_order.data->>'email';
+  p_data:=jsonb_build_object('order_id',v_order.id);
   v_key:=v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':storno';
+  -- Older Edge follow-ups carried requested_by but no explicit resend ID and
+  -- used the generic :false key. Reuse that committed identity rather than
+  -- manufacture a second automatic message, including cancelled/expired rows.
+  SELECT * INTO v_existing FROM public.email_messages
+    WHERE organization=p_org AND order_id=v_order.id AND message_kind='order_storno'
+      AND recipient=v_recipient AND source_version=v_version
+      AND dedupe_key IN (v_key,v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':false')
+    ORDER BY (dedupe_key=v_key) DESC,id LIMIT 1;
+  IF v_existing.id IS NOT NULL THEN v_key:=v_existing.dedupe_key; END IF;
  END IF;
  IF v_kind='order_tickets' THEN
   SELECT * INTO v_existing FROM public.email_messages WHERE order_id=v_order.id AND message_kind=v_kind AND recipient=v_recipient AND source_version=v_version
@@ -143,11 +155,6 @@ BEGIN
  -- Reuse the existing hierarchical permission check, including elevated-account protections.
  IF auth.uid() IS NULL OR NOT coalesce(public.get_can_reset_user_password(p_user),false) THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended('sign-in:'||p_user::text||':'||p_occasion::text,0));
- -- Team invitations never own a password transition, including older clients.
- PERFORM 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user FOR SHARE;
- IF EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user
-   AND (is_editor OR is_editor_view OR is_manager)) THEN
-  RAISE insufficient_privilege USING MESSAGE='Team invitations cannot reset account passwords'; END IF;
  SELECT * INTO v_existing FROM public.email_messages WHERE recipient_user=p_user AND occasion=p_occasion AND message_kind='sign_in' AND (dedupe_key=p_dedupe OR (workflow_state IN ('pending','preparing','sending','retry_wait','unknown','accepted') AND expires_at>now())) ORDER BY id DESC LIMIT 1;
  IF v_existing.id IS NOT NULL THEN
   RETURN jsonb_build_object('message_id',v_existing.message_id,'replayed',true);

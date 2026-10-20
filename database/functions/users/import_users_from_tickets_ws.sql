@@ -1,6 +1,9 @@
-CREATE OR REPLACE FUNCTION public.import_users_from_tickets_ws(p_occasion_id bigint)
-RETURNS jsonb SECURITY DEFINER
-SET search_path = public, extensions AS $$
+CREATE OR REPLACE FUNCTION public.import_users_from_tickets_ws_internal_v1(p_occasion_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
     -- Declare a variable to hold the JSONB result from the import function.
     import_results JSONB;
@@ -13,7 +16,7 @@ BEGIN
 
     -- Call the original function to import users and store the returned JSONB
     -- in our variable instead of discarding it with PERFORM.
-    import_results := public.import_users_from_tickets(p_occasion_id);
+    import_results := public.import_ticket_profiles_internal_v1(p_occasion_id);
 
     -- Return a new JSONB object that includes the standard success code/message
     -- as well as the 'data' key containing the actual import results.
@@ -23,4 +26,11 @@ BEGIN
         'data', import_results
     );
 END;
-$$ LANGUAGE plpgsql;
+$function$
+;
+REVOKE ALL ON FUNCTION public.import_users_from_tickets_ws_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.import_users_from_tickets_ws(p_occasion_id bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN RETURN public.import_users_from_tickets_client_sync_v1(p_occasion_id,extensions.gen_random_uuid()); END $$;
+REVOKE ALL ON FUNCTION public.import_users_from_tickets_ws(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.import_users_from_tickets_ws(bigint) TO authenticated;

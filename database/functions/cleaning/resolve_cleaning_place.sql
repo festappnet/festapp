@@ -1,15 +1,9 @@
--- Cleaning service — crew marks a whole toilet as cleaned (resolve all its open
--- reports at once, decision Q3). Sets resolved_by/resolved_at on every open
--- report of the place so its derived status goes back to green.
--- Crew-only (get_is_cleaning_crew_on_occasion). Envelope {code, message, data}.
--- Deliberately does NOT check the "cleaning" feature flag: the crew must still be
--- able to resolve outstanding reports after the feature is turned off. Only new
--- reports are gated — in report_cleaning_issue.
-CREATE OR REPLACE FUNCTION public.resolve_cleaning_place_internal_v1(place_id bigint) RETURNS jsonb
-  LANGUAGE plpgsql
-  SECURITY DEFINER
-  SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.resolve_cleaning_place_internal_v1(place_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   v_user uuid := auth.uid();
   v_occasion bigint;
@@ -43,9 +37,14 @@ BEGIN
     'data', jsonb_build_object('resolved', v_count)
   );
 END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.resolve_cleaning_place(place_id bigint) RETURNS jsonb
-LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.resolve_cleaning_place_internal_v1(place_id);
-$$;
+$function$;
+REVOKE ALL ON FUNCTION public.resolve_cleaning_place_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.resolve_cleaning_place(place_id bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ result:=public.resolve_cleaning_place_client_sync_v1(place_id,extensions.gen_random_uuid());
+ RETURN jsonb_build_object('code',result->'code','message',result#>'{data,message}','data',result->'data');
+END $$;
+REVOKE ALL ON FUNCTION public.resolve_cleaning_place(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.resolve_cleaning_place(bigint) TO authenticated;

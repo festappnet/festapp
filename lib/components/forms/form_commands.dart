@@ -8,7 +8,7 @@ abstract interface class FormCommands {
     required int sourceFormId,
     required String targetOccasionLink,
   });
-  Future<void> delete(int formId);
+  Future<void> delete(int formId, {required int expectedVersion});
   Future<Map<String, dynamic>> save(Map<String, dynamic> form);
   Future<Map<String, dynamic>> saveBlueprint(
     Map<String, dynamic> blueprint,

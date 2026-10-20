@@ -7,6 +7,7 @@ const _unchanged = Object();
 
 class ProductModel {
   final int? id;
+  final int aggregateVersion;
   final String? deleteBlockedReason;
   final bool? deletionAllowed;
   final List<ProductPriceChange> priceChanges;
@@ -178,6 +179,7 @@ class ProductModel {
 
   ProductModel({
     this.id,
+    this.aggregateVersion = 0,
     this.deleteBlockedReason,
     this.deletionAllowed,
     List<ProductPriceChange>? priceChanges,
@@ -218,6 +220,7 @@ class ProductModel {
     final data = (json['data'] as Map?)?.cast<String, dynamic>();
 
     return ProductModel(
+      aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
       visibilityChanges: (json['visibility_changes'] as List? ?? [])
           .map((c) => ProductVisibilityChange.fromJson(c))
           .toList(),
@@ -271,6 +274,7 @@ class ProductModel {
   };
 
   ProductModel copyWith({
+    int? aggregateVersion,
     Object? id = _unchanged,
     Object? deleteBlockedReason = _unchanged,
     Object? deletionAllowed = _unchanged,
@@ -301,6 +305,7 @@ class ProductModel {
     Object? formIds = _unchanged,
     Object? formTitles = _unchanged,
   }) => ProductModel(
+    aggregateVersion: aggregateVersion ?? this.aggregateVersion,
     id: identical(id, _unchanged) ? this.id : id as int?,
     deleteBlockedReason: identical(deleteBlockedReason, _unchanged)
         ? this.deleteBlockedReason

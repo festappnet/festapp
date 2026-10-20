@@ -1,6 +1,9 @@
-CREATE OR REPLACE FUNCTION public.delete_product(p_product_id BIGINT)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
+CREATE OR REPLACE FUNCTION public.delete_product_internal_v1(p_product_id bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   v_occasion_id BIGINT;
   v_order_count INT;
@@ -46,4 +49,11 @@ BEGIN
    WHERE id = p_product_id;
 
 END;
-$$;
+$function$
+;
+REVOKE ALL ON FUNCTION public.delete_product_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.delete_product(p_product_id bigint)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN PERFORM public.delete_product_client_sync_v1(p_product_id,extensions.gen_random_uuid()); END $$;
+REVOKE ALL ON FUNCTION public.delete_product(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.delete_product(bigint) TO authenticated;

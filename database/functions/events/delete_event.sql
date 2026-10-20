@@ -1,40 +1,17 @@
--- delete_event — editor-only deletion of an event that first unbinds the child
--- rows whose FKs lack ON DELETE CASCADE: sign-ups (event_users), saved
--- (event_users_saved), exclusive links, roles, and parent/child groups. This is
--- required because ordinary events — including counseling slots — carry
--- event_users / event_users_saved rows that an editor cannot remove from the
--- client under RLS (a user may only delete their own rows). event_speakers and
--- activity_assignment_events cascade on their own.
-CREATE OR REPLACE FUNCTION public.delete_event(p_event BIGINT)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-    v_occasion BIGINT;
+CREATE OR REPLACE FUNCTION public.delete_event(p_event bigint)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE oc bigint; ver bigint; r jsonb;
 BEGIN
-    SELECT occasion INTO v_occasion
-    FROM public.events
-    WHERE id = p_event;
+ SELECT occasion INTO oc FROM public.events WHERE id=p_event;
+ IF oc IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
+ IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(oc) THEN RETURN jsonb_build_object('code',403); END IF;
+ PERFORM public.lock_event_deletion_scope_internal_v1(oc,ARRAY[p_event]);
+ PERFORM 1 FROM public.events WHERE id=p_event AND occasion=oc FOR UPDATE;
+ SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
+ ON v.aggregate_type='event' AND v.scope_type='occasion' AND v.scope_id=oc AND v.aggregate_id=p_event::text;
+ r:=public.delete_event_client_sync_v1(oc,p_event,extensions.gen_random_uuid(),ver);
+ RETURN jsonb_build_object('code',r->'code');
+END $$;
 
-    IF NOT FOUND THEN
-        RETURN jsonb_build_object('code', 404);
-    END IF;
-
-    IF NOT public.get_is_editor_on_occasion(v_occasion) THEN
-        RETURN jsonb_build_object('code', 403);
-    END IF;
-
-    -- Unbind child rows without ON DELETE CASCADE, then delete the event.
-    DELETE FROM public.event_users       WHERE event = p_event;
-    DELETE FROM public.event_users_saved WHERE event = p_event;
-    DELETE FROM public.exclusive_events  WHERE event = p_event;
-    DELETE FROM public.event_roles       WHERE event = p_event;
-    DELETE FROM public.event_groups      WHERE event_parent = p_event OR event_child = p_event;
-
-    DELETE FROM public.events WHERE id = p_event;
-
-    RETURN jsonb_build_object('code', 200);
-END;
-$$;
+REVOKE ALL ON FUNCTION public.delete_event(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_event(bigint) TO authenticated;

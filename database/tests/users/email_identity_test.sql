@@ -140,7 +140,7 @@ BEGIN
        SET ticket = v_ticket
      WHERE occasion = v_occasion AND "user" = v_second;
 
-    PERFORM public.import_users_from_tickets(v_occasion);
+    PERFORM public.import_ticket_profiles_internal_v1(v_occasion);
 
     PERFORM assert_eq(
         (SELECT email_delivery FROM public.user_info WHERE id = v_second),
@@ -205,7 +205,7 @@ BEGIN
     INSERT INTO eshop.order_product_ticket("order", ticket)
     VALUES (v_order_1, v_ticket_1), (v_order_2, v_ticket_2);
 
-    v_result := public.import_users_from_tickets(v_occasion);
+    v_result := public.import_ticket_profiles_internal_v1(v_occasion);
     PERFORM assert_eq(jsonb_array_length(v_result->'inserted'), 2,
         'ticket import creates both people sharing one mailbox');
     PERFORM assert_eq(
@@ -231,7 +231,7 @@ BEGIN
         2::bigint,
         'both imported identities are linked to their tickets');
 
-    v_result := public.import_users_from_tickets(v_occasion);
+    v_result := public.import_ticket_profiles_internal_v1(v_occasion);
     PERFORM assert_eq(jsonb_array_length(v_result->'inserted'), 0,
         'ticket import retry creates no additional identity');
     PERFORM assert_eq(

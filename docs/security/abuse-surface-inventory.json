@@ -224,7 +224,7 @@
     {
       "operation": "push.publish",
       "budget": "push.delivery",
-      "source": "database/functions/notifications/publication.sql",
+      "source": "database/functions/news/publish_news_client_sync_v1.sql",
       "admission": "charge_notification_intent_v1",
       "evidence": "database/tests/abuse/push_test.sql",
       "owner": "Festapp backend maintainers",

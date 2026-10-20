@@ -109,17 +109,17 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
                     .saveTarget(persisted, product, price, hidden);
                 return;
               }
-              final persisted = wave.id == null
-                  ? await DbEshop.createProductPriceWave(
-                      widget.occasionLink, wave.time)
-                  : wave;
-              await DbEshop.saveProductWaveTarget(
-                  persisted,
-                  product.id!,
-                  price,
-                  hidden,
-                  wave.prices(product).firstOrNull?.revision,
-                  wave.visibility(product).firstOrNull?.revision);
+              if (wave.id == null) {
+                await DbEshop.saveNewProductWaveTarget(
+                    widget.occasionLink, wave, product.id!, price, hidden,
+                    wave.prices(product).firstOrNull?.revision,
+                    wave.visibility(product).firstOrNull?.revision);
+              } else {
+                await DbEshop.saveProductWaveTarget(
+                    wave, product.id!, price, hidden,
+                    wave.prices(product).firstOrNull?.revision,
+                    wave.visibility(product).firstOrNull?.revision);
+              }
             }));
     if (!mounted) return;
     setState(() => busy = false);

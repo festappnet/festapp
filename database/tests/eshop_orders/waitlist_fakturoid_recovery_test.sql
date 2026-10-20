@@ -1,6 +1,9 @@
--- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Transaction-local fixtures. All email envelopes are sealed test doubles; no provider is invoked.
 BEGIN;
+-- This provider-recovery matrix reuses one synthetic recipient across fixtures.
+-- Exercise recovery independently of recipient throttling (covered in abuse/email_auth_test.sql).
+UPDATE public.abuse_policy_rules SET base_limit=100,hard_cap=100
+ WHERE rule_key IN ('email.ordinary.recipient.burst','email.ordinary.recipient.day');
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
 CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE plpgsql AS $$

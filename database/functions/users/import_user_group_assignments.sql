@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION public.import_user_group_assignments_internal_v1(
     p_occasion_id bigint,
     p_assignments jsonb
@@ -97,6 +98,4 @@ BEGIN
 END;
 $$;
 
-
-
-REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;

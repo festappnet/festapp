@@ -16,10 +16,8 @@ void main() {
         return {
           'mutation': {
             'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
+            'receiptId': params['p_command_id'], 'commitId': '00000000-0000-4000-8000-000000000001', 'replayed': false,
+            'occurredAt': '2026-10-20T00:00:00Z',
           },
           'status': 'applied',
           'code': 200,
@@ -59,6 +57,35 @@ void main() {
     expect(result.version, 1);
   });
 
+  test('unit quote preserves its original baseline without an occasion scope',
+      () async {
+    final commands = SupabaseInformationCommands.withTransport(
+        ClientCommandTransport((name, params) async {
+      expect(name, 'save_unit_information_client_sync_v1');
+      expect(params['p_unit'], 7);
+      expect(params.containsKey('p_occasion'), false);
+      expect(params['p_expected_version'], 3);
+      return {
+        'mutation': {
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'], 'commitId': '00000000-0000-4000-8000-000000000001', 'replayed': false,
+            'occurredAt': '2026-10-20T00:00:00Z',
+          },
+          'status': 'applied',
+        'code': 200,
+        'data': {
+          'version': 4,
+          'information': {'id': 11, 'unit': 7, 'type': 'quote'}
+        },
+        'sync': {'replacements': <Object>[]}
+      };
+    }, maxAttempts: 1));
+    final result = await commands.save(99,
+        InformationModel(id: 11, unit: 7, type: 'quote', aggregateVersion: 3));
+    expect(result.information?.unit, 7);
+    expect(result.version, 4);
+  });
+
   test('game guess uses a receipt-backed private-profile command', () async {
     late String functionName;
     final commands =
@@ -68,10 +95,8 @@ void main() {
         return {
           'mutation': {
             'commandId': params['p_command_id'],
-            'receiptId': params['p_command_id'],
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
+            'receiptId': params['p_command_id'], 'commitId': '00000000-0000-4000-8000-000000000001', 'replayed': false,
+            'occurredAt': '2026-10-20T00:00:00Z',
           },
           'status': 'applied',
           'code': 200,

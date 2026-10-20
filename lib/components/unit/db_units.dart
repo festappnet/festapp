@@ -1,6 +1,5 @@
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
@@ -52,22 +51,12 @@ class DbUnits {
   }
 
   static Future<void> updateUnit(UnitModel unit) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      final saved = await _commands.save(unit);
-      unit
-        ..title = saved.title
-        ..data = saved.data
-        ..aggregateVersion = saved.aggregateVersion;
-      return;
-    }
-    await _supabase.rpc(
-      "update_unit",
-      params: {
-        'p_unit_id': unit.id,
-        'p_title': unit.title,
-        'p_data': unit.data,
-      },
-    );
+    final saved = await _commands.save(unit);
+    unit
+      ..title = saved.title
+      ..data = saved.data
+      ..aggregateVersion = saved.aggregateVersion;
+    return;
   }
 
   static Future<int> createUnitAndAssignManager(String title) async {

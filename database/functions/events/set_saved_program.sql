@@ -1,83 +1,11 @@
-CREATE OR REPLACE FUNCTION public.set_saved_program(
-    p_occasion BIGINT,
-    p_event_ids BIGINT[],
-    p_mode TEXT
-)
-RETURNS BIGINT[]
-LANGUAGE plpgsql
-VOLATILE
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-    v_actor UUID := auth.uid();
-    v_ids BIGINT[];
-    v_saved BIGINT[];
+CREATE OR REPLACE FUNCTION public.set_saved_program(p_occasion bigint,p_event_ids bigint[],p_mode text)
+RETURNS bigint[] LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE r jsonb;
 BEGIN
-    IF v_actor IS NULL OR p_mode NOT IN ('join', 'remove', 'replace')
-       OR cardinality(COALESCE(p_event_ids, '{}')) > 5000
-       OR NOT EXISTS (
-           SELECT 1
-           FROM public.occasion_users ou
-           WHERE ou.occasion = p_occasion AND ou."user" = v_actor
-       ) THEN
-        RAISE insufficient_privilege
-            USING MESSAGE = 'invalid saved-program command';
-    END IF;
+ r:=public.set_saved_program_client_sync_v1(p_occasion,p_event_ids,p_mode,extensions.gen_random_uuid());
+ IF r->>'code'<>'200' THEN RAISE EXCEPTION 'saved program rejected'; END IF;
+ RETURN ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(r#>'{data,saved}'));
+END $$;
 
-    SELECT COALESCE(
-        array_agg(DISTINCT input.event_id ORDER BY input.event_id),
-        '{}'
-    )
-    INTO v_ids
-    FROM unnest(COALESCE(p_event_ids, '{}')) AS input(event_id);
-
-    IF EXISTS (
-        SELECT 1
-        FROM unnest(v_ids) AS input(event_id)
-        LEFT JOIN public.events e
-          ON e.id = input.event_id AND e.occasion = p_occasion
-        WHERE e.id IS NULL
-    ) THEN
-        RAISE invalid_parameter_value
-            USING MESSAGE = 'saved program contains cross-scope events';
-    END IF;
-
-    PERFORM pg_advisory_xact_lock(hashtextextended(
-        'saved-program:' || v_actor::text || ':' || p_occasion::text,
-        0
-    ));
-
-    IF p_mode = 'replace' THEN
-        DELETE FROM public.event_users_saved es
-        USING public.events e
-        WHERE es.event = e.id
-          AND es."user" = v_actor
-          AND e.occasion = p_occasion
-          AND NOT es.event = ANY(v_ids);
-    ELSIF p_mode = 'remove' THEN
-        DELETE FROM public.event_users_saved es
-        WHERE es."user" = v_actor AND es.event = ANY(v_ids);
-    END IF;
-
-    IF p_mode IN ('join', 'replace') THEN
-        INSERT INTO public.event_users_saved(event, "user")
-        SELECT input.event_id, v_actor
-        FROM unnest(v_ids) AS input(event_id)
-        ON CONFLICT DO NOTHING;
-    END IF;
-
-    SELECT COALESCE(array_agg(es.event ORDER BY es.event), '{}')
-    INTO v_saved
-    FROM public.event_users_saved es
-    JOIN public.events e ON e.id = es.event
-    WHERE es."user" = v_actor AND e.occasion = p_occasion;
-
-    RETURN v_saved;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.set_saved_program(BIGINT, BIGINT[], TEXT)
-    FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.set_saved_program(BIGINT, BIGINT[], TEXT)
-    TO authenticated;
+REVOKE ALL ON FUNCTION public.set_saved_program(bigint,bigint[],text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.set_saved_program(bigint,bigint[],text) TO authenticated;

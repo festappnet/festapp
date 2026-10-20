@@ -401,7 +401,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _deleteForm(BuildContext currentContext) async {
     if (!_canEdit) return;
     try {
-      await DbForms.deleteForm(_form!.definition.id!);
+      await DbForms.deleteForm(_form!.definition.id!,
+          expectedVersion: _form!.aggregateVersion);
       if (!mounted) return;
       ToastHelper.Show(
         currentContext,

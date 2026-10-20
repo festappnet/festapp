@@ -1,13 +1,9 @@
-CREATE OR REPLACE FUNCTION game_update_settings(
-  oc BIGINT,
-  new_start_time TIMESTAMPTZ,
-  new_end_time TIMESTAMPTZ
-)
-RETURNS JSONB
-LANGUAGE plpgsql VOLATILE
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.game_update_settings_internal_v1(oc bigint, new_start_time timestamp with time zone, new_end_time timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
   existing_data JSONB;
   updated_game_data JSONB;
@@ -42,4 +38,17 @@ BEGIN
     'message', 'Game settings updated successfully'
   );
 END;
-$$;
+$function$
+;
+REVOKE ALL ON FUNCTION public.game_update_settings_internal_v1(bigint,timestamptz,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.game_update_settings(oc bigint, new_start_time timestamp with time zone, new_end_time timestamp with time zone)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
+BEGIN RETURN public.game_update_settings_client_sync_v1(
+  oc,new_start_time,new_end_time,extensions.gen_random_uuid())->'data'; END; $function$
+;
+REVOKE ALL ON FUNCTION public.game_update_settings(bigint,timestamptz,timestamptz) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.game_update_settings(bigint,timestamptz,timestamptz) TO authenticated;

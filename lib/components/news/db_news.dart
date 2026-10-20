@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/news/news_model.dart';
 import 'package:fstapp/components/news/news_strings.dart';
+import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -18,18 +19,20 @@ class DbNews {
   static Future<void> deleteNewsMessage(NewsModel message) async {
     final result =
         await _commands.delete(RightsService.currentOccasionId()!, message);
-    if (result.status == NewsCommandStatus.conflict ||
-        result.status == NewsCommandStatus.rejected) {
+    if (result.status == NewsCommandStatus.conflict) {
+      throw StateError('News was changed by another editor');
+    }
+    if (result.status == NewsCommandStatus.rejected) {
       throw StateError('News delete was rejected');
     }
+    return;
   }
 
   static Future<void> updateNewsMessage(NewsModel message,
       {String? originalMessage}) async {
     final result = await _commands.update(
         RightsService.currentOccasionId()!, message,
-        originalMessage:
-            ClientSyncRuntime.isV1Selected ? null : originalMessage);
+        originalMessage: null);
     if (result.status == NewsCommandStatus.conflict) {
       throw StateError('News was changed by another editor');
     }
@@ -107,44 +110,62 @@ class DbNews {
     if (ClientSyncRuntime.isV1Selected) {
       return ClientSyncProjection.unreadNewsCount();
     }
-    return (await getAllNewsMessages()).where((item) => !item.isRead).length;
+    int lastMessageId = await getLastReadMessage();
+    var result = await _supabase
+        .from(Tb.news.table)
+        .select()
+        .eq(Tb.news.occasion, RightsService.currentOccasionId()!)
+        .gt(Tb.news.id, lastMessageId)
+        .count();
+    return result.count;
   }
 
   static Future<int> getLastReadMessage() async {
     AuthService.ensureUserIsLoggedIn();
-    if (ClientSyncRuntime.isV1Selected) {
-      final rows = await ClientSyncProjection.news();
-      return rows
-          .where((item) => item.isRead)
-          .fold<int>(0, (last, item) => item.id > last ? item.id : last);
+    int lastMessageId = 0;
+    var lastMessage = await _supabase
+        .from(Tb.news.table)
+        .select("${Tb.news.id},"
+            "${Tb.user_news.table}!inner(${Tb.user_news.news_id})")
+        .match({
+      Tb.news.occasion: RightsService.currentOccasionId()!,
+      "${Tb.user_news.table}.${Tb.user_news.user}": AuthService.currentUserId()
+    }).maybeSingle();
+    if (lastMessage != null) {
+      lastMessageId = lastMessage[Tb.news.id];
     }
-    final state = await _supabase.rpc('get_news_read_state_v1',
-        params: {'p_occasion': RightsService.currentOccasionId()!});
-    return (state['newsId'] as num).toInt();
+    return lastMessageId;
   }
 
   static Future<void> setMessagesAsRead(int newId) async {
     AuthService.ensureUserIsLoggedIn();
     await _commands.markRead(RightsService.currentOccasionId()!, newId);
+    return;
   }
 
   static Future<void> setLatestMessageAsRead() async {
     AuthService.ensureUserIsLoggedIn();
-    final messages = await getAllNewsMessages();
-    if (messages.isEmpty) return;
-    final latestId =
-        messages.map((item) => item.id).reduce((a, b) => a > b ? a : b);
-    await setMessagesAsRead(latestId);
+    final latestMessage = await _supabase
+        .from(Tb.news.table)
+        .select(Tb.news.id)
+        .eq(Tb.news.occasion, RightsService.currentOccasionId()!)
+        .order(Tb.news.id, ascending: false)
+        .limit(1)
+        .maybeSingle();
+    if (latestMessage == null) return;
+    final latestId = (latestMessage[Tb.news.id] as num).toInt();
+    if (await getLastReadMessage() < latestId) {
+      await setMessagesAsRead(latestId);
+    }
   }
 
   static Future<List<NewsModel>> getAllNewsMessages() async {
-    if (ClientSyncRuntime.isV1Selected) return ClientSyncProjection.news();
     int lastReadMessageId = 0;
     if (AuthService.isLoggedIn()) {
       lastReadMessageId = await getLastReadMessage();
     }
-    var data = await _supabase.rpc("get_news_for_context_v1",
-        params: {"p_occasion": RightsService.currentOccasionId()!});
+    var data = await _supabase.rpc("get_news_with_versions_v1",
+        params: {'p_occasion': RightsService.currentOccasionId()!});
 
     List<NewsModel> loadedMessages =
         List<NewsModel>.from(data.map((x) => NewsModel.fromJson(x)));

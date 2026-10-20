@@ -21,7 +21,7 @@ REVOKE ALL ON FUNCTION public.get_user_group_command_data_v1(bigint) FROM PUBLIC
 CREATE OR REPLACE FUNCTION public.get_user_group_editor_bundle_v1(p_occasion bigint,p_group_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
- IF auth.uid() IS NULL OR NOT (public.get_is_editor_view_on_occasion(p_occasion) OR EXISTS(SELECT 1 FROM public.user_groups ug JOIN public.user_group_info g ON g.id=ug."group" WHERE g.id=p_group_id AND g.occasion=p_occasion AND ug."user"=auth.uid() AND ug.is_admin)) THEN
+ IF auth.uid() IS NULL OR NOT (public.get_is_editor_view_on_occasion(p_occasion) OR public.get_is_editor_on_occasion(p_occasion) OR EXISTS(SELECT 1 FROM public.user_groups ug JOIN public.user_group_info g ON g.id=ug."group" WHERE g.id=p_group_id AND g.occasion=p_occasion AND ug."user"=auth.uid() AND ug.is_admin)) THEN
  RAISE insufficient_privilege USING MESSAGE='group editor required'; END IF;
  RETURN (SELECT public.get_user_group_command_data_v1(id) FROM public.user_group_info WHERE id=p_group_id AND occasion=p_occasion);
 END $$;

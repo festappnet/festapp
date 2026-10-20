@@ -1,12 +1,8 @@
-CREATE OR REPLACE FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(
-    p_occasion bigint,
-    p_feedback bigint,
-    p_command_id uuid
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
+CREATE OR REPLACE FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(p_occasion bigint, p_feedback bigint, p_command_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
 AS $function$
 DECLARE
     v_actor uuid := auth.uid();
@@ -108,11 +104,8 @@ BEGIN
         v_replacements
     );
 END;
-$function$;
+$function$
+;
 
-REVOKE ALL ON FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(
-    bigint, bigint, uuid
-) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(
-    bigint, bigint, uuid
-) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(p_occasion bigint, p_feedback bigint, p_command_id uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_event_feedback_for_edit_client_sync_v1(p_occasion bigint, p_feedback bigint, p_command_id uuid) TO authenticated;

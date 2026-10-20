@@ -102,7 +102,11 @@ BEGIN
         'assignment_place_links',  COALESCE(assignmentPlaceLinksData, '[]'::jsonb),
         'assignment_event_links',  COALESCE(assignmentEventLinksData, '[]'::jsonb),
         'activity_assignments',    COALESCE(aaData, '[]'::jsonb),
-        'user_info',               COALESCE(usersData, '[]'::jsonb)
+        'user_info',               COALESCE(usersData, '[]'::jsonb),
+        'aggregate_version',       COALESCE((SELECT av.version
+          FROM public.client_aggregate_versions av
+          WHERE av.aggregate_type='activities' AND av.scope_type='occasion'
+            AND av.scope_id=p_occasion AND av.aggregate_id=p_occasion::text),0)
       )
     );
 END;

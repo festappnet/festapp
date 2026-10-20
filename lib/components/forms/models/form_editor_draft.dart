@@ -8,6 +8,32 @@ import 'form_bundle.dart';
 /// freeze is the sole boundary that assembles a complete immutable definition.
 class FormEditorDraft {
   FormDefinition definition;
+  int aggregateVersion;
+  Map<String, int> _productVersions = {};
+  Map<String, int> _productTypeVersions = {};
+  void _captureProductVersions() => captureProductCatalog(relatedFields
+      .map((field) => field.definition.productType)
+      .whereType<ProductTypeModel>());
+  void captureProductCatalog(Iterable<ProductTypeModel> types) {
+    for (final type in types) {
+      if (type.id != null)
+        _productTypeVersions.putIfAbsent(
+            type.id.toString(), () => type.aggregateVersion);
+      for (final product in type.products ?? const <ProductModel>[]) {
+        if (product.id != null)
+          _productVersions.putIfAbsent(
+              product.id.toString(), () => product.aggregateVersion);
+      }
+    }
+  }
+
+  void acceptProductVersions(Map<String, dynamic> saved) {
+    _productVersions = (saved['product_versions'] as Map).map(
+        (id, version) => MapEntry(id.toString(), (version as num).toInt()));
+    _productTypeVersions = (saved['product_type_versions'] as Map).map(
+        (id, version) => MapEntry(id.toString(), (version as num).toInt()));
+  }
+
   OccasionModel? occasionModel;
   BankAccountModel? bankAccount;
   List<BankAccountModel>? availableBankAccounts;
@@ -15,6 +41,7 @@ class FormEditorDraft {
   final Set<int> deletedFieldIds = {};
   final Set<int> deletedProductIds = {};
   FormEditorDraft({
+    this.aggregateVersion = 0,
     int? participantCapacity,
     bool waitlistEnabled = false,
     bool showRemainingCapacity = true,
@@ -70,10 +97,13 @@ class FormEditorDraft {
             stats: stats,
             isReminderEnabled: isReminderEnabled,
             canDelete: canDelete),
-        relatedFields = List.of(relatedFields ?? const []);
+        relatedFields = List.of(relatedFields ?? const []) {
+    _captureProductVersions();
+  }
 
   FormEditorDraft.fromBundle(FormBundle bundle)
-      : definition = bundle.definition
+      : aggregateVersion = bundle.aggregateVersion,
+        definition = bundle.definition
             .copyWith(relatedFields: const <FormFieldDefinition>[]),
         relatedFields = bundle.definition.relatedFields
             .map(FormFieldDraft.fromDefinition)
@@ -82,7 +112,9 @@ class FormEditorDraft {
         bankAccount = bundle.bankAccount,
         availableBankAccounts = bundle.availableBankAccounts == null
             ? null
-            : List.of(bundle.availableBankAccounts!);
+            : List.of(bundle.availableBankAccounts!) {
+    _captureProductVersions();
+  }
   factory FormEditorDraft.fromJson(Map<String, dynamic> json) =>
       FormEditorDraft.fromBundle(FormBundle.fromJson(json));
   bool get usesSeatSelection => FormDefinition.usesSeatSelectionIn(
@@ -91,6 +123,7 @@ class FormEditorDraft {
       relatedFields: relatedFields.map((field) => field.freeze()).toList());
   FormBundle toBundle() => FormBundle(
       definition: freeze(),
+      aggregateVersion: aggregateVersion,
       occasion: occasionModel,
       bankAccount: bankAccount,
       availableBankAccounts: availableBankAccounts);
@@ -100,9 +133,14 @@ class FormEditorDraft {
     final result = toJson()
       ..remove('account_number')
       ..remove('secret');
+    result['expected_aggregate_version'] = aggregateVersion;
+    result['expected_product_versions'] =
+        Map<String, int>.from(_productVersions);
+    result['expected_product_type_versions'] =
+        Map<String, int>.from(_productTypeVersions);
     result['form_fields'] = result.remove('fields');
-    result['deleted_field_ids'] = deletedFieldIds.toList();
-    result['deleted_product_ids'] = deletedProductIds.toList();
+    result['deleted_field_ids'] = (deletedFieldIds.toList()..sort());
+    result['deleted_product_ids'] = (deletedProductIds.toList()..sort());
     return result;
   }
 

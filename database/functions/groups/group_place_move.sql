@@ -52,12 +52,12 @@ BEGIN
   IF p_expected_version IS DISTINCT FROM v_version THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,
       'conflict',409,jsonb_build_object('version',v_version,'place',
-        to_jsonb(v_place)||jsonb_build_object('aggregate_version',v_version)),'{}','[]','user',NULL,v_replacements);
+        to_jsonb(v_place)||jsonb_build_object('aggregate_version',v_version)));
   END IF;
   IF v_place.coordinates=jsonb_build_object('latLng',jsonb_build_object('lat',p_lat,'lng',p_lng)) THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,
       'unchanged',200,jsonb_build_object('version',v_version,'place',
-        to_jsonb(v_place)||jsonb_build_object('aggregate_version',v_version)),'{}','[]','user',NULL,v_replacements);
+        to_jsonb(v_place)||jsonb_build_object('aggregate_version',v_version)));
   END IF;
   UPDATE public.places SET coordinates=jsonb_build_object('latLng',
     jsonb_build_object('lat',p_lat,'lng',p_lng)),updated_at=clock_timestamp()

@@ -1,6 +1,7 @@
 BEGIN;
--- This suite creates several links; quota behavior has dedicated abuse scenarios.
-UPDATE public.abuse_policy_rules SET base_limit=hard_cap WHERE budget_key IN ('occasion.creation','occasion.draft');
+-- This slug regression deliberately creates eight events in one transaction.
+-- Admission behavior itself is exercised with restrictive defaults in abuse/.
+UPDATE public.abuse_policy_rules SET base_limit=20 WHERE rule_key='occasion.create.actor.burst';
 DO $$
 DECLARE actor uuid; org bigint; unit_id bigint; a bigint; b bigint; f bigint; first_link text;
  foreign_org bigint; old_revision bigint;

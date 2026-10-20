@@ -169,7 +169,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/send-email/deposit_templates_test.ts"
+        "supabase/functions/send-email/deposit_templates_test.ts",
+        "supabase/functions/send-email/cancellation_handler_test.ts"
       ],
       "abusePolicy": [
         "email.ordinary"

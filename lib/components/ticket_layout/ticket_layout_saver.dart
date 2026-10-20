@@ -4,16 +4,18 @@ import '../occasion/occasion_model.dart';
 
 /// Saves only ticket artwork/geometry using the existing versioned occasion command.
 class TicketLayoutSaver {
-  final Future<OccasionModel> Function(String) load;
+  final Future<OccasionModel> Function(String)? load;
   final Future<void> Function(OccasionModel) persist;
   TicketLayoutSaver(
       {Future<OccasionModel> Function(String)? load,
       Future<void> Function(OccasionModel)? persist})
-      : load = load ?? DbOccasions.getOccasionByLink,
-        persist = persist ?? DbOccasions.updateOccasion;
+      : load = load,
+        persist = persist ?? DbOccasions.updateTicketLayout;
 
   Future<void> save(OccasionModel current, TicketFeature draft) async {
-    final fresh = await load(current.link!);
+    final fresh = load == null
+        ? await DbOccasions.getTicketLayoutForEdit(current)
+        : await load!(current.link!);
     if (fresh.id != current.id ||
         fresh.aggregateVersion != current.aggregateVersion) {
       throw StateError('Occasion was changed by another editor');

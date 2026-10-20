@@ -1,6 +1,5 @@
 import 'package:fstapp/components/inventory/models/spot_management_bundle.dart';
 import 'package:fstapp/components/inventory/spot_commands.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbSpots {
@@ -73,13 +72,7 @@ class DbSpots {
     if (changes.isEmpty) {
       return;
     }
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.updateAssignments(changes);
-      return;
-    }
-    await _supabase.rpc(
-      'update_spot_assignments',
-      params: {'p_changes': changes},
-    );
+    await _commands.updateAssignments(changes);
+    return;
   }
 }

@@ -24,7 +24,19 @@ BEGIN
     -- Permission check. This function is expected to throw on failure.
     PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
 
-    PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE product=p_product_id));
+    -- Every caller, including aggregate saves, uses this validation owner.
+    IF p_contexts IS NULL OR jsonb_typeof(p_contexts) IS DISTINCT FROM 'array'
+      OR jsonb_array_length(p_contexts)>1000 OR octet_length(p_contexts::text)>1048576
+      OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_contexts) c
+        LEFT JOIN public.inventory_contexts ic ON ic.id=(c->>'inventory_context_id')::bigint
+        LEFT JOIN public.inventory_pools pool ON pool.id=ic.inventory_pool
+        WHERE pool.occasion IS DISTINCT FROM v_occasion_id OR (c->>'quantity')::integer IS NULL
+          OR (c->>'quantity')::integer<0
+          OR EXISTS(SELECT 1 FROM jsonb_object_keys(c) k WHERE k NOT IN ('inventory_context_id','quantity')))
+      OR (SELECT count(*) FROM jsonb_array_elements(p_contexts))<>
+        (SELECT count(DISTINCT (c->>'inventory_context_id')::bigint) FROM jsonb_array_elements(p_contexts) c)
+    THEN RAISE invalid_parameter_value USING MESSAGE='invalid or foreign inventory contexts'; END IF;
+    PERFORM public.lock_product_order_dependencies_internal_v1(p_product_id);
     PERFORM 1 FROM eshop.products WHERE id=p_product_id FOR UPDATE;
     PERFORM 1 FROM public.inventory_pools WHERE id IN(SELECT inventory_pool FROM public.inventory_contexts WHERE id IN
       (SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=p_product_id UNION SELECT (x->>'inventory_context_id')::bigint FROM jsonb_array_elements(p_contexts) x)) ORDER BY id FOR UPDATE;
@@ -57,9 +69,11 @@ BEGIN
       PERFORM apply_allocations(v_order_id);
     END LOOP;
 
+    PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,p_product_id);
+
 END;
 $$;
-REVOKE ALL ON FUNCTION public.update_product_inventory_contexts_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.update_product_inventory_contexts_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.update_product_inventory_contexts(p_product_id bigint,p_contexts jsonb)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN

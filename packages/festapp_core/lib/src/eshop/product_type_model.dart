@@ -5,6 +5,7 @@ const _unchanged = Object();
 
 class ProductTypeModel {
   final int? id;
+  final int aggregateVersion;
   final String? title;
   final String? description;
   final String? type;
@@ -14,6 +15,7 @@ class ProductTypeModel {
 
   ProductTypeModel({
     this.id,
+    this.aggregateVersion = 0,
     this.title,
     this.description,
     this.type,
@@ -27,6 +29,7 @@ class ProductTypeModel {
 
   factory ProductTypeModel.fromJson(Map<String, dynamic> json) {
     return ProductTypeModel(
+      aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
       id: json['id'],
       title: json['title'],
       description: json['description'],
@@ -57,6 +60,7 @@ class ProductTypeModel {
     Object? description = _unchanged,
     Object? products = _unchanged,
   }) => ProductTypeModel(
+    aggregateVersion: aggregateVersion,
     id: id,
     title: identical(title, _unchanged) ? this.title : title as String?,
     description: identical(description, _unchanged)

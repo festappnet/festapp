@@ -83,6 +83,12 @@ BEGIN
     WHERE p.id = v_product_id;
 
     -- Return the ID of the updated product on success.
+    IF p_input ? 'inventory_contexts' THEN
+      PERFORM public.update_product_inventory_contexts_internal_v1(v_product_id,p_input->'inventory_contexts');
+    END IF;
+    IF NOT (p_input ? 'inventory_contexts') THEN
+      PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
+    END IF;
     RETURN v_product_id;
 
   -- CASE 2: Product was NOT found (v_product_id was NULL or was an ID that doesn't exist)
@@ -162,12 +168,18 @@ BEGIN
     RETURNING id INTO v_product_id; -- Get the newly created ID
 
     -- Return the ID of the newly created product.
+    IF p_input ? 'inventory_contexts' THEN
+      PERFORM public.update_product_inventory_contexts_internal_v1(v_product_id,p_input->'inventory_contexts');
+    END IF;
+    IF NOT (p_input ? 'inventory_contexts') THEN
+      PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
+    END IF;
     RETURN v_product_id;
 
   END IF;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.update_product(p_input jsonb)
 RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN

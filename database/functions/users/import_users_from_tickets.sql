@@ -1,10 +1,11 @@
-CREATE OR REPLACE FUNCTION public.import_users_from_tickets(p_occasion_id bigint)
-RETURNS JSONB
-LANGUAGE plpgsql
-SET search_path = public, extensions
-AS $$
+CREATE OR REPLACE FUNCTION public.import_ticket_profiles_internal_v1(p_occasion_id bigint)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'extensions'
+AS $function$
 DECLARE
     ticket_record RECORD;
+    v_global_before jsonb;
     order_data JSONB;
     user_email TEXT;
     v_sign_in_email TEXT;
@@ -35,7 +36,6 @@ DECLARE
     deleted_user_info RECORD;
     update_report_info RECORD;
 BEGIN
-    PERFORM public.lock_activity_aggregate_internal_v1(p_occasion_id);
     -- 1. Get the organization_id from the occasion
     SELECT organization INTO v_organization_id FROM public.occasions WHERE id = p_occasion_id;
 
@@ -57,7 +57,7 @@ BEGIN
         FROM public.user_info ui
         WHERE ui.id = storno_record."user";
 
-        PERFORM public.remove_occasion_user_domain_internal_v1(p_occasion_id,storno_record."user");
+        PERFORM public.delete_occasion_user(storno_record."user", p_occasion_id);
 
         deleted_users := array_append(deleted_users,
             jsonb_build_object(
@@ -176,12 +176,15 @@ BEGIN
                       AND occasion = p_occasion_id;
 
                     -- 2. Update Global User Info (Sync core fields)
-                    UPDATE public.user_info
+
+                    SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=target_uuid FOR UPDATE;
+UPDATE public.user_info
                     SET
                         name = COALESCE(update_payload->>'name', name),
                         surname = COALESCE(update_payload->>'surname', surname),
                         sex = COALESCE(update_payload->>'sex', sex)
                     WHERE id = target_uuid;
+                    PERFORM public.publish_user_profile_change_internal_v1(target_uuid,p_occasion_id,v_global_before);
 
                     -- Logging
                     SELECT ui.email_readonly, ui.name, ui.surname
@@ -246,13 +249,16 @@ BEGIN
 --                    IF v_birthDate IS NOT NULL THEN user_data := user_data || jsonb_build_object('birthDate', v_birthDate); END IF;
 
                     -- Update Global Info
-                    UPDATE public.user_info
+
+                    SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=v_user_id FOR UPDATE;
+UPDATE public.user_info
                     SET
                         name = user_name,
                         surname = user_surname,
                         sex = user_sex,
                         data = COALESCE(user_info.data, '{}'::jsonb) || user_data
                     WHERE id = v_user_id;
+                    PERFORM public.publish_user_profile_change_internal_v1(v_user_id,p_occasion_id,v_global_before);
 
                     IF v_occasion_user_row."user" IS NULL THEN
                         -- Link to occasion
@@ -293,4 +299,8 @@ BEGIN
         'deleted', to_jsonb(deleted_users)
     );
 END;
-$$;
+$function$
+;
+
+REVOKE ALL ON FUNCTION public.import_ticket_profiles_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.import_users_from_tickets(bigint) FROM PUBLIC,anon,authenticated,service_role;

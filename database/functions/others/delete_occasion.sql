@@ -167,3 +167,17 @@ BEGIN
   RETURN;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.delete_occasion_internal_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.delete_occasion(oc bigint)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path=public,extensions
+AS $function$
+BEGIN
+  PERFORM public.delete_occasion_client_sync_v1(oc,extensions.gen_random_uuid());
+END; $function$
+;
+REVOKE ALL ON FUNCTION public.delete_occasion(bigint) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.delete_occasion(bigint) TO authenticated;

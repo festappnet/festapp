@@ -144,7 +144,8 @@ class DbActivities {
         occasionId: occasionId,
         expectedVersion: bundle.aggregateVersion,
         activities: _buildUpdatePayload(bundle),
-        history: bundle.toJsonEditor(),
+        history: {...bundle.toJsonEditor(),
+          '_consume_autosave': {'id': bundle.id}},
         parentHistoryId: bundle.parentHistoryId);
     if (result.status == 'conflict') {
       throw StateError('Activities were changed by another editor');

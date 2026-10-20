@@ -24,6 +24,7 @@ class GroupCommandResult {
 
 abstract interface class GroupCommands {
   Future<GroupCommandResult> save(int occasionId, UserGroupInfoModel group);
+  Future<GroupCommandResult> addMembers(int occasionId, int groupId, List<String> userIds);
   Future<GroupCommandResult> delete(int occasionId, UserGroupInfoModel group);
   Future<GroupCommandResult> replaceAssignments(
     int occasionId,
@@ -33,7 +34,7 @@ abstract interface class GroupCommands {
 
 class SupabaseGroupCommands implements GroupCommands {
   SupabaseGroupCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client),
+      : _transport = ClientCommandTransport.supabase(client, durable: true),
         _actorId = (() => client.auth.currentUser?.id);
 
   SupabaseGroupCommands.withTransport(this._transport,
@@ -43,6 +44,16 @@ class SupabaseGroupCommands implements GroupCommands {
   final ClientCommandTransport _transport;
   final String? Function() _actorId;
   final _creations = Expando<_GroupCreationIntent>();
+
+  @override
+  Future<GroupCommandResult> addMembers(
+      int occasionId, int groupId, List<String> userIds) async {
+    final response = await _invoke('add_user_group_members_client_sync_v1', {
+      'p_occasion': occasionId, 'p_group': groupId,
+      'p_users': (userIds.toSet().toList()..sort()),
+    });
+    return _decode(response);
+  }
 
   @override
   Future<GroupCommandResult> replaceAssignments(

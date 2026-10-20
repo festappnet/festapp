@@ -15,6 +15,7 @@ class BlueprintModel {
   static const String metaSpotType = "spot";
 
   int? id;
+  int aggregateVersion;
   DateTime? createdAt;
   Map<String, dynamic>? data;
   String? title;
@@ -55,6 +56,7 @@ class BlueprintModel {
 
     return BlueprintModel(
       id: json[TbEshop.blueprints.id],
+      aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
       createdAt: json[TbEshop.blueprints.created_at] != null
           ? DateTime.parse(json[TbEshop.blueprints.created_at])
           : null,
@@ -93,10 +95,26 @@ class BlueprintModel {
         TbEshop.order_product_ticket.table: orderProductTickets,
       };
 
+  /// Authoring never submits the read bundle's orders, tickets or occupancy.
+  Map<String, dynamic> toSaveJson() => {
+        'id': id,
+        'occasion': occasion,
+        'organization': organization,
+        'expected_aggregate_version': aggregateVersion,
+        'title': title,
+        'data': data,
+        'configuration': configuration?.toJson(),
+        'groups': groups?.map((g) => g.toJson()).toList(),
+        'background_svg': backgroundSvg,
+        'objects':
+            objects?.map((o) => o.toJson()..remove('state')).toList() ?? [],
+      };
+
   String toBasicString() => title ?? id.toString();
 
   BlueprintModel({
     this.id,
+    this.aggregateVersion = 0,
     this.createdAt,
     this.data,
     this.title,

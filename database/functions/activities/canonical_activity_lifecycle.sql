@@ -43,7 +43,7 @@ BEGIN
  IF b->>'disposition'='replay' THEN RETURN b->'response'; END IF;
  SELECT id INTO latest FROM public.activity_history WHERE occasion_id=p_occasion AND history_type='PUBLISH' ORDER BY id DESC LIMIT 1;
  IF p_expected_version IS DISTINCT FROM v OR p_parent_history_id IS DISTINCT FROM latest THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('version',v,'latestPublishId',latest)); END IF;
- graph:=public.activity_history_graph_internal_v1(p_occasion,p_history_data); history:=public.activity_graph_history_internal_v1(graph);
+ graph:=public.activity_history_graph_internal_v1(p_occasion,p_history_data-'_consume_autosave'); history:=public.activity_graph_history_internal_v1(graph);
  SELECT * INTO draft FROM public.activity_history WHERE occasion_id=p_occasion AND user_id=actor AND history_type='AUTOSAVE' ORDER BY id DESC LIMIT 1;
  result:=jsonb_build_object('version',v,'latestPublishId',latest,'draftId',draft.id,'draftParentHistoryId',latest);
  IF draft.id IS NOT NULL AND draft.activities_data=history AND draft.parent_history_id IS NOT DISTINCT FROM latest THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,result); END IF;
@@ -79,23 +79,23 @@ BEGIN
  SELECT id,activities_data INTO latest,previous_history FROM public.activity_history WHERE occasion_id=p_occasion AND history_type='PUBLISH' ORDER BY id DESC LIMIT 1;
  IF p_expected_version IS DISTINCT FROM v OR p_parent_history_id IS DISTINCT FROM latest THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('version',v,'latestPublishId',latest,'historyId',latest)); END IF;
  graph:=public.normalize_activity_graph_internal_v1(p_occasion,p_activities_data,true);
- IF graph IS DISTINCT FROM public.activity_history_graph_internal_v1(p_occasion,p_history_data) THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',400,jsonb_build_object('version',v,'latestPublishId',latest,'reason','graph_history_mismatch')); END IF;
+ IF graph IS DISTINCT FROM public.activity_history_graph_internal_v1(p_occasion,p_history_data-'_consume_autosave') THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',400,jsonb_build_object('version',v,'latestPublishId',latest,'reason','graph_history_mismatch')); END IF;
  history:=public.activity_graph_history_internal_v1(graph); old_graph:=public.current_activity_graph_internal_v1(p_occasion);
  live_changed:=graph IS DISTINCT FROM old_graph OR latest IS NULL;
  IF NOT live_changed AND public.activity_history_graph_internal_v1(p_occasion,previous_history)=graph THEN
-  deleted:=public.clear_activity_draft_internal_v1(p_occasion,actor,latest,true);
-  IF deleted=0 THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,jsonb_build_object('version',v,'historyId',latest,'latestPublishId',latest,'draftId',NULL)); END IF;
-  RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,'activities.publish','activities',jsonb_build_array(jsonb_build_object('entityType','activity_draft','entityId',NULL,'operation','delete','changedFields',jsonb_build_array('draft'))),'{}','[]','[]',jsonb_build_object('version',v,'historyId',latest,'latestPublishId',latest,'draftId',NULL));
+  deleted:=public.consume_selected_activity_draft_internal_v1(p_occasion,actor,latest,p_history_data->'_consume_autosave',graph);
+  IF deleted=0 THEN RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,jsonb_build_object('version',v,'historyId',latest,'latestPublishId',latest,'draftId',(SELECT id FROM public.activity_history WHERE occasion_id=p_occasion AND user_id=actor AND history_type='AUTOSAVE' ORDER BY id DESC LIMIT 1),'draftConsumed',false)); END IF;
+  RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,'activities.publish','activities',jsonb_build_array(jsonb_build_object('entityType','activity_draft','entityId',NULL,'operation','delete','changedFields',jsonb_build_array('draft'))),'{}','[]','[]',jsonb_build_object('version',v,'historyId',latest,'latestPublishId',latest,'draftId',NULL,'draftConsumed',true));
  END IF;
  SELECT ARRAY(SELECT DISTINCT (x->>'user')::uuid FROM jsonb_array_elements(old_graph||graph) a,LATERAL jsonb_array_elements(a->'assignments') x WHERE x->>'user' IS NOT NULL UNION SELECT actor) INTO users;
  PERFORM public.replace_activities_graph_internal_v1(p_occasion,graph);
  hid:=public.write_activity_history_internal_v1(p_occasion,actor,history,'PUBLISH',latest,'Published via application');
- PERFORM public.clear_activity_draft_internal_v1(p_occasion,actor,latest,true);
+ deleted:=public.consume_selected_activity_draft_internal_v1(p_occasion,actor,latest,p_history_data->'_consume_autosave',graph);
  UPDATE public.client_aggregate_versions SET version=version+1,updated_at=clock_timestamp() WHERE aggregate_type='activities' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p_occasion::text RETURNING version INTO v;
  SELECT COALESCE(jsonb_agg(jsonb_build_object('component','private_activity','userId',u) ORDER BY u),'[]') INTO impacts FROM unnest(users) u JOIN public.occasion_users ou ON ou.occasion=p_occasion AND ou."user"=u;
  replacements:=jsonb_build_array(jsonb_build_object('component','private_activity','userId',actor,'payload',(public.get_my_events_and_activities(p_occasion,true)->'data')));
  PERFORM public.retain_activity_history_internal_v1(p_occasion);
- RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,'activities.publish','activities',jsonb_build_array(jsonb_build_object('entityType','activities','entityId',p_occasion,'operation','publish','changedFields',jsonb_build_array('graph','history'))),'{}',impacts,'[]',jsonb_build_object('version',v,'historyId',hid,'latestPublishId',hid,'draftId',NULL,'activities',graph),'{}','[]','user',NULL,replacements);
+ RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,'activities.publish','activities',jsonb_build_array(jsonb_build_object('entityType','activities','entityId',p_occasion,'operation','publish','changedFields',jsonb_build_array('graph','history'))),'{}',impacts,'[]',jsonb_build_object('version',v,'historyId',hid,'latestPublishId',hid,'draftId',(SELECT id FROM public.activity_history WHERE occasion_id=p_occasion AND user_id=actor AND history_type='AUTOSAVE' ORDER BY id DESC LIMIT 1),'draftConsumed',deleted>0,'activities',graph),'{}','[]','user',NULL,replacements);
 END $$;
 REVOKE ALL ON FUNCTION public.lock_activity_editor_internal_v1(bigint),public.retain_activity_history_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint),public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint),public.publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint) FROM PUBLIC,anon;

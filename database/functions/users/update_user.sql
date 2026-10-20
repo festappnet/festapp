@@ -17,6 +17,7 @@ DECLARE
   v_unit bigint;
   new_user uuid;
   existing_user_id uuid;
+  v_global_before jsonb;
   v_create_response jsonb;
 BEGIN
   -- Extract main fields from the input_data jsonb object
@@ -89,6 +90,8 @@ BEGIN
     WHERE email = v_org::text || '+' || v_email;
 
     IF existing_user_id IS NOT NULL THEN
+      IF EXISTS(SELECT 1 FROM public.user_info WHERE id=existing_user_id AND organization IS DISTINCT FROM v_org) THEN
+        RETURN jsonb_build_object('code',403,'message','User is outside the unit organization'); END IF;
       -- Create profile if missing
       IF NOT EXISTS (SELECT 1 FROM public.user_info WHERE id = existing_user_id) THEN
         INSERT INTO public.user_info (
@@ -133,6 +136,9 @@ BEGIN
     END IF;
   END IF;
 
+  -- Global profile is the parent of its occasion projections.
+  SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=v_user AND organization=v_org FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('code',403,'message','User is outside the unit organization'); END IF;
   -- Update existing user logic
   UPDATE public.user_info
   SET
@@ -152,6 +158,7 @@ BEGIN
     END
   WHERE id = v_user;
 
+  PERFORM public.publish_user_profile_change_internal_v1(v_user,v_occasion,v_global_before);
   RETURN jsonb_build_object(
    'code', 200,
    'message', 'User details updated successfully',
@@ -163,7 +170,15 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION public.update_user(input_data jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.update_user_internal_v1(input_data);
-$$;
+-- Unit account management remains a distinct legacy scope; occasion creation uses its command.
+CREATE OR REPLACE FUNCTION public.update_user(input_data jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ IF input_data->>'occasion' IS NOT NULL THEN RETURN jsonb_build_object('code',426,'message','Upgrade required: create_occasion_user_client_sync_v1'); END IF;
+ RETURN public.update_user_internal_v1(input_data);
+END $$;
+REVOKE ALL ON FUNCTION public.update_user_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.update_user(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_user(jsonb) TO authenticated;
+-- No current caller of this obsolete occasion-profile overload remains.
+REVOKE ALL ON FUNCTION public.update_user(uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;

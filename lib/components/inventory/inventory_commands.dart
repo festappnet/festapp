@@ -14,7 +14,7 @@ abstract interface class InventoryCommands {
 
 class SupabaseInventoryCommands implements InventoryCommands {
   SupabaseInventoryCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseInventoryCommands.withTransport(this._transport);
 

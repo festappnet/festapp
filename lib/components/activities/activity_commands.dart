@@ -39,7 +39,7 @@ abstract interface class ActivityCommands {
 
 class SupabaseActivityCommands implements ActivityCommands {
   SupabaseActivityCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client),
+      : _transport = ClientCommandTransport.supabase(client, durable: true),
         _actorId = (() => client.auth.currentUser?.id);
 
   SupabaseActivityCommands.withTransport(this._transport,

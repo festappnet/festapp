@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_unit_for_edit(unit_id bigint) RETURNS jsonb
+CREATE OR REPLACE FUNCTION public.get_unit_for_edit(unit_id bigint) RETURNS jsonb
 LANGUAGE plpgsql STABLE
 SECURITY DEFINER
 SET search_path = public, extensions
@@ -36,7 +36,10 @@ BEGIN
         'title', title,
         'data', data,
         'features', features,
-        'organization', organization
+        'organization', organization,
+        'aggregate_version', coalesce((SELECT v.version FROM public.client_aggregate_versions v
+          WHERE v.aggregate_type='unit' AND v.scope_type='unit' AND v.scope_id=unit_id
+          AND v.aggregate_id=unit_id::text),0)
     ) INTO unit_data
     FROM units
     WHERE id = unit_id;

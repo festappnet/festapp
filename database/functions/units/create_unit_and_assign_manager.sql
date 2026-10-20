@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION create_unit_and_assign_manager(
+CREATE OR REPLACE FUNCTION public.create_unit_and_assign_manager(
   title text
 ) RETURNS jsonb
 SECURITY DEFINER

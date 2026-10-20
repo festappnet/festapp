@@ -158,7 +158,8 @@ BEGIN
   ELSE
     v_place_id:=(p_group->>'placeId')::bigint;
     IF v_place_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.places p
-      WHERE p.id=v_place_id AND p.occasion=p_occasion AND NOT p.is_hidden) THEN
+      WHERE p.id=v_place_id AND p.occasion=p_occasion
+        AND (NOT p.is_hidden OR (p.id=v_old_place AND p.type='group' AND v_old_private))) THEN
       RAISE invalid_parameter_value USING MESSAGE='invalid shared group place';
     END IF;
   END IF;
@@ -193,10 +194,7 @@ BEGIN
       AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=v_id::text
       RETURNING version INTO v_version;
   END IF;
-  DELETE FROM public.user_groups WHERE "group"=v_id;
-  INSERT INTO public.user_groups("user","group",is_admin)
-    SELECT x.user_id,v_id,COALESCE(x.is_admin,false)
-    FROM jsonb_to_recordset(p_group->'participants') x(user_id uuid,is_admin boolean);
+  PERFORM public.write_user_group_members_internal_v1(p_occasion,v_id,p_group->'participants',true);
   IF v_old_private AND v_old_place IS DISTINCT FROM v_place_id THEN
     IF EXISTS (SELECT 1 FROM public.user_group_info g WHERE g.id<>v_id
       AND g.place=v_old_place) THEN

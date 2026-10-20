@@ -408,7 +408,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+  FROM PUBLIC, anon, authenticated, service_role;
 
 -- Existing internal callers retain same-unit semantics.
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
@@ -417,7 +417,7 @@ SET search_path = public, extensions AS $$
   SELECT public.duplicate_occasion_internal_v1(oc, NULL);
 $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
+  FROM PUBLIC, anon, authenticated, service_role;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)

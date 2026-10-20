@@ -13,7 +13,7 @@
 --   * rate limit: max 5 reports per user per 15 minutes -> 429.
 --   * on a fresh report, inserts a log_notifications row addressed to the crew
 --     (data.path = 'cleaning' so the push deep-links to the Cleaning page).
-CREATE OR REPLACE FUNCTION public.report_cleaning_issue(
+CREATE OR REPLACE FUNCTION public.report_cleaning_issue_internal_v1(
   place_id bigint,
   problem_type text,
   note text DEFAULT NULL
@@ -121,7 +121,7 @@ BEGIN
   SELECT cr.* INTO v_existing
   FROM public.cleaning_reports cr
   WHERE cr.place = place_id
-    AND cr.problem_type = report_cleaning_issue.problem_type
+    AND cr.problem_type = report_cleaning_issue_internal_v1.problem_type
     AND cr.resolved_at IS NULL
   ORDER BY cr.created_at ASC
   LIMIT 1;
@@ -176,3 +176,15 @@ BEGIN
   );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.report_cleaning_issue_internal_v1(bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.report_cleaning_issue(place_id bigint,problem_type text,note text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ result:=public.report_cleaning_issue_client_sync_v1(place_id,problem_type,note,extensions.gen_random_uuid());
+ RETURN jsonb_build_object('code',result->'code','message',result#>'{data,message}','data',result->'data');
+END $$;
+REVOKE ALL ON FUNCTION public.report_cleaning_issue(bigint,text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.report_cleaning_issue(bigint,text,text) TO authenticated;

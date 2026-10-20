@@ -3,7 +3,6 @@ import 'package:fstapp/components/groups/group_commands.dart';
 import 'package:fstapp/components/information/information_model.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:festapp_core/map.dart';
-import 'package:fstapp/components/map/db_places.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_sync_projection.dart';
@@ -18,7 +17,11 @@ class DbGroups {
   static const editorPlacesKey = 'places';
 
   static Future<List<UserGroupInfoModel>> getGroupsWithPlaces() async {
-    return (await getUserGroupsEditorData()).groups;
+    final data = await _supabase.rpc('get_group_places_for_map_v1', params: {
+      'p_occasion': RightsService.currentOccasionId()!,
+    }) as List;
+    return [for (final row in data)
+      UserGroupInfoModel.fromJson((row as Map).cast<String, dynamic>())];
   }
 
   static Future<UserGroupsEditorData> getUserGroupsEditorData(
@@ -123,6 +126,22 @@ class DbGroups {
       } else {
         model.acceptSavedIdentity(saved, submittedPlace);
       }
+    }
+  }
+
+  static Future<void> addMembers(
+      UserGroupInfoModel group, List<String> userIds) async {
+    final actor = RightsService.currentUser()?.id;
+    final context = ClientSyncRuntime.mutationContextToken;
+    final result = await _commands.addMembers(
+        RightsService.currentOccasionId()!, group.id!, userIds);
+    if (result.status == GroupCommandStatus.rejected ||
+        result.status == GroupCommandStatus.conflict) {
+      throw StateError('Adding group members was rejected');
+    }
+    if (actor == RightsService.currentUser()?.id &&
+        ClientSyncRuntime.isCurrentMutationContext(context)) {
+      group.aggregateVersion = result.version;
     }
   }
 
