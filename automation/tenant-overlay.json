@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "tenantId": "festapptickets",
-  "baseMainSha": "fa4bb16a281aef3a2006e63df1288676a5adb463",
+  "baseMainSha": "b6508c81d6baf0141507a1f2252f066e5bffa213",
   "release": {
     "version": "0.20.299+792",
     "note": "Blueprint editor update"

@@ -8,6 +8,7 @@ DO $$
 DECLARE org bigint; un bigint; oc bigint; fid bigint; fk uuid; bank bigint;
  pt bigint; prod bigint; bp bigint; seat bigint; other_seat bigint; seat_field bigint;
  email_field bigint; name_field bigint; secret uuid:=gen_random_uuid(); client_id uuid:=gen_random_uuid();
+ node_a uuid:=gen_random_uuid(); node_b uuid:=gen_random_uuid();
  payload jsonb; result jsonb; oid bigint; before_orders bigint; command uuid;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seat checkout regression') RETURNING id INTO org;
@@ -35,6 +36,18 @@ BEGIN
  VALUES('A1',prod,oc,bp) RETURNING id INTO seat;
  INSERT INTO eshop.spots(title,product,occasion,blueprint)
  VALUES('A2',prod,oc,bp) RETURNING id INTO other_seat;
+ -- Public holds require the same canonical physical bindings as the renderer.
+ UPDATE eshop.blueprints SET layout_revision=1,layout=jsonb_build_object(
+  'schemaVersion',2,'symbolSetVersion',1,
+  'canvas',jsonb_build_object('x',0,'y',0,'width',400,'height',400,'fill','#FFFFFFFF'),
+  'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,
+  'textPolicy',jsonb_build_object('language','und','direction','auto'),
+  'nodes',jsonb_build_array(
+   jsonb_build_object('id',node_a,'kind','seat','width',48,'height',48,'transform',jsonb_build_object('x',100,'y',200,'rotation',0)),
+   jsonb_build_object('id',node_b,'kind','seat','width',48,'height',48,'transform',jsonb_build_object('x',200,'y',200,'rotation',0))),
+  'selectionUnits','[]'::jsonb) WHERE id=bp;
+ PERFORM public.validate_blueprint_layout_internal((SELECT layout FROM eshop.blueprints WHERE id=bp));
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(bp,node_a,seat),(bp,node_b,other_seat);
  result:=public.select_spot(fk,secret,seat,true);
  IF result->>'code'<>'200' THEN RAISE EXCEPTION 'Seat selection failed: %',result; END IF;
  payload:=jsonb_build_object('form',fk,'secret',secret,
