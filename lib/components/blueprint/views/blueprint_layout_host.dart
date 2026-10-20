@@ -63,6 +63,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   bool _showIndividualCommercialSeats = false;
   bool get _editingPlan => _screenMode == _BlueprintScreenMode.edit;
   String? _message;
+  BlueprintSeatState? _legendHover;
   late final _assets = widget.assetResolver ?? BlueprintLayoutAssetResolver();
   bool _assetsPending = false;
   bool _assetsFailed = false;
@@ -211,6 +212,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     controller.setMode(BlueprintLayoutMode.manage);
     setState(() {
       _screenMode = mode;
+      _legendHover = null;
       _message = null;
     });
     _hostFocus.requestFocus();
@@ -1471,6 +1473,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 in controller.adapter.publicPresentation(binding).entries)
               if (!_editingPlan || entry.key != 'fill') entry.key: entry.value,
             'selected': controller.operationSelection.contains(binding.nodeId),
+            'highlighted': _legendHover != null &&
+                (_legendHover == BlueprintSeatState.selectedByMe
+                    ? controller.operationSelection.contains(binding.nodeId)
+                    : controller.adapter.state(binding) == _legendHover),
             'tooltip': !_editingPlan &&
                     _canOrder &&
                     controller.adapter.spots[binding.spotId] != null
@@ -1767,6 +1773,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                     ? null
                                     : BlueprintLayoutLegend(
                                         compact: true,
+                                        onHover: (state) => setState(
+                                            () => _legendHover = state),
                                         states: controller
                                             .snapshot.seatBindings.values
                                             .map(controller.adapter.state),

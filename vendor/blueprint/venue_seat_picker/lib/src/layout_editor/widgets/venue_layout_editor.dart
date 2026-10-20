@@ -1232,8 +1232,50 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         final west = direction.contains('w'), north = direction.contains('n');
         final horizontal = west || direction.contains('e');
         final vertical = north || direction.contains('s');
-        final dx = (point.dx - pointer.dx) * (west ? -1 : 1);
-        final dy = (point.dy - pointer.dy) * (north ? -1 : 1);
+        var dx = (point.dx - pointer.dx) * (west ? -1 : 1);
+        var dy = (point.dy - pointer.dy) * (north ? -1 : 1);
+        final snapped = snapTranslation(
+          start,
+          c.selection,
+          0,
+          0,
+          zoom: _viewportScale,
+          grid: 8,
+          disabled: !_snap || HardwareKeyboard.instance.isAltPressed,
+          sourceBounds: {
+            'x':
+                bounds['x']! +
+                (west
+                    ? -dx
+                    : horizontal
+                    ? bounds['width']! + dx
+                    : bounds['width']! / 2),
+            'y':
+                bounds['y']! +
+                (north
+                    ? -dy
+                    : vertical
+                    ? bounds['height']! + dy
+                    : bounds['height']! / 2),
+            'width': 0,
+            'height': 0,
+          },
+        );
+        if (horizontal) dx += (west ? -1 : 1) * snapped.dx;
+        if (vertical) dy += (north ? -1 : 1) * snapped.dy;
+        _snapGuides = snapped.guides
+            .where(
+              (guide) => guide['axis'] == 'x'
+                  ? horizontal &&
+                        (!vertical ||
+                            (dx / bounds['width']!).abs() >=
+                                (dy / bounds['height']!).abs())
+                  : vertical &&
+                        (!horizontal ||
+                            (dy / bounds['height']!).abs() >
+                                (dx / bounds['width']!).abs()),
+            )
+            .toList();
         // Scale furniture and spacing while retaining physical chair sizes.
         final change =
             horizontal &&
@@ -1318,6 +1360,21 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       final oldHeight = oldBounds?['height'] ?? n.height;
       var width = math.max(1.0, oldWidth + (current[0] - initial[0]) * sx);
       var height = math.max(1.0, oldHeight + (current[1] - initial[1]) * sy);
+      final snappedSize = snapResize(
+        start,
+        n,
+        width,
+        height,
+        sx: sx,
+        sy: sy,
+        zoom: _viewportScale,
+        grid: 8,
+        disabled: !_snap || HardwareKeyboard.instance.isAltPressed,
+        localBounds: oldBounds,
+      );
+      width = snappedSize.width;
+      height = snappedSize.height;
+      _snapGuides = snappedSize.guides;
       final roundTable = n.kind == 'table' && n.surface?['type'] == 'circle';
       final shift = HardwareKeyboard.instance.isShiftPressed;
       final graphic = n.kind == 'image' || n.kind == 'vector';
@@ -1369,6 +1426,13 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       final resizedRoot = resized.nodes.firstWhere((node) => node.id == n.id);
       width = resizedRoot.width;
       height = resizedRoot.height;
+      _snapGuides = _snapGuides
+          .where(
+            (guide) => guide['axis'] == 'x'
+                ? (width - snappedSize.width).abs() < .01
+                : (height - snappedSize.height).abs() < .01,
+          )
+          .toList();
       final actualBounds = isRows ? rowAssemblyBounds(resized, n.id) : null;
       // Keep the opposite edge fixed even when curved chair tangents change
       // the generated footprint's local origin.

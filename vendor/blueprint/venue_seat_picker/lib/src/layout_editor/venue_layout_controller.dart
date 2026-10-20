@@ -1323,6 +1323,7 @@ class VenueLayoutController extends ChangeNotifier {
                 _document,
                 tableId,
                 count,
+                constrainToCanvas: true,
                 protectedSeatIds: protectedSeatIds?.call() ?? const {},
               ),
         label: 'Seats',

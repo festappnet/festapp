@@ -1,3 +1,4 @@
+import 'blueprint_table_seating.dart';
 import 'blueprint_table_titles.dart';
 import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
@@ -275,7 +276,8 @@ BlueprintLegacyConversion convertLegacyBlueprint(BlueprintModel source,
   }, fontFamilies: fontFamilies, sourceRevision: 0);
   if (!imported.isReady)
     throw StateError('legacy_conversion_invalid:${imported.receipt['issues']}');
-  var document = normalizeBlueprintTableTitles(imported.document!);
+  var document = normalizeBlueprintTableSeating(
+      normalizeBlueprintTableTitles(imported.document!));
   final labelProfile = nativePlan?['tableLabelStyle'] as Map?;
   if (labelProfile != null) {
     // Explicitly reviewed typography applies to the table kind, so later
