@@ -5,6 +5,7 @@ import { csTranslations } from "../supabase/functions/_shared/translations/trans
 import { enTranslations } from "../supabase/functions/_shared/translations/translations.en.ts";
 import {
   generatePaymentDetails,
+  renderAccountNumber,
   type Tone,
 } from "../supabase/functions/_shared/translations/payment-details.helpers.ts";
 import {
@@ -350,7 +351,8 @@ for (const record of records) {
       [code, html],
     ) => [
       code,
-      html.replaceAll(fixture.accountNumber, "{{preview_account_number}}")
+      html.replaceAll(renderAccountNumber(fixture.accountNumber), renderAccountNumber("{{preview_account_number}}"))
+        .replaceAll(fixture.accountNumber, "{{preview_account_number}}")
         .replaceAll(formatIBAN(fixture.iban), "{{preview_iban}}")
         .replace(moneyPattern, (value) => moneySlots[value])
         .replaceAll(values.deadline || fixture.deadline, "{{preview_deadline}}")

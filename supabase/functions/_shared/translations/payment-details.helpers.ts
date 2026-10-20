@@ -20,7 +20,7 @@ export type Tone = 'formal' | 'informal';
 
 // Render short text runs so mail clients do not mistake an account for a phone
 // number. Tags add no spaces or invisible characters to the copyable value.
-const renderAccountNumber = (value: string) => {
+export const renderAccountNumber = (value: string) => {
   const escaped = value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return `<span class="festapp-payment-account" style="white-space: nowrap; pointer-events: none; cursor: text;">${
     escaped.replace(/\d{1,3}/g, '<span style="display: inline-block;">$&</span>')

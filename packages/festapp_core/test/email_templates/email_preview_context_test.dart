@@ -33,6 +33,23 @@ void main() {
       ),
     ],
   );
+  test('configured account replaces fixture digits in every payment block', () {
+    const account = EmailPreviewPaymentAccount(
+      accountNumber: '2102808173/2010',
+      iban: 'CZ87 2010 0000 0021 0280 8173',
+      currencies: ['CZK'],
+    );
+    for (final original in records.where((r) => r.values.containsKey('paymentDetails'))) {
+      final adjusted = original.withContext(context.withPaymentAccount(account));
+      final html = adjusted.values['paymentDetails']!;
+      final text = html.replaceAll(RegExp(r'<[^>]*>'), '');
+      expect(text, contains(account.accountNumber));
+      expect(text, contains(account.iban));
+      expect(text, isNot(contains('0000000000/0000')));
+      expect(html, isNot(contains('{{preview_')));
+      expect(adjusted.values['accountNumber'], account.accountNumber);
+    }
+  });
   test(
     'context binds actual catalog titles, types and prices into production HTML',
     () {
