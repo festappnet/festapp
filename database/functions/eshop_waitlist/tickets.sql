@@ -29,6 +29,9 @@ BEGIN
    CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'fields','[]')) f WHERE f ? 'product_type'
   UNION ALL SELECT s.product FROM jsonb_array_elements(coalesce(p_input->'ticket','[]')) t JOIN eshop.spots s ON s.id=(t->>'spot')::bigint) selected;
  PERFORM 1 FROM eshop.products WHERE id=ANY(ids) ORDER BY id FOR UPDATE;
+ PERFORM 1 FROM eshop.blueprints WHERE id IN(
+  SELECT blueprint FROM public.forms WHERE id IN(SELECT form FROM eshop.orders WHERE id=p_order)
+  UNION SELECT blueprint FROM eshop.spots WHERE product=ANY(ids)) ORDER BY id FOR UPDATE;
  PERFORM 1 FROM public.inventory_pools WHERE id IN(SELECT ic.inventory_pool FROM public.inventory_contexts ic
   JOIN eshop.product_inventory_contexts pic ON pic.inventory_context=ic.id WHERE pic.product=ANY(ids)) ORDER BY id FOR UPDATE;
  PERFORM 1 FROM public.inventory_contexts WHERE id IN(SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=ANY(ids)) ORDER BY id FOR UPDATE;

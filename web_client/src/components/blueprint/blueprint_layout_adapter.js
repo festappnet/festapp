@@ -27,11 +27,10 @@ export class BlueprintLayoutAdapter {
         const products = new Map((data.products || []).map(p => [String(p.id), p]));
         this.areaProducts = new Map([...this.areaBindings].map(([id, binding]) => [id, products.get(String(binding.productId))]));
         const spots = new Map((data.spots || []).map(s => [String(s.id), s]));
-        const initial = new Set(initialSeats.map(s => String(s.id)));
         for (const binding of data.seatBindings || []) {
-            const spot = spots.get(String(binding.spotId)) || {};
+            const spot = spots.get(String(binding.spotId)) || {state: binding.status};
             const product = products.get(String(binding.productId));
-            const selected = spot.state === SeatStates.SELECTED_BY_ME || (!spot.state && initial.has(String(binding.spotId)));
+            const selected = spot.state === SeatStates.SELECTED_BY_ME;
             const currency = product?.currency_code;
             const priceLabel = typeof product?.price === 'number' && Number.isFinite(product.price) && /^[A-Z]{3}$/.test(currency || '')
                 ? formatPrice(product.price, currency, 0, LocalizationService.currentLocale) : null;
@@ -51,6 +50,27 @@ export class BlueprintLayoutAdapter {
                 },
             });
         }
+        this.session?.reconcileReservations?.([...this.models.values()], data);
+    }
+    // The host supplies only the permission-checked reader; this adapter updates
+    // commercial presentation and payload without replacing document or camera.
+    setReservationReader(read) {
+        if (!this._recover) this._previousRecover = this.session?.recoverReservations;
+        this._recover = async () => {
+            const data = await read();
+            if (this.disposed) throw new Error('reservation_picker_closed');
+            this.reconcile(data);
+        };
+        if (this.session) this.session.recoverReservations = this._recover;
+    }
+    reconcile(data) {
+        const states = new Map((data.spots || []).map(spot => [String(spot.id), spot.state]));
+        const bindings = new Map((data.seatBindings || []).map(binding => [binding.nodeId, binding]));
+        for (const [id, model] of this.models) {
+            model.state = states.get(String(model.id)) || bindings.get(id)?.status || SeatStates.EMPTY;
+        }
+        this.session?.reconcileReservations?.([...this.models.values()], data);
+        if (!this.disposed) this.onPresentationChanged?.(this.seatPresentation);
     }
     get selectedSeats() { return [...this.models.values()].filter(s => s.state === SeatStates.SELECTED_BY_ME); }
     seatModel(nodeId) { return this.models.get(nodeId); }
@@ -111,7 +131,8 @@ export class BlueprintLayoutAdapter {
             return { accepted: true, expiresAt: result?.expiresAt };
         } catch (error) {
             if (!this.disposed) this.onError?.(error);
-            return { accepted: false, message: error.message, reason: error.reason };
+            return { accepted: false, message: error.message, reason: error.reason,
+                authoritativeSeatIds: error.reservationRecovered ? [...this.models].filter(([, model]) => model.state === SeatStates.SELECTED_BY_ME).map(([id]) => id) : undefined };
         } finally { ids.forEach(id => this.pending.delete(id)); }
     }
     updatePresentation(spots) {
@@ -121,5 +142,5 @@ export class BlueprintLayoutAdapter {
         }
         if (!this.disposed) this.onPresentationChanged?.(this.seatPresentation);
     }
-    dispose() { this.disposed = true; this.onPresentationChanged = null; this.onCapacityChanged = null; this.onError = null; }
+    dispose() { if (this.session?.recoverReservations === this._recover) this.session.recoverReservations = this._previousRecover ?? null; this.disposed = true; this.onPresentationChanged = null; this.onCapacityChanged = null; this.onError = null; }
 }

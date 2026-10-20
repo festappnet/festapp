@@ -1,6 +1,6 @@
 BEGIN;
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; blueprint_id bigint; ord bigint; opt bigint; spot_id bigint; actor uuid; link text := 'sequence-blueprint-'||gen_random_uuid(); result jsonb;
+DECLARE org bigint; unit_id bigint; occ bigint; blueprint_id bigint; ord bigint; opt bigint; spot_id bigint; actor uuid; link text := 'sequence-blueprint-'||gen_random_uuid(); result jsonb; node uuid:=gen_random_uuid(); font text;
 BEGIN
  SELECT id INTO actor FROM auth.users LIMIT 1;
  PERFORM assert_not_null(actor,'Auth fixture exists');
@@ -11,8 +11,15 @@ BEGIN
  INSERT INTO eshop.orders(occasion,order_sequence,order_symbol,state,data) VALUES(occ,public.next_order_sequence(occ),public.generate_order_symbol(),'paid','{}') RETURNING id INTO ord;
  INSERT INTO eshop.order_product_ticket("order") VALUES(ord) RETURNING id INTO opt;
  INSERT INTO eshop.spots(occasion,title,order_product_ticket) VALUES(occ,'Seat',opt) RETURNING id INTO spot_id;
- INSERT INTO eshop.blueprints(organization,occasion,title,objects) VALUES(org,occ,'Blueprint',jsonb_build_array(jsonb_build_object('id',spot_id,'type','spot'))) RETURNING id INTO blueprint_id;
-  PERFORM pg_temp.adopt_public_link_fixtures();
+ SELECT id INTO font FROM public.ticket_font_assets WHERE id LIKE 'builtin:%' ORDER BY id LIMIT 1;
+ INSERT INTO eshop.blueprints(organization,occasion,title,layout,layout_revision)
+ VALUES(org,occ,'Blueprint',jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,'textPolicy',jsonb_build_object('language','und','direction','auto'),
+  'canvas',jsonb_build_object('x',0,'y',0,'width',1000,'height',1000,'fill','#FFFFFFFF'),
+  'nodes',jsonb_build_array(jsonb_build_object('id',node,'kind','seat','width',40,'height',40,
+    'transform',jsonb_build_object('x',0,'y',0,'rotation',0)))),1) RETURNING id INTO blueprint_id;
+ UPDATE eshop.spots SET blueprint=blueprint_id WHERE id=spot_id;
+ INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(blueprint_id,node,spot_id);
+ PERFORM public.reserve_public_link_internal('occasion',occ,link,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  result:=public.get_blueprint_for_edit(link);
  PERFORM assert_eq((result->>'code')::integer,200,'Blueprint loads');

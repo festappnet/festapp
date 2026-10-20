@@ -4,6 +4,15 @@ import test from 'node:test';
 import { LocalizationService } from '../../src/services/localization_service.js';
 import { CommonStrings } from '../../src/components/shared/common_strings.js';
 
+for (const locale of ['cs', 'en']) {
+    test(`published ${locale} MCP consent uses its canonical dictionary`, async () => {
+        const published = JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        const canonical = JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        assert.ok(canonical.McpConnection);
+        assert.deepEqual(published.McpConnection, canonical.McpConnection);
+    });
+}
+
 for (const [locale, expected] of [['cs', '+ Akce'], ['en', '+ Event'], ['uk', '+ Подія']]) {
     test(`published ${locale} catalog translates the mobile create-event button`, async t => {
         const original = LocalizationService.translations;

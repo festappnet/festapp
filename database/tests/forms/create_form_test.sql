@@ -3,6 +3,7 @@
 
 DO $$
 DECLARE
+    v_actor uuid;
     v_org_id bigint;
     v_unit_id bigint;
     v_occasion_id bigint;
@@ -19,14 +20,13 @@ BEGIN
     VALUES (v_unit_id, 'Temp Occasion Form', 'temp-occasion-form-' || floor(random()*100000)::text, now(), now() + interval '1 day') 
     RETURNING id INTO v_occasion_id;
 
-    -- 2. Execute: Create Form
-    PERFORM create_user_for_test('form_create_fixture','form-create-fixture@example.invalid');
-    UPDATE public.user_info SET organization=v_org_id WHERE id=get_user_id('form_create_fixture');
-    UPDATE public.occasions SET organization=v_org_id WHERE id=v_occasion_id;
-    INSERT INTO public.unit_users(unit,"user",is_editor,is_editor_view)
-      VALUES(v_unit_id,get_user_id('form_create_fixture'),true,true);
-    PERFORM set_config('request.jwt.claim.sub',get_user_id('form_create_fixture')::text,true);
+    PERFORM public.create_user_for_test('create-form-manager','create-form-manager@example.invalid');
+    v_actor:=public.get_user_id('create-form-manager');
+    INSERT INTO public.unit_users(unit,"user",is_editor,is_manager) VALUES(v_unit_id,v_actor,true,true);
+    PERFORM set_config('request.jwt.claim.sub',v_actor::text,true);
     PERFORM set_config('request.jwt.claim.role','authenticated',true);
+
+    -- 2. Execute: Create Form
     SELECT create_form(v_occasion_id, 'test-form-link-unique-' || floor(random()*100000)::text, 'Test Form Title') 
     INTO v_form_json;
 

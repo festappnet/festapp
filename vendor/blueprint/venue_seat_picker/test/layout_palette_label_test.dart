@@ -36,7 +36,8 @@ void main() {
       final boxes = paragraph.getBoxesForSelection(
         const TextSelection(baseOffset: 0, extentOffset: 14),
       );
-      expect(boxes, hasLength(2));
+      // Fallback glyph runs can split one visual line into multiple boxes.
+      expect(boxes.map((box) => box.top).toSet(), hasLength(2));
       for (final box in boxes) {
         expect(
           box.bottom,

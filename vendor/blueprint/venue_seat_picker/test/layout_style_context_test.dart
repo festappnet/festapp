@@ -122,6 +122,8 @@ void main() {
       );
       await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Style'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Detailed settings'));
+      await tester.pumpAndSettle();
       final fill = find.descendant(
         of: find.byType(AlertDialog),
         matching: find.byKey(const ValueKey('canonical-style-fill')),
@@ -135,7 +137,7 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
       await tester.pumpAndSettle();
       expect(c.document.nodes.first.style['fill'], '#2563EBFF');
-      await tester.tap(find.text('Close'));
+      await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
 
       await tester.pumpAndSettle();

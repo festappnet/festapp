@@ -25,13 +25,24 @@ class _EditorDialogDismissalState extends State<EditorDialogDismissal> {
   @override
   void initState() {
     super.initState();
-    FocusManager.instance.addEarlyKeyEventHandler(_escape);
+    FocusManager.instance.addEarlyKeyEventHandler(_escapeOutside);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _route = ModalRoute.of(context);
+  }
+
+  KeyEventResult _escapeOutside(KeyEvent event) {
+    final focusedContext = FocusManager.instance.primaryFocus?.context;
+    var inside = focusedContext == context;
+    focusedContext?.visitAncestorElements((element) {
+      if (element == context) inside = true;
+      return !inside;
+    });
+    // Focused children (including editor popovers) get the first opportunity.
+    return inside ? KeyEventResult.ignored : _escape(event);
   }
 
   KeyEventResult _escape(KeyEvent event) {
@@ -48,13 +59,13 @@ class _EditorDialogDismissalState extends State<EditorDialogDismissal> {
 
   @override
   void dispose() {
-    FocusManager.instance.removeEarlyKeyEventHandler(_escape);
+    FocusManager.instance.removeEarlyKeyEventHandler(_escapeOutside);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) =>
-      Focus(autofocus: widget.autofocus, child: widget.child);
+      Focus(autofocus: widget.autofocus, onKeyEvent: (_, event) => _escape(event), child: widget.child);
 }
 
 /// All editor modal entry points share route-scoped Escape, even when a

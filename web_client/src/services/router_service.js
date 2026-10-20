@@ -1,3 +1,4 @@
+import { isEmbed } from './embed_context.js';
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
 import { resolveScannerRoute } from './scanner_routes.js';
 import { AppConfig } from '../app_config.js';
@@ -17,6 +18,7 @@ export class RouterService {
 
     static canonicalizePublicLink(kind, requested, canonical) {
         replaceResolvedPublicLink(kind, requested, canonical);
+        RouterService._lastPath = window.location.pathname;
     }
 
     static openExternalUrl(url, { inCurrentWindow = false } = {}) {
@@ -49,15 +51,17 @@ export class RouterService {
 
     static async navigateToForm(link) {
         const cleanLink = link.split('?')[0];
-        const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
-        RouterService._lastPath = path; // Update tracker
+        const path = `${RouterService.FORM_PATH_PREFIX}${cleanLink}${isEmbed() ? window.location.search + window.location.hash : ''}`;
+        RouterService._lastPath = `${RouterService.FORM_PATH_PREFIX}${cleanLink}`;
         RouterService.pushState(path);
+        await RouterService.mountForm(cleanLink);
+    }
+
+    static async mountForm(link) {
         const { FormPage } = await import('../components/forms/form_page.js');
-        // Instantiate using correct container (legacy id preserved)
-        // Ensure to remove old instance if tracked via singleton in FormPage (which we removed)
-        // Since we are moving to instance based, the Router should probably hold the current page reference
-        // but for now, we just create new one which cleans up previous by id.
-        await new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
+        RouterService._formPage?.clear();
+        RouterService._formPage = new FormPage('form-page-container');
+        await RouterService._formPage.init(link, { onBack: RouterService.goBackProgrammatically });
     }
 
     static getLoginUrl() {
@@ -87,6 +91,7 @@ export class RouterService {
     }
 
     static async navigateToFlutterRoute(url) {
+        if (isEmbed()) return;
         if (!AppConfig.isAppSupported) {
             const target = new URL(url, window.location.origin);
             const redirect = target.origin === window.location.origin
@@ -111,6 +116,7 @@ export class RouterService {
 
     // History Management
     static pushState(path) {
+        RouterService.disposeMcpPage();
         window.history.pushState({}, '', path);
     }
 
@@ -120,7 +126,7 @@ export class RouterService {
         if (RouterService.hasPersonalOrderLink()) {
             window.history.pushState({ overlay: hash }, '', window.location.href);
         } else {
-            window.history.pushState({}, '', `${window.location.pathname}#${hash}`);
+            window.history.pushState({}, '', `${window.location.pathname}${window.location.search}#${hash}`);
         }
     }
 
@@ -145,16 +151,26 @@ export class RouterService {
 
     // Initial Load Check
     static async handleInitialLoad() {
+        RouterService.disposeMcpPage();
+        const mcpGeneration = RouterService._mcpGeneration;
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.
         if (window.location.pathname === '/google-auth') return true;
         if (/^\/unit\/[1-9]\d*\/?$/.test(window.location.pathname)) return false;
+        if (window.location.pathname === '/settings/mcp-connect') {
+            const { McpConnectionPage } = await import('../components/mcp/mcp_connection_page.js');
+            if (mcpGeneration !== RouterService._mcpGeneration ||
+                window.location.pathname !== '/settings/mcp-connect') return true;
+            document.getElementById('app')?.setAttribute('hidden', '');
+            RouterService._mcpPage = new McpConnectionPage(document.getElementById('form-page-container'));
+            await RouterService._mcpPage.init();
+            return true;
+        }
         let path = window.location.pathname;
         const fullUrl = window.location.href;
 
         if (path === '/order') {
-            const { FormPage } = await import('../components/forms/form_page.js');
-            await new FormPage('form-page-container').init(null, { onBack: RouterService.goBackProgrammatically });
+            await RouterService.mountForm(null);
             return true;
         }
 
@@ -202,7 +218,7 @@ export class RouterService {
         let redirectPath = `${path}${query}`;
 
         // 2. Data-Driven Decision Logic (Mirrors Flutter AppRouter.getDefaultLink)
-        if (AppConfig.isAppSupported) {
+        if (AppConfig.isAppSupported && !isEmbed()) {
             // Need to fetch data to make a decision
             const { RightsService } = await import('./rights_service.js'); // Lazy load to avoid cycle
             await RightsService.updateAppData();
@@ -355,7 +371,7 @@ export class RouterService {
              const hasPreview = window.location.search && window.location.search.includes('preview=true');
              const hasSearch = window.location.search && (window.location.search.includes('?q=') || window.location.search.includes('&q='));
 
-             if (!hasPreview && !hasSearch && !RouterService.hasPersonalOrderLink() && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
+             if (!isEmbed() && !hasPreview && !hasSearch && !RouterService.hasPersonalOrderLink() && (window.location.search || window.location.hash || fullUrl.includes('?'))) {
                   window.history.replaceState(null, '', path);
                   RouterService._lastPath = path; // Sync tracker
              }
@@ -369,8 +385,7 @@ export class RouterService {
         if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
             const cleanLink = RouterService.getFormLink(path);
             if (cleanLink) {
-                const { FormPage } = await import('../components/forms/form_page.js');
-                await new FormPage('form-page-container').init(cleanLink, { onBack: RouterService.goBackProgrammatically });
+                await RouterService.mountForm(cleanLink);
                 return true; // Handled
             }
         }
@@ -466,6 +481,14 @@ export class RouterService {
     // Listen for PopState
     static _lastPath = window.location.pathname;
     static _scannerPage = null;
+    static _mcpPage = null;
+    static _mcpGeneration = 0;
+
+    static disposeMcpPage() {
+        RouterService._mcpGeneration++;
+        RouterService._mcpPage?.dispose();
+        RouterService._mcpPage = null;
+    }
 
     static initPopStateListener() {
         window.addEventListener('popstate', async (event) => {
@@ -476,6 +499,7 @@ export class RouterService {
                 return;
             }
             RouterService._lastPath = path;
+            RouterService.disposeMcpPage();
 
             const scannerRoute = resolveScannerRoute(path);
             if (scannerRoute) {
@@ -487,8 +511,7 @@ export class RouterService {
 
             if (path.startsWith(RouterService.FORM_PATH_PREFIX)) {
                  const link = RouterService.getFormLink(path);
-                 const { FormPage } = await import('../components/forms/form_page.js');
-                 new FormPage('form-page-container').init(link, { onBack: RouterService.goBackProgrammatically });
+                 await RouterService.mountForm(link);
             } else {
                  window.location.reload();
             }

@@ -25,9 +25,14 @@ BEGIN
  -- Public authoring limits are enforced before persistence, including the
  -- 20k seat limit (25k is the distinct overall node limit).
  req:=f->'request';req:=jsonb_set(req,'{expected_layout_revision}','1'); req:=jsonb_set(req,'{seatChanges}','[]');
- FOREACH scenario IN ARRAY ARRAY['canvas','size','cycle','unknown','asset','seat_limit'] LOOP
+ FOREACH scenario IN ARRAY ARRAY['canvas','size','cycle','unknown','asset','seat_limit','style_key','style_nan','style_bounds','schema','missing_revision'] LOOP
   invalid_req:=req;
   CASE scenario
+   WHEN 'style_key' THEN invalid_req:=jsonb_set(req,'{layout,styles}','{"kinds":{"seat":{"injected":true}}}');expected_reason:='BLUEPRINT_UNKNOWN_STYLE';
+   WHEN 'style_nan' THEN invalid_req:=jsonb_set(req,'{layout,styles}','{"kinds":{"seat":{"opacity":"NaN"}}}');expected_reason:='BLUEPRINT_INVALID_DECLARATION';
+   WHEN 'style_bounds' THEN invalid_req:=jsonb_set(req,'{layout,styles}','{"kinds":{"seat":{"opacity":1.1}}}');expected_reason:='BLUEPRINT_INVALID_DECLARATION';
+   WHEN 'schema' THEN invalid_req:=jsonb_set(req,'{layout,schemaVersion}','99');expected_reason:='BLUEPRINT_INVALID_CANONICAL_LAYOUT';
+   WHEN 'missing_revision' THEN invalid_req:=req-'expected_layout_revision';expected_reason:='BLUEPRINT_REVISION_CONFLICT';
    WHEN 'canvas' THEN invalid_req:=jsonb_set(req,'{layout,canvas,width}','63');expected_reason:='BLUEPRINT_INVALID_CANVAS';
    WHEN 'size' THEN invalid_req:=jsonb_set(req,'{layout,nodes,0,width}','0');expected_reason:='BLUEPRINT_INVALID_GEOMETRY';
    WHEN 'cycle' THEN invalid_req:=jsonb_set(req,'{layout,nodes,0,parentId}',req#>'{layout,nodes,0,id}');expected_reason:='BLUEPRINT_PARENT_CYCLE';

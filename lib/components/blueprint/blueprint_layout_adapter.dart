@@ -1,3 +1,5 @@
+import 'package:venue_seat_picker/venue_seat_picker.dart';
+import 'blueprint_seat.dart';
 import 'package:festapp_core/eshop.dart';
 import 'blueprint_layout_contract.dart';
 import 'blueprint_model.dart';
@@ -9,6 +11,33 @@ class BlueprintLayoutAdapter {
   BlueprintLayoutAdapter(BlueprintModel source) {
     refresh(source);
   }
+
+  /// Compatibility slots for the form payload; positions never render V2 geometry.
+  BlueprintSeat seatSlot(
+          BlueprintModel source, BlueprintSeatBinding binding, int index) =>
+      BlueprintSeat(
+          position: SeatPosition(0, index),
+          size: 0,
+          seatId: binding.spotId,
+          label: binding.title,
+          seat: BlueprintObjectModel(
+              id: binding.spotId,
+              title: binding.title,
+              spotProduct: binding.productId,
+              product: product(binding),
+              blueprint: source))
+        ..isSelected = true;
+
+  List<BlueprintSeat> selectedSeats(BlueprintModel source) {
+    final bindings = source.layoutSnapshot?.seatBindings.values.toList() ??
+        const <BlueprintSeatBinding>[];
+    return [
+      for (var index = 0; index < bindings.length; index++)
+        if (state(bindings[index]) == BlueprintSeatState.selectedByMe)
+          seatSlot(source, bindings[index], index)
+    ];
+  }
+
   Map<int, ProductModel> products = {};
   Map<String, Map<String, dynamic>> areaAvailability = {};
   Map<int, BlueprintObjectModel> spots = {};

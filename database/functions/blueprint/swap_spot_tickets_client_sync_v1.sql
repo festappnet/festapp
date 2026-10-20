@@ -1,16 +1,19 @@
-CREATE OR REPLACE FUNCTION public.swap_spot_tickets_client_sync_v1(
-  p_spot_1 bigint,p_spot_2 bigint,p_command_id uuid
-) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+CREATE OR REPLACE FUNCTION public.swap_spot_tickets_client_sync_v1(p_spot_1 bigint, p_spot_2 bigint, p_command_id uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, extensions
+AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_users uuid[];
 BEGIN
-  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id IN(p_spot_1,p_spot_2)));
+  SELECT occasion INTO v_occasion FROM public.client_mutation_receipts WHERE command_id=p_command_id AND actor_id=v_actor AND command_name='inventory.spots.swap';
+  IF NOT FOUND THEN
   SELECT min(s.occasion) INTO v_occasion FROM eshop.spots s
     WHERE s.id IN (p_spot_1,p_spot_2);
+  END IF;
   IF v_actor IS NULL OR p_spot_1 IS NULL OR p_spot_2 IS NULL
     OR p_spot_1=p_spot_2 OR v_occasion IS NULL
-    OR (SELECT count(*) FROM eshop.spots s
-      WHERE s.id IN (p_spot_1,p_spot_2) AND s.occasion=v_occasion)<>2
     OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
@@ -18,6 +21,12 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.spots.swap',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
+  IF (SELECT count(*) FROM eshop.spots s
+      WHERE s.id IN (p_spot_1,p_spot_2) AND s.occasion=v_occasion)<>2
+ THEN RAISE insufficient_privilege USING MESSAGE='foreign spot swap'; END IF;
+
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion]);
+  PERFORM public.lock_spot_assignment_scope_internal_v1(ARRAY[p_spot_1,p_spot_2]);
   SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_users
   FROM eshop.spots s JOIN eshop.order_product_ticket opt
     ON opt.id=s.order_product_ticket JOIN public.occasion_users ou
@@ -30,8 +39,7 @@ BEGIN
       'safeLabel','Spot ticket swap','changedFields',jsonb_build_array(
         'order_product_ticket','product'))),v_users,jsonb_build_object(
           'spotIds',jsonb_build_array(p_spot_1,p_spot_2)));
-END; $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets_client_sync_v1(
-  bigint,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.swap_spot_tickets_client_sync_v1(
-  bigint,bigint,uuid) TO authenticated;
+END; $function$;
+
+REVOKE ALL ON FUNCTION public.swap_spot_tickets_client_sync_v1(bigint,bigint,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.swap_spot_tickets_client_sync_v1(bigint,bigint,uuid) TO authenticated;

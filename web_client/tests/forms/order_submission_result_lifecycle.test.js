@@ -35,7 +35,7 @@ test('a successful fast submission keeps its confirmation visible after closing 
     RouterService.pushOverlayState = () => {};
 
     const page = new FormPage('form-page-container');
-    page.currentSession = { payload: { form: 'test' } };
+    page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {}, payload: { form: 'test' } };
     page.cleanup = () => {};
     page.renderForm = () => {};
 
@@ -82,7 +82,7 @@ test('demo checkout and waitlist use the normal result without sending or storin
     RouterService.pushOverlayState = () => {};
     for (const registrationMode of ['regular', 'waitlist']) {
       const page = new FormPage('form-page-container');
-      page.currentSession = { payload: { form: 'demo', email: 'private@example.invalid' } };
+      page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {}, payload: { form: 'demo', email: 'private@example.invalid' } };
       page.waitlistCommands = { command: async () => { writes++; throw new Error('real waitlist called'); } };
       page.cleanup = () => {};
       page.submitOrder(document.createElement('form'), {
@@ -106,9 +106,9 @@ test('demo checkout and waitlist use the normal result without sending or storin
   }
 });
 
-for (const viewFails of [false, true]) {
-  test(`waitlist registration opens the shared overview and preserves confirmation on view failure=${viewFails}`, async t => {
-    const dom = new JSDOM('<div id="form-page-container"></div>', {url: 'https://example.test/form/test'});
+for (const embedded of [false, true]) for (const viewFails of [false, true]) {
+  test(`waitlist registration opens the shared overview and preserves confirmation on view failure=${viewFails}, embed=${embedded}`, async t => {
+    const dom = new JSDOM('<div id="form-page-container"></div>', {url: `https://example.test/form/test${embedded ? '?embed=1' : ''}`});
     Object.assign(globalThis, {window: dom.window, document: dom.window.document,
       HTMLElement: dom.window.HTMLElement, CustomEvent: dom.window.CustomEvent});
     window.scrollTo = () => {};
@@ -121,7 +121,7 @@ for (const viewFails of [false, true]) {
     const page = new FormPage('form-page-container');
     page.currentLink = 'test';
     const model = {key: 'test-key', registrationMode: 'waitlist', visibleFields: [], communicationTone: 'formal'};
-    page.currentSession = {formModel: model, payload: {fields: []}, state: {tickets: [{fields: []}]}};
+    page.currentSession = { awaitPendingReservations: async () => {}, captureReservationCapability: () => null, completeReservation: () => {},formModel: model, payload: {fields: []}, state: {tickets: [{fields: []}]}};
     let registrations = 0, reads = 0;
     const token = 'a'.repeat(64);
     page.waitlistCommands = {
@@ -139,8 +139,9 @@ for (const viewFails of [false, true]) {
     assert.equal(registrations, 1);
     assert.equal(reads, 1);
     assert.ok(document.querySelector('.fullscreen-result-overlay .success-color'), 'committed registration stays successful');
-    assert.equal(window.location.search, `?order_id=12&token=${token}`);
+    assert.equal(window.location.search, `?order_id=12&token=${token}${embedded ? "&embed=1" : ""}`);
     assert.equal(window.location.hash, '');
+    assert.equal(RouterService._lastPath, '/order');
     assert.equal(JSON.stringify(window.history.state).includes(token), false);
     assert.ok(viewFails ? page.host.querySelector('[role=alert]') : page.host.textContent.includes('REGISTERED'));
     document.querySelector('.btn-back-to-form').click();

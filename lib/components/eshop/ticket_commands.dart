@@ -37,7 +37,7 @@ abstract interface class TicketCommands {
 
 class SupabaseTicketCommands implements TicketCommands {
   SupabaseTicketCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseTicketCommands.withTransport(this._transport);
 
@@ -47,7 +47,7 @@ class SupabaseTicketCommands implements TicketCommands {
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds) async {
     final response = ClientCommandResponse.from(
       await _transport.invoke('storno_tickets_client_sync_v1', {
-        'p_tickets': ticketIds,
+        'p_tickets': (ticketIds.toSet().toList()..sort()),
       }),
     );
     if (response.code != 200) {

@@ -35,9 +35,16 @@ abstract class LayoutHistoryParticipant {
 }
 
 class LayoutSelectionResult {
-  const LayoutSelectionResult({required this.accepted, this.message});
+  const LayoutSelectionResult({
+    required this.accepted,
+    this.message,
+    this.authoritativeSeatIds,
+  });
   final bool accepted;
   final String? message;
+
+  /// Confirmed authority recovery for requested seats only.
+  final Set<String>? authoritativeSeatIds;
 }
 
 class _Checkpoint {

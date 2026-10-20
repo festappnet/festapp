@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_blueprint(
+CREATE OR REPLACE FUNCTION public.get_blueprint(
     my_secret UUID,
     form_key UUID,
     blueprint_id BIGINT
@@ -43,9 +43,12 @@ BEGIN
         'id', b.id,
         'occasion', b.occasion,
         'created_at', b.created_at,
-        'data', b.data,
+        'data', '{}'::jsonb,
         'title', b.title,
         'layout', public.blueprint_public_document_internal(b.layout), 'layout_revision', b.layout_revision,
+        'expiresAt', (SELECT min(s.secret_expiration_time) FROM eshop.spots s
+          WHERE s.blueprint=b.id AND s.secret=my_secret AND s.order_product_ticket IS NULL
+            AND s.secret_expiration_time>clock_timestamp()),
         'layoutResources', public.blueprint_layout_resources_internal(public.blueprint_public_document_internal(b.layout),b.occasion)
     )
     INTO blueprintData

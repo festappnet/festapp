@@ -310,6 +310,8 @@ if [ "$RUN_AUTOMATION" = true ]; then
       "$SCRIPT_DIR/tests/hetzner_supabase_infrastructure.test.mjs" \
       "$SCRIPT_DIR/tests/edge_function_test_coverage.test.mjs" \
       "$SCRIPT_DIR/tests/abuse_policy_coverage.test.mjs" \
+      "$SCRIPT_DIR/tests/canonical_operation_sources.test.mjs" \
+      "$SCRIPT_DIR/tests/operation_inventory.test.mjs" \
       "$SCRIPT_DIR/tests/server_security_migrations.test.mjs" \
       "$SCRIPT_DIR/tests/data_security_migrations.test.mjs" \
       "$SCRIPT_DIR/hetzner-supabase/monitoring/metrics.test.mjs" \

@@ -1,8 +1,6 @@
--- One admission preflight for the complete atomic unit. These are the same
--- bound blueprint offer, maximum counts and physical/context quantities as checkout.
-CREATE OR REPLACE FUNCTION public.blueprint_hold_admission_internal(p_form bigint,p_spots bigint[],p_secret uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE item record; counts jsonb; requested bigint; occupied bigint; physical bigint; cap bigint;
+-- Shared financial parent locks for hold admission and its atomic-unit wrapper.
+CREATE OR REPLACE FUNCTION public.lock_blueprint_hold_scope_internal(p_spots bigint[])
+RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
  -- Serialize all products and required inventory contexts in canonical ID order.
  PERFORM 1 FROM eshop.products WHERE id IN (SELECT product FROM eshop.spots WHERE id=ANY(p_spots)) ORDER BY id FOR UPDATE;
@@ -10,8 +8,18 @@ BEGIN
   JOIN eshop.product_inventory_contexts pic ON pic.inventory_context=ic.id JOIN eshop.spots s ON s.product=pic.product WHERE s.id=ANY(p_spots)) ORDER BY id FOR UPDATE;
  PERFORM 1 FROM public.inventory_contexts WHERE id IN (SELECT pic.inventory_context FROM eshop.product_inventory_contexts pic
   JOIN eshop.spots s ON s.product=pic.product WHERE s.id=ANY(p_spots)) ORDER BY id FOR UPDATE;
+END $$;
+REVOKE ALL ON FUNCTION public.lock_blueprint_hold_scope_internal(bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
+-- One admission preflight for the complete atomic unit. These are the same
+-- offered fields, maximum counts and physical/context quantities as checkout.
+CREATE OR REPLACE FUNCTION public.blueprint_hold_admission_internal(p_form bigint,p_spots bigint[],p_secret uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE item record; counts jsonb; requested bigint; occupied bigint; physical bigint; cap bigint;
+BEGIN
+ PERFORM public.lock_blueprint_hold_scope_internal(p_spots);
  FOR item IN SELECT p.*,count(*) AS requested FROM eshop.spots s JOIN eshop.products p ON p.id=s.product
-  WHERE s.id=ANY(p_spots) AND NOT coalesce(s.secret=p_secret AND s.secret_expiration_time>statement_timestamp(),false)
+  WHERE s.id=ANY(p_spots) AND NOT coalesce(s.secret=p_secret AND s.secret_expiration_time>clock_timestamp(),false)
   GROUP BY p.id ORDER BY p.id LOOP
   IF item.is_hidden THEN RETURN jsonb_build_object('code',409,'reason','PRODUCT_HIDDEN'); END IF;
   IF NOT EXISTS(SELECT 1 FROM public.blueprint_form_products_internal(p_form) offered WHERE offered.product=item.id AND offered.has_seats) THEN
@@ -19,7 +27,7 @@ BEGIN
   IF coalesce(item.maximum,0)>0 THEN
    SELECT count(*) INTO occupied FROM eshop.order_product_ticket WHERE product=item.id;
    SELECT occupied+count(*) INTO occupied FROM eshop.spots WHERE product=item.id AND order_product_ticket IS NULL
-    AND secret IS NOT NULL AND secret_expiration_time>statement_timestamp();
+    AND secret IS NOT NULL AND secret_expiration_time>clock_timestamp();
    IF occupied+item.requested>item.maximum THEN RETURN jsonb_build_object('code',409,'reason','PRODUCT_CAPACITY_EXCEEDED'); END IF;
   END IF;
   counts:=public.blueprint_product_availability_internal(item.id);
@@ -30,10 +38,10 @@ BEGIN
  FOR item IN SELECT pic.inventory_context,ip.sellable_capacity,sum(pic.quantity)::bigint AS requested
   FROM eshop.spots s JOIN eshop.product_inventory_contexts pic ON pic.product=s.product
   JOIN public.inventory_contexts ic ON ic.id=pic.inventory_context JOIN public.inventory_pools ip ON ip.id=ic.inventory_pool
-  WHERE s.id=ANY(p_spots) AND NOT coalesce(s.secret=p_secret AND s.secret_expiration_time>statement_timestamp(),false)
+  WHERE s.id=ANY(p_spots) AND NOT coalesce(s.secret=p_secret AND s.secret_expiration_time>clock_timestamp(),false)
   GROUP BY pic.inventory_context,ip.sellable_capacity ORDER BY pic.inventory_context LOOP
   SELECT count(*),count(*) FILTER(WHERE order_product_ticket IS NOT NULL OR
-   (secret IS NOT NULL AND secret_expiration_time>statement_timestamp())) INTO physical,occupied
+   (secret IS NOT NULL AND secret_expiration_time>clock_timestamp())) INTO physical,occupied
    FROM eshop.spots WHERE inventory_context=item.inventory_context;
   -- Addressed seats usually have no inventory_context. Their existing spot
   -- holds nevertheless promise all PIC quantities at checkout. Count that
@@ -43,7 +51,7 @@ BEGIN
    INTO occupied FROM eshop.spots held JOIN eshop.product_inventory_contexts pic ON pic.product=held.product
    WHERE pic.inventory_context=item.inventory_context AND held.blueprint IS NOT NULL
     AND held.order_product_ticket IS NULL AND held.secret IS NOT NULL
-    AND held.secret_expiration_time>statement_timestamp();
+    AND held.secret_expiration_time>clock_timestamp();
   cap:=least(physical,coalesce(item.sellable_capacity,physical));
   IF occupied+item.requested>cap THEN RETURN jsonb_build_object('code',409,'reason','PRODUCT_CAPACITY_EXCEEDED'); END IF;
  END LOOP;
@@ -65,7 +73,7 @@ BEGIN
  SELECT * INTO s FROM eshop.spots WHERE id=spot_id AND blueprint=bp FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('code',404,'message','Spot not found'); END IF;
  IF s.order_product_ticket IS NOT NULL THEN RETURN jsonb_build_object('code',409,'message','Spot is already ordered'); END IF;
- IF s.secret_expiration_time<=statement_timestamp() THEN
+ IF s.secret_expiration_time<=clock_timestamp() THEN
   UPDATE eshop.spots SET secret=NULL,secret_expiration_time=NULL WHERE id=spot_id;
   s.secret:=NULL; s.secret_expiration_time:=NULL;
  END IF;
@@ -82,8 +90,8 @@ BEGIN
  IF selecting AND public.get_is_editor_order_on_occasion(occ) IS NOT TRUE THEN
   form_data:=public.get_effective_form_data(fid);
   IF form_open IS NOT TRUE OR
-   (coalesce(form_data#>>'{schedule,start_time}',form_data->>'start_time'))::timestamptz>statement_timestamp() OR
-   (coalesce(form_data#>>'{schedule,end_time}',form_data->>'end_time'))::timestamptz<statement_timestamp() THEN
+   (coalesce(form_data#>>'{schedule,start_time}',form_data->>'start_time'))::timestamptz>clock_timestamp() OR
+   (coalesce(form_data#>>'{schedule,end_time}',form_data->>'end_time'))::timestamptz<clock_timestamp() THEN
    RETURN jsonb_build_object('code',403,'message','Form is not open'); END IF;
  END IF;
  policy:=public.abuse_effective_rules_v1('spot.hold',un,org);
@@ -91,12 +99,12 @@ BEGIN
  FOR r IN SELECT value FROM jsonb_array_elements(policy->'rules') ORDER BY value->>'rule_key' LOOP
   PERFORM pg_advisory_xact_lock(hashtextextended('abuse:'||(r->>'rule_key')||':'||(scopes->>(r->>'scope_kind')),0));
  END LOOP;
- SELECT count(*) INTO held FROM eshop.spots WHERE secret=secret_id AND secret_expiration_time>statement_timestamp() AND order_product_ticket IS NULL;
+ SELECT count(*) INTO held FROM eshop.spots WHERE secret=secret_id AND secret_expiration_time>clock_timestamp() AND order_product_ticket IS NULL;
  costs:=jsonb_build_object('hold.active.buyer',held+1);
  PERFORM public.abuse_charge_v1(policy,scopes,costs);
  SELECT (x->>'base_limit')::integer INTO duration_seconds FROM jsonb_array_elements(public.abuse_effective_rules_v1('hold.duration',un,org)->'rules') x;
  IF duration_seconds IS NULL THEN RAISE configuration_limit_exceeded USING MESSAGE='abuse_policy_missing'; END IF;
- UPDATE eshop.spots SET secret=secret_id,secret_expiration_time=statement_timestamp()+make_interval(secs=>duration_seconds),updated_at=now() WHERE id=spot_id RETURNING * INTO s;
+ UPDATE eshop.spots SET secret=secret_id,secret_expiration_time=clock_timestamp()+make_interval(secs=>duration_seconds),updated_at=now() WHERE id=spot_id RETURNING * INTO s;
  RETURN jsonb_build_object('code',200,'message','Spot selected','expiresAt',s.secret_expiration_time);
 END $$;
 REVOKE ALL ON FUNCTION public.select_spot_single_internal_v1(uuid,uuid,bigint,boolean) FROM PUBLIC,anon,authenticated;
@@ -108,11 +116,13 @@ BEGIN
  PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
  PERFORM pg_advisory_xact_lock(hashtextextended('hold:'||secret_id::text,0));
  ids:=public.blueprint_selection_unit_spots_internal(spot_id);
+ PERFORM 1 FROM public.forms WHERE id=fid FOR UPDATE;
+ PERFORM public.lock_blueprint_hold_scope_internal(ids);
  PERFORM 1 FROM eshop.spots WHERE id=ANY(ids) ORDER BY id FOR UPDATE;
  BEGIN
   IF selecting AND EXISTS(SELECT 1 FROM eshop.spots s LEFT JOIN eshop.blueprint_seat_bindings b ON b.spot=s.id
    WHERE s.id=ANY(ids) AND (b.blocked OR s.product IS NULL)
-    AND NOT coalesce(s.secret=secret_id AND s.secret_expiration_time>statement_timestamp(),false)) THEN
+    AND NOT coalesce(s.secret=secret_id AND s.secret_expiration_time>clock_timestamp(),false)) THEN
    RAISE check_violation USING MESSAGE='BLUEPRINT_SEAT_UNAVAILABLE'; END IF;
   IF selecting THEN
    r:=public.blueprint_hold_admission_internal(fid,ids,secret_id);

@@ -1,0 +1,44 @@
+{
+  "status": "E0_implemented_locally_verified_live_login_pending",
+  "tenant": "festapptickets",
+  "tenantSourceSha": "189148dc8547f2510fd58bd4d9a2eeff2432da71",
+  "operations": [
+    "context.inspect",
+    "ticket_layouts.inspect",
+    "ticket_layouts.preview"
+  ],
+  "businessWritesEnabled": false,
+  "productionApplied": false,
+  "blueprintV2Included": false,
+  "profileImported": "vstupenky-online",
+  "publicActivationVerified": true,
+  "liveUserLoginPerformed": false,
+  "externalMcpClientConfigured": false,
+  "checks": {
+    "nodeTests": 15,
+    "ordinaryRoleSqlTest": "pass",
+    "canonicalPdfRasterPreview": "pass_visually_inspected",
+    "nativeKeychainBindingImport": "pass_real_account_storage_not_tested",
+    "diffCheck": "pass"
+  },
+  "sourceHashes": {
+    "database/tests/ticket_layout_mcp_read_test.sql": "3b7b084f7c784cdc7582fb1c9640b6c6679405b9667c458bcb813cec5ed7ed9d",
+    "tools/festapp/.gitignore": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+    "tools/festapp/README.md": "c98f944942c460a91747f1c8739e63a34b479622a1ab91a364549962049d5a62",
+    "tools/festapp/package-lock.json": "ee2b9b41ca9f2aabbb3c7c952718b7561aee829cf92bd515af2ef875612d2084",
+    "tools/festapp/package.json": "e04c56d70c652d9c4700e52bd64d3041ddccec412a023987af5e639a7532e2ad",
+    "tools/festapp/src/auth/session.mjs": "8f5eb4721f60221ba5dcbfab0900a9a136469f43265e9f2aba09b711ead8e843",
+    "tools/festapp/src/cli/main.mjs": "0f3c1a170270192b75deed84795fe5dd708add8cfa7512ac21bbb7860080a058",
+    "tools/festapp/src/context/profile.mjs": "233a83881ce1a1aab16905b825b85d6baabede9de2309859d643346905b1f48f",
+    "tools/festapp/src/context/tenant-profile.mjs": "80ba809f7e132dcda4a0fe574b330f37b1f71bfedca5e6176d9a7b5abb4628ce",
+    "tools/festapp/src/errors.mjs": "b65d69e96d1362d0f846c1cc05558f2ef769a32554e81a1b45364477bbb787a9",
+    "tools/festapp/src/mcp/server.mjs": "be121db4facc0a60ec5cf490e235650727b63e24b6397b5bcc801c7475e571fd",
+    "tools/festapp/src/operations/catalog.mjs": "93c612e0c6b88c7e8e4fe5585177720f6a21b387d0e99eb6f107c7e63d97e965",
+    "tools/festapp/src/operations/preview.mjs": "2600cfab36dcbc4c0a2d58b8fef996b63d549ebfce73fbcf305b1255dcbefef7",
+    "tools/festapp/test/canonical_preview.ts": "e5939c466f5d69f8614e3c898d284248defe2be03f5c38d39ce74836765ff89c",
+    "tools/festapp/test/context.test.mjs": "9b3c7b83818514b5731b0941102c18db2a7d265b41ec7e980663846a6844b190",
+    "tools/festapp/test/fixture.mjs": "046e312b14c952c6f771eb61da83378b45c6a74fd02fb06fb32b171539c9da33",
+    "tools/festapp/test/operations.test.mjs": "b257b877380ec14826cf111dbc261830f23830a54ffebfdedfb1ad9be95a5ef7",
+    "tools/festapp/test/stdio.test.mjs": "1112850a051ff782555c591a24df513bfa2f36bc20df5691c83c447a8340ab2d"
+  }
+}

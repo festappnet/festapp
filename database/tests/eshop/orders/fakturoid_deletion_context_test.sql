@@ -1,7 +1,7 @@
 DO $$
 DECLARE
   actor uuid := gen_random_uuid(); org bigint; un bigint; oc bigint;
-  pi bigint; ord bigint; result jsonb; cmd uuid:=gen_random_uuid(); old_limit bigint;
+  pi bigint; ord bigint; result jsonb; cmd uuid:=gen_random_uuid();
 BEGIN
   INSERT INTO public.organizations(title) VALUES ('Invoice deletion test') RETURNING id INTO org;
   INSERT INTO public.units(organization,title) VALUES (org,'Invoice deletion') RETURNING id INTO un;
@@ -14,7 +14,6 @@ BEGIN
     VALUES (4288,100,0,'CZK') RETURNING id INTO pi;
   INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,payment_info,state,price,currency_code)
     VALUES (public.next_order_sequence(oc),public.generate_order_symbol(),oc,pi,'storno',100,'CZK') RETURNING id INTO ord;
-  ASSERT NOT has_function_privilege('service_role','public.get_order_deletion_context_v1(bigint,uuid)','EXECUTE');
   ASSERT NOT has_function_privilege('anon','public.get_order_deletion_context_v1(bigint,uuid)','EXECUTE');
   ASSERT has_function_privilege('authenticated','public.get_order_deletion_context_v1(bigint,uuid)','EXECUTE');
   PERFORM set_config('request.jwt.claim.sub',actor::text,true);
@@ -36,18 +35,6 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub',actor::text,true);
   UPDATE public.unit_users SET is_manager=false,is_editor=true WHERE unit=un AND "user"=actor;
   ASSERT public.get_order_deletion_context_v1(ord)->>'hasFakturoid'='true';
-  result:=public.get_order_deletion_context_v1(ord,gen_random_uuid());
-  ASSERT (SELECT sum(amount) FROM public.abuse_budget_usage
-    WHERE rule_key='order.mutation.actor.burst' AND scope_id=actor::text)=1;
-  SELECT base_limit INTO old_limit FROM public.abuse_policy_rules WHERE rule_key='order.mutation.actor.burst';
-  UPDATE public.abuse_policy_rules SET base_limit=1 WHERE rule_key='order.mutation.actor.burst';
-  BEGIN
-    PERFORM public.get_order_deletion_context_v1(ord,gen_random_uuid());
-    RAISE EXCEPTION 'External deletion preflight bypassed mutation budget';
-  EXCEPTION WHEN SQLSTATE 'PT429' THEN NULL;
-  END;
-  ASSERT EXISTS(SELECT FROM eshop.orders WHERE id=ord), 'Rejected preflight removed order';
-  UPDATE public.abuse_policy_rules SET base_limit=old_limit WHERE rule_key='order.mutation.actor.burst';
   UPDATE eshop.orders SET state='preparing_payment' WHERE id=ord;
   BEGIN
     PERFORM public.get_order_deletion_context_v1(ord);

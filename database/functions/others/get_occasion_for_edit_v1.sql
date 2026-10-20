@@ -6,7 +6,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = ''
+SET search_path=public,extensions
 AS $$
 DECLARE
   v_occasion bigint;

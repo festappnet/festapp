@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import { formFieldTitle } from './form_field_labels.js';
 import { html as htmlText } from '../../utils/html.js';
 import { WaitlistStrings } from './waitlist_strings.js';
@@ -29,6 +31,7 @@ if (typeof document !== 'undefined') {
 export class OrderPreview {
 
     static show(form, formModel, priceData, onConfirm, onClose, precalculatedPayload = null, presentation = {}) {
+        const previousFocus = document.activeElement;
         // 1. Calculate and Prepare Data
         const data = { ...OrderPreview._prepareData(form, formModel, priceData, precalculatedPayload), presentation };
         
@@ -78,6 +81,8 @@ export class OrderPreview {
                 overlay.innerHTML = ''; // Cleanup
                 document.body.style.overflow = ''; // Restore Scroll
                 if (onClose) onClose();
+                previousFocus?.focus({ preventScroll: true });
+                revealEmbedStep(previousFocus);
             }, 250); 
         };
 
@@ -127,6 +132,7 @@ export class OrderPreview {
         overlay.style.display = 'flex';
         overlay.offsetHeight; // Force reflow
         overlay.classList.add('visible');
+        revealEmbedStep(overlay);
         
         const content = overlay.querySelector('.order-preview-content');
         const body = overlay.querySelector('.order-preview-body');
@@ -137,6 +143,7 @@ export class OrderPreview {
         let ignoreGesture = false;
         
         const touchStart = (e) => {
+            if (isEmbed()) return;
             // Check if touch target is header or handle
             const isHeader = e.target.closest('.order-preview-header') || e.target.closest('.order-preview-handle-bar');
             
@@ -214,13 +221,13 @@ export class OrderPreview {
         // Ensure the body (scrollable area) is scrolled to show tickets/total/submit
         // "scrolling can be bit slower" -> Custom JS animation required as 'smooth' is browser-fixed.
         setTimeout(() => {
-             if (body) {
+             if (body && !isEmbed()) {
                  OrderPreview._animateScrollToBottom(body, 700); // 700ms duration (User Request)
              }
         }, 150); 
         
         // Disable Body Scroll
-        document.body.style.overflow = 'hidden';
+        if (!isEmbed()) document.body.style.overflow = 'hidden';
         
         RouterService.pushOverlayState('order-preview');
 

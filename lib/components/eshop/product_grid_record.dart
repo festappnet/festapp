@@ -15,7 +15,7 @@ import 'package:trina_grid/trina_grid.dart';
 class ProductGridRecord extends ITrinaRowModel {
   ProductGridRecord(
       {required this.product, required this.commands, this.productTypeTitle});
-  final ProductModel product;
+  ProductModel product;
   final EshopCommands commands;
   final String? productTypeTitle;
   @override
@@ -124,6 +124,7 @@ class ProductGridRecord extends ITrinaRowModel {
         commands: commands,
         productTypeTitle: productTypeTitle ?? record?.productTypeTitle,
         product: ProductModel(
+          aggregateVersion: model?.aggregateVersion ?? 0,
           id: json[EshopColumnIds.PRODUCT_ID] == -1
               ? null
               : json[EshopColumnIds.PRODUCT_ID],
@@ -200,15 +201,19 @@ class ProductGridRecord extends ITrinaRowModel {
   @override
   Future<void> updateMethod(BuildContext context) =>
       ExceptionHandler.guardVoid(context, futureFunction: () async {
-        final productId = await commands.saveProduct(product.toJson());
-        await commands.updateProductInventoryContexts(
-            productId,
-            product.includedInventories
-                .map((link) => {
-                      'inventory_context_id': link.inventoryContextId,
-                      'quantity': link.quantity,
-                    })
-                .toList());
+        final saved = await commands.saveProduct({
+          ...product.toJson(),
+          if (product.id != null)
+            'expected_aggregate_version': product.aggregateVersion,
+          'inventory_contexts': product.includedInventories
+              .map((link) => {
+                    'inventory_context_id': link.inventoryContextId,
+                    'quantity': link.quantity,
+                  })
+              .toList(),
+        });
+        product = product.copyWith(
+            id: saved.id, aggregateVersion: saved.aggregateVersion);
       },
           defaultErrorMessage: OrdersStrings.failedToSaveProduct,
           rethrowError: true);
@@ -217,7 +222,7 @@ class ProductGridRecord extends ITrinaRowModel {
   Future<void> deleteMethod(BuildContext context) async {
     if (id == null) return;
     await ExceptionHandler.guardVoid(context,
-        futureFunction: () => commands.deleteProduct(id!),
+        futureFunction: () => commands.deleteProduct(id!, expectedVersion: product.aggregateVersion),
         defaultErrorMessage: OrdersStrings.failedToDeleteProduct,
         rethrowError: true);
   }

@@ -100,7 +100,8 @@ void main() {
         } else {
           expect(persisted.title, 'Updated lunch');
           expect(controller.hasPendingChanges, isFalse);
-          expect(commands.inclusions.single, [
+          expect(commands.inclusions, isEmpty);
+          expect(commands.saved.single['inventory_contexts'], [
             {'inventory_context_id': 9, 'quantity': 2}
           ]);
         }
@@ -118,22 +119,24 @@ class _Commands implements EshopCommands {
   final inclusions = <List<Map<String, dynamic>>>[];
   bool reject = false;
   @override
-  Future<int> saveProduct(Map<String, dynamic> product) async {
+  Future<SavedProduct> saveProduct(Map<String, dynamic> product) async {
     saved.add(product);
     if (reject) throw StateError('Save rejected');
     persist(product);
-    return product['id'] as int;
+    return SavedProduct(product['id'] as int,
+        (product['expected_aggregate_version'] as int) + 1);
   }
 
   @override
   Future<void> updateProductInventoryContexts(
-      int id, List<Map<String, dynamic>> contexts) async {
+      int id, List<Map<String, dynamic>> contexts,
+      {required int expectedVersion}) async {
     expect(id, 7);
     inclusions.add(contexts);
   }
 
   @override
-  Future<void> deleteProduct(int id) async => throw UnimplementedError();
+  Future<void> deleteProduct(int id, {required int expectedVersion}) async => throw UnimplementedError();
   @override
   Future<Map<String, dynamic>> updateTicketProducts(
           int id, List<Map<String, dynamic>> products) async =>

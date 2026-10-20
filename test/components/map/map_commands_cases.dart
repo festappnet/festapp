@@ -16,13 +16,6 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {'version': 4, 'place': null},
@@ -50,13 +43,6 @@ void main() {
       (name, params) async {
         functionName = name;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -132,13 +118,6 @@ void main() {
         functionName = name;
         parameters = params;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -175,13 +154,6 @@ void main() {
         calls[name] = params;
         final isPath = name == 'save_path_client_sync_v1';
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'unchanged',
           'code': 200,
           'data': {
@@ -229,13 +201,6 @@ void main() {
       (name, params) async {
         functionName = name;
         return {
-          'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
-            'commitId': null,
-            'replayed': false,
-            'occurredAt': '2026-10-15T10:00:00Z'
-          },
           'status': 'applied',
           'code': 200,
           'data': {
@@ -254,11 +219,11 @@ void main() {
     ));
 
     final result = await commands.create(
-      occasionId: 7,
+      unitId: 7,
       link: 'tent',
       svg: '<svg/>',
     );
-    expect(functionName, 'save_icon_client_sync_v1');
+    expect(functionName, 'save_unit_icon_client_sync_v1');
     expect(result.icon?.id, 9);
   });
 }

@@ -11,7 +11,6 @@ import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/ticket_commands.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app_config.dart';
@@ -299,17 +298,7 @@ class DbTickets {
     int spotId1,
     int spotId2,
   ) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.swapSpots(spotId1, spotId2);
-      return;
-    }
-    await _supabase.rpc(
-      'swap_spot_tickets',
-      params: {
-        'spot_id_1': spotId1,
-        'spot_id_2': spotId2,
-      },
-    );
+    await _commands.swapSpots(spotId1, spotId2);
   }
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(

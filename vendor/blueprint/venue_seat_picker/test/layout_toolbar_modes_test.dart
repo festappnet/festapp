@@ -62,10 +62,8 @@ void main() {
       expect(tool('Resize'), findsNothing);
       expect(tool('Rotate'), findsNothing);
       await mount(false);
-      expect(tester.getRect(tool('Select')), select);
-      expect(tester.getRect(tool('Pan')), pan);
-      expect(tool('Select'), findsOneWidget);
-      expect(tool('Pan'), findsOneWidget);
+      expect(tool('Select'), findsNothing);
+      expect(tool('Pan'), findsNothing);
       expect(tool('Resize'), findsNothing);
       expect(tool('Rotate'), findsNothing);
     });

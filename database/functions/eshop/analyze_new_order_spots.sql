@@ -135,6 +135,8 @@ BEGIN
       FROM public.form_fields ff WHERE ff.form=f.id AND ff.is_required=true
       AND ff.is_hidden=false AND ff.type NOT IN ('ticket','spot','product_type')),'[]'::jsonb))
     INTO v_order_form FROM public.forms f WHERE f.occasion=v_occasion_id AND f.is_open=true
+      AND f.blueprint=(SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1])
+      AND NOT EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND blueprint IS DISTINCT FROM (SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1]))
     ORDER BY f.type='ticket' DESC,f.id DESC LIMIT 1;
   RETURN jsonb_build_object(
     'conflicts', COALESCE(v_conflicts, '[]'::jsonb),

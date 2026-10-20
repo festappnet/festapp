@@ -219,6 +219,10 @@ void main() {
       expect(sample.left - marker.right, closeTo(4, .1));
       expect(sample.top, closeTo(marker.top, 1));
       expect(sample.right, lessThanOrEqualTo(375));
+      expect(sample.height, greaterThan(marker.height * 1.5));
+      final text = tester.widget<Text>(find.text(title));
+      expect(text.maxLines, isNull);
+      expect(text.overflow, isNull);
       final semantics = tester.widgetList<Semantics>(find.byType(Semantics))
           .where((widget) => widget.properties.label?.contains(title) == true).single;
       expect(semantics.excludeSemantics, isTrue);

@@ -1,9 +1,9 @@
 // Actual guarded local pipeline proof. No mock image processor, R2 or SQL RPC.
 import {readFileSync} from 'node:fs';import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';import assert from 'node:assert/strict';import sharp from 'sharp';
-const api='http://127.0.0.1:59521',bridge='http://127.0.0.1:59525';
+const api='http://127.0.0.1:59721',bridge='http://127.0.0.1:59725';
 const envPath=process.env.BLUEPRINT_WORKER_ENV;assert(envPath,'BLUEPRINT_WORKER_ENV required');
 const vars=Object.fromEntries(readFileSync(envPath,'utf8').split(/\r?\n/).filter(line=>line&&!line.startsWith('#')).map(line=>{const at=line.indexOf('=');return[line.slice(0,at),line.slice(at+1).replace(/^['"]|['"]$/g,'')]}));
-assert.equal((await(await fetch(bridge+'/health')).json()).project,'festapp-blueprint-b-image-local');
+assert.equal((await(await fetch(bridge+'/health')).json()).project,'festapp-blueprint-1000-image-local');
 const sign=await fetch(api+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:vars.SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:'1+t@t.com',password:'test'})});assert.equal(sign.status,200,'local seeded auth');const token=(await sign.json()).access_token;
 const headers={apikey:vars.SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'};
 const occasion=Number(process.env.BLUEPRINT_OCCASION??1);const blueprint=Number(process.env.BLUEPRINT_ID??1);

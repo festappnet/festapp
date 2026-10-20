@@ -3,6 +3,7 @@ import 'package:venue_seat_picker/venue_seat_picker.dart'
     show GraphicImportFailure;
 
 class BlueprintStrings {
+  static String get reservationExpired => 'FeatureBlueprint.reservationExpired'.tr();
   static String get releaseTemporaryReservation =>
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>

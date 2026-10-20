@@ -7,7 +7,7 @@ import {preset,parseLayout,pdfBox} from './ticketLayout.ts';
 import {sampleData} from './ticketRenderData.ts';
 import {fitText} from './ticketText.ts';
 const families=['Roboto','Roboto Slab','Russo One'];
-const assets=families.map(f=>fontCatalog.find(a=>a.family===f)!);
+const assets=families.map(f=>fontCatalog.find(a=>a.family===f&&a.weight===400&&a.style==='normal')!);
 const local=new Map<string,Uint8Array>();
 for(const a of assets)local.set(a.id,await Deno.readFile(`test/fixtures/ticket_fonts/${a.family.replaceAll(' ','-')}.ttf`));
 function setup(shared=new Map<string,Uint8Array>()) {

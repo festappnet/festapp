@@ -7,7 +7,7 @@ BEGIN
  f:=public.blueprint_test_fixture_internal();
  PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
  r:=public.update_blueprint_client_sync_v1(f->'request',gen_random_uuid());
- PERFORM public.assert_eq(r->>'status','applied','canonical fixture saved');
+ PERFORM public.assert_eq((r->>'code')::int,200,'canonical fixture saved');
  DELETE FROM public.form_fields WHERE form=(f->>'form')::bigint;
  SELECT id INTO spot FROM eshop.spots WHERE blueprint=(f->>'blueprint')::bigint ORDER BY id LIMIT 1;
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)

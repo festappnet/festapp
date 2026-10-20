@@ -192,9 +192,16 @@ class EmailPreviewScenario {
       if (!result.containsKey(entry.key)) continue;
       result[entry.key] = entry.value.replaceAllMapped(
         EmailTemplateRules.tokenPattern,
-        (m) => bindings.containsKey(m[1])
-            ? escapeEmailHtml(bindings[m[1]]!)
-            : m[0]!,
+        (m) {
+          if (!bindings.containsKey(m[1])) return m[0]!;
+          final escaped = escapeEmailHtml(bindings[m[1]]!);
+          // Preserve the renderer's copyable account markup and prevent mail
+          // clients from turning a numeric account into a phone link.
+          return m[1] == 'preview_account_number'
+              ? escaped.replaceAllMapped(RegExp(r'\d{1,3}'),
+                  (digits) => '<span style="display: inline-block;">${digits[0]}</span>')
+              : escaped;
+        },
       );
     }
     if (context.products.isNotEmpty && result.containsKey('amount'))

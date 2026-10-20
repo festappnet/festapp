@@ -20,7 +20,9 @@ class BlueprintModel {
   Map<String, dynamic> layoutResources;
   Map<String, Map<String, dynamic>> areaAvailability;
   int? id;
+  int aggregateVersion;
   DateTime? createdAt;
+  DateTime? reservationExpiresAt;
   Map<String, dynamic>? data;
   String? title;
   int? organization;
@@ -49,6 +51,7 @@ class BlueprintModel {
     final result = BlueprintModel(
       id: json['id'], occasion: json['occasion'], organization: json['organization'],
       title: json['title'],
+      reservationExpiresAt: DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
       createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at']),
       data: json['data'],
       layoutSnapshot: BlueprintLayoutSnapshot.fromJson(json),
@@ -84,6 +87,7 @@ class BlueprintModel {
 
     return BlueprintModel(
       id: json[TbEshop.blueprints.id],
+      aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
       createdAt: json[TbEshop.blueprints.created_at] != null
           ? DateTime.parse(json[TbEshop.blueprints.created_at])
           : null,
@@ -124,6 +128,21 @@ class BlueprintModel {
     return snapshot.toJson();
   }
 
+  /// Authoring never submits the read bundle's orders, tickets or occupancy.
+  Map<String, dynamic> toSaveJson() => {
+        'id': id,
+        'occasion': occasion,
+        'organization': organization,
+        'expected_aggregate_version': aggregateVersion,
+        'title': title,
+        'data': data,
+        'configuration': configuration?.toJson(),
+        'groups': groups?.map((g) => g.toJson()).toList(),
+        'background_svg': backgroundSvg,
+        'objects':
+            objects?.map((o) => o.toJson()..remove('state')).toList() ?? [],
+      };
+
   String toBasicString() => title ?? id.toString();
 
   BlueprintModel({
@@ -131,7 +150,9 @@ class BlueprintModel {
     this.layoutResources = const {},
     this.areaAvailability = const {},
     this.id,
+    this.aggregateVersion = 0,
     this.createdAt,
+    this.reservationExpiresAt,
     this.data,
     this.title,
     this.organization,

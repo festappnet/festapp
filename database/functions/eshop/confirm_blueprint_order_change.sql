@@ -19,6 +19,12 @@ DECLARE
 BEGIN
   PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
+  SELECT occasion INTO v_occasion_id FROM eshop.spots WHERE id=p_spot_ids[1];
+  IF NOT coalesce(public.get_is_editor_order_on_occasion(v_occasion_id),false) THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+  IF EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND secret IS NOT NULL
+    AND secret_expiration_time>clock_timestamp()
+    AND secret IS DISTINCT FROM (p_input_data->>'secret')::uuid) THEN
+    RAISE check_violation USING MESSAGE='BLUEPRINT_SEAT_PROTECTED'; END IF;
   -- Extract Email for validation
   v_email := p_input_data->>'email';
 
@@ -69,7 +75,9 @@ BEGIN
     RAISE EXCEPTION 'The active order form changed. Reopen the order.';
   END IF;
 
-  IF v_form_key IS NULL THEN
+  IF v_form_key IS NULL OR NOT EXISTS(SELECT 1 FROM public.forms f WHERE f.key=v_form_key
+    AND f.blueprint=(SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1]))
+    OR EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND blueprint IS DISTINCT FROM (SELECT blueprint FROM eshop.spots WHERE id=p_spot_ids[1])) THEN
       RAISE EXCEPTION 'No open form found for this occasion to create the new order.';
   END IF;
 

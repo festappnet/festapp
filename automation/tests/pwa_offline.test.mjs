@@ -205,6 +205,10 @@ try {
       }
       if (!networkAvailable) throw new Error('offline');
       networkCalls++;
+      if (url.includes('/settings/mcp-connect')) {
+        assert.equal(options?.cache, 'no-store');
+        return new Response('online consent');
+      }
       if (url.includes('/festapp-version.json')) {
         return new Response(JSON.stringify({ version: serverVersion }), {
           headers: { 'content-type': 'application/json' },
@@ -706,6 +710,14 @@ try {
   assert.match(networkReload, /registration\.update\(\)/);
   assert.doesNotMatch(networkReload, /unregister\(\)/);
   assert.doesNotMatch(networkReload, /caches\.delete|festapp-app-shell-/);
+  const consent = new Request('https://app.test/settings/mcp-connect?request=' + 'R'.repeat(43));
+  Object.defineProperty(consent, 'mode', { value: 'navigate' });
+  networkAvailable = false;
+  await assert.rejects(dispatchFetch(consent), /offline/,
+    'consent must not fall back to a cached Flutter document');
+  networkAvailable = true;
+  assert.equal(await (await dispatchFetch(consent)).text(), 'online consent');
+
   console.log('pwa_offline.test: ok');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

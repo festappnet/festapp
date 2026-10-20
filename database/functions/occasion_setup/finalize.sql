@@ -220,6 +220,22 @@ BEGIN
    END LOOP;
   END LOOP;
  END IF;
+ -- Plans are materialized through the existing price-wave commands, using
+ -- newly mapped product IDs. No source IDs or second scheduler escape.
+ IF coalesce((payload->>'priceWavesEnabled')::boolean,false) AND coalesce((payload->>'formEnabled')::boolean,true)
+   AND EXISTS(SELECT 1 FROM eshop.products p JOIN public.form_fields ff ON ff.product_type=p.product_type
+     WHERE p.occasion=new_id AND ff.form=form_id AND NOT coalesce(ff.is_hidden,false)
+       AND p.price>0 AND NOT coalesce(p.is_hidden,false)) THEN
+  FOR wave IN SELECT value FROM jsonb_array_elements(coalesce(payload->'priceWaves','[]')) LOOP
+   saved_wave:=public.create_product_price_wave((SELECT link FROM public.occasions WHERE id=new_id),(wave->>'change_time')::timestamptz);
+   FOR target IN SELECT value FROM jsonb_array_elements(coalesce(wave->'targets','[]')) LOOP
+    wave_product:=(product_map->>(target->>'product'))::bigint;
+    IF wave_product IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='Price wave product missing'; END IF;
+    PERFORM public.save_product_wave_target((saved_wave->>'id')::bigint,wave_product,(saved_wave->>'revision')::bigint,
+      (target->>'price')::numeric,(target->>'is_hidden')::boolean,NULL,NULL);
+   END LOOP;
+  END LOOP;
+ END IF;
  -- Rebind ticket product-type references only after their new IDs exist.
  IF has_tickets AND payload->'ticketDraft' ? 'layout' THEN
   pt := payload->'ticketDraft'||'{"code":"ticket","is_enabled":true}'::jsonb;

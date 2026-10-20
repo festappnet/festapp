@@ -11,6 +11,8 @@ BEGIN
    RAISE insufficient_privilege USING MESSAGE='blueprint editor required'; END IF;
   INSERT INTO eshop.blueprints(occasion,organization,title) SELECT id,organization,p_blueprint->>'title' FROM public.occasions WHERE id=(p_blueprint->>'occasion')::bigint RETURNING * INTO b;
  ELSE
+  SELECT * INTO b FROM eshop.blueprints WHERE id=(p_blueprint->>'id')::bigint;
+  PERFORM 1 FROM eshop.products WHERE occasion=b.occasion ORDER BY id FOR UPDATE;
   SELECT * INTO b FROM eshop.blueprints WHERE id=(p_blueprint->>'id')::bigint FOR UPDATE;
  END IF;
  IF b.id IS NULL THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_NOT_FOUND'; END IF;
@@ -60,7 +62,7 @@ BEGIN
   IF c->>'operation'='delete' THEN
    IF binding.node_id IS NULL THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_BINDING_NOT_FOUND',DETAIL=c::text; END IF;
    SELECT * INTO s FROM eshop.spots WHERE id=binding.spot;
-   IF s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()) THEN
+   IF s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>clock_timestamp()) THEN
     RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_SEAT_PROTECTED',DETAIL=c::text; END IF;
    DELETE FROM eshop.blueprint_seat_bindings WHERE blueprint=b.id AND node_id=node;
    DELETE FROM eshop.spots WHERE id=s.id;
@@ -85,7 +87,7 @@ BEGIN
   IF spot_id IS NOT NULL THEN
    SELECT * INTO s FROM eshop.spots WHERE id=spot_id AND blueprint=b.id AND occasion=b.occasion;
    IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_SPOT_SCOPE_MISMATCH',DETAIL=c::text; END IF;
-   IF (s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()))
+   IF (s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>clock_timestamp()))
     AND (s.product IS DISTINCT FROM product_id OR s.title IS DISTINCT FROM c->>'title'
      OR coalesce(binding.blocked,false) IS DISTINCT FROM blocked_value OR binding.selection_unit IS DISTINCT FROM unit_id OR binding.group_node IS DISTINCT FROM group_id OR binding.product_assignment_mode IS DISTINCT FROM assignment_mode) THEN
     RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_SEAT_PROTECTED',DETAIL=c::text; END IF;
@@ -127,7 +129,10 @@ BEGIN
    capacity_int:=(c->>'capacity')::bigint;
    IF capacity_int IS NULL OR capacity_int<0 OR capacity_int>1000000 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_INVALID_CAPACITY'; END IF;
    SELECT ip.* INTO pool FROM public.inventory_pools ip JOIN public.inventory_contexts ic ON ic.inventory_pool=ip.id WHERE ic.id=(c->>'inventoryContextId')::bigint;
-   PERFORM public.update_inventory_pool_bundle(jsonb_build_object('pool',to_jsonb(pool)||jsonb_build_object('sellable_capacity',capacity_int)));
+   PERFORM public.update_inventory_pool_bundle(jsonb_build_object('pool',jsonb_build_object(
+    'id',pool.id,'occasion',pool.occasion,'title',pool.title,
+    'description',pool.description,'type',pool.type,'data',pool.data,
+    'sellable_capacity',capacity_int)));
   END IF;
   INSERT INTO eshop.blueprint_area_bindings VALUES(b.id,node,(c->>'inventoryContextId')::bigint,product_id);
  END LOOP;

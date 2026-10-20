@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "coreSourceByteEquivalent": true,
+  "pubSelectedCoreAndWrapper": true,
+  "actualNpmPack": true,
+  "cleanConsumerTemplates": 15,
+  "archivedExampleBuilt": true,
+  "archivedExampleBrowser": true,
+  "requiredNpmFiles": {
+    "src/index.js": "872eca30627240c4ae7d1ed9514e45edd7af6eff8697efe41e81916d2b2c4bb9",
+    "src/index.d.ts": "a6259b131a94d5749f8c7fd63634e04693946eddcbccaad3f300a839008af621",
+    "dist/venue_layout_kernel.js": "d9bf41b1787d6341efcd5168606efdfd85fbdb6e240bb835cfbb6e0a0d873cdd",
+    "dist/manifest.json": "f4a70b933aafafe825ad5a6ee05f0a09db1690e6c1f19e4f3512a4c7511b8d31",
+    "demo/index.html": "fdffd579eb9e9623ee64e866f96d00193d8b88e4d0426854da3bc06e8615c60c",
+    "LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
+    "assets/layout_fonts/fixtures.json": "65274bb0050d5c1da58394053065eaeef0d0cf2bbfcf57dfb4994626d039d33d",
+    "assets/layout_fonts/manifest.json": "8063a7de961f6f4f05661c342286fe896993de6b2b78385701b2a3eff1ad90f6",
+    "assets/layout_fonts/Roboto-OFL.txt": "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41",
+    "assets/layout_fonts/Roboto-400-normal.ttf": "7f3ec5073a282c666c9a0063573345841229caf50ed34d33017e20d441bf5caf",
+    "assets/layout_fonts/Roboto-400-italic.ttf": "cab2f63113328b72dce6b3e1eac7f268a27290911049f79fe760630c7befd861",
+    "assets/layout_fonts/Roboto-700-normal.ttf": "a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d",
+    "assets/layout_fonts/Roboto-700-italic.ttf": "07b9b53ecf7da2d6c4af6841bb5c9e16087594914c6723a782805a4201b3cdc5"
+  }
+}

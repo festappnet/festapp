@@ -1,3 +1,5 @@
+import { isEmbed } from '../../services/embed_context.js';
+import { revealEmbedStep } from '../../services/embed_bridge.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { parseOrganizationIdentity } from './organization_identity.js';
 const t = key => LocalizationService.tr(`OrganizationVerification.${key}`);
@@ -45,6 +47,12 @@ export class OrganizationIdentityFooter {
         dialog.addEventListener('close',()=>{dialog.remove(); if(this.dialog===dialog)this.dialog=null; if(opener.isConnected)opener.focus();},{once:true});
         // Keep Escape owned by this native dialog, including inside order overlays.
         dialog.addEventListener('keydown', event => { if (event.key === 'Escape') event.stopPropagation(); });
-        this.host.append(dialog); dialog.showModal(); close.focus();
+        this.host.append(dialog);
+        if (isEmbed()) {
+            dialog.style.position = 'absolute';
+            dialog.style.top = `${Math.max(0, opener.getBoundingClientRect().top + window.scrollY)}px`;
+            dialog.style.marginBlock = '0';
+        }
+        dialog.showModal(); close.focus({ preventScroll: true }); revealEmbedStep(dialog);
     }
 }

@@ -1,51 +1,23 @@
-CREATE OR REPLACE FUNCTION public.update_speaker_topic(p_occasion BIGINT, p_topic JSONB)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-    v_topic_id BIGINT;
-    v_row      public.speaker_topics%ROWTYPE;
-    v_title    TEXT;
+-- Legacy partial patch adapter. Omitted fields survive; explicit nullable fields clear.
+CREATE OR REPLACE FUNCTION public.update_speaker_topic(p_occasion bigint,p_topic jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE v_id bigint:=(p_topic->>'id')::bigint; v_version bigint; v_payload jsonb; r jsonb;
 BEGIN
-    -- Only editors of the occasion may write the topic catalog.
-    IF NOT public.get_is_editor_on_occasion(p_occasion) THEN
-        RETURN jsonb_build_object('code', 403);
-    END IF;
+ IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  RETURN jsonb_build_object('code',403); END IF;
+ IF v_id IS NOT NULL THEN
+  PERFORM 1 FROM public.speaker_topics WHERE id=v_id AND occasion=p_occasion FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('code',404); END IF;
+  v_payload:=(SELECT to_jsonb(t) FROM public.speaker_topics t WHERE t.id=v_id);
+  SELECT coalesce(v.version,0) INTO v_version FROM (SELECT 1) seed
+   LEFT JOIN public.client_aggregate_versions v ON v.aggregate_type='speaker_topic'
+   AND v.scope_type='occasion' AND v.scope_id=p_occasion AND v.aggregate_id=v_id::text;
+ ELSE v_payload:=jsonb_build_object('title','','order',0,'is_hidden',false); END IF;
+ v_payload:=v_payload||p_topic;
+ IF nullif(btrim(v_payload->>'title'),'') IS NULL THEN RETURN jsonb_build_object('code',400); END IF;
+ r:=public.save_speaker_topic_client_sync_v1(p_occasion,extensions.gen_random_uuid(),v_version,jsonb_build_object('id',v_payload->'id','title',v_payload->'title','order',v_payload->'order','is_hidden',v_payload->'is_hidden'));
+ RETURN jsonb_build_object('code',r->'code','data',r#>'{data,topic}');
+END $$;
 
-    IF p_topic ? 'id' AND (p_topic->>'id') IS NOT NULL THEN
-        -- UPDATE — guarded by occasion to prevent cross-occasion edits.
-        v_topic_id := (p_topic->>'id')::BIGINT;
-
-        UPDATE public.speaker_topics t SET
-            title     = COALESCE(p_topic->>'title', t.title),
-            "order"   = CASE WHEN p_topic ? 'order'     THEN (p_topic->>'order')::BIGINT        ELSE t."order"   END,
-            is_hidden = CASE WHEN p_topic ? 'is_hidden' THEN (p_topic->>'is_hidden')::BOOLEAN   ELSE t.is_hidden END
-        WHERE t.id = v_topic_id AND t.occasion = p_occasion
-        RETURNING t.* INTO v_row;
-
-        IF NOT FOUND THEN
-            RETURN jsonb_build_object('code', 404);
-        END IF;
-    ELSE
-        -- INSERT — a non-empty title is required. Areas have no code/key; the
-        -- only identifier is the hidden primary key id.
-        v_title := p_topic->>'title';
-        IF v_title IS NULL OR btrim(v_title) = '' THEN
-            RETURN jsonb_build_object('code', 400);
-        END IF;
-
-        INSERT INTO public.speaker_topics (occasion, title, "order", is_hidden)
-        VALUES (
-            p_occasion,
-            v_title,
-            COALESCE((p_topic->>'order')::BIGINT, 0),
-            COALESCE((p_topic->>'is_hidden')::BOOLEAN, FALSE)
-        )
-        RETURNING * INTO v_row;
-    END IF;
-
-    RETURN jsonb_build_object('code', 200, 'data', to_jsonb(v_row));
-END;
-$$;
+REVOKE ALL ON FUNCTION public.update_speaker_topic(bigint,jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_speaker_topic(bigint,jsonb) TO authenticated;

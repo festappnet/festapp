@@ -87,6 +87,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     super.initState();
     controller = BlueprintLayoutController(source: widget.source);
     controller.layout.readOnly = !_canEdit;
+    RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
     // Decide once on entry. Inserting or saving never leaves explicit editing.
     _screenMode = _canEdit && controller.layout.document.nodes.isEmpty
         ? _BlueprintScreenMode.edit
@@ -94,8 +95,17 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     _loadAssets();
   }
 
+  void _rightsChanged() {
+    if (!mounted) return;
+    setState(() {
+      controller.layout.readOnly = !_canEdit;
+      if (!_canOrder) controller.setMode(BlueprintLayoutMode.manage);
+    });
+  }
+
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
     _assets.dispose();
     _hostFocus.dispose();
     controller.dispose();
@@ -333,8 +343,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   Future<void> _saveCaptured() async {
+    if (!_canEdit) return;
     await finishBlueprintTextEditing();
-    if (!mounted) return;
+    if (!mounted || !_canEdit) return;
     if (controller.saver.pending == null &&
         !controller.validatePlacementForReservations()) {
       throw StateError('layout_placement_invalid');
@@ -362,6 +373,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         throw const FormatException('canonical_document_required');
       }
     }
+    controller.layout.readOnly = !_canEdit;
+    if (!_canEdit) return;
     final result = await controller.save(
         captured: captured,
         capturedAreaCapacities: capturedAreas,
@@ -498,7 +511,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       child: Text(BlueprintStrings.legendSwapSeats))
                 ],
               ));
-      if (confirmed == true && mounted) {
+      if (confirmed == true && mounted && _canOrder) {
         await controller.swapSelected();
         await _refresh();
         if (mounted) controller.setMode(BlueprintLayoutMode.manage);
@@ -872,8 +885,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       try {
         final updated = product.copyWith(
             title: result['title'] as String, price: result['price'] as double);
-        final id = await DbEshop.updateProduct(updated);
-        if (mounted) controller.upsertCatalogProduct(updated.copyWith(id: id));
+        final saved = await DbEshop.saveProductBasics(updated);
+        if (mounted) controller.upsertCatalogProduct(saved);
       } finally {
         if (mounted) setState(() => _operationPending = false);
       }

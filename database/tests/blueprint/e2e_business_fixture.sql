@@ -9,7 +9,7 @@ DECLARE bp bigint:=(f->>'blueprint')::bigint; occ bigint:=(f->>'occasion')::bigi
  own_secret uuid:=gen_random_uuid(); foreign_secret uuid:=gen_random_uuid();
  inspector_type bigint; inspector_product bigint;
 BEGIN
- IF (SELECT project FROM festapp_test_support.disposable_environment WHERE singleton) IS DISTINCT FROM 'festapp-blueprint-b-e2e-20261019' THEN RAISE EXCEPTION 'owned full E2E project required'; END IF;
+ IF (SELECT project FROM festapp_test_support.disposable_environment WHERE singleton) IS DISTINCT FROM 'festapp-blueprint-1000-e2e-20261020' THEN RAISE EXCEPTION 'owned full E2E project required'; END IF;
  SELECT * INTO b FROM eshop.blueprints WHERE id=bp; IF b.layout IS NULL THEN RAISE EXCEPTION 'real persisted V2 fixture required'; END IF;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);

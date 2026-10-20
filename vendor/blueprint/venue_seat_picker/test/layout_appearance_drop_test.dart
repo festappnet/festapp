@@ -87,7 +87,7 @@ void main() {
       await open(tester, c);
       await tester.pumpAndSettle();
       tester
-          .widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>))
+          .widget<SegmentedButton<String>>(find.byWidgetPredicate((w) => w is SegmentedButton<String> && w.segments.any((s) => s.value == 'children')))
           .onSelectionChanged!({'children'});
       await tester.pumpAndSettle();
       final seatField = find.byKey(const ValueKey('canonical-style-fill'));
@@ -100,7 +100,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('editor-color-Used colors-DCFCE7')),
+        find.byKey(const ValueKey('editor-color-Used colors-267329')),
         findsOneWidget,
       );
       await tester.tap(

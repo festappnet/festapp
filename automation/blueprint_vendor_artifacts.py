@@ -59,8 +59,12 @@ if package['name'] != '@festapp/venue-layout' or package['version'] != '0.3.0':
 for name, expected in receipt['requiredNpmFiles'].items():
     if digest(artifacts / 'npm' / name) != expected:
         raise SystemExit(f'Extracted npm receipt mismatch: {name}')
-shutil.copyfile(archive, HOST / 'web_client' / 'vendor' / pack)
-manifest['archives'][pack] = digest(archive)
+immutable_pack = f'festapp-venue-layout-0.3.0-{digest(archive)[:12]}.tgz'
+target_pack = HOST / 'web_client' / 'vendor' / immutable_pack
+if target_pack.exists() and digest(target_pack) != digest(archive):
+    raise SystemExit('Immutable npm artifact collision')
+shutil.copyfile(archive, target_pack)
+manifest['archives'][immutable_pack] = digest(archive)
 (vendor / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 (vendor / 'README.md').write_text('''# Blueprint distribution snapshot
 

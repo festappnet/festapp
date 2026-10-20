@@ -9,6 +9,7 @@ declare
     v_org_id bigint;
     v_entity_title text;
     v_new_html text;
+    v_before jsonb;
 begin
     -- 1. Validate Entity Type and Permissions
     if p_entity_type = 'occasion' then
@@ -17,9 +18,10 @@ begin
             perform public.raise_error('permission_denied');
         end if;
 
+        SELECT data INTO v_before FROM public.occasions WHERE id=p_entity_id FOR UPDATE;
         -- Update Occasion Data
         update public.occasions
-        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', to_jsonb(p_banner_url))
+        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', coalesce(to_jsonb(p_banner_url),'null'::jsonb))
         where id = p_entity_id
         returning organization, title into v_org_id, v_entity_title;
 
@@ -28,15 +30,25 @@ begin
             perform public.raise_error('permission_denied');
         end if;
 
+        SELECT data INTO v_before FROM public.units WHERE id=p_entity_id FOR UPDATE;
         -- Update Unit Data
         update public.units
-        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', to_jsonb(p_banner_url))
+        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', coalesce(to_jsonb(p_banner_url),'null'::jsonb))
         where id = p_entity_id
         returning organization, title into v_org_id, v_entity_title;
 
     else
         raise exception 'Invalid entity type: %', p_entity_type;
     end if;
+
+    IF v_before IS DISTINCT FROM (CASE WHEN p_entity_type='occasion'
+      THEN (SELECT data FROM public.occasions WHERE id=p_entity_id)
+      ELSE (SELECT data FROM public.units WHERE id=p_entity_id) END) THEN
+      INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+      VALUES(p_entity_type,p_entity_type,p_entity_id,p_entity_id::text,1)
+      ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+      SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
+    END IF;
 
     -- 2. Handle HTML Wrapper Logic
     if p_banner_url is not null then
@@ -45,7 +57,7 @@ begin
         v_new_html := v_new_html || '<div style="text-align: center;">';
         v_new_html := v_new_html || '<img src="' || p_banner_url || '" alt="' || coalesce(v_entity_title, 'Banner') || '" style="width: 100%; height: auto; display: block;">';
         v_new_html := v_new_html || '</div>';
-        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">';
+        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px;">';
         v_new_html := v_new_html || '{{content}}';
         v_new_html := v_new_html || '</div></div>';
 
@@ -77,3 +89,6 @@ begin
     end if;
 end;
 $$;
+
+REVOKE ALL ON FUNCTION public.update_entity_email_banner(text,bigint,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_entity_email_banner(text,bigint,text) TO authenticated;

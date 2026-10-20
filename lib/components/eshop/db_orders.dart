@@ -17,7 +17,6 @@ import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
 import 'package:fstapp/services/toast_helper.dart';
-import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -75,7 +74,7 @@ class DbOrders {
     Map<String, dynamic> inputData,
   ) async {
     final replacement = {
-      'spotIds': spotIds,
+      'spotIds': (spotIds.toSet().toList()..sort()),
       'inputData': inputData,
     };
     return _sendTicketOrderIntent(
@@ -90,12 +89,14 @@ class DbOrders {
     required Map<String, dynamic> payload,
     required String bodyKey,
   }) async {
+    payload = (jsonDecode(jsonEncode(payload)) as Map).cast<String, dynamic>();
     final clientId = await ClientCommandIdentity.clientId();
+    final principalBinding =
+        '${_supabase.rest.url}:${_supabase.auth.currentUser?.id ?? 'anonymous'}';
     final commandId = await ClientCommandIdentity.claimIntent(
       namespace,
       payload,
-      principalBinding:
-          '${_supabase.rest.url}:${_supabase.auth.currentUser?.id ?? 'anonymous'}',
+      principalBinding: principalBinding,
     );
     final response = await _supabase.functions.invoke(
       "send-ticket-order",
@@ -111,22 +112,27 @@ class DbOrders {
         (code == 200 ||
             (code >= 1000 && code < 2000) ||
             (code >= 400 && code < 500 && code != 408 && code != 429))) {
-      await ClientCommandIdentity.completeIntent(namespace, payload);
+      await ClientCommandIdentity.completeIntent(namespace, payload,
+          commandId: commandId, principalBinding: principalBinding);
     }
     return response;
   }
 
-  static Future<void> stornoOrder(int id) async {
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.cancel(id);
-    } else {
-      await _supabase.rpc(
-        'update_order_and_tickets_to_storno_ws_221',
-        params: {'order_id': id},
-      );
-    }
+  static Future<void> stornoOrder(int id) => _orderIntent(
+      'inventory.order.cancel',
+      id,
+      (commandId) => _commands.cancel(id, commandId: commandId));
 
-    await sendStornoTicketOrderEmail(orderId: id);
+  static Future<void> _orderIntent(
+      String operation, int id, Future<void> Function(String) submit) async {
+    final payload = {'order': id};
+    final principal = '${_supabase.rest.url}:${_supabase.auth.currentUser!.id}';
+    final commandId = await ClientCommandIdentity.claimIntent(
+        operation, payload,
+        principalBinding: principal);
+    await submit(commandId);
+    await ClientCommandIdentity.completeIntent(operation, payload,
+        commandId: commandId, principalBinding: principal);
   }
 
   static Future<SpotSelectionResult> selectSpotResult(
@@ -311,9 +317,11 @@ class DbOrders {
       {bool deleteFakturoidInvoice = false}) async {
     if (deleteFakturoidInvoice) {
       final payload = {'orderId': model.id, 'deleteFakturoidInvoice': true};
+      final principal =
+          '${_supabase.rest.url}:${_supabase.auth.currentUser!.id}';
       final commandId = await ClientCommandIdentity.claimIntent(
           'order_delete_fakturoid', payload,
-          principalBinding: _supabase.auth.currentUser?.id);
+          principalBinding: principal);
       try {
         final result = await _supabase.functions.invoke('delete-order', body: {
           ...payload,
@@ -325,22 +333,15 @@ class DbOrders {
         }
         await applyClientCommandReplacements(response);
         await ClientCommandIdentity.completeIntent(
-            'order_delete_fakturoid', payload);
+            'order_delete_fakturoid', payload,
+            commandId: commandId, principalBinding: principal);
       } on FunctionException {
         throw StateError(OrdersStrings.deleteFakturoidInvoiceFailed);
       }
       return;
     }
-    if (ClientSyncRuntime.isV1Selected) {
-      await _commands.delete(model.id!);
-      return;
-    }
-    await _supabase.rpc(
-      'delete_order_221',
-      params: {
-        'order_id': model.id,
-      },
-    );
+    await _orderIntent('inventory.order.delete', model.id!,
+        (commandId) => _commands.delete(model.id!, commandId: commandId));
   }
 
   static Future<void> updateOrderResponses(FormResponseModel responses) async {
@@ -420,26 +421,10 @@ class DbOrders {
     return OrderHistoryBundle(order: order, history: history);
   }
 
-  static Future<FunctionResponse> sendStornoTicketOrderEmail({
-    required int orderId,
-  }) async {
-    final body = {
-      "code": "TICKET_ORDER_STORNO",
-      "data": {"orderId": orderId},
-    };
-
-    try {
-      final response = await _supabase.functions.invoke(
-        "send-email",
-        body: body,
-      );
-
-      return response;
-    } catch (e) {
-      // Unexpected error in sendTicketsToEmail
-      rethrow;
-    }
-  }
+  static Future<FunctionResponse> sendStornoTicketOrderEmail({required int orderId}) =>
+      _supabase.functions.invoke('send-email', body: {
+        'code': 'TICKET_ORDER_STORNO', 'data': {'orderId': orderId},
+      });
 
   static Future<Uint8List?> downloadContractPdf(int orderId) async {
     try {

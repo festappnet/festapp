@@ -579,7 +579,8 @@ self.addEventListener('fetch', (event) => {
 
   // Google handoffs are online proofs. Never cache them or substitute a
   // different platform's shell, even when an older shell is available offline.
-  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth') {
+  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth' ||
+      url.pathname === '/settings/mcp-connect') {
     const callbackClient = event.resultingClientId || event.clientId;
     if (request.mode === 'navigate' && callbackClient) {
       clientCacheNames.delete(callbackClient);

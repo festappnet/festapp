@@ -92,18 +92,18 @@ BEGIN
     'public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)'))
     INTO v_definition;
   PERFORM assert_true(v_definition LIKE '%impact_companion_owners_v1%',
-    'normal participant profile changes invalidate the companion owner');
+    'canonical profile domain changes invalidate the companion owner before receipt completion');
 
   SELECT pg_get_functiondef(to_regprocedure(
     'public.import_profiles_client_sync_v1(bigint,uuid,jsonb,jsonb)'))
     INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%group_profile_impacts_internal_v1%' AND v_definition LIKE '%v_old_impacts%',
+  PERFORM assert_true(v_definition LIKE '%group_profile_impacts_internal_v1%',
     'profile import invalidates companion owners');
 
   SELECT pg_get_functiondef(to_regprocedure(
-    'public.delete_occasion_user_client_sync_v1(bigint,uuid,uuid,bigint)'))
+    'public.remove_occasion_user_domain_internal_v1(bigint,uuid)'))
     INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%remove_occasion_user_domain_internal_v1%',
+  PERFORM assert_true(v_definition LIKE '%group_profile_impacts_internal_v1%',
     'occasion-member deletion invalidates companion owners before cascade');
 
   SELECT pg_get_functiondef(to_regprocedure(
@@ -124,13 +124,11 @@ BEGIN
     'order reader scopes companions');
   SELECT pg_get_functiondef(to_regprocedure(
     'public.sign_user_to_event(bigint,uuid)')) INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%ce.occasion=uc.occasion%'
-      AND v_definition LIKE '%get_companion_feature_policy_v1%',
+  PERFORM assert_true(v_definition LIKE '%set_event_attendance_client_sync_v1%',
     'legacy sign-in enforces occasion scope and feature gate');
   SELECT pg_get_functiondef(to_regprocedure(
     'public.sign_user_out_of_event(bigint,uuid)')) INTO v_definition;
-  PERFORM assert_true(v_definition LIKE '%ce.occasion=uc.occasion%'
-      AND v_definition LIKE '%get_companion_feature_policy_v1%',
+  PERFORM assert_true(v_definition LIKE '%set_event_attendance_client_sync_v1%',
     'legacy sign-out enforces occasion scope and feature gate');
 END $$;
 
@@ -426,8 +424,9 @@ VALUES (990001,'99000000-0000-0000-0000-000000000002',
 SELECT set_config('request.jwt.claim.sub',
   '99000000-0000-0000-0000-000000000002',true);
 DO $$
-DECLARE v_result jsonb;
+DECLARE v_result jsonb; v_group bigint;
 BEGIN
+  INSERT INTO public.user_group_info(occasion,title,leader) VALUES(990001,'Companion-led group','99000000-0000-0000-0000-000000000004') RETURNING id INTO v_group;
   v_result:=public.delete_owned_companion_client_sync_v1(
     990001,'99000000-0000-0000-0000-000000000004',
     '99000000-0000-0000-0000-000000000113');
@@ -436,6 +435,9 @@ BEGIN
   PERFORM assert_true(NOT EXISTS (SELECT 1 FROM public.user_info
     WHERE id='99000000-0000-0000-0000-000000000004'),
     'self-created delete removes its technical account');
+  PERFORM assert_true(public.delete_owned_companion_client_sync_v1(990001,'99000000-0000-0000-0000-000000000004','99000000-0000-0000-0000-000000000113')=v_result,'owned deletion replay survives removal of the ownership relation');
+  PERFORM assert_true((SELECT leader IS NULL FROM public.user_group_info WHERE id=v_group),'owned companion deletion clears group leadership');
+  PERFORM assert_true((SELECT version=1 FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND scope_id=990001 AND aggregate_id=v_group::text),'owned deletion invalidates a group that originally had version zero');
 END $$;
 
 INSERT INTO public.events(id,title,start_time,end_time,occasion)

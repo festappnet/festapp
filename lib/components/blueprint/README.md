@@ -39,6 +39,20 @@ offer closes. Existing active addressed holds count through PIC quantities even
 when the held spot has no direct inventory context. They use the existing spot
 hold records, not a second reservation ledger.
 
+Public checkout checks the form's own blueprint, unique seat IDs and a non-null
+matching, unexpired hold after acquiring its locks. Form schedule and hold expiry
+use the current database clock after lock waits. Successful assignment consumes
+the hold. Only a verified order editor can replace seats without a customer hold;
+another buyer's active hold remains protected. Replacement uses the selected
+blueprint's form and its required ticket answers; payload fields cannot replace
+the server's chosen form or seat list.
+
+Refresh replaces the selection with the public server projection and restores the
+original own-hold `expiresAt`. Public blueprint `data` is an empty allowlisted
+object. Bindings expose sale state and commercial identities, with one catalog
+row per product; order/customer metadata, secrets and private asset originals stay
+outside that projection.
+
 Assigning a blueprint to a form offers its bound seats and capacity areas. No
 duplicate product-type form field is required. Questions and optional product
 fields remain separate. Standing quantity uses the blueprint catalog and the

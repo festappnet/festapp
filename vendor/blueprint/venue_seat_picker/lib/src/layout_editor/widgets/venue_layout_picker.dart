@@ -154,7 +154,10 @@ class _VenueLayoutPickerState extends State<VenueLayoutPicker> {
       final result = await callback(ids, selecting);
       if (!_current(generation)) return;
       setState(() {
-        if (!result.accepted) {
+        if (result.authoritativeSeatIds != null) {
+          _selected.removeAll(ids);
+          _selected.addAll(result.authoritativeSeatIds!.intersection(ids));
+        } else if (!result.accepted) {
           _selected.removeAll(ids);
           _selected.addAll(before.intersection(ids));
         }

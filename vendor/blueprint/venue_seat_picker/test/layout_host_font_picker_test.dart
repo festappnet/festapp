@@ -47,8 +47,8 @@ void main() {
       expect(find.text('Host full font catalog'), findsOneWidget);
       expect(find.byType(EditorFontPicker), findsNothing);
       expect(find.text('Font size'), findsOneWidget);
-      expect(find.text('Bold'), findsOneWidget);
-      expect(find.text('Italic'), findsOneWidget);
+      expect(find.byTooltip('Bold'), findsOneWidget);
+      expect(find.byTooltip('Italic'), findsOneWidget);
       final beforeView = calls;
       await tester.pumpWidget(editor(false));
       await tester.pumpAndSettle();

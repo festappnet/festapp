@@ -37,8 +37,7 @@ BEGIN
             RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
         END IF;
 
-        -- Already-cancelled tickets are an idempotent no-op after authorization.
-        -- They must not invoke the edit guard or create a second cancellation intent.
+        -- Repeated selected tickets in an otherwise active order are a no-op.
         IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
           WHERE opt."order"=v_order_id AND t.id=ANY(p_ticket_ids) AND t.state IS DISTINCT FROM 'storno') THEN
           CONTINUE;
@@ -74,19 +73,7 @@ BEGIN
         -- -----------------------------------------------------
         IF v_remaining_count <= 0 THEN
             -- Helper function to cancel the entire order
-            PERFORM update_order_and_tickets_to_storno_ws_internal_v1(v_order_id);
-            -- Commit cancellation and its durable email intent together. Replays
-            -- cannot reach this branch once the active tickets are cancelled.
-            IF p_send_email AND EXISTS (SELECT 1 FROM eshop.orders WHERE id=v_order_id
-                AND position('@' in data->>'email')>0 AND length(data->>'email')<=320) THEN
-            PERFORM public.enqueue_order_email('TICKET_ORDER_STORNO',
-                jsonb_build_object('order_id', v_order_id),
-                (SELECT organization FROM public.occasions WHERE id=v_occasion_id),
-                v_occasion_id,
-                (SELECT unit FROM public.occasions WHERE id=v_occasion_id),
-                now(), 'last-ticket-cancelled:' || v_order_id);
-            END IF;
-
+            PERFORM public.cancel_order_domain_internal_v1(v_order_id,p_send_email);
 
         -- -----------------------------------------------------
         -- SCENARIO B: Partial Cancellation (Modify Order)

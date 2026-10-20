@@ -35,7 +35,7 @@ abstract interface class CleaningCommands {
 
 class SupabaseCleaningCommands implements CleaningCommands {
   SupabaseCleaningCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client);
+      : _transport = ClientCommandTransport.supabase(client, durable: true);
 
   SupabaseCleaningCommands.withTransport(this._transport);
 

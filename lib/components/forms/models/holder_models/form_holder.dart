@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/reservation_capability_store.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -15,9 +16,23 @@ class FormHolderController {
   final bool demoSimulation;
   String? secret;
   DateTime? reservationExpiresAt;
-  void updateReservationSession(String nextSecret, DateTime? expiresAt) {
+  bool reservationPending = false;
+  ReservationCapabilityStore? capabilityStore;
+  ReservationCapability? capability;
+  Future<void> rememberReservation() async {
+    if (demoSimulation || secret == null) return;
+    capability = await capabilityStore?.remember(secret!, reservationExpiresAt);
+  }
+
+  Future<void> updateReservationSession(String nextSecret, DateTime? expiresAt) async {
     secret = nextSecret;
     reservationExpiresAt = expiresAt;
+    if (expiresAt == null) {
+      await capabilityStore?.clear(capability);
+      capability = null;
+    } else {
+      await rememberReservation();
+    }
   }
 
   final int? blueprintId;

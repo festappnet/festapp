@@ -19,7 +19,8 @@ BEGIN
 
     -- Authorization Check: User must be a member or have editor view permissions on the occasion.
     SELECT EXISTS (SELECT 1 FROM public.user_groups WHERE "group" = p_group_id AND "user" = auth.uid()) INTO v_is_member;
-    v_is_editor_view := get_is_editor_view_on_occasion(v_occasion_id);
+    v_is_editor_view := public.get_is_editor_view_on_occasion(v_occasion_id)
+      OR public.get_is_editor_on_occasion(v_occasion_id);
 
     IF NOT v_is_member AND NOT v_is_editor_view THEN
         RAISE EXCEPTION 'NOT_AUTHORIZED';

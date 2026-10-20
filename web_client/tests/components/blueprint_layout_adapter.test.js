@@ -192,3 +192,65 @@ test('capacity callback uses the bound blueprint catalog without admission form 
     assert.equal(form.payload.ticket[0].fields[0].product_type,9);
     assert.equal((await adapter.requestQuantity('unknown',1)).accepted,false);
 });
+
+test('checkout waits for pending hold and preserves original server deadline', async t => {
+    let finish;
+    t.mock.method(DbForms, 'selectSpot', () => new Promise(resolve => finish = resolve));
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    const pending = adapter.requestSelection(new Set(['a','b']), true);
+    let submitted = false;
+    const checkout = form.awaitPendingReservations().then(() => submitted = true);
+    await Promise.resolve();
+    assert.equal(submitted, false);
+    finish({spotIds:[11,12], expiresAt:'2099-01-01T00:00:00Z'});
+    await pending; await checkout;
+    form.adoptReservation({expiresAt:'2099-01-01T01:00:00Z'});
+    assert.equal(form.reservationExpiresAt, '2099-01-01T00:00:00Z');
+    assert.deepEqual(form.payload.ticket.map(ticket => ticket.spot), [11,12]);
+});
+
+test('lost hold response recovers authoritative payload without retrying hold', async t => {
+    let writes = 0;
+    t.mock.method(DbForms, 'selectSpot', async () => { writes++; throw new Error('network lost'); });
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    const originalDocument = adapter.document;
+    adapter.setReservationReader(async () => {
+        const confirmed = data(); confirmed.spots.forEach(spot => spot.state = 'selected_by_me');
+        confirmed.expiresAt = '2099-01-01T00:00:00Z';
+        return confirmed;
+    });
+    const result = await adapter.requestSelection(new Set(['a','b']), true);
+    assert.equal(result.accepted, false);
+    assert.deepEqual(result.authoritativeSeatIds, ['a','b']);
+    assert.equal(writes, 1);
+    assert.equal(adapter.document, originalDocument);
+    assert.deepEqual(form.payload.ticket.map(ticket => ticket.spot), [11,12]);
+    await form.awaitPendingReservations();
+});
+
+test('unknown state blocks checkout; rejected release restores confirmed ticket fields', async t => {
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    t.mock.method(DbForms, 'selectSpot', async () => {throw new Error('network lost');});
+    await adapter.requestSelection(new Set(['a','b']), true);
+    await assert.rejects(form.awaitPendingReservations(), /reservation_state_unknown/);
+    const own = data(); own.spots.forEach(spot => spot.state = 'selected_by_me');
+    adapter.reconcile(own);
+    const firstTicket = form.state.tickets[0];
+    firstTicket.fields.push({_subFieldId:'note',text:'preserved'});
+    t.mock.method(DbForms, 'selectSpot', async () => {throw Object.assign(new Error('rejected'), {reservationRejected:true});});
+    await assert.rejects(form.removeTicket(0), /rejected/);
+    assert.equal(form.state.tickets[0], firstTicket);
+    assert.equal(form.state.tickets[0].fields[0].text, 'preserved');
+    assert.equal(form.payload.ticket.length, 2);
+});
+
+test('reopen drops stale seat payload and preserves standing tickets', () => {
+    const form = session();
+    form.addTicket({spot:11, spotPrice:100});
+    form.addTicket({_blueprintArea:'standing', fields:[]});
+    const source = data(); source.spots[0] = {id:11};
+    const adapter = new BlueprintLayoutAdapter(source, {session:form, initialSeats:[{id:11}]});
+    assert.equal(adapter.selectedSeats.length, 0);
+    assert.equal(form.payload.ticket.some(ticket => ticket.spot === 11), false);
+    assert.equal(form.state.tickets[0]._blueprintArea, 'standing');
+});

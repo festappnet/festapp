@@ -47,6 +47,8 @@ DECLARE
     field_item JSONB;
     products_array BIGINT[] := '{}';
     form_id BIGINT;
+    form_blueprint BIGINT;
+    selected_spots BIGINT[];
     field_type TEXT;
     key_val RECORD;
     order_data JSONB;
@@ -81,8 +83,8 @@ BEGIN
         END IF;
 
         form_key := (input_data->>'form')::UUID;
-        SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open
-        INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val
+        SELECT id, occasion, bank_account, deadline_duration_seconds, data, is_open, blueprint
+        INTO form_id, occasion_id, bank_account_id, form_deadline_duration, form_data, is_open_val, form_blueprint
         FROM public.forms
         WHERE key = form_key FOR UPDATE;
 
@@ -96,25 +98,6 @@ BEGIN
         form_data := public.get_effective_form_data(form_id);
 
         is_editor := public.get_is_editor_order_on_occasion(occasion_id);
-
-        IF NOT is_editor AND NOT p_offer THEN
-            IF is_open_val IS FALSE THEN
-                 RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1021, 'message', 'Form is closed')::TEXT;
-            END IF;
-
-            -- Check for start_time and end_time constraints only if not editor
-            IF COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time') IS NOT NULL THEN
-                IF now < (COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time'))::TIMESTAMPTZ THEN
-                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1019, 'message', 'Form is not yet open')::TEXT;
-                END IF;
-            END IF;
-
-            IF COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time') IS NOT NULL THEN
-                IF now > (COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time'))::TIMESTAMPTZ THEN
-                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1020, 'message', 'Form is closed')::TEXT;
-                END IF;
-            END IF;
-        END IF;
 
         -- Fetch organization, unit, and occasion title from the occasion
         SELECT organization, unit, title, features
@@ -174,6 +157,33 @@ BEGIN
           RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','FORM_CAPACITY_EXCEEDED',
             'capacity',public.get_form_capacity_snapshot_internal(form_id))::text; END IF;
         PERFORM public.lock_ticket_order_products_internal(order_id,input_data);
+        SELECT coalesce(array_agg((t->>'spot')::bigint),'{}') INTO selected_spots
+        FROM jsonb_array_elements(input_data->'ticket') t WHERE t->>'spot' IS NOT NULL;
+        IF cardinality(selected_spots)<>(SELECT count(DISTINCT id) FROM unnest(selected_spots) id) THEN
+          RAISE EXCEPTION '%',jsonb_build_object('code',1007,'message','Duplicate spot')::text; END IF;
+        -- Admission locks product/inventory parents before any seat row. The
+        -- occasion scope is acquired by every caller before form/order parents.
+        PERFORM 1 FROM eshop.spots WHERE id=ANY(selected_spots) ORDER BY id FOR UPDATE;
+        now:=clock_timestamp();
+        IF NOT is_editor AND NOT p_offer THEN
+            IF is_open_val IS NOT TRUE THEN
+                 RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1021, 'message', 'Form is closed')::TEXT;
+            END IF;
+
+            -- Check for start_time and end_time constraints only if not editor
+            IF COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time') IS NOT NULL THEN
+                IF now < (COALESCE(form_data->'schedule'->>'start_time', form_data->>'start_time'))::TIMESTAMPTZ THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1019, 'message', 'Form is not yet open')::TEXT;
+                END IF;
+            END IF;
+
+            IF COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time') IS NOT NULL THEN
+                IF now > (COALESCE(form_data->'schedule'->>'end_time', form_data->>'end_time'))::TIMESTAMPTZ THEN
+                    RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1020, 'message', 'Form is closed')::TEXT;
+                END IF;
+            END IF;
+        END IF;
+
         UPDATE eshop.orders SET state='ordered' WHERE id=order_id;
 
         PERFORM public.validate_waitlist_answers_internal(form_id,input_data,input_data->'ticket',false);
@@ -204,7 +214,14 @@ BEGIN
                 END IF;
 
                 spot_secret := (input_data->>'secret')::UUID;
-                IF spot_data.secret IS DISTINCT FROM spot_secret THEN
+                IF (NOT coalesce(is_editor,false) AND
+                     (spot_secret IS NULL OR spot_data.secret IS NULL
+                      OR spot_data.secret IS DISTINCT FROM spot_secret
+                      OR spot_data.secret_expiration_time IS NULL
+                      OR spot_data.secret_expiration_time <= clock_timestamp()))
+                   OR (coalesce(is_editor,false) AND spot_data.secret IS NOT NULL
+                       AND spot_data.secret_expiration_time > clock_timestamp()
+                       AND spot_data.secret IS DISTINCT FROM spot_secret) THEN
                     RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1009, 'message', 'Invalid secret for spot')::TEXT;
                 END IF;
 
@@ -378,7 +395,7 @@ BEGIN
                 IF spot_id IS NOT NULL THEN
                     IF product_id = spot_product.id THEN
                         UPDATE eshop.spots
-                        SET order_product_ticket = order_product_ticket_id, updated_at = now
+                        SET order_product_ticket = order_product_ticket_id, secret = NULL, secret_expiration_time = NULL, updated_at = now
                         WHERE id = spot_id;
                     END IF;
                 END IF;

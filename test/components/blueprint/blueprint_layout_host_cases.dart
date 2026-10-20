@@ -155,6 +155,33 @@ void main() {
     expect(resolveNodeAppearance(unchanged, table).label['italic'], true);
   });
 
+  test('permission loss blocks draft save and retains the confirmed layout', () async {
+    var calls = 0;
+    final controller = BlueprintLayoutController(
+      source: BlueprintModel(layoutSnapshot: snapshot()),
+      saver: BlueprintLayoutSaver(Commands((input) async {
+        calls++;
+        return accepted(input);
+      })),
+    );
+    addTearDown(controller.dispose);
+    final confirmed = controller.layout.document;
+    controller.layout.readOnly = true;
+    await expectLater(controller.save(), throwsStateError);
+    expect(calls, 0);
+    expect(controller.layout.document, same(confirmed));
+    expect(controller.saver.pending, isNull);
+  });
+  test('public blueprint preserves authoritative reservation expiry on reopen', () {
+    final model = BlueprintModel.fromJson({
+      ...snapshot().toJson(),
+      'expiresAt': '2026-10-20T11:12:13Z',
+      'spots': [],
+      'products': [],
+    });
+    expect(model.reservationExpiresAt, DateTime.utc(2026, 10, 20, 11, 12, 13));
+    expect(model.layoutSnapshot!.document.toJson(), snapshot().document.toJson());
+  });
   test('new row seats retain generated row-letter commercial titles', () {
     final source = BlueprintModel(
         layoutSnapshot: BlueprintLayoutSnapshot(

@@ -272,32 +272,11 @@ SET search_path = public, extensions
                 SET blueprint = new_blueprint_id,
                     updated_at = now
               WHERE id = v_form_id;
+             INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+             VALUES('form','occasion',occ_id,v_form_id::text,1)
+             ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+             SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
          END IF;
      END IF;
  END;
  $$;
-
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_occasion bigint; v_version bigint; v_response jsonb;
-BEGIN
-  v_occasion:=NULLIF(input_data->>'id','')::bigint;
-  IF v_occasion IS NULL THEN
-    PERFORM public.create_occasion_client_sync_v1(
-      extensions.gen_random_uuid(),input_data);
-    RETURN;
-  END IF;
-  SELECT COALESCE(v.version,0) INTO v_version
-    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
-      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
-  v_response:=public.save_occasion_client_sync_v1(v_occasion,
-    extensions.gen_random_uuid(),v_version,input_data);
-  IF v_response->>'status'='conflict' THEN
-    RAISE serialization_failure USING MESSAGE='Occasion changed; reload before saving';
-  ELSIF v_response->>'status' IS DISTINCT FROM 'applied' THEN
-    RAISE invalid_parameter_value USING MESSAGE='Occasion save rejected';
-  END IF;
-END; $$;
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;

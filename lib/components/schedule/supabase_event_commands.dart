@@ -8,16 +8,10 @@ import 'package:fstapp/components/schedule/event_commands.dart';
 /// Statically bound event command adapter. RPC names are implementation
 /// details and cannot be selected by feature/UI callers.
 class SupabaseEventCommands implements EventCommands {
-  SupabaseEventCommands(SupabaseClient client,
-      {bool Function()? useClientSyncDelete})
-      : _transport = ClientCommandTransport.supabase(client),
-        _legacyDelete =
-            ((id) => client.rpc('delete_event', params: {'p_event': id})),
-        _useClientSyncDelete = useClientSyncDelete ?? (() => true);
+  SupabaseEventCommands(SupabaseClient client)
+      : _transport = ClientCommandTransport.supabase(client);
 
   final ClientCommandTransport _transport;
-  final Future<Object?> Function(int?) _legacyDelete;
-  final bool Function() _useClientSyncDelete;
 
   @override
   Future<EventCommandResult> save(EventModel event) async {
@@ -35,15 +29,6 @@ class SupabaseEventCommands implements EventCommands {
 
   @override
   Future<EventCommandResult> delete(EventModel event) async {
-    if (!_useClientSyncDelete()) {
-      final raw = await _legacyDelete(event.id);
-      final code = raw is Map && raw['code'] != null
-          ? (raw['code'] as num).toInt()
-          : null;
-      if (code != 200) throw Exception('delete_event failed with code $code');
-      return EventCommandResult(
-          status: EventCommandStatus.applied, version: event.aggregateVersion);
-    }
     final occasionId = event.occasionId;
     final eventId = event.id;
     if (occasionId == null || eventId == null) {

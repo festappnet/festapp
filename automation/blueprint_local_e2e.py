@@ -2,9 +2,9 @@
 """Restore ONLY the owned disposable Blueprint B full backend; never production."""
 import json, os, pathlib, re, subprocess, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BACKEND = pathlib.Path('/Users/miakh/source/festapp-blueprint-b-e2e-20261019')
-PROJECT = 'festapp-blueprint-b-e2e-20261019'
-LOG = pathlib.Path('/tmp/blueprint-b-rebootstrap.log')
+BACKEND = pathlib.Path('/Users/miakh/source/festapp-blueprint-1000-e2e-20261020')
+PROJECT = 'festapp-blueprint-1000-e2e-20261020'
+LOG = pathlib.Path('/tmp/blueprint-1000-rebootstrap.log')
 ENV = dict(os.environ, PGPASSWORD='postgres')
 LOG.touch(mode=0o600, exist_ok=True); LOG.chmod(0o600)
 def run(args, *, text=None, capture=False, sensitive=False):
@@ -14,16 +14,16 @@ def run(args, *, text=None, capture=False, sensitive=False):
         raise RuntimeError('Command failed: '+str(args[0])+'; inspect private log '+str(LOG))
     return result.stdout if capture else None
 def sql(query, user='postgres', capture=False, sensitive=False):
-    return run(['psql','-h','127.0.0.1','-p','59522','-U',user,'-d','postgres','-X','-qAt','-v','ON_ERROR_STOP=1'],text=query,capture=capture,sensitive=sensitive)
+    return run(['psql','-h','127.0.0.1','-p','59722','-U',user,'-d','postgres','-X','-qAt','-v','ON_ERROR_STOP=1'],text=query,capture=capture,sensitive=sensitive)
 def file_sql(path,user='postgres'):
-    run(['psql','-h','127.0.0.1','-p','59522','-U',user,'-d','postgres','-X','-q','-v','ON_ERROR_STOP=1','-f',str(path)])
+    run(['psql','-h','127.0.0.1','-p','59722','-U',user,'-d','postgres','-X','-q','-v','ON_ERROR_STOP=1','-f',str(path)])
 def private_json(path,value):
     with os.fdopen(os.open(path,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600),'w') as target: target.write(json.dumps(value))
     path.chmod(0o600)
 def main():
     if pathlib.Path.cwd().resolve()!=ROOT: raise RuntimeError('Run from the isolated source checkout')
     config=(BACKEND/'supabase/config.toml').read_text()
-    if f'project_id = "{PROJECT}"' not in config or 'port = 59521' not in config or 'port = 59522' not in config:
+    if f'project_id = "{PROJECT}"' not in config or 'port = 59721' not in config or 'port = 59722' not in config:
         raise RuntimeError('Owned disposable project identity/ports mismatch')
     print('Starting owned Blueprint disposable backend',flush=True)
     run(['supabase','start','--workdir',str(BACKEND),'--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'])
@@ -80,8 +80,8 @@ CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;
     sql("UPDATE cron.job SET active=false",user="supabase_admin")
     sql("UPDATE public.email_capacity SET paused=true,worker_url=NULL; NOTIFY pgrst, 'reload schema';")
     status=json.loads(run(['supabase','status','--workdir',str(BACKEND),'--output','json'],capture=True,sensitive=True))
-    if status.get('API_URL')!='http://127.0.0.1:59521':raise RuntimeError('Unexpected API target')
-    private_json(BACKEND/'private-defines.json',{'FESTAPP_SUPABASE_URL':status['API_URL'],'FESTAPP_SUPABASE_ANON_KEY':status['ANON_KEY'],'FESTAPP_E2E_BACKEND_PORT':'59521','FESTAPP_E2E_IMAGE_PORT':'59525','FESTAPP_OCCASION_SETUP':'true'})
+    if status.get('API_URL')!='http://127.0.0.1:59721':raise RuntimeError('Unexpected API target')
+    private_json(BACKEND/'private-defines.json',{'FESTAPP_SUPABASE_URL':status['API_URL'],'FESTAPP_SUPABASE_ANON_KEY':status['ANON_KEY'],'FESTAPP_E2E_BACKEND_PORT':'59721','FESTAPP_E2E_IMAGE_PORT':'59725','FESTAPP_OCCASION_SETUP':'true'})
     print('Owned backend ready; email delivery paused and every cron job inactive',flush=True)
 if __name__=='__main__':
     try:main()

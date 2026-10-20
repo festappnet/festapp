@@ -181,7 +181,8 @@ BEGIN
   SELECT value->'layout' INTO old_layout FROM jsonb_array_elements(COALESCE(p_old,'[]')) WHERE value->>'code'='ticket';
   next_layout:=old_layout;
   IF p_change IS NOT NULL THEN
-    IF jsonb_typeof(p_change)<>'object' OR NOT (p_change ? 'expected' AND p_change ? 'next') THEN RAISE EXCEPTION 'Invalid ticket layout change'; END IF;
+    IF jsonb_typeof(p_change)<>'object' OR NOT (p_change ? 'expected' AND p_change ? 'next')
+      OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_change) k WHERE k NOT IN ('expected','next','appearance')) THEN RAISE EXCEPTION 'Invalid ticket layout change'; END IF;
     IF COALESCE(old_layout,'null') IS DISTINCT FROM p_change->'expected' THEN
       RAISE EXCEPTION 'ticket_layout_conflict' USING ERRCODE='40001';
     END IF;
@@ -224,3 +225,29 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path = public, extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) TO service_role;
+
+-- Only appearance fields may be copied from the ticket editor. Owned image metadata
+-- is the authority for new backgrounds; no network resource is fetched by SQL.
+CREATE OR REPLACE FUNCTION public.merge_ticket_appearance_internal_v1(p_occasion bigint,p_features jsonb,p_appearance jsonb)
+RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
+DECLARE result jsonb:='[]'; feature jsonb; background text; old_background text;
+BEGIN
+ IF p_appearance IS NULL THEN RETURN p_features; END IF;
+ IF jsonb_typeof(p_appearance) IS DISTINCT FROM 'object'
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_appearance) k WHERE k NOT IN ('background','ticket_type'))
+  OR (p_appearance ? 'ticket_type' AND p_appearance->>'ticket_type' IS NOT NULL
+    AND p_appearance->>'ticket_type' NOT IN ('wide','named')) THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid ticket appearance'; END IF;
+ SELECT f->>'background' INTO old_background FROM jsonb_array_elements(p_features) f WHERE f->>'code'='ticket';
+ background:=p_appearance->>'background';
+ IF background IS NOT NULL AND background IS DISTINCT FROM old_background AND NOT EXISTS(
+  SELECT 1 FROM public.images i JOIN public.occasions o ON o.id=p_occasion
+  WHERE i.link=background AND (i.occasion=o.id OR i.unit=o.unit)) THEN
+  RAISE insufficient_privilege USING MESSAGE='ticket background must belong to this occasion or unit'; END IF;
+ FOR feature IN SELECT value FROM jsonb_array_elements(p_features) LOOP
+  IF feature->>'code'='ticket' THEN feature:=feature||p_appearance; END IF;
+  result:=result||jsonb_build_array(feature);
+ END LOOP;
+ RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.merge_ticket_appearance_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;

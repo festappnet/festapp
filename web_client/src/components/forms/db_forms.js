@@ -84,6 +84,7 @@ export class DbForms {
 
         if (data && data.code !== 200) {
             const rejection = new Error(data.message || data.reason || 'Selection failed');
+            rejection.reservationRejected = true;
             rejection.reason = data.reason; rejection.issues = data.issues;
             throw rejection;
         }

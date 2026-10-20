@@ -1,3 +1,4 @@
+import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import './user_header.css';
@@ -17,6 +18,7 @@ export class UserHeader extends HTMLElement {
     }
 
     connectedCallback() {
+        if (isEmbed()) { this.hidden = true; return; }
         // Moving the same header between the app and an overview reconnects it.
         // Keep its rendered navigation; rights updates own subsequent rendering.
         

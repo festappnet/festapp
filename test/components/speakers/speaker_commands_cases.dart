@@ -15,8 +15,8 @@ void main() {
         parameters = params;
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'
@@ -66,8 +66,8 @@ void main() {
         if (name == 'delete_speaker_topic_client_sync_v1') {
           return {
             'mutation': {
-              'commandId': '00000000-0000-4000-8000-000000000001',
-              'receiptId': '00000000-0000-4000-8000-000000000001',
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
               'commitId': null,
               'replayed': false,
               'occurredAt': '2026-10-15T10:00:00Z'
@@ -80,8 +80,8 @@ void main() {
         }
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'
@@ -122,8 +122,8 @@ void main() {
         calls.add(name);
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'
@@ -168,8 +168,8 @@ void main() {
         parameters = params;
         return {
           'mutation': {
-            'commandId': '00000000-0000-4000-8000-000000000001',
-            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': null,
             'replayed': false,
             'occurredAt': '2026-10-15T10:00:00Z'

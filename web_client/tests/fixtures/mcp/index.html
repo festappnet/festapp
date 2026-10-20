@@ -1,0 +1,13 @@
+<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>MCP consent fixture</title><div id="consent"></div><script type="module">
+import { McpConnectionPage } from '/src/components/mcp/mcp_connection_page.js';
+import { LocalizationService } from '/src/services/localization_service.js';
+LocalizationService.translations = await (await fetch('/assets/translations/cs.json')).json();
+const operations = [];
+const client = { auth: { getSession: async () => ({data:{session:{user:{email:'1+synthetic@example.test'}}}}) }, functions:{invoke:async(name,{body})=>{
+    operations.push({operation:body.operation,access:body.access});
+    return {data:body.operation==='details'?{client:'Codex',applicationType:'native',occasions:[{id:99,title:'První akce'},{id:100,title:'Druhá akce'}]}:body.operation==='status'?{status:'connected'}:{resumeUrl:'https://mcp.festapp.net/connect/fixture/finish?resume='+'S'.repeat(43)}};
+}}};
+const popup = {opener:{},location:{replace(){}},close(){this.closed=true;}};
+const page = new McpConnectionPage(document.getElementById('consent'),{client,browser:{location:{href:location.origin+'/settings/mcp-connect?request='+'R'.repeat(43)},open(){return popup;},close(){}}});
+await page.init(); window.consentFixture={ready:true,read:()=>({state:page.state,selected:[...page.selected],operations,popupClosed:popup.closed,openerIsNull:popup.opener===null})};
+</script></html>

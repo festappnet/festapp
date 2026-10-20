@@ -98,8 +98,7 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
           : product.copyWith(
               title: result['title'] as String,
               price: result['price'] as double);
-      final id = await DbEshop.updateProduct(updated);
-      updated = updated.copyWith(id: id);
+      updated = await DbEshop.saveProductBasics(updated);
       // Catalog persistence is immediate and deliberately outside layout undo.
       final blueprint = widget.blueprint;
       if (blueprint != null) {

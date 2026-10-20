@@ -23,6 +23,6 @@ def main():
     sql("SELECT vault.create_secret('"+secret+"','blueprint_image_processing_v1','Disposable local image registration') WHERE NOT EXISTS(SELECT 1 FROM vault.secrets WHERE name='blueprint_image_processing_v1');",user='supabase_admin')
     # Reusing an already initialized environment uses its existing vault value.
     secret=sql("SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name='blueprint_image_processing_v1'",user='supabase_admin',capture=True,sensitive=True).strip()
-    env=BACKEND/'private-worker.env';env.write_text('IMAGE_PROCESSING_SERVICE_SECRET='+secret+'\nSUPABASE_ANON_KEY='+json.loads((BACKEND/'private-defines.json').read_text())['FESTAPP_SUPABASE_ANON_KEY']+'\nCONTROL_ALLOWED_ORIGINS=http://127.0.0.1:59600,http://127.0.0.1:59601\n');env.chmod(0o600)
+    env=BACKEND/'private-worker.env';env.write_text('IMAGE_PROCESSING_SERVICE_SECRET='+secret+'\nSUPABASE_ANON_KEY='+json.loads((BACKEND/'private-defines.json').read_text())['FESTAPP_SUPABASE_ANON_KEY']+'\nCONTROL_ALLOWED_ORIGINS=http://127.0.0.1:59740,http://127.0.0.1:59741\n');env.chmod(0o600)
     print('Synthetic fixture ready: form '+str(fixture['form'])+', blueprint '+str(fixture['blueprint'])+'; private manifest '+str(manifest))
 if __name__=='__main__':main()

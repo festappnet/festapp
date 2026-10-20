@@ -45,6 +45,15 @@ BEGIN
       USING MESSAGE = 'disable client_sync_v1 before hiding occasion';
   END IF;
 
+  -- A layout-only command must not manufacture data/features or run general settings effects.
+  IF p_config ? 'ticket_layout_change' AND p_config - ARRAY['id','ticket_layout_change']='{}'::jsonb THEN
+    IF NOT public.can_edit_ticket_layout(p_occasion) THEN
+      RAISE insufficient_privilege USING MESSAGE='unit editor required';
+    END IF;
+    RETURN public.save_occasion_domain_command_internal_v1(
+      p_occasion,p_command_id,p_expected_version,p_config);
+  END IF;
+
   v_data := CASE
     WHEN jsonb_typeof(p_config->'data') = 'object' THEN p_config->'data'
     ELSE '{}'::jsonb

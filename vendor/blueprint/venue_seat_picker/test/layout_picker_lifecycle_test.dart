@@ -63,6 +63,40 @@ void main() {
     },
   );
 
+  testWidgets('authority recovery wins over optimistic rollback', (
+    tester,
+  ) async {
+    final id = newLayoutId();
+    final doc = VenueLayoutDocument(
+      nodes: [LayoutNode(id: id, kind: 'seat', x: 100, y: 100)],
+    );
+    final response = Completer<LayoutSelectionResult>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: VenueLayoutPicker(
+            document: doc,
+            onSelectionRequested: (_, __) => response.future,
+          ),
+        ),
+      ),
+    );
+    tester.widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface)).onTap!(
+      const Offset(100, 100),
+    );
+    await tester.pump();
+    response.complete(
+      LayoutSelectionResult(accepted: false, authoritativeSeatIds: {id}),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
+          .presentation[id]['selected'],
+      true,
+    );
+  });
+
   final seatId = newLayoutId(), areaId = newLayoutId();
   VenueLayoutDocument document() => VenueLayoutDocument.empty().copyWith(
     nodes: [

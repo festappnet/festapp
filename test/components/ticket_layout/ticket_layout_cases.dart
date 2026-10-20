@@ -851,7 +851,7 @@ void main() {
     final first = TicketLayoutService(transport: transport),
         second = TicketLayoutService(transport: transport);
     final a =
-            catalog.firstWhere((f) => f['family'] == 'Roboto')['id'] as String,
+            catalog.firstWhere((f) => f['family'] == 'Roboto' && f['weight'] == 400 && f['style'] == 'normal')['id'] as String,
         b = catalog.firstWhere((f) => f['family'] == 'Russo One')['id']
             as String;
     final concurrent = await Future.wait([first.font(1, a), second.font(1, a)]);

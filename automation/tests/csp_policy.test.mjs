@@ -35,6 +35,7 @@ test('manifest binds each actual document and detects changed, missing and added
 test('source header copies use the same canonical owner and retain hosting rules', async () => {
  const {BASE_POLICY} = await import('../lib/csp_policy.mjs');
  const template = await readFile(new URL('../lib/web_headers.template',import.meta.url),'utf8');
+ assert.match(template, /\/embed\.js\n  Cache-Control: public, max-age=300, must-revalidate/);
  const expected = template.replace('/*\n',`/*\n  Content-Security-Policy: ${BASE_POLICY}\n`);
  for (const file of ['../../web/_headers','../../web_client/public/_headers']) assert.equal(await readFile(new URL(file,import.meta.url),'utf8'),expected);
 });

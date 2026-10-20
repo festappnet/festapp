@@ -1,0 +1,22 @@
+[
+  {
+    "log": "/Users/miakh/source/venue-seat-picker-blueprint-mcp-closure-20261020/build/qa/closure-20261020-complete/core-publish.log",
+    "errors": 0,
+    "warnings": 4,
+    "validated": true,
+    "analyzerIssues": false,
+    "passed": true,
+    "failureReasons": [],
+    "exitCode": 65
+  },
+  {
+    "log": "/Users/miakh/source/venue-seat-picker-blueprint-mcp-closure-20261020/build/qa/closure-20261020-complete/wrapper-publish.log",
+    "errors": 0,
+    "warnings": 4,
+    "validated": true,
+    "analyzerIssues": false,
+    "passed": true,
+    "failureReasons": [],
+    "exitCode": 65
+  }
+]

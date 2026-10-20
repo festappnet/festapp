@@ -25,6 +25,7 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE = 'occasion editor required';
   END IF;
 
+  PERFORM public.lock_event_deletion_scope_internal_v1(v_occasion,ARRAY[p_event]);
   PERFORM 1
   FROM public.events e
   JOIN public.event_speakers es

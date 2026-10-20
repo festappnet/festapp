@@ -1,9 +1,13 @@
-CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_apply_v1(p_occasion_id bigint, p_rows jsonb, p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'extensions'
-AS $function$
+CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_apply_v1(
+    p_occasion_id bigint,
+    p_rows jsonb,
+    p_delete_user_ids jsonb DEFAULT '[]'::jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     v_unit_id bigint;
     v_organization_id bigint;
@@ -21,6 +25,7 @@ DECLARE
     v_created integer := 0;
     v_updated integer := 0;
     v_deleted integer := 0;
+    v_global_before jsonb;
 BEGIN
     SELECT o.unit, u.organization
       INTO v_unit_id, v_organization_id
@@ -47,6 +52,62 @@ BEGIN
     IF jsonb_array_length(p_rows) > 10000
        OR jsonb_array_length(p_delete_user_ids) > 10000 THEN
         RAISE EXCEPTION 'IMPORT_PAYLOAD_TOO_LARGE';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(p_rows) item
+         WHERE jsonb_typeof(item) <> 'object'
+            OR jsonb_typeof(item->'data') <> 'object'
+    ) THEN
+        RAISE EXCEPTION 'INVALID_IMPORT_ROW';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(p_rows) item
+         WHERE NULLIF(btrim(item->'data'->>'email'), '') IS NULL
+    ) THEN
+        RAISE EXCEPTION 'EMAIL_REQUIRED';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(p_rows) item
+         WHERE length(btrim(item->'data'->>'email')) > 254
+            OR lower(btrim(item->'data'->>'email'))
+               !~ '^[^[:space:]@]+@[^[:space:]@]+$'
+            OR (
+                item ? 'email_delivery'
+                AND (
+                    NULLIF(btrim(item->>'email_delivery'), '') IS NULL
+                    OR length(btrim(item->>'email_delivery')) > 254
+                    OR lower(btrim(item->>'email_delivery'))
+                       !~ '^[^[:space:]@]+@[^[:space:]@]+$'
+                )
+            )
+    ) THEN
+        RAISE EXCEPTION 'INVALID_EMAIL';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+          FROM jsonb_array_elements(p_rows) item
+         GROUP BY lower(btrim(item->'data'->>'email'))
+        HAVING count(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'DUPLICATE_ACCOUNT_EMAIL';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+          FROM jsonb_array_elements(p_rows) item
+         WHERE NULLIF(item->>'user_id', '') IS NOT NULL
+         GROUP BY item->>'user_id'
+        HAVING count(*) > 1
+    ) THEN
+        RAISE EXCEPTION 'DUPLICATE_USER_ID';
+    END IF;
+    IF EXISTS (
+        SELECT 1
+          FROM jsonb_array_elements(p_rows) item
+          JOIN jsonb_array_elements_text(p_delete_user_ids) deleted(id)
+            ON deleted.id = item->>'user_id'
+    ) THEN
+        RAISE EXCEPTION 'CONFLICTING_IMPORT_OPERATION';
     END IF;
 
     -- Serialize all CSV imports for one occasion. The group RPC uses the same
@@ -185,6 +246,7 @@ BEGIN
             v_updated := v_updated + 1;
         END IF;
 
+        SELECT to_jsonb(ui) INTO v_global_before FROM public.user_info ui WHERE id=v_user_id FOR UPDATE;
         UPDATE public.user_info ui
            SET data = COALESCE(ui.data, '{}'::jsonb)
                       || public.get_user_profile_data_patch(v_data_patch),
@@ -205,6 +267,8 @@ BEGIN
                                  THEN NULLIF(v_data_patch->>'birthDate', '')::date
                                  ELSE ui.birth_date END
          WHERE ui.id = v_user_id;
+
+        PERFORM public.publish_user_profile_change_internal_v1(v_user_id,p_occasion_id,v_global_before);
 
         IF v_row ? 'services' THEN
             IF COALESCE(jsonb_typeof(v_row->'services'), 'null') <> 'object' THEN
@@ -243,30 +307,7 @@ BEGIN
         ) THEN
             RAISE EXCEPTION 'DELETE_USER_NOT_ON_OCCASION';
         END IF;
-        UPDATE public.news
-           SET created_by = NULL
-         WHERE created_by = v_user_id
-           AND occasion = p_occasion_id;
-        DELETE FROM public.user_groups
-         WHERE "user" = v_user_id
-           AND "group" IN (
-               SELECT id FROM public.user_group_info
-                WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.event_users
-         WHERE "user" = v_user_id
-           AND event IN (
-               SELECT id FROM public.events WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.user_news
-         WHERE "user" = v_user_id AND occasion = p_occasion_id;
-        DELETE FROM public.event_users_saved
-         WHERE "user" = v_user_id
-           AND event IN (
-               SELECT id FROM public.events WHERE occasion = p_occasion_id
-           );
-        DELETE FROM public.occasion_users
-         WHERE "user" = v_user_id AND occasion = p_occasion_id;
+        PERFORM public.remove_occasion_user_domain_internal_v1(p_occasion_id,v_user_id);
         v_deleted := v_deleted + 1;
     END LOOP;
 
@@ -285,8 +326,9 @@ BEGIN
         'groups', jsonb_array_length(v_group_assignments)
     );
 END;
-$function$
-;
+$$;
+
+
 CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_internal_v1(p_occasion_id bigint, p_rows jsonb, p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -301,4 +343,4 @@ BEGIN
 END;
 $function$
 ;
-REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;

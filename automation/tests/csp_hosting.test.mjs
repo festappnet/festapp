@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const profiles = Object.fromEntries(['webclient','flutter','auth_bridge','organizers','none','static-test'].map(profile => [profile, {policy: `base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-${profile}'; script-src-attr 'none'; report-uri /_security/csp-report?profile=${profile}; report-to csp-${profile}`} ]));
-const source = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
+const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
  .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => `const CSP_MANIFEST = ${JSON.stringify({profiles, documents:{'privacy/index.html':{profile:'static-test'}}})};`)
  .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
@@ -13,7 +14,7 @@ const env = {ASSETS:{fetch:async req => {
 }}};
 const request = path => new Request('https://fixture.invalid' + path);
 test('all actual HTML router branches including bridge, callback, fallback and static responses carry their document policy', async () => {
- for (const [path, profile] of [['/','webclient'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/auth_bridge.html','auth_bridge'],['/pro-poradatele','organizers'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
+ for (const [path, profile] of [['/','webclient'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/settings/mcp-connect','webclient'],['/auth_bridge.html','auth_bridge'],['/pro-poradatele','organizers'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
   const res = await worker.fetch(request(path), env);
   assert.equal(res.headers.get('content-security-policy'), "base-uri 'self'; object-src 'none'", path);
   assert.equal(res.headers.get('content-security-policy-report-only'), profiles[profile].policy, path);

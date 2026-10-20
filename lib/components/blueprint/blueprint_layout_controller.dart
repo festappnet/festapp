@@ -567,6 +567,7 @@ class BlueprintLayoutController extends ChangeNotifier
       {BlueprintLayoutSnapshot? captured,
       Map<String, int>? capturedAreaCapacities,
       Map<String, dynamic>? preparedResources}) async {
+    if (layout.readOnly) throw StateError('blueprint_read_only');
     if (isBusy) throw StateError('save_in_progress');
     final submitted = saver.pending?.snapshot ?? captured ?? snapshot;
     if (layout.placementIssuesFor(submitted.document).isNotEmpty) {

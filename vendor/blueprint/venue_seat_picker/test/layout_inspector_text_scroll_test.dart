@@ -31,7 +31,7 @@ Future<void> mountInspector(
 
 void main() {
   testWidgets(
-    'scroll over a focused number never changes the plan or undo history',
+    'scroll over an unfocused number never changes the plan or undo history',
     (tester) async {
       final table = LayoutNode(
         id: newLayoutId(),
@@ -52,6 +52,8 @@ void main() {
       final field = find.widgetWithText(TextField, 'Font size');
       await tester.ensureVisible(field);
       await tester.tap(field);
+      await tester.pump();
+      FocusManager.instance.primaryFocus?.unfocus();
       await tester.pump();
       final before = c.document;
       var notifications = 0;

@@ -1,3 +1,6 @@
+import 'package:fstapp/components/forms/db_forms.dart';
+import 'package:fstapp/components/blueprint/blueprint_layout_adapter.dart';
+import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
 import '../waitlist_strings.dart';
@@ -157,18 +160,25 @@ class FormFieldBuilders {
     return StatefulBuilder(
       builder: (context, setState) {
         Future<void> removeTicket(int index) async {
-          if (removingTicket) return;
+          if (removingTicket || formHolder.controller!.reservationPending) return;
+          final controller = formHolder.controller!;
           final selected = ticket.tickets[index];
           final spotId = selected.seat?.seat?.id;
           setState(() => removingTicket = true);
+          final remoteRelease = spotId != null && !controller.demoSimulation;
+          if (remoteRelease) {
+            controller.reservationPending = true;
+            controller.updateTotalPrice?.call();
+          }
           try {
             var released = <int>{};
             if (spotId != null && !formHolder.controller!.demoSimulation) {
               final controller = formHolder.controller!;
+              await controller.rememberReservation();
               final result = await DbOrders.selectSpotResult(
                   controller.formKey!, controller.secret!, spotId, false);
               if (!result.accepted) throw StateError(result.code.toString());
-              controller.updateReservationSession(result.secret, result.expiresAt);
+              await controller.updateReservationSession(result.secret, result.expiresAt);
               released = result.spotIds.toSet();
             }
             if (!context.mounted) return;
@@ -176,8 +186,30 @@ class FormFieldBuilders {
               ticket.tickets.removeWhere((item) => identical(item, selected) ||
                   released.contains(item.seat?.seat?.id));
             });
-            formHolder.controller!.updateTotalPrice?.call();
+            controller.reservationPending = false;
+            controller.updateTotalPrice?.call();
           } catch (_) {
+            if (remoteRelease) {
+              try {
+                // Release may have committed before the response was lost.
+                // Reconcile authority instead of sending the mutation again.
+                final source = await DbForms.getBlueprint(
+                    controller.secret!, controller.formKey!, controller.blueprintId!);
+                if (source?.layoutSnapshot != null && context.mounted) {
+                  final adapter = BlueprintLayoutAdapter(source!);
+                  final held = source.layoutSnapshot!.seatBindings.values
+                      .where((binding) => adapter.state(binding) == BlueprintSeatState.selectedByMe)
+                      .map((binding) => binding.spotId).toSet();
+                  setState(() => ticket.tickets.removeWhere((item) =>
+                      item.seat?.seatId != null && !held.contains(item.seat!.seatId)));
+                  await controller.updateReservationSession(controller.secret!, source.reservationExpiresAt);
+                  controller.reservationPending = false;
+                  controller.updateTotalPrice?.call();
+                }
+              } catch (_) {
+                // Keep checkout gated; reopening the picker owns Retry.
+              }
+            }
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(CommonStrings.unexpectedError)));
