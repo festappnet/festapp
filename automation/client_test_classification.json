@@ -100,6 +100,7 @@
         "test/components/forms/payment_qr_card_cases.dart",
         "test/components/forms/waitlist_models_cases.dart",
         "test/components/forms/waitlist_runtime_cases.dart",
+        "test/components/forms/waitlist_commands_cases.dart",
         "test/components/html/html_unit_cases.dart",
         "test/components/html/html_clipboard_cases.dart",
         "test/components/html/html_editor_document_cases.dart",
@@ -704,6 +705,48 @@
       "reason": "Localized verification review dialog with real focus, scrolling and injected RPC transport; covers decision validation and retained drafts.",
       "sources": [
         "test/components/forms/verification_review_test.dart"
+      ]
+    },
+    "test/components/users/occasion_team_invitation_test.dart": {
+      "kind": "widget",
+      "reason": "Team invitation page interaction with injected readers and acceptance callbacks, localized labels and tenant configuration.",
+      "sources": [
+        "test/components/users/occasion_team_invitation_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_story_test.dart": {
+      "kind": "adapter",
+      "reason": "Application occasion draft and story transitions; exercises the Flutter application model without rendering widgets.",
+      "sources": [
+        "test/components/occasion/occasion_setup_story_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_story_shell_test.dart": {
+      "kind": "widget",
+      "reason": "Responsive story shell layout, rendered navigation, semantics and screenshot fixtures require Flutter widgets.",
+      "sources": [
+        "test/components/occasion/occasion_setup_story_shell_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_invitations_test.dart": {
+      "kind": "widget",
+      "reason": "Invitation role selection, recipient edits and send confirmation are verified through widget interactions.",
+      "sources": [
+        "test/components/occasion/occasion_setup_invitations_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_communication_test.dart": {
+      "kind": "widget",
+      "reason": "Communication setup renders inherited organization settings and exercises asynchronous save callbacks.",
+      "sources": [
+        "test/components/occasion/occasion_setup_communication_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_details_test.dart": {
+      "kind": "widget",
+      "reason": "Setup details render bank-account, pricing, promotion and form-link widgets with injected callbacks.",
+      "sources": [
+        "test/components/occasion/occasion_setup_details_test.dart"
       ]
     }
   }
