@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "ac416ae9771d50e517736b0987201ca486f8e348",
+  "release": {
+    "version": "0.20.298+789",
+    "note": "Polish MCP connection completion experience"
+  }
+}
