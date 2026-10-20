@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "1a3a0fcc7646257dad452216a27245e86e6a15e0",
+  "release": {
+    "version": "0.20.298+788",
+    "note": "Add MCP tenant consent flow"
+  }
+}
