@@ -47,6 +47,7 @@ export class CommonStrings {
     static get addEventShort() { return LocalizationService.tr("FeatureUser.addEventShort", {}, "+ Event"); }
     static get myEvents() { return LocalizationService.tr("FeatureUser.myEvents", {}, "My events"); }
     static get admin() { return LocalizationService.tr("FeatureUser.admin", {}, "Admin"); }
+    static get organizationSettings() { return LocalizationService.tr('Administration.organizationSettings'); }
     static get email() { return LocalizationService.tr("FeatureUser.email"); }
     static get password() { return LocalizationService.tr("FeatureUser.password"); }
     static get login() { return LocalizationService.tr("FeatureUser.logIn"); }

@@ -318,6 +318,33 @@ export class UserHeader extends HTMLElement {
             const accountActions = document.createElement('div');
             popover.appendChild(accountActions);
             const userId = this.user.id;
+            const organizationId = Number(AppConfig.organization);
+            if (Number.isSafeInteger(organizationId) && organizationId > 0) {
+                // Organization administration is distinct from occasion/unit rights.
+                // Recheck on every open and ignore results from an old identity/menu.
+                Promise.resolve().then(() => SupabaseService.getClient().rpc(
+                    'check_is_admin_of_organization', { organization_id: organizationId },
+                )).then(({ data, error }) => {
+                    if (error || data !== true || !wrapper.isConnected ||
+                        this.user?.id !== userId || RightsService.currentUser?.id !== userId ||
+                        Number(AppConfig.organization) !== organizationId) return;
+                    const action = document.createElement('button');
+                    action.type = 'button';
+                    action.className = 'popover-logout-row popover-account-action popover-organization-settings';
+                    const icon = document.createElement('i');
+                    icon.className = 'material-icons';
+                    icon.setAttribute('aria-hidden', 'true');
+                    icon.textContent = 'business';
+                    const label = document.createElement('span');
+                    label.textContent = CommonStrings.organizationSettings;
+                    action.append(icon, label);
+                    action.onclick = async () => {
+                        wrapper.remove();
+                        await RouterService.navigateToFlutterRoute(`/organizationEdit/${organizationId}`);
+                    };
+                    accountActions.prepend(action);
+                }).catch(() => {});
+            }
             GoogleAuthService.identityStatus().then(status => {
                 if (!wrapper.isConnected || this.user?.id !== userId || status.enabled !== true) return;
                 const action = document.createElement('button');

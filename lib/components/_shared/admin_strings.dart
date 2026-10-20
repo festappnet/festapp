@@ -16,6 +16,11 @@ class AdministrationStrings {
       'Administration.reservations'.tr(); // "Reservations"
   static String get oneSignalSecretManagedServerSide =>
       'Administration.oneSignalSecretManagedServerSide'.tr();
+  static String get webAnalytics => 'Administration.webAnalytics'.tr();
+  static String get organizationSettings =>
+      'Administration.organizationSettings'.tr();
+  static String get openCloudflareAnalytics =>
+      'Administration.openCloudflareAnalytics'.tr();
 
   static String get googleLoginEnabled =>
       'Administration.googleLoginEnabled'.tr();

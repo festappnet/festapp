@@ -638,6 +638,9 @@
     "removePlace": "Usuń przypisanie miejsca"
   },
   "Administration": {
+    "webAnalytics": "Ruch serwera strony",
+    "openCloudflareAnalytics": "Otwórz statystyki w Cloudflare",
+    "organizationSettings": "Ustawienia organizacji",
     "copyLink": "Kopiuj link",
     "downloadApp": "Pobierz aplikację",
     "enableNotifications": "Włącz powiadomienia",

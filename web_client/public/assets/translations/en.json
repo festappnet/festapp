@@ -1189,6 +1189,9 @@
     "cardTooltipUnassigned": "{count} unassigned spot(s)"
   },
   "Administration": {
+    "webAnalytics": "Website server traffic",
+    "openCloudflareAnalytics": "Open analytics in Cloudflare",
+    "organizationSettings": "Organization settings",
     "findUnitHint": "Find organization...",
     "newUnitButton": "New organization",
     "findOccasionHint": "Find event...",

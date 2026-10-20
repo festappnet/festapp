@@ -1,6 +1,6 @@
 # Ochrana osobních údajů - Vstupenky.online
 
-Účinnost: 9. října 2026. Verze: 1.1.
+Účinnost: 20. října 2026. Verze: 1.2.
 
 ## Kdo odpovídá za vaše údaje
 
@@ -17,6 +17,14 @@ Pro účet potřebujeme jméno, příjmení a e-mail. Podle přihlášky či obj
 ## Proč údaje potřebujeme
 
 Údaje používáme pro účet, přihlášky, objednávky, platby, komunikaci a podporu. Právním základem je plnění smlouvy, předsmluvní kroky, zákonná povinnost nebo oprávněný zájem na zabezpečení a ochraně práv. Nepovinné zpracování může vyžadovat samostatný souhlas. Registrace sama není souhlasem s reklamou ani nepovinným sledováním.
+
+## Souhrny serverového provozu na vstupenky.online
+
+Na webu vstupenky.online používáme přehledy serverového provozu Cloudflare. Vznikají z HTTP požadavků, které Cloudflare přijímá při doručování a ochraně webu. Používáme je k přehledu o zatížení, přenesených datech, chybách a zemích původu požadavků, abychom mohli zajistit dostupnost, kapacitu a zabezpečení služby. Právním základem pro související zpracování osobních údajů je náš oprávněný zájem na těchto účelech.
+
+Tyto přehledy nevyžadují analytický skript ani analytické cookies v prohlížeči. Browserové měření Cloudflare Web Analytics (RUM) je na tomto webu vypnuté. Neměříme jím pohyb uvnitř aplikace ani rychlost jejího vykreslování a nepropojujeme serverové přehledy s účty nebo objednávkami.
+
+Při obsluze webu Cloudflare zpracovává také IP adresu, požadovanou cestu a technické údaje požadavku. Serverový provoz proto neoznačujeme za zcela anonymní. Počet požadavků zahrnuje také načítání souborů a automatizovaný provoz; neodpovídá počtu osob. Případná dříve nastavená cookie `festapp_analytics_optout` tyto serverové přehledy nevypíná. Pro jejich použití nyní žádnou takovou předvolbu neukládáme. Proti zpracování na základě oprávněného zájmu můžete vznést námitku na `info@festapp.net`.
 
 ## E-maily
 

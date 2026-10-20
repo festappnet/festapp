@@ -1189,6 +1189,9 @@
     "cardTooltipUnassigned": "Počet nepřiřazených míst: {count}"
   },
   "Administration": {
+    "webAnalytics": "Provoz webu",
+    "openCloudflareAnalytics": "Otevřít přehled v Cloudflare",
+    "organizationSettings": "Nastavení organizace",
     "findUnitHint": "Najít organizaci...",
     "newUnitButton": "Nová organizace",
     "findOccasionHint": "Najít událost...",
