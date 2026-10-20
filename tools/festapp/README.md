@@ -4,8 +4,9 @@ This private Node package exposes the same fixed operations through a diagnostic
 CLI and the official MCP SDK's stdio transport. SQL remains the domain owner;
 `preview-ticket-layout` remains the only ticket renderer. Every profile starts
 with inspection/preview and enables artwork commands only after an authenticated
-backend contract check. No arbitrary SQL/shell tools, hosted server, OAuth
-connector or Blueprint V2 are exposed.
+backend contract check. The optional hosted OAuth pilot is described below;
+it is prepared separately from the local stdio release. No arbitrary SQL/shell
+tools or Blueprint V2 are exposed.
 
 The E0 surface is:
 
@@ -93,6 +94,13 @@ Example client entry, using absolute paths in that client's configuration:
 
 No credentials belong in this entry. The process cannot change profiles through
 a tool call. Stdout is exclusively MCP JSON-RPC. CLI diagnostics share handlers:
+
+Generate the absolute paths for JSON-based desktop clients instead of copying
+placeholders (this only prints configuration; it never edits another client):
+
+```sh
+node tools/festapp/src/cli/main.mjs mcp config --profile vstupenky-online
+```
 
 ```sh
 printf '%s\n' '{"occasionId":7}' | node tools/festapp/src/cli/main.mjs ticket-layouts inspect --profile vstupenky-online
@@ -190,7 +198,53 @@ E1 code, the legacy artwork fence and authenticated runtime registration are
 implemented. Live exposure depends on the selected backend migration and a
 normal operator login; no service credential is used. The remaining report/event/order readers belong to later
 E5; the current visual/layout slice is not completion of the overall MCP plan.
-Hosted OAuth and issued-ticket actions remain later separately scoped waves.
+The hosted OAuth read pilot is implemented in `src/remote`, with its activation
+gates and client setup in [remote-mcp-auth.md](../../docs/architecture/operations/remote-mcp-auth.md).
+It adds two read tools for explicitly selected occasions, using the same handlers.
+Hosted preview/writes and issued-ticket actions remain separate waves.
+
+## Hosted OAuth pilot: connect in a browser
+
+The selected endpoint is `https://mcp.festapp.net/mcp`. Implementation and local
+acceptance do not mean the endpoint has been activated. The release record must
+confirm DNS/TLS, the exact image/config and the real ChatGPT connection first.
+
+After activation, add that URL as a custom remote MCP server in ChatGPT, choose
+OAuth and the pre-registered public client `festapp-chatgpt` with no client secret.
+Register the exact callback shown by ChatGPT's server management page. The
+prepared configuration uses its stable callback
+`https://chatgpt.com/connector_platform_oauth_redirect`; issuer identification is
+advertised and verified locally. Automatic/open client registration is disabled.
+
+Click connect, log into Festapp in the browser, select allowed occasions and
+confirm access. No API key or refresh token is copied into ChatGPT. The first
+pilot allows only `context.inspect` and `ticket_layouts.inspect`; the configured
+operator/resource list is checked again for every call. Disconnect at
+`https://mcp.festapp.net/connections`, independently of the Festapp application.
+
+The browser currently supports ordinary Festapp password authentication. MFA
+accounts fail explicitly; Google/SSO and device login are not implemented in
+this pilot. The local terminal login is unchanged. Mendelio Voice's remote
+OAuth and local device-login pattern informed the connection UX, not shared
+credentials or identity-provider configuration.
+
+Runtime: Node 24 LTS. Configuration and the separate secret file are private,
+outside Git. Validate and provision without printing secrets:
+
+```sh
+node tools/festapp/src/remote/main.mjs check /absolute/private/config.json
+node tools/festapp/src/remote/main.mjs secrets init /absolute/private/secrets/issuer.json
+node tools/festapp/src/remote/main.mjs serve /absolute/private/config.json --secrets /absolute/private/secrets/issuer.json --data /absolute/private/data --port 3399
+```
+
+Secret initialization is exclusive. Keep the AES storage key, cookie keys and
+issuer signing key stable across restarts. The server binds only loopback;
+canonical requests require the exact Host and trusted HTTPS proxy header.
+`Dockerfile.remote`, `remote-compose.yml` and `Caddyfile.remote` prepare the
+bounded sidecar, leaving the existing API release separate. Only one process
+may own its SQLite volume. After an unclean stop, verify that process is stopped
+before removing only its empty `remote-process.lock`; never clear another
+operator's per-profile refresh lock while it is active.
 
 References: [MCP SDK v1 server documentation](https://ts.sdk.modelcontextprotocol.io/server),
 [Supabase password authentication](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),

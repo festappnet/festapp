@@ -20,6 +20,9 @@ export function createServer(operations) {
                 description: operation.description,
                 inputSchema: operation.input,
                 outputSchema: operation.output,
+                ...(operations.owner?.securitySchemes ? {
+                    _meta: { securitySchemes: operations.owner.securitySchemes },
+                } : {}),
                 annotations: {
                     readOnlyHint: operation.domainReadOnly,
                     destructiveHint: false,
@@ -36,6 +39,8 @@ export function createServer(operations) {
                             { type: 'text', text: JSON.stringify(result) },
                         ],
                         structuredContent: result,
+                        ...(['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(result.error?.code) && operations.owner?.authChallenge
+                            ? { _meta: { 'mcp/www_authenticate': [operations.owner.authChallenge] } } : {}),
                     };
                 if (!result.data.image)
                     return {
