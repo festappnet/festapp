@@ -37,9 +37,15 @@ resources = json.loads(Path(a.resources).read_text())
 assert resources.get('protocol') == 2
 assert all(isinstance(resources.get(key), dict) for key in ['fontFamilies', 'textLayouts', 'numberSymbols'])
 assert a.version.isdigit() and len(a.version) == 14
+for row in rows:
+    ids = set(row['request']['textResourceIds'])
+    text = {key: value for key, value in resources['textLayouts'].items() if key in ids}
+    numbers = {key: value for key, value in resources['numberSymbols'].items() if value['id'] in ids}
+    assert ids == set(text) | {value['id'] for value in numbers.values()}, 'missing reviewed text resource'
+    row['resources'] = {'protocol': 2, 'fontFamilies': resources['fontFamilies'],
+                        'textLayouts': text, 'numberSymbols': numbers}
 payload = json.dumps(rows, separators=(',', ':'), ensure_ascii=False)
-font_payload = json.dumps(resources, separators=(',', ':'), ensure_ascii=False)
-assert '$reviewed$' not in payload and '$fonts$' not in font_payload
+assert '$reviewed$' not in payload
 sha = hashlib.sha256(payload.encode()).hexdigest()
 version = a.version
 sql = """BEGIN;
@@ -47,7 +53,7 @@ SET LOCAL TIME ZONE 'UTC';
 SET LOCAL lock_timeout='15s';
 SET LOCAL statement_timeout='120s';
 DO $cutover$
-DECLARE batch jsonb:=$reviewed$PAYLOAD$reviewed$::jsonb; resources jsonb:=$fonts$FONTS$fonts$::jsonb;
+DECLARE batch jsonb:=$reviewed$PAYLOAD$reviewed$::jsonb; resources jsonb;
  entry jsonb; req jsonb; source jsonb; change jsonb; row eshop.blueprints; spot eshop.spots;
  ids bigint[]; before_spots jsonb; expected_group uuid; original_group text;
 BEGIN
@@ -60,7 +66,7 @@ BEGIN
  PERFORM 1 FROM eshop.spots WHERE occasion=ANY(ids) ORDER BY id FOR UPDATE;
  SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.id),'[]') INTO before_spots FROM eshop.spots s WHERE s.occasion=ANY(ids);
  FOR entry IN SELECT * FROM jsonb_array_elements(batch) LOOP
-  req:=entry->'request';source:=(entry->>'reviewedSourceText')::jsonb;
+  req:=entry->'request';source:=(entry->>'reviewedSourceText')::jsonb;resources:=entry->'resources';
   SELECT * INTO STRICT row FROM eshop.blueprints WHERE id=(entry->>'blueprintId')::bigint;
   IF row.organization<>ORGANIZATION OR row.occasion<>(entry->>'occasionId')::bigint OR
    public.blueprint_legacy_migration_source_internal(row.id) IS DISTINCT FROM source OR
@@ -100,7 +106,11 @@ BEGIN
      RAISE EXCEPTION 'invalid reviewed group product'; END IF;
    INSERT INTO eshop.blueprint_group_products(blueprint,group_node,product) VALUES(row.id,(change->>'groupNodeId')::uuid,(change->>'productId')::bigint);
   END LOOP;
-  UPDATE eshop.blueprints SET layout=req->'layout',layout_revision=1,updated_at=now() WHERE id=row.id;
+  IF to_jsonb(public.blueprint_text_resource_ids_internal(req->'layout',row.occasion)) IS DISTINCT FROM req->'textResourceIds' THEN
+   RAISE EXCEPTION 'reviewed text dependency mismatch for blueprint %',row.id; END IF;
+  UPDATE eshop.blueprints SET layout=req->'layout',
+   layout_text_resource_ids=public.blueprint_text_resource_ids_internal(req->'layout',row.occasion),
+   layout_revision=1,updated_at=now() WHERE id=row.id;
  END LOOP;
  IF before_spots IS DISTINCT FROM (SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.id),'[]') FROM eshop.spots s WHERE s.occasion=ANY(ids)) THEN
   RAISE EXCEPTION 'commercial rows changed'; END IF;
@@ -111,7 +121,7 @@ END $cutover$;
 NOTIFY pgrst,'reload schema';
 COMMIT;
 """
-for key, value in [('DATABASE_ASSERTION', a.database), ('PAYLOAD', payload), ('FONTS', font_payload), ('ORGANIZATION', str(a.organization)), ('EXPECTED_COUNT', str(a.expected_count)), ('VERSION', version), ('DIGEST', sha)]:
+for key, value in [('DATABASE_ASSERTION', a.database), ('PAYLOAD', payload), ('ORGANIZATION', str(a.organization)), ('EXPECTED_COUNT', str(a.expected_count)), ('VERSION', version), ('DIGEST', sha)]:
     sql = sql.replace(key, value)
 output = Path(a.output)
 with os.fdopen(os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as f:
