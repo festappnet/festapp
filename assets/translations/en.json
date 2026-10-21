@@ -1497,6 +1497,14 @@
       "empty": "No product is assigned to this seat.",
       "selection": "Seat in your current selection."
     },
+    "standingSalesLimit": "Sale limit",
+    "standingSupplyHint": "The sale limit does not add inventory supply. To increase the supply, edit the capacity group in Inventory.",
+    "standingNoAdmissionType": "First create a ticket form for this event. It prepares the admission product type needed here.",
+    "standingPreparationRetained": "Prepared products and inventory remain saved if you close this dialog. You can manage them in Products and Inventory. Retry keeps the prepared capacity.",
+    "assignStandingProduct": "Assign admission product",
+    "standingSetupSaveHint": "Products and inventory are saved immediately. The area assignment and capacity changes take effect when you save the plan.",
+    "standingCapacityGroup": "Capacity group",
+    "standingSharedCapacityHint": "This capacity belongs to the inventory pool. Changes affect every product and area sharing that pool.",
     "standingRequiresProduct": "The area capacity is ready. To sell admission, assign a ticket product and its inventory capacity."
   },
   "OccasionSettings": {

@@ -1497,6 +1497,14 @@
       "empty": "Místo nemá přiřazený produkt.",
       "selection": "Místo ve vašem aktuálním výběru."
     },
+    "standingSalesLimit": "Prodejní limit",
+    "standingSupplyHint": "Prodejní limit nepřidává zásoby. Pro zvýšení počtu dostupných míst upravte skupinu kapacity v Zásobách.",
+    "standingNoAdmissionType": "Nejprve vytvořte pro tuto akci vstupenkový formulář. Ten připraví potřebný typ vstupenky.",
+    "standingPreparationRetained": "Připravené produkty a zásoby zůstanou uložené i po zavření dialogu. Spravovat je můžete v Produktech a Zásobách. Opakování zachová připravenou kapacitu.",
+    "assignStandingProduct": "Přiřadit vstupenku",
+    "standingSetupSaveHint": "Produkty a zásoby se ukládají ihned. Přiřazení plochy a změny kapacity se použijí po uložení plánu.",
+    "standingCapacityGroup": "Skupina kapacity",
+    "standingSharedCapacityHint": "Kapacita patří ke skupině zásob. Změna ovlivní všechny produkty a plochy, které ji sdílejí.",
     "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt vstupenky a jeho kapacitu."
   },
   "OccasionSettings": {

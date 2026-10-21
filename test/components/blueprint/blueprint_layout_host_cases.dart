@@ -1,3 +1,7 @@
+import 'package:fstapp/components/blueprint/blueprint_standing_inventory.dart';
+import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
+import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
+import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_font_selection.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
@@ -68,6 +72,155 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
       'areaBindings': []
     };
 void main() {
+  test(
+    'standing setup prepares supply once and saves an undoable initial binding',
+    () async {
+      final id = newLayoutId();
+      final otherArea = newLayoutId();
+      final operations = <String>[];
+      var rejectLink = true;
+      final preparation = BlueprintStandingInventory(
+        savePool: (bundle) async {
+          operations.add('pool');
+          expect(bundle.pool.sellableCapacity, 25);
+          return InventoryPoolBundle(
+            pool: InventoryPoolModel(
+              id: 5,
+              occasionId: 8,
+              sellableCapacity: 25,
+            ),
+            contexts: [InventoryContextModel(id: 6, inventoryPoolId: 5)],
+          );
+        },
+        saveResource: (resource) async {
+          operations.add('resource');
+          expect(resource.inventoryPoolId, 5);
+          expect(resource.capacity, 25);
+          resource.id = 7;
+        },
+        linkProduct: (product, context) async {
+          operations.add('link');
+          expect(context, 6);
+          if (rejectLink) throw StateError('conflict');
+        },
+      );
+      final product = ProductModel(
+        id: 9,
+        occasion: 8,
+        title: 'Standing',
+        price: 80,
+        productTypeString: ProductModel.spotType,
+      );
+      await expectLater(preparation.prepare(product, 25), throwsStateError);
+      await expectLater(preparation.prepare(product, 30), throwsStateError);
+      rejectLink = false;
+      final linked = await preparation.prepare(product, 25);
+      expect(operations, ['pool', 'resource', 'link', 'link']);
+      final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+          blueprintId: 4,
+          occasionId: 8,
+          title: 'Hall',
+          revision: 2,
+          document: VenueLayoutDocument(
+            nodes: [
+              LayoutNode(
+                id: id,
+                kind: 'capacityArea',
+                x: 400,
+                y: 300,
+                width: 200,
+                height: 100,
+                properties: {'capacity': 100},
+              ),
+              LayoutNode(
+                  id: otherArea,
+                  kind: 'capacityArea',
+                  x: 700,
+                  y: 300,
+                  width: 200,
+                  height: 100),
+            ],
+          ),
+        ),
+      );
+      source.layoutResources = blueprintPreparedResourcesFixture(
+        source.layoutSnapshot!.document,
+      );
+      Map<String, dynamic>? request;
+      final c = BlueprintLayoutController(
+        source: source,
+        saver: BlueprintLayoutSaver(
+          Commands((input) async {
+            request = input;
+            return {
+              ...accepted(input),
+              'layout_revision': 3,
+              'areaBindings': input['areaBindingChanges'],
+            };
+          }),
+        ),
+      );
+      addTearDown(c.dispose);
+      expect(
+        () => c.bindStandingArea(
+          id,
+          product,
+          inventoryContextId: 6,
+          capacity: 25,
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => c.bindStandingArea(
+          id,
+          linked.copyWith(occasion: 99),
+          inventoryContextId: 6,
+          capacity: 25,
+        ),
+        throwsStateError,
+      );
+      c.bindStandingArea(id, linked, inventoryContextId: 6, capacity: 25);
+      expect(
+          () => c.bindStandingArea(otherArea, linked,
+              inventoryContextId: 6, capacity: 25),
+          throwsStateError);
+      expect(c.isDirty, isTrue);
+      expect(request, isNull);
+      expect(c.areaCapacity(id), 25);
+      c.layout.undo();
+      expect(c.snapshot.areaBindings, isEmpty);
+      c.layout.redo();
+      expect(c.snapshot.areaBindings[id]!.inventoryContextId, 6);
+      expect(
+        () =>
+            c.bindStandingArea(id, linked, inventoryContextId: 6, capacity: 25),
+        throwsStateError,
+      );
+      await c.save();
+      expect(request!['areaBindingChanges'][0]['capacity'], 25);
+      expect(c.isDirty, isFalse);
+      final reloaded = BlueprintLayoutController(
+        source: BlueprintModel(
+          layoutSnapshot: BlueprintLayoutSnapshot.fromJson(c.snapshot.toJson()),
+          products: [linked],
+          areaAvailability: {
+            id: {'capacity': 25, 'available': 25},
+          },
+        ),
+      );
+      addTearDown(reloaded.dispose);
+      expect(reloaded.snapshot.areaBindings[id]!.productId, 9);
+      expect(reloaded.areaCapacity(id), 25);
+      reloaded.layout.readOnly = true;
+      expect(() => reloaded.setAreaCapacity(id, 5), throwsStateError);
+      await expectLater(
+        preparation.prepare(product.copyWith(orderedCount: 1), 25),
+        throwsStateError,
+      );
+    },
+  );
+
   test('commercial rename and seat blocking remain drafts until explicit save',
       () async {
     final base = snapshot();

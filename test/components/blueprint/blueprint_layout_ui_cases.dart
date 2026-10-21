@@ -1,3 +1,5 @@
+import 'package:fstapp/components/blueprint/views/blueprint_standing_setup_dialog.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_inline_name.dart';
 import '../../support/fixtures/blueprint_native_font_fixture.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -2329,6 +2331,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final originalRights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasion: OccasionModel(id: 1, link: 'standing-fixture'),
         capabilities: {
           AuthorizationCapabilities.occasionsWrite: true,
           AuthorizationCapabilities.ordersWrite: true
@@ -2370,9 +2373,69 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('commercial-area-$id')));
     await tester.pump();
-    expect(find.text('${BlueprintStrings.standingCapacity}: 100'), findsOneWidget);
+    expect(
+        find.text('${BlueprintStrings.standingCapacity}: 100'), findsOneWidget);
     expect(find.text(BlueprintStrings.standingRequiresProduct), findsOneWidget);
-    expect(find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
+    expect(
+        find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
+    pickerResponse = (request) {
+      expect(
+          request.url.path, endsWith('/rpc/get_products_and_types_for_edit'));
+      return http.Response(
+          jsonEncode({
+            'server_time': '2026-10-21T10:00:00Z',
+            'product_types': [
+              {'id': 2, 'occasion': 1, 'title': 'Admission', 'type': 'spot'}
+            ],
+            'products': [
+              {
+                'id': 9,
+                'occasion': 1,
+                'title': 'Standing ticket',
+                'price': 80,
+                'currency_code': 'CZK',
+                'product_type': 2,
+                'type': 'spot'
+              }
+            ],
+            'inventory_pools': [
+              {
+                'id': 5,
+                'occasion': 1,
+                'title': 'Standing',
+                'sellable_capacity': 25
+              }
+            ],
+            'inventory_contexts': [
+              {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
+            ],
+            'product_inventory_contexts': [
+              {'product': 9, 'inventory_context': 6, 'quantity': 1}
+            ],
+            'forms': [],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+          request: request);
+    };
+    await tester.tap(find.byKey(const ValueKey('assign-standing-product')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BlueprintStandingSetupDialog), findsOneWidget);
+    await tester.tap(find.byType(DropdownButtonFormField<int>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Standing ticket').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+        of: find.byType(BlueprintStandingSetupDialog),
+        matching: find.widgetWithText(
+            FilledButton, BlueprintStrings.assignStandingProduct)));
+    await tester.pumpAndSettle();
+    expect(find.byType(BlueprintStandingSetupDialog), findsNothing);
+    expect(find.byKey(const ValueKey('assign-standing-product')), findsNothing);
+    final capacityField = tester.widget<TextField>(
+        find.byKey(const ValueKey('standing-capacity-field')));
+    expect(capacityField.controller!.text, '25');
+    // No blueprint write is sent until the user explicitly saves the draft.
+    expect(source.layoutSnapshot!.areaBindings, isEmpty);
   });
-
 }
