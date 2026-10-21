@@ -2,7 +2,7 @@ import {BlueprintSelector} from '../../../src/components/blueprint/blueprint_sel
 import {DbForms} from '../../../src/components/forms/db_forms.js';
 import {FormSession} from '../../../src/components/forms/form_session.js';
 import {LocalizationService} from '../../../src/services/localization_service.js';
-import translations from '../../../public/assets/translations/cs.json';
+import translations from '../../../../assets/translations/cs.json';
 LocalizationService.currentLocale='cs'; LocalizationService.translations=translations;
 const id='10000000-0000-4000-8000-000000000001';
 const product={id:9,title:'Místa ke stání',price:100,currency_code:'CZK'};
@@ -11,7 +11,7 @@ const data={layout:{schemaVersion:2,symbolSetVersion:1,canvas:{x:0,y:0,width:800
 DbForms.getBlueprint=async()=>data;
 const model={key:'fixture',secret:'fixture',blueprint:1,visibleFields:[],relatedFields:[{type:'ticket',data:{max_tickets:100}}]};
 window.session=new FormSession(model);
-if (!new URLSearchParams(location.search).has('empty')) window.session.setAreaQuantity(binding,2,96,product);
+window.session.setAreaQuantity(binding,2,96,product);
 window.selector=new BlueprintSelector();
 await window.selector.open(window.session);
 window.fixtureReady=true;

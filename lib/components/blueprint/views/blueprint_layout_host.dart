@@ -927,29 +927,12 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         : _productText(products.isEmpty
             ? controller.snapshot.groupProducts[table.id]
             : products.single);
-    return _commercialNodeRow(
-      node: table,
-      selected: selected,
-      summary: summary,
-      count: members.length,
-      icon: Icons.table_restaurant_outlined,
-      highlighted: {table.id, ...members.map((seat) => seat.nodeId)},
-    );
-  }
-
-  Widget _commercialNodeRow({
-    required LayoutNode node,
-    required bool selected,
-    required String summary,
-    required int count,
-    required IconData icon,
-    Set<String>? highlighted,
-  }) {
     return Padding(
-      key: _commercialRowKeys.putIfAbsent(node.id, () => GlobalKey()),
+      key: _commercialRowKeys.putIfAbsent(table.id, () => GlobalKey()),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: MouseRegion(
-        onEnter: (_) => controller.layout.highlightObjects(highlighted ?? {node.id}),
+        onEnter: (_) => controller.layout.highlightObjects(
+            {table.id, ...members.map((seat) => seat.nodeId)}),
         onExit: (_) => controller.layout.highlightObjects({}),
         child: Ink(
           decoration: BoxDecoration(
@@ -963,19 +946,21 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 : null,
           ),
           child: ListTile(
-            key: ValueKey('commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
+            key: ValueKey('commercial-table-${table.id}'),
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             minLeadingWidth: 18,
             horizontalTitleGap: 8,
             selected: selected,
-            leading: Icon(icon, size: 18),
-            title: Text(node.label.isEmpty
-                ? (node.kind == 'capacityArea' ? BlueprintStrings.standingAreas : BlueprintStrings.tablesTitle)
-                : node.label),
-            subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Text('($count)', style: Theme.of(context).textTheme.bodySmall),
-            onTap: _busy ? null : () => _selectCommercialRow(node.id),
+            leading: const Icon(Icons.table_restaurant_outlined, size: 18),
+            title: Text(table.label.isEmpty
+                ? BlueprintStrings.tablesTitle
+                : table.label),
+            subtitle:
+                Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: Text('(${members.length})',
+                style: Theme.of(context).textTheme.bodySmall),
+            onTap: _busy ? null : () => _selectCommercialRow(table.id),
           ),
         ),
       ),
@@ -1337,12 +1322,22 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   Text(BlueprintStrings.standingAreas,
                       style: Theme.of(context).textTheme.titleMedium),
                   for (final area in areas)
-                    _commercialNodeRow(
-                      node: area,
-                      selected: _commercialSelection.contains(area.id),
-                      summary: _productText(controller.snapshot.areaBindings[area.id]?.productId),
-                      count: controller.areaCapacity(area.id),
-                      icon: Icons.people_outline,
+                    MouseRegion(
+                      onEnter: (_) =>
+                          controller.layout.highlightObjects({area.id}),
+                      onExit: (_) => controller.layout.highlightObjects({}),
+                      child: ListTile(
+                        key: ValueKey('commercial-area-${area.id}'),
+                        contentPadding: EdgeInsets.zero,
+                        selected: _commercialSelection.contains(area.id),
+                        title: Text(area.label.isEmpty
+                            ? BlueprintStrings.standingAreas
+                            : area.label),
+                        subtitle: Text(_productText(controller
+                            .snapshot.areaBindings[area.id]?.productId)),
+                        onTap:
+                            _busy ? null : () => _selectCommercialRow(area.id),
+                      ),
                     ),
                   const Divider(),
                 ],

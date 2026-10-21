@@ -1380,9 +1380,6 @@
     "catalogSaveNotice": "Změny katalogu se ukládají ihned. Zahození návrhu plánku je nevrátí.",
     "catalogAffectedSeats": "Tento sdílený produkt používá {count} míst. Ceny již prodaných vstupenek spravuje server.",
     "viewer": {
-      "placeCount_one": "{count} místo",
-      "placeCount_few": "{count} místa",
-      "placeCount_other": "{count} míst",
       "viewerLabel": "Plánek sálu",
       "places": "Místa",
       "place": "Místo",
@@ -1409,8 +1406,7 @@
       "removeOne": "Odebrat jedno",
       "standingNotConfigured": "Stání ještě není v prodeji - není přiřazená vstupenka.",
       "standingUnavailable": "Místa ke stání již nejsou dostupná.",
-      "standingSaleClosed": "Prodej míst ke stání není dostupný.",
-      "chooseQuantity": "Vybrat počet"
+      "standingSaleClosed": "Prodej míst ke stání není dostupný."
     },
     "demoGeometryNotice": "Ukázkový plánek. Úpravy a uložení platí jen v této ukázce. Objednávky, rezervace a katalog se nemění.",
     "seatStates": {
@@ -1462,8 +1458,8 @@
     "tryLayoutDemo": "Vyzkoušet ukázkový plánek",
     "blockSeats": "Zablokovat místa",
     "unblockSeats": "Odblokovat místa",
-    "standingCapacity": "Počet míst",
-    "capacitySaveHint": "Změna se projeví po uložení plánku.",
+    "standingCapacity": "Prodejní kapacita stání",
+    "capacitySaveHint": "Změna se projeví po uložení plánku. Dostupnost omezuje také kapacita produktu.",
     "invalidStandingCapacity": "Zadejte celé číslo od 0 do 1 000 000.",
     "standingAvailability": "Dostupných míst: {available} z {capacity}",
     "helpTitle": "Ovládání plánku",
@@ -1501,14 +1497,7 @@
       "empty": "Místo nemá přiřazený produkt.",
       "selection": "Místo ve vašem aktuálním výběru."
     },
-    "standingNoAdmissionType": "Nejprve vytvořte pro tuto akci vstupenkový formulář. Ten připraví potřebný typ vstupenky.",
-    "standingPreparationRetained": "Připravené produkty a zásoby zůstanou uložené i po zavření dialogu. Spravovat je můžete v Produktech a Zásobách. Opakování zachová připravenou kapacitu.",
-    "areaProduct": "Produkt plochy",
-    "areaProductAssigned": "Použito pro celou plochu",
-    "assignStandingProduct": "Přiřadit produkt",
-    "standingSetupSaveHint": "Produkty a zásoby se ukládají ihned. Přiřazení plochy a změny kapacity se použijí po uložení plánu.",
-    "standingCapacityGroup": "Skupina kapacity",
-    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt a jeho kapacitu."
+    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt vstupenky a jeho kapacitu."
   },
   "OccasionSettings": {
     "title": "Název",

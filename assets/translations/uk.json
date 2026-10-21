@@ -992,13 +992,7 @@
       "removeOne": "Прибрати одне",
       "standingNotConfigured": "Квиток на стояче місце не призначено.",
       "standingUnavailable": "Стоячі місця більше недоступні.",
-      "standingSaleClosed": "Продаж стоячих місць недоступний.",
-      "standing": "Стоячі місця",
-      "availableCount": "Доступно: {count}",
-      "confirmQuantity": "Підтвердити кількість",
-      "pending": "Обробка",
-      "quantityRejected": "Не вдалося підтвердити кількість",
-      "chooseQuantity": "Вибрати кількість"
+      "standingSaleClosed": "Продаж стоячих місць недоступний."
     },
     "standingCapacity": "Кількість місць",
     "capacitySaveHint": "Зміни застосуються після збереження плану."
