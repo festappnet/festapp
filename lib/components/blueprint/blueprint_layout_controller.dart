@@ -161,9 +161,10 @@ class BlueprintLayoutController extends ChangeNotifier
     final binding = _draft.seatBindings[id];
     if (mode == BlueprintLayoutMode.manage ||
         binding?.spotId == null ||
-        binding!.blocked ||
+        (binding!.blocked && mode != BlueprintLayoutMode.block) ||
         isBusy) return;
-    if (mode == BlueprintLayoutMode.order) {
+    if (mode == BlueprintLayoutMode.order ||
+        mode == BlueprintLayoutMode.block) {
       final unit = layout.document.selectionUnits
           .where((u) => (u['nodeIds'] as List? ?? const []).contains(id));
       final ids = unit.isEmpty
@@ -174,7 +175,9 @@ class BlueprintLayoutController extends ChangeNotifier
       } else {
         if (ids.any((node) =>
             _draft.seatBindings[node]?.spotId == null ||
-            _draft.seatBindings[node]!.blocked)) return;
+            (mode == BlueprintLayoutMode.block
+                ? isProtected(node)
+                : _draft.seatBindings[node]!.blocked))) return;
         _operationSelection.addAll(ids);
       }
     } else if (!_operationSelection.remove(id)) {

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 // Host-only commercial contract. No product, spot or order identity enters core.
-enum BlueprintLayoutMode { manage, order, swap }
+enum BlueprintLayoutMode { manage, order, swap, block }
 
 enum BlueprintSeatOperation { upsert, delete }
 

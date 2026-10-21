@@ -700,6 +700,37 @@ void main() {
     final block = find.byKey(const ValueKey('blueprint-toggle-blocked'));
     await tester.tap(block);
     await tester.pumpAndSettle();
+    final operationPanel =
+        find.byKey(const ValueKey('blueprint-operation-panel'));
+    expect(operationPanel, findsOneWidget);
+    expect(editor.controller.canUndo, isFalse,
+        reason: 'Entering block mode must not change any seat');
+    await tester.tap(find.byKey(const ValueKey('blueprint-cancel-operation')));
+    await tester.pumpAndSettle();
+    expect(operationPanel, findsNothing);
+    expect(editor.controller.canUndo, isFalse);
+    await tester.tap(block);
+    await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .viewSelection,
+        {seats[1].id});
+    await tester.tap(find.byKey(const ValueKey('blueprint-confirm-operation')));
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.unblockSeats), findsOneWidget);
+    await tester.tap(block);
+    await tester.pumpAndSettle();
+    expect(
+        find.descendant(
+            of: operationPanel,
+            matching: find.text(BlueprintStrings.unblockSeats)),
+        findsNWidgets(2));
+    await tester.tap(find.byKey(const ValueKey('blueprint-confirm-operation')));
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
+    editor.controller.undo();
+    await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.unblockSeats), findsOneWidget);
     editor.controller.undo();
     await tester.pumpAndSettle();
