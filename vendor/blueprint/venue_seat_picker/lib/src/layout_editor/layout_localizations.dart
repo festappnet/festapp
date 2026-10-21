@@ -686,10 +686,6 @@ const _cs = <String, String>{
   'group': 'Skupina',
   'Drag onto the plan, or click to place':
       'Přetáhni do sálu nebo vyber a klikni do plánku',
-  'Tap an object to add it. Drawing tools continue on the plan.':
-      'Klepnutím přidáte objekt. Kreslení pokračuje v plánku.',
-  'No free space found. Tap the plan to choose a position.':
-      'Volné místo nenalezeno. Klepnutím do plánku vyberte umístění.',
   'Seating': 'Sezení',
   'Paint a connected surface.': 'Namaluj souvislou plochu.',
   'Surface brush limit reached.': 'Plocha dosáhla maximální velikosti.',
