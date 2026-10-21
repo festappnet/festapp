@@ -103,4 +103,77 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'draft text preview does not enable geometry and viewers default to vectors',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1440, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final document = tableLayout(shape: 'rect', count: 0);
+      final table = document.nodes.first;
+      final controller = VenueLayoutController(
+        document.copyWith(nodes: [table.copyWith(label: 'Draft table')]),
+      );
+      addTearDown(controller.dispose);
+      var fontLoads = 0;
+      Future<void> mount({bool nativeTextPreview = false}) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: VenueLayoutEditor(
+                controller: controller,
+                showGallery: false,
+                interactionEnabled: false,
+                nativeTextPreview: nativeTextPreview,
+                inlineTextStyleBuilder: (_) async {
+                  fontLoads++;
+                  return const TextStyle(fontFamily: 'Ahem');
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      LayoutScenePainter painter() => tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .map((widget) => widget.painter)
+          .whereType<LayoutScenePainter>()
+          .firstWhere(
+            (p) => (p.scene['items'] as List).any(
+              (item) => (item['nodeId'] ?? item['id']) == table.id,
+            ),
+          );
+      List nativeItems() => (painter().scene['items'] as List)
+          .where((item) => item['kind'] == 'nativeText')
+          .toList();
+
+      await mount();
+      expect(nativeItems(), isEmpty);
+      expect(fontLoads, 0);
+      await mount(nativeTextPreview: true);
+      expect(nativeItems(), hasLength(1));
+      expect(fontLoads, 1);
+      expect(find.byKey(const ValueKey('layout-tool-Select')), findsNothing);
+      final beforeDrag = controller.document.toJson();
+      await tester.drag(find.byType(LayoutSceneSurface), const Offset(80, 0));
+      await tester.pumpAndSettle();
+      expect(controller.document.toJson(), beforeDrag);
+      expect(controller.canUndo, isFalse);
+
+      controller.apply(
+        controller.document.copyWith(
+          nodes: [table.copyWith(label: 'Renamed draft table')],
+        ),
+      );
+      await tester.pumpAndSettle();
+      final paragraph = nativeItems().single['nativeParagraph'] as TextPainter;
+      expect(paragraph.text!.toPlainText(), 'Renamed draft table');
+      expect(fontLoads, 1, reason: 'Renaming reuses the loaded face');
+      expect(controller.resources['textLayouts'] ?? {}, isEmpty);
+      await mount();
+      expect(nativeItems(), isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

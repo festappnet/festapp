@@ -257,6 +257,7 @@
     "users/validate_occasion_user_csv_import_v1.sql",
     "emails/legacy_template_delete.sql",
     "users/occasion_enrolment_internal.sql",
-    "others/legacy_occasion_catalogs.sql"
+    "others/legacy_occasion_catalogs.sql",
+    "blueprint/resource_admission.sql"
   ]
 }

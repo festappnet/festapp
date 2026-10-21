@@ -11,7 +11,7 @@ import {TicketFontError,type TicketFont} from '../_shared/ticketFonts.ts';
 const fontReply=(f:TicketFont)=>({id:f.id,family:f.family,weight:f.weight,font:Buffer.from(f.bytes).toString('base64'),metrics:f.metrics});
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Cache-Control':'no-store'};
 export interface PreviewDependencies {
-  authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean):Promise<false|{abuseLimits:Record<string,number>}>;
+  authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean,resourceMode?:'font'|'layout-text'):Promise<false|{abuseLimits:Record<string,number>}>;
   authorizeSetupDraft?:(header:string,draftId:string,bytes:number)=>Promise<false|{abuseLimits:Record<string,number>}>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
@@ -52,7 +52,8 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
     const admission=setup
       ? await deps.authorizeSetupDraft?.(auth,setupDraftId,count)??false
-      : await deps.authorize(auth,occasionId,count,readOnly);
+      : await deps.authorize(auth,occasionId,count,readOnly,
+          mode==='font'||mode==='layout-text'?mode:undefined);
     if(!admission)return reply(403,{error:'Forbidden'});
     const limits=documentLimits(admission);
     const boundedReply=(status:number,body:unknown)=>{

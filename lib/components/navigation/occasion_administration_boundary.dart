@@ -35,8 +35,12 @@ class RightsAdministrationAccess implements AdministrationAccess {
           : RightsService.canSeeAdministration());
   @override
   Future<bool> load(String link, {required bool reservations}) async {
-    if (loadedLink == link) return canAccess(reservations: reservations);
-    await RightsService.updateAppData(link: link, refreshOffline: false);
+    if (loadedLink == link && canAccess(reservations: reservations))
+      return true;
+    // A denied/failed refresh leaves this link selected with invalidated
+    // capabilities. Retry must ask SQL again, rather than cache that denial.
+    await RightsService.updateAppData(
+        link: link, force: loadedLink == link, refreshOffline: false);
     final allowed = loadedLink != null && canAccess(reservations: reservations);
     if (allowed) {
       await LastAdministrationContext.instance.remember(

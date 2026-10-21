@@ -1,3 +1,4 @@
+import '../../support/fixtures/blueprint_native_font_fixture.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/blueprint/seat_reservation/widgets/seat_reservation_widget.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
@@ -848,9 +849,14 @@ void main() {
       expect(controller.canUndo, isFalse);
     });
   }
-  for (final outcome in ['complete', 'changed', 'failed', 'disposed']) {
+  for (final outcome in [
+    'reservations',
+    'edit again',
+    'repeated',
+    'disposed'
+  ]) {
     testWidgetsWithEnvironment(() => environment,
-        'view transition finishes composing input and guards $outcome response',
+        'mode switch keeps composed text local until Save: $outcome',
         (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1;
@@ -869,7 +875,6 @@ void main() {
       final document = VenueLayoutDocument.fromJson(
           Map<String, dynamic>.from(fixture['document'] as Map));
       final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
-      final response = Completer<void>();
       var batches = 0;
       final provider = await tester.runAsync(() => BlueprintTextResources.load(
               1, service: TicketLayoutService(transport: (body) async {
@@ -893,27 +898,7 @@ void main() {
               };
             }
             batches++;
-            if (batches == 1) await response.future;
-            final batch = body['batch'] as Map;
-            return {
-              'protocol': 2,
-              'fontFamilies': resources['fontFamilies'],
-              'numberSymbols': {},
-              'textLayouts': {
-                for (final raw in batch['requests'] as List)
-                  LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
-                    'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
-                    'descriptor':
-                        LayoutTextRequest(Map<String, dynamic>.from(raw))
-                            .resourceDescriptor,
-                    'path': [
-                      ['M', 0, 0],
-                      ['L', 10, 10]
-                    ],
-                    'clip': raw['box'],
-                  }
-              },
-            };
+            throw StateError('Vector generation must wait for explicit save');
           })));
       await tester.runAsync(() => provider!.loadFace(
           (resources['fontFamilies'] as Map).values.first['faces']['400:normal']
@@ -969,56 +954,55 @@ void main() {
       view.onSelectionChanged(modes);
       await tester.pump();
       await tester.pump();
-      expect(batches, 1,
-          reason: 'one pending transition owns text preparation');
-      expect(controller.document.nodes.first.properties['text'],
-          'Completed composing text');
-      expect(
-          tester
-              .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor))
-              .busy,
-          isTrue);
-      final beforeResources = controller.resources;
-      if (outcome == 'changed') {
-        controller.updateNode(controller.document.nodes.first.copyWith(
-            properties: {
-              ...controller.document.nodes.first.properties,
-              'text': 'Newer draft'
-            }));
-      }
       if (outcome == 'disposed') {
         await environment.pumpWidget(tester, const SizedBox.shrink());
-      }
-      if (outcome == 'failed') {
-        response.completeError(StateError('transition_failed'));
-      } else {
-        response.complete();
-      }
-      await tester.pumpAndSettle();
-      if (outcome == 'disposed') {
+        await tester.pumpAndSettle();
+        expect(batches, 0);
         expect(tester.takeException(), isNull);
         return;
       }
+      await tester.pumpAndSettle();
       var editor =
           tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
       expect(editor.busy, isFalse);
-      if (outcome == 'changed' || outcome == 'failed') {
-        expect(editor.interactionEnabled, isTrue);
-        expect(controller.resources, beforeResources);
-        await tester.ensureVisible(
-            find.byKey(const ValueKey('blueprint-reservations-mode')));
-        await tester
-            .tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
+      expect(editor.interactionEnabled, isFalse);
+      expect(editor.nativeTextPreview, isTrue);
+      expect(controller.document.nodes.first.properties['text'],
+          'Completed composing text');
+      final native = (layoutPainter(tester).scene['items'] as List)
+          .where((item) =>
+              item['kind'] == 'nativeText' &&
+              item['nodeId'] == document.nodes.first.id)
+          .single;
+      expect(native['nativeParagraph'].text.toPlainText(),
+          'Completed composing text');
+      final beforeDrag = controller.document.toJson();
+      await tester.drag(layoutCanvas(), const Offset(60, 0));
+      await tester.pumpAndSettle();
+      expect(controller.document.toJson(), beforeDrag,
+          reason:
+              'Local draft rendering grants no geometry editing in reservations');
+      if (outcome == 'edit again') {
+        await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
         await tester.pumpAndSettle();
         editor = tester
             .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
-        expect(batches, 2);
+        expect(editor.interactionEnabled, isTrue);
+        expect(controller.document.nodes.first.properties['text'],
+            'Completed composing text');
       }
-      expect(editor.interactionEnabled, isFalse);
-      expect(
-          compileScene(controller.document,
-              resources: controller.resources)['issues'],
-          isEmpty);
+      if (outcome == 'repeated') {
+        view.onSelectionChanged(modes);
+        await tester.pumpAndSettle();
+      }
+      expect(batches, 0,
+          reason:
+              'Composition, mode changes and canvas gestures never request canonical vectors');
+      expect(source.layoutSnapshot!.document.toJson(), document.toJson(),
+          reason: 'The saved plan remains unchanged');
+      expect(source.layoutSnapshot!.revision, 1);
+      expect(controller.dirty, isTrue);
+      expect(tester.takeException(), isNull);
     });
   }
   testWidgetsWithEnvironment(() => environment,
@@ -1310,28 +1294,11 @@ void main() {
             groupProducts: {table.id: 1}));
     source.layoutResources =
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
+    var vectorRequests = 0;
     final provider = await tester.runAsync(() => BlueprintTextResources.load(1,
             service: TicketLayoutService(transport: (body) async {
-          final batch = body['batch'] as Map;
-          return {
-            'protocol': 2,
-            'fontFamilies': source.layoutResources['fontFamilies'],
-            'numberSymbols': {},
-            'textLayouts': {
-              for (final raw in batch['requests'] as List)
-                LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
-                  'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
-                  'descriptor':
-                      LayoutTextRequest(Map<String, dynamic>.from(raw))
-                          .resourceDescriptor,
-                  'path': [
-                    ['M', 0, 0],
-                    ['L', 10, 10]
-                  ],
-                  'clip': raw['box'],
-                },
-            },
-          };
+          if (body['mode'] != 'font') vectorRequests++;
+          return blueprintNativeFontReplyFixture(body);
         })));
     await environment.pumpWidget(
         tester,
@@ -1390,10 +1357,16 @@ void main() {
     await tester.pump();
     expect(editor.controller.document.nodes.map((n) => n.label),
         everyElement('Front table'));
+    expect(source.layoutSnapshot!.document, same(original));
+    expect(source.layoutSnapshot!.revision, 1);
+    expect(vectorRequests, 0,
+        reason: 'Renaming uses the loaded native font until explicit Save');
+    expect(editor.controller.dirty, isTrue);
     expect(
-        compileScene(editor.controller.document,
-            resources: editor.controller.resources)['issues'],
-        isEmpty);
+        (layoutPainter(tester).scene['items'] as List)
+            .where((item) => item['kind'] == 'nativeText')
+            .isNotEmpty,
+        isTrue);
 
     await tester.enterText(name, '   ');
     await tester.testTextInput.receiveAction(TextInputAction.done);
@@ -1665,7 +1638,11 @@ void main() {
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
+                source: source,
+                reload: () async => source,
+                loadTextResources: () => BlueprintTextResources.load(1,
+                    service: TicketLayoutService(
+                        transport: blueprintNativeFontReplyFixture)))));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     Future<void> expectActionVisible(String key) async {

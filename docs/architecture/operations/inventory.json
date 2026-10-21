@@ -284,6 +284,24 @@
       ]
     },
     {
+      "name": "admit_layout_resources_limits_v1",
+      "references": [
+        {
+          "file": "supabase/functions/preview-ticket-layout/index.ts",
+          "line": 17,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/resource_admission.sql",
+          "line": 12,
+          "arguments": "p_occasion bigint,p_bytes bigint"
+        }
+      ]
+    },
+    {
       "name": "admit_notification_delivery_v1",
       "references": [
         {
@@ -324,7 +342,7 @@
       "references": [
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 16,
+          "line": 18,
           "via": "rpc"
         }
       ],
@@ -4946,7 +4964,7 @@
         },
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 20,
+          "line": 22,
           "via": "rpc"
         }
       ],
@@ -5419,7 +5437,7 @@
       "references": [
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 25,
+          "line": 27,
           "via": "rpc"
         }
       ],
@@ -7949,7 +7967,7 @@
         },
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 20,
+          "line": 22,
           "via": "from"
         },
         {
@@ -8792,6 +8810,17 @@
           "file": "database/functions/abuse/media.sql",
           "line": 23,
           "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint,p_profile text"
+        }
+      ]
+    },
+    {
+      "name": "admit_layout_resources_limits_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/resource_admission.sql",
+          "line": 12,
+          "arguments": "p_occasion bigint,p_bytes bigint"
         }
       ]
     },
@@ -9944,6 +9973,17 @@
           "file": "database/functions/user_permissions/feature_operations.sql",
           "line": 172,
           "arguments": "p_occasion bigint,p_place bigint"
+        }
+      ]
+    },
+    {
+      "name": "can_prepare_layout_resources",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/resource_admission.sql",
+          "line": 3,
+          "arguments": "p_occasion bigint"
         }
       ]
     },

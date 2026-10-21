@@ -116,6 +116,15 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
 
+## Blueprint draft text and persistence
+
+Blueprint editors render draft labels locally using the loaded font. Renaming,
+composition and switching editor modes must not generate canonical vectors or
+save the plan. Native draft text preview does not grant geometry editing rights.
+Explicit Save captures the draft, prepares its canonical text resources and then
+persists that exact snapshot. Cancel restores the confirmed plan. Public viewers
+and PDF rendering consume the saved canonical resources.
+
 ## Occasion feature configuration
 
 `occasions.features` stores each event's feature array. `Feature.fromJson`

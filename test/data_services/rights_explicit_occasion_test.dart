@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/product_grid_record.dart';
 import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart';
 import 'package:fstapp/components/users/db_users.dart';
@@ -30,6 +32,7 @@ void main() {
   var bankDispatches = 0;
   var bankRpcDispatches = 0;
   var unitUserUpdates = 0;
+  var contextFailures = 0;
   setUpAll(() async {
     PackageInfo.setMockInitialValues(
         appName: 'test',
@@ -39,6 +42,9 @@ void main() {
         buildSignature: '');
     tz.initializeTimeZones();
     fixture = await RootSupabaseFixture.open((request) async {
+      if (request.url.path == '/auth/v1/logout') {
+        return http.Response('', 204, request: request);
+      }
       if (request.url.path == '/functions/v1/bank-sync-manage') {
         bankDispatches++;
         return http.Response(
@@ -61,6 +67,10 @@ void main() {
         final context = (jsonDecode(request.body)['data_in'] as Map)
             .cast<String, dynamic>();
         contexts.add(context);
+        if (contextFailures > 0) {
+          contextFailures--;
+          throw http.ClientException('Fixture context unavailable');
+        }
         return http.Response(
             jsonEncode({
               'code': 200,
@@ -74,7 +84,8 @@ void main() {
                 'unit': {'id': context['unit_id']},
               'occasion_user': {'is_editor_view': true},
               'capabilities': {
-                'navigation.administration': true,
+                'navigation.administration':
+                    context['link'] != 'access-revoked',
                 if (context['unit_id'] == 12) 'media.unit.write': true,
               },
               if (context['unit_id'] == 12) 'user_info': {'id': 'self-user'},
@@ -96,6 +107,7 @@ void main() {
     bankDispatches = 0;
     bankRpcDispatches = 0;
     unitUserUpdates = 0;
+    contextFailures = 0;
     final state = RightsContextFixture();
     addTearDown(state.dispose);
     final storage = await LocalAppStorageFixture.open();
@@ -387,6 +399,52 @@ void main() {
     expect(contexts.single['unit_id'], 12);
     expect(RightsService.hasCapability('media.unit.write'), isTrue);
   });
+  for (final revoked in [false, true]) {
+    test(
+        'administration retry reloads invalidated capabilities, revoked=$revoked',
+        () async {
+      const actor = '00000000-0000-4000-8000-000000000001';
+      final payload = base64Url.encode(utf8.encode(jsonEncode({
+        'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
+        'sub': actor,
+      })));
+      await Supabase.instance.client.auth.recoverSession(jsonEncode({
+        'access_token':
+            '${base64Url.encode(utf8.encode('{}'))}.$payload.signature',
+        'refresh_token': 'fixture-refresh',
+        'token_type': 'bearer',
+        'expires_in': 3600,
+        'user': {
+          'id': actor,
+          'aud': 'authenticated',
+          'role': 'authenticated',
+          'created_at': '2026-01-01T00:00:00Z'
+        },
+      }));
+      addTearDown(() =>
+          Supabase.instance.client.auth.signOut(scope: SignOutScope.local));
+      final link = revoked ? 'access-revoked' : 'access-recovery';
+      await RightsService.updateAppData(
+          link: link, force: true, refreshOffline: false);
+      contextFailures = 1;
+      await RightsService.refreshAfterAuthorizationDenial();
+      expect(RightsService.canSeeAdministration(), isFalse);
+      expect(AuthService.isLoggedIn(), isTrue);
+      final mutationCount =
+          bankDispatches + bankRpcDispatches + unitUserUpdates;
+      expect(
+          await const RightsAdministrationAccess()
+              .load(link, reservations: false),
+          !revoked);
+      expect(contexts, hasLength(3),
+          reason:
+              'Retry must fetch current SQL capabilities for the same link');
+      expect(AuthService.currentUserId(), actor);
+      expect(
+          bankDispatches + bankRpcDispatches + unitUserUpdates, mutationCount,
+          reason: 'Reloading context cannot replay the rejected mutation');
+    });
+  }
 }
 
 class _DeniedProductCommands implements EshopCommands {

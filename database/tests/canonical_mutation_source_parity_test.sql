@@ -30,6 +30,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.adjust_spot_capacity_for_pool(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e46b9a4b5fd32f15655958bd80a85bda'),'current SQL source parity: public.adjust_spot_capacity_for_pool(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.administration_navigation_rule(boolean,boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7a9559975e19ae53e8b15a23a4b8b68a'),'current SQL source parity: public.administration_navigation_rule(boolean,boolean,boolean,boolean,boolean)');
+-- supabase/migrations/20261021140000_blueprint_resource_admission.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.admit_layout_resources_limits_v1(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='4f4c04aad4bed791cbfa05e8b39c200a'),'current SQL source parity: public.admit_layout_resources_limits_v1(bigint,bigint)');
 -- supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql
  PERFORM assert_true(to_regprocedure('public.advance_group_profile_heads_internal_v1(bigint,uuid[])') IS NULL,'retired SQL identity remains absent: public.advance_group_profile_heads_internal_v1(bigint,uuid[])');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -122,6 +124,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_migrate_reviewed_legacy_blueprint(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7b8aa96e5ddac5d222dbcaf9326f0086'),'current SQL source parity: public.can_migrate_reviewed_legacy_blueprint(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_move_map_place(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='946808896200870493de0351fe9b6c38'),'current SQL source parity: public.can_move_map_place(bigint,bigint)');
+-- supabase/migrations/20261021140000_blueprint_resource_admission.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_prepare_layout_resources(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f6faeb5ef1b579d87f0f8e459aea3800'),'current SQL source parity: public.can_prepare_layout_resources(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_preview_ticket_readonly(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48efb47c1529b5106cbab4edf641fd0a'),'current SQL source parity: public.can_preview_ticket_readonly(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql

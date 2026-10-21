@@ -83,7 +83,7 @@ jobs:
           GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
       - name: Database contract and anonymous checkout
-        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test blueprint/resource_admission_test
       - name: Click a seat and complete checkout in a real browser
         run: pnpm --dir web_client run test:seat-checkout-browser
 
@@ -98,7 +98,7 @@ jobs:
         with:
           deno-version: '2.9.0'
       - name: Ticket preview colors and first-delivery intent
-        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
+        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
       - id: sdk
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
@@ -113,4 +113,4 @@ jobs:
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - run: fvm flutter pub get
       - name: First delivery and resend client requests
-        run: fvm flutter test --no-pub test/components/eshop/ticket_delivery_request_test.dart
+        run: fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart

@@ -68,6 +68,58 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
       'areaBindings': []
     };
 void main() {
+  test('commercial rename and seat blocking remain drafts until explicit save',
+      () async {
+    final base = snapshot();
+    final writes = <Map<String, dynamic>>[];
+    final controller = BlueprintLayoutController(
+      source: BlueprintModel(layoutSnapshot: base),
+      saver: BlueprintLayoutSaver(Commands((input) async {
+        writes.add(input);
+        return accepted(input);
+      })),
+    );
+    addTearDown(controller.dispose);
+    final oldName = base.document.nodes.firstWhere((n) => n.id == group).label;
+    controller.renameCommercialNode(group, 'Draft table');
+    controller.setBlocked(node, true);
+    expect(writes, isEmpty);
+    expect(controller.isDirty, isTrue);
+    expect(
+        controller.snapshot.document.nodes
+            .firstWhere((n) => n.id == group)
+            .label,
+        'Draft table');
+    expect(base.document.nodes.firstWhere((n) => n.id == group).label, oldName);
+    controller.cancel();
+    expect(writes, isEmpty);
+    expect(controller.isDirty, isFalse);
+    expect(
+        controller.snapshot.document.nodes
+            .firstWhere((n) => n.id == group)
+            .label,
+        oldName);
+    expect(controller.snapshot.seatBindings[node]!.blocked, isFalse);
+    controller.renameCommercialNode(group, 'Saved table');
+    controller.setBlocked(node, true);
+    expect(writes, isEmpty);
+    await controller.save(
+        preparedResources:
+            blueprintPreparedResourcesFixture(controller.snapshot.document));
+    expect(writes, hasLength(1));
+    expect(
+        (writes.single['layout']['nodes'] as List)
+            .singleWhere((n) => n['id'] == group)['label'],
+        'Saved table');
+    expect(controller.isDirty, isFalse);
+    controller.cancel();
+    expect(
+        controller.snapshot.document.nodes
+            .firstWhere((n) => n.id == group)
+            .label,
+        'Saved table');
+    expect(writes, hasLength(1));
+  });
   test(
       'font family change drops unsupported bold italic but preserves independent fonts',
       () {
@@ -614,8 +666,9 @@ void main() {
     expect(c.isDirty, isFalse);
     c.renameCommercialNode(groupA, 'Front table');
     expect(c.layout.document.nodes.first.label, 'Front table');
-    expect(c.layout.document.nodes.firstWhere((n) => n.id == tableA).label,
-        'A', reason: 'renaming a group does not dual-write an independent object name');
+    expect(c.layout.document.nodes.firstWhere((n) => n.id == tableA).label, 'A',
+        reason:
+            'renaming a group does not dual-write an independent object name');
     expect(c.snapshot.seatBindings[inheritedA]!.title, 'A1');
     c.layout.undo();
     c.renameCommercialNode(inheritedA, 'A-special');

@@ -1,3 +1,9 @@
+## 0.3.1
+
+- Restore the exact SDK fixes shipped in Festapp 35e421e27 to canonical source.
+- Allow editor hosts to preview draft text with loaded fonts without enabling geometry editing. Canonical viewer rendering remains the default.
+- Use the corresponding 0.2.1 core fixes and rebuild the 0.3.1 web distribution.
+
 ## 0.2.0 (unreleased)
 
 - Add a backend-independent object layout document, controller and shared Dart/JS scene runtime alongside the existing grid API.

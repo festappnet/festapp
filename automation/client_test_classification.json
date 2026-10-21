@@ -801,6 +801,13 @@
       "sources": [
         "test/components/organization/authorization_projection_test.dart"
       ]
+    },
+    "test/components/blueprint/blueprint_toolbar_test.dart": {
+      "kind": "environment",
+      "reason": "Actual blueprint toolbar themes, responsive modes and canvas layout require Flutter rendering and isolated font fixtures.",
+      "sources": [
+        "test/components/blueprint/blueprint_toolbar_test.dart"
+      ]
     }
   }
 }

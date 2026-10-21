@@ -36,6 +36,7 @@ class VenueLayoutEditor extends StatefulWidget {
     this.seatPresentation = const {},
     this.capacityPresentation = const {},
     this.interactionEnabled = true,
+    this.nativeTextPreview = false,
     this.onNodeActivated,
     this.onEditRequested,
     this.inspectorOverride,
@@ -55,7 +56,7 @@ class VenueLayoutEditor extends StatefulWidget {
   final Widget Function(BuildContext, LayoutNode)? fontPickerBuilder;
   final Widget Function(BuildContext, String)? globalFontPickerBuilder;
 
-  /// Native input uses the exact loaded face; committed text still paints paths.
+  /// Native input and editor previews use the exact loaded face.
   final Future<TextStyle> Function(LayoutNode)? inlineTextStyleBuilder;
 
   /// Host actions share the editor toolbar. Trailing actions stay visible while
@@ -78,6 +79,11 @@ class VenueLayoutEditor extends StatefulWidget {
 
   /// Disable geometric tools while retaining camera, selection and activation.
   final bool interactionEnabled;
+
+  /// Preview unsaved labels with the host's loaded font while geometry tools
+  /// remain disabled. Editor hosts opt in explicitly; viewers retain canonical
+  /// prepared text by default. Requires [inlineTextStyleBuilder].
+  final bool nativeTextPreview;
 
   /// Exact node hit, shared by pointer/touch and keyboard Enter/Space.
   final ValueChanged<String>? onNodeActivated;
@@ -3333,7 +3339,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               : _viewHint,
                                         ),
                                         child: LayoutSceneSurface(
-                                          retainPendingTextPreview: _canEdit,
+                                          retainPendingTextPreview:
+                                              _canEdit ||
+                                              widget.nativeTextPreview,
                                           key: ValueKey(_templateViewport),
                                           document: c.document,
                                           backgroundSelected:
