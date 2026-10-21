@@ -42,8 +42,10 @@ připojit; editorovi bez těchto práv zůstává možnost uložit koncept. Potv
 včetně stavu propojení. Krok plateb obsahuje také kanonické nastavení variabilního
 symbolu (náhodný nebo číselná řada). Splatnost a upomínky mají samostatnou
 otázku. Prázdná splatnost přebírá nastavení formulářů události; nezaplacená
-objednávka se po splatnosti sama neruší ani neuvolňuje místa. Uložení výchozích
-upomínek organizace nemění e-mail pro odpovědi ani tón komunikace a naopak.
+objednávka se po splatnosti sama neruší ani neuvolňuje místa. Upomínky, e-mail
+pro odpovědi a tón komunikace se ukládají do konceptu. Náhled potvrzovacího
+e-mailu vykresluje Edge Function `occasion-setup-email-preview` z uložené revize
+konceptu; nastavení organizace se nemění.
 Server při finalizaci znovu ověří jednotku, měny
 a fingerprint platebních instrukcí; změněný účet vyžaduje nové potvrzení.
 Legacy koncepty bez nového potvrzovacího pole zachovávají původní routování. Dřívější skryté volby se bez příslušné funkce neuplatňují.
@@ -74,7 +76,8 @@ ověřuje práva a načítá zdroje pomocí skutečné autorizované předlohy.
 
 Pro nové RPC a rozšířenou finalizaci je třeba migrace
 `20261019123000_occasion_setup_adaptive_details.sql`; pouhý restart staršího
-lokálního backendu ji automaticky nenainstaluje.
+lokálního backendu ji automaticky nenainstaluje. Úpravy kopírování, oprávnění
+a náhledu e-mailu přidává migrace `20261022013000_occasion_setup_ux.sql`.
 
 Nový koncept vzniká přes stejný SQL algoritmus jako běžná událost
 (update_occasion_internal_v1, včetně vytvoření formuláře a produktů).
@@ -84,7 +87,10 @@ konfigurace uložená do occasion_setup_drafts. Koncept proto nevytváří trval
 Výchozí hodnoty se neduplikují v Dart kódu. Koncept rovnou obsahuje formulář:
 povinný e-mail, vstupenku a jednu variantu produktu Spot za 100 CZK.
 Editor obsahu je vložený přímo do kroku Formulář a změny průběžně ukládá
-do konceptu. Pole jsou přímo na ploše bez vnořeného canvasu a scrollu. Plánek má samostatný krok za Formulářem. Vstupenka používá existující editor vzhledu,
+do konceptu. Pole jsou přímo na ploše bez vnořeného canvasu a scrollu. Plánek má samostatný krok za Formulářem. Nový plánek nabízí celý katalog
+šablon včetně prázdného plátna; potvrzené uložení vrací uživatele do průvodce.
+Formulář i plánek lze kopírovat nezávisle na zdroji celé akce. Kopii formuláře
+lze bezprostředně vrátit zpět a zachovává vlastní adresu formuláře. Vstupenka používá existující editor vzhledu,
 ale jeho nastavení ukládá pouze do konceptu. Náhled vyžaduje lokálně spuštěnou
 Edge Function `preview-ticket-layout`, kterou spouštěč automaticky zapne. Nastavení plateb má vlastní krok s bankovní
 trasou, splatností a související komunikací.

@@ -1,7 +1,13 @@
-CREATE OR REPLACE FUNCTION public.get_is_manager_on_unit(unit_id bigint)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
- SELECT public.active_membership(
-   (SELECT m.is_manager FROM public.unit_users m WHERE m."user"=auth.uid() AND m.unit=unit_id),
-   public.is_demo_unit(unit_id));
+CREATE OR REPLACE FUNCTION public.get_is_manager_on_unit(unit_id bigint) RETURNS bool
+    LANGUAGE sql STABLE
+    SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+  SELECT NOT public.is_demo_unit(unit_id) AND EXISTS (
+    SELECT 1
+    FROM public.unit_users membership
+    WHERE membership."user" = auth.uid()
+      AND membership.unit = unit_id
+      AND membership.is_manager
+  );
 $$;

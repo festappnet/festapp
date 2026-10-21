@@ -77,17 +77,23 @@ class OccasionSetupSourcePicker extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        ListTile(
+        RadioListTile<bool>(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(selectedId == null
-                ? Icons.radio_button_checked
-                : Icons.radio_button_off),
-            title: Text(OccasionSetupStrings.copy('fromScratch')),
-            onTap: () => onChanged(null)),
-        OutlinedButton.icon(
-            onPressed: sources.isEmpty ? null : () => _pick(context),
-            icon: const Icon(Icons.search),
-            label: Text(OccasionSetupStrings.copy('source'))),
+            value: true,
+            groupValue: selectedId == null,
+            title: Text(OccasionSetupStrings.story('newOccasion')),
+            onChanged: (_) => onChanged(null)),
+        RadioListTile<bool>(
+            contentPadding: EdgeInsets.zero,
+            value: false,
+            groupValue: selectedId == null,
+            title: Text(OccasionSetupStrings.story('copyOccasion')),
+            onChanged: sources.isEmpty ? null : (_) => _pick(context)),
+        if (selectedId != null)
+          OutlinedButton.icon(
+              onPressed: sources.isEmpty ? null : () => _pick(context),
+              icon: const Icon(Icons.search),
+              label: Text(OccasionSetupStrings.copy('source'))),
         if (selectedId != null)
           Padding(
               padding: const EdgeInsets.only(top: 8),

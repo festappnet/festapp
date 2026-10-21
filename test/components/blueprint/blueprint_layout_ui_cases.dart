@@ -2311,6 +2311,54 @@ void main() {
   });
 
   testWidgetsWithEnvironment(() => environment,
+      'wizard returns only after confirmed save and accepted geometry baseline',
+      (tester) async {
+    var completed = 0;
+    var saves = 0;
+    final pending = Completer<void>();
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutDemo(
+          initialDocument: VenueLayoutDocument(nodes: [
+            LayoutNode(
+                id: '10000000-0000-4000-8000-000000000099', kind: 'group')
+          ]),
+          initialResources: const {
+            'protocol': 2,
+            'fontFamilies': {},
+            'textLayouts': {},
+            'assets': {}
+          },
+          initiallyUnsaved: true,
+          onSaved: () => completed++,
+          onSave: (_) {
+            saves++;
+            return saves == 1 ? pending.future : Future.value();
+          },
+        )));
+    await tester.pumpAndSettle();
+    final save = find.byType(FilledButton).last;
+    await tester.tap(save);
+    await tester.pump();
+    expect(completed, 0);
+    pending.completeError(StateError('draft_save_failed'));
+    await tester.pumpAndSettle();
+    expect(completed, 0);
+    expect(find.textContaining('draft_save_failed'), findsOneWidget);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(completed, 1);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .controller
+            .dirty,
+        isFalse);
+    expect(find.byType(EditorActionBar), findsNothing);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
       'empty catalog cannot invent a product template or call the writer',
       (tester) async {
     await environment.pumpWidget(

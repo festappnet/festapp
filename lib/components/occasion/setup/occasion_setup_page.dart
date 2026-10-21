@@ -5,6 +5,7 @@ import 'package:fstapp/services/time_helper.dart';
 import 'occasion_setup_sales.dart';
 import 'occasion_setup_completed.dart';
 import 'occasion_setup_source_picker.dart';
+import 'occasion_setup_copy_picker.dart';
 import 'occasion_setup_references.dart';
 import 'occasion_setup_reference_dialog.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -15,7 +16,6 @@ import '../../blueprint/blueprint_text_preparation.dart';
 import '../../blueprint/blueprint_strings.dart';
 import '../../blueprint/views/blueprint_layout_demo.dart';
 import '../../blueprint/views/blueprint_product_dialogs.dart';
-import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
@@ -29,8 +29,6 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:fstapp/components/forms/models/form_editor_draft.dart';
-import 'package:fstapp/components/forms/views/create_or_copy_dialog.dart';
 import 'package:fstapp/components/forms/views/form_editor_content.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
@@ -48,7 +46,6 @@ import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 
 import 'occasion_setup_draft.dart';
@@ -114,6 +111,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   late TextEditingController _linkController;
   int _editEpoch = 0;
   int _formEpoch = 0;
+  int _configurationEpoch = 0;
+  Map<String, dynamic>? _formUndo;
   TicketFeature? _ticketFeature;
   FormEditBundle? _inlineFormBundle;
   List<Map<String, dynamic>> _sources = [];
@@ -319,13 +318,59 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return '${o['title']} ($formatted)';
   }
 
-  List<FormEditorDraft> get _sourceForms => [
-        if (_selectedSource != null)
-          for (final raw in _selectedSource!['forms'] as List)
-            FormEditorDraft.fromJson(Map<String, dynamic>.from(raw))
-              ..occasionModel = OccasionModel.fromJson(
-                  Map<String, dynamic>.from(_selectedSource!['occasion']))
-      ];
+  Map<String, dynamic> _clone(Map value) =>
+      Map<String, dynamic>.from(jsonDecode(jsonEncode(value)));
+
+  Future<Map<String, dynamic>?> _pickConfiguration(String kind) async {
+    final epoch = _configurationEpoch;
+    final chosen = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (_) => OccasionSetupCopyPicker(
+            kind: kind,
+            load: () async {
+              final rows = await Supabase.instance.client
+                  .rpc('get_occasion_setup_source_list', params: {
+                'p_unit': _stored.unit,
+                'p_source_unit': _data['sourceUnitId'] ?? _stored.unit
+              });
+              return [
+                for (final source in (rows as List).whereType<Map>())
+                  for (final item
+                      in (source[kind] as List? ?? []).whereType<Map>())
+                    {
+                      ...Map<String, dynamic>.from(item),
+                      'occasionId': (source['occasion'] as Map)['id'],
+                      'occasionTitle': (source['occasion'] as Map)['title']
+                    }
+              ];
+            }));
+    if (!mounted || chosen == null || epoch != _configurationEpoch) return null;
+    try {
+      final source = await _sourceDetail(chosen['occasionId'] as int);
+      if (!mounted || epoch != _configurationEpoch) return null;
+      return {
+        'source': source,
+        'item': (source[kind] as List)
+            .whereType<Map>()
+            .firstWhere((i) => i['id'] == chosen['id'])
+      };
+    } catch (error, stack) {
+      debugPrint('Setup copy: $error\n$stack');
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(OccasionSetupStrings.story('copiesFailed'))));
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> _loadEmailPreview(
+      Map<String, dynamic> snapshot) async {
+    if (!await _flush()) throw StateError('Draft save failed');
+    final response = await Supabase.instance.client.functions.invoke(
+        'occasion-setup-email-preview',
+        body: {'draftId': _stored.id, 'revision': _stored.revision});
+    return Map<String, dynamic>.from(response.data as Map);
+  }
 
   void _ensureDefaultForm(Map<String, dynamic> draft) {
     final existing = draft['formDraft'];
@@ -494,6 +539,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   void _change(
     void Function(Map<String, dynamic>) update, {
     bool changesConfiguration = false,
+    bool invalidateUndo = true,
   }) {
     if (_finalizeCommand != null) return;
     setState(() {
@@ -501,6 +547,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       final oldFormLink = (_data['formDraft'] as Map?)?['link'];
       final oldCurrencies = OccasionSetupStory.paymentCurrencies(_data);
       update(_data);
+      if (changesConfiguration && invalidateUndo) {
+        _configurationEpoch++;
+        _formUndo = null;
+      }
       if (_data['title'] != oldTitle &&
           _data['formLinkAutomatic'] != false &&
           _data['formDraft'] is Map) {
@@ -878,7 +928,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (question.key == 'verification') _refreshVerification();
   }
 
-  Future<void> _openBlueprint() async {
+  Future<void> _openBlueprint({VenueLayoutDocument? initialTemplate}) async {
+    if (initialTemplate == null &&
+        _data['blueprintLayoutDraft'] is! Map &&
+        SetupBlueprintConfiguration(_data).mode != SetupBlueprintMode.copy) {
+      await _startNewBlueprint();
+      return;
+    }
     if (_openingBlueprint) return;
     setState(() {
       _openingBlueprint = true;
@@ -929,10 +985,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       var draft = raw is Map
           ? BlueprintSetupLayoutDraft.fromJson(Map<String, dynamic>.from(raw))
           : BlueprintSetupLayoutDraft.empty(
-              document:
-                  VenueLayoutTemplates.byId(VenueLayoutTemplates.defaultId)
-                      .create(
-                          localize: VenueLayoutLocalizations.of(context).text),
+              document: initialTemplate ??
+                  VenueLayoutTemplates.byId('blank').create(
+                      localize: VenueLayoutLocalizations.of(context).text),
               resources: const {});
       final provider = await BlueprintTextResources.forSetupDraft(_stored.id);
       Future<Map<String, dynamic>> prepare(
@@ -954,8 +1009,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       if (!mounted) return;
       await Navigator.of(context).push<void>(MaterialPageRoute(
           builder: (_) => Scaffold(
-                appBar: AppBar(title: Text(CommonStrings.blueprint)),
+                appBar: AppBar(
+                    title: Text(
+                        OccasionSetupStrings.story('draftBlueprintTitle'))),
                 body: BlueprintLayoutDemo(
+                    onSaved: () => Navigator.of(context).pop(),
                     initialDocument: draft.document,
                     initiallyUnsaved: raw is! Map,
                     initialResources: resources,
@@ -1038,61 +1096,62 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   int _layoutAreaCount(Map<String, dynamic> data) =>
       SetupBlueprintConfiguration(data).areaCount;
 
+  Future<void> _startNewBlueprint() async {
+    final selected = await showDialog<LayoutTemplate>(
+        context: context,
+        builder: (c) => AppAlertDialog(
+            title: Text(OccasionSetupStrings.story('chooseBlueprintTemplate')),
+            content: SizedBox(
+                width: 560,
+                height: 460,
+                child: ListView(children: [
+                  for (final template in VenueLayoutTemplates.all)
+                    ListTile(
+                        title: Text(template.id == 'blank'
+                            ? OccasionSetupStrings.story('emptyBlueprint')
+                            : VenueLayoutLocalizations.of(c)
+                                .text(template.title)),
+                        onTap: () => Navigator.pop(c, template)),
+                ]))));
+    if (!mounted || selected == null) return;
+    _change((d) {
+      SetupBlueprintConfiguration(d).clear(create: true);
+      _inlineFormBundle = null;
+      _formEpoch++;
+    }, changesConfiguration: true);
+    await _openBlueprint(
+        initialTemplate: selected.create(
+            localize: VenueLayoutLocalizations.of(context).text));
+  }
+
   Future<void> _selectBlueprint({bool chooseAnother = false}) async {
     if (_loadingBlueprintCandidate) return;
-    _blueprintOpenFailed = false;
+    final epoch = _configurationEpoch;
+    final picked = await _pickConfiguration('blueprints');
+    if (!mounted || picked == null || epoch != _configurationEpoch) return;
     final request = ++_blueprintSelectionRequest;
-    final sourceId = _data['sourceId'];
-    final formEpoch = _formEpoch;
-    final plans = (_selectedSource?['blueprints'] as List? ?? [])
-        .whereType<Map>()
-        .toList();
-    final form = (_selectedSource?['forms'] as List? ?? [])
-        .whereType<Map>()
-        .where((f) => f['id'] == _data['sourceFormId'])
-        .firstOrNull;
-    Map? chosen = chooseAnother
-        ? null
-        : plans.where((p) => p['id'] == form?['blueprint']).firstOrNull;
-    chosen ??= plans.length == 1 ? plans.single : null;
-    if (chosen == null && plans.isNotEmpty) {
-      chosen = await showDialog<Map>(
-          context: context,
-          builder: (context) =>
-              AppSimpleDialog(title: const Text('Vyberte plánek'), children: [
-                for (final plan in plans)
-                  SimpleDialogOption(
-                      onPressed: () => Navigator.pop(context, plan),
-                      child: Text(
-                          plan['title'] as String? ?? 'Plánek ${plan['id']}'))
-              ]));
-    }
-    if (!mounted) return;
-    if (chosen == null) {
-      if (plans.isEmpty)
-        setState(() => _blueprintError =
-            'Předloha nemá dostupný plánek. Vytvořte nový nebo pokračujte bez plánku.');
-      return;
-    }
     setState(() => _loadingBlueprintCandidate = true);
     try {
-      final selected = chosen;
-      final candidate =
-          Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
-      _applyBlueprint(candidate, await _prepareBlueprint(selected));
-      if (!mounted ||
-          request != _blueprintSelectionRequest ||
-          sourceId != _data['sourceId'] ||
-          formEpoch != _formEpoch) return;
+      final candidate = _clone(_data);
+      _applyBlueprint(
+          candidate, await _prepareBlueprint(picked['item'] as Map));
+      candidate['blueprintSourceOccasionId'] =
+          ((picked['source'] as Map)['occasion'] as Map)['id'];
+      if (!mounted || epoch != _configurationEpoch) return;
       final resolved = await _resolveReferences(candidate, _data);
-      if (resolved == null || !mounted || request != _blueprintSelectionRequest)
-        return;
-      _change((x) {
-        x.addAll(resolved);
+      if (!mounted ||
+          resolved == null ||
+          request != _blueprintSelectionRequest ||
+          epoch != _configurationEpoch) return;
+      _change((d) {
+        d.addAll(resolved);
         _inlineFormBundle = null;
         _formEpoch++;
       }, changesConfiguration: true);
-      setState(() => _blueprintError = null);
+      setState(() {
+        _blueprintError = null;
+        _blueprintOpenFailed = false;
+      });
     } catch (error) {
       if (mounted) setState(() => _blueprintError = error.toString());
     } finally {
@@ -1100,87 +1159,62 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
   }
 
-  Widget _switch(Map<String, dynamic> d, String keyName, String label) =>
-      SwitchListTile(
-        title: Text(label),
-        value: d[keyName] == true,
-        onChanged: (v) =>
-            _change((x) => x[keyName] = v, changesConfiguration: true),
-      );
-
   Future<void> _chooseForm() async {
-    final current = _active;
-    if (current == null) return;
-    if (current['formDraft'] != null) {
-      final replace = await showDialog<bool>(
-        context: context,
-        builder: (context) => AppAlertDialog(
-          title: const Text('Nahradit formulář v konceptu?'),
-          content: const Text(
-            'Dosavadní úpravy formuláře se při výměně zahodí.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(CommonStrings.back),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('Common.confirm'.tr()),
-            ),
-          ],
-        ),
-      );
-      if (replace != true || !mounted) return;
+    final epoch = _configurationEpoch;
+    final picked = await _pickConfiguration('forms');
+    if (!mounted || picked == null || epoch != _configurationEpoch) return;
+    final previous = _clone(_data);
+    try {
+      final candidate = _clone(_data);
+      final source = picked['source'] as Map;
+      final form = _clone(picked['item'] as Map);
+      form['link'] = (candidate['formDraft'] as Map?)?['link'] ?? '';
+      candidate['formDraft'] = form;
+      candidate['sourceFormId'] = form['id'];
+      candidate['formSourceOccasionId'] = (source['occasion'] as Map)['id'];
+      candidate['formOrigin'] = (source['occasion'] as Map)['title'];
+      candidate['formDefaultsFollowEvent'] = false;
+      final plan = (source['blueprints'] as List)
+          .whereType<Map>()
+          .where((p) => p['id'] == form['blueprint'])
+          .firstOrNull;
+      if (plan != null)
+        _applyBlueprint(candidate, await _prepareBlueprint(plan));
+      if (!mounted || epoch != _configurationEpoch) return;
+      final next = await _resolveReferences(candidate, _data);
+      if (!mounted || next == null || epoch != _configurationEpoch) return;
+      _change((d) {
+        d.clear();
+        d.addAll(next);
+        _resetBankAccount(d);
+        _adoptFormSettings(d);
+        _formEpoch++;
+        _formLinkAvailable = null;
+        _inlineFormBundle = null;
+        _ticketFeature = null;
+      }, changesConfiguration: true);
+      setState(() => _formUndo = previous);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.toString())));
     }
-    final result = await showDialog<dynamic>(
-      context: context,
-      builder: (context) => CreateOrCopyFormDialog(
-        existingForms: _sourceForms.map((form) => form.toBundle()).toList(),
-      ),
-    );
-    if (!mounted || result == null) return;
-    final form = result is FormBundle
-        ? FormEditorDraft.fromBundle(result)
-        : defaultDraftForm(
-            Map<String, dynamic>.from(_data['defaultConfiguration'] as Map),
-          );
-    final candidate =
-        Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
-    candidate['formDraft'] = serializeDraftForm(form);
-    candidate['sourceFormId'] =
-        result is FormBundle ? form.definition.id : null;
-    (candidate['formDraft'] as Map)['link'] = '';
-    if (result is FormBundle && form.definition.blueprint != null) {
-      for (final source
-          in [_selectedSource].whereType<Map<String, dynamic>>()) {
-        final selected = (source['blueprints'] as List)
-            .whereType<Map>()
-            .where((plan) => plan['id'] == form.definition.blueprint)
-            .firstOrNull;
-        if (selected != null)
-          _applyBlueprint(candidate, await _prepareBlueprint(selected));
-      }
-    }
-    final next = await _resolveReferences(candidate, _data);
-    if (!mounted || next == null) return;
-    _change((draft) {
-      _resetBankAccount(draft);
-      _formEpoch++;
-      _formLinkAvailable = null;
+  }
+
+  void _undoForm() {
+    final previous = _formUndo;
+    if (previous == null) return;
+    _change((d) {
+      final step = d['step'];
+      final q = d['storyQuestion'];
+      d.clear();
+      d.addAll(previous);
+      d['step'] = step;
+      d['storyQuestion'] = q;
       _inlineFormBundle = null;
+      _formEpoch++;
       _ticketFeature = null;
-      draft['formDefaultsFollowEvent'] = false;
-      draft['sourceFormId'] = next['sourceFormId'];
-      draft['formDraft'] = next['formDraft'];
-      draft['formLinkAutomatic'] = true;
-      draft['blueprintMode'] = next['blueprintMode'];
-      draft['blueprintLayoutDraft'] = next['blueprintLayoutDraft'];
-      draft['blueprintTitle'] = next['blueprintTitle'];
-      draft['ticketDraft'] = next['ticketDraft'];
-      _adoptFormSettings(draft);
-      draft['formOrigin'] =
-          result is FormBundle ? form.occasionModel?.title : null;
+      _formLinkAvailable = null;
     }, changesConfiguration: true);
   }
 
@@ -1874,6 +1908,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
+  Widget _switch(Map<String, dynamic> data, String key, String label) =>
+      SwitchListTile.adaptive(
+          title: Text(label),
+          value: data[key] == true,
+          onChanged: (value) => _change((draft) => draft[key] = value,
+              changesConfiguration: true));
+
   Widget _body(Map<String, dynamic> d) {
     if (_questions[_questionIndex(d)].key == 'ticket')
       return _ticketSettings(d);
@@ -1922,6 +1963,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (_questions[_questionIndex(d)].key == 'communication') {
       return OccasionSetupCommunication(
         key: const ValueKey('communication'),
+        loadPreview: _loadEmailPreview,
         draftId: _stored.id,
         unitId: _stored.unit,
         data: d,
@@ -1971,6 +2013,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               label: _sourceLabel,
               onChanged: _selectSource,
             ),
+            if (d['sourceId'] != null) ...[
+              if (AppConfig.isAppSupported)
+                _switch(d, 'copyProgram',
+                    '${CommonStrings.schedule} a ${CommonStrings.places}'),
+              if (AppConfig.isAppSupported)
+                _switch(d, 'copyInformation',
+                    'FeatureInformation.information'.tr()),
+              _switch(
+                  d, 'copyEmails', OccasionSetupStrings.story('copyEmails')),
+            ],
             if (_loadingDetail) const LinearProgressIndicator(),
             if (_sources.isEmpty && !_loadingSources && _sourceError == null)
               const Text(
@@ -1986,52 +2038,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       case 2:
         if (!AppConfig.isAppSupported) return _ticketSettings(d);
         return Column(
-          children: [
-            _switch(d, 'formEnabled', 'Registrace a prodej'),
-            _switch(
-              d,
-              'copyProgram',
-              '${CommonStrings.schedule} a ${CommonStrings.places}',
-            ),
-            _switch(
-              d,
-              'copyInformation',
-              'FeatureInformation.information'.tr(),
-            ),
-            if (d['copyProgram'] == true)
-              ExpansionTile(
-                title: Text(
-                  '${CommonStrings.schedule} · ${(d['sourceProgram'] as List? ?? []).length}',
-                ),
-                children: [
-                  for (final item in d['sourceProgram'] as List? ?? [])
-                    ListTile(
-                      title: Text((item as Map)['title']?.toString() ?? ''),
-                      subtitle: Text(
-                        _dateForReview(item['start_time']?.toString()),
-                      ),
-                    ),
-                ],
-              ),
-            if (d['copyInformation'] == true)
-              ExpansionTile(
-                title: Text(
-                  '${'FeatureInformation.information'.tr()} · ${(d['sourceInformation'] as List? ?? []).length}',
-                ),
-                children: [
-                  for (final item in d['sourceInformation'] as List? ?? [])
-                    ListTile(
-                      title: Text((item as Map)['title']?.toString() ?? ''),
-                    ),
-                ],
-              ),
-            ExpansionTile(
-              title: Text('FormsFeature.additionalSettings'.tr()),
-              subtitle: const Text('Šablony e-mailů a menší volby'),
-              children: [_switch(d, 'copyEmails', 'Převzít e-mailové šablony')],
-            ),
-          ],
-        );
+            children: [_switch(d, 'formEnabled', 'Registrace a prodej')]);
       case 3:
         if (d['formEnabled'] == false) {
           return const Text('Formulář je vypnutý.');
@@ -2042,11 +2049,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 Map<String, dynamic>.from(formData),
               ))
             : null;
-        final fields = formBundle?.form.relatedFields
-                .where((field) => field.definition.isTicketField != true)
-                .length ??
-            0;
-        final products = formBundle?.products.length ?? 0;
         final referenceIssues = OccasionSetupReferences(d).hasIssues;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2062,7 +2064,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ElevatedButton.icon(
                 onPressed: _chooseForm,
                 icon: const Icon(Icons.add),
-                label: Text('FormsFeature.createNewForm'.tr()),
+                label: Text(OccasionSetupStrings.story('copyForm')),
               )
             else ...[
               if (d['formOrigin'] != null)
@@ -2088,12 +2090,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   (x['formDraft'] as Map)['link'] = value;
                   _inlineFormBundle?.form.definition =
                       _inlineFormBundle!.form.definition.copyWith(link: value);
-                }, changesConfiguration: true),
+                }, changesConfiguration: true, invalidateUndo: !automatic),
               ),
               const SizedBox(height: 10),
-              Text('$fields polí · $products produktů'),
               const SizedBox(height: 12),
-              Text(OccasionSetupSales.text(d, 'productsHelp')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
@@ -2101,17 +2101,24 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   OutlinedButton.icon(
                     onPressed: _chooseForm,
                     icon: const Icon(Icons.swap_horiz),
-                    label: Text('FormsFeature.createNewForm'.tr()),
+                    label: Text(OccasionSetupStrings.story('copyForm')),
                   ),
                 ],
               ),
             ],
+            if (_formUndo != null)
+              TextButton(
+                  onPressed: _undoForm,
+                  child: Text(OccasionSetupStrings.story('undoCopy'))),
             if (formBundle != null) ...[
               const SizedBox(height: 18),
               FormEditorContent.prototype(
                 key: ValueKey('${d['id']}-inline-form-$_formEpoch'),
                 embedded: true,
                 bundle: formBundle,
+                onPrototypeHydrated: (saved) => _change((x) {
+                  x['formDraft'] = serializeDraftForm(saved.form);
+                }, changesConfiguration: true, invalidateUndo: false),
                 onPrototypeSave: (saved) => _change((x) {
                   x['formDraft'] = serializeDraftForm(saved.form);
                 }, changesConfiguration: true),
@@ -2204,49 +2211,27 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButtonFormField<String>(
-            key: UniqueKey(),
-            initialValue: SetupBlueprintConfiguration(d).modeId,
-            decoration: InputDecoration(labelText: CommonStrings.blueprint),
-            items: const [
-              DropdownMenuItem(value: 'none', child: Text('Bez plánku')),
-              DropdownMenuItem(value: 'new', child: Text('Nový')),
-              DropdownMenuItem(value: 'copy', child: Text('Převzít'))
-            ],
-            onChanged: (value) async {
-              if (value == SetupBlueprintConfiguration(d).modeId) return;
-              if (value == 'copy') {
-                await _selectBlueprint();
-                return;
-              }
-              _blueprintSelectionRequest++;
-              if (d['blueprintLayoutDraft'] is Map) {
-                final discard = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AppAlertDialog(
-                            title: const Text('Zahodit současný plánek?'),
-                            actions: [
-                              TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: Text(CommonStrings.cancel)),
-                              TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Zahodit'))
-                            ]));
-                if (!mounted) return;
-                if (discard != true) {
-                  setState(() {});
+        for (final mode in ['none', 'new', 'copy'])
+          RadioListTile<String>(
+              value: mode,
+              groupValue: SetupBlueprintConfiguration(d).modeId,
+              title: Text(OccasionSetupStrings.story('blueprint.$mode')),
+              onChanged: (value) {
+                if (value == 'copy') {
+                  _selectBlueprint();
                   return;
                 }
-              }
-              _change((x) {
-                SetupBlueprintConfiguration(x).clear(create: value == 'new');
-                _inlineFormBundle = null;
-                _formEpoch++;
-              }, changesConfiguration: true);
-              setState(() => _blueprintError = null);
-            }),
+                if (value == 'new') {
+                  _startNewBlueprint();
+                  return;
+                }
+                _blueprintSelectionRequest++;
+                _change((d) {
+                  SetupBlueprintConfiguration(d).clear();
+                  _inlineFormBundle = null;
+                  _formEpoch++;
+                }, changesConfiguration: true);
+              }),
         if (SetupBlueprintConfiguration(d).mode == SetupBlueprintMode.copy)
           TextButton(
               onPressed: _loadingBlueprintCandidate
@@ -2262,7 +2247,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               child: const Text('Zkusit znovu'))
         ],
         if (SetupBlueprintConfiguration(d).active) ...[
-          Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
+          if (_layoutSeatCount(d) > 0)
+            Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
           if (_layoutAreaCount(d) > 0)
             Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
           const SizedBox(height: 12),
@@ -2271,7 +2257,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 ? null
                 : _openBlueprint,
             icon: const Icon(Icons.grid_on),
-            label: const Text('Otevřít editor plánku'),
+            label: Text(OccasionSetupStrings.story('editBlueprint')),
           ),
           const SizedBox(height: 12),
           const Text('Úpravy plánku se ukládají do tohoto konceptu.'),

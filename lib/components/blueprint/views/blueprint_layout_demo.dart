@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import '../blueprint_strings.dart';
 import '../../_shared/common_strings.dart';
+import '../../occasion/setup/occasion_setup_strings.dart';
 import '../../_shared/editor_action_bar.dart';
 
 /// Local geometry editor. Its optional save callback stores the wizard draft;
@@ -15,6 +16,7 @@ class BlueprintLayoutDemo extends StatefulWidget {
       this.initialResources,
       this.loadTextResources,
       this.onSave,
+      this.onSaved,
       this.prepareResources,
       this.unitId,
       this.initiallyUnsaved = false});
@@ -26,6 +28,7 @@ class BlueprintLayoutDemo extends StatefulWidget {
   final VenueLayoutDocument? initialDocument;
   final Map<String, dynamic>? initialResources;
   final Future<void> Function(VenueLayoutDocument)? onSave;
+  final VoidCallback? onSaved;
   @override
   State<BlueprintLayoutDemo> createState() => _BlueprintLayoutDemoState();
 }
@@ -72,6 +75,10 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
       _savedResources = resources ?? _controller!.resources;
       _savedOnce = true;
       _controller!.setSavedBaseline(document);
+      if (widget.onSaved != null)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onSaved?.call();
+        });
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
@@ -113,23 +120,29 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
                   },
                   child: Scaffold(
                     body: Column(children: [
-                      MaterialBanner(
-                        content: Text(widget.onSave == null
-                            ? BlueprintStrings.demoGeometryNotice
-                            : BlueprintStrings.draftGeometryNotice),
-                        leading: const Icon(Icons.science_outlined),
-                        actions: [
-                          TextButton(
-                              onPressed: (_pending || _editorBusy)
-                                  ? null
-                                  : () {
-                                      controller.apply(_saved!,
-                                          preparedResources: _savedResources);
-                                      controller.markSaved();
-                                    },
-                              child: Text(CommonStrings.discardChanges))
-                        ],
-                      ),
+                      if (widget.onSaved != null)
+                        Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Text(OccasionSetupStrings.story(
+                                'draftBlueprintTitle'))),
+                      if (widget.onSaved == null)
+                        MaterialBanner(
+                          content: Text(widget.onSave == null
+                              ? BlueprintStrings.demoGeometryNotice
+                              : BlueprintStrings.draftGeometryNotice),
+                          leading: const Icon(Icons.science_outlined),
+                          actions: [
+                            TextButton(
+                                onPressed: (_pending || _editorBusy)
+                                    ? null
+                                    : () {
+                                        controller.apply(_saved!,
+                                            preparedResources: _savedResources);
+                                        controller.markSaved();
+                                      },
+                                child: Text(CommonStrings.discardChanges))
+                          ],
+                        ),
                       if (_pending) const LinearProgressIndicator(),
                       if (_error != null)
                         Padding(
@@ -154,17 +167,30 @@ class _BlueprintLayoutDemoState extends State<BlueprintLayoutDemo> {
                                       setState(() => _editorBusy = busy);
                                   }))),
                     ]),
-                    bottomNavigationBar: EditorActionBar(
-                      hasChanges: controller.dirty ||
-                          (widget.initiallyUnsaved && !_savedOnce),
-                      enabled: !_pending && !_editorBusy,
-                      onSave: _save,
-                      onDiscard: () async {
-                        controller.apply(_saved!,
-                            preparedResources: _savedResources);
-                        controller.markSaved();
-                      },
-                    ),
+                    bottomNavigationBar: widget.onSaved != null
+                        ? SafeArea(
+                            child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Align(
+                                    alignment: Alignment.centerRight,
+                                    heightFactor: 1,
+                                    child: FilledButton(
+                                        onPressed: !_pending && !_editorBusy
+                                            ? _save
+                                            : null,
+                                        child: Text(OccasionSetupStrings.story(
+                                            'saveAndReturn'))))))
+                        : EditorActionBar(
+                            hasChanges: controller.dirty ||
+                                (widget.initiallyUnsaved && !_savedOnce),
+                            enabled: !_pending && !_editorBusy,
+                            onSave: _save,
+                            onDiscard: () async {
+                              controller.apply(_saved!,
+                                  preparedResources: _savedResources);
+                              controller.markSaved();
+                            },
+                          ),
                   )));
         },
       );

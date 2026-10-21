@@ -18,8 +18,8 @@ BEGIN
  EXECUTE 'SET LOCAL ROLE authenticated';
  metadata:=public.get_occasion_setup_source_list(target);
  PERFORM assert_eq(jsonb_array_length(metadata),1,'Only accessible sources');
- PERFORM assert_false(metadata->0 ? 'forms','No form configurations in metadata');
- PERFORM assert_false(metadata->0 ? 'blueprints','No plans in metadata');
+ PERFORM assert_eq(jsonb_typeof(metadata->0->'forms'),'array','Lightweight form summaries are available without loading source configuration');
+ PERFORM assert_eq(jsonb_typeof(metadata->0->'blueprints'),'array','Lightweight plan summaries are available without loading source configuration');
  source:=public.get_occasion_setup_source(target,source_id);
  PERFORM assert_eq((source->'occasion'->>'id')::bigint,source_id,'Selected detail');
  PERFORM assert_true(octet_length(metadata::text)<octet_length(source::text),'Metadata smaller than detail');
