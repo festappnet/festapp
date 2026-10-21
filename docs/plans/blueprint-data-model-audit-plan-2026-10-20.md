@@ -56,7 +56,7 @@ nebyly změněny. Dosavadní úspěšná UI kontrola sama neprokazuje round-trip
   převod existujících dokumentů. Ne nový rezervační, finanční nebo sync systém.
 - Tento dokument navrhuje změny. Neopravňuje produkční migraci, deployment,
   hromadné převody skutečných plánků, commit ani push.
-- Historický inventář 49 plánků v `docs/plans/evidence/blueprint-b-20261019/`
+- Historický inventář 49 plánků v [historical evidence and recovery](../archive/repository-artifact-followup-2026-10-21.md#blueprint)
   je důkaz z předchozího průzkumu, ne dnešní ověření produkčního schématu.
 
 ## Inspirace a vlastní rozhodnutí

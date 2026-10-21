@@ -1,5 +1,9 @@
 # Festapp self-hosted Supabase cutover runbook
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
 > Historical 2026 backend migration procedure. The canonical switch completed
 > on 2026-09-10. This runbook preserves cutover/recovery gates; do not use its
 > preactivation sequence to install a new tenant. Current tenant setup is in

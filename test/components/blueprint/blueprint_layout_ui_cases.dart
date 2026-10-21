@@ -113,35 +113,41 @@ void main() {
   });
   for (final mobile in [(390.0, 844.0, 1.0), (320.0, 640.0, 1.6)]) {
     testWidgetsWithEnvironment(() => environment,
-      'commercial name edits inline, trims once and cancels with Escape',
-      (tester) async {
-    final changes = <String>[];
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(
-      body: BlueprintInlineName(nodeId: 'table', name: 'B3', enabled: true,
-          onSubmitted: changes.add))));
-    final edit = find.byKey(const ValueKey('rename-commercial-table'));
-    await tester.tap(edit);
-    await tester.pumpAndSettle();
-    expect(find.byType(Dialog), findsNothing);
-    await tester.enterText(find.byType(TextField), ' B4 ');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(changes, ['B4']);
-    await tester.tap(edit);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Cancelled');
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    expect(find.byType(TextField), findsNothing);
-    expect(changes, ['B4']);
-    await tester.tap(edit);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '   ');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(changes, ['B4']);
-  });
-  testWidgetsWithEnvironment(() => environment,
+        'commercial name edits inline, trims once and cancels with Escape',
+        (tester) async {
+      final changes = <String>[];
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: BlueprintInlineName(
+                      nodeId: 'table',
+                      name: 'B3',
+                      enabled: true,
+                      onSubmitted: changes.add))));
+      final edit = find.byKey(const ValueKey('rename-commercial-table'));
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      expect(find.byType(Dialog), findsNothing);
+      await tester.enterText(find.byType(TextField), ' B4 ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(changes, ['B4']);
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Cancelled');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      expect(changes, ['B4']);
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(changes, ['B4']);
+    });
+    testWidgetsWithEnvironment(() => environment,
         'mobile blueprint keeps canvas dominant and all actions reachable ${mobile.$1}',
         (tester) async {
       tester.view.physicalSize = Size(mobile.$1, mobile.$2);
@@ -2331,7 +2337,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final originalRights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        occasion: OccasionModel(id: 1, link: 'standing-fixture'),
+        occasion: OccasionModel(
+            id: 1,
+            link: 'standing-fixture',
+            isOpen: false,
+            isHidden: true,
+            isPromoted: false),
         capabilities: {
           AuthorizationCapabilities.occasionsWrite: true,
           AuthorizationCapabilities.ordersWrite: true

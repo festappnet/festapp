@@ -1,1 +1,0 @@
-{"scope": "Task-owned local catalog only; former service grant removed, actor-bound receipted wrapper retained", "execute": {"anon": false, "service_role": false, "authenticated": false}, "function": "public.delete_unit_user_internal_v1(uuid,bigint)", "cronCallers": 0, "policyCallers": 0, "liveSqlCallers": ["delete_unit_user_client_sync_v1(uuid,bigint,uuid)"]}

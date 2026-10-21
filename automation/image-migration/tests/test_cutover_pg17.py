@@ -59,8 +59,8 @@ class PostgreSQLCutover(unittest.TestCase):
     def setUp(self):
         self.sql('DROP DATABASE IF EXISTS ' + DB + '; CREATE DATABASE ' + DB + ';', database='postgres')
         # Restore the actual canonical commit owner and its table contracts.
-        source = (ROOT / 'supabase/migrations/20260802234000_client_sync_v1_expansion.sql').read_text()
-        foundation = (ROOT / 'automation/hetzner-supabase/rehearsal/prepare-source-staging-databases.sh').read_text()
+        source = (Path(__file__).parent / 'fixtures/client-sync-expansion.sql').read_text()
+        foundation = (Path(__file__).parent / 'fixtures/managed-auth-uid.sql').read_text()
         uid = re.search(r'CREATE FUNCTION auth\.uid\(\)[\s\S]*?;', foundation)
         assert uid, 'managed Auth foundation definition missing'
         tables = []

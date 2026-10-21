@@ -1,62 +1,11 @@
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
-CREATE OR REPLACE FUNCTION public.register_blueprint_layout_font(p_font_id text,p_outline jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE asset public.ticket_font_assets; merged jsonb;
-BEGIN
- IF auth.role() IS DISTINCT FROM 'service_role' THEN RAISE insufficient_privilege USING MESSAGE='font service required'; END IF;
- SELECT * INTO asset FROM public.ticket_font_assets WHERE id=p_font_id FOR UPDATE;
- IF NOT FOUND OR p_outline->>'id' IS DISTINCT FROM p_font_id OR p_outline->>'hash' IS DISTINCT FROM asset.metadata->>'sha256'
-  OR p_outline->>'family' IS DISTINCT FROM asset.metadata->>'family' OR jsonb_typeof(p_outline->'glyphs') IS DISTINCT FROM 'object'
-  OR coalesce((p_outline->>'unitsPerEm')::numeric,0)<=0 OR p_outline->>'ascent' IS NULL OR p_outline->>'descent' IS NULL
-  OR octet_length(p_outline::text)>8388608 OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_outline) k WHERE k NOT IN ('id','hash','family','unitsPerEm','ascent','descent','glyphs')) THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_INVALID_FONT_OUTLINE'; END IF;
- IF asset.layout_outline IS NOT NULL AND asset.layout_outline-'glyphs' IS DISTINCT FROM p_outline-'glyphs' THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_FONT_METRICS_CHANGED'; END IF;
- merged:=jsonb_set(p_outline,'{glyphs}',coalesce(asset.layout_outline->'glyphs','{}')||(p_outline->'glyphs'));
- UPDATE public.ticket_font_assets SET layout_outline=merged WHERE id=p_font_id;
- RETURN merged;
-END $$;
+
 REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
 -- Schema-1 dependency boundary. Match effectiveNodeProperties: a kind
 -- declaration wins over an unmasked node value; explicit overrides win last.
 -- Presets have their own document defaults and namespace.
-CREATE OR REPLACE FUNCTION public.blueprint_layout_font_dependencies_internal(p_layout jsonb)
-RETURNS TABLE(font_id text,node_id text,rendered_text text)
-LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- WITH RECURSIVE documents(doc) AS (
-  SELECT p_layout UNION ALL
-  SELECT preset->'document' FROM documents
-  CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'presets','[]')) preset
- ), declarations AS (
-  SELECT doc#>>'{defaultTextStyle,fontId}' AS font_id FROM documents
-  UNION SELECT style->>'fontId' FROM documents
-   CROSS JOIN LATERAL jsonb_each(coalesce(doc->'appearance','{}')) styles(kind,style)
-  UNION SELECT node->>'fontId' FROM documents
-   CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node
- )
- SELECT font_id,NULL::text,NULL::text FROM declarations WHERE font_id IS NOT NULL
- UNION ALL
- SELECT coalesce(CASE WHEN coalesce(node->'appearanceOverrides','[]') ? 'fontId' THEN node->>'fontId' END,
-   doc->'appearance'->(node->>'kind')->>'fontId',node->>'fontId',doc#>>'{defaultTextStyle,fontId}'),
-  node->>'id',CASE WHEN node->>'kind'='seat' OR (node->>'kind'='furniture' AND node->>'furniture'='couch')
-   OR (node->>'kind'='table' AND node->>'furniture'='bar') THEN ''
-   WHEN node->>'kind'='text' THEN coalesce(node->>'text','') ELSE coalesce(node->>'label','') END
- FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node
- UNION ALL
- -- The scene's numeric badge uses the document face, independently of kind
- -- appearance. Prepare symbols once; availability changes must not fetch fonts.
- SELECT doc#>>'{defaultTextStyle,fontId}',node->>'id','×0123456789'
- FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node
- WHERE node->>'kind'='capacityArea' OR (node->>'kind'='furniture' AND node->>'furniture' IS DISTINCT FROM 'couch' AND
-  coalesce((SELECT jsonb_array_length(unit->'nodeIds')
-   FROM jsonb_array_elements(coalesce(doc->'selectionUnits','[]')) WITH ORDINALITY units(unit,ordinal)
-   WHERE jsonb_array_length(unit->'nodeIds')>0 AND NOT EXISTS(
-    SELECT 1 FROM jsonb_array_elements_text(unit->'nodeIds') member
-    WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(doc->'nodes') child
-     WHERE child->>'id'=member AND child->>'parentId'=node->>'id'))
-   ORDER BY ordinal LIMIT 1),0)>1)
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_layout_font_dependencies_internal(jsonb) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_legacy_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -260,135 +209,10 @@ END $$;
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
-CREATE OR REPLACE FUNCTION public.save_blueprint_layout_internal_v1(p_blueprint jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT public.save_blueprint_layout_impl_internal(p_blueprint,false);
-$$;
+
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION get_blueprint(
-    my_secret UUID,
-    form_key UUID,
-    blueprint_id BIGINT
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-    blueprintData JSONB;
-    spotsData JSONB;
-    productsData JSONB;
-    valid_spots JSONB;
-    form_bundle JSONB;
-BEGIN
-    -- Validate the form and blueprint association
-    IF NOT EXISTS (
-        SELECT 1
-        FROM public.forms f
-        WHERE f.key = form_key
-          AND (NOT public.is_demo_occasion(f.occasion) OR public.can_read_demo_occasion(f.occasion))
-          AND (f.is_open = true OR public.get_is_editor_order_view_on_occasion(f.occasion))
-          AND EXISTS (
-              SELECT 1
-              FROM eshop.blueprints b
-              WHERE b.id = blueprint_id
-                AND f.blueprint = blueprint_id
-          )
-    ) THEN
-        RETURN jsonb_build_object(
-            'code', 400,
-            'message', 'Invalid form key or blueprint association.'
-        );
-    END IF;
 
-    IF EXISTS(SELECT 1 FROM eshop.blueprints WHERE id=blueprint_id AND layout IS NULL) THEN
-      RETURN jsonb_build_object('code',409,'reason','BLUEPRINT_LAYOUT_MIGRATION_REQUIRED');
-    END IF;
-
-    -- Fetch blueprint details
-    SELECT jsonb_build_object(
-        'id', b.id,
-        'occasion', b.occasion,
-        'created_at', b.created_at,
-        'data', b.data,
-        'title', b.title,
-        'layout', jsonb_set(b.layout,'{presets}','[]'), 'layout_revision', b.layout_revision,
-        'layoutResources', public.blueprint_layout_resources_internal(jsonb_set(b.layout,'{presets}','[]'),b.occasion)
-    )
-    INTO blueprintData
-    FROM eshop.blueprints b
-    WHERE b.id = blueprint_id;
-
-    -- Every runtime spot belongs to a canonical node binding.
-    SELECT coalesce(jsonb_agg(spot),'[]'::jsonb) INTO valid_spots
-      FROM eshop.blueprint_seat_bindings WHERE blueprint=blueprint_id;
-
-    -- Fetch enriched spots data
-    SELECT jsonb_agg(jsonb_build_object(
-        'id', s.id,
-        'title', s.title,
-        'product', s.product,
-        'state', CASE
-            WHEN s.order_product_ticket IS NOT NULL THEN 'ordered'
-            WHEN s.secret IS NOT NULL AND s.secret_expiration_time > now() THEN
-                CASE
-                    WHEN s.secret = my_secret THEN 'selected_by_me'
-                    ELSE 'selected'
-                END
-            ELSE 'available'
-        END
-    ))
-    INTO spotsData
-    FROM eshop.spots s
-    WHERE s.id = ANY(SELECT jsonb_array_elements_text(valid_spots)::BIGINT)
-      AND s.occasion = (
-        SELECT occasion FROM public.forms WHERE key = form_key
-      );
-
-    -- Reuse the form's public catalog projection, including current wave-applied
-    -- price, visible offers, product maximum and inventory availability.
-    form_bundle:=public.get_form_bundle_internal((SELECT id FROM public.forms WHERE key=form_key),true)::jsonb;
-    SELECT coalesce(jsonb_agg(product||jsonb_build_object('isAvailable',
-        coalesce((product->>'is_dynamically_available')::boolean,true) AND
-        (coalesce((product->>'maximum')::bigint,0)<=0 OR
-         coalesce((product->>'ordered_count')::bigint,0)<(product->>'maximum')::bigint))),'[]')
-    INTO productsData
-    FROM (SELECT DISTINCT ON (offered_product.value->>'id') offered_product.value AS product
-      FROM jsonb_array_elements(coalesce(nullif(form_bundle#>'{data,fields}','null'::jsonb),'[]'::jsonb)) field
-      CROSS JOIN LATERAL jsonb_array_elements(coalesce(nullif(field#>'{product_type_data,products}','null'::jsonb),'[]'::jsonb)) AS offered_product(value)
-      WHERE (field->>'type'='ticket' OR ((field->>'is_ticket_field')::boolean AND field->>'type'='product_type'))
-        AND (offered_product.value->>'id')::bigint IN (
-          SELECT s.product FROM eshop.spots s WHERE s.id=ANY(SELECT jsonb_array_elements_text(valid_spots)::bigint)
-          UNION SELECT ab.product FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=blueprint_id)
-      ORDER BY offered_product.value->>'id') offered;
-
-    -- Add spots data to the blueprint object
-    blueprintData = jsonb_set(
-        blueprintData,
-        '{spots}',
-        COALESCE(spotsData, '[]'::jsonb)
-    );
-
-    -- Add products data to the blueprint object
-    blueprintData = jsonb_set(
-        blueprintData,
-        '{products}',
-        COALESCE(productsData, '[]'::jsonb)
-    );
-
-    blueprintData:=blueprintData||public.blueprint_public_binding_projection_internal(blueprint_id,my_secret);
-
-    blueprintData:=blueprintData||jsonb_build_object('areaAvailability',public.blueprint_area_availability_internal(blueprint_id,(SELECT id FROM public.forms WHERE key=form_key)));
-
-    -- Return combined data
-    RETURN jsonb_build_object(
-        'code', 200,
-        'data', blueprintData
-    );
-END;
-$$;
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
 RETURNS bigint
@@ -806,19 +630,12 @@ REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Temporary staged rollout: only organization 3 is released first.

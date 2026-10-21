@@ -8,24 +8,7 @@ ALTER TABLE public.forms ADD CONSTRAINT forms_capacity_configuration CHECK (
 
 
 -- Source: database/functions/eshop_waitlist/form_capacity.sql
-CREATE OR REPLACE FUNCTION public.get_form_capacity_snapshot_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp())
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH counts AS (
- SELECT f.*, (SELECT count(DISTINCT t.id) FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id JOIN eshop.orders o ON o.id=x."order"
-  WHERE o.form=f.id AND t.state IS DISTINCT FROM 'storno' AND t.state IS DISTINCT FROM 'waitlisted' AND o.state IS DISTINCT FROM 'storno') occupied,
- (SELECT count(*) FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id
-  WHERE s.form_id=f.id AND s.outcome='pending' AND w.expires_at>p_at) reserved,
- (SELECT count(DISTINCT t.id) FROM eshop.tickets t JOIN eshop.order_product_ticket x ON x.ticket=t.id JOIN eshop.orders o ON o.id=x."order"
-  WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(t.id)='waiting') waiting
- FROM public.forms f WHERE f.id=p_form), free AS (
- SELECT *,greatest(participant_capacity-occupied-reserved,0) available FROM counts)
- SELECT jsonb_build_object('enabled',participant_capacity IS NOT NULL,'limit',participant_capacity,
- 'remainingPublic',CASE WHEN participant_capacity IS NOT NULL THEN greatest(available-waiting,0) END,
- 'showRemaining',show_remaining_capacity,'occupiedPeople',occupied,'offeredPlaces',reserved,'waitingPeople',waiting,
- 'offerablePlaces',available,'heldForWaiting',least(available,waiting),'revision',capacity_revision,
- 'canSendOffers',waitlist_enabled AND available>0,'blockedReason',CASE WHEN NOT waitlist_enabled THEN 'WAITLIST_NOT_AVAILABLE'
- WHEN available=0 THEN 'FORM_CAPACITY_EXCEEDED' END,'serverTime',p_at) FROM free;
-$$;
+
 CREATE OR REPLACE FUNCTION public.get_form_registration_mode_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp())
 RETURNS text LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE f public.forms; d jsonb; c jsonb;
@@ -212,11 +195,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
-RETURNS json LANGUAGE sql SECURITY DEFINER
-SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal((SELECT id FROM public.forms WHERE link=form_link),false);
-$$;
+
 
 -- Source: database/functions/others/update_occasion.sql
 CREATE OR REPLACE FUNCTION public.update_occasion_internal_v1(input_data JSONB)
@@ -509,11 +488,3 @@ SET search_path = public, extensions
      END IF;
  END;
  $$;
-
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.update_occasion_internal_v1(input_data);
-END;
-$$;

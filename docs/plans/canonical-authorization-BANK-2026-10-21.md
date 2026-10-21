@@ -73,6 +73,6 @@ testy ověřují, že po odmítnutí remote synchronizace vůbec neběží.
 Opakované konečné měření contextu se 4/50 bankovními členstvími splnilo
 p95/throughput limit 5 % sériově i se čtyřmi klienty, včetně prvního požadavku
 na novém DB spojení. Přesná čísla, raw vstupy a rozdíly SQL snapshotů jsou
-v `evidence/canonical-authorization-20261020/performance-summary.json`.
+v [historickém záznamu a obnově](../archive/canonical-authorization-evidence-2026-10-20.md).
 Lokální inventory/deletion a výkonové podmínky vln 0-4 jsou uzavřené;
 produkční aplikace zůstává neprovedená.

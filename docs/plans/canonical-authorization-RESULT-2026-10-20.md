@@ -70,7 +70,7 @@ a odstranění objednávky po čekání na zámek používají živého vlastní
 
 ## Inventář a kontrakce
 
-[Domain ledger](evidence/canonical-authorization-20261020/domain-ledger.json)
+[Domain ledger](../archive/canonical-authorization-evidence-2026-10-20.md)
 pokrývá všech **1 162 katalogových funkcí**, jejich ACL, zdroj, digest, SQL
 vazby, operation ownery, actor/technical hranice a reference na testy.
 Součástí je **408 RLS policies**, úplné table/column grants, oba cron jobs
@@ -78,9 +78,9 @@ včetně jejich vypnuté lokální execution hranice a všechny řádky runtime 
 registry. Dvě popisné registry položky nejsou zaměňované za jména funkcí.
 Původní sync rollout `cutover_ready` flagy se tímto úkolem nemění.
 
-Samostatný [boundary ledger](evidence/canonical-authorization-20261020/boundary-ledger.json)
+Samostatný [boundary ledger](../archive/canonical-authorization-evidence-2026-10-20.md)
 klasifikuje všech 58 transportních a 41 dynamic-SQL kandidátů včetně type/DI
-false positives. [Dispatch evidence](evidence/canonical-authorization-20261020/transport-resolution.json)
+false positives. [Dispatch evidence](../archive/canonical-authorization-evidence-2026-10-20.md)
 obsahuje 42 source-bound dynamických dispatch míst a žádné nevyřešené místo.
 Všechny statické RPC callery mají existující katalogový cíl. Aktuální přímé
 klientské table přístupy jsou čtení; nebyl nalezen aktivní Storage/Realtime producer.
@@ -103,7 +103,7 @@ výpočty již nejsou paralelní ownery. Historické migrace zůstaly nezměněn
 ## Ověření a výkon
 
 Skutečně provedené příkazy, výsledky i opravené dřívější pokusy jsou v
-[validation.json](evidence/canonical-authorization-20261020/validation.json).
+[validation.json](../archive/canonical-authorization-evidence-2026-10-20.md).
 Hlavní konečné výsledky:
 
 - SQL/MCP: **66 pass, 0 fail, 0 skip**, včetně 2048 kombinací rolí, demo/tenant,
@@ -120,7 +120,7 @@ Hlavní konečné výsledky:
 - Generátory projekce, capability IDs, policies, writer contractu, forward
   migrace a canonical source contractu prošly `--check`.
 
-[Performance summary](evidence/canonical-authorization-20261020/performance-summary.json)
+[Performance summary](../archive/canonical-authorization-evidence-2026-10-20.md)
 a raw artefakty uzavírají lokální gate: střídavé A/B, stejné fixture,
 8/1000 akcí, 4/50 bank členství, p50/p95, throughput, buffers/plány a jeden RPC
 na doménový request. Šest workloadů prošlo sériově i se čtyřmi klienty.
@@ -138,7 +138,7 @@ zahřáté, nebyly flushovány. Nejde o měření produkčních latencí.
 Forward migrace je
 `supabase/migrations/20261021100000_canonical_authorization.sql`.
 Zdrojové, migrační a evidenční SHA256 jsou v
-[source-hashes.json](evidence/canonical-authorization-20261020/source-hashes.json).
+[source-hashes.json](../archive/canonical-authorization-evidence-2026-10-20.md).
 Catalog-after souhlasí s authored SQL a skutečnými grants; předchozí úplné ACL
 jsou doložené samostatnou pristine baseline receipt.
 

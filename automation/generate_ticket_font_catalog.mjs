@@ -55,7 +55,7 @@ export function generate(root) {
     return {id:`font-family:${hash}`,hash,...payload};
   }).sort(familyOrder);
   const defaultFaceIds=defaultFonts.map(f=>f.id);
-  const json=JSON.stringify({version:2,googleFontsVersion:version,unsupportedFamilies,defaultFaceIds,fonts,families},null,2)+'\n';
+  const json=JSON.stringify({version:2,googleFontsVersion:version,unsupportedFamilies,defaultFaceIds,fonts,families})+'\n';
   const seed='-- Generated. Append-only: never delete historical IDs.\nINSERT INTO public.ticket_font_assets(id,metadata) VALUES\n'+fonts.map(f=>`('${f.id}','${JSON.stringify(f).replaceAll("'","''")}'::jsonb)`).join(',\n')+'\nON CONFLICT(id) DO NOTHING;\n';
   const legacyFiles={futura:'font.ttf',robotoSlab:'roboto-slab.ttf',roboto:'roboto.ttf',russoOne:'russo-one.ttf'};
   const dart='// Generated from the immutable font catalog.\nconst legacyTicketFontIds = <String, String>{\n'+Object.entries(legacyFiles).map(([key,file])=>`  '${key}':\n      '${fonts.find(f=>f.file===file).id}',`).join('\n')+'\n};\n';

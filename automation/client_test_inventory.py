@@ -69,7 +69,7 @@ def main():
     mode, location = sys.argv[1:]
     if mode == "baseline":
         inventory = cases([Path(location)], {})
-        MANIFEST.write_text(json.dumps({"moves": {}, "cases": [list(key) + [count] for key, count in sorted(inventory.items())]}, indent=2) + "\n")
+        MANIFEST.write_text(json.dumps({"moves": {}, "cases": [list(key) + [count] for key, count in sorted(inventory.items())]}, ensure_ascii=False, separators=(',', ':')) + "\n")
         print(f"Baseline: {sum(inventory.values())} semantic cases")
         return 0
     manifest = json.loads(MANIFEST.read_text())

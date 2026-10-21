@@ -573,7 +573,7 @@ test('gallery deletion uses the same media operation for editors and rechecks re
 
 
 test('RLS cutover preserves every policy command, executor and permissiveness',options,async t=>within(t,async(db)=>{
-    const before=JSON.parse(await readFile(new URL('../../../docs/plans/evidence/canonical-authorization-20261020/catalog-before.json',import.meta.url),'utf8'));
+    const before=JSON.parse(await readFile(new URL('../../../database/fixtures/authorization/pre-cutover-policies.json',import.meta.url),'utf8'));
     const key=p=>[p.schemaname,p.tablename,p.policyname].join('/');
     const metadata=p=>({schemaname:p.schemaname,tablename:p.tablename,policyname:p.policyname,cmd:p.cmd,permissive:p.permissive,roles:p.roles});
     const current=(await db.query("select to_jsonb(p)-'qual'-'with_check' metadata from pg_policies p where schemaname in ('public','eshop','storage')")).rows.map(r=>r.metadata);
@@ -600,7 +600,7 @@ test('historical template delete retains its narrower role while delegating the 
 
 
 test('full ACL comparison preserves tables and all unrelated function grants',options,async t=>within(t,async(db)=>{
-    const before=JSON.parse(await readFile(new URL('../../../docs/plans/evidence/canonical-authorization-20261020/catalog-before-pristine.json',import.meta.url),'utf8'));
+    const before=JSON.parse(await readFile(new URL('../../../database/fixtures/authorization/pre-cutover-acl.json',import.meta.url),'utf8'));
     const query=await readFile(new URL('../../../automation/authorization/catalog.sql',import.meta.url),'utf8');
     const responses=await db.query(query),after=responses.at(-1).rows[0].jsonb_build_object;
     const sorted=rows=>(rows??[]).map(r=>JSON.stringify(r)).sort();

@@ -3,7 +3,7 @@
 Pracuj v `/Users/miakh/source/festapp`. Implementuj autoritativní plán
 `docs/plans/google-sign-in-plan-2026-10-01.md`; před úpravami ho přečti celý spolu s AGENTS.md, CLAUDE.md a docs/architecture/ai_context.md. Verification: standard.
 
-Cíl: kvalitní „Pokračovat s Google“ ve webklientu i Flutteru, bezpečné propojení stávajícího účtu a nová registrace při zachování organizací, UUID, vstupenek a práv. Uživatel výslovně vyžaduje grafickou úroveň webklienta vstupenky.online. Respektuj vizuální brief a reference v `docs/plans/google-sign-in-reference-2026-10-01/`; dodej skutečné screenshoty všech podstatných stavů, light/dark a mobilních rozměrů.
+Cíl: kvalitní „Pokračovat s Google“ ve webklientu i Flutteru, bezpečné propojení stávajícího účtu a nová registrace při zachování organizací, UUID, vstupenek a práv. Uživatel výslovně vyžaduje grafickou úroveň webklienta vstupenky.online. Respektuj vizuální brief a reference v [historical evidence and recovery](../archive/repository-artifact-followup-2026-10-21.md#google-sign-in); dodej skutečné screenshoty všech podstatných stavů, light/dark a mobilních rozměrů.
 
 Navazuj na uložený lokální důkaz GoTrue v2.189.0 a doplň zbývající integrační ověření z plánu; sekce D1a-D6 jsou závazné. FestApp používá tenantem prefixované Auth emaily a různá UUID téže osoby v různých organizacích. Prosté `signInWithOAuth` by neřešilo zachování identity. Plán volí Google OIDC broker s ověřeným issuer/sub, explicitním propojením a běžnou Supabase session pro původní účet. Žádné automatické email linking, globální změny UUID, vlastní JWT signer, triggery ani druhá paralelní Google login cesta. Vyvrátí-li spike předpoklad, aktualizuj plán s důkazy před další implementací.
 

@@ -17,7 +17,7 @@ import { openRemoteStorage } from '../../src/remote/storage.mjs';
 import { canonicalBackendProfileSha256 } from '../../../../automation/lib/backend_activation_manifest.mjs';
 const exec = promisify(execFile), root=resolve(import.meta.dirname,'../../../..');
 const privateRoot='/Users/miakh/source/festapp-blueprint-mcp-closure-local-20261020';
-const evidence=resolve(root,'docs/plans/evidence/blueprint-mcp-closure-20261020');
+const evidence=resolve(root,process.env.FESTAPP_BLUEPRINT_EVIDENCE_DIR??'.codex-artifacts/blueprint/run');
 const status=JSON.parse(await readFile(privateRoot+'/backend-status.json','utf8'));
 assert.equal(status.API_URL,'http://127.0.0.1:59721');
 const guard=await exec('psql',['-h','127.0.0.1','-p','59722','-U','postgres','-d','postgres','-XqAt','-v','ON_ERROR_STOP=1','-c',"select json_build_object('project',(select project from festapp_test_support.disposable_environment where singleton),'paused',(select bool_and(paused and worker_url is null) from public.email_capacity),'cron',(select count(*) from cron.job where active))"],{env:{...process.env,PGPASSWORD:'postgres'}});

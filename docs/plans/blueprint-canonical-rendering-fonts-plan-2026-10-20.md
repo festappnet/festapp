@@ -14,12 +14,12 @@ shodu výsledku níže se vztahují k uloženému/prohlíženému plánku, nikol
 průběžnému nativnímu náhledu editoru. Nejde o druhý uložený model.
 
 Ovládání editoru sdílí fontové, barevné a číselné komponenty s editorem vstupenek.
-Aktuální výsledky: [canonical-cutover-ledger.md](evidence/blueprint-typography-20261020/canonical-cutover-ledger.md).
+Aktuální výsledky: [canonical-cutover-ledger.md](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
 Níže uvedené průběžné stavové poznámky jsou historická evidence původní realizace.
 
 ## Průběžná implementační evidence
 
-[Engine rozhodnutí, opravené admission regrese a přesný stav](evidence/blueprint-typography-20261020/decision-and-status.md).
+[Engine rozhodnutí, opravené admission regrese a přesný stav](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
 HarfBuzz 14.6.0 je ověřený jediný kandidát backendu; Fontkit selhal na marks/Indic.
 Dvě konkrétní schema-1 SQL mezery jsou opravené a jejich bounded SQL/Dart/extracted
 JS corpus prochází. Celý text layout, dokument 2, runtime cutover a SVG import

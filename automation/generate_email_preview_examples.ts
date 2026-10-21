@@ -468,8 +468,6 @@ const compositionFixtures = [
 }));
 const output = JSON.stringify(
   { version: 1, sourceDigest, sources, records, compositionFixtures },
-  null,
-  2,
 ) + "\n";
 const rawReferenceHtml =
   `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Ukázky e-mailů</title><style>body{font:16px/1.5 sans-serif;margin:24px;color:#202020;background:#fff}article{max-width:720px;margin:0 auto 40px}a{pointer-events:none}h1{font-size:24px}</style><h1>Obsah e-mailu - ukázková data</h1>` +

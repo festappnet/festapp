@@ -3030,28 +3030,7 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_occasion bigint; v_version bigint; v_response jsonb;
-BEGIN
-  v_occasion:=NULLIF(input_data->>'id','')::bigint;
-  IF v_occasion IS NULL THEN
-    PERFORM public.create_occasion_client_sync_v1(
-      extensions.gen_random_uuid(),input_data);
-    RETURN;
-  END IF;
-  SELECT COALESCE(v.version,0) INTO v_version
-    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
-      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
-  v_response:=public.save_occasion_client_sync_v1(v_occasion,
-    extensions.gen_random_uuid(),v_version,input_data);
-  IF v_response->>'status'='conflict' THEN
-    RAISE serialization_failure USING MESSAGE='Occasion changed; reload before saving';
-  ELSIF v_response->>'status' IS DISTINCT FROM 'applied' THEN
-    RAISE invalid_parameter_value USING MESSAGE='Occasion save rejected';
-  END IF;
-END; $$;
+
 REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;
 
@@ -3526,18 +3505,10 @@ REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
+REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

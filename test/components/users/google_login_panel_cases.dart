@@ -51,9 +51,10 @@ void main() {
       'actual Google panel remains usable at all target widths, themes, locales and continuation states',
       (tester) async {
     final export = Platform.environment['FESTAPP_EXPORT_GOOGLE_VISUALS'] == '1';
-    final output = Directory(
-        'docs/plans/google-sign-in-reference-2026-10-01/implementation')
-      ..createSync(recursive: true);
+    final evidenceRoot = Platform.environment['FESTAPP_GOOGLE_AUTH_EVIDENCE_DIR'] ??
+        '.codex-artifacts/google-auth/run';
+    final output = Directory('$evidenceRoot/implementation');
+    if (export) output.createSync(recursive: true);
     final translations = _Translations({
       for (final language in ['cs', 'en'])
         language: File('assets/translations/$language.json').readAsStringSync(),

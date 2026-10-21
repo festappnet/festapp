@@ -417,7 +417,7 @@ stoly, konstrukci sálu a cikcak čáry, shodné tooltipy a fialová použitá m
 křížku. Původní rastrový Basic PASS byl odvolán. Opravených49 plánků má18 nativních sálů/464 stolů, skutečné popisky, cikcak a přerušované čáry; aktuální důkazy jsou v nové vizuální evidenci. Žádný skutečný sirotek neexistuje, proto se žádný plánek nemaže.
 Historické geometry sloupce jsou jen vstupem kontrolovaného převodu, ne runtime
 alternativou. Produkční aktivace nadále není provedena; její přesné kroky jsou v
-[evidenci C](evidence/blueprint-b-20261019/activation-c-boundary.md).
+[evidenci C](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
 
 ## Odstranění a omezené zachování starých cest
 
@@ -496,7 +496,7 @@ Při psaní tohoto plánu se testy ani buildy nespouštějí. Při implementaci:
   `c829a33d07de9a8fa376b407658875d22abd246e`. Původní checkouty se nepřepínají.
 - Přenos A obsahuje 214 dohledaných zdrojových souborů (tracked patch + untracked
   manifest); cizí Festapp runtime dirty změny se nepřenášejí. Evidence je v
-  `evidence/blueprint-b-20261019/`. Lokální overrides míří pouze do task package;
+  [historical evidence and recovery](../archive/repository-artifact-followup-2026-10-21.md#blueprint). Lokální overrides míří pouze do task package;
   čistý archive consumer instaluje oddělené skutečné core/Flutter archivy.
 - Oprava předpokladu archivačního testu: `LayoutNode.toJson()` záměrně
   kvantizuje transformace/rozměry na 1/1024 (core `model.dart`). Nekvantizovaný
@@ -530,7 +530,7 @@ Při psaní tohoto plánu se testy ani buildy nespouštějí. Při implementaci:
   na occasion nebo unit; save ověřuje připravenost a public reader vrací jen
   bezpečné referenced resources. Skutečné lokální Images/R2/SQL včetně save,
   reload, copy a zamítnutých podvrhů prošly. Důkaz a limity jsou v
-  [image-evidence.md](evidence/blueprint-b-20261019/image-evidence.md).
+  [image-evidence.md](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
   Flutter a JS načítají ověřené bajty přes obecné resource seams; finální UI
   ověření a stav U06 uvádí paritní ledger.
 - Setup draft uchovává typed V2 geometrii a obchodní bindingy bez spot ID a bez
@@ -540,7 +540,7 @@ Při psaní tohoto plánu se testy ani buildy nespouštějí. Při implementaci:
   žádný druhý font katalog ani rezervační engine nevznikl.
 
 Aktuální důkazy a otevřená akceptace jsou v
-[evidenci B](evidence/blueprint-b-20261019/implementation-report.md).
+[evidenci B](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
 
 
 Novější osobní AGENTS pravidlo během realizace stanovilo nejvýše jednu Flutter

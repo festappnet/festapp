@@ -533,19 +533,12 @@ REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION get_blueprint(

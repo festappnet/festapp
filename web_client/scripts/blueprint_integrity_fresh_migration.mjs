@@ -2,7 +2,7 @@
 import pg from 'pg';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
-import {readFileSync,writeFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 const url=new URL(process.env.BLUEPRINT_DATABASE_URL??'');
 assert.equal(url.hostname,'127.0.0.1');assert(['59822','60922'].includes(url.port));
@@ -70,6 +70,8 @@ try{
  report.aggregateBeforeAfterSha256=createHash('sha256').update(JSON.stringify(before)).digest('hex');
  report.migrationSha256=createHash('sha256').update(migration).digest('hex');
  report.unchangedAggregate=true;report.receiptReplay=true;report.ownExpiryReadback=true;report.installedSourceParity=true;report.stagedReadersAbsent=true;report.adminMissingLayoutFailClosed=true;
- writeFileSync(resolve(root,'docs/plans/evidence/blueprint-mcp-closure-20261020/sql-fresh-forward-qualification.json'),JSON.stringify(report,null,2)+'\n');
+ const evidence=resolve(root,process.env.FESTAPP_BLUEPRINT_EVIDENCE_DIR??'.codex-artifacts/blueprint/run');
+ mkdirSync(evidence,{recursive:true});
+ writeFileSync(resolve(evidence,'sql-fresh-forward-qualification.json'),JSON.stringify(report,null,2)+'\n');
  console.log(`PASS fresh ${report.freshForwardMigrations}-migration catalog, preexisting sold/held aggregate preservation, receipt replay and source parity`);
 }finally{await c.query('rollback');await c.end();}

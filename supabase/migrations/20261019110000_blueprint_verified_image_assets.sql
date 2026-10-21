@@ -37,21 +37,7 @@ REVOKE ALL ON FUNCTION public.admit_image_upload_budget_internal(bigint,bigint,b
 REVOKE ALL ON FUNCTION public.admit_image_upload_v1(bigint,bigint,bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.admit_image_upload_v1(bigint,bigint,bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.admit_external_image_fetch_v1(p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE un bigint; org bigint; policy jsonb; cap bigint;
-BEGIN
- IF auth.uid() IS NULL OR (p_occasion_id IS NULL)=(p_unit_id IS NULL)
-  OR public.check_upload_permission(p_occasion_id,p_unit_id) IS NOT TRUE THEN
-  RAISE insufficient_privilege USING MESSAGE='image editor required'; END IF;
- IF p_occasion_id IS NOT NULL THEN SELECT unit,organization INTO un,org FROM public.occasions WHERE id=p_occasion_id;
- ELSE SELECT id,organization INTO un,org FROM public.units WHERE id=p_unit_id; END IF;
- policy:=public.abuse_effective_rules_v1('image.fetch',un,org);
- SELECT (r->>'base_limit')::bigint INTO cap FROM jsonb_array_elements(policy->'rules') r WHERE r->>'rule_key'='image.fetch.payload.bytes';
- IF cap IS NULL THEN RAISE configuration_limit_exceeded USING MESSAGE='abuse_policy_missing'; END IF;
- PERFORM public.abuse_charge_v1(policy,jsonb_build_object('actor',auth.uid(),'unit',un,'organization',org),jsonb_build_object('image.fetch.payload.bytes',cap));
- RETURN jsonb_build_object('allowed',true,'maxBytes',cap);
-END $$;
+
 REVOKE ALL ON FUNCTION public.admit_external_image_fetch_v1(bigint,bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.admit_external_image_fetch_v1(bigint,bigint) TO authenticated;
 
@@ -389,23 +375,7 @@ GRANT EXECUTE ON FUNCTION public.authorize_image_deletion(text[]) TO authenticat
 
 -- Source: database/functions/blueprint/resources.sql
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
-CREATE OR REPLACE FUNCTION public.register_blueprint_layout_font(p_font_id text,p_outline jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE asset public.ticket_font_assets; merged jsonb;
-BEGIN
- IF auth.role() IS DISTINCT FROM 'service_role' THEN RAISE insufficient_privilege USING MESSAGE='font service required'; END IF;
- SELECT * INTO asset FROM public.ticket_font_assets WHERE id=p_font_id FOR UPDATE;
- IF NOT FOUND OR p_outline->>'id' IS DISTINCT FROM p_font_id OR p_outline->>'hash' IS DISTINCT FROM asset.metadata->>'sha256'
-  OR p_outline->>'family' IS DISTINCT FROM asset.metadata->>'family' OR jsonb_typeof(p_outline->'glyphs') IS DISTINCT FROM 'object'
-  OR coalesce((p_outline->>'unitsPerEm')::numeric,0)<=0 OR p_outline->>'ascent' IS NULL OR p_outline->>'descent' IS NULL
-  OR octet_length(p_outline::text)>8388608 OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_outline) k WHERE k NOT IN ('id','hash','family','unitsPerEm','ascent','descent','glyphs')) THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_INVALID_FONT_OUTLINE'; END IF;
- IF asset.layout_outline IS NOT NULL AND asset.layout_outline-'glyphs' IS DISTINCT FROM p_outline-'glyphs' THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_FONT_METRICS_CHANGED'; END IF;
- merged:=jsonb_set(p_outline,'{glyphs}',coalesce(asset.layout_outline->'glyphs','{}')||(p_outline->'glyphs'));
- UPDATE public.ticket_font_assets SET layout_outline=merged WHERE id=p_font_id;
- RETURN merged;
-END $$;
+
 REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
@@ -421,32 +391,7 @@ REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,b
 
 
 -- Source: database/functions/blueprint/validation.sql
-CREATE OR REPLACE FUNCTION public.validate_blueprint_polygon_internal(p_points jsonb,p_closed boolean)
-RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE i int;j int;size int; a jsonb;b jsonb;c jsonb;d jsonb;ab_c numeric;ab_d numeric;cd_a numeric;cd_b numeric; area numeric:=0;
-BEGIN
- IF jsonb_typeof(p_points) IS DISTINCT FROM 'array' OR jsonb_array_length(p_points) NOT BETWEEN (CASE WHEN p_closed THEN 3 ELSE 2 END) AND 512 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VERTICES'; END IF;
- size:=jsonb_array_length(p_points);
- FOR a IN SELECT * FROM jsonb_array_elements(p_points) LOOP
-  IF jsonb_typeof(a)<>'array' OR jsonb_array_length(a)<>2 OR jsonb_typeof(a->0)<>'number' OR jsonb_typeof(a->1)<>'number' OR abs((a->>0)::numeric)>1000000000 OR abs((a->>1)::numeric)>1000000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VERTICES'; END IF;
- END LOOP;
- IF NOT p_closed THEN RETURN; END IF;
- FOR i IN 0..size-1 LOOP
-  a:=p_points->i;b:=p_points->((i+1)%size);
-  area:=area+(a->>0)::numeric*(b->>1)::numeric-(b->>0)::numeric*(a->>1)::numeric;
-  FOR j IN i+1..size-1 LOOP
-   IF j=i+1 OR (i=0 AND j=size-1) THEN CONTINUE; END IF;
-   c:=p_points->j;d:=p_points->((j+1)%size);
-   ab_c:=((b->>0)::numeric-(a->>0)::numeric)*((c->>1)::numeric-(a->>1)::numeric)-((b->>1)::numeric-(a->>1)::numeric)*((c->>0)::numeric-(a->>0)::numeric);
-   ab_d:=((b->>0)::numeric-(a->>0)::numeric)*((d->>1)::numeric-(a->>1)::numeric)-((b->>1)::numeric-(a->>1)::numeric)*((d->>0)::numeric-(a->>0)::numeric);
-   cd_a:=((d->>0)::numeric-(c->>0)::numeric)*((a->>1)::numeric-(c->>1)::numeric)-((d->>1)::numeric-(c->>1)::numeric)*((a->>0)::numeric-(c->>0)::numeric);
-   cd_b:=((d->>0)::numeric-(c->>0)::numeric)*((b->>1)::numeric-(c->>1)::numeric)-((d->>1)::numeric-(c->>1)::numeric)*((b->>0)::numeric-(c->>0)::numeric);
-   IF ab_c*ab_d<=0 AND cd_a*cd_b<=0 AND greatest(least((a->>0)::numeric,(b->>0)::numeric),least((c->>0)::numeric,(d->>0)::numeric))<=least(greatest((a->>0)::numeric,(b->>0)::numeric),greatest((c->>0)::numeric,(d->>0)::numeric))
-    AND greatest(least((a->>1)::numeric,(b->>1)::numeric),least((c->>1)::numeric,(d->>1)::numeric))<=least(greatest((a->>1)::numeric,(b->>1)::numeric),greatest((c->>1)::numeric,(d->>1)::numeric)) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SELF_INTERSECTION'; END IF;
-  END LOOP;
- END LOOP;
- IF abs(area)<0.000000001 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_DEGENERATE_POLYGON'; END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
@@ -1521,19 +1466,12 @@ REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
