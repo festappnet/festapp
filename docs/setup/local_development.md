@@ -6,8 +6,10 @@ a complete historical bootstrap. A clean local database therefore starts from
 the versioned schema-only baseline and applies only migrations newer than that
 baseline.
 
-The baseline contains no production rows or secrets. It is a schema dump of the
-`public` and `eshop` schemas, including functions, policies, grants and triggers.
+The installation contract is `supabase/baseline/manifest.json`. It pins the
+schema, provider bootstrap, non-tenant reference seed, covered migration ledger
+and immutable historical Git inputs by checksum. The baseline contains no
+production rows or secrets.
 
 ## First-time setup and reset
 
@@ -22,8 +24,8 @@ The baseline contains no production rows or secrets. It is a schema dump of the
 
 The command deletes and recreates only the Docker volume belonging to
 `festapp-db-tests-pg15`, starts PostgreSQL 15 on port `55432`, restores
-`supabase/baseline/20260805230000_production_schema.sql`, records all migration
-versions included in that baseline, applies newer forward migrations, and runs
+the manifest-owned baseline through `20260906140000`, records its 111 covered
+migration versions, applies newer forward migrations, and runs
 `supabase/seed.sql`.
 
 Database URL:
@@ -65,22 +67,44 @@ never production.
 
 - Active migrations use one unique `YYYYMMDDHHMMSS_name.sql` filename in
   `supabase/migrations/`.
-- Files at or below the baseline version are retained for production history
-  but are recorded as already represented when a local database is rebuilt.
-- Newer migrations are applied normally by `supabase migration up` during the
-  bootstrap.
+- Covered historical SQL is recovered from checksum-pinned Git objects rather
+  than kept in the active migration directory. Its versions remain in the ledger.
+- The bootstrap uses `automation/baseline.py upgrade-local` to materialize a
+  complete temporary migration history for Supabase CLI and apply active forwards.
 - Pre-Supabase `0.x.sql` upgrade fragments live in
   `database/migrations_legacy/`; they are historical records and are not active
   migrations.
 - Never edit an applied production migration. Add a new forward migration.
 
-When deliberately refreshing the baseline, create a schema-only dump, verify
-that it contains no `COPY` or `INSERT INTO` statements, update the baseline
-version in `automation/bootstrap_local_db.sh`, and prove a clean rebuild plus
-the database contract suite before replacing the old baseline.
+When refreshing the baseline, prove schema, reference-row, sequence and ACL
+parity on PG15 and PG17, checksum every installation input, and preserve supported
+upgrades before removing covered files. Never rewrite an applied migration.
+
+## Existing local database upgrades and historical recovery
+
+A disposable local database with the original August baseline ledger is supported:
+
+```bash
+python3 automation/baseline.py upgrade-local --database-url 'postgresql://supabase_admin:postgres@127.0.0.1:55432/postgres?sslmode=disable'
+python3 automation/baseline.py historical-kit /tmp/festapp-historical-kit --email
+```
+
+The upgrade command requires a loopback port owned by a local Festapp Docker
+PostgreSQL container. It runs the existing order-symbol backfill before the
+corresponding contract migration, then applies the remaining forwards. It refuses
+older or missing original-baseline ledgers. Use the extension-owning local role
+`supabase_admin` where required by the provider image.
+
+Historical recovery needs the full Git objects pinned in
+`automation/historical-sql-manifest.json`; use a full clone or fetch the recorded
+commits in a shallow checkout. Recovery validates all checksums before writing,
+refuses conflicting files, and never substitutes current source definitions.
+`automation/email-delivery/rehearse-local.sh` uses this kit for its legacy upgrade.
 
 ## Production safety
 
-`bootstrap_local_db.sh` uses only `127.0.0.1:55432` and the dedicated local
-Supabase project ID. It does not read `DATABASE_URL`, link a remote project, or
+`bootstrap_local_db.sh` defaults to `127.0.0.1:55432` and its dedicated local
+Supabase project ID. Isolated checks may select a separate project, workdir and
+port with `FESTAPP_LOCAL_DB_PROJECT_ID`, `FESTAPP_LOCAL_DB_WORKDIR` and
+`FESTAPP_LOCAL_DB_PORT`. Scheduled cron execution is disabled before SQL restore. It does not read `DATABASE_URL`, link a remote project, or
 run `db push`. Testing against production is not part of the supported workflow.

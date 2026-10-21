@@ -6980,22 +6980,6 @@ BEGIN
    END LOOP;
   END LOOP;
  END IF;
- -- Plans are materialized through the existing price-wave commands, using
- -- newly mapped product IDs. No source IDs or second scheduler escape.
- IF coalesce((payload->>'priceWavesEnabled')::boolean,false) AND coalesce((payload->>'formEnabled')::boolean,true)
-   AND EXISTS(SELECT 1 FROM eshop.products p JOIN public.form_fields ff ON ff.product_type=p.product_type
-     WHERE p.occasion=new_id AND ff.form=form_id AND NOT coalesce(ff.is_hidden,false)
-       AND p.price>0 AND NOT coalesce(p.is_hidden,false)) THEN
-  FOR wave IN SELECT value FROM jsonb_array_elements(coalesce(payload->'priceWaves','[]')) LOOP
-   saved_wave:=public.create_product_price_wave((SELECT link FROM public.occasions WHERE id=new_id),(wave->>'change_time')::timestamptz);
-   FOR target IN SELECT value FROM jsonb_array_elements(coalesce(wave->'targets','[]')) LOOP
-    wave_product:=(product_map->>(target->>'product'))::bigint;
-    IF wave_product IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='Price wave product missing'; END IF;
-    PERFORM public.save_product_wave_target((saved_wave->>'id')::bigint,wave_product,(saved_wave->>'revision')::bigint,
-      (target->>'price')::numeric,(target->>'is_hidden')::boolean,NULL,NULL);
-   END LOOP;
-  END LOOP;
- END IF;
  -- Rebind ticket product-type references only after their new IDs exist.
  IF has_tickets AND payload->'ticketDraft' ? 'layout' THEN
   pt := payload->'ticketDraft'||'{"code":"ticket","is_enabled":true}'::jsonb;
@@ -14117,6 +14101,35 @@ BEGIN
 END; $function$
 ;
 
+-- Source: database/functions/emails/email_domain.sql
+CREATE OR REPLACE FUNCTION public.reset_password_and_enqueue_email(p_user uuid,p_password text,p_occasion bigint,p_sealed jsonb,p_content_hash text,p_dedupe text,p_expires timestamptz)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE v_answer jsonb; v_context jsonb; v_email text; v_result jsonb; v_existing public.email_messages; v_password_version text;
+BEGIN
+ -- Reuse the existing hierarchical permission check, including elevated-account protections.
+ IF auth.uid() IS NULL OR NOT coalesce(public.get_can_reset_user_password(p_user),false) THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('sign-in:'||p_user::text||':'||p_occasion::text,0));
+ -- Team invitations never own a password transition, including older clients.
+ PERFORM 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user FOR SHARE;
+ IF EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user
+   AND (is_editor OR is_editor_view OR is_manager)) THEN
+  RAISE insufficient_privilege USING MESSAGE='Team invitations cannot reset account passwords'; END IF;
+ SELECT * INTO v_existing FROM public.email_messages WHERE recipient_user=p_user AND occasion=p_occasion AND message_kind='sign_in' AND (dedupe_key=p_dedupe OR (workflow_state IN ('pending','preparing','sending','retry_wait','unknown','accepted') AND expires_at>now())) ORDER BY id DESC LIMIT 1;
+ IF v_existing.id IS NOT NULL THEN
+  RETURN jsonb_build_object('message_id',v_existing.message_id,'replayed',true);
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user) THEN RAISE EXCEPTION 'user_not_in_occasion'; END IF;
+ v_answer:=public.reset_user_password(p_user,p_password);
+ IF v_answer->>'code'<>'200' THEN RAISE EXCEPTION 'password_reset_denied'; END IF;
+ SELECT jsonb_build_object('organization',organization,'occasion',id,'unit',unit,'recipient_user',p_user) INTO v_context FROM public.occasions WHERE id=p_occasion;
+ v_email:=public.get_user_delivery_email(p_user);
+ SELECT encode(extensions.digest(encrypted_password,'sha256'),'hex') INTO v_password_version FROM auth.users WHERE id=p_user;
+ v_result:=public.enqueue_email('sign_in',v_context,v_email,jsonb_build_object('password_version',v_password_version,'content_hash',p_content_hash),p_dedupe,'SIGN_IN_CODE',now(),p_expires);
+ UPDATE public.email_messages SET prepared=p_sealed,prepared_hash=encode(extensions.digest(p_sealed::text,'sha256'),'hex'),prepared_at=now() WHERE message_id=(v_result->>'message_id')::uuid;
+ PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=(v_result->>'message_id')::uuid),true);
+ RETURN v_result;
+END $$;
+
 -- Source: database/functions/speakers/delete_counseling_slot.sql
 -- Guard used by both legacy and client-sync single-slot deletion paths.
 -- It locks the target event and only resolves an occasion when the event is a
@@ -20705,6 +20718,18 @@ GRANT EXECUTE ON FUNCTION public.get_ticket_layout_write_contract_v1() TO authen
 REVOKE DELETE ON public.images, public.log_notifications FROM PUBLIC, anon, authenticated;
 
 -- Source: database/functions/user_permissions/contraction.sql
+-- Provider schedulers may live in the cluster postgres database rather than
+-- the active application database. Inspect the local job catalog when present;
+-- the release preflight separately checks the provider-owned scheduler.
+-- This transaction-local snapshot creates no application table or scheduler.
+CREATE TEMP TABLE authorization_retirement_cron_commands(command text) ON COMMIT DROP;
+DO $retirement_cron_catalog$
+BEGIN
+ IF to_regclass('cron.job') IS NOT NULL THEN
+  EXECUTE 'INSERT INTO pg_temp.authorization_retirement_cron_commands SELECT command FROM cron.job';
+ END IF;
+END $retirement_cron_catalog$;
+
 -- No current Dart/JS/Edge/Worker/MCP source calls these historical claims RPCs.
 -- Effective function-body references form only this closed seven-function island;
 -- catalog policies, triggers and service jobs do not reference it. JWT identity,
@@ -20721,7 +20746,7 @@ BEGIN
      ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(')
  OR EXISTS(SELECT 1 FROM pg_trigger t WHERE NOT t.tgisinternal
    AND pg_get_triggerdef(t.oid) ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job j WHERE j.command
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands j WHERE j.command
    ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(') THEN
   RAISE EXCEPTION 'Claims RPC contraction has an active catalog caller';
  END IF;
@@ -20746,7 +20771,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy policy WHERE
    coalesce(pg_get_expr(policy.polqual,policy.polrelid),'')||coalesce(pg_get_expr(policy.polwithcheck,policy.polrelid),'')
      ~ '\mdelete_order[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job job WHERE job.command ~ '\mdelete_order[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands job WHERE job.command ~ '\mdelete_order[[:space:]]*\(') THEN
   RAISE EXCEPTION 'Obsolete order deleter still has an active catalog caller';
  END IF;
 END;
@@ -20764,7 +20789,7 @@ BEGIN
      AND function.prosrc ~* pattern)
  OR EXISTS(SELECT 1 FROM pg_policy policy WHERE
    coalesce(pg_get_expr(policy.polqual,policy.polrelid),'')||coalesce(pg_get_expr(policy.polwithcheck,policy.polrelid),'') ~* pattern)
- OR EXISTS(SELECT 1 FROM cron.job job WHERE job.command ~* pattern) THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands job WHERE job.command ~* pattern) THEN
   RAISE EXCEPTION 'Obsolete pre-command writers still have an active catalog caller';
  END IF;
 END;
@@ -20786,7 +20811,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy p WHERE
     coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'')
       ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Obsolete form deleter still has a catalog caller';
  END IF;
 END $obsolete_form_writer$;
@@ -20811,7 +20836,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM pg_policy p WHERE
    coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'')
      ~* '\mupdate_user[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mupdate_user[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mupdate_user[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Profile overload still has a policy or job caller';
  END IF;
 END $obsolete_profile_overload$;
@@ -20823,7 +20848,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM pg_proc p WHERE p.pronamespace='public'::regnamespace
    AND p.proname<>'get_bank_sync_connections_for_unit'
    AND p.prosrc ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Obsolete unscoped bank listing still has a caller';
  END IF;
 END $obsolete_bank_unit_listing$;
@@ -20846,7 +20871,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy p WHERE
    coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'') ~* pattern)
  OR EXISTS(SELECT 1 FROM pg_trigger t WHERE NOT t.tgisinternal AND pg_get_triggerdef(t.oid) ~* pattern)
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* pattern)
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* pattern)
  OR EXISTS(SELECT 1 FROM public.client_sync_component_sources r WHERE
    (r.canonical_writers||r.legacy_writers) && ARRAY['create_spots_for_inventory_pool','update_inclusion_type_group','upsert_event_user']::text[]) THEN
   RAISE EXCEPTION 'Obsolete capacity/attendance implementation still has a caller';

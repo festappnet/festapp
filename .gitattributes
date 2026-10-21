@@ -3,3 +3,12 @@
 
 # Generated local authorization catalog, raw measurements and evidence receipts.
 docs/plans/evidence/canonical-authorization-20261020/** linguist-generated=true
+# Manifest checksums use LF bytes on every workstation.
+/supabase/baseline/*.sql text eol=lf
+/supabase/baseline/manifest.json text eol=lf
+/automation/historical-sql-manifest.json text eol=lf
+/automation/order-symbol/backfill.sql text eol=lf
+
+# Catalog function bodies retain existing whitespace so schema fingerprints stay exact.
+/supabase/baseline/*_schema.sql whitespace=-blank-at-eol,-blank-at-eof
+/supabase/baseline/*_reference_seed.sql whitespace=-blank-at-eof

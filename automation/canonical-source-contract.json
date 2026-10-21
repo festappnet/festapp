@@ -1,6 +1,5 @@
 {
-  "baseline": "supabase/baseline/20260805230000_production_schema.sql",
-  "baselineVersion": "20260805230000",
+  "baselineManifest": "supabase/baseline/manifest.json",
   "operationsManifest": "automation/canonical-operation-sources.json",
   "retainedSignatures": [
     "public.record_account_deletion_sync_v1(uuid,bigint)",
