@@ -789,6 +789,18 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "style_concert_stub": "Koncert · kontrolný ústrižok",
+    "style_ball_silk": "Ples · hodvábna pozvánka",
+    "style_festival_poster": "Festival · malý plagát",
+    "style_club_panorama": "Klub · panoramatická",
+    "style_theatre_program": "Divadlo · klasický program",
+    "style_gallery_square": "Výstava · štvorcová",
+    "style_gala_invitation": "Gala · úzka pozvánka",
+    "style_boarding_pass": "Konferencia · boarding pass",
+    "style_cinema_strip": "Kino · filmový pás",
+    "style_sports_arena": "Šport · arénová vstupenka",
+    "style_festival_badge": "Festival · osobná akreditácia",
+    "style_workshop_card": "Workshop · štúdiová karta",
     "text": "Voľný text",
     "textDefault": "Váš text",
     "textContent": "Text na vstupenke",

@@ -362,14 +362,20 @@ class TicketLayoutService {
       logo = await decode(j['logo']);
       final presetValues = (j['presets'] as Map? ?? {}).cast<String, dynamic>();
       final overrides = (j['presetBackgrounds'] as Map? ?? {});
+      final presetArtwork = (j['presetArtwork'] as Map? ?? {});
       final artworks = <String, TicketLayoutArtwork>{};
       if (overrides.isNotEmpty) {
         for (final key in presetValues.keys) {
           final blank = overrides.containsKey(key) && overrides[key] == null;
+          final custom = presetArtwork[key] as Map?;
           artworks[key] = TicketLayoutArtwork(
               label: null,
-              background: blank ? null : j['backgroundUrl'] as String?,
-              image: blank ? null : bg?.clone());
+              background: custom != null
+                  ? custom['background'] as String?
+                  : blank ? null : j['backgroundUrl'] as String?,
+              image: custom != null
+                  ? await decode(custom['image'] as String?)
+                  : blank ? null : bg?.clone());
         }
       }
       return TicketLayoutResources(

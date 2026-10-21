@@ -24,7 +24,10 @@ Future<bool> copyOccasionMedia(
       features: occasion.features);
   if (ticketDetails is TicketFeature &&
       ticketDetails.ticketBackground != null &&
-      ticketDetails.ticketBackground!.isNotEmpty) {
+      ticketDetails.ticketBackground!.isNotEmpty &&
+      // Immutable gallery artwork is bundled, not owned by the occasion.
+      !ticketDetails.ticketBackground!
+          .startsWith('https://img.festapp.net/ticket-presets/v1/')) {
     ticketDetails.ticketBackground =
         await copy(ticketDetails.ticketBackground!);
   }

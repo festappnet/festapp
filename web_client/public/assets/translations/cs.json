@@ -2658,6 +2658,18 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "style_concert_stub": "Koncert · kontrolní útržek",
+    "style_ball_silk": "Ples · hedvábná pozvánka",
+    "style_festival_poster": "Festival · malý plakát",
+    "style_club_panorama": "Klub · panoramatická",
+    "style_theatre_program": "Divadlo · klasický program",
+    "style_gallery_square": "Výstava · čtvercová",
+    "style_gala_invitation": "Gala · úzká pozvánka",
+    "style_boarding_pass": "Konference · boarding pass",
+    "style_cinema_strip": "Kino · filmový pás",
+    "style_sports_arena": "Sport · arénová vstupenka",
+    "style_festival_badge": "Festival · osobní akreditace",
+    "style_workshop_card": "Workshop · studiová karta",
     "resetCrop": "Zobrazit celý obrázek",
     "cropImageHint": "Tažením rohů vyberte výřez. Uvnitř jej můžete posunout.",
     "cropImage": "Oříznout obrázek",

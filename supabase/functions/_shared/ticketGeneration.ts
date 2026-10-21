@@ -7,6 +7,7 @@ import { fetchPublicImage, UnsafeTargetError } from '../fetch-http-data/safeFetc
 import {futuraId,type TicketFont} from './ticketFonts.ts';
 import {resolveTicketFont,parseRegisteredTicketLayout} from './ticketFontStorage.ts';
 import {effectiveFontId,layoutFontIds} from './ticketLayout.ts';
+import {galleryBackground, galleryFontIds} from './ticketGallery.ts';
 export interface Resources { fonts?:Record<string,TicketFont>;registeredIds?:ReadonlySet<string>;font:Uint8Array;metrics:FontMetrics;background?:Uint8Array;preparedBackground?:PreparedTicketBackground;missingBackground?:boolean;logo?:Uint8Array;catalog?:ProductCatalog }
 export async function loadLayoutResources(occasion:any,featureOverride?:any,options:{allowMissingBackground?:boolean}={},readImage=fetchPublicImage):Promise<Resources> {
   const feature=featureOverride??occasion.features?.find((f:any)=>f.code==='ticket');
@@ -15,6 +16,7 @@ export async function loadLayoutResources(occasion:any,featureOverride?:any,opti
   const defaultId=template?effectiveFontId(template):futuraId;
   const ids=new Set<string>([defaultId]);
   if(options.allowMissingBackground)ids.add(futuraId); // concurrently rendered preset gallery
+  if(options.allowMissingBackground)for(const id of galleryFontIds)ids.add(id);
   for(const e of template?.elements??[])if(e.visible&&!['qr','logo'].includes(e.binding))ids.add(effectiveFontId(template,e));
   const fonts:Record<string,TicketFont>={};await Promise.all([...ids].map(async id=>{fonts[id]=await resolveTicketFont(id);}));
   const selected=fonts[defaultId];const font=selected.bytes;
@@ -23,7 +25,7 @@ export async function loadLayoutResources(occasion:any,featureOverride?:any,opti
   let backgroundBytes:Uint8Array|undefined;
   let missingBackground=false;
   if(backgroundUrl) {
-    try { backgroundBytes=await read(backgroundUrl); }
+    try { backgroundBytes=await galleryBackground(backgroundUrl)??await read(backgroundUrl); }
     catch(error) {
       // Only the editor can recover from a confirmed deleted image. Downloads
       // and PDF previews must never silently produce a different ticket.

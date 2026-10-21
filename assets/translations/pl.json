@@ -767,6 +767,18 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "style_concert_stub": "Koncert · odcinek kontrolny",
+    "style_ball_silk": "Bal · jedwabne zaproszenie",
+    "style_festival_poster": "Festiwal · mały plakat",
+    "style_club_panorama": "Klub · panoramiczny",
+    "style_theatre_program": "Teatr · klasyczny program",
+    "style_gallery_square": "Wystawa · kwadratowy",
+    "style_gala_invitation": "Gala · wąskie zaproszenie",
+    "style_boarding_pass": "Konferencja · karta pokładowa",
+    "style_cinema_strip": "Kino · taśma filmowa",
+    "style_sports_arena": "Sport · bilet na arenę",
+    "style_festival_badge": "Festiwal · akredytacja imienna",
+    "style_workshop_card": "Warsztat · karta studyjna",
     "text": "Własny tekst",
     "textDefault": "Twój tekst",
     "textContent": "Tekst na bilecie",
