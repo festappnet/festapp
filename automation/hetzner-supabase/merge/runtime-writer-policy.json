@@ -61,14 +61,6 @@
       ],
       "mutates_authority": true
     },
-    "exchange-sign-in-code": {
-      "trigger": "client-http",
-      "effects": [
-        "database-rpc",
-        "auth-session-create"
-      ],
-      "mutates_authority": true
-    },
     "fetch-http-data": {
       "trigger": "client-http",
       "effects": [

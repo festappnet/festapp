@@ -163,9 +163,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
             child: SuperEditorPopover(
                 popoverFocusNode: _popoverFocus,
                 editorFocusNode: controller.focusNode,
-                child: TapRegion(
-                    onTapOutside: (_) => _closeMentions(),
-                    child: Material(
+                child: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(8),
                     clipBehavior: Clip.antiAlias,
@@ -305,7 +303,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                   ]);
                                             }))),
                           ]),
-                        )))))));
+                        ))))));
   }
 
   ExecutionInstruction _authoringKeys(
@@ -921,19 +919,6 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               SliverToBoxAdapter(child: controller.authoring!.header(context) ?? const SizedBox.shrink()),
                                             SuperEditor(
                                               editor: controller.editor,
-                                              // The default opaque highlight obscures
-                                              // light text in dark mode.
-                                              selectionStyle: Theme.of(context)
-                                                          .brightness ==
-                                                      Brightness.dark
-                                                  ? SelectionStyles(
-                                                      selectionColor:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .primary
-                                                              .withValues(alpha: 0.35),
-                                                    )
-                                                  : defaultSelectionStyle,
                                               inputRole:
                                                   'html-${identityHashCode(controller)}',
                                               imeConfiguration:

@@ -24,7 +24,6 @@ export class AuthService {
     }
 
     static async logout() {
-        RightsService.clearCapabilities();
         await SupabaseService.getClient().auth.signOut();
         // Clear local data if needed
         browserStorage.removeItem(SupabaseService.tokenKey);

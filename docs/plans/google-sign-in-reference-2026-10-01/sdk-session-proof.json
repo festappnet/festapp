@@ -1,0 +1,88 @@
+{
+  "authImage": "supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7",
+  "sdk": "supabase-js@2.58.0",
+  "flutterSdk": {
+    "sameUuid": true,
+    "noPasswordRecoveryEvent": true,
+    "refresh": true
+  },
+  "identities": [
+    {
+      "org": 1,
+      "rawEmail": "planner@example.com",
+      "sameUuid": true,
+      "setSessionEvents": [
+        "INITIAL_SESSION",
+        "SIGNED_IN",
+        "TOKEN_REFRESHED",
+        "SIGNED_OUT"
+      ],
+      "refresh": true,
+      "revoke": true,
+      "replayRejected": true,
+      "passwordPreserved": true
+    },
+    {
+      "org": 2,
+      "rawEmail": "planner@example.com",
+      "sameUuid": true,
+      "setSessionEvents": [
+        "INITIAL_SESSION",
+        "SIGNED_IN",
+        "TOKEN_REFRESHED",
+        "SIGNED_OUT"
+      ],
+      "refresh": true,
+      "revoke": true,
+      "replayRejected": true,
+      "passwordPreserved": true
+    },
+    {
+      "org": 1,
+      "rawEmail": "planner+1@example.com",
+      "sameUuid": true,
+      "setSessionEvents": [
+        "INITIAL_SESSION",
+        "SIGNED_IN",
+        "TOKEN_REFRESHED",
+        "SIGNED_OUT"
+      ],
+      "refresh": true,
+      "revoke": true,
+      "replayRejected": true,
+      "passwordPreserved": true
+    },
+    {
+      "org": 1,
+      "rawEmail": "1+real@example.com",
+      "sameUuid": true,
+      "setSessionEvents": [
+        "INITIAL_SESSION",
+        "SIGNED_IN",
+        "TOKEN_REFRESHED",
+        "SIGNED_OUT"
+      ],
+      "refresh": true,
+      "revoke": true,
+      "replayRejected": true,
+      "passwordPreserved": true
+    }
+  ],
+  "missingRecoveryDoesNotCreate": true,
+  "deletionDuringMintRejected": true,
+  "distributedConcurrentMint": {
+    "sessions": 1,
+    "retryableRejections": 2
+  },
+  "lostLeaseRejectedAndNewOwnerPreserved": true,
+  "publicDomainDeletionRejected": true,
+  "emailMismatchRejected": true,
+  "mfa": {
+    "verifiedTotpAal2": true,
+    "internalRecoveryBlocked": true,
+    "freshPasswordAndEncryptedCrossRequestProof": true,
+    "wrongCodeRejected": true,
+    "correctRetrySameChallenge": true
+  },
+  "status": "passed"
+}

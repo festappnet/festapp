@@ -1,4 +1,3 @@
-import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/eshop/order_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -12,8 +11,13 @@ void main() {
         functionName = name;
         sent = params;
         return {
-          'mutation': commandResponseFixture(
-              params['p_command_id'] as String)['mutation'],
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {'orderId': 5},
@@ -35,8 +39,13 @@ void main() {
         functionName = name;
         sent = params;
         return {
-          'mutation': commandResponseFixture(
-              params['p_command_id'] as String)['mutation'],
+          'mutation': {
+            'commandId': '00000000-0000-4000-8000-000000000001',
+            'receiptId': '00000000-0000-4000-8000-000000000001',
+            'commitId': null,
+            'replayed': false,
+            'occurredAt': '2026-10-15T10:00:00Z'
+          },
           'status': 'applied',
           'code': 200,
           'data': {'orderId': 5},

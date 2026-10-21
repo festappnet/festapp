@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://festapp.net/schemas/self-hosted-identity-decision-v1.json",
+  "title": "Festapp private identity decision evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision_version", "sources", "source_collision_report_sha256", "decisions", "validation", "created_at", "decision_sha256"],
+  "properties": {
+    "decision_version": { "const": "2026-08-27.1" },
+    "sources": { "type": "object" },
+    "source_collision_report_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "decisions": { "type": "array" },
+    "validation": { "type": "object" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "decision_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

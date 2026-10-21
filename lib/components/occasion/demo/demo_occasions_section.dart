@@ -10,14 +10,12 @@ import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 /// catalogue uses the account-wide metadata returned with its examples.
 class DemoOccasionsSection extends StatefulWidget {
   final bool? hasOwnOccasions;
-  final DemoCatalog? initialCatalog;
   final Future<DemoCatalog> Function() load;
   final Future<void> Function(DemoOccasion)? onOpen;
   final Future<void> Function(DemoOccasion)? onCreateCopy;
   const DemoOccasionsSection(
       {super.key,
       this.hasOwnOccasions,
-      this.initialCatalog,
       this.load = DemoCatalog.load,
       this.onOpen,
       this.onCreateCopy});
@@ -33,21 +31,7 @@ class _DemoOccasionsSectionState extends State<DemoOccasionsSection> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialCatalog != null) {
-      _catalog = widget.initialCatalog;
-    } else {
-      _load();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant DemoOccasionsSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialCatalog != oldWidget.initialCatalog &&
-        widget.initialCatalog != null) {
-      _catalog = widget.initialCatalog;
-      _failed = false;
-    }
+    _load();
   }
 
   Future<void> _load() async {

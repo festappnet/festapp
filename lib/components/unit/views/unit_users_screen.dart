@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -55,8 +54,7 @@ class _UnitUsersScreenState extends State<UnitUsersScreen> {
         ),
         getNewObject: () => UnitUserModel.newRow(widget.unit.id!),
         headerChildren: [
-          if (RightsService.hasCapability(
-              AuthorizationCapabilities.unitUsersWrite))
+          if (RightsService.isUnitManager())
             DataGridAction(
               name: CommonStrings.addExisting,
               action: (SingleDataGridController p0, [_]) async {

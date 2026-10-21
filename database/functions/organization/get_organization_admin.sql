@@ -6,7 +6,13 @@ SET search_path = public, extensions
 AS $$
 BEGIN
   -- Verify admin status
-  IF public.can_manage_organization_settings(organization_id) THEN
+  IF EXISTS (
+    SELECT 1
+    FROM organization_users
+    WHERE "user" = auth.uid()
+      AND organization = organization_id
+      AND is_admin = true
+  ) THEN
     -- Return the organization record without server-only delivery secrets.
     RETURN QUERY
     SELECT o.id, o.created_at, o.updated_at,
