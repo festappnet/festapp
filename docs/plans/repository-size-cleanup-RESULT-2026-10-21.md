@@ -1,7 +1,8 @@
 # Repository size cleanup - release PR, 2026-10-21
 
-The release change is based on canonical `main` at
-`6f6c5aa5108f0f67e150fb915d4c8bad9612c66c`. The original dirty feature checkout
+The standalone cleanup was prepared on canonical `main` at
+`6f6c5aa5108f0f67e150fb915d4c8bad9612c66c`. Release integration also includes
+merged authorization PR #545 at `ddd54c61038340c262966aecdd03c8f1035636dc`. The original dirty feature checkout
 and unrelated work remain untouched. No production SQL writes or deployment ran.
 
 ## Installation and recovery
@@ -64,7 +65,7 @@ parity-tested inputs. Matching schema hashes:
 - PG15: `8487dcfd9fa28d3da5f2d9da5dfbd26b6e83e591dbb5e73324092a18ce777ca1`.
 - PG17: `7d534b8799853f969a10487d1af56e25090ebf88ac002d10981ec90915a9484c`.
 
-The current-main integration was separately tested with disposable PG15/PG17:
+The standalone cleanup was separately tested with disposable PG15/PG17:
 
 - Clean baseline installation plus all current forwards; final ledger has 321
   versions through `20261021120000`.
@@ -82,6 +83,23 @@ The database-backed registry-transition suite requires its separately named
 `festapp-canonical-mutation-pg15` environment on port 55452 and was not run against
 these differently named targets. Flutter was not run: client code is unchanged.
 Production application of the new guard remains part of the normal release.
+
+## Combined release qualification
+
+The final combined source was installed from an empty PG17 provider database,
+including both proposed migrations: 322 ledger versions through
+`20261021120000`. All 13 targeted SQL suites pass, including setup price waves,
+team invitation password protection and canonical source parity. All 55 Node
+contracts pass. The merge preserves both attribute contracts, uses the current
+authorization branch's valid seat-binding fixture, and regenerates source
+fingerprints from the shared baseline.
+
+The authorization migration is not in the approved production ledger and has
+not been applied there. Its final release assembly incorporates the deduplicated
+setup owner and restored password guard, rather than reinstalling stale bodies
+after the earlier cleanup fix. Existing published migrations remain unchanged.
+The original authorization role/performance evidence remains tied to PR #545;
+these integration checks do not claim a new production performance result.
 
 ## Measured PR delta
 
