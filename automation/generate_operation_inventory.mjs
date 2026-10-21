@@ -165,7 +165,8 @@ export function buildInventory(projectRoot) {
   // textual declaration as evidence, never as a claim about the deployed winner.
   const unresolved = new Set(rpc.filter(r => !r.definitions.length).map(r => r.name));
   const migrationReferences = new Map();
-  for (const absolute of [...files(path.join(projectRoot, 'supabase/baseline'), new Set(['.sql'])),
+  const baseline = JSON.parse(fs.readFileSync(path.join(projectRoot, 'supabase/baseline/manifest.json'), 'utf8'));
+  for (const absolute of [path.join(projectRoot, baseline.schema.path),
     ...files(path.join(projectRoot, 'supabase/migrations'), new Set(['.sql']))].sort()) {
     const source = fs.readFileSync(absolute, 'utf8');
     for (const match of source.matchAll(/\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:\w+\.)?(\w+)\s*\(/gi)) {

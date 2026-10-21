@@ -8,6 +8,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+from baseline import load_manifest
+
 BACKEND = ROOT.parent / 'festapp-wizard-local'
 PROJECT = 'festapp-wizard-local'
 DB_URL = 'postgresql://postgres:postgres@127.0.0.1:56822/postgres'
@@ -63,19 +65,18 @@ def prepare():
         existing = subprocess.check_output(['psql', DB_URL, '-Atc', "select to_regclass('public.units') is not null"], text=True).strip()
         if existing == 't':
             raise RuntimeError('Unmarked database already contains app data; refusing to bootstrap over it')
-        pre = 'CREATE SCHEMA IF NOT EXISTS eshop;'
-        for extension, schema in [('dblink','public'),('http','extensions'),('moddatetime','extensions'),
-                                  ('pg_cron','pg_catalog'),('pg_trgm','extensions'),('pgaudit','extensions'),
-                                  ('pgjwt','extensions'),('unaccent','extensions')]:
-            pre += f'CREATE EXTENSION IF NOT EXISTS {extension} WITH SCHEMA {schema};'
-        for schema in ['public', 'eshop']:
-            for kind in ['TABLES', 'SEQUENCES', 'FUNCTIONS']:
-                pre += f'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA {schema} REVOKE ALL ON {kind} FROM anon, authenticated, service_role;'
-        sql('-c', pre)
-        sql('-f', str(ROOT / 'supabase/baseline/20260805230000_production_schema.sql'))
-        for migration in sorted((ROOT / 'supabase/migrations').glob('*.sql')):
-            if migration.name[:14] > '20260805230000':
-                sql('-f', str(migration))
+        run(['docker', 'exec', '-e', 'PGPASSWORD=postgres', 'supabase_db_' + PROJECT,
+             'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1',
+             '-qc', 'ALTER SYSTEM SET cron.launch_active_jobs = off'])
+        sql('-c', 'SELECT pg_reload_conf()')
+        baseline = load_manifest(ROOT)
+        sql('-c', 'CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;')
+        for key in ['bootstrap', 'schema', 'referenceSeed']:
+            sql('-f', str(ROOT / baseline[key]['path']))
+        ledger = subprocess.check_output(['python3', str(ROOT / 'automation/baseline.py'), 'ledger-sql'], text=True)
+        sql('-c', ledger)
+        run(['python3', str(ROOT / 'automation/baseline.py'), 'upgrade-local',
+             '--database-url', DB_URL.replace('postgres:postgres@', 'supabase_admin:postgres@') + '?sslmode=disable'])
         sql('-f', str(ROOT / 'supabase/seed.sql'))
         marker.write_text('Canonical baseline and forward migrations loaded.\n')
     # Draft functions may change while iterating; the canonical file is idempotent.

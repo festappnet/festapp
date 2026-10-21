@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readHistoricalSql} from '../../../automation/lib/historical_sql.mjs';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
@@ -68,7 +69,7 @@ try{
  });
  await test('containment closes PUBLIC inheritance on legacy definitions before retirement',async()=>{
   await q('SAVEPOINT pre');
-  const baseline=read('supabase/baseline/20260805230000_production_schema.sql');
+  const baseline=readHistoricalSql('supabase/baseline/20260805230000_production_schema.sql');
   for(const name of ['migrate_users_to_org','update_spot','apply_allocations_claim_only']){
    const start=baseline.indexOf(`CREATE OR REPLACE FUNCTION "public"."${name}"(`);
    assert(start>=0,name);

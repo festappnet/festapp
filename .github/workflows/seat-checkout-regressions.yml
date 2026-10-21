@@ -19,6 +19,9 @@ on:
       - 'lib/components/eshop/views/orders_content.dart'
       - 'test/components/eshop/ticket_delivery_request_test.dart'
       - 'supabase/migrations/**'
+      - 'supabase/baseline/**'
+      - 'automation/baseline.py'
+      - 'automation/historical-sql-manifest.json'
       - 'automation/bootstrap_local_db.sh'
       - 'automation/local_db/**'
       - 'web_client/package.json'
@@ -44,6 +47,8 @@ jobs:
       SEAT_CHECKOUT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 11.24.0

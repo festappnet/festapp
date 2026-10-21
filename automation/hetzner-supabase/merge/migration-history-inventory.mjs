@@ -32,9 +32,23 @@ export function repositoryMigrationInventory(directory = MIGRATIONS_DIRECTORY) {
         name: match[2],
         file: entry.name,
         sha256: sha256(contents),
+        availability: 'active-forward-sql',
+        baseline_covered: false,
       };
     })
     .sort((left, right) => left.file.localeCompare(right.file));
+  if (path.resolve(directory) === MIGRATIONS_DIRECTORY) {
+    const baseline = JSON.parse(fs.readFileSync(path.join(REPOSITORY_ROOT, 'supabase/baseline/manifest.json'), 'utf8'));
+    const history = JSON.parse(fs.readFileSync(path.join(REPOSITORY_ROOT, baseline.historicalSources.path), 'utf8'));
+    for (const entry of history.files.filter(entry => entry.path.startsWith('supabase/migrations/'))) {
+      const file = path.basename(entry.path);
+      const match = file.match(MIGRATION_FILE);
+      if (!match || match[1] > baseline.coveredThrough) throw new Error('invalid historical baseline coverage');
+      migrations.push({ version: match[1], name: match[2], file, sha256: entry.sha256,
+        availability: 'checksum-verified-historical-kit', baseline_covered: true });
+    }
+    migrations.sort((left, right) => left.file.localeCompare(right.file));
+  }
   const versions = migrations.map((entry) => entry.version);
   if (new Set(versions).size !== versions.length) {
     throw new Error('repository migration versions must be unique');

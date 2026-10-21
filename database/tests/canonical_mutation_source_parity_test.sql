@@ -858,8 +858,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.report_cleaning_issue_client_sync_v1(bigint,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='74377e1985ecde5723b4c4519b27e676'),'current SQL source parity: public.report_cleaning_issue_client_sync_v1(bigint,text,text,uuid)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.report_cleaning_issue_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='eb15fe9b543194bbd3eebe831015fda7'),'current SQL source parity: public.report_cleaning_issue_internal_v1(bigint,text,text)');
--- supabase/migrations/20261020120000_canonical_operations_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='fc357f4502424005ab7411b28bb9c323'),'current SQL source parity: public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)');
+-- supabase/migrations/20261021120000_restore_team_invitation_password_guard.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='dc1a4842a4c932797b5d73527a8f42ed'),'current SQL source parity: public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.resolve_cleaning_place(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a191549954d169f806916ba9ab5f040d'),'current SQL source parity: public.resolve_cleaning_place(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql

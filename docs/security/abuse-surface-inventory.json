@@ -243,7 +243,7 @@
       "operation": "image.record",
       "budget": "image.records",
       "source": "database/functions/others/add_image_record.sql",
-      "admission": "admit_image_record_v1",
+      "admission": "admit_image_record_budget_internal",
       "evidence": "database/tests/abuse/image_records_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-11-16"
@@ -285,6 +285,24 @@
     }
   ],
   "edgeFunctions": [
+    {
+      "name": "mcp-session-exchange",
+      "path": "supabase/functions/mcp-session-exchange/index.ts",
+      "policies": [
+        "auth.mcp.single-use-request",
+        "auth.mcp.exact-origin",
+        "auth.mcp.issuer-budget"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-16",
+      "evidence": [
+        "supabase/functions/mcp-session-exchange/handler_test.ts",
+        "supabase/functions/_shared/issueExistingUserSession_test.ts",
+        "supabase/functions/mcp-session-exchange/config_test.ts"
+      ],
+      "reason": "Exact tenant origin, verified actor and single-use broker lease fence session issuance; the shared issuer enforces its budget. Local tests do not certify live activation."
+    },
     {
       "name": "auth-email-hook",
       "path": "supabase/functions/auth-email-hook/index.ts",
