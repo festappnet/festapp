@@ -38,3 +38,25 @@ Primary implementation references for the pinned runtime:
 [pool registry and per-service semaphore](https://github.com/supabase/edge-runtime/blob/v1.74.0/crates/base/src/worker/pool.rs),
 [native counter fields](https://github.com/supabase/edge-runtime/blob/v1.74.0/ext/runtime/lib.rs),
 [CLI flags](https://github.com/supabase/edge-runtime/blob/v1.74.0/cli/src/flags.rs).
+
+## Summarize exported history offline
+
+Run the summary on a private local copy of the collector's JSONL files and
+a budget describing the same host and container set:
+
+```bash
+python3 automation/hetzner-supabase/runtime/summarize-resource-history.py \
+  /private/path/resources-*.jsonl --budget /private/path/resource-budget.json
+```
+
+The budget uses `admin_limits` (container names without the `/supabase-` prefix,
+with `mem_limit` in bytes) and `reserve_policy` with
+`os_headroom_target_bytes` and `logical_backup_transient_target_bytes`. A dated
+example is `docs/operations/security-remediation-20261016/resource-budget.json`;
+verify its assumptions before using it for another observation window.
+
+The report separates simultaneous sampled memory from sums of individual
+working-set maxima, reports gaps and missing database/Edge samples, and rejects
+duplicate timestamps or histories spanning different host memory sizes. It
+reads local files only. Its feasibility screen does not establish safe hard
+caps, representative business peaks or a need to buy capacity.
