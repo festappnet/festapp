@@ -73,187 +73,202 @@ class OccasionEditCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      margin: EdgeInsets.zero,
       color: cardColor,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(StylesConfig.commonRoundness),
         side: BorderSide(color: borderColor, width: borderWidth),
       ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              PopupMenuButton<String>(
-                elevation: 0,
-                icon: Icon(Icons.more_vert,
-                    color: onSurfaceColor.withOpacity(0.7)),
-                onSelected: (value) {
-                  if (value == "app_landing") onSetAppLanding?.call();
-                  if (value == "create_copy") {
-                    onCreateCopy?.call();
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  if (onSetAppLanding != null)
-                    PopupMenuItem(
-                        value: 'app_landing',
-                        child: Text(isAppLanding
-                            ? UnitStrings.clearAppLanding
-                            : UnitStrings.setAppLanding)),
-                  if (onCreateCopy != null)
-                    PopupMenuItem(
-                      value: "create_copy",
-                      child: Text(FormStrings.createCopy),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  PopupMenuButton<String>(
+                    elevation: 0,
+                    icon: Icon(Icons.more_vert,
+                        color: onSurfaceColor.withOpacity(0.7)),
+                    onSelected: (value) {
+                      if (value == "app_landing") onSetAppLanding?.call();
+                      if (value == "create_copy") {
+                        onCreateCopy?.call();
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => [
+                      if (onSetAppLanding != null)
+                        PopupMenuItem(
+                            value: 'app_landing',
+                            child: Text(isAppLanding
+                                ? UnitStrings.clearAppLanding
+                                : UnitStrings.setAppLanding)),
+                      if (onCreateCopy != null)
+                        PopupMenuItem(
+                          value: "create_copy",
+                          child: Text(FormStrings.createCopy),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(children: [
+                          if (occasion.startTime != null &&
+                              occasion.endTime != null)
+                            Expanded(
+                                child: Text(
+                              TimeHelper.getMinimalisticDateRange(context,
+                                  occasion.startTime!, occasion.endTime!),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                          if (badge != null) ...[
+                            const SizedBox(width: 8),
+                            Badge(
+                                backgroundColor: theme.colorScheme.primary,
+                                textColor: theme.colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                textStyle: theme.textTheme.labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                label: Text(badge!)),
+                          ],
+                        ]),
+                        const SizedBox(height: 4),
+                        Tooltip(
+                          message: occasion.title ?? '',
+                          waitDuration: const Duration(milliseconds: 350),
+                          exitDuration: const Duration(milliseconds: 100),
+                          showDuration: const Duration(seconds: 8),
+                          preferBelow: false,
+                          constraints: BoxConstraints(
+                            maxWidth:
+                                (MediaQuery.sizeOf(context).width - 32).clamp(
+                              0.0,
+                              360.0,
+                            ),
+                          ),
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x24000000),
+                                blurRadius: 16,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          textStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: onSurfaceColor,
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                          child: Text(
+                            occasion.title ?? '',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (occasion.stats != null) ...[
+                          if (FeatureService.isFeatureEnabled(
+                              FeatureConstants.form,
+                              features: occasion.features)) ...[
+                            const SizedBox(height: 8),
+                            Builder(builder: (context) {
+                              final bool hasTickets =
+                                  FeatureService.isFeatureEnabled(
+                                      FeatureConstants.ticket,
+                                      features: occasion.features);
+
+                              return Wrap(
+                                spacing: 12.0,
+                                runSpacing: 4.0,
+                                children: [
+                                  _buildStat(context,
+                                      icon: hasTickets
+                                          ? Icons.confirmation_number_outlined
+                                          : Icons.chat_bubble,
+                                      value: (occasion.stats!.total -
+                                              occasion.stats!.storno)
+                                          .toString(),
+                                      tooltip: hasTickets
+                                          ? OrdersStrings.tickets
+                                          : OrdersStrings.applications),
+                                  _buildStat(context,
+                                      icon: Icons.check_circle_outline,
+                                      value: (occasion.stats!.paidOrSent +
+                                              occasion.stats!.used)
+                                          .toString(),
+                                      tooltip: OrdersStrings.gridPaidOrSent),
+                                  _buildStat(context,
+                                      icon: Icons.shopping_cart_outlined,
+                                      value: occasion.stats!.ordered.toString(),
+                                      tooltip: OrdersStrings.gridOrdered),
+                                ],
+                              );
+                            })
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 12.0,
+                              runSpacing: 4.0,
+                              children: [
+                                _buildStat(context,
+                                    icon: Icons.group_outlined,
+                                    value: occasion.stats!.users.toString(),
+                                    tooltip: CommonStrings.users),
+                              ],
+                            )
+                          ],
+                        ],
+                      ],
                     ),
+                  ),
+                  if (isAppLanding)
+                    Tooltip(
+                        message: UnitStrings.appLanding,
+                        child: Icon(Icons.home,
+                            semanticLabel: UnitStrings.appLanding,
+                            color: theme.colorScheme.primary)),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right,
+                      color: onSurfaceColor.withOpacity(0.5)),
+                  const SizedBox(width: 4),
                 ],
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(children: [
-                      if (occasion.startTime != null &&
-                          occasion.endTime != null)
-                        Expanded(
-                            child: Text(
-                          TimeHelper.getMinimalisticDateRange(
-                              context, occasion.startTime!, occasion.endTime!),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )),
-                      const SizedBox(width: 6),
-                      if (occasion.saleForms?.isNotEmpty == true)
-                        Flexible(
-                            flex: 3,
-                            child: OccasionSaleBadge(occasion: occasion))
-                      else if (badge != null)
-                        Flexible(
-                            flex: 3,
-                            child: Text(badge!,
-                                maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ]),
-                    const SizedBox(height: 4),
-                    Tooltip(
-                      message: occasion.title ?? '',
-                      waitDuration: const Duration(milliseconds: 350),
-                      exitDuration: const Duration(milliseconds: 100),
-                      showDuration: const Duration(seconds: 8),
-                      preferBelow: false,
-                      constraints: BoxConstraints(
-                        maxWidth: (MediaQuery.sizeOf(context).width - 32).clamp(
-                          0.0,
-                          360.0,
-                        ),
-                      ),
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x24000000),
-                            blurRadius: 16,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      textStyle: theme.textTheme.bodyMedium?.copyWith(
-                        color: onSurfaceColor,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                      child: Text(
-                        occasion.title ?? '',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (occasion.stats != null) ...[
-                      if (FeatureService.isFeatureEnabled(FeatureConstants.form,
-                          features: occasion.features)) ...[
-                        const SizedBox(height: 8),
-                        Builder(builder: (context) {
-                          final bool hasTickets =
-                              FeatureService.isFeatureEnabled(
-                                  FeatureConstants.ticket,
-                                  features: occasion.features);
-
-                          return Wrap(
-                            spacing: 12.0,
-                            runSpacing: 4.0,
-                            children: [
-                              _buildStat(context,
-                                  icon: hasTickets
-                                      ? Icons.confirmation_number_outlined
-                                      : Icons.chat_bubble,
-                                  value: (occasion.stats!.total -
-                                          occasion.stats!.storno)
-                                      .toString(),
-                                  tooltip: hasTickets
-                                      ? OrdersStrings.tickets
-                                      : OrdersStrings.applications),
-                              _buildStat(context,
-                                  icon: Icons.check_circle_outline,
-                                  value: (occasion.stats!.paidOrSent +
-                                          occasion.stats!.used)
-                                      .toString(),
-                                  tooltip: OrdersStrings.gridPaidOrSent),
-                              _buildStat(context,
-                                  icon: Icons.shopping_cart_outlined,
-                                  value: occasion.stats!.ordered.toString(),
-                                  tooltip: OrdersStrings.gridOrdered),
-                            ],
-                          );
-                        })
-                      ] else ...[
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 12.0,
-                          runSpacing: 4.0,
-                          children: [
-                            _buildStat(context,
-                                icon: Icons.group_outlined,
-                                value: occasion.stats!.users.toString(),
-                                tooltip: CommonStrings.users),
-                          ],
-                        )
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-              if (isAppLanding)
-                Tooltip(
-                    message: UnitStrings.appLanding,
-                    child: Icon(Icons.home,
-                        semanticLabel: UnitStrings.appLanding,
-                        color: theme.colorScheme.primary)),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right, color: onSurfaceColor.withOpacity(0.5)),
-              const SizedBox(width: 4),
-            ],
+            ),
           ),
-        ),
+          if (occasion.saleForms?.isNotEmpty == true)
+            PositionedDirectional(
+              top: 0,
+              end: 4,
+              child: OccasionSaleBadge(occasion: occasion),
+            ),
+        ],
       ),
     );
   }

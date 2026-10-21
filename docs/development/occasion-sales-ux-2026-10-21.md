@@ -74,3 +74,9 @@ Browser používal skutečné lokální Edge funkce a lokální fontový storage
 - [Odsouhlasená interaktivní maketa](../design/occasion-sales-preview/index.html)
 - [Dokončení v reálném Flutter UI na mobilu](../design/occasion-sales-preview/implemented-completion-mobile.png)
 - [Karty v reálném Flutter UI na mobilu](../design/occasion-sales-preview/implemented-cards-mobile.png)
+
+## Odsouhlasená úprava po prvním nasazení
+
+Varianta B nahrazuje barevné textové badge neutrálními ikonkami v pravém horním rohu. Původní komponenta má opět výšku 110 px, název `titleMedium` (16 px, původní tučný řez) na jediném řádku a původní rozestupy. Běžně otevřené formuláře a již seskupené proběhlé akce nemají dodatečný stavový prvek. Výjimky, částečně otevřené formuláře a aktivní odpočty mají tooltip dostupný myší, klepnutím i fokusem klávesnice. Pozadí ikonek zůstává průhledné. Základní karta pod stavovým prvkem odpovídá původní komponentě před prvním UX rozšířením.
+
+Součástí opravy je také skrytý limit počtu přihlášek s uloženou hodnotou 1, jsou-li vypnuté vstupenky i plánek, a odpovídající jedno-položkové e-mailové příklady včetně cen. Příklady pro vstupenky či zapnutý plánek zůstávají více-položkové. Stripe není součástí změny.

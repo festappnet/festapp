@@ -14,6 +14,7 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_seat_preview.dar
 import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
@@ -487,6 +488,79 @@ void main() {
     });
   }
 
+  testWidgetsWithEnvironment(() => environment,
+      'ordinary open cards retain original typography and hide sale decoration',
+      (tester) async {
+    final occasion = OccasionModel(
+        id: 1,
+        title: 'Původní karta',
+        startTime: DateTime(2030, 1, 10),
+        endTime: DateTime(2030, 1, 11),
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
+        stats: StatsModel(),
+        saleForms: [form(), form()]);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SizedBox(
+                    width: 312,
+                    height: 110,
+                    child:
+                        OccasionEditCard(occasion: occasion, onTap: () {})))));
+    expect(find.byType(TextButton), findsNothing);
+    final title = tester.widget<Text>(find.text('Původní karta'));
+    expect(title.maxLines, 1);
+    expect(title.style!.fontSize, 16);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
+      'paused card shows a neutral corner icon with a tap tooltip',
+      (tester) async {
+    var opened = 0;
+    final occasion = OccasionModel(
+        id: 1,
+        title: 'Pozastavená akce',
+        startTime: DateTime(2030, 1, 10),
+        endTime: DateTime(2030, 1, 11),
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
+        stats: StatsModel(),
+        saleForms: [form(open: false)]);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SizedBox(
+                    width: 312,
+                    height: 110,
+                    child: OccasionEditCard(
+                        occasion: occasion, onTap: () => opened++)))));
+    expect(find.byIcon(Icons.pause), findsOneWidget);
+    final icon = tester.getRect(find.byIcon(Icons.pause));
+    final card = tester.getRect(find.byType(OccasionEditCard));
+    expect(icon.right, greaterThan(card.right - 24));
+    expect(icon.top, lessThan(card.top + 24));
+    final button = tester.widget<TextButton>(find.byType(TextButton));
+    expect(button.style!.backgroundColor!.resolve({}), Colors.transparent);
+    for (var i = 0;
+        i < 4 && find.textContaining('Pozastaveno').evaluate().isEmpty;
+        i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+    }
+    expect(find.textContaining('Pozastaveno'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.pause));
+    await tester.pump();
+    expect(find.textContaining('Pozastaveno'), findsOneWidget);
+    expect(opened, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final scale in [1.0, 2.0]) {
     testWidgetsWithEnvironment(() => environment,
         'card fits 288px at text scale $scale and explains its badge',
@@ -512,13 +586,14 @@ void main() {
                           MediaQueryData(textScaler: TextScaler.linear(scale)),
                       child: SizedBox(
                           width: 288,
-                          height: 126 + (scale - 1) * 64,
+                          height: 110 + (scale - 1) * 64,
                           child: OccasionEditCard(
                               occasion: occasion, onTap: () => opened++))))));
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('V prodeji 2/3'), findsOneWidget);
-      await tester.tap(find.text('V prodeji 2/3'));
+      expect(find.text('2/3'), findsOneWidget);
+      expect(find.text('V prodeji 2/3'), findsNothing);
+      await tester.tap(find.text('2/3'));
       await tester.pump();
       expect(find.textContaining('Otevřené formuláře: 2/3'), findsOneWidget);
       expect(opened, 0,
