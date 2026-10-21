@@ -715,8 +715,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       );
     }
     if (kind == 'Table') {
-      final seating = documentTableSeating(c.document),
-          scale = seating.width / 40;
+      final seating = documentSeating(c.document), scale = seating.width / 40;
       return tableLayout(
         shape: 'roundedRect',
         x: point.dx,
@@ -737,15 +736,15 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         shape: 'ellipse',
         x: point.dx,
         y: point.dy,
-        width: 160 * documentTableSeating(c.document).width / 40,
-        height: 160 * documentTableSeating(c.document).width / 40,
-        seating: documentTableSeating(c.document),
+        width: 160 * documentSeating(c.document).width / 40,
+        height: 160 * documentSeating(c.document).width / 40,
+        seating: documentSeating(c.document),
       );
     }
     if (kind == 'Bar') {
-      final scale = documentTableSeating(c.document).width / 40;
+      final scale = documentSeating(c.document).width / 40;
       final bar = barLayout(
-        seating: documentTableSeating(c.document),
+        seating: documentSeating(c.document),
         x: point.dx,
         y: point.dy,
         width: 280 * scale,
@@ -841,17 +840,11 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           : 'shape',
       x: point.dx,
       y: point.dy,
-      width: kind == 'Seat'
-          ? documentSeating(c.document).width
-          : kind == 'Standing'
-          ? 480
-          : 160,
+      width: kind == 'Seat' ? documentSeating(c.document).width : 160,
       height: kind == 'Seat'
           ? documentSeating(c.document).height
           : ['Line', 'Arrow'].contains(kind)
           ? 1
-          : kind == 'Standing'
-          ? 240
           : 80,
       label: kind == 'Standing' ? 'Standing area' : '',
       style: kind == 'Text'
@@ -868,8 +861,6 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                   : '#CBD5E1FF',
               'stroke': '#334155FF',
               'strokeWidth': 2,
-              if (kind == 'Standing')
-                'label': {'size': 32, 'align': 'center'},
             },
       properties: kind == 'Text'
           ? {'text': VenueLayoutStrings.text(context, 'Your text')}
@@ -2013,12 +2004,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     );
   }
 
-  Widget _palette() => _gesturePanel('palette', () => _buildPalette());
+  Widget _palette() => _gesturePanel('palette', _buildPalette);
 
-  Widget _buildPalette({
-    ValueChanged<String>? onChoose,
-    ValueChanged<String>? onSearch,
-  }) {
+  Widget _buildPalette() {
     final seating = documentSeating(c.document).record;
     if (!sameLayoutValue(_previewSeating, seating)) {
       _previewSeating = seating;
@@ -2101,9 +2089,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           mainAxisExtent: 68 + _paletteLabelHeight,
           children: [
             for (final entry in entries)
-              if (onChoose != null ||
-                  ['Draw table', 'Draw bar'].contains(entry.key))
-                _paletteTile(entry.key, entry.value, onChoose: onChoose)
+              if (['Draw table', 'Draw bar'].contains(entry.key))
+                _paletteTile(entry.key, entry.value)
               else
                 Draggable<String>(
                   data: entry.key,
@@ -2210,9 +2197,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: LayoutText(
-              onChoose != null
-                  ? 'Tap an object to add it. Drawing tools continue on the plan.'
-                  : 'Drag onto the plan, or click to place',
+              'Drag onto the plan, or click to place',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
@@ -2226,7 +2211,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                 prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
               ),
-              onChanged: onSearch ?? (v) => setState(() => _librarySearch = v),
+              onChanged: (v) => setState(() => _librarySearch = v),
             ),
           ),
           Expanded(
@@ -2256,11 +2241,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       (MediaQuery.textScalerOf(context).scale(12) * 1.35 * 2).ceilToDouble() +
       2;
 
-  Widget _paletteTile(
-    String kind,
-    String title, {
-    ValueChanged<String>? onChoose,
-  }) {
+  Widget _paletteTile(String kind, String title) {
     final colors = Theme.of(context).colorScheme;
     final selected = _tool == kind;
     return Semantics(
@@ -2295,11 +2276,6 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           ),
         ),
         onPressed: () {
-          if (!_canEdit) return;
-          if (onChoose != null) {
-            onChoose(kind);
-            return;
-          }
           _cancelGesture();
           setState(() => _tool = kind);
         },
@@ -2776,10 +2752,20 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                 ),
             ]
           : [
-              if (c.automaticChairTargets.isNotEmpty)
+              if (c.document.nodes.any(
+                    (n) =>
+                        n.id == hit &&
+                        n.kind == 'seat' &&
+                        c.document.nodes.any(
+                          (parent) =>
+                              parent.id == n.parentId && parent.kind == 'table',
+                        ),
+                  ) &&
+                  seatAttachment(c.document, hit)?['placement']?['mode'] !=
+                      'automatic')
                 item(
                   'automaticChair',
-                  '${VenueLayoutStrings.text(context, 'Reset placement')} (${c.automaticChairTargets.length})',
+                  'Restore automatic position',
                   Icons.restart_alt,
                 ),
               if (c.document.nodes.any((n) => n.id == hit && n.kind == 'seat'))
@@ -2810,7 +2796,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         if (hit != null) c.select({hit});
         _focus.requestFocus();
       case 'automaticChair':
-        c.restoreAutomaticChairPositions(c.automaticChairTargets);
+        if (hit != null) c.restoreAutomaticChairPosition(hit);
       case 'style':
         await showLayoutStyleDialog(context, c);
       case 'copyStyle':
@@ -2931,60 +2917,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       ),
   ];
 
-  void _insertFromMobileLibrary(String kind) {
-    if (!_canEdit) return;
-    _cancelGesture();
-    setState(() => _tool = kind);
-    if (_surfaceTool || _polygonTool) {
-      _focus.requestFocus();
-      return;
-    }
-    // Try the centre first, then nearby positions through the normal collision
-    // and history boundary. Repeated taps must not stack seats or tables.
-    final canvas = c.document.canvas;
-    final x = (canvas['x'] as num).toDouble();
-    final y = (canvas['y'] as num).toDouble();
-    final width = (canvas['width'] as num).toDouble();
-    final height = (canvas['height'] as num).toDouble();
-    final centre = Offset(x + width / 2, y + height / 2);
-    final candidates =
-        [
-          for (var row = 0; row < 5; row++)
-            for (var column = 0; column < 5; column++)
-              Offset(
-                x + width * (column + .5) / 5,
-                y + height * (row + .5) / 5,
-              ),
-        ]..sort(
-          (a, b) => (a - centre).distanceSquared.compareTo(
-            (b - centre).distanceSquared,
-          ),
-        );
-    final occupiedSeats = [
-      for (final seat in c.document.nodes.where((n) => n.kind == 'seat'))
-        nodeBounds(c.document, seat),
-    ];
-    for (final point in candidates) {
-      if (occupiedSeats.any(
-        (b) => Rect.fromLTWH(
-          b['x']!, b['y']!, b['width']!, b['height']!,
-        ).contains(point),
-      )) {
-        continue;
-      }
-      if (_dropPreview(kind, point)) {
-        _drop(kind, point);
-        return;
-      }
-    }
-    _cancelGesture();
-    setState(() {
-      _tool = kind;
-      c.error = 'No free space found. Tap the plan to choose a position.';
-    });
-  }
-
-  Future<void> _mobilePanel({bool library = false, bool canvas = false}) async {
+  void _mobilePanel({bool library = false, bool canvas = false}) {
     if (canvas) {
       _cancelGesture();
       c.select({});
@@ -2993,29 +2926,20 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         _canvasSelected = true;
       });
     }
-    final kind = await showModalBottomSheet<String>(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) => SizedBox(
         height: MediaQuery.sizeOf(context).height * .8,
-        child: StatefulBuilder(
-          builder: (context, setSheetState) => AnimatedBuilder(
-            animation: Listenable.merge([c, _globalStyleOpen]),
-            builder: (context, _) => library
-                ? widget.libraryOverride ??
-                      _buildPalette(
-                        onChoose: (kind) => Navigator.pop(context, kind),
-                        onSearch: (value) =>
-                            setSheetState(() => _librarySearch = value),
-                      )
-                : _inspector(),
-          ),
+        child: AnimatedBuilder(
+          animation: Listenable.merge([c, _globalStyleOpen]),
+          builder: (context, _) =>
+              library ? widget.libraryOverride ?? _palette() : _inspector(),
         ),
       ),
     );
-    if (mounted && kind != null) _insertFromMobileLibrary(kind);
   }
 
   Widget _mobileToolbar() => Padding(
@@ -3511,7 +3435,6 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                                       ))
                                               : const {},
                                           pan: _tool == 'Pan' || !_canEdit,
-                                          touchPanOnEmpty: _tool == 'Select',
                                           onSelectDown: _selectDown,
                                           onContextMenu:
                                               (!_canEdit || _tool != 'Select')
