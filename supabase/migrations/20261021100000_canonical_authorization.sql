@@ -20718,6 +20718,18 @@ GRANT EXECUTE ON FUNCTION public.get_ticket_layout_write_contract_v1() TO authen
 REVOKE DELETE ON public.images, public.log_notifications FROM PUBLIC, anon, authenticated;
 
 -- Source: database/functions/user_permissions/contraction.sql
+-- Provider schedulers may live in the cluster postgres database rather than
+-- the active application database. Inspect the local job catalog when present;
+-- the release preflight separately checks the provider-owned scheduler.
+-- This transaction-local snapshot creates no application table or scheduler.
+CREATE TEMP TABLE authorization_retirement_cron_commands(command text) ON COMMIT DROP;
+DO $retirement_cron_catalog$
+BEGIN
+ IF to_regclass('cron.job') IS NOT NULL THEN
+  EXECUTE 'INSERT INTO pg_temp.authorization_retirement_cron_commands SELECT command FROM cron.job';
+ END IF;
+END $retirement_cron_catalog$;
+
 -- No current Dart/JS/Edge/Worker/MCP source calls these historical claims RPCs.
 -- Effective function-body references form only this closed seven-function island;
 -- catalog policies, triggers and service jobs do not reference it. JWT identity,
@@ -20734,7 +20746,7 @@ BEGIN
      ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(')
  OR EXISTS(SELECT 1 FROM pg_trigger t WHERE NOT t.tgisinternal
    AND pg_get_triggerdef(t.oid) ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job j WHERE j.command
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands j WHERE j.command
    ~ '(set_claim|delete_claim|get_claims|get_claim|get_my_claims|get_my_claim|is_claims_admin)[[:space:]]*\(') THEN
   RAISE EXCEPTION 'Claims RPC contraction has an active catalog caller';
  END IF;
@@ -20759,7 +20771,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy policy WHERE
    coalesce(pg_get_expr(policy.polqual,policy.polrelid),'')||coalesce(pg_get_expr(policy.polwithcheck,policy.polrelid),'')
      ~ '\mdelete_order[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job job WHERE job.command ~ '\mdelete_order[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands job WHERE job.command ~ '\mdelete_order[[:space:]]*\(') THEN
   RAISE EXCEPTION 'Obsolete order deleter still has an active catalog caller';
  END IF;
 END;
@@ -20777,7 +20789,7 @@ BEGIN
      AND function.prosrc ~* pattern)
  OR EXISTS(SELECT 1 FROM pg_policy policy WHERE
    coalesce(pg_get_expr(policy.polqual,policy.polrelid),'')||coalesce(pg_get_expr(policy.polwithcheck,policy.polrelid),'') ~* pattern)
- OR EXISTS(SELECT 1 FROM cron.job job WHERE job.command ~* pattern) THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands job WHERE job.command ~* pattern) THEN
   RAISE EXCEPTION 'Obsolete pre-command writers still have an active catalog caller';
  END IF;
 END;
@@ -20799,7 +20811,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy p WHERE
     coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'')
       ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mdelete_form_ws_obsolete_v1[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Obsolete form deleter still has a catalog caller';
  END IF;
 END $obsolete_form_writer$;
@@ -20824,7 +20836,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM pg_policy p WHERE
    coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'')
      ~* '\mupdate_user[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mupdate_user[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mupdate_user[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Profile overload still has a policy or job caller';
  END IF;
 END $obsolete_profile_overload$;
@@ -20836,7 +20848,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM pg_proc p WHERE p.pronamespace='public'::regnamespace
    AND p.proname<>'get_bank_sync_connections_for_unit'
    AND p.prosrc ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(')
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(') THEN
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* '\mget_bank_sync_connections_for_unit[[:space:]]*\(') THEN
    RAISE EXCEPTION 'Obsolete unscoped bank listing still has a caller';
  END IF;
 END $obsolete_bank_unit_listing$;
@@ -20859,7 +20871,7 @@ BEGIN
  OR EXISTS(SELECT 1 FROM pg_policy p WHERE
    coalesce(pg_get_expr(p.polqual,p.polrelid),'')||coalesce(pg_get_expr(p.polwithcheck,p.polrelid),'') ~* pattern)
  OR EXISTS(SELECT 1 FROM pg_trigger t WHERE NOT t.tgisinternal AND pg_get_triggerdef(t.oid) ~* pattern)
- OR EXISTS(SELECT 1 FROM cron.job WHERE command ~* pattern)
+ OR EXISTS(SELECT 1 FROM pg_temp.authorization_retirement_cron_commands WHERE command ~* pattern)
  OR EXISTS(SELECT 1 FROM public.client_sync_component_sources r WHERE
    (r.canonical_writers||r.legacy_writers) && ARRAY['create_spots_for_inventory_pool','update_inclusion_type_group','upsert_event_user']::text[]) THEN
   RAISE EXCEPTION 'Obsolete capacity/attendance implementation still has a caller';

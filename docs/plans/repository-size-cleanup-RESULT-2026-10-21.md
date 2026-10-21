@@ -98,13 +98,21 @@ The authorization migration is not in the approved production ledger and has
 not been applied there. Its final release assembly incorporates the deduplicated
 setup owner and restored password guard, rather than reinstalling stale bodies
 after the earlier cleanup fix. Existing published migrations remain unchanged.
+The provider scheduler resides in the cluster `postgres` database, while the
+active production application database has no `cron.job`. Retirement checks
+therefore use a transaction-local snapshot of a local cron catalog when present;
+the release preflight checked the provider scheduler separately and found zero
+references to every retired name. The complete proposed migration passes with
+the local cron schema absent and still rejects an actual scheduled obsolete
+caller. Both rehearsals roll back. No scheduler or persistent helper is added.
+
 The original authorization role/performance evidence remains tied to PR #545;
 these integration checks do not claim a new production performance result.
 
 ## Measured PR delta
 
 Across every changed path, including replacement SQL, tooling, generated
-inventories and this documentation: 5,470,385 -> 4,510,728 bytes
-and 122,597 -> 105,206 LF-delimited lines. Net reduction:
-**959,657 bytes and 17,391 lines**.
+inventories and this documentation: 5,479,629 -> 4,522,285 bytes
+and 122,747 -> 105,388 LF-delimited lines. Net reduction:
+**957,344 bytes and 17,359 lines**.
 No savings from ignored scratch files or unrelated concurrent work are included.
