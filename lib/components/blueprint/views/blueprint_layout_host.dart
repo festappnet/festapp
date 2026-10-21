@@ -1,4 +1,3 @@
-import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
 import 'blueprint_standing_capacity_control.dart';
@@ -876,20 +875,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         Text('${BlueprintStrings.standingCapacity}: $capacity'),
         const SizedBox(height: 8),
         Text(BlueprintStrings.standingRequiresProduct),
-        if (_canEdit && _canOrder)
-          FilledButton.icon(
-              key: const ValueKey('assign-standing-product'),
-              onPressed: _busy
-                  ? null
-                  : () => showDialog<void>(
-                      context: context,
-                      builder: (_) => BlueprintStandingSetupDialog(
-                          controller: controller,
-                          nodeId: area.id,
-                          occasionLink:
-                              RightsService.currentOccasion()!.link!)),
-              icon: const Icon(Icons.add),
-              label: Text(BlueprintStrings.assignStandingProduct)),
       ] else
         Text(BlueprintStrings.standingAvailability(
             (availability?['available'] as num?)?.toInt() ?? 0,
@@ -897,7 +882,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       if (_canEdit &&
           controller.snapshot.areaBindings.containsKey(area.id)) ...[
         const SizedBox(height: 16),
-        Text(BlueprintStrings.standingSharedCapacityHint),
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],

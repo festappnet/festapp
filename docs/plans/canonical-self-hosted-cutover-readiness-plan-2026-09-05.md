@@ -1,9 +1,5 @@
 # Dokončení canonical self-hosted Supabase cutoveru
 
-> The completed cloud merge commands referenced here were retired; recover the
-> [pinned historical source](../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
-> These commands are not current installation or release prerequisites.
-
 Datum: 2026-09-05
 Stav: připraveno k realizaci, produkční cutover je zatím NO-GO
 Ověření: release

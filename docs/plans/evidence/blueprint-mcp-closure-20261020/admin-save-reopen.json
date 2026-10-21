@@ -1,0 +1,29 @@
+{
+  "before": {
+    "revision": 3,
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "fill": "#FFFFFFFF",
+      "width": 2810,
+      "height": 2200
+    },
+    "bindingCount": 1000,
+    "bindingsMd5": "0cedfe13fba86bbb414d52716957cd5a"
+  },
+  "after": {
+    "revision": 4,
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "fill": "#FFFFFFFF",
+      "width": 2964,
+      "height": 2200
+    },
+    "bindingCount": 1000,
+    "bindingsMd5": "0cedfe13fba86bbb414d52716957cd5a"
+  },
+  "actualFlutterReleaseUI": true,
+  "saveReloadReopen": true,
+  "bindingsIdentical": true
+}
