@@ -11,11 +11,18 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   'registration_mode',m.value,
   'has_availability',CASE
    WHEN m.value='blueprint' THEN EXISTS (
-    SELECT 1 FROM public.blueprint_form_products_internal(f.id) offered
-    JOIN eshop.products p ON p.id=offered.product
-    WHERE NOT p.is_hidden AND public.is_product_dynamically_available(p.id)
+    -- Resolve the form's small offer before running expensive inventory checks.
+    -- Without this boundary a hash join can evaluate every system product.
+    WITH offered_products AS MATERIALIZED (
+     SELECT p.id,offered.has_capacity
+     FROM public.blueprint_form_products_internal(f.id) offered
+     JOIN eshop.products p ON p.id=offered.product
+     WHERE NOT p.is_hidden
+    )
+    SELECT 1 FROM offered_products p
+    WHERE public.is_product_dynamically_available(p.id)
     AND (public.blueprint_product_availability_internal(p.id)->>'available')::bigint>0
-    AND (offered.has_capacity OR EXISTS (
+    AND (p.has_capacity OR EXISTS (
      SELECT 1 FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
      WHERE sb.blueprint=f.blueprint AND s.product=p.id AND NOT sb.blocked
       AND NOT EXISTS (
@@ -28,8 +35,12 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
     SELECT 1 FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
      WHERE ff.form=f.id AND NOT coalesce(ff.is_hidden,false)
      AND (pt.type='spot' OR ff.is_required)
-     AND NOT EXISTS (SELECT 1 FROM eshop.products p WHERE p.product_type=ff.product_type
-      AND NOT p.is_hidden AND public.is_product_dynamically_available(p.id)
+     AND NOT EXISTS (
+      WITH field_products AS MATERIALIZED (
+       SELECT p.id FROM eshop.products p
+       WHERE p.product_type=ff.product_type AND NOT p.is_hidden
+      )
+      SELECT 1 FROM field_products p WHERE public.is_product_dynamically_available(p.id)
       AND (public.blueprint_product_availability_internal(p.id)->>'available')::bigint>0))
    ELSE m.value='waitlist' END
  ) ORDER BY f.id),'[]'::jsonb)
