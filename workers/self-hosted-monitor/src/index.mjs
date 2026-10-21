@@ -1,8 +1,8 @@
 import { createMonitoring } from "@festapp/monitoring";
 
 const TARGETS = ["api.festapp.net"];
+// Supabase Storage is retired; its intentional 410 is not backend health.
 const CHECKS = [
-  { path: "/storage/v1/status", expectedStatus: 200 },
   { path: "/auth/v1/health", expectedStatus: 401 },
   { path: "/rest/v1/", expectedStatus: 401 },
 ];

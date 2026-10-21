@@ -18,7 +18,7 @@ function transport({ requests, batches, backendFailed = false, emailFailed = fal
     }
     assert.equal(new URL(url).hostname, "api.festapp.net", "no external heartbeat destination is contacted");
     if (url.endsWith("/get_festapp_monitoring_health_v1")) return Response.json({ ok: !emailFailed, alerts: emailFailed ? emailAlerts : [] });
-    return new Response("", { status: backendFailed ? 503 : url.endsWith("/storage/v1/status") ? 200 : 401 });
+    return new Response("", { status: backendFailed ? 503 : 401 });
   };
 }
 
@@ -26,7 +26,7 @@ test("healthy probes retain evidence and report only through Monitoring without 
   const writes = [], requests = [], batches = [];
   const result = await runProbes(environment(writes), transport({ requests, batches }), new Date("2026-09-02T19:00:00Z"));
   assert.equal(result.pass, true);
-  assert.equal(result.results.length, 3);
+  assert.equal(result.results.length, 2);
   assert.deepEqual(writes.map(({ key }) => key), ["monitoring/2026-09-02/2026-09-02T19-00-00.000Z.json", "monitoring/latest.json"]);
   assert.equal(batches.length, 1);
   assert.equal(batches[0].events.length, 2);
@@ -77,4 +77,21 @@ test("a stalled queue incident must be recorded, not just its heartbeat", async 
     return Response.json({ results: batch.events.filter(e => e.kind !== "error").map(e => ({ eventId: e.event_id, recorded: true })) }, { status: 202 });
   };
   await assert.rejects(runProbes(environment(writes), fetchImpl), /shared Monitoring collection failed/);
+});
+
+
+test("retired Storage returning 410 does not fail active backend monitoring", async () => {
+  const writes = [], requests = [], batches = [];
+  const base = transport({ requests, batches });
+  const result = await runProbes(environment(writes), async (target, init) => {
+    if (new URL(String(target)).pathname.startsWith("/storage/v1")) {
+      requests.push(String(target));
+      return new Response("Gone", { status: 410 });
+    }
+    return base(target, init);
+  });
+  assert.equal(result.pass, true);
+  assert.deepEqual(result.results.map(({ path }) => path), ["/auth/v1/health", "/rest/v1/"]);
+  assert.equal(requests.some(url => new URL(url).pathname.startsWith("/storage/v1")), false);
+  assert.equal(batches[0].events.find(e => e.check_id === "canonical-backend").outcome, "success");
 });
