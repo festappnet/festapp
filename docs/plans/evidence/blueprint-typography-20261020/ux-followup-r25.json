@@ -1,0 +1,24 @@
+{
+  "revision": "r25",
+  "scope": "local preview only",
+  "changes": [
+    "Rejected move target footprint rendered with translucent red fill and outline",
+    "Duplicate collision warnings scoped to copied subtree",
+    "Successful move, release, cancel clear transient target preview; last-valid document/undo behavior preserved"
+  ],
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "fe8a5dd0b84c963a77c5fc498dfa061953703b9a00bc4ba9542924ca0d76c917",
+    "lib/src/layout_editor/widgets/layout_scene_surface.dart": "30fc14c0b17ecec86a0d84418e73cbb88f85964048ad55ddc44b6029f5cd155d",
+    "lib/src/layout_editor/venue_layout_controller.dart": "5645be2127e97d73f8dc1a94d43fd9b2ae3cc18f2e574978933f89595ca1bbf9"
+  },
+  "tests": {
+    "passed": 16,
+    "log": "/tmp/blueprint-r25-drag-tests.log"
+  },
+  "archive_gate": "/tmp/blueprint-r25-archive.log",
+  "host_build": "/tmp/blueprint-r25-host-build.log",
+  "interactive_browser_walkthrough": false,
+  "production_writes": false,
+  "main_js_sha256": "e50b1f89c45812b82d6060f722d48ad629150cf009579aab4368d0f96147a67c",
+  "served_bytes_verified": true
+}
