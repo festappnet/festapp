@@ -2005,9 +2005,12 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     );
   }
 
-  Widget _palette() => _gesturePanel('palette', _buildPalette);
+  Widget _palette() => _gesturePanel('palette', () => _buildPalette());
 
-  Widget _buildPalette() {
+  Widget _buildPalette({
+    ValueChanged<String>? onChoose,
+    ValueChanged<String>? onSearch,
+  }) {
     final seating = documentSeating(c.document).record;
     if (!sameLayoutValue(_previewSeating, seating)) {
       _previewSeating = seating;
@@ -2090,8 +2093,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           mainAxisExtent: 68 + _paletteLabelHeight,
           children: [
             for (final entry in entries)
-              if (['Draw table', 'Draw bar'].contains(entry.key))
-                _paletteTile(entry.key, entry.value)
+              if (onChoose != null ||
+                  ['Draw table', 'Draw bar'].contains(entry.key))
+                _paletteTile(entry.key, entry.value, onChoose: onChoose)
               else
                 Draggable<String>(
                   data: entry.key,
@@ -2198,7 +2202,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: LayoutText(
-              'Drag onto the plan, or click to place',
+              onChoose != null
+                  ? 'Tap an object to add it. Drawing tools continue on the plan.'
+                  : 'Drag onto the plan, or click to place',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
@@ -2212,7 +2218,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                 prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
               ),
-              onChanged: (v) => setState(() => _librarySearch = v),
+              onChanged: onSearch ?? (v) => setState(() => _librarySearch = v),
             ),
           ),
           Expanded(
@@ -2242,7 +2248,11 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       (MediaQuery.textScalerOf(context).scale(12) * 1.35 * 2).ceilToDouble() +
       2;
 
-  Widget _paletteTile(String kind, String title) {
+  Widget _paletteTile(
+    String kind,
+    String title, {
+    ValueChanged<String>? onChoose,
+  }) {
     final colors = Theme.of(context).colorScheme;
     final selected = _tool == kind;
     return Semantics(
@@ -2277,6 +2287,11 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           ),
         ),
         onPressed: () {
+          if (!_canEdit) return;
+          if (onChoose != null) {
+            onChoose(kind);
+            return;
+          }
           _cancelGesture();
           setState(() => _tool = kind);
         },
@@ -2908,7 +2923,60 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       ),
   ];
 
-  void _mobilePanel({bool library = false, bool canvas = false}) {
+  void _insertFromMobileLibrary(String kind) {
+    if (!_canEdit) return;
+    _cancelGesture();
+    setState(() => _tool = kind);
+    if (_surfaceTool || _polygonTool) {
+      _focus.requestFocus();
+      return;
+    }
+    // Try the centre first, then nearby positions through the normal collision
+    // and history boundary. Repeated taps must not stack seats or tables.
+    final canvas = c.document.canvas;
+    final x = (canvas['x'] as num).toDouble();
+    final y = (canvas['y'] as num).toDouble();
+    final width = (canvas['width'] as num).toDouble();
+    final height = (canvas['height'] as num).toDouble();
+    final centre = Offset(x + width / 2, y + height / 2);
+    final candidates =
+        [
+          for (var row = 0; row < 5; row++)
+            for (var column = 0; column < 5; column++)
+              Offset(
+                x + width * (column + .5) / 5,
+                y + height * (row + .5) / 5,
+              ),
+        ]..sort(
+          (a, b) => (a - centre).distanceSquared.compareTo(
+            (b - centre).distanceSquared,
+          ),
+        );
+    final occupiedSeats = [
+      for (final seat in c.document.nodes.where((n) => n.kind == 'seat'))
+        nodeBounds(c.document, seat),
+    ];
+    for (final point in candidates) {
+      if (occupiedSeats.any(
+        (b) => Rect.fromLTWH(
+          b['x']!, b['y']!, b['width']!, b['height']!,
+        ).contains(point),
+      )) {
+        continue;
+      }
+      if (_dropPreview(kind, point)) {
+        _drop(kind, point);
+        return;
+      }
+    }
+    _cancelGesture();
+    setState(() {
+      _tool = kind;
+      c.error = 'No free space found. Tap the plan to choose a position.';
+    });
+  }
+
+  Future<void> _mobilePanel({bool library = false, bool canvas = false}) async {
     if (canvas) {
       _cancelGesture();
       c.select({});
@@ -2917,20 +2985,29 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         _canvasSelected = true;
       });
     }
-    showModalBottomSheet<void>(
+    final kind = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) => SizedBox(
         height: MediaQuery.sizeOf(context).height * .8,
-        child: AnimatedBuilder(
-          animation: Listenable.merge([c, _globalStyleOpen]),
-          builder: (context, _) =>
-              library ? widget.libraryOverride ?? _palette() : _inspector(),
+        child: StatefulBuilder(
+          builder: (context, setSheetState) => AnimatedBuilder(
+            animation: Listenable.merge([c, _globalStyleOpen]),
+            builder: (context, _) => library
+                ? widget.libraryOverride ??
+                      _buildPalette(
+                        onChoose: (kind) => Navigator.pop(context, kind),
+                        onSearch: (value) =>
+                            setSheetState(() => _librarySearch = value),
+                      )
+                : _inspector(),
+          ),
         ),
       ),
     );
+    if (mounted && kind != null) _insertFromMobileLibrary(kind);
   }
 
   Widget _mobileToolbar() => Padding(
