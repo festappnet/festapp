@@ -1038,6 +1038,18 @@
     "askManagerForPaymentAccount": "Щоб приймати платежі, попросіть адміністратора організації додати рахунок для зазначених валют."
   },
   "TicketLayout": {
+    "style_concert_stub": "Концерт · контрольний відрив",
+    "style_ball_silk": "Бал · шовкове запрошення",
+    "style_festival_poster": "Фестиваль · мініафіша",
+    "style_club_panorama": "Клуб · панорамний",
+    "style_theatre_program": "Театр · класична програма",
+    "style_gallery_square": "Виставка · квадратний",
+    "style_gala_invitation": "Гала · вузьке запрошення",
+    "style_boarding_pass": "Конференція · посадковий талон",
+    "style_cinema_strip": "Кіно · кіноплівка",
+    "style_sports_arena": "Спорт · квиток на арену",
+    "style_festival_badge": "Фестиваль · особиста акредитація",
+    "style_workshop_card": "Майстерня · студійна картка",
     "text": "Довільний текст",
     "textDefault": "Ваш текст",
     "textContent": "Текст на квитку",
