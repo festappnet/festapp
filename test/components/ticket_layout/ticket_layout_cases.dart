@@ -1,3 +1,4 @@
+import 'package:crypto/crypto.dart';
 import '../../support/editor_file_drop.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:cross_file/cross_file.dart';
@@ -924,32 +925,32 @@ void main() {
   test(
       'shared Dart registration reuses bytes for A/B/A across service instances',
       () async {
-    final catalog = jsonDecode(
-        File('supabase/functions/_shared/ticket-assets/font-catalog.json')
-            .readAsStringSync())['fonts'] as List;
+    // These real fixture faces belong only to this registration scenario.
+    // Roboto is also loaded by blueprint groups, so it is not a cold-cache input.
+    final assets = <String, Map<String, dynamic>>{};
+    for (final file in ['Roboto-Slab.ttf', 'Roboto-Slab-variable.ttf']) {
+      final bytes = File('test/fixtures/ticket_fonts/$file').readAsBytesSync();
+      final id = 'gf:${sha256.convert(bytes)}';
+      assets[id] = {
+        'id': id,
+        'family': 'Roboto Slab',
+        'weight': 400,
+        'font': base64Encode(bytes),
+        'metrics': fixture['metrics'],
+      };
+    }
     final calls = <String>[];
     Future<Map<String, dynamic>> transport(Map<String, dynamic> request) async {
       expect(request['mode'], 'font');
       expect(request['fontProtocol'], 2);
-      final asset = catalog.firstWhere((f) => f['id'] == request['fontId']);
-      calls.add(asset['id']);
-      return {
-        'id': asset['id'],
-        'family': asset['family'],
-        'weight': asset['weight'],
-        'font': base64Encode(File(
-                'test/fixtures/ticket_fonts/${asset['family'].replaceAll(' ', '-')}.ttf')
-            .readAsBytesSync()),
-        'metrics': fixture['metrics']
-      };
+      final id = request['fontId'] as String;
+      calls.add(id);
+      return assets[id]!;
     }
 
     final first = TicketLayoutService(transport: transport),
         second = TicketLayoutService(transport: transport);
-    final a =
-            catalog.firstWhere((f) => f['family'] == 'Roboto' && f['weight'] == 400 && f['style'] == 'normal')['id'] as String,
-        b = catalog.firstWhere((f) => f['family'] == 'Russo One')['id']
-            as String;
+    final a = assets.keys.first, b = assets.keys.last;
     final concurrent = await Future.wait([first.font(1, a), second.font(1, a)]);
     expect(identical(concurrent[0], concurrent[1]), true);
     await first.font(1, b);
