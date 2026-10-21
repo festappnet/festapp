@@ -186,6 +186,23 @@ Save freezes capacity metadata alongside the document before text preparation.
 Undo after save therefore restores an explicit inventory capacity change, while
 geometry-only saves omit capacity. The reservation detail shows available places
 and a focused numeric control; product/physical inventory limits still apply.
+An unbound standing area can assign a visible, priced admission (`spot`) product.
+The setup reuses its existing quantity-one inventory context (unique within the
+blueprint), or prepares a pool, context, resource supply and product-context link
+through the inventory/catalog commands. Existing sold products without inventory
+are excluded from this shortcut. Product and inventory preparation is immediate;
+the initial binding and sale-limit intent are undoable until the plan is saved.
+The sale limit is a ceiling, not additional physical supply: increase resource
+capacity in Inventory when more supply is needed. Shared pool limits affect all
+its products and contexts. Form offers and checkout continue to derive admission
+from saved bindings through the existing blueprint form-product projection.
+
+Preparation retains successful pool/resource steps while the dialog retries,
+including switching products. Closing after a partial failure leaves these
+entities saved and manageable in Products/Inventory; it does not attempt unsafe
+compensating deletion. Reopening starts from the authoritative catalog. A new
+preparation can therefore leave an unused pool from an earlier incomplete setup.
+
 The editor workspace adapts to theme brightness while authored document fills
 remain unchanged. Neutral line thumbnails use brighter strokes in dark mode and
 a minimum visible stroke width; material thumbnails show their canonical family.

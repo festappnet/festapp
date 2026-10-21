@@ -60,6 +60,56 @@ class BlueprintLayoutController extends ChangeNotifier
               0)
           .toInt();
 
+  /// Initial assignment only: existing sold allocations must retain their context.
+  void bindStandingArea(
+    String id,
+    ProductModel product, {
+    required int inventoryContextId,
+    required int capacity,
+  }) {
+    if (isBusy || layout.readOnly) throw StateError('blueprint_read_only');
+    if (_draft.areaBindings.containsKey(id) ||
+        _draft.areaBindings.values.any(
+            (binding) => binding.inventoryContextId == inventoryContextId) ||
+        !layout.document.nodes.any(
+          (n) => n.id == id && n.kind == 'capacityArea',
+        ) ||
+        product.id == null ||
+        product.occasion != snapshot.occasionId ||
+        product.productTypeString != ProductModel.spotType ||
+        product.isHidden == true ||
+        product.price == null ||
+        !product.includedInventories.any(
+          (link) =>
+              link.inventoryContextId == inventoryContextId &&
+              link.quantity == 1,
+        ) ||
+        capacity < 0 ||
+        capacity > 1000000) {
+      throw StateError('invalid_area_binding');
+    }
+    upsertCatalogProduct(product);
+    final candidate = _draft.copyWith(
+      areaBindings: {
+        ..._draft.areaBindings,
+        id: BlueprintAreaBinding(
+          nodeId: id,
+          inventoryContextId: inventoryContextId,
+          productId: product.id!,
+        ),
+      },
+    );
+    if (!layout.apply(
+      layout.document,
+      participantCheckpoints: [
+        _captureSnapshot(
+          candidate,
+          areaCapacities: {..._areaCapacities, id: capacity},
+        ),
+      ],
+    )) throw StateError(layout.error ?? 'area_binding_rejected');
+  }
+
   void setAreaCapacity(String id, int capacity) {
     if (isBusy || layout.readOnly) throw StateError('blueprint_read_only');
     if (capacity < 0 ||
