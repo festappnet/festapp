@@ -52,7 +52,6 @@ class LayoutSceneSurface extends StatefulWidget {
     this.onDragEnd,
     this.onDragCancel,
     this.pan = true,
-    this.touchPanOnEmpty = false,
     this.showControls = true,
     this.compactZoomControls = false,
     this.showGrid = false,
@@ -90,9 +89,6 @@ class LayoutSceneSurface extends StatefulWidget {
   final List<Offset> pathPoints;
   final VoidCallback? onDragEnd, onDragCancel;
   final bool pan, showControls, animate;
-
-  /// In Select mode, a finger on empty canvas navigates instead of drawing a marquee.
-  final bool touchPanOnEmpty;
   final bool retainPendingTextPreview;
   final bool compactZoomControls;
   final bool showGrid;
@@ -211,7 +207,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   Offset? _doubleTapPosition;
   Offset? _pointTapDown;
   Offset? _dragPointerDown;
-  bool _touchPanning = false;
   late final _motion = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: layoutMotionTokens['reflowMs']!),
@@ -270,10 +265,12 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
     if (bounds == null || size == null) return value;
     final zoom = _cameraScale(value);
     double translation(double value, double start, double end, double extent) {
-      // Each plan edge may reach the viewport midpoint, but never pass it.
-      // This caps empty space at half the viewport, even for a narrow plan.
-      final visible = extent / 2;
-      return value.clamp(visible - end * zoom, extent - visible - start * zoom);
+      // Keep an axis centered until the plan fills it, as in the web picker.
+      if ((end - start) * zoom <= extent - 32) {
+        return (extent - (start + end) * zoom) / 2;
+      }
+      final a = 16 - start * zoom, b = extent - 16 - end * zoom;
+      return value.clamp(math.min(a, b), math.max(a, b));
     }
 
     return value.clone()..setTranslationRaw(
@@ -1010,7 +1007,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                       onScaleStart: (details) {
                         _gestureScale = 1;
                         if (!widget.pan &&
-                            !_touchPanning &&
                             details.pointerCount == 1 &&
                             widget.onDragStart != null) {
                           _interactionDragging = true;
@@ -1028,7 +1024,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                           }
                           _twoFinger = true;
                         }
-                        if (widget.pan || _touchPanning || _twoFinger) {
+                        if (widget.pan || _twoFinger) {
                           _moveCamera(
                             details.localFocalPoint,
                             details.focalPointDelta,
@@ -1044,7 +1040,6 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                         if (_interactionDragging) widget.onDragEnd?.call();
                         _interactionDragging = false;
                         _twoFinger = false;
-                        _touchPanning = false;
                       },
                       child: GestureDetector(
                         // A semantic tap synthesizes the center, losing the
@@ -1072,19 +1067,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                           onPointerDown: (event) {
                             _hideHoverTooltip();
                             if (event.buttons != kPrimaryButton) return;
-                            if (_dragPointerDown == null) {
-                              final world = globalWorld(event.position);
-                              _touchPanning =
-                                  widget.touchPanOnEmpty &&
-                                  event.kind == PointerDeviceKind.touch &&
-                                  hitTest(
-                                        widget.document,
-                                        world.dx,
-                                        world.dy,
-                                      ) ==
-                                      null;
-                              _dragPointerDown = event.position;
-                            }
+                            _dragPointerDown ??= event.position;
                             _pointTapDown = widget.onPointTap == null
                                 ? null
                                 : event.position;

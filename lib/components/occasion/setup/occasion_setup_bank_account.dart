@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../occasion_sale_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -103,6 +102,7 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
         final first = accounts.firstOrNull;
         widget.onChanged({
           'bankAccountId': first?['id'],
+          'bankAccountConfirmed': false,
           'bankAccountLabel': first == null ? '' : _label(first),
           'bankAccountFingerprint': first?['fingerprint'],
         });
@@ -110,6 +110,7 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
           widget.data['bankAccountFingerprint'] != selected['fingerprint']) {
         widget.onChanged({
           'bankAccountLabel': _label(selected),
+          'bankAccountConfirmed': false,
           'bankAccountFingerprint': selected['fingerprint'],
         });
       }
@@ -158,7 +159,6 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
             else ...[
               for (final account in _accounts)
                 UnitBankAccountCard(
-                  showSyncHelp: false,
                   account: BankAccountModel.fromJson({
                     ...account,
                     'account_number_human_readable': account['display'],
@@ -173,12 +173,21 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
                       groupValue: widget.data['bankAccountId'] as int?,
                       onChanged: (id) => widget.onChanged({
                         'bankAccountId': id,
+                        'bankAccountConfirmed': false,
                         'bankAccountLabel': _label(account),
                         'bankAccountFingerprint': account['fingerprint'],
                       }),
                     ),
                   ),
                 ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: widget.data['bankAccountConfirmed'] == true,
+                onChanged: (v) =>
+                    widget.onChanged({'bankAccountConfirmed': v == true}),
+                title: Text(OccasionSetupDetailsStrings.text('confirmAccount')),
+                subtitle: Text(_currencies),
+              ),
             ],
             const SizedBox(height: 8),
             if (_canManage)
@@ -196,12 +205,6 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
             else
               Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
             Text(OccasionSetupDetailsStrings.text('bankSetupHint')),
-            if (_accounts.any((account) =>
-                account['id'] == widget.data['bankAccountId'] &&
-                (account['bank_sync'] as Map?)?['state'] != 'connected'))
-              Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(OccasionSaleStrings.text('manualPaymentsHelp'))),
           ],
         ],
       );

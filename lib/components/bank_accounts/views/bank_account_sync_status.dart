@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:festapp_core/eshop.dart';
 import '../bank_account_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import '../../eshop/orders_strings.dart';
@@ -7,9 +8,7 @@ import 'bank_sync_warning_button.dart';
 /// Safe operational status, including for viewers without account admin rights.
 class BankAccountSyncStatus extends StatelessWidget {
   final BankAccountModel account;
-  final bool showHelp;
-  const BankAccountSyncStatus(
-      {super.key, required this.account, this.showHelp = true});
+  const BankAccountSyncStatus({super.key, required this.account});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +28,12 @@ class BankAccountSyncStatus extends StatelessWidget {
               ));
     return Row(
       children: [
-        if (warning != null && showHelp)
+        if (warning != null)
           BankSyncWarningButton(warning: warning, showPaymentHelp: false)
         else
-          Padding(
+          const Padding(
             padding: EdgeInsets.all(8),
-            child: Icon(
-                warning == null
-                    ? Icons.check_circle_outline
-                    : Icons.info_outline,
-                size: 20),
+            child: Icon(Icons.check_circle_outline, size: 20),
           ),
         Flexible(
           child: Text(

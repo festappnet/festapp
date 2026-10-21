@@ -1,0 +1,30 @@
+{
+  "revision": "r31",
+  "scope": "local preview only",
+  "changes": [
+    "Individual attached-seat selection shows its own boundary connector",
+    "Contextual counted text-only transfer to editable peers of same kind",
+    "Replaces resolved label declarations without changing geometry, content or document defaults",
+    "Skips locked objects and assemblies; one history entry with Undo notification"
+  ],
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/layout_table_selection.dart": "aeba3fe7eed2e4536e1e1f9debb54ae6bbf40b9c47cff78c207f462737bf95a1",
+    "lib/src/layout_editor/widgets/layout_style.dart": "01384d7b82ce220a9f295e8994b76283fe77eb3f4ad9129b8cef1d8aca2545d7",
+    "lib/src/layout_editor/widgets/canonical_appearance_panel.dart": "db16918450d22a4b55f22af6548eae003e5659cfe5d191b07ec33b297360d41e",
+    "lib/src/layout_editor/layout_localizations.dart": "37f064879ea953a82e7cebbb8155e7fbf4dc9112659abcf334f0c99bc8719482",
+    "test/layout_table_selection_links_test.dart": "650ae71a1f93baa6e5181c1057774a5a4f7059859c82e225435211e38f6c1a52",
+    "test/layout_text_style_transfer_test.dart": "52efeeaea7187964a9bdee4eaf2039efdc8c4bc5538b2a5a1b21a8d654c19218"
+  },
+  "targeted_tests": {
+    "passed": 9,
+    "log": "/tmp/blueprint-r31-tests-final.log"
+  },
+  "archive_gate": "/tmp/blueprint-r31-archive.log",
+  "archive_passed": true,
+  "archived_templates": 15,
+  "host_build": "/tmp/blueprint-r31-host-build.log",
+  "interactive_browser_walkthrough": false,
+  "production_writes": false,
+  "served_bytes_verified": true,
+  "main_js_sha256": "d60356abfa825805bb343816b33d317a1c7ae60ce794d5ef8b9d76c635de8c61"
+}

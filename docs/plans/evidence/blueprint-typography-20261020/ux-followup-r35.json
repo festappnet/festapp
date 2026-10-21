@@ -1,0 +1,29 @@
+{
+  "revision": "r35",
+  "scope": "local preview only",
+  "behavior": [
+    "triple click canvas enters editing",
+    "double click already selected object enters editing and transfers selection",
+    "permission and manage-mode guards; no geometry mutation"
+  ],
+  "host_source_sha256": {
+    "lib/components/blueprint/views/blueprint_layout_host.dart": "f3b985f6a0d9b301d4d8ef2760ab1aa0d2cc33c3e96b57653157061f03e02295",
+    "lib/components/blueprint/views/blueprint_plan_editor.dart": "a44f3a706b3788ea97fa111ef9771b614965caec4ec3f9410353c4d16fabdeb5"
+  },
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "d55b97f7a4a2a68b5d634487225b0e5287b238273f69e9b28124ecf45fa366b4"
+  },
+  "shortcut_test": "/tmp/blueprint-r35-shortcut.log",
+  "host_test": "/tmp/blueprint-r35-host-test.log",
+  "archive_gate": "/tmp/blueprint-r35-archive.log",
+  "host_build": "/tmp/blueprint-r35-host-build.log",
+  "production_writes": false,
+  "backend_writes": false,
+  "interactive_browser_walkthrough": false,
+  "served_bytes_verified": true,
+  "main_js_sha256": "3c5f30be41144c4a5c7e6216a94eaf86291a2c2add118c0ae9a3020adfc886a1",
+  "host_build_passed": true,
+  "archive_passed": true,
+  "shortcut_test_passed": true,
+  "host_test_passed": true
+}

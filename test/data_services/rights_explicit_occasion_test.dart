@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/product_grid_record.dart';
 import 'package:fstapp/services/exception_handler.dart';
-import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
-import 'package:fstapp/data_services/auth_service.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart';
 import 'package:fstapp/components/users/db_users.dart';
@@ -14,7 +12,6 @@ import '../support/fixtures/root_supabase_fixture.dart';
 import '../support/fixtures/local_app_storage_fixture.dart';
 import '../support/fixtures/rights_context_fixture.dart';
 import 'dart:convert';
-import 'dart:async';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,8 +30,6 @@ void main() {
   var bankDispatches = 0;
   var bankRpcDispatches = 0;
   var unitUserUpdates = 0;
-  var contextFailures = 0;
-  Completer<void>? contextGate;
   setUpAll(() async {
     PackageInfo.setMockInitialValues(
         appName: 'test',
@@ -44,9 +39,6 @@ void main() {
         buildSignature: '');
     tz.initializeTimeZones();
     fixture = await RootSupabaseFixture.open((request) async {
-      if (request.url.path == '/auth/v1/logout') {
-        return http.Response('', 204, request: request);
-      }
       if (request.url.path == '/functions/v1/bank-sync-manage') {
         bankDispatches++;
         return http.Response(
@@ -69,14 +61,9 @@ void main() {
         final context = (jsonDecode(request.body)['data_in'] as Map)
             .cast<String, dynamic>();
         contexts.add(context);
-        await contextGate?.future;
-        if (contextFailures > 0) {
-          contextFailures--;
-          throw http.ClientException('Fixture context unavailable');
-        }
         return http.Response(
             jsonEncode({
-              'code': context['link'] == 'server-denied' ? 403 : 200,
+              'code': 200,
               if (context['unit_id'] == null)
                 'occasion': {
                   'id': 1072557,
@@ -87,8 +74,7 @@ void main() {
                 'unit': {'id': context['unit_id']},
               'occasion_user': {'is_editor_view': true},
               'capabilities': {
-                'navigation.administration':
-                    context['link'] != 'access-revoked',
+                'navigation.administration': true,
                 if (context['unit_id'] == 12) 'media.unit.write': true,
               },
               if (context['unit_id'] == 12) 'user_info': {'id': 'self-user'},
@@ -110,25 +96,10 @@ void main() {
     bankDispatches = 0;
     bankRpcDispatches = 0;
     unitUserUpdates = 0;
-    contextFailures = 0;
-    contextGate = null;
     final state = RightsContextFixture();
     addTearDown(state.dispose);
     final storage = await LocalAppStorageFixture.open();
     addTearDown(storage.dispose);
-  });
-
-  test('an explicit backend denial differs from a failed context request',
-      () async {
-    await expectLater(
-        RightsService.updateAppData(
-            link: 'server-denied', force: true, refreshOffline: false),
-        throwsA(isA<ContextAccessDenied>()));
-    contextFailures = 1;
-    await expectLater(
-        RightsService.updateAppData(
-            link: 'access-recovery', force: true, refreshOffline: false),
-        throwsA(isA<http.ClientException>()));
   });
 
   test('explicit administration link survives a configured landing occasion',
@@ -416,70 +387,6 @@ void main() {
     expect(contexts.single['unit_id'], 12);
     expect(RightsService.hasCapability('media.unit.write'), isTrue);
   });
-  for (final revoked in [false, true]) {
-    test(
-        'administration retry reloads invalidated capabilities, revoked=$revoked',
-        () async {
-      const actor = '00000000-0000-4000-8000-000000000001';
-      final payload = base64Url.encode(utf8.encode(jsonEncode({
-        'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
-        'sub': actor,
-      })));
-      await Supabase.instance.client.auth.recoverSession(jsonEncode({
-        'access_token':
-            '${base64Url.encode(utf8.encode('{}'))}.$payload.signature',
-        'refresh_token': 'fixture-refresh',
-        'token_type': 'bearer',
-        'expires_in': 3600,
-        'user': {
-          'id': actor,
-          'aud': 'authenticated',
-          'role': 'authenticated',
-          'created_at': '2026-01-01T00:00:00Z'
-        },
-      }));
-      addTearDown(() =>
-          Supabase.instance.client.auth.signOut(scope: SignOutScope.local));
-      final link = revoked ? 'access-revoked' : 'access-recovery';
-      await RightsService.updateAppData(
-          link: link, force: true, refreshOffline: false);
-      if (!revoked) {
-        contextGate = Completer<void>();
-        final refreshing = RightsService.updateAppData(
-            link: link, force: true, refreshOffline: false);
-        final joining =
-            const RightsAdministrationAccess().load(link, reservations: false);
-        await Future<void>.delayed(Duration.zero);
-        expect(contexts, hasLength(2));
-        expect(RightsService.canSeeAdministration(), isFalse);
-        contextGate!.complete();
-        await refreshing;
-        expect(await joining, isTrue);
-        expect(contexts, hasLength(2),
-            reason:
-                'Boundary joins the existing refresh instead of invalidating it again');
-        contextGate = null;
-      }
-      final initialReads = contexts.length;
-      contextFailures = 1;
-      await RightsService.refreshAfterAuthorizationDenial();
-      expect(RightsService.canSeeAdministration(), isFalse);
-      expect(AuthService.isLoggedIn(), isTrue);
-      final mutationCount =
-          bankDispatches + bankRpcDispatches + unitUserUpdates;
-      expect(
-          await const RightsAdministrationAccess()
-              .load(link, reservations: false),
-          !revoked);
-      expect(contexts, hasLength(initialReads + 2),
-          reason:
-              'Retry must fetch current SQL capabilities for the same link');
-      expect(AuthService.currentUserId(), actor);
-      expect(
-          bankDispatches + bankRpcDispatches + unitUserUpdates, mutationCount,
-          reason: 'Reloading context cannot replay the rejected mutation');
-    });
-  }
 }
 
 class _DeniedProductCommands implements EshopCommands {
