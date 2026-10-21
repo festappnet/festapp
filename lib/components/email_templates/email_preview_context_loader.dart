@@ -28,15 +28,10 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
   final current = RightsService.currentOccasion();
   final features = occasion.features.isNotEmpty
       ? occasion.features
-      : current?.id == occasion.id
-          ? current!.features
-          : occasion.features;
+      : current?.id == occasion.id ? current!.features : occasion.features;
   final base = EmailPreviewContext(
       occasionTitle: occasion.title,
-      ticketsEnabled:
-          features.any((f) => f.code == FeatureConstants.ticket && f.isEnabled),
-      blueprintEnabled: features
-          .any((f) => f.code == FeatureConstants.blueprint && f.isEnabled),
+      ticketsEnabled: features.any((f) => f.code == FeatureConstants.ticket && f.isEnabled),
       deadline: DateFormat('d. M. y').format(deadline));
   final link = occasion.link?.isNotEmpty == true
       ? occasion.link
@@ -64,13 +59,12 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
       first,
       ...eligible.where(
           (p) => !identical(p, first) && (p.currencyCode ?? 'CZK') == currency)
-    ].take(base.singleApplication ? 1 : 2);
+    ].take(2);
     final types = {for (final type in bundle.productTypes) type.id: type.title};
     return EmailPreviewContextResult(EmailPreviewContext(
       occasionTitle: occasion.title,
       deadline: base.deadline,
       ticketsEnabled: base.ticketsEnabled,
-      blueprintEnabled: base.blueprintEnabled,
       products: selected
           .map((p) => EmailPreviewProduct(
               title: p.title!,

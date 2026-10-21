@@ -1,0 +1,19 @@
+{
+  "version": "2026-08-27.1",
+  "canonicalSource": "default",
+  "sources": {
+    "default": "kjdpmixlnhntmxjedpxh",
+    "a": "lwfpdjxsdmkfyrzqbrlk"
+  },
+  "rules": {
+    "numericIds": "preallocate-per-table",
+    "foreignKeys": "registry-required",
+    "embeddedReferences": "registry-required",
+    "naturalKeyConflict": "block",
+    "uuidConflict": "block",
+    "identityConflict": "block-unless-explicit-decision",
+    "storageConflict": "deduplicate-identical-otherwise-namespaced-rewrite",
+    "sideEffectsDuringReplay": "forbidden",
+    "lastWriteWins": "forbidden"
+  }
+}

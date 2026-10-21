@@ -270,10 +270,12 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
     if (bounds == null || size == null) return value;
     final zoom = _cameraScale(value);
     double translation(double value, double start, double end, double extent) {
-      // Each plan edge may reach the viewport midpoint, but never pass it.
-      // This caps empty space at half the viewport, even for a narrow plan.
-      final visible = extent / 2;
-      return value.clamp(visible - end * zoom, extent - visible - start * zoom);
+      // Keep an axis centered until the plan fills it, as in the web picker.
+      if ((end - start) * zoom <= extent - 32) {
+        return (extent - (start + end) * zoom) / 2;
+      }
+      final a = 16 - start * zoom, b = extent - 16 - end * zoom;
+      return value.clamp(math.min(a, b), math.max(a, b));
     }
 
     return value.clone()..setTranslationRaw(

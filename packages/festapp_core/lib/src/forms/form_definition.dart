@@ -47,9 +47,6 @@ class FormDefinition {
   final String? type;
   final int? bankAccountId;
   final int? deadlineDurationSeconds;
-
-  int effectiveDeadlineDurationSeconds({int? occasionDefault}) =>
-      deadlineDurationSeconds ?? occasionDefault ?? 604800;
   final bool? isOpen;
   final String? accountNumber;
   final String? secret;

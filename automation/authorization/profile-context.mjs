@@ -1,8 +1,7 @@
-import {evidenceDirectory} from './evidence.mjs';
 // Task-owned nested SQL diagnostic; never connects to a provider or production.
 import {connect,fixture} from './benchmark.mjs';
 import {readFile,writeFile} from 'node:fs/promises';
-const root=new URL('../../',import.meta.url),folder=await evidenceDirectory();
+const root=new URL('../../',import.meta.url),folder=new URL('docs/plans/evidence/canonical-authorization-20261020/',root);
 const db=await connect();const messages=[];db.on('notice',event=>messages.push(event.message));
 try {
  await db.query('BEGIN');const f=await fixture(db,8,4);

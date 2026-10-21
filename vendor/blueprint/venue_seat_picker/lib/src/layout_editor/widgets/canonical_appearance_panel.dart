@@ -179,7 +179,6 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
     Map<String, dynamic> values,
   ) async {
     var selected = current;
-    var selectedDocument = c.document;
     c.beginGesture();
     bool? accepted;
     try {
@@ -190,13 +189,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
           child: StatefulBuilder(
             builder: (context, update) {
               void preview(String value) {
-                c.preview(selectedDocument);
                 change(path, value);
-              }
-
-              void select(String value) {
-                preview(value);
-                selectedDocument = c.document;
                 update(() => selected = value);
               }
 
@@ -224,32 +217,25 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                           shrinkWrap: true,
                           children: [
                             for (final value in choices)
-                              MouseRegion(
-                                onEnter: (_) => preview(value),
-                                onExit: (_) {
-                                  if (c.gestureActive)
-                                    c.preview(selectedDocument);
-                                },
-                                child: RadioListTile<String>(
-                                  value: value,
-                                  groupValue: selected,
-                                  onChanged: (_) => select(value),
-                                  title: Text(tr(value)),
-                                  secondary: LayoutStylePreview(
-                                    size: const Size(64, 42),
-                                    appearance: title == 'Material'
-                                        ? layoutMaterialFamilyAppearances[value]!
-                                        : LayoutAppearance(
-                                            layoutMaterialFamilyAppearances['minimal']!
-                                                .object,
-                                            seats: {
-                                              ...layoutMaterialFamilyAppearances['minimal']!
-                                                  .seats!,
-                                              if (title == 'Chair style')
-                                                'seatStyle': value,
-                                            },
-                                          ),
-                                  ),
+                              RadioListTile<String>(
+                                value: value,
+                                groupValue: selected,
+                                onChanged: (_) => preview(value),
+                                title: Text(tr(value)),
+                                secondary: LayoutStylePreview(
+                                  size: const Size(64, 42),
+                                  appearance: title == 'Material'
+                                      ? layoutMaterialFamilyAppearances[value]!
+                                      : LayoutAppearance(
+                                          layoutMaterialFamilyAppearances['minimal']!
+                                              .object,
+                                          seats: {
+                                            ...layoutMaterialFamilyAppearances['minimal']!
+                                                .seats!,
+                                            if (title == 'Chair style')
+                                              'seatStyle': value,
+                                          },
+                                        ),
                                 ),
                               ),
                           ],
@@ -266,10 +252,8 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                               child: Text(tr('Cancel')),
                             ),
                             FilledButton(
-                              onPressed: () {
-                                c.preview(selectedDocument);
-                                Navigator.pop(dialogContext, true);
-                              },
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
                               child: Text(tr('Apply')),
                             ),
                           ],
