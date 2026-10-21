@@ -1275,7 +1275,11 @@
       "endTime": "Godzina zakończenia wydarzenia",
       "endBeforeStart": "Wydarzenie musi kończyć się w chwili rozpoczęcia lub później.",
       "incomplete": "Odpowiedź jest niepełna. Należy uzupełnić wymagane dane i sprawdzić ustawienia.",
-      "questionNumber": "Pytanie {current} z {total}"
+      "questionNumber": "Pytanie {current} z {total}",
+      "listingTitle": "Pokaż wydarzenie w publicznym wykazie",
+      "listingHint": "Ustawienie zostanie zastosowane dopiero po wyraźnym opublikowaniu utworzonego wydarzenia. Ta opcja nie otwiera sprzedaży.",
+      "publishEvent": "Opublikuj wydarzenie zgodnie z ustawieniami",
+      "publishedEvent": "Publikacja wydarzenia została zapisana."
     },
     "draft": "Szkic",
     "cancelDraft": "Usuń szkic",
@@ -1683,6 +1687,72 @@
     "previewEmailSelection": "E-maile pokazują wybrane produkty, cenę i wprowadzone dane kontaktowe. To tylko podgląd; nic nie zostanie wysłane.",
     "retrySender": "Wczytaj ponownie adres nadawcy",
     "seatSelection": "Wybór miejsc",
-    "previousQuestion": "Poprzednie pytanie"
+    "previousQuestion": "Poprzednie pytanie",
+    "ticketing": {
+      "scheduled": "Przedsprzedaż zaplanowana",
+      "selling": "W przedsprzedaży",
+      "soldOut": "Wyprzedane",
+      "startsIn": "Przedsprzedaż rozpocznie się za {duration}",
+      "endsIn": "Przedsprzedaż kończy się za {duration}",
+      "startsSoon": "Przedsprzedaż rozpocznie się w ciągu minuty",
+      "endsSoon": "Przedsprzedaż zakończy się w ciągu minuty",
+      "startsOn": "Przedsprzedaż od {date}",
+      "counts": "Otwarte formularze: {active}/{total}. Przedsprzedaż: {selling}, lista rezerwowa: {waitlists}.",
+      "startAt": "Początek przedsprzedaży: {date}",
+      "endAt": "Koniec przedsprzedaży: {date}",
+      "saleStart": "Początek przedsprzedaży",
+      "saleEnd": "Koniec przedsprzedaży",
+      "countdown": "Pokazuj odliczanie przedsprzedaży",
+      "countdownHelp": "Opcjonalne. Wyłączenie odliczania nie zmienia terminów przedsprzedaży.",
+      "invalidTiming": "Sprawdź terminy przedsprzedaży. Początek musi być w przyszłości i przed końcem przedsprzedaży, a koniec nie później niż koniec wydarzenia.",
+      "createScheduled": "Utwórz i zaplanuj przedsprzedaż",
+      "createOpen": "Utwórz i otwórz przedsprzedaż",
+      "salesLink": "Link do formularza przedsprzedaży",
+      "privacy": "Wydarzenie pozostaje ukryte w katalogu. Dostępność formularza zależy od wybranych ustawień przedsprzedaży.",
+      "help": {
+        "preparation": "Formularz pozostanie zamknięty. Przedsprzedaż można otworzyć później.",
+        "scheduled": "Przedsprzedaż otworzy się automatycznie w wybranym terminie.",
+        "immediate": "Formularz od razu zacznie przyjmować zamówienia."
+      },
+      "completion": {
+        "preparation": "Formularz przedsprzedaży jest gotowy. Przedsprzedaż nie jest jeszcze otwarta.",
+        "scheduled": "Przedsprzedaż otworzy się automatycznie w ustawionym terminie.",
+        "immediate": "Formularz przedsprzedaży jest otwarty i gotowy do przyjmowania zamówień."
+      },
+      "question": "Kiedy rozpocznie się przedsprzedaż?"
+    },
+    "registration": {
+      "scheduled": "Zapisy zaplanowana",
+      "selling": "W zapisów",
+      "soldOut": "Wyprzedane",
+      "startsIn": "Zapisy rozpocznie się za {duration}",
+      "endsIn": "Zapisy kończy się za {duration}",
+      "startsSoon": "Zapisy rozpocznie się w ciągu minuty",
+      "endsSoon": "Zapisy zakończy się w ciągu minuty",
+      "startsOn": "Zapisy od {date}",
+      "counts": "Otwarte formularze: {active}/{total}. Zapisy: {selling}, lista rezerwowa: {waitlists}.",
+      "startAt": "Początek zapisów: {date}",
+      "endAt": "Koniec zapisów: {date}",
+      "saleStart": "Początek zapisów",
+      "saleEnd": "Koniec zapisów",
+      "countdown": "Pokazuj odliczanie zapisów",
+      "countdownHelp": "Opcjonalne. Wyłączenie odliczania nie zmienia terminów zapisów.",
+      "invalidTiming": "Sprawdź terminy zapisów. Początek musi być w przyszłości i przed końcem zapisów, a koniec nie później niż koniec wydarzenia.",
+      "createScheduled": "Utwórz i zaplanuj zapisy",
+      "createOpen": "Utwórz i otwórz zapisy",
+      "salesLink": "Link do formularza zapisów",
+      "privacy": "Wydarzenie pozostaje ukryte w katalogu. Dostępność formularza zależy od wybranych ustawień zapisów.",
+      "help": {
+        "preparation": "Formularz pozostanie zamknięty. Zapisy można otworzyć później.",
+        "scheduled": "Zapisy otworzy się automatycznie w wybranym terminie.",
+        "immediate": "Formularz od razu zacznie przyjmować zamówienia."
+      },
+      "completion": {
+        "preparation": "Formularz zapisów jest gotowy. Zapisy nie jest jeszcze otwarta.",
+        "scheduled": "Zapisy otworzy się automatycznie w ustawionym terminie.",
+        "immediate": "Formularz zapisów jest otwarty i gotowy do przyjmowania zamówień."
+      },
+      "question": "Kiedy rozpoczną się zapisy?"
+    }
   }
 }

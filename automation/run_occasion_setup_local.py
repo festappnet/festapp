@@ -10,8 +10,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 from baseline import load_manifest
 
-BACKEND = ROOT.parent / 'festapp-wizard-local'
-PROJECT = 'festapp-wizard-local'
+BACKEND = Path(os.environ.get('FESTAPP_WIZARD_WORKSPACE', str(ROOT.parent / 'festapp-wizard-local'))).resolve()
+PROJECT = BACKEND.name
+if not PROJECT.startswith('festapp-wizard-'):
+    raise RuntimeError('Wizard workspace requires a festapp-wizard- name')
 DB_URL = 'postgresql://postgres:postgres@127.0.0.1:56822/postgres'
 LOG = BACKEND / 'setup.log'
 
@@ -22,8 +24,9 @@ def run(args, **kwargs):
         subprocess.run(args, check=True, stdout=log, stderr=log, **kwargs)
 
 
-def sql(*args):
-    run(['psql', DB_URL, '-v', 'ON_ERROR_STOP=1', '-q', *args])
+def sql(*args, admin=False):
+    database_url = DB_URL.replace('postgres:postgres@', 'supabase_admin:postgres@') if admin else DB_URL
+    run(['psql', database_url, '-v', 'ON_ERROR_STOP=1', '-q', *args])
 
 
 def prepare():
@@ -68,20 +71,22 @@ def prepare():
         run(['docker', 'exec', '-e', 'PGPASSWORD=postgres', 'supabase_db_' + PROJECT,
              'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1',
              '-qc', 'ALTER SYSTEM SET cron.launch_active_jobs = off'])
-        sql('-c', 'SELECT pg_reload_conf()')
+        sql('-c', 'SELECT pg_reload_conf()', admin=True)
         baseline = load_manifest(ROOT)
-        sql('-c', 'CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;')
+        sql('-c', 'CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;', admin=True)
         for key in ['bootstrap', 'schema', 'referenceSeed']:
-            sql('-f', str(ROOT / baseline[key]['path']))
+            sql('-f', str(ROOT / baseline[key]['path']), admin=True)
         ledger = subprocess.check_output(['python3', str(ROOT / 'automation/baseline.py'), 'ledger-sql'], text=True)
-        sql('-c', ledger)
+        run(['psql', DB_URL, '-v', 'ON_ERROR_STOP=1', '-q', '-c', ledger])
+        sql('-c', "INSERT INTO public.organizations(id,title) VALUES(19,'Slunovrat') ON CONFLICT (id) DO NOTHING;")
         run(['python3', str(ROOT / 'automation/baseline.py'), 'upgrade-local',
              '--database-url', DB_URL.replace('postgres:postgres@', 'supabase_admin:postgres@') + '?sslmode=disable'])
-        sql('-f', str(ROOT / 'supabase/seed.sql'))
+        sql('-c', "SET request.jwt.claim.role='service_role'", '-f', str(ROOT / 'supabase/seed.sql'))
         marker.write_text('Canonical baseline and forward migrations loaded.\n')
     # Draft functions may change while iterating; the canonical file is idempotent.
-    sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'))
-    sql('-f', str(ROOT / 'database/functions/occasion_setup/sources.sql'))
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/sources.sql'), admin=True)
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'), admin=True)
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/finalize.sql'), admin=True)
     sql('-c', "NOTIFY pgrst, 'reload schema'")
     status = json.loads(subprocess.check_output(['supabase', 'status', '--workdir', str(BACKEND), '--output', 'json'], stderr=subprocess.DEVNULL))
     if status['API_URL'] != 'http://127.0.0.1:56821':
@@ -91,7 +96,8 @@ def prepare():
     with os.fdopen(descriptor, 'w') as stream:
         json.dump({'FESTAPP_SUPABASE_URL': status['API_URL'],
                    'FESTAPP_SUPABASE_ANON_KEY': status['ANON_KEY'],
-                   'FESTAPP_OCCASION_SETUP': '--enable-wizard' in sys.argv}, stream)
+                   'FESTAPP_OCCASION_SETUP': '--enable-wizard' in sys.argv,
+                   'FESTAPP_APP_SUPPORTED': '--app-supported' in sys.argv}, stream)
     os.chmod(defines, 0o600)
     functions = BACKEND / 'supabase/functions'
     expected = ROOT / 'supabase/functions'

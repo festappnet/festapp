@@ -51,10 +51,10 @@ class OccasionSetupStory {
     return currencies;
   }
 
-  static bool paymentAccountConfirmed(Map<String, dynamic> data) =>
+  static bool paymentAccountReady(Map<String, dynamic> data) =>
       data['bankAccountId'] is int &&
       (data['bankAccountId'] as int) > 0 &&
-      data['bankAccountConfirmed'] == true;
+      (data['bankAccountFingerprint'] as String? ?? '').isNotEmpty;
 
   /// Validate only active price scheduling. Dormant choices survive backtracking
   /// without blocking a free event or a disabled form.
@@ -111,7 +111,7 @@ class OccasionSetupStory {
       const OccasionSetupQuestion(0, 'source'),
       const OccasionSetupQuestion(1, 'name'),
       const OccasionSetupQuestion(1, 'dates'),
-      const OccasionSetupQuestion(1, 'presentation'),
+      if (appSupported) const OccasionSetupQuestion(1, 'presentation'),
       if (appSupported) const OccasionSetupQuestion(1, 'link'),
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
       if (form) const OccasionSetupQuestion(3, 'form'),
@@ -122,8 +122,6 @@ class OccasionSetupStory {
       if (form) const OccasionSetupQuestion(3, 'communication'),
       if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
       if (tickets) const OccasionSetupQuestion(2, 'ticket'),
-      if (tickets && data?['configureScanning'] == true)
-        const OccasionSetupQuestion(2, 'scanner', optional: true),
       const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),
@@ -159,10 +157,18 @@ class OccasionSetupStory {
       data: context,
       organizationVerified: organizationVerified,
     );
-    final savedKey = data['storyQuestion'];
+    final savedKey = switch (data['storyQuestion']) {
+      'presentation' when !appSupported => 'form',
+      'scanner' => 'team',
+      final value => value,
+    };
     final key = savedKey == 'start' || savedKey == 'end' ? 'dates' : savedKey;
     final exact = pages.indexWhere(
-      (p) => p.step == data['step'] && p.key == key,
+      (p) =>
+          p.key == key &&
+          (p.step == data['step'] ||
+              data['storyQuestion'] == 'scanner' ||
+              data['storyQuestion'] == 'presentation'),
     );
     if (exact >= 0) return exact;
     if (data['step'] == 5) return pages.length - 1;

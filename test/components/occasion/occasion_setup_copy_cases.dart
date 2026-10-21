@@ -158,7 +158,7 @@ void main() {
                     selectedId: null,
                     label: (_) => 'Same name (21.10.2026)',
                     onChanged: (id) => selected = id))));
-    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    await tester.tap(find.byType(OutlinedButton));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Same name (21.10.2026) · source-2').last);
     await tester.pumpAndSettle();

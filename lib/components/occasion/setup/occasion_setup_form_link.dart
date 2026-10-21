@@ -123,6 +123,19 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
         TextField(
           controller: _controller,
           decoration: InputDecoration(
+            suffixIcon: IconButton(
+              onPressed: _checking
+                  ? null
+                  : () {
+                      _forceSuggestion = true;
+                      widget.onValidityChanged?.call(null);
+                      widget.onChanged('', true);
+                      _controller.clear();
+                      _schedule();
+                    },
+              icon: const Icon(Icons.auto_fix_high),
+              tooltip: OccasionSetupDetailsStrings.text('suggestLink'),
+            ),
             labelText: OccasionSetupDetailsStrings.text('formAddress'),
             helperText: OccasionSetupDetailsStrings.text('linkPreviewHint'),
             helperMaxLines: 3,
@@ -145,19 +158,6 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
         if (_checking) const LinearProgressIndicator(),
         if (_available == true)
           Text(OccasionSetupDetailsStrings.text('linkAvailable')),
-        TextButton.icon(
-          onPressed: _checking
-              ? null
-              : () {
-                  _forceSuggestion = true;
-                  widget.onValidityChanged?.call(null);
-                  widget.onChanged('', true);
-                  _controller.clear();
-                  _schedule();
-                },
-          icon: const Icon(Icons.auto_fix_high),
-          label: Text(OccasionSetupDetailsStrings.text('suggestLink')),
-        ),
         PublicLink(link: _controller.text),
       ]);
 }

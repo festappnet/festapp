@@ -3009,7 +3009,11 @@
       "endBeforeStart": "The event must end at or after its start.",
       "incomplete": "This answer is incomplete. Required details and settings need to be checked.",
       "questionNumber": "Question {current} of {total}",
-      "saleTimingQuestion": "When should sales start?"
+      "saleTimingQuestion": "When should sales start?",
+      "listingTitle": "List the event publicly",
+      "listingHint": "Applied only when you explicitly publish the created event. This does not open sales.",
+      "publishEvent": "Publish event with these settings",
+      "publishedEvent": "Event publication saved."
     },
     "draft": "Draft",
     "cancelDraft": "Discard draft",
@@ -3699,6 +3703,72 @@
     "retrySender": "Reload sender address",
     "seatSelection": "Seat selection",
     "previousQuestion": "Previous question",
-    "shortStartsIn": "Starts in {duration}"
+    "shortStartsIn": "Starts in {duration}",
+    "ticketing": {
+      "scheduled": "Ticket sale scheduled",
+      "selling": "On ticket sale",
+      "soldOut": "Sold out",
+      "startsIn": "Ticket sale starts in {duration}",
+      "endsIn": "Ticket sale ends in {duration}",
+      "startsSoon": "Ticket sale starts within a minute",
+      "endsSoon": "Ticket sale ends within a minute",
+      "startsOn": "Ticket sale from {date}",
+      "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
+      "startAt": "Ticket sale starts: {date}",
+      "endAt": "Ticket sale ends: {date}",
+      "saleStart": "Ticket sale start",
+      "saleEnd": "Ticket sale end",
+      "countdown": "Show ticket sale countdowns",
+      "countdownHelp": "Optional. Turning countdowns off does not change ticket sale times.",
+      "invalidTiming": "Check ticket sale times. The start must be in the future and before ticket sale end; ticket sales must end by event end.",
+      "createScheduled": "Create and schedule ticket sale",
+      "createOpen": "Create and open ticket sale",
+      "salesLink": "Ticket sales form link",
+      "privacy": "The event stays hidden in the catalogue. The selected ticket sale settings control access to the ticket sales form.",
+      "help": {
+        "preparation": "The form stays closed. Open ticket sales later.",
+        "scheduled": "Ticket sales open automatically at the selected time.",
+        "immediate": "The form will accept orders immediately."
+      },
+      "completion": {
+        "preparation": "The ticket sales form is ready. Ticket sales are not open yet.",
+        "scheduled": "Ticket sales will open automatically at the scheduled time.",
+        "immediate": "The ticket sales form is open and ready to accept orders."
+      },
+      "question": "When should ticket sales start?"
+    },
+    "registration": {
+      "scheduled": "Registration scheduled",
+      "selling": "On registration",
+      "soldOut": "Sold out",
+      "startsIn": "Registration starts in {duration}",
+      "endsIn": "Registration ends in {duration}",
+      "startsSoon": "Registration starts within a minute",
+      "endsSoon": "Registration ends within a minute",
+      "startsOn": "Registration from {date}",
+      "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
+      "startAt": "Registration starts: {date}",
+      "endAt": "Registration ends: {date}",
+      "saleStart": "Registration start",
+      "saleEnd": "Registration end",
+      "countdown": "Show registration countdowns",
+      "countdownHelp": "Optional. Turning countdowns off does not change registration times.",
+      "invalidTiming": "Check registration times. The start must be in the future and before registration end; registration must end by event end.",
+      "createScheduled": "Create and schedule registration",
+      "createOpen": "Create and open registration",
+      "salesLink": "Registration form link",
+      "privacy": "The event stays hidden in the catalogue. The selected registration settings control access to the registration form.",
+      "help": {
+        "preparation": "The form stays closed. Open registration later.",
+        "scheduled": "Registration open automatically at the selected time.",
+        "immediate": "The form will accept orders immediately."
+      },
+      "completion": {
+        "preparation": "The registration form is ready. Registration are not open yet.",
+        "scheduled": "Registration will open automatically at the scheduled time.",
+        "immediate": "The registration form is open and ready to accept orders."
+      },
+      "question": "When should registration start?"
+    }
   }
 }

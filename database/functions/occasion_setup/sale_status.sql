@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.get_occasion_sale_forms_internal(p_occasion bi
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(jsonb_build_object(
   'id',f.id,'is_open',f.is_open,
+  'has_tickets',EXISTS(SELECT 1 FROM public.form_fields ticket_field WHERE ticket_field.form=f.id AND ticket_field.type='ticket' AND NOT coalesce(ticket_field.is_hidden,false)),
   'is_preparation',coalesce((d.value#>>'{schedule,sale_preparation}')::boolean,false),
   'start_time',nullif(coalesce(d.value#>>'{schedule,start_time}',d.value->>'start_time'),''),
   'end_time',nullif(coalesce(d.value#>>'{schedule,end_time}',d.value->>'end_time'),''),

@@ -1295,7 +1295,11 @@
       "endTime": "Čas konca akcie",
       "endBeforeStart": "Koniec akcie musí byť v rovnakom čase ako začiatok alebo neskôr.",
       "incomplete": "Odpoveď zatiaľ nie je úplná. Je potrebné doplniť povinné údaje a skontrolovať nastavenia.",
-      "questionNumber": "Otázka {current} z {total}"
+      "questionNumber": "Otázka {current} z {total}",
+      "listingTitle": "Uviesť akciu vo verejnom prehľade",
+      "listingHint": "Použije sa až po výslovnom zverejnení vytvorenej akcie. Táto voľba neotvára predaj.",
+      "publishEvent": "Zverejniť akciu podľa nastavenia",
+      "publishedEvent": "Zverejnenie akcie bolo uložené."
     },
     "draft": "Koncept",
     "cancelDraft": "Zrušiť koncept",
@@ -1703,6 +1707,72 @@
     "previewEmailSelection": "E-maily zobrazia vybrané produkty, cenu a vyplnené kontaktné údaje. Je to iba náhľad; nič sa neodošle.",
     "retrySender": "Znovu načítať adresu odosielateľa",
     "seatSelection": "Výber miest",
-    "previousQuestion": "Predchádzajúca otázka"
+    "previousQuestion": "Predchádzajúca otázka",
+    "ticketing": {
+      "scheduled": "Predpredaj naplánovaný",
+      "selling": "V predpredaji",
+      "soldOut": "Vypredané",
+      "startsIn": "Predpredaj začína o {duration}",
+      "endsIn": "Predpredaj končí o {duration}",
+      "startsSoon": "Predpredaj začne do minúty",
+      "endsSoon": "Predpredaj skončí do minúty",
+      "startsOn": "Predpredaj od {date}",
+      "counts": "Otvorené formuláre: {active}/{total}. Predpredaj: {selling}, náhradníci: {waitlists}.",
+      "startAt": "Predpredaj začína: {date}",
+      "endAt": "Predpredaj končí: {date}",
+      "saleStart": "Začiatok predpredaja",
+      "saleEnd": "Koniec predpredaja",
+      "countdown": "Zobrazovať odpočty predpredaja",
+      "countdownHelp": "Voliteľné. Vypnutie odpočtu nemení termíny predpredaja.",
+      "invalidTiming": "Skontrolujte termíny predpredaja. Začiatok musí byť v budúcnosti a pred koncom predpredaja; koniec najneskôr na konci akcie.",
+      "createScheduled": "Vytvoriť a naplánovať predpredaj",
+      "createOpen": "Vytvoriť a otvoriť predpredaj",
+      "salesLink": "Odkaz na predpredajný formulár",
+      "privacy": "Akcia zostane skrytá v katalógu. Dostupnosť predpredajného formulára určuje zvolené nastavenie predpredaja.",
+      "help": {
+        "preparation": "Formulár zostane zatvorený. Predpredaj otvoríte neskôr.",
+        "scheduled": "Predpredaj sa otvorí automaticky vo zvolený čas.",
+        "immediate": "Vo formulári bude možné začať objednávať."
+      },
+      "completion": {
+        "preparation": "Predpredajný formulár je pripravený. Predpredaj zatiaľ nie je otvorený.",
+        "scheduled": "Predpredaj sa automaticky otvorí v nastavenom čase.",
+        "immediate": "Predpredajný formulár je otvorený a pripravený prijímať objednávky."
+      },
+      "question": "Kedy sa má začať predpredaj?"
+    },
+    "registration": {
+      "scheduled": "Prihlasovanie naplánovaný",
+      "selling": "V prihlasovaniei",
+      "soldOut": "Vypredané",
+      "startsIn": "Prihlasovanie začína o {duration}",
+      "endsIn": "Prihlasovanie končí o {duration}",
+      "startsSoon": "Prihlasovanie začne do minúty",
+      "endsSoon": "Prihlasovanie skončí do minúty",
+      "startsOn": "Prihlasovanie od {date}",
+      "counts": "Otvorené formuláre: {active}/{total}. Prihlasovanie: {selling}, náhradníci: {waitlists}.",
+      "startAt": "Prihlasovanie začína: {date}",
+      "endAt": "Prihlasovanie končí: {date}",
+      "saleStart": "Začiatok prihlasovania",
+      "saleEnd": "Koniec prihlasovania",
+      "countdown": "Zobrazovať odpočty prihlasovania",
+      "countdownHelp": "Voliteľné. Vypnutie odpočtu nemení termíny prihlasovania.",
+      "invalidTiming": "Skontrolujte termíny prihlasovania. Začiatok musí byť v budúcnosti a pred koncom prihlasovania; koniec najneskôr na konci akcie.",
+      "createScheduled": "Vytvoriť a naplánovať prihlasovanie",
+      "createOpen": "Vytvoriť a otvoriť prihlasovanie",
+      "salesLink": "Odkaz na prihlasovaniený formulár",
+      "privacy": "Akcia zostane skrytá v katalógu. Dostupnosť prihlasovanieného formulára určuje zvolené nastavenie prihlasovania.",
+      "help": {
+        "preparation": "Formulár zostane zatvorený. Prihlasovanie otvoríte neskôr.",
+        "scheduled": "Prihlasovanie sa otvorí automaticky vo zvolený čas.",
+        "immediate": "Vo formulári bude možné začať objednávať."
+      },
+      "completion": {
+        "preparation": "Prihlasovaniený formulár je pripravený. Prihlasovanie zatiaľ nie je otvorený.",
+        "scheduled": "Prihlasovanie sa automaticky otvorí v nastavenom čase.",
+        "immediate": "Prihlasovaniený formulár je otvorený a pripravený prijímať objednávky."
+      },
+      "question": "Kedy sa má začať prihlasovanie?"
+    }
   }
 }

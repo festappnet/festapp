@@ -205,7 +205,7 @@ void main() {
     expect(draft.bundle().products.single.priceChanges, isEmpty);
   });
   testWidgets(
-    'account requires confirmation and currency changes invalidate it',
+    'selected account is ready without checkbox and currency changes invalidate it',
     (tester) async {
       final data = <String, dynamic>{
         'formDraft': {
@@ -256,10 +256,8 @@ void main() {
       expect(find.byType(Radio<int>), findsOneWidget);
       expect(find.byIcon(Icons.link_off), findsNothing);
       expect(data['bankAccountId'], 7);
-      expect(data['bankAccountConfirmed'], false);
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      expect(data['bankAccountConfirmed'], true);
+      expect(find.byType(Checkbox), findsNothing);
+      expect(data.containsKey('bankAccountConfirmed'), isFalse);
       expect(data['bankAccountFingerprint'], 'digest');
       update(
         () => ((data['formDraft'] as Map)['fields'] as List)
@@ -268,7 +266,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(data['bankAccountId'], isNull);
-      expect(data['bankAccountConfirmed'], false);
+      expect(data.containsKey('bankAccountConfirmed'), isFalse);
       expect(
         find.text('OccasionSetup.setupDetails.bankMissing'),
         findsOneWidget,
@@ -276,7 +274,7 @@ void main() {
     },
   );
   testWidgets(
-    'missing account offers setup then reloads without implicit confirmation',
+    'missing account offers setup and reloads a verified selection',
     (tester) async {
       final data = <String, dynamic>{};
       var created = false;
@@ -318,7 +316,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(created, true);
       expect(data['bankAccountId'], 9);
-      expect(data['bankAccountConfirmed'], false);
+      expect(data.containsKey('bankAccountConfirmed'), isFalse);
     },
   );
 }

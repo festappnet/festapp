@@ -8,6 +8,39 @@ class OccasionSaleStrings {
   static String text(String key, [Map<String, String>? args]) =>
       'OccasionSales.$key'.tr(namedArgs: args);
 
+  static String domainText(bool tickets, String key,
+      [Map<String, String>? args]) {
+    const domainKeys = {
+      'scheduled',
+      'selling',
+      'soldOut',
+      'startsIn',
+      'endsIn',
+      'startsSoon',
+      'endsSoon',
+      'startsOn',
+      'counts',
+      'startAt',
+      'endAt',
+      'saleStart',
+      'saleEnd',
+      'countdown',
+      'countdownHelp',
+      'invalidTiming',
+      'createScheduled',
+      'createOpen',
+      'salesLink',
+      'privacy',
+      'help',
+      'completion',
+      'question'
+    };
+    return domainKeys.contains(key.split('.').first)
+        ? 'OccasionSales.${tickets ? 'ticketing' : 'registration'}.$key'
+            .tr(namedArgs: args)
+        : text(key, args);
+  }
+
   static String duration(Duration remaining, Locale locale) {
     if (remaining.inDays > 0) {
       final count = remaining.inDays;
@@ -28,7 +61,11 @@ class OccasionSaleStrings {
   }
 
   static String label(OccasionSaleStatus status, DateTime now, Locale locale,
-      {String? timezone}) {
+      {String? timezone, bool? hasTickets}) {
+    String wording(String key, [Map<String, String>? args]) =>
+        hasTickets == null
+            ? text(key, args)
+            : domainText(hasTickets, key, args);
     final deadline = status.deadline;
     if (deadline != null &&
         status.countdown &&
@@ -36,17 +73,17 @@ class OccasionSaleStrings {
             status.total == 1 && deadline.difference(now).inDays < 3)) {
       final remaining = deadline.difference(now);
       if (remaining.inSeconds < 60)
-        return text(status.starts ? 'startsSoon' : 'endsSoon');
-      return text(status.starts ? 'startsIn' : 'endsIn',
+        return wording(status.starts ? 'startsSoon' : 'endsSoon');
+      return wording(status.starts ? 'startsIn' : 'endsIn',
           {'duration': duration(remaining, locale)});
     }
     if (status.state == OccasionSaleState.scheduled && deadline != null) {
-      return text('startsOn', {
+      return wording('startsOn', {
         'date': DateFormat.Md(locale.toLanguageTag())
             .format(deadline.toOccasionTime(timezone))
       });
     }
-    final base = text(status.state.name);
+    final base = wording(status.state.name);
     return status.active > 0 && status.total > 1
         ? '$base ${status.active}/${status.total}'
         : base;

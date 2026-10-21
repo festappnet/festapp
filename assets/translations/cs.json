@@ -2960,7 +2960,7 @@
     "story": {
       "communicationIncomplete": "Nastavení komunikace není úplné. Je nutné zkontrolovat e-mail pro odpovědi a předstih připomenutí.",
       "communicationQuestion": "Jak bude nastavena komunikace s účastníky?",
-      "bankAccountNotConfirmed": "Bankovní účet není potvrzený",
+      "bankAccountNotConfirmed": "Vyberte platný účet pro příjem plateb.",
       "bankAccountRequired": "Pro placenou událost je nutné vybrat a potvrdit bankovní účet.",
       "configureScanningHint": "Nepovinné nastavení skenování vstupenek. Nemění vzhled vstupenky a lze jej upravit později.",
       "configureScanning": "Nastavit odbavení na místě",
@@ -3010,7 +3010,11 @@
       "endBeforeStart": "Konec akce musí být ve stejný čas jako začátek nebo později.",
       "incomplete": "Odpověď zatím není úplná. Je nutné doplnit povinné údaje a zkontrolovat nastavení.",
       "questionNumber": "Otázka {current} z {total}",
-      "saleTimingQuestion": "Kdy má prodej začít?"
+      "saleTimingQuestion": "Kdy má prodej začít?",
+      "listingTitle": "Uvést akci ve veřejném přehledu",
+      "listingHint": "Použije se až po výslovném zveřejnění vytvořené akce. Tato volba neotevírá prodej.",
+      "publishEvent": "Zveřejnit akci podle nastavení",
+      "publishedEvent": "Zveřejnění akce bylo uloženo."
     },
     "draft": "Koncept",
     "cancelDraft": "Zrušit koncept",
@@ -3700,6 +3704,72 @@
     "retrySender": "Znovu načíst adresu odesílatele",
     "seatSelection": "Výběr míst",
     "previousQuestion": "Předchozí otázka",
-    "shortStartsIn": "Začíná za {duration}"
+    "shortStartsIn": "Začíná za {duration}",
+    "ticketing": {
+      "scheduled": "Předprodej naplánován",
+      "selling": "V předprodeji",
+      "soldOut": "Vyprodáno",
+      "startsIn": "Předprodej začíná za {duration}",
+      "endsIn": "Předprodej končí za {duration}",
+      "startsSoon": "Předprodej začne do minuty",
+      "endsSoon": "Předprodej skončí do minuty",
+      "startsOn": "Předprodej od {date}",
+      "counts": "Otevřené formuláře: {active}/{total}. Předprodej: {selling}, náhradníci: {waitlists}.",
+      "startAt": "Předprodej začíná: {date}",
+      "endAt": "Předprodej končí: {date}",
+      "saleStart": "Začátek předprodeje",
+      "saleEnd": "Konec předprodeje",
+      "countdown": "Zobrazovat odpočty předprodeje",
+      "countdownHelp": "Volitelné. Vypnutí odpočtu nemění termíny předprodeje.",
+      "invalidTiming": "Zkontrolujte termíny předprodeje. Začátek musí být v budoucnosti a před koncem předprodeje; konec nejpozději na konci akce.",
+      "createScheduled": "Vytvořit a naplánovat předprodej",
+      "createOpen": "Vytvořit a otevřít předprodej",
+      "salesLink": "Odkaz na předprodejní formulář",
+      "privacy": "Akce zůstane skrytá v katalogu. Dostupnost předprodejního formuláře určuje zvolené nastavení předprodeje.",
+      "help": {
+        "preparation": "Formulář zůstane zavřený. Předprodej otevřete později.",
+        "scheduled": "Předprodej se otevře automaticky ve zvolený čas.",
+        "immediate": "Na formuláři bude možné začít objednávat."
+      },
+      "completion": {
+        "preparation": "Předprodejní formulář je připravený. Předprodej zatím není otevřený.",
+        "scheduled": "Předprodej se automaticky otevře v nastavený čas.",
+        "immediate": "Předprodejní formulář je otevřený a připravený přijímat objednávky."
+      },
+      "question": "Kdy má předprodej začít?"
+    },
+    "registration": {
+      "scheduled": "Přihlašování naplánováno",
+      "selling": "Přihlašování probíhá",
+      "soldOut": "Kapacita naplněna",
+      "startsIn": "Přihlašování začíná za {duration}",
+      "endsIn": "Přihlašování končí za {duration}",
+      "startsSoon": "Přihlašování začne do minuty",
+      "endsSoon": "Přihlašování skončí do minuty",
+      "startsOn": "Přihlašování od {date}",
+      "counts": "Otevřené formuláře: {active}/{total}. Přihlašování: {selling}, náhradníci: {waitlists}.",
+      "startAt": "Přihlašování začíná: {date}",
+      "endAt": "Přihlašování končí: {date}",
+      "saleStart": "Začátek přihlašování",
+      "saleEnd": "Konec přihlašování",
+      "countdown": "Zobrazovat odpočty přihlašování",
+      "countdownHelp": "Volitelné. Vypnutí odpočtu nemění termíny přihlašování.",
+      "invalidTiming": "Zkontrolujte termíny přihlašování. Začátek musí být v budoucnosti a před koncem přihlašování; konec nejpozději na konci akce.",
+      "createScheduled": "Vytvořit a naplánovat přihlašování",
+      "createOpen": "Vytvořit a otevřít přihlašování",
+      "salesLink": "Odkaz na přihlašovací formulář",
+      "privacy": "Akce zůstane skrytá v katalogu. Dostupnost přihlašovacího formuláře určuje zvolené nastavení přihlašování.",
+      "help": {
+        "preparation": "Formulář zůstane zavřený. Přihlašování otevřete později.",
+        "scheduled": "Přihlašování se otevře automaticky ve zvolený čas.",
+        "immediate": "Na formuláři bude možné začít objednávat."
+      },
+      "completion": {
+        "preparation": "Přihlašovací formulář je připravený. Přihlašování zatím není otevřený.",
+        "scheduled": "Přihlašování se automaticky otevře v nastavený čas.",
+        "immediate": "Přihlašovací formulář je otevřený a připravený přijímat objednávky."
+      },
+      "question": "Kdy má přihlašování začít?"
+    }
   }
 }

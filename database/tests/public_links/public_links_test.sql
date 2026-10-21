@@ -27,6 +27,9 @@ BEGIN
  UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',a,'last-name') WHERE id=a;
  PERFORM assert_eq(public.get_occasion_by_link(first_link)->>'link','last-name','old random alias resolves directly');
  PERFORM assert_eq(public.get_occasion_for_edit_v1('first-name')->>'id',a::text,'admin alias same identity');
+ UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',a,'occasion_with_underscores') WHERE id=a;
+ PERFORM assert_eq(public.get_occasion_by_link('occasion_with_underscores')->>'link','occasion_with_underscores','underscore occasion slug roundtrip');
+ PERFORM assert_eq(public.get_occasion_for_edit_v1('last-name')->>'id',a::text,'occasion rename preserves previous alias');
  UPDATE public.occasions SET link=public.reserve_public_link_internal('occasion',a,first_link) WHERE id=a;
  response:=public.create_occasion_client_sync_v1(gen_random_uuid(),jsonb_build_object('unit',unit_id,'organization',org,'title','Other','start_time',now(),'end_time',now()+interval '1 day'));
  b:=(response#>>'{data,occasionId}')::bigint;
@@ -49,6 +52,10 @@ BEGIN
  PERFORM assert_eq(public.get_form_fields('form-old')->>'code','200','legacy fields reader resolves alias using canonical product schema');
  PERFORM assert_eq(public.get_form_from_link('form-old')::jsonb#>>'{data,id}',f::text,'legacy public form delegates to canonical bundle');
  PERFORM assert_eq(public.get_form_for_edit('form-old')#>>'{data,form,link}','form-current','form edit alias canonical');
+ UPDATE public.forms SET link=public.reserve_public_link_internal('form',f,'form_with_underscores') WHERE id=f;
+ PERFORM assert_eq(public.resolve_form_link_internal('form_with_underscores'),f,'underscore form slug roundtrip');
+ PERFORM assert_eq(public.get_form_for_edit('form_with_underscores')#>>'{data,form,link}','form_with_underscores','underscore form canonical read');
+ PERFORM assert_eq(public.resolve_form_link_internal('form-current'),f,'form rename preserves previous alias');
  INSERT INTO public.organizations(title) VALUES('Other public link tenant') RETURNING id INTO foreign_org;
  PERFORM assert_eq(public.get_app_config_v218(jsonb_build_object('platform',jsonb_build_object('platform','web'),'organization',foreign_org,'link','first-name'))->>'code','404','occasion alias does not cross tenant');
  PERFORM assert_eq(public.get_app_config_v218(jsonb_build_object('platform',jsonb_build_object('platform','web'),'organization',foreign_org,'form_link','form-old'))->>'code','404','form alias does not fall into another tenant context');
@@ -112,8 +119,15 @@ BEGIN
  response:=public.save_occasion_setup_draft(draft,(response->>'revision')::bigint,(response->'data') || jsonb_build_object(
   'sourceId',a,'copy_locale','en','copy_title_edited',true,'title','My custom title',
   'formDraft',data,'formEnabled',true,'start',now(),'end',now()+interval '1 day','reviewConfirmed',true,
-  'blueprintObjects',jsonb_build_array(jsonb_build_object('type','spot','x',1,'y',1,'product',data#>'{fields,2,product_type_data,products,0,id}')),
-  'blueprintGroups','[]'::jsonb),5);
+  'blueprintMode','copy','blueprintLayoutDraft',jsonb_build_object(
+   'layout',jsonb_build_object('schemaVersion',2,'symbolSetVersion',1,
+    'canvas',jsonb_build_object('x',0,'y',0,'width',1000,'height',1000,'fill','#ffffffff'),
+    'styles','{}'::jsonb,'seatingDefaults','{}'::jsonb,'textPolicy',jsonb_build_object('language','und','direction','auto'),
+    'nodes',jsonb_build_array(jsonb_build_object('id','00000000-0000-4000-8000-000000000001','kind','seat','width',40,'height',40,
+     'transform',jsonb_build_object('x',60,'y',60,'rotation',0)))),
+   'seatBindings',jsonb_build_array(jsonb_build_object('nodeId','00000000-0000-4000-8000-000000000001',
+    'productId',data#>'{fields,2,product_type_data,products,0,id}','title','A1','blocked',false)),
+   'groupProducts','[]'::jsonb,'areaBindings','[]'::jsonb)),5);
  response:=public.finalize_occasion_setup_draft(draft,(response->>'revision')::bigint,gen_random_uuid());
  copied:=(response#>>'{data,occasionId}')::bigint;
  PERFORM assert_eq((SELECT title FROM public.occasions WHERE id=copied),'My custom title','wizard honors manually edited copy title');

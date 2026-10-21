@@ -52,7 +52,7 @@ class AppConfig {
   static const String? forceOccasionLink = null;
   static const bool isPublicNotificationSendingDisabled = false;
   static const bool isAllUnit = false;
-  static const bool isAppSupported = true;
+  static const bool isAppSupported = bool.fromEnvironment('FESTAPP_APP_SUPPORTED', defaultValue: true);
   static const bool isWebclientSupported = true;
   static const bool isContractFeatureEnabled = false;
   static const bool showBankSupportRole = false;

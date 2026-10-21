@@ -1,8 +1,171 @@
+import 'dart:convert';
+import 'package:fstapp/components/occasion/setup/occasion_form_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
 
 void main() {
+  test('normalized seat field opens form bundle without a JSON save roundtrip',
+      () {
+    final data = jsonDecode('''{
+      "blueprintMode":"copy",
+      "formDraft":{"title":"Admission","fields":[
+        {"type":"ticket"},
+        {"type":"spot","is_ticket_field":true,"is_hidden":true,
+          "title":"Choose your seat","data":{"hint":"Hall"}}
+      ]}
+    }''') as Map<String, dynamic>;
+    final owner = SetupBlueprintConfiguration(data);
+    owner.normalize();
+    final form =
+        draftFormBundle(data['formDraft'] as Map<String, dynamic>).form;
+    expect(form.usesSeatSelection, true);
+    final field =
+        form.relatedFields.singleWhere((f) => f.definition.type == 'spot');
+    expect(field.definition.title, 'Choose your seat');
+    expect(field.definition.data?['hint'], 'Hall');
+    owner.normalize();
+    expect(
+        draftFormBundle(data['formDraft'] as Map<String, dynamic>)
+            .form
+            .usesSeatSelection,
+        true);
+    owner.clear();
+    expect(
+        draftFormBundle(data['formDraft'] as Map<String, dynamic>)
+            .form
+            .usesSeatSelection,
+        false);
+  });
+  test('setup mode owns geometry and public seat selection, retaining products',
+      () {
+    final doc = VenueLayoutDocument(nodes: [
+      LayoutNode(id: '00000000-0000-4000-8000-000000000001', kind: 'seat'),
+      LayoutNode(id: '00000000-0000-4000-8000-000000000002', kind: 'shape')
+    ]);
+    final raw =
+        BlueprintSetupLayoutDraft.empty(document: doc, resources: const {})
+            .reconcile(doc, defaultProductId: 42)
+            .toJson();
+    final data = <String, dynamic>{
+      'blueprintMode': 'Bez plánku',
+      'formEnabled': true,
+      'formDraft': {
+        'fields': [
+          {'type': 'ticket'},
+          {
+            'type': 'product_type',
+            'product_type_data': {
+              'id': 1,
+              'type': 'spot',
+              'products': [
+                {'id': 42}
+              ]
+            }
+          }
+        ]
+      }
+    };
+    final owner = SetupBlueprintConfiguration(data);
+    owner.importPlan({'id': 7, 'title': 'Hall', 'blueprintLayoutDraft': raw});
+    expect(owner.modeId, 'copy');
+    expect(owner.seatCount, 1);
+    expect(owner.ready, true);
+    expect(
+        (data['formDraft']['fields'] as List)
+            .where((f) => f['type'] == 'spot')
+            .single['is_hidden'],
+        false);
+    expect(() => owner.importPlan({'id': 8}), throwsFormatException);
+    expect(data['blueprintSourceId'], 7,
+        reason: 'Unsupported source preserves last valid plan');
+    owner.clear();
+    expect(data.containsKey('blueprintLayoutDraft'), false);
+    expect((data['formDraft']['fields'] as List).length, 2);
+    expect(owner.ready, true);
+    owner.clear(create: true);
+    expect(owner.ready, false,
+        reason: 'An unfinished new plan can save but cannot finalize');
+  });
+  test('seat counts ignore orphan bindings, blocked seats and decoration', () {
+    final doc = VenueLayoutDocument(nodes: [
+      LayoutNode(id: '00000000-0000-4000-8000-000000000001', kind: 'shape')
+    ]);
+    final data = <String, dynamic>{
+      'blueprintMode': 'copy',
+      'formEnabled': true,
+      'blueprintLayoutDraft': {
+        'layout': doc.toJson(),
+        'seatBindings': [
+          {'nodeId': '00000000-0000-4000-8000-000000000001', 'productId': 42},
+          {'nodeId': '00000000-0000-4000-8000-000000000002', 'productId': 42}
+        ]
+      }
+    };
+    expect(SetupBlueprintConfiguration(data).seatCount, 0);
+    expect(SetupBlueprintConfiguration(data).ready, false);
+  });
+  test(
+      'supported legacy document adapts in a private copy through canonical importer',
+      () {
+    final legacy = <String, dynamic>{
+      'schemaVersion': 1,
+      'symbolSetVersion': 1,
+      'canvas': {
+        'x': 0.0,
+        'y': 0.0,
+        'width': 1000.0,
+        'height': 1000.0,
+        'fill': '#FFFFFFFF'
+      },
+      'nodes': [
+        LayoutNode(
+                id: '00000000-0000-4000-8000-000000000001',
+                kind: 'seat',
+                label: 'A1')
+            .toJson()
+      ],
+      'defaultTextStyle': {
+        'fontId': 'fixture:sans',
+        'size': 24,
+        'color': '#222222FF'
+      }
+    };
+    final plan = {
+      'id': 9,
+      'blueprintLayoutDraft': {
+        'layout': legacy,
+        'seatBindings': [
+          {
+            'nodeId': '00000000-0000-4000-8000-000000000001',
+            'productId': 42,
+            'spotId': 99
+          }
+        ]
+      }
+    };
+    final adapted =
+        SetupBlueprintConfiguration.adaptSource(plan, fontFamilies: {
+      'family:sans': {
+        'id': 'family:sans',
+        'faces': {'400:normal': 'fixture:sans'}
+      }
+    });
+    final draft =
+        BlueprintSetupLayoutDraft.fromJson(adapted['blueprintLayoutDraft']);
+    expect(draft.document.schemaVersion, 2);
+    expect(draft.seatBindings.values.single.productId, 42);
+    expect(draft.seatBindings.values.single.spotId, isNull);
+    expect(legacy['schemaVersion'], 1);
+  });
+  test('translated and absent mode values migrate to stable IDs', () {
+    expect(
+        SetupBlueprintConfiguration({'blueprintMode': 'Nový'}).modeId, 'new');
+    expect(SetupBlueprintConfiguration({'blueprintMode': 'Převzít'}).modeId,
+        'copy');
+    expect(SetupBlueprintConfiguration({'blueprintLayoutDraft': {}}).modeId,
+        'copy');
+  });
   test(
       'setup draft keeps explicit overrides and never persists live identities/resources',
       () {

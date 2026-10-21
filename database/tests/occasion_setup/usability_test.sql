@@ -1,0 +1,38 @@
+DO $$
+DECLARE actor uuid; org bigint; target bigint; other_org bigint; other_unit bigint; source_id bigint;
+ source jsonb; metadata jsonb; link text; draft jsonb;
+BEGIN
+ PERFORM create_user_for_test('setup-usability','setup-usability-'||gen_random_uuid()||'@example.invalid');
+ actor:=get_user_id('setup-usability');
+ INSERT INTO public.organizations(title) VALUES('Setup usability') RETURNING id INTO org;
+ UPDATE public.user_info SET organization=org WHERE id=actor;
+ INSERT INTO public.units(title,organization) VALUES('Target',org) RETURNING id INTO target;
+ INSERT INTO public.unit_users("user",unit,is_editor,is_manager) VALUES(actor,target,true,true);
+ INSERT INTO public.organizations(title) VALUES('Unrelated tenant') RETURNING id INTO other_org;
+ INSERT INTO public.units(title,organization) VALUES('Unrelated unit',other_org) RETURNING id INTO other_unit;
+ INSERT INTO public.occasions(title,link,organization,unit,start_time,end_time) VALUES('Test source','usability-'||gen_random_uuid(),org,target,now(),now()+interval '1 day') RETURNING id INTO source_id;
+ PERFORM assert_eq(public.occasion_setup_default_start_internal('2026-10-21 21:17:00+02','Europe/Prague'), '2026-11-20 21:30:00+01'::timestamptz,'Round minutes up in tenant timezone');
+ PERFORM assert_eq(public.occasion_setup_default_start_internal('2026-10-21 21:30:00+02','Europe/Prague'), '2026-11-20 21:30:00+01'::timestamptz,'Exact slot retained');
+ PERFORM assert_eq(public.occasion_setup_default_start_internal('2026-10-21 23:47:00+02','Europe/Prague'), '2026-11-21 00:00:00+01'::timestamptz,'Midnight roll over');
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ metadata:=public.get_occasion_setup_source_list(target);
+ PERFORM assert_eq(jsonb_array_length(metadata),1,'Only accessible sources');
+ PERFORM assert_false(metadata->0 ? 'forms','No form configurations in metadata');
+ PERFORM assert_false(metadata->0 ? 'blueprints','No plans in metadata');
+ source:=public.get_occasion_setup_source(target,source_id);
+ PERFORM assert_eq((source->'occasion'->>'id')::bigint,source_id,'Selected detail');
+ PERFORM assert_true(octet_length(metadata::text)<octet_length(source::text),'Metadata smaller than detail');
+ BEGIN PERFORM public.get_occasion_setup_source(other_unit,source_id); RAISE EXCEPTION 'Foreign target accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.get_occasion_setup_source_list(target,other_unit); RAISE EXCEPTION 'Foreign source list accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ draft:=public.create_occasion_setup_draft(gen_random_uuid(),target);
+ PERFORM assert_eq(jsonb_array_length(public.get_occasion_setup_bank_accounts((draft->>'id')::uuid)->'accounts'),0,'No fictitious automatic route');
+ link:=(public.suggest_occasion_setup_form_link((draft->>'id')::uuid,'Letní ples 2027',NULL)->>'suggestion');
+ PERFORM assert_eq(link,'letni_ples_2027','Default converter uses underscores');
+ PERFORM assert_eq((public.suggest_occasion_setup_form_link((draft->>'id')::uuid,'Letní ples 2027',NULL)->>'suggestion'),link,'Shared converter for both namespaces');
+ EXECUTE 'RESET ROLE';
+ INSERT INTO public.form_link_reservations(slug,form) VALUES(link,NULL);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ PERFORM assert_true((public.suggest_occasion_setup_form_link((draft->>'id')::uuid,'Letní ples 2027',NULL)->>'suggestion')<>link,'Reserved address produces another available suggestion');
+ EXECUTE 'RESET ROLE';
+END $$;

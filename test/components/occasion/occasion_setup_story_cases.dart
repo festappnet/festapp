@@ -15,7 +15,7 @@ void main() {
             basics,
             appSupported
                 ? ['name', 'dates', 'presentation', 'link', 'promotion']
-                : ['name', 'dates', 'presentation', 'promotion'],
+                : ['name', 'dates', 'promotion'],
           );
         },
       );
@@ -255,44 +255,17 @@ void main() {
     },
   );
 
-  test(
-    'scanner is opt-in, requires tickets and adds no readiness requirement',
-    () {
-      final base = formData();
-      final defaults = OccasionSetupStory.questions(false, data: base);
-      expect(defaults.any((question) => question.key == 'scanner'), isFalse);
-      final configured = {...base, 'configureScanning': true};
-      final pages = OccasionSetupStory.questions(false, data: configured);
-      final index = pages.indexWhere((question) => question.key == 'scanner');
-      expect(index, greaterThan(0));
-      expect(pages[index].optional, isTrue);
-      expect(pages[index - 1].key, 'ticket');
-      expect(
-        OccasionSetupStory.completesRequiredStep(pages, index - 1),
-        isTrue,
-      );
-      expect(OccasionSetupStory.completesRequiredStep(pages, index), isFalse);
-      expect(
-        OccasionSetupStory.applicableSteps(configured, false),
-        OccasionSetupStory.applicableSteps(base, false),
-      );
-      expect(
-        OccasionSetupStory.index({
-          ...configured,
-          'step': 2,
-          'storyQuestion': 'scanner',
-        }, false),
-        index,
-      );
-      expect(
-        OccasionSetupStory.questions(
-          false,
-          data: {...formData(tickets: false), 'configureScanning': true},
-        ).any((question) => question.key == 'scanner'),
-        isFalse,
-      );
-    },
-  );
+  test('scanner is absent and old questions resume safely', () {
+    final configured = {...formData(), 'configureScanning': true};
+    final pages = OccasionSetupStory.questions(false, data: configured);
+    expect(pages.any((q) => q.key == 'scanner'), isFalse);
+    final restored = OccasionSetupStory.index(
+        {...configured, 'step': 2, 'storyQuestion': 'scanner'}, false);
+    expect(pages[restored].key, 'team');
+    final presentation = OccasionSetupStory.index(
+        {...configured, 'step': 1, 'storyQuestion': 'presentation'}, false);
+    expect(pages[presentation].key, 'form');
+  });
 
   test(
     'paid app events have a dedicated payments question before blueprint',
@@ -326,23 +299,23 @@ void main() {
   );
 
   test(
-    'payment confirmation requires an account and derives currency context',
+    'payment readiness requires a verified account and derives currency context',
     () {
-      expect(OccasionSetupStory.paymentAccountConfirmed({}), isFalse);
+      expect(OccasionSetupStory.paymentAccountReady({}), isFalse);
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({'bankAccountId': 7}),
+        OccasionSetupStory.paymentAccountReady({'bankAccountId': 7}),
         isFalse,
       );
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({
-          'bankAccountConfirmed': true,
+        OccasionSetupStory.paymentAccountReady({
+          'bankAccountFingerprint': 'verified',
         }),
         isFalse,
       );
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({
+        OccasionSetupStory.paymentAccountReady({
           'bankAccountId': 7,
-          'bankAccountConfirmed': true,
+          'bankAccountFingerprint': 'verified',
         }),
         isTrue,
       );

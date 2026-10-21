@@ -1275,7 +1275,11 @@
       "endTime": "Endzeit der Veranstaltung",
       "endBeforeStart": "Die Veranstaltung muss zum oder nach dem Startzeitpunkt enden.",
       "incomplete": "Die Antwort ist noch unvollständig. Bitte die Pflichtangaben und Einstellungen überprüfen.",
-      "questionNumber": "Frage {current} von {total}"
+      "questionNumber": "Frage {current} von {total}",
+      "listingTitle": "Veranstaltung öffentlich auflisten",
+      "listingHint": "Wird erst angewendet, wenn Sie die erstellte Veranstaltung ausdrücklich veröffentlichen. Diese Option öffnet den Verkauf nicht.",
+      "publishEvent": "Veranstaltung mit diesen Einstellungen veröffentlichen",
+      "publishedEvent": "Die Veröffentlichung wurde gespeichert."
     },
     "draft": "Entwurf",
     "cancelDraft": "Entwurf verwerfen",
@@ -1683,6 +1687,72 @@
     "previewEmailSelection": "E-Mails zeigen die gewählten Produkte, den Preis und die eingegebenen Kontaktdaten. Dies ist nur eine Vorschau; nichts wird gesendet.",
     "retrySender": "Absenderadresse erneut laden",
     "seatSelection": "Platzauswahl",
-    "previousQuestion": "Vorherige Frage"
+    "previousQuestion": "Vorherige Frage",
+    "ticketing": {
+      "scheduled": "Vorverkauf geplant",
+      "selling": "Im Vorverkauf",
+      "soldOut": "Ausverkauft",
+      "startsIn": "Vorverkauf beginnt in {duration}",
+      "endsIn": "Vorverkauf endet in {duration}",
+      "startsSoon": "Vorverkauf beginnt in weniger als 1 Min.",
+      "endsSoon": "Vorverkauf endet in weniger als 1 Min.",
+      "startsOn": "Vorverkauf ab {date}",
+      "counts": "Offene Formulare: {active}/{total}. Vorverkauf: {selling}, Warteliste: {waitlists}.",
+      "startAt": "Vorverkaufsbeginn: {date}",
+      "endAt": "Vorverkaufsende: {date}",
+      "saleStart": "Vorverkaufsbeginn",
+      "saleEnd": "Vorverkaufsende",
+      "countdown": "Vorverkaufs-Countdowns anzeigen",
+      "countdownHelp": "Optional. Ausschalten ändert die Vorverkaufszeiten nicht.",
+      "invalidTiming": "Prüfen Sie die Zeiten. Der Beginn muss in der Zukunft und vor dem Vorverkaufsende liegen; das Ende spätestens am Veranstaltungsende.",
+      "createScheduled": "Erstellen und Vorverkauf planen",
+      "createOpen": "Erstellen und Vorverkauf öffnen",
+      "salesLink": "Link zum Vorverkaufsformular",
+      "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Vorverkaufseinstellungen bestimmen die Verfügbarkeit des Formulars.",
+      "help": {
+        "preparation": "Das Formular bleibt geschlossen. Öffnen Sie den Vorverkauf später.",
+        "scheduled": "Der Vorverkauf öffnet automatisch zur gewählten Zeit.",
+        "immediate": "Bestellungen sind sofort möglich."
+      },
+      "completion": {
+        "preparation": "Das Vorverkaufsformular ist bereit. Der Vorverkauf ist noch geschlossen.",
+        "scheduled": "Der Vorverkauf öffnet automatisch zum geplanten Zeitpunkt.",
+        "immediate": "Das Vorverkaufsformular ist geöffnet und nimmt Bestellungen an."
+      },
+      "question": "Wann soll der Vorverkauf starten?"
+    },
+    "registration": {
+      "scheduled": "Anmeldung geplant",
+      "selling": "Im Anmeldung",
+      "soldOut": "Ausverkauft",
+      "startsIn": "Anmeldung beginnt in {duration}",
+      "endsIn": "Anmeldung endet in {duration}",
+      "startsSoon": "Anmeldung beginnt in weniger als 1 Min.",
+      "endsSoon": "Anmeldung endet in weniger als 1 Min.",
+      "startsOn": "Anmeldung ab {date}",
+      "counts": "Offene Formulare: {active}/{total}. Anmeldung: {selling}, Warteliste: {waitlists}.",
+      "startAt": "Anmeldebeginn: {date}",
+      "endAt": "Anmeldeende: {date}",
+      "saleStart": "Anmeldebeginn",
+      "saleEnd": "Anmeldeende",
+      "countdown": "Anmelde-Countdowns anzeigen",
+      "countdownHelp": "Optional. Ausschalten ändert die Anmeldezeiten nicht.",
+      "invalidTiming": "Prüfen Sie die Zeiten. Der Beginn muss in der Zukunft und vor dem Anmeldeende liegen; das Ende spätestens am Veranstaltungsende.",
+      "createScheduled": "Erstellen und Anmeldung planen",
+      "createOpen": "Erstellen und Anmeldung öffnen",
+      "salesLink": "Link zum Anmeldeformular",
+      "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Anmeldeeinstellungen bestimmen die Verfügbarkeit des Formulars.",
+      "help": {
+        "preparation": "Das Formular bleibt geschlossen. Öffnen Sie den Anmeldung später.",
+        "scheduled": "Der Anmeldung öffnet automatisch zur gewählten Zeit.",
+        "immediate": "Bestellungen sind sofort möglich."
+      },
+      "completion": {
+        "preparation": "Das Anmeldeformular ist bereit. Der Anmeldung ist noch geschlossen.",
+        "scheduled": "Der Anmeldung öffnet automatisch zum geplanten Zeitpunkt.",
+        "immediate": "Das Anmeldeformular ist geöffnet und nimmt Bestellungen an."
+      },
+      "question": "Wann soll die Anmeldung starten?"
+    }
   }
 }

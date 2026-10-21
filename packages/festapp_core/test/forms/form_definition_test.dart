@@ -3,27 +3,58 @@ import 'package:festapp_core/forms.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('pre-start presentation round trips and retains its draft when hidden', () {
-    final original = FormDefinition(data: {
-      'schedule': {'custom': 9, 'enable_countdown': true},
-    });
-    expect(original.showBeforeStartMessage, isFalse);
-    expect(original.beforeStartMessage, isNull);
-    final edited = original
-        .withBeforeStartMessage('<p>Informace</p><img src="https://example.test/hall.png">')
-        .withShowBeforeStartMessage(true);
-    final restored = FormDefinition.fromJson(jsonDecode(jsonEncode(edited)));
-    expect(restored.showBeforeStartMessage, isTrue);
-    expect(restored.beforeStartMessage, edited.beforeStartMessage);
-    expect(restored.data!['schedule']['custom'], 9);
-    expect(restored.enableCountdown, isTrue);
-    expect(original.beforeStartMessage, isNull);
-    final hidden = restored.withShowBeforeStartMessage(false);
-    expect(hidden.showBeforeStartMessage, isFalse);
-    expect(hidden.beforeStartMessage, restored.beforeStartMessage);
-    expect(hidden.withBeforeStartMessage(null).beforeStartMessage, isNull);
-  });
+  test(
+    'effective deadline distinguishes inherited null, zero and explicit values',
+    () {
+      final inherited = FormDefinition();
+      expect(
+        inherited.effectiveDeadlineDurationSeconds(occasionDefault: 259200),
+        259200,
+      );
+      expect(inherited.effectiveDeadlineDurationSeconds(), 604800);
+      expect(
+        inherited
+            .copyWith(deadlineDurationSeconds: 0)
+            .effectiveDeadlineDurationSeconds(occasionDefault: 259200),
+        0,
+      );
+      expect(
+        inherited
+            .copyWith(deadlineDurationSeconds: 86400)
+            .effectiveDeadlineDurationSeconds(),
+        86400,
+      );
+      expect(inherited.toJson()['deadline_duration_seconds'], isNull);
+    },
+  );
 
+  test(
+    'pre-start presentation round trips and retains its draft when hidden',
+    () {
+      final original = FormDefinition(
+        data: {
+          'schedule': {'custom': 9, 'enable_countdown': true},
+        },
+      );
+      expect(original.showBeforeStartMessage, isFalse);
+      expect(original.beforeStartMessage, isNull);
+      final edited = original
+          .withBeforeStartMessage(
+            '<p>Informace</p><img src="https://example.test/hall.png">',
+          )
+          .withShowBeforeStartMessage(true);
+      final restored = FormDefinition.fromJson(jsonDecode(jsonEncode(edited)));
+      expect(restored.showBeforeStartMessage, isTrue);
+      expect(restored.beforeStartMessage, edited.beforeStartMessage);
+      expect(restored.data!['schedule']['custom'], 9);
+      expect(restored.enableCountdown, isTrue);
+      expect(original.beforeStartMessage, isNull);
+      final hidden = restored.withShowBeforeStartMessage(false);
+      expect(hidden.showBeforeStartMessage, isFalse);
+      expect(hidden.beforeStartMessage, restored.beforeStartMessage);
+      expect(hidden.withBeforeStartMessage(null).beforeStartMessage, isNull);
+    },
+  );
 
   test('form definition owns nested wire values and field options', () {
     final data = <String, dynamic>{

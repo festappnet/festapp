@@ -2,9 +2,7 @@ import 'package:fstapp/router_service.dart';
 import '../occasion_creation_notice.dart';
 import 'occasion_setup_result.dart';
 import 'package:fstapp/services/time_helper.dart';
-import '../occasion_sale_strings.dart';
 import 'occasion_setup_sales.dart';
-import 'occasion_setup_customer_preview.dart';
 import 'occasion_setup_completed.dart';
 import 'occasion_setup_source_picker.dart';
 import 'occasion_setup_references.dart';
@@ -66,7 +64,6 @@ import 'occasion_setup_communication.dart';
 import 'occasion_setup_invitations.dart';
 
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
-import 'package:fstapp/components/ticket_layout/views/ticket_scanning_settings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 
 import 'package:fstapp/components/unit/verification/db_unit_verification.dart';
@@ -120,6 +117,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   TicketFeature? _ticketFeature;
   FormEditBundle? _inlineFormBundle;
   List<Map<String, dynamic>> _sources = [];
+  Map<String, dynamic>? _selectedSource;
+  int _sourceRequest = 0;
+  bool _loadingDetail = false;
+  final Map<String, Future<Map<String, dynamic>>> _sourceRequests = {};
   String? _sourceError;
   bool _loadingSources = true;
   UnitLegalProfile? _organizerProfile;
@@ -133,6 +134,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _conflict = false;
   String? _error;
   bool _finalizing = false;
+  String? _blueprintError;
+  bool _loadingBlueprintCandidate = false;
+  int _blueprintSelectionRequest = 0;
   bool _openingBlueprint = false;
   String? _finalizeCommand;
   OccasionSetupDraft? _finalizeDraft;
@@ -148,15 +152,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'title': '',
       'link': '',
       'start': _stored.data['start_time'] ??
-          DateTime.now()
-              .add(const Duration(days: 30))
-              .toUtc()
-              .toIso8601String(),
+          ((_stored.data['defaultConfiguration'] as Map)['occasion']
+              as Map)['start_time'],
       'end': _stored.data['end_time'] ??
-          DateTime.now()
-              .add(const Duration(days: 33))
-              .toUtc()
-              .toIso8601String(),
+          ((_stored.data['defaultConfiguration'] as Map)['occasion']
+              as Map)['end_time'],
       'source': 'Od nuly',
       'copyProgram': false,
       'copyInformation': false,
@@ -165,7 +165,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'formOrigin': null,
       'formDraft': null,
       'deadline': '',
-      'blueprintMode': 'Bez plánku',
+      'blueprintMode': SetupBlueprintConfiguration(_stored.data).modeId,
       'reviewed': false,
       'reviewConfirmed': false,
       'completed': <int>[],
@@ -179,6 +179,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     _ensureDefaultForm(_data);
     initializeCommunicationDraft(_data);
     _restrictToSupportedFeatures(_data);
+    _data.remove('bankAccountConfirmed');
+    _data.remove('configureScanning');
     _linkController = TextEditingController(text: _data['link'] as String);
     _loadSources();
     _refreshVerification();
@@ -207,49 +209,103 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Future<void> _loadSources() async {
-    if (mounted) {
-      setState(() {
-        _loadingSources = true;
-        _sourceError = null;
-      });
-    }
+    setState(() {
+      _loadingSources = true;
+      _sourceError = null;
+    });
+    _sourceRequests.clear();
     try {
-      final rows = await Supabase.instance.client.rpc(
-        'get_occasion_setup_sources',
-        params: {'p_unit': _data['sourceUnitId'] ?? _stored.unit},
-      );
-      if (mounted) {
-        setState(() {
-          _sources =
-              (rows as List).map((r) => Map<String, dynamic>.from(r)).toList();
-        });
-        if (_data['sourceId'] != null &&
-            _data['sourceSelectionPending'] != true) {
-          final source = _sources
-              .where((s) => (s['occasion'] as Map)['id'] == _data['sourceId'])
-              .firstOrNull;
-          if (source != null) {
-            _change((x) => x['source'] = _sourceLabel(source));
-          }
-        }
+      final rows = await Supabase.instance.client
+          .rpc('get_occasion_setup_source_list', params: {
+        'p_unit': _stored.unit,
+        'p_source_unit': _data['sourceUnitId'] ?? _stored.unit
+      });
+      if (!mounted) return;
+      setState(() => _sources =
+          (rows as List).map((r) => Map<String, dynamic>.from(r)).toList());
+      final id = _data['sourceId'] as int?;
+      if (id != null) {
         if (_data['sourceSelectionPending'] == true) {
-          final selected = _sources
-              .where((s) => (s['occasion'] as Map)['id'] == _data['sourceId'])
-              .firstOrNull;
-          if (selected != null) {
-            _change((x) {
-              _applySource(x, (selected['occasion'] as Map)['id'] as int);
-              x.remove('sourceSelectionPending');
-            });
-          }
+          await _selectSource(id);
+        } else {
+          // Read-only refresh: a presentation label is not a draft edit.
+          final source = await _sourceDetail(id);
+          if (mounted && _data['sourceId'] == id)
+            setState(() => _selectedSource = source);
         }
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted)
         setState(() => _sourceError = 'Předlohy se nepodařilo načíst.');
-      }
     } finally {
       if (mounted) setState(() => _loadingSources = false);
+    }
+  }
+
+  Future<Map<String, dynamic>> _sourceDetail(int id) {
+    // This page belongs to one authenticated unit context. Never share this
+    // cache across pages/logins, and discard failed requests to allow retry.
+    final key =
+        '${Supabase.instance.client.auth.currentUser?.id}:${_stored.unit}:$id';
+    return _sourceRequests.putIfAbsent(key, () async {
+      try {
+        final result = await Supabase.instance.client.rpc(
+            'get_occasion_setup_source',
+            params: {'p_unit': _stored.unit, 'p_occasion': id});
+        return Map<String, dynamic>.from(result as Map);
+      } catch (_) {
+        _sourceRequests.remove(key);
+        rethrow;
+      }
+    });
+  }
+
+  Future<void> _selectSource(int? id) async {
+    final request = ++_sourceRequest;
+    if (id == null) {
+      _selectedSource = null;
+      _change((d) => _applySource(d, null), changesConfiguration: true);
+      setState(() {
+        _loadingDetail = false;
+        _sourceError = null;
+      });
+      return;
+    }
+    setState(() {
+      _loadingDetail = true;
+      _sourceError = null;
+    });
+    try {
+      final source = await _sourceDetail(id);
+      if (!mounted || request != _sourceRequest) return;
+      final staged = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)));
+      final prepared =
+          Map<String, dynamic>.from(jsonDecode(jsonEncode(source)) as Map);
+      final form = (prepared['forms'] as List).firstOrNull as Map?;
+      final plans = prepared['blueprints'] as List;
+      final index =
+          plans.indexWhere((p) => (p as Map)['id'] == form?['blueprint']);
+      if (index >= 0)
+        plans[index] = await _prepareBlueprint(plans[index] as Map);
+      if (!mounted || request != _sourceRequest) return;
+      _applySource(staged, id, source: prepared);
+      SetupBlueprintConfiguration(staged).normalize();
+      final resolved = await _resolveReferences(staged, _data);
+      if (!mounted || request != _sourceRequest || resolved == null) return;
+      _selectedSource = prepared;
+      _change((d) {
+        d.clear();
+        d.addAll(resolved);
+        d.remove('sourceSelectionPending');
+      }, changesConfiguration: true);
+    } catch (e) {
+      if (mounted && request == _sourceRequest)
+        setState(() => _sourceError = e is FormatException
+            ? e.message
+            : 'Předlohu se nepodařilo načíst. Dosavadní nastavení zůstalo zachováno.');
+    } finally {
+      if (mounted && request == _sourceRequest)
+        setState(() => _loadingDetail = false);
     }
   }
 
@@ -263,12 +319,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   List<FormEditorDraft> get _sourceForms => [
-        for (final source in _sources)
-          for (final raw in source['forms'] as List)
+        if (_selectedSource != null)
+          for (final raw in _selectedSource!['forms'] as List)
             FormEditorDraft.fromJson(Map<String, dynamic>.from(raw))
               ..occasionModel = OccasionModel.fromJson(
-                Map<String, dynamic>.from(source['occasion']),
-              ),
+                  Map<String, dynamic>.from(_selectedSource!['occasion']))
       ];
 
   void _ensureDefaultForm(Map<String, dynamic> draft) {
@@ -318,10 +373,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   void _resetBankAccount(Map<String, dynamic> draft) {
     draft.remove('bankAccountId');
     draft.remove('bankAccountLabel');
-    draft['bankAccountConfirmed'] = false;
+    draft.remove('bankAccountConfirmed');
+    draft.remove('bankAccountFingerprint');
   }
 
-  void _applySource(Map<String, dynamic> draft, int? sourceId) {
+  void _applySource(Map<String, dynamic> draft, int? sourceId,
+      {Map<String, dynamic>? source}) {
     _formLinkAvailable = null;
     _resetBankAccount(draft);
     _ticketFeature = null;
@@ -334,6 +391,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['copyInformation'] = false;
     draft['copyEmails'] = false;
     draft['sourceId'] = null;
+    draft.remove('sourceSelectionPending');
+    draft.remove('sourceFormId');
     draft['formDraft'] = null;
     draft['formOrigin'] = null;
     draft.remove('blueprintLayoutDraft');
@@ -345,8 +404,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _ensureDefaultForm(draft);
       return;
     }
-    final source =
-        _sources.firstWhere((s) => (s['occasion'] as Map)['id'] == sourceId);
+    source ??= _selectedSource;
+    if (source == null) throw const FormatException('Předloha není načtená.');
     draft['source'] = _sourceLabel(source);
     draft['sourceId'] = (source['occasion'] as Map)['id'];
     draft.putIfAbsent('copy_locale', () => context.locale.languageCode);
@@ -364,6 +423,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     final forms = source['forms'] as List;
     if (forms.isNotEmpty) {
+      draft['sourceFormId'] = (forms.first as Map)['id'];
       draft['formDraft'] = jsonDecode(jsonEncode(forms.first));
       (draft['formDraft'] as Map)['link'] = '';
       draft['formLinkAutomatic'] = true;
@@ -397,14 +457,28 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     serializeCommunicationDraft(draft);
   }
 
-  void _applyBlueprint(Map<String, dynamic> draft, Map plan) {
-    draft['blueprintMode'] = 'Převzít';
-    draft.remove('blueprintLayoutDraft');
-    if (plan['blueprintLayoutDraft'] is Map) {
-      draft['blueprintLayoutDraft'] =
-          jsonDecode(jsonEncode(plan['blueprintLayoutDraft']));
+  Future<Map<String, dynamic>> _prepareBlueprint(Map plan) async {
+    final raw = plan['blueprintLayoutDraft'];
+    if (raw is! Map || (raw['layout'] as Map?)?['schemaVersion'] != 1) {
+      return SetupBlueprintConfiguration.adaptSource(plan,
+          fontFamilies: const {});
     }
-    draft['blueprintTitle'] = plan['title'];
+    final provider = await BlueprintTextResources.forSetupDraft(_stored.id);
+    final families = {
+      for (final family in provider.families)
+        family['id'] as String: Map<String, dynamic>.from(family)
+    };
+    final adapted =
+        SetupBlueprintConfiguration.adaptSource(plan, fontFamilies: families);
+    final draft = BlueprintSetupLayoutDraft.fromJson(
+        Map<String, dynamic>.from(adapted['blueprintLayoutDraft'] as Map));
+    await BlueprintTextPreparation(provider.prepareTextBatch)
+        .prepareSnapshot(draft.document, families, const {});
+    return adapted;
+  }
+
+  void _applyBlueprint(Map<String, dynamic> draft, Map plan) {
+    SetupBlueprintConfiguration(draft).importPlan(plan);
   }
 
   void _save() {
@@ -452,7 +526,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
       }
       _restrictToSupportedFeatures(_data);
-      if (changesConfiguration) _persistFormControls(_data);
+      if (changesConfiguration) {
+        _persistFormControls(_data);
+        SetupBlueprintConfiguration(_data).normalize();
+      }
       if (changesConfiguration) {
         _data['reviewed'] = false;
         _data['reviewConfirmed'] = false;
@@ -484,6 +561,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<bool> _drain() async {
     while (_dirty) {
+      SetupBlueprintConfiguration(_data).normalize();
       _restrictToSupportedFeatures(_data);
       final snapshot = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)));
       _dirty = false;
@@ -565,7 +643,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       if (!mounted) return;
       setState(() => _allowPop = true);
       Navigator.of(context).pop(link);
-    } catch (_) {
+    } catch (error) {
+      if (!eventCreated &&
+          error is PostgrestException &&
+          error.code != null &&
+          !error.code!.startsWith('08') &&
+          error.code != '57014' &&
+          !error.code!.startsWith('PGRST0')) {
+        _finalizeCommand = null;
+        _finalizeDraft = null;
+      }
       if (mounted)
         setState(
           () => _finalizeError = eventCreated
@@ -648,12 +735,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     ).contains(step)) return true;
     switch (step) {
       case 0:
-        return true;
+        return !_loadingDetail && _data['sourceSelectionPending'] != true;
       case 1:
         final start = DateTime.tryParse(d['start'] as String);
         final end = DateTime.tryParse(d['end'] as String);
         return (d['title'] as String).trim().isNotEmpty &&
-            (d['isPromoted'] != true ||
+            (!AppConfig.isAppSupported ||
+                d['isPromoted'] != true ||
                 (d['introImage'] as String? ?? '').trim().isNotEmpty) &&
             isValidPublicSlug(d['link'] as String, allowEmpty: true) &&
             start != null &&
@@ -694,14 +782,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _blueprintReady(Map<String, dynamic> d) =>
-      d['blueprintMode'] == 'Bez plánku' ||
-      (d['formEnabled'] == true &&
-          _layoutSeatCount(d) + _layoutAreaCount(d) > 0);
+      SetupBlueprintConfiguration(d).ready;
 
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
       (!OccasionSetupStory.hasPaidProducts(d) ||
-          OccasionSetupStory.paymentAccountConfirmed(d));
+          OccasionSetupStory.paymentAccountReady(d));
 
   bool _deadlineReady(Map<String, dynamic> d) =>
       (d['deadline'] as String? ?? '').trim().isEmpty ||
@@ -744,8 +830,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         includePayments: false,
         includeCommunication: false,
       );
-    if (q.key == 'payments')
-      return OccasionSetupStory.paymentAccountConfirmed(d);
+    if (q.key == 'payments') return OccasionSetupStory.paymentAccountReady(d);
     if (q.key == 'paymentTiming')
       return _deadlineReady(d) &&
           communicationDraftValid(d, includeReply: false);
@@ -758,7 +843,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return (d['title'] as String).trim().isNotEmpty;
       case 'promotion':
       case 'presentation':
-        return d['isPromoted'] != true ||
+        return !AppConfig.isAppSupported ||
+            d['isPromoted'] != true ||
             (d['introImage'] as String? ?? '').trim().isNotEmpty;
       case 'dates':
         final start = DateTime.tryParse(d['start'] as String);
@@ -795,10 +881,21 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (_openingBlueprint) return;
     setState(() {
       _openingBlueprint = true;
-      _error = null;
+      _blueprintError = null;
     });
     final assets = BlueprintLayoutAssetResolver();
     try {
+      final oldLayout = _active!['blueprintLayoutDraft'];
+      if (oldLayout is Map &&
+          (oldLayout['layout'] as Map?)?['schemaVersion'] == 1) {
+        final prepared =
+            await _prepareBlueprint({'blueprintLayoutDraft': oldLayout});
+        if (!mounted) return;
+        _change(
+            (value) => value['blueprintLayoutDraft'] =
+                prepared['blueprintLayoutDraft'],
+            changesConfiguration: true);
+      }
       if (!await _flush() || !mounted) return;
       final data = _active!;
       final formData = data['formDraft'];
@@ -823,7 +920,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         if (defaultProduct == null || !mounted) return;
       }
       final raw = data['blueprintLayoutDraft'];
-      if (raw == null && data['blueprintMode'] == 'Převzít') {
+      if (raw == null &&
+          SetupBlueprintConfiguration(data).mode == SetupBlueprintMode.copy) {
         throw StateError(BlueprintStrings.layoutUnavailable);
       }
       var draft = raw is Map
@@ -922,7 +1020,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     }),
               )));
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) setState(() => _blueprintError = error.toString());
     } finally {
       assets.dispose();
       if (mounted) setState(() => _openingBlueprint = false);
@@ -930,53 +1028,70 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   int _layoutSeatCount(Map<String, dynamic> data) =>
-      data['blueprintLayoutDraft'] is Map
-          ? ((data['blueprintLayoutDraft'] as Map)['seatBindings'] as List? ??
-                  [])
-              .length
-          : 0;
+      SetupBlueprintConfiguration(data).seatCount;
   int _layoutAreaCount(Map<String, dynamic> data) =>
-      data['blueprintLayoutDraft'] is Map
-          ? ((data['blueprintLayoutDraft'] as Map)['areaBindings'] as List? ??
-                  [])
-              .length
-          : 0;
+      SetupBlueprintConfiguration(data).areaCount;
 
-  Widget _choice(Map<String, dynamic> d, String keyName, String label,
-          List<String> options) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: DropdownButtonFormField<String>(
-          key: ValueKey('${d['id']}-$keyName-${d[keyName]}'),
-          initialValue: d[keyName] as String,
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
-          items: options
-              .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-              .toList(),
-          onChanged: (v) => _change((x) {
-            x[keyName] = v;
-            if (keyName == 'blueprintMode' &&
-                (v == 'Nový' || v == 'Bez plánku')) {
-              setDraftSeatSelection(x, v == 'Nový');
-              _inlineFormBundle = null;
-              _formEpoch++;
-            }
-            if (keyName == 'blueprintMode' && v == 'Nový') {
-              x.remove('blueprintLayoutDraft');
-            }
-            if (keyName == 'blueprintMode' && v == 'Převzít') {
-              final source = _sources
-                  .where((s) => (s['occasion'] as Map)['id'] == x['sourceId'])
-                  .firstOrNull;
-              final plans = source?['blueprints'] as List? ?? [];
-              if (plans.isNotEmpty) _applyBlueprint(x, plans.first as Map);
-            }
-          }, changesConfiguration: true),
-        ),
-      );
+  Future<void> _selectBlueprint({bool chooseAnother = false}) async {
+    if (_loadingBlueprintCandidate) return;
+    final request = ++_blueprintSelectionRequest;
+    final sourceId = _data['sourceId'];
+    final formEpoch = _formEpoch;
+    final plans = (_selectedSource?['blueprints'] as List? ?? [])
+        .whereType<Map>()
+        .toList();
+    final form = (_selectedSource?['forms'] as List? ?? [])
+        .whereType<Map>()
+        .where((f) => f['id'] == _data['sourceFormId'])
+        .firstOrNull;
+    Map? chosen = chooseAnother
+        ? null
+        : plans.where((p) => p['id'] == form?['blueprint']).firstOrNull;
+    chosen ??= plans.length == 1 ? plans.single : null;
+    if (chosen == null && plans.isNotEmpty) {
+      chosen = await showDialog<Map>(
+          context: context,
+          builder: (context) =>
+              AppSimpleDialog(title: const Text('Vyberte plánek'), children: [
+                for (final plan in plans)
+                  SimpleDialogOption(
+                      onPressed: () => Navigator.pop(context, plan),
+                      child: Text(
+                          plan['title'] as String? ?? 'Plánek ${plan['id']}'))
+              ]));
+    }
+    if (!mounted) return;
+    if (chosen == null) {
+      if (plans.isEmpty)
+        setState(() => _blueprintError =
+            'Předloha nemá dostupný plánek. Vytvořte nový nebo pokračujte bez plánku.');
+      return;
+    }
+    setState(() => _loadingBlueprintCandidate = true);
+    try {
+      final selected = chosen;
+      final candidate =
+          Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
+      _applyBlueprint(candidate, await _prepareBlueprint(selected));
+      if (!mounted ||
+          request != _blueprintSelectionRequest ||
+          sourceId != _data['sourceId'] ||
+          formEpoch != _formEpoch) return;
+      final resolved = await _resolveReferences(candidate, _data);
+      if (resolved == null || !mounted || request != _blueprintSelectionRequest)
+        return;
+      _change((x) {
+        x.addAll(resolved);
+        _inlineFormBundle = null;
+        _formEpoch++;
+      }, changesConfiguration: true);
+      setState(() => _blueprintError = null);
+    } catch (error) {
+      if (mounted) setState(() => _blueprintError = error.toString());
+    } finally {
+      if (mounted) setState(() => _loadingBlueprintCandidate = false);
+    }
+  }
 
   Widget _switch(Map<String, dynamic> d, String keyName, String label) =>
       SwitchListTile(
@@ -1026,14 +1141,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final candidate =
         Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
     candidate['formDraft'] = serializeDraftForm(form);
+    candidate['sourceFormId'] =
+        result is FormBundle ? form.definition.id : null;
     (candidate['formDraft'] as Map)['link'] = '';
     if (result is FormBundle && form.definition.blueprint != null) {
-      for (final source in _sources) {
+      for (final source
+          in [_selectedSource].whereType<Map<String, dynamic>>()) {
         final selected = (source['blueprints'] as List)
             .whereType<Map>()
             .where((plan) => plan['id'] == form.definition.blueprint)
             .firstOrNull;
-        if (selected != null) _applyBlueprint(candidate, selected);
+        if (selected != null)
+          _applyBlueprint(candidate, await _prepareBlueprint(selected));
       }
     }
     final next = await _resolveReferences(candidate, _data);
@@ -1045,6 +1164,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _inlineFormBundle = null;
       _ticketFeature = null;
       draft['formDefaultsFollowEvent'] = false;
+      draft['sourceFormId'] = next['sourceFormId'];
       draft['formDraft'] = next['formDraft'];
       draft['formLinkAutomatic'] = true;
       draft['blueprintMode'] = next['blueprintMode'];
@@ -1161,8 +1281,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     void update(DateTime selected) => _change((x) {
           final instant = selected.toUtcFromOccasionTime();
           x[question] = instant.toIso8601String();
+          if (!isStart) x['endEdited'] = true;
           final end = DateTime.tryParse(x['end'] as String);
-          if (isStart && end != null && instant.isAfter(end)) {
+          if (isStart &&
+              x['endEdited'] != true &&
+              end != null &&
+              instant.isAfter(end)) {
             x['end'] = instant.toIso8601String();
           }
         }, changesConfiguration: true);
@@ -1223,7 +1347,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (d['formEnabled'] == true) {
       if (!OccasionSetupSales.valid(d, DateTime.now()))
-        issues.add(MapEntry(3, OccasionSaleStrings.text('invalidTiming')));
+        issues.add(MapEntry(3, OccasionSetupSales.text(d, 'invalidTiming')));
       if (!communicationDraftValid(d))
         issues.add(
           MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')),
@@ -1272,8 +1396,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
       }
     }
-    if (OccasionSetupStory.formEnabled(d) &&
-        d['blueprintMode'] != 'Bez plánku') {
+    if (SetupBlueprintConfiguration(d).active) {
       if (d['formEnabled'] != true || d['formDraft'] == null) {
         issues.add(
           MapEntry(
@@ -1282,7 +1405,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           ),
         );
       }
-      if (_layoutSeatCount(d) + _layoutAreaCount(d) == 0) {
+      if (!_blueprintReady(d)) {
         issues.add(MapEntry(AppConfig.isAppSupported ? 4 : 6,
             'Plánek zatím nemá žádná místa.'));
       }
@@ -1291,7 +1414,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(MapEntry(3, OccasionSetupStrings.copy('invalidReferences')));
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
-        !OccasionSetupStory.paymentAccountConfirmed(d)) {
+        !OccasionSetupStory.paymentAccountReady(d)) {
       issues.add(
         MapEntry(
           AppConfig.isAppSupported ? 3 : 4,
@@ -1307,7 +1430,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         ),
       );
     }
-    if (d['isPromoted'] == true &&
+    if (AppConfig.isAppSupported &&
+        d['isPromoted'] == true &&
         (d['introImage'] as String? ?? '').trim().isEmpty) {
       issues.add(
         MapEntry(1, OccasionSetupStrings.story('promotionImageRequired')),
@@ -1495,9 +1619,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 ),
               ),
               _reviewRow(
-                OccasionSetupStrings.story('promotion'),
                 OccasionSetupStrings.story(
-                  d['isPromoted'] == true ? 'enabled' : 'disabled',
+                    AppConfig.isAppSupported ? 'promotion' : 'listingTitle'),
+                OccasionSetupStrings.story(
+                  (AppConfig.isAppSupported
+                          ? d['isPromoted'] == true
+                          : d['listPubliclyOnPublish'] != false)
+                      ? 'enabled'
+                      : 'disabled',
                 ),
               ),
               if ((d['placeName'] as String? ?? '').isNotEmpty)
@@ -1558,13 +1687,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   form.form.definition.link ?? '',
                 ),
                 _reviewRow(
-                    OccasionSaleStrings.text('saleStart'),
-                    OccasionSaleStrings.text(
-                        'mode.${OccasionSetupSales.mode(d)}')),
+                    OccasionSetupSales.text(d, 'saleStart'),
+                    OccasionSetupSales.text(
+                        d, 'mode.${OccasionSetupSales.mode(d)}')),
                 if (OccasionSetupSales.mode(d) == 'scheduled')
-                  _reviewRow(OccasionSaleStrings.text('saleStart'),
+                  _reviewRow(OccasionSetupSales.text(d, 'saleStart'),
                       _dateForReview(d['saleStart'] as String?)),
-                _reviewRow(OccasionSaleStrings.text('saleEnd'),
+                _reviewRow(OccasionSetupSales.text(d, 'saleEnd'),
                     _dateForReview((d['saleEnd'] ?? d['end']) as String?)),
                 Text(
                   'Pole formuláře (${form.form.relatedFields.where((field) => field.definition.isTicketField != true).length})',
@@ -1601,13 +1730,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     OccasionSetupStory.hasPaidProducts(d)) ...[
                   _reviewRow(
                     'BankAccount.bankAccount'.tr(),
-                    OccasionSetupStory.paymentAccountConfirmed(d)
+                    OccasionSetupStory.paymentAccountReady(d)
                         ? (d['bankAccountLabel'] as String? ?? '')
                         : OccasionSetupStrings.story('bankAccountNotConfirmed'),
                   ),
                   _reviewRow(
                     'FeatureFormSettings.labelDeadlineDays'.tr(),
-                    '${d['deadline']}',
+                    '${effectiveSetupDeadlineSeconds(d) / 86400}'
+                        .replaceFirst(RegExp(r'\.0$'), ''),
                   ),
                 ],
               ],
@@ -1661,13 +1791,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               [
                 _reviewRow(
                   'BankAccount.bankAccount'.tr(),
-                  OccasionSetupStory.paymentAccountConfirmed(d)
+                  OccasionSetupStory.paymentAccountReady(d)
                       ? (d['bankAccountLabel'] as String? ?? '')
                       : OccasionSetupStrings.story('bankAccountNotConfirmed'),
                 ),
                 _reviewRow(
                   'FeatureFormSettings.labelDeadlineDays'.tr(),
-                  '${d['deadline']}',
+                  '${effectiveSetupDeadlineSeconds(d) / 86400}'
+                      .replaceFirst(RegExp(r'\.0$'), ''),
                 ),
               ],
               issues),
@@ -1677,8 +1808,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             AppConfig.isAppSupported ? 4 : 6,
             CommonStrings.blueprint,
             [
-              _reviewRow('Způsob', d['blueprintMode'] as String),
-              if (d['blueprintMode'] != 'Bez plánku') ...[
+              _reviewRow('Způsob', SetupBlueprintConfiguration(d).label),
+              if (SetupBlueprintConfiguration(d).active) ...[
                 _reviewRow(
                   'Rozměry',
                   '${canvas?['width'] ?? '-'} × ${canvas?['height'] ?? '-'}',
@@ -1712,45 +1843,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             5,
             'Soukromí a dokončení',
             [
-              Text(OccasionSaleStrings.text('privacy')),
+              Text(OccasionSetupSales.text(d, 'privacy')),
               if (d['formEnabled'] == true)
-                Text(OccasionSaleStrings.text(
-                    'completion.${OccasionSetupSales.mode(d)}')),
+                Text(OccasionSetupSales.text(
+                    d, 'completion.${OccasionSetupSales.mode(d)}')),
               const SizedBox(height: 8),
               Text(FormStrings.automaticPublicLink),
             ],
             issues),
-        if (d['formEnabled'] == true && d['formDraft'] is Map) ...[
-          OutlinedButton.icon(
-            icon: const Icon(Icons.preview_outlined),
-            label: Text(OccasionSaleStrings.text('customerPreview')),
-            onPressed: () async {
-              if (!await _flush() || !mounted) return;
-              await showDialog<void>(
-                  context: context,
-                  builder: (previewContext) => AppDialog(
-                        child: SizedBox(
-                            width: 800,
-                            height: MediaQuery.sizeOf(context).height * .85,
-                            child: Column(children: [
-                              AppDialogHeader(
-                                  title: Text(OccasionSaleStrings.text(
-                                      'customerPreview')),
-                                  onClose: () =>
-                                      Navigator.of(previewContext).pop()),
-                              Expanded(
-                                  child: OccasionSetupCustomerPreview(
-                                      data: d,
-                                      unitId: _stored.unit,
-                                      draftId: _stored.id,
-                                      loadBlueprintResources: () =>
-                                          _store.blueprintResources(_stored))),
-                            ])),
-                      ));
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: d['reviewConfirmed'] == true,
@@ -1761,7 +1861,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         ),
         TextButton(
             onPressed: _leave,
-            child: Text(OccasionSaleStrings.text('saveAndLeave'))),
+            child: Text(OccasionSetupSales.text(d, 'saveAndLeave'))),
         if (_finalizeError != null) Text(_finalizeError!),
       ],
     );
@@ -1775,12 +1875,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           data: d,
           onChanged: (patch) =>
               _change((x) => x.addAll(patch), changesConfiguration: true));
-    if (_questions[_questionIndex(d)].key == 'promotion') {
+    if (_questions[_questionIndex(d)].key == 'promotion' &&
+        AppConfig.isAppSupported) {
       return OccasionSetupPromotion(
         data: d,
         onChanged: (patch) =>
             _change((x) => x.addAll(patch), changesConfiguration: true),
       );
+    }
+    if (_questions[_questionIndex(d)].key == 'promotion') {
+      return SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: Text(OccasionSetupStrings.story('listingTitle')),
+          subtitle: Text(OccasionSetupStrings.story('listingHint')),
+          value: d['listPubliclyOnPublish'] != false,
+          onChanged: (value) => _change(
+              (x) => x['listPubliclyOnPublish'] = value,
+              changesConfiguration: true));
     }
     if (_questions[_questionIndex(d)].key == 'paymentTiming') {
       return OccasionSetupCommunication(
@@ -1820,16 +1931,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             _change((x) => x.addAll(patch), changesConfiguration: true),
       );
     }
-    if (_questions[_questionIndex(d)].key == 'scanner') {
-      final feature = _ticketDraftFeature(d);
-      return EditorDraftScope(
-        onChanged: () => _change(
-          (x) => x['ticketDraft'] = feature.toJson(),
-          changesConfiguration: true,
-        ),
-        child: TicketScanningSettings(feature: feature),
-      );
-    }
     if (_questions[_questionIndex(d)].key == 'verification') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1861,9 +1962,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               selectedId: d['sourceId'] as int?,
               unavailableLabel: d['source'] as String?,
               label: _sourceLabel,
-              onChanged: (id) => _change((x) => _applySource(x, id),
-                  changesConfiguration: true),
+              onChanged: _selectSource,
             ),
+            if (_loadingDetail) const LinearProgressIndicator(),
             if (_sources.isEmpty && !_loadingSources && _sourceError == null)
               const Text(
                 'V této jednotce zatím nejsou žádné uložené předlohy.',
@@ -1985,7 +2086,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               const SizedBox(height: 10),
               Text('$fields polí · $products produktů'),
               const SizedBox(height: 12),
-              Text(OccasionSaleStrings.text('productsHelp')),
+              Text(OccasionSetupSales.text(d, 'productsHelp')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
@@ -2057,15 +2158,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            title: Text(OccasionSetupStrings.story('configureScanning')),
-            subtitle: Text(OccasionSetupStrings.story('configureScanningHint')),
-            value: d['configureScanning'] == true,
-            onChanged: (value) =>
-                _change((x) => x['configureScanning'] = value),
-          ),
         ],
       ),
     );
@@ -2105,34 +2197,70 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _choice(d, 'blueprintMode', CommonStrings.blueprint,
-            ['Bez plánku', 'Nový', 'Převzít']),
-        TextButton.icon(
-            icon: const Icon(Icons.science_outlined),
-            label: Text(BlueprintStrings.tryLayoutDemo),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => Scaffold(
-                    appBar: AppBar(title: Text(BlueprintStrings.tryLayoutDemo)),
-                    body: const BlueprintLayoutDemo())))),
-        if (d['blueprintMode'] != 'Bez plánku') ...[
-          if (OccasionSetupStory.hasTickets(d))
-            SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                title: Text(FormStrings.seatSelection),
-                value: ((d['formDraft'] as Map?)?['fields'] as List? ?? [])
-                    .whereType<Map>()
-                    .any((f) => f['type'] == 'spot' && f['is_hidden'] != true),
-                onChanged: (value) => _change((x) {
-                      setDraftSeatSelection(x, value);
-                      _inlineFormBundle = null;
-                      _formEpoch++;
-                    }, changesConfiguration: true)),
+        DropdownButtonFormField<String>(
+            key: UniqueKey(),
+            initialValue: SetupBlueprintConfiguration(d).modeId,
+            decoration: InputDecoration(labelText: CommonStrings.blueprint),
+            items: const [
+              DropdownMenuItem(value: 'none', child: Text('Bez plánku')),
+              DropdownMenuItem(value: 'new', child: Text('Nový')),
+              DropdownMenuItem(value: 'copy', child: Text('Převzít'))
+            ],
+            onChanged: (value) async {
+              if (value == SetupBlueprintConfiguration(d).modeId) return;
+              if (value == 'copy') {
+                await _selectBlueprint();
+                return;
+              }
+              _blueprintSelectionRequest++;
+              if (d['blueprintLayoutDraft'] is Map) {
+                final discard = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AppAlertDialog(
+                            title: const Text('Zahodit současný plánek?'),
+                            actions: [
+                              TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(CommonStrings.cancel)),
+                              TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Zahodit'))
+                            ]));
+                if (!mounted) return;
+                if (discard != true) {
+                  setState(() {});
+                  return;
+                }
+              }
+              _change((x) {
+                SetupBlueprintConfiguration(x).clear(create: value == 'new');
+                _inlineFormBundle = null;
+                _formEpoch++;
+              }, changesConfiguration: true);
+              setState(() => _blueprintError = null);
+            }),
+        if (SetupBlueprintConfiguration(d).mode == SetupBlueprintMode.copy)
+          TextButton(
+              onPressed: _loadingBlueprintCandidate
+                  ? null
+                  : () => _selectBlueprint(chooseAnother: true),
+              child: const Text('Vybrat jiný plánek')),
+        if (_loadingBlueprintCandidate) const LinearProgressIndicator(),
+        if (_blueprintError != null) ...[
+          Text(_blueprintError!),
+          TextButton(
+              onPressed: _selectBlueprint, child: const Text('Zkusit znovu'))
+        ],
+        if (SetupBlueprintConfiguration(d).active) ...[
           Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
           if (_layoutAreaCount(d) > 0)
             Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: _openingBlueprint ? null : _openBlueprint,
+            onPressed: _openingBlueprint || _loadingBlueprintCandidate
+                ? null
+                : _openBlueprint,
             icon: const Icon(Icons.grid_on),
             label: const Text('Otevřít editor plánku'),
           ),
@@ -2155,7 +2283,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         for (final item in _questions)
           item.key == 'team'
               ? OccasionTeamInvitationStrings.text('question')
-              : OccasionSetupStrings.story('${item.key}Question'),
+              : item.key == 'saleTiming'
+                  ? OccasionSetupSales.text(d, 'question')
+                  : item.key == 'promotion' && !AppConfig.isAppSupported
+                      ? OccasionSetupStrings.story('listingTitle')
+                      : OccasionSetupStrings.story('${item.key}Question'),
       ],
       currentIndex: index,
       eventTitle:
@@ -2170,7 +2302,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _questions.length,
       ),
       segmentStates: [
-        OccasionSaleStrings.text('previousQuestion'),
+        OccasionSetupSales.text(d, 'previousQuestion'),
         OccasionSetupStrings.story('currentQuestion'),
         OccasionSetupStrings.story('upcomingQuestion'),
       ],

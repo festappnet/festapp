@@ -10,7 +10,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  sale_mode text; sale_start timestamptz; sale_end timestamptz;
- blueprint_id bigint; v_commit public.client_commits%ROWTYPE;
+ blueprint_mode text; blueprint_id bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
@@ -22,6 +22,12 @@ BEGIN
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
  payload := d.data;
+ blueprint_mode:=CASE payload->>'blueprintMode'
+  WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
+  ELSE payload->>'blueprintMode' END;
+ IF blueprint_mode IS NULL THEN blueprint_mode:=CASE WHEN jsonb_typeof(payload->'blueprintLayoutDraft')='object' THEN 'copy' ELSE 'none' END; END IF;
+ IF blueprint_mode NOT IN ('none','new','copy') THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid blueprint mode'; END IF;
  -- The form owns its sale window. Absent intent keeps historical drafts closed.
  sale_mode:=coalesce(payload->>'saleMode','preparation');
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN
@@ -66,16 +72,16 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Draft image access denied'; END IF;
  IF coalesce((payload->>'isPromoted')::boolean,false) AND intro_image IS NULL THEN
   RAISE invalid_parameter_value USING MESSAGE='Promotion requires an intro image'; END IF;
- -- New setup clients explicitly confirm receiving instructions. Old drafts
- -- without this field retain the existing canonical automatic routing contract.
+ -- Selection is sufficient; current permissions, currencies and account
+ -- fingerprint are still verified under locks before materialization.
  SELECT array_agg(DISTINCT coalesce(nullif(p->>'currency_code',''),'CZK')) INTO required_currencies
  FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f
  CROSS JOIN LATERAL jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p
  WHERE coalesce((payload->>'formEnabled')::boolean,true) AND NOT coalesce((f->>'is_hidden')::boolean,false)
    AND NOT coalesce((p->>'is_hidden')::boolean,false) AND (p->>'price')::numeric>0;
- IF required_currencies IS NOT NULL AND payload ? 'bankAccountConfirmed' THEN
-  IF (payload->>'bankAccountConfirmed')::boolean IS DISTINCT FROM true OR nullif(payload->>'bankAccountId','') IS NULL THEN
-   RAISE invalid_parameter_value USING MESSAGE='Bank account confirmation required'; END IF;
+ IF required_currencies IS NOT NULL AND (payload ? 'bankAccountId' OR payload ? 'bankAccountConfirmed') THEN
+  IF nullif(payload->>'bankAccountId','') IS NULL THEN
+   RAISE invalid_parameter_value USING MESSAGE='Bank account selection required'; END IF;
   selected_bank:=(payload->>'bankAccountId')::bigint;
   PERFORM 1 FROM eshop.bank_accounts ba JOIN eshop.unit_bank_accounts u ON u.bank_account=ba.id
    WHERE u.unit=d.unit AND ba.id=selected_bank AND ba.type<>'CASH' FOR SHARE OF ba,u;
@@ -87,7 +93,7 @@ BEGIN
   IF bank_currencies IS NULL OR NOT required_currencies <@ bank_currencies THEN
    RAISE invalid_parameter_value USING MESSAGE='Bank account currency mismatch'; END IF;
   IF bank_fingerprint IS DISTINCT FROM payload->>'bankAccountFingerprint' THEN
-   RAISE serialization_failure USING MESSAGE='Bank account details changed; confirm again'; END IF;
+   RAISE serialization_failure USING MESSAGE='Bank account details changed; select again'; END IF;
  END IF;
  -- Active form choices own enabled features, not whether an editor was visited.
  has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(
@@ -97,10 +103,18 @@ BEGIN
   features:=features||jsonb_build_array((coalesce(nullif(payload->'ticketDraft','null'::jsonb),'{}'::jsonb)-'layout')
     ||'{"code":"ticket","is_enabled":true}'::jsonb);
  END IF;
- IF coalesce((payload->>'formEnabled')::boolean,true) AND payload->>'blueprintMode' IN ('Nový','Převzít')
-   AND jsonb_array_length(coalesce(payload#>'{blueprintLayoutDraft,seatBindings}','[]'))+
-       jsonb_array_length(coalesce(payload#>'{blueprintLayoutDraft,areaBindings}','[]'))=0 THEN
-  RAISE invalid_parameter_value USING MESSAGE='Selected blueprint has no places'; END IF;
+ IF blueprint_mode<>'none' AND (
+  NOT coalesce((payload->>'formEnabled')::boolean,true) OR
+  NOT EXISTS(
+   SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{blueprintLayoutDraft,seatBindings}','[]')) binding
+   JOIN jsonb_array_elements(coalesce(payload#>'{blueprintLayoutDraft,layout,nodes}','[]')) node ON node->>'id'=binding->>'nodeId'
+   WHERE node->>'kind'='seat' AND binding->>'productId' IS NOT NULL AND NOT coalesce((binding->>'blocked')::boolean,false)
+   UNION ALL
+   SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{blueprintLayoutDraft,areaBindings}','[]')) binding
+   JOIN jsonb_array_elements(coalesce(payload#>'{blueprintLayoutDraft,layout,nodes}','[]')) node ON node->>'id'=binding->>'nodeId'
+   WHERE node->>'kind'='capacityArea' AND binding->>'productId' IS NOT NULL
+    AND (binding->>'inventoryContextId' IS NOT NULL OR coalesce((binding->>'capacity')::numeric,0)>0)
+  )) THEN RAISE invalid_parameter_value USING MESSAGE='Selected blueprint requires a form and sellable places'; END IF;
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN
   features := features || jsonb_build_array(jsonb_build_object('code','form','is_enabled',true) ||
     CASE WHEN communication_new THEN jsonb_build_object(
@@ -114,6 +128,7 @@ BEGIN
   'start_time',payload->>'start','end_time',payload->>'end','is_hidden',true,'is_open',false,
   'is_promoted',coalesce((payload->>'isPromoted')::boolean,false),
   'features',features,'data',jsonb_strip_nulls(jsonb_build_object('client_sync_v1',false,
+   'setup_listing_intent',coalesce((payload->>'listPubliclyOnPublish')::boolean,true),
    'image',intro_image,'place_name',nullif(btrim(payload->>'placeName'),''),'reply_to',reply_email)));
  policies:=public.abuse_policy_bundle_v1(ARRAY['occasion.creation','occasion.copy'],d.unit,d.organization);
  IF source_id IS NOT NULL AND (coalesce((payload->>'copyProgram')::boolean,false) OR coalesce((payload->>'copyInformation')::boolean,false) OR coalesce((payload->>'copyEmails')::boolean,false)) THEN
@@ -180,6 +195,13 @@ BEGIN
   DELETE FROM public.form_fields WHERE form=form_id;
   DELETE FROM eshop.products WHERE occasion=new_id;
   DELETE FROM eshop.product_types WHERE occasion=new_id;
+  -- Active plan owns the public seat selector. Catalog products remain available without it.
+  form_data:=jsonb_set(form_data,'{fields}',coalesce((
+   SELECT jsonb_agg(f) FROM jsonb_array_elements(coalesce(form_data->'fields','[]')) f
+   WHERE f->>'type' IS DISTINCT FROM 'spot'),'[]'::jsonb)||
+   CASE WHEN blueprint_mode<>'none' THEN jsonb_build_array('{"order":-1}'::jsonb ||
+     coalesce((SELECT f FROM jsonb_array_elements(coalesce(form_data->'fields','[]')) f WHERE f->>'type'='spot' LIMIT 1),'{}'::jsonb) ||
+     '{"type":"spot","is_ticket_field":true,"is_hidden":false,"is_required":true}'::jsonb) ELSE '[]'::jsonb END);
   -- Every field/product is newly owned by this occasion. Retain a local mapping
   -- for seats that referred to draft/source product IDs.
   FOR field IN SELECT value FROM jsonb_array_elements(coalesce(form_data->'fields','[]')) LOOP
@@ -215,9 +237,10 @@ BEGIN
     IF old_products->idx->>'id' IS NOT NULL THEN product_map := product_map || jsonb_build_object(old_products->idx->>'id',new_products->idx->'id'); END IF;
    END LOOP;
   END IF;
-  IF coalesce(payload->>'blueprintMode','')<>'Bez plánku' AND
-   (payload->>'blueprintMode' IN ('Nový','Převzít') OR
-    (payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb)) THEN
+  IF blueprint_mode<>'none' THEN
+   IF EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{blueprintLayoutDraft,seatBindings}','[]')) binding
+     WHERE binding->>'productId' IS NULL OR product_map->>(binding->>'productId') IS NULL) THEN
+    RAISE invalid_parameter_value USING MESSAGE='Every blueprint seat requires a form product'; END IF;
   IF payload->'blueprintLayoutDraft' IS NOT NULL AND payload->'blueprintLayoutDraft'<>'null'::jsonb THEN
    IF payload#>>'{blueprintLayoutDraft,layout,schemaVersion}'='2' THEN
     PERFORM public.copy_blueprint_text_resources_internal(NULL,d.id,new_id,payload#>'{blueprintLayoutDraft,layout}');

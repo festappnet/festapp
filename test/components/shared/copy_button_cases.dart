@@ -145,13 +145,13 @@ void main() {
   });
 
   test('new public slug format has narrow ASCII and length boundaries', () {
-    for (final value in ['abc', 'summer-2027', 'a' * 80]) {
+    for (final value in ['abc', 'summer-2027', 'under_score', 'a' * 80]) {
       expect(isValidPublicSlug(value), isTrue);
     }
     for (final value in [
       '',
       'Upper',
-      'under_score',
+      'two__underscores',
       '-edge',
       'edge-',
       'two--hyphens',
