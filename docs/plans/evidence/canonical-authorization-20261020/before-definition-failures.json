@@ -1,0 +1,18 @@
+{
+  "scope": "Task-owned 61022 only; recorded before definitions applied in a rollback transaction, not a pristine production/base rebuild",
+  "baselineSha256": "999f7ed115433ac3bda066c6c4f832914abe6bd25713767b38494bbf1dcaa3f0",
+  "results": [
+    {
+      "path": "database/tests/eshop/orders/cancelled_order_read_only_test.sql",
+      "state": "failed",
+      "code": "P0001",
+      "message": "ASSERTION FAILED: cancelled command must reject: SELECT public.update_order_and_tickets_to_storno_221(700)"
+    },
+    {
+      "path": "database/tests/eshop/deposit/storno_reminder_cleanup_test.sql",
+      "state": "failed",
+      "code": "P0001",
+      "message": "ASSERTION FAILED: Setup: order creation should succeed. Expected 200, but got 1007"
+    }
+  ]
+}

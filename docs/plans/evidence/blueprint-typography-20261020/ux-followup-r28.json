@@ -1,0 +1,33 @@
+{
+  "revision": "r28",
+  "scope": "local preview only",
+  "changes": [
+    "Compact protected-seat details and rename icon beside group title",
+    "Redundant view tools and single-table bulk product action removed",
+    "Czech cancel/dismiss wording Zru\u0161it recorded in repository rules",
+    "Order entry inherits eligible selection with atomic unit checks",
+    "Swap entry inherits a pair or single seat; oversized selection left empty"
+  ],
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "c7203c124651716840e4aadcd8b0868f043176b29d6f4507ab328e9310ba99ab"
+  },
+  "host_source_sha256": {
+    "lib/components/blueprint/views/blueprint_layout_host.dart": "58a7564b02db64bcb4fe33f476a0e2181f46f6b85a2a4ee703fc97e66588b92c"
+  },
+  "tests": {
+    "workspace_and_canvas": {
+      "passed": 2,
+      "log": "/tmp/blueprint-r28-ui-tests.log"
+    },
+    "operation_selection_and_draft": {
+      "passed": 1,
+      "log": "/tmp/blueprint-r28-operation-final.log"
+    }
+  },
+  "archive_gate": "/tmp/blueprint-r28-archive.log",
+  "host_build": "/tmp/blueprint-r28-host-build.log",
+  "interactive_browser_walkthrough": false,
+  "production_writes": false,
+  "main_js_sha256": "2a17891901d2a43a6238a35115b6998636276b67ed632560a2e30719835a68ae",
+  "served_bytes_verified": true
+}
