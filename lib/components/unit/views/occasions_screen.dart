@@ -576,7 +576,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         key: createdIndex >= 0 ? _createdGridKey : null,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 420,
-          mainAxisExtent: 126 +
+          mainAxisExtent: 110 +
               (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(0, 100) *
                   4,
           mainAxisSpacing: 16,
