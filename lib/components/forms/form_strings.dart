@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get productsAndPrices =>
+      'FeatureFormSettings.productsAndPrices'.tr();
   static String get embedAction => 'FeatureFormSettings.embedAction'.tr();
   static String get embedTitle => 'FeatureFormSettings.embedTitle'.tr();
   static String get embedFallback => 'FeatureFormSettings.embedFallback'.tr();
@@ -10,10 +12,14 @@ class FormStrings {
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
 
-  static String get savedPublicLink => 'FeatureFormSettings.savedPublicLink'.tr();
-  static String get publicLinkPreview => 'FeatureFormSettings.publicLinkPreview'.tr();
-  static String get automaticPublicLink => 'FeatureFormSettings.automaticPublicLink'.tr();
-  static String get publicLinkHistoryHelp => 'FeatureFormSettings.publicLinkHistoryHelp'.tr();
+  static String get savedPublicLink =>
+      'FeatureFormSettings.savedPublicLink'.tr();
+  static String get publicLinkPreview =>
+      'FeatureFormSettings.publicLinkPreview'.tr();
+  static String get automaticPublicLink =>
+      'FeatureFormSettings.automaticPublicLink'.tr();
+  static String get publicLinkHistoryHelp =>
+      'FeatureFormSettings.publicLinkHistoryHelp'.tr();
   static String get demoNotice => 'DemoOccasions.formNotice'.tr();
   static String get demoComplete => 'DemoOccasions.formComplete'.tr();
   static String get demoResult => 'DemoOccasions.formResult'.tr();

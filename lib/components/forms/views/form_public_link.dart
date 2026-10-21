@@ -19,8 +19,13 @@ class PublicLink extends StatelessWidget {
   final String link;
   final String? savedLink;
   final bool isForm;
+  final bool showCopyLabel;
   const PublicLink(
-      {super.key, required this.link, this.savedLink, this.isForm = true});
+      {super.key,
+      required this.link,
+      this.savedLink,
+      this.isForm = true,
+      this.showCopyLabel = false});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +35,9 @@ class PublicLink extends StatelessWidget {
         Text(FormStrings.savedPublicLink, style: const TextStyle(fontSize: 12)),
         Row(children: [
           Expanded(child: SelectableText(publicLinkUrl(saved, isForm: isForm))),
-          CopyButton(value: publicLinkUrl(saved, isForm: isForm)),
+          CopyButton(
+              value: publicLinkUrl(saved, isForm: isForm),
+              showLabel: showCopyLabel),
         ]),
       ],
       if (link != saved) ...[

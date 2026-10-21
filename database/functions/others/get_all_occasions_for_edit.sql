@@ -60,6 +60,7 @@ BEGIN
           'used', COALESCE(ticket_stats.used, 0),
           'users', COALESCE(user_stats.user_count, 0)
       ),
+      'sale_forms', public.get_occasion_sale_forms_internal(o.id),
       'form', (
          -- This subquery fetches the first associated form for the occasion.
          SELECT jsonb_build_object(

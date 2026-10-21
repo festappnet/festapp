@@ -1,4 +1,6 @@
-import '../components/occasion/occasion_setup_copy_cases.dart' as occasion_setup_copy;
+import '../components/occasion/occasion_sale_cases.dart' as occasion_sale;
+import '../components/occasion/occasion_setup_copy_cases.dart'
+    as occasion_setup_copy;
 import '../components/occasion/demo_occasion_banner_cases.dart'
     as demo_occasion_banner;
 import '../components/occasion/demo_occasions_section_cases.dart'
@@ -46,6 +48,7 @@ import 'czech_catalog_1_cases.dart' as suite2;
 
 void main() {
   registerClientSuites({
+    'occasion_sale': occasion_sale.main,
     'occasion_setup_copy': occasion_setup_copy.main,
     'demo_occasion_banner': demo_occasion_banner.main,
     'demo_occasions_section': demo_occasions_section.main,

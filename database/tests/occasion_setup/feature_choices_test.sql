@@ -60,6 +60,14 @@ BEGIN
    PERFORM assert_true(plan_id IS NOT NULL,'Chosen plan is linked to the form');
    PERFORM assert_true((SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(o.features) f WHERE f->>'code'='blueprint' AND (f->>'is_enabled')::boolean) FROM public.occasions o WHERE o.id=event_id),'Chosen plan enables blueprint feature');
    PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.spots WHERE occasion=event_id AND blueprint=plan_id),'Chosen plan has owned inventory');
+   PERFORM assert_true((public.get_occasion_sale_forms_internal(event_id)->0->>'has_availability')::boolean IS NOT NULL,'Blueprint projection is available');
+   UPDATE public.forms SET is_open=true WHERE id=form_id;
+   PERFORM assert_true((public.get_occasion_sale_forms_internal(event_id)->0->>'has_availability')::boolean,'Free bound seat is sellable');
+   UPDATE eshop.spots SET secret=gen_random_uuid(),secret_expiration_time=now()+interval '1 hour' WHERE blueprint=plan_id;
+   PERFORM assert_false((public.get_occasion_sale_forms_internal(event_id)->0->>'has_availability')::boolean,'Held seat is not advertised as sellable');
+   UPDATE eshop.spots SET secret=NULL,secret_expiration_time=NULL,state='black' WHERE blueprint=plan_id;
+   PERFORM assert_false((public.get_occasion_sale_forms_internal(event_id)->0->>'has_availability')::boolean,'Blocked seat is not advertised as sellable');
+
   ELSE
    PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.blueprints WHERE occasion=event_id),'No plan choice creates no blueprint');
    PERFORM assert_false((SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(o.features) f WHERE f->>'code'='blueprint') FROM public.occasions o WHERE o.id=event_id),'Dormant plan does not enable blueprint feature');

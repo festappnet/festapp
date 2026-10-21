@@ -1,3 +1,4 @@
+import 'occasion_sale_status.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -78,6 +79,8 @@ class OccasionModel {
   FormBundle? form;
   List<Feature> features;
   StatsModel? stats;
+  List<OccasionSaleForm>? saleForms;
+  DateTime? saleOccasionEndUtc;
   int aggregateVersion;
 
   OccasionModel({
@@ -100,6 +103,8 @@ class OccasionModel {
     this.form,
     List<Feature>? features,
     this.stats,
+    this.saleForms,
+    this.saleOccasionEndUtc,
     this.aggregateVersion = 0,
   }) : features = features ?? [];
 
@@ -142,6 +147,12 @@ class OccasionModel {
 
       organization: json[Tb.occasions.organization],
       unit: json[Tb.occasions.unit],
+      saleForms: (json['sale_forms'] as List?)
+          ?.map((f) => OccasionSaleForm.fromJson(Map<String, dynamic>.from(f)))
+          .toList(),
+      saleOccasionEndUtc:
+          DateTime.tryParse(json[Tb.occasions.end_time] as String? ?? '')
+              ?.toUtc(),
       form: json["form"] != null ? FormBundle.fromJson(json["form"]) : null,
       features: json[Tb.occasions.features] is List
           ? List<Feature>.from((json[Tb.occasions.features] as List)
@@ -190,6 +201,8 @@ class OccasionModel {
       Tb.occasions.unit: unit,
       Tb.occasions.features: features,
       'stats': stats,
+      if (saleForms != null)
+        'sale_forms': saleForms!.map((f) => f.toJson()).toList(),
     };
   }
 

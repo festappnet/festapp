@@ -29,6 +29,28 @@ void main() {
       .instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, null));
 
+  testWidgets('labelled completion copy is accessible and copies the saved URL',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+            body: SizedBox(
+                width: 288,
+                child: PublicLink(
+                    link: 'saved-form',
+                    savedLink: 'saved-form',
+                    showCopyLabel: true)))));
+    expect(find.widgetWithText(OutlinedButton, CommonStrings.copy),
+        findsOneWidget);
+    await tester.tap(find.widgetWithText(OutlinedButton, CommonStrings.copy));
+    await tester.pumpAndSettle();
+    expect(copied, '${AppConfig.webLink}/form/saved-form');
+    expect(find.widgetWithText(OutlinedButton, CommonStrings.copied),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets('visible hover tooltip changes on copy and resets: $brightness',
         (tester) async {

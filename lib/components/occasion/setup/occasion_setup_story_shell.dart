@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 
-/// Story navigation is deliberately manual. Segment position describes the
-/// journey, while [readiness] describes the draft's required completion checks.
+/// One journey position, with an explicitly named jump list on every screen.
 class OccasionSetupStoryShell extends StatelessWidget {
   const OccasionSetupStoryShell({
     super.key,
@@ -9,7 +9,6 @@ class OccasionSetupStoryShell extends StatelessWidget {
     required this.currentIndex,
     required this.eventTitle,
     required this.status,
-    required this.readiness,
     required this.questionCount,
     required this.segmentStates,
     required this.leaveLabel,
@@ -28,7 +27,6 @@ class OccasionSetupStoryShell extends StatelessWidget {
   final int currentIndex;
   final String eventTitle;
   final String status;
-  final String readiness;
   final String questionCount;
 
   /// Completed, current and upcoming labels, in that order.
@@ -43,6 +41,28 @@ class OccasionSetupStoryShell extends StatelessWidget {
   final Widget? error;
   final double maxContentWidth;
   final bool centerQuestion;
+
+  void _showQuestions(BuildContext context) {
+    showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AppSimpleDialog(
+              title: Text(questionCount),
+              children: [
+                for (var index = 0; index < questionTitles.length; index++)
+                  ListTile(
+                    leading: Text('${index + 1}'),
+                    title: Text(questionTitles[index]),
+                    selected: index == currentIndex,
+                    onTap: onQuestionSelected == null
+                        ? null
+                        : () {
+                            Navigator.of(dialogContext).pop();
+                            onQuestionSelected!(index);
+                          },
+                  ),
+              ],
+            ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +175,17 @@ class OccasionSetupStoryShell extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(questionCount,
-                                style: theme.textTheme.labelLarge
-                                    ?.copyWith(color: colors.primary)),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: TextButton.icon(
+                                onPressed: onQuestionSelected == null
+                                    ? null
+                                    : () => _showQuestions(context),
+                                icon: const Icon(Icons.format_list_numbered,
+                                    size: 18),
+                                label: Text(questionCount),
+                              ),
+                            ),
                             const SizedBox(height: 12),
                             Semantics(
                               header: true,
@@ -204,11 +232,6 @@ class OccasionSetupStoryShell extends StatelessWidget {
                       ),
                     ),
                   ]),
-                  const SizedBox(height: 4),
-                  Text(readiness,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: colors.onSurfaceVariant)),
                 ]),
               ),
             ),

@@ -115,16 +115,15 @@ class OccasionSetupStory {
       if (appSupported) const OccasionSetupQuestion(1, 'link'),
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
       if (form) const OccasionSetupQuestion(3, 'form'),
+      if (form) const OccasionSetupQuestion(3, 'saleTiming'),
       if (paid) const OccasionSetupQuestion(3, 'pricing'),
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'payments'),
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'paymentTiming'),
       if (form) const OccasionSetupQuestion(3, 'communication'),
       if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
-      if (!appSupported) ...[
-        if (tickets) const OccasionSetupQuestion(2, 'ticket'),
-        if (tickets && data?['configureScanning'] == true)
-          const OccasionSetupQuestion(2, 'scanner', optional: true),
-      ],
+      if (tickets) const OccasionSetupQuestion(2, 'ticket'),
+      if (tickets && data?['configureScanning'] == true)
+        const OccasionSetupQuestion(2, 'scanner', optional: true),
       const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),

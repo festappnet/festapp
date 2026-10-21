@@ -48,10 +48,16 @@ BEGIN
  PERFORM assert_eq((SELECT new_value FROM eshop.planned_changes WHERE id=(c3->>'id')::bigint),'500','Manual save preserves future absolute targets');
  PERFORM public.update_product(jsonb_build_object('id',prod,'price',450));
  BEGIN PERFORM public.update_product(jsonb_build_object('id',prod,'currency_code','EUR')); RAISE EXCEPTION 'product currency bypass'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ -- The canonical writer preserves the typed validation exception (also on
+ -- unchanged main); it is not the old JSON-error adapter.
+ BEGIN
  result := public.update_form_internal_v1(jsonb_build_object('id',fid,'occasion',occ,'link',link,'form_fields',jsonb_build_array(
    jsonb_build_object('type','product_type','product_type',jsonb_build_object('id',pt,'title','Tickets','type','spot','products',jsonb_build_array(
-     jsonb_build_object('id',prod,'title','Ticket','price',450,'currency_code','EUR','data','{}'::jsonb))))))); 
- PERFORM assert_eq(result->>'message','CANCEL_PRICE_CHANGES_BEFORE_CURRENCY_CHANGE','Form save cannot bypass pending currency protection');
+     jsonb_build_object('id',prod,'title','Ticket','price',450,'currency_code','EUR','data','{}'::jsonb)))))));
+  RAISE EXCEPTION 'form currency bypass';
+ EXCEPTION WHEN invalid_parameter_value THEN
+  PERFORM assert_eq(SQLERRM,'CANCEL_PRICE_CHANGES_BEFORE_CURRENCY_CHANGE','Form save cannot bypass pending currency protection');
+ END;
  PERFORM assert_eq((SELECT currency_code::text FROM eshop.products WHERE id=prod),'CZK','Rejected form leaves currency unchanged');
  -- Viewer and foreign tenant cannot write, but viewer can inspect.
  UPDATE public.occasion_users SET is_editor_order=false WHERE "user"=actor AND occasion=occ;

@@ -7,7 +7,10 @@ import 'package:fstapp/main.dart' as app;
 
 Future<void> main() async {
   final backend = Uri.parse(AppConfig.effectiveSupabaseUrl);
-  if (backend.host != '127.0.0.1' || backend.port != 56821) {
+  if (backend.host != '127.0.0.1' ||
+      backend.port !=
+          const int.fromEnvironment('FESTAPP_TEST_BACKEND_PORT',
+              defaultValue: 56821)) {
     throw StateError(
         'Wizard development requires the disposable loopback backend');
   }

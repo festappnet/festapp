@@ -1,3 +1,6 @@
+import 'package:fstapp/components/occasion/occasion_creation_notice.dart';
+import 'dart:async';
+import 'occasion_created_highlight.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'occasion_setup_draft_card.dart';
 import 'package:fstapp/components/occasion/occasion_creation_button.dart';
@@ -35,6 +38,32 @@ class OccasionsScreen extends StatefulWidget {
 }
 
 class _OccasionsScreenState extends State<OccasionsScreen> {
+  final _scrollController = ScrollController();
+  final _createdGridKey = GlobalKey();
+  int? _createdOccasionId;
+  Timer? _highlightTimer;
+  void _highlight(OccasionModel occasion) {
+    if (!mounted || occasion.unit != widget.unit.id) return;
+    _highlightTimer?.cancel();
+    // Creation returns to the new card, including when the old list was filtered.
+    _searchController.clear();
+    setState(() => _createdOccasionId = occasion.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _createdOccasionId != occasion.id) return;
+      await OccasionCreatedHighlight.reveal(
+          gridKey: _createdGridKey,
+          controller: _scrollController,
+          index: _createdGridIndex,
+          animate: !MediaQuery.disableAnimationsOf(context));
+      if (!mounted || _createdOccasionId != occasion.id) return;
+      _highlightTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _createdOccasionId = null);
+      });
+    });
+  }
+
+  int _createdGridIndex = 0;
+
   List<OccasionModel> _allOccasions = [];
   List<OccasionModel> _filteredOccasions = [];
   bool _isLoading = true;
@@ -76,7 +105,10 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _resumeDraft(OccasionSetupDraft draft) async {
-    await OccasionSetupPage.open(context, draft);
+    final result = await OccasionSetupPage.open(context, draft);
+    if (result != null && mounted) {
+      await _loadOccasions();
+    }
     if (mounted) await _loadDrafts();
   }
 
@@ -185,11 +217,21 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     _loadDrafts();
   }
 
+  void _consumeCreationNotice() {
+    final id = OccasionCreationNotice.take(widget.unit.id!);
+    if (id == null) return;
+    final occasion = _allOccasions.where((o) => o.id == id).firstOrNull;
+    if (occasion != null) _highlight(occasion);
+  }
+
   void _initializeOccasions() {
     if (widget.initialOccasions != null) {
       _allOccasions = widget.initialOccasions!;
       _filteredOccasions = widget.initialOccasions!;
       _isLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _consumeCreationNotice();
+      });
       // Re-apply filter if search was active
       if (_searchController.text.isNotEmpty) {
         _filterOccasions();
@@ -201,6 +243,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   @override
   void dispose() {
+    _highlightTimer?.cancel();
+    _scrollController.dispose();
     RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _searchController.removeListener(_filterOccasions);
     _searchFocusNode.removeListener(_onSearchFocusChange);
@@ -226,6 +270,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         _filteredOccasions = occasions;
         _isLoading = false;
       });
+      _consumeCreationNotice();
     }
   }
 
@@ -248,12 +293,13 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Future<void> _addNewEvent({bool withoutWizard = false}) async {
-    await OccasionCreationHelper.createNewOccasion(
+    final created = await OccasionCreationHelper.createNewOccasion(
         context, widget.unit, _allOccasions,
         withoutWizard: withoutWizard);
 
     if (mounted) {
       await _loadOccasions();
+      if (created != null) _highlight(created);
     }
     if (mounted) await _loadDrafts();
   }
@@ -270,11 +316,20 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   Future<void> _handleCreateCopy(OccasionModel occasion) async {
     final sourceUnitId = widget.unit.id;
+    OccasionModel? created;
     final target = await OccasionCreationHelper.createCopy(context, occasion,
-        sourceUnitId: sourceUnitId, existingOccasions: _allOccasions);
+        sourceUnitId: sourceUnitId,
+        existingOccasions: _allOccasions,
+        onCreated: (value) => created = value);
     if (!mounted || widget.unit.id != sourceUnitId || target == null) return;
     if (AppConfig.occasionSetupEnabled) {
-      await _loadDrafts();
+      if (target.id != widget.unit.id && created != null) {
+        await RouterService.navigateToUnitAdmin(context, target);
+        return;
+      }
+      await _loadOccasions();
+      if (created != null) _highlight(created!);
+      if (mounted) await _loadDrafts();
     } else if (target.id == widget.unit.id) {
       await _loadOccasions();
     } else {
@@ -306,6 +361,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                   await _loadDrafts();
                 },
                 child: CustomScrollView(
+                  controller: _scrollController,
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
                     SliverToBoxAdapter(
@@ -412,14 +468,14 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                         child: child),
                     child: showButton &&
                             RightsService.currentUnit()?.id == widget.unit.id &&
-                            RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)
+                            RightsService.hasCapability(
+                                AuthorizationCapabilities.occasionsCreate)
                         ? Row(
                             key: const ValueKey('add-button'),
                             children: [
                               const SizedBox(width: 16),
                               OccasionCreationButton(
-                                showChoices: AppConfig.occasionSetupEnabled &&
-                                    !AppConfig.isAppSupported,
+                                showChoices: AppConfig.occasionSetupEnabled,
                                 onGuided: _addNewEvent,
                                 onQuick: () =>
                                     _addNewEvent(withoutWizard: true),
@@ -511,19 +567,26 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   Widget _buildGrid(List<OccasionModel> occasions, {bool isPresent = false}) {
+    final createdIndex =
+        occasions.indexWhere((o) => o.id == _createdOccasionId);
+    if (createdIndex >= 0) _createdGridIndex = createdIndex;
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        key: createdIndex >= 0 ? _createdGridKey : null,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 420,
-          mainAxisExtent: 110,
+          mainAxisExtent: 126 +
+              (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(0, 100) *
+                  4,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final occasion = occasions[index];
-            return OccasionEditCard(
+            final card = OccasionEditCard(
+              key: ValueKey(occasion.id),
               occasion: occasion,
               onTap: () => _handleView(occasion),
               onCreateCopy: () => _handleCreateCopy(occasion),
@@ -540,6 +603,10 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                       _landing?.occasionId == occasion.id ? null : occasion.id)
                   : null,
             );
+            return occasion.id == _createdOccasionId
+                ? OccasionCreatedHighlight(
+                    key: ValueKey('created-${occasion.id}'), child: card)
+                : card;
           },
           childCount: occasions.length,
         ),

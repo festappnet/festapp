@@ -567,7 +567,13 @@ BEGIN
                waitlist_offer_duration_seconds = CASE WHEN input_data ? 'waitlist_offer_duration_seconds' THEN (input_data->>'waitlist_offer_duration_seconds')::integer ELSE waitlist_offer_duration_seconds END,
                capacity_revision = capacity_revision+1,
                title = CASE WHEN input_data ? 'title' THEN input_data->>'title' ELSE title END,
-               data = CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END,
+               -- Opening the real form ends its initial preparation phase.
+               -- Later closing it is a pause, irrespective of test orders.
+               data = CASE WHEN coalesce((input_data->>'is_open')::boolean,is_open) THEN
+                 jsonb_set(coalesce(CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END,'{}'::jsonb),'{schedule}',
+                  coalesce((CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END)->'schedule','{}'::jsonb)
+                   ||'{"sale_preparation":false}'::jsonb)
+                 ELSE CASE WHEN input_data ? 'data' THEN input_data->'data' ELSE data END END,
                header = CASE WHEN input_data ? 'header' THEN input_data->>'header' ELSE header END,
                header_off = CASE WHEN input_data ? 'header_off' THEN input_data->>'header_off' ELSE header_off END,
                link = link_param,

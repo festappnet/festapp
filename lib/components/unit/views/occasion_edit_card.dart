@@ -1,3 +1,4 @@
+import 'occasion_sale_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
@@ -72,6 +73,7 @@ class OccasionEditCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       color: cardColor,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -81,7 +83,7 @@ class OccasionEditCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -129,17 +131,16 @@ class OccasionEditCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         )),
-                      if (badge != null) ...[
-                        const SizedBox(width: 8),
-                        Badge(
-                            backgroundColor: theme.colorScheme.primary,
-                            textColor: theme.colorScheme.onPrimary,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            textStyle: theme.textTheme.labelSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                            label: Text(badge!)),
-                      ],
+                      const SizedBox(width: 6),
+                      if (occasion.saleForms?.isNotEmpty == true)
+                        Flexible(
+                            flex: 3,
+                            child: OccasionSaleBadge(occasion: occasion))
+                      else if (badge != null)
+                        Flexible(
+                            flex: 3,
+                            child: Text(badge!,
+                                maxLines: 1, overflow: TextOverflow.ellipsis)),
                     ]),
                     const SizedBox(height: 4),
                     Tooltip(
@@ -180,10 +181,10 @@ class OccasionEditCard extends StatelessWidget {
                       ),
                       child: Text(
                         occasion.title ?? '',
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

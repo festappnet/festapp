@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../occasion_sale_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -205,6 +206,12 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
             else
               Text(OccasionSetupDetailsStrings.text('bankManagerNeeded')),
             Text(OccasionSetupDetailsStrings.text('bankSetupHint')),
+            if (_accounts.any((account) =>
+                account['id'] == widget.data['bankAccountId'] &&
+                (account['bank_sync'] as Map?)?['state'] != 'connected'))
+              Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(OccasionSaleStrings.text('manualPaymentsHelp'))),
           ],
         ],
       );

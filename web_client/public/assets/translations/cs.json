@@ -491,7 +491,8 @@
     "embedHelp": "Vložte kód do HTML svého webu. Automatická výška vyžaduje povolený externí skript. Pokud jej váš web blokuje, použijte pevnou výšku.",
     "embedSaveFirst": "Pro vložení na web nejprve formulář uložte.",
     "embedAutomatic": "Automatická výška (doporučeno)",
-    "embedFixed": "Pevná výška bez skriptu"
+    "embedFixed": "Pevná výška bez skriptu",
+    "productsAndPrices": "Produkty a ceny"
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -1429,14 +1430,14 @@
     "svgConversionFailed": "SVG se nepodařilo převést. Plánek zůstal beze změny.",
     "blockSeat": "Blokovat místo",
     "blockSeatHint": "Blokované místo nelze vybrat do nové objednávky.",
-    "placementInvalid": "Plánek obsahuje překrývající se objekty nebo objekty mimo plátno. Oprav červeně označená místa.",
-    "seatProductRequired": "Novým místům chybí produkt s cenou. Přiřaď ho v režimu Rezervace a objednávky.",
+    "placementInvalid": "Plánek obsahuje překrývající se objekty nebo objekty mimo plátno. Opravte červeně označená místa.",
+    "seatProductRequired": "Novým místům chybí produkt s cenou. Přiřaďte ho v režimu Rezervace a objednávky.",
     "editAreaProduct": "Upravit produkt a cenu",
     "tablesTitle": "Stoly",
     "standingAreas": "Stání",
-    "tableSelectionHint": "Klikni na stůl. Shift přidá další.",
+    "tableSelectionHint": "Klikněte na stůl. Shift přidá další.",
     "noTables": "V plánku zatím nejsou stoly.",
-    "selectTableOrSeat": "Vyber stůl nebo jednotlivé místo.",
+    "selectTableOrSeat": "Vyberte stůl nebo jednotlivé místo.",
     "useTableDefault": "Použít výchozí produkt stolu",
     "defaultProductHint": "Výchozí produkt platí pro nová a zděděná místa. Vlastní produkty jednotlivých míst zůstanou.",
     "unsavedPlanShort": "Neuloženo",
@@ -1480,7 +1481,17 @@
     "helpEscapeEdit": "Zrušit tažení nebo výběr; zavřít dialog",
     "helpEscapeView": "Ukončit objednávku či prohazování; zavřít dialog",
     "helpSeatStates": "Stavy míst",
-    "orderSelectionTitle": "Výběr míst pro objednávku"
+    "orderSelectionTitle": "Výběr míst pro objednávku",
+    "imageUploadUncertain": "Výsledek nahrání se nepodařilo ověřit. Před dalším pokusem zkontrolujte, zda byl obrázek přidaný.",
+    "seatStateDescriptions": {
+      "available": "Místo lze objednat.",
+      "selected": "Dočasně ho drží jiný zákazník.",
+      "ordered": "Je součástí objednávky.",
+      "used": "Vstupenka už byla použita při vstupu.",
+      "blocked": "Místo není v prodeji.",
+      "empty": "Místo nemá přiřazený produkt.",
+      "selection": "Místo ve vašem aktuálním výběru."
+    }
   },
   "OccasionSettings": {
     "title": "Název",
@@ -1955,7 +1966,8 @@
     "keepEditing": "Pokračovat v úpravách",
     "copy": "Kopírovat",
     "copied": "Zkopírováno",
-    "resourceLimited": "Dočasně byl dosažen limit využití. Zkuste to později. Pro navýšení kapacity kontaktujte podporu."
+    "resourceLimited": "Dočasně byl dosažen limit využití. Zkuste to později. Pro navýšení kapacity kontaktujte podporu.",
+    "contextLoadFailed": "Oprávnění se nepodařilo ověřit. Zkuste to znovu."
   },
   "BankAccount": {
     "organizationSettings": "nastavení organizace",
@@ -2988,7 +3000,8 @@
       "endTime": "Čas konce akce",
       "endBeforeStart": "Konec akce musí být ve stejný čas jako začátek nebo později.",
       "incomplete": "Odpověď zatím není úplná. Je nutné doplnit povinné údaje a zkontrolovat nastavení.",
-      "questionNumber": "Otázka {current} z {total}"
+      "questionNumber": "Otázka {current} z {total}",
+      "saleTimingQuestion": "Kdy má prodej začít?"
     },
     "draft": "Koncept",
     "cancelDraft": "Zrušit koncept",
@@ -2996,7 +3009,18 @@
     "cancelDraftConfirm": "Opravdu zrušit koncept „{title}“? Rozpracované nastavení bude trvale smazáno.",
     "progress": "Dokončeno {value} %",
     "createStepByStep": "Vytvořit krok za krokem",
-    "withoutWizard": "Bez průvodce"
+    "withoutWizard": "Bez průvodce",
+    "copy": {
+      "source": "Předloha",
+      "fromScratch": "Od nuly",
+      "referencesTitle": "Propojit nový formulář",
+      "referencesBody": "Vyberte náhrady produktů použitých v plánku a vstupence. Rozložení a obsah vstupenky se zachovají. Zpět ponechá současný formulář.",
+      "seatProduct": "Místa: {title}",
+      "ticketType": "Pole vstupenky: {title}",
+      "duplicateTypes": "Dvě pole vstupenky nemohou v jedné šabloně odkazovat na stejnou skupinu produktů. Vyberte různé skupiny.",
+      "invalidReferences": "Plánek nebo vstupenka odkazuje na produkty, které ve vybraném formuláři chybí. Ve formuláři vyberte jejich náhrady.",
+      "repairReferences": "Propojit produkty"
+    }
   },
   "Waitlist": {
     "settings": "Kapacita a náhradníci",
@@ -3584,5 +3608,83 @@
     "switchAccount": "Přihlásit se jiným účtem",
     "legacyInviteHint": "Vybraným uživatelům odešleme pozvánku. Členům týmu pošleme odkaz bez změny hesla.",
     "legacyReinviteConfirm": "Někteří uživatelé již obdrželi pozvánku. Odeslat ji znovu?"
+  },
+  "EditorFileDrop": {
+    "hint": "Přetažením obrázku nahraďte podklad",
+    "singleFile": "Přetáhněte právě jeden soubor, nikoli složku.",
+    "unsupported": "Tento typ souboru není podporován.",
+    "tooLarge": "Obrázek překračuje limit 20 MB."
+  },
+  "OccasionSales": {
+    "admission": "Vstupné",
+    "standardTicket": "Základní vstupenka",
+    "customerPreview": "Náhled pro zákazníka",
+    "previewSafe": "Vyzkoušejte pole a cenu. Náhled nic neukládá, neotevírá prodej, nerezervuje místa a neodesílá objednávky ani e-maily.",
+    "previewSeats": "Výběr konkrétních míst zde není aktivní. Vzhled vstupenky zkontrolujte v kroku Vstupenka.",
+    "previewTotal": "Celkem za vybrané produkty: {amount}",
+    "previewEmail": "Ukázka potvrzovacích e-mailů",
+    "previewEmailSample": "Ukázková objednávka používá produkty konceptu a zděděné šablony. Není propojena s výběrem ve formuláři výše.",
+    "previewUnavailable": "Náhled e-mailu se nepodařilo načíst. Nastavení zůstává uložené; před otevřením prodeje ověřte e-mailové šablony.",
+    "manualPaymentsHelp": "Bez propojení s bankou se platby nepotvrzují automaticky. V administraci otevřete Objednávky, vyhledejte objednávku a potvrďte přijatou platbu. Až potvrzení platby spustí doručení placené vstupenky. Propojení nastavíte přes Spravovat bankovní účty.",
+    "senderUnavailable": "Systémový odesílatel - přesná adresa nyní není dostupná",
+    "preparation": "V přípravě",
+    "scheduled": "Prodej naplánován",
+    "selling": "V prodeji",
+    "waitlist": "Náhradníci",
+    "soldOut": "Vyprodáno",
+    "paused": "Pozastaveno",
+    "ended": "Ukončeno",
+    "finished": "Proběhlo",
+    "startsIn": "Prodej začíná za {duration}",
+    "endsIn": "Prodej končí za {duration}",
+    "startsSoon": "Prodej začne do minuty",
+    "endsSoon": "Prodej skončí do minuty",
+    "startsOn": "Prodej od {date}",
+    "days": {
+      "one": "{count} den",
+      "few": "{count} dny",
+      "many": "{count} dní",
+      "other": "{count} dní"
+    },
+    "hours": "{count} h",
+    "minutes": "{count} min",
+    "counts": "Otevřené formuláře: {active}/{total}. Prodej: {selling}, náhradníci: {waitlists}.",
+    "startAt": "Prodej začíná: {date}",
+    "endAt": "Prodej končí: {date}",
+    "mode": {
+      "preparation": "Ponechat v přípravě",
+      "scheduled": "Naplánovat otevření",
+      "immediate": "Otevřít hned po vytvoření"
+    },
+    "help": {
+      "preparation": "Formulář zůstane zavřený. Prodej otevřete později.",
+      "scheduled": "Prodej se otevře automaticky ve zvolený čas.",
+      "immediate": "Na formuláři bude možné začít objednávat."
+    },
+    "saleStart": "Začátek prodeje",
+    "saleEnd": "Konec prodeje",
+    "time": "Čas",
+    "endDefault": "Výchozí: konec akce. Můžete zvolit dřívější termín.",
+    "useEventEnd": "Použít konec akce",
+    "countdown": "Zobrazovat odpočty prodeje",
+    "countdownHelp": "Volitelné. Vypnutí odpočtu nemění termíny prodeje.",
+    "invalidTiming": "Zkontrolujte termíny prodeje. Začátek musí být v budoucnosti a před koncem prodeje; konec nejpozději na konci akce.",
+    "create": "Vytvořit akci",
+    "createScheduled": "Vytvořit a naplánovat prodej",
+    "createOpen": "Vytvořit a otevřít prodej",
+    "products": "Produkty a ceny",
+    "productsHelp": "Vstupenky jsou produkty formuláře. Názvy, ceny a varianty upravíte přímo níže.",
+    "created": "Akce je vytvořená",
+    "completion": {
+      "preparation": "Prodejní formulář je připravený. Prodej zatím není otevřený.",
+      "scheduled": "Prodej se automaticky otevře v nastavený čas.",
+      "immediate": "Prodejní formulář je otevřený a připravený přijímat objednávky."
+    },
+    "salesLink": "Odkaz na prodejní formulář",
+    "openForm": "Zobrazit formulář",
+    "backToList": "Přejít do přehledu akcí",
+    "manage": "Spravovat akci",
+    "privacy": "Akce zůstane skrytá v katalogu. Dostupnost prodejního formuláře určuje zvolené nastavení prodeje.",
+    "saveAndLeave": "Uložit koncept a odejít"
   }
 }

@@ -1,5 +1,6 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
+import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -62,5 +63,22 @@ FormEditorDraft defaultDraftForm(Map<String, dynamic> configuration) {
   final draft = FormEditorDraft.fromJson(
       Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))));
   draft.definition = draft.definition.copyWith(link: '');
+  // Only the generated starter is renamed. Existing source products retain
+  // their organizer-owned titles, IDs, prices and order limits.
+  for (final field in draft.relatedFields) {
+    final type = field.definition.productType;
+    if (type?.type != 'spot' || type?.title != 'Spot') continue;
+    field.definition = field.definition.copyWith(
+      title: OccasionSaleStrings.text('admission'),
+      productType: type!
+          .copyWith(title: OccasionSaleStrings.text('admission'), products: [
+        for (final product in type.products ?? <ProductModel>[])
+          product.title == 'Variant 1'
+              ? product.copyWith(
+                  title: OccasionSaleStrings.text('standardTicket'))
+              : product,
+      ]),
+    );
+  }
   return draft;
 }

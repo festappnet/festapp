@@ -1,0 +1,419 @@
+import 'package:fstapp/components/unit/views/occasion_created_highlight.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_completed.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_result.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:fstapp/widgets/time_data_range_picker.dart';
+import 'dart:convert';
+import 'package:fstapp/components/occasion/setup/occasion_form_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_customer_preview.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/occasion/occasion_sale_status.dart';
+import 'package:fstapp/components/occasion/occasion_sale_strings.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_sales.dart';
+import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
+import '../../support/fixtures/widget_environment_fixture.dart';
+
+void main() {
+  WidgetEnvironmentFixture.register();
+  late WidgetEnvironmentFixture environment;
+  setUpAll(() {
+    tzdata.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('UTC'));
+    environment = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations:
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync()));
+  });
+  testWidgets(
+      'starter admission is human named without changing its price, identity or copied forms',
+      (tester) async {
+    final configuration = {
+      'forms': [
+        {
+          'fields': [
+            {
+              'id': -1,
+              'type': 'product_type',
+              'title': 'Spot',
+              'product_type_data': {
+                'id': -2,
+                'title': 'Spot',
+                'type': 'spot',
+                'products': [
+                  {
+                    'id': -3,
+                    'title': 'Variant 1',
+                    'price': 100,
+                    'currency_code': 'CZK'
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    };
+    await environment.pumpWidget(tester, const MaterialApp(home: SizedBox()));
+    // Localization is supplied by the same fixture as the wizard widgets.
+    final starter = defaultDraftForm(configuration);
+    final type = starter.relatedFields.single.definition.productType!;
+    expect(type.title, 'Vstupné');
+    expect(type.products!.single.title, 'Základní vstupenka');
+    expect(type.products!.single.id, -3);
+    expect(type.products!.single.price, 100);
+    final copied = draftFormBundle(
+        Map<String, dynamic>.from((configuration['forms'] as List).single));
+    expect(copied.products.single.title, 'Variant 1');
+  });
+
+  testWidgets(
+      'customer preview renders canonical fields and keeps its edits out of the draft',
+      (tester) async {
+    final data = <String, dynamic>{
+      'title': 'Preview',
+      'formDraft': {
+        'title': 'Form',
+        'fields': [
+          {'id': -1, 'type': 'email', 'title': 'E-mail', 'is_required': true}
+        ]
+      }
+    };
+    final saved = jsonEncode(data);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: OccasionSetupCustomerPreview(data: data, unitId: 1))));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Náhled nic neukládá'), findsOneWidget);
+    await tester.enterText(
+        find.byType(TextField).first, 'preview@example.invalid');
+    await tester.pump();
+    expect(jsonEncode(data), saved);
+    expect(find.text('Vytvořit objednávku'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  final now = DateTime.utc(2030, 1, 1, 12);
+  OccasionSaleForm form(
+          {bool open = true,
+          String mode = 'regular',
+          bool available = true,
+          DateTime? start,
+          DateTime? end,
+          bool preparation = false,
+          bool countdown = false}) =>
+      OccasionSaleForm(
+          id: 1,
+          isOpen: open,
+          mode: mode,
+          hasAvailability: available,
+          start: start,
+          end: end,
+          isPreparation: preparation,
+          countdown: countdown);
+  OccasionSaleStatus status(List<OccasionSaleForm> forms) =>
+      OccasionSaleStatus.resolve(forms, now: now)!;
+
+  test(
+      'form lifecycle distinguishes preparation, pause, deadlines and event end',
+      () {
+    expect(status([form(open: false, preparation: true)]).state,
+        OccasionSaleState.preparation);
+    expect(status([form(open: false)]).state, OccasionSaleState.paused);
+    expect(status([form(start: now.add(const Duration(hours: 1)))]).state,
+        OccasionSaleState.scheduled);
+    expect(status([form(start: now)]).state, OccasionSaleState.selling);
+    expect(status([form(end: now)]).state, OccasionSaleState.ended);
+    expect(status([form(available: false)]).state, OccasionSaleState.soldOut);
+    expect(status([form(mode: 'waitlist', available: false)]).state,
+        OccasionSaleState.waitlist);
+    expect(
+        OccasionSaleStatus.resolve([form()], now: now, occasionEnd: now)!.state,
+        OccasionSaleState.finished);
+    expect(OccasionSaleStatus.resolve([], now: now), isNull);
+  });
+  test('mixed forms count purchases and waitlists; closed forms do not count',
+      () {
+    final value = status([
+      form(),
+      form(mode: 'waitlist'),
+      form(open: false),
+      form(start: now.add(const Duration(days: 1)))
+    ]);
+    expect(value.state, OccasionSaleState.selling);
+    expect(value.active, 2);
+    expect(value.total, 4);
+    expect(value.selling, 1);
+    expect(value.waitlists, 1);
+    final waiting = status([form(mode: 'waitlist'), form(open: false)]);
+    expect(waiting.active, 1);
+    expect(waiting.state, OccasionSaleState.waitlist);
+  });
+  test('aggregate never promises an end before the last active form', () {
+    final value = status([
+      form(end: now.add(const Duration(hours: 1)), countdown: true),
+      form(end: now.add(const Duration(hours: 3)), countdown: true)
+    ]);
+    expect(value.deadline, now.add(const Duration(hours: 3)));
+    expect(
+        status([form(end: now.add(const Duration(hours: 1))), form()]).deadline,
+        isNull);
+  });
+  test('sale intent validation ignores dormant disabled-form choices', () {
+    final data = <String, dynamic>{
+      'end': now.add(const Duration(days: 2)).toIso8601String(),
+      'saleMode': 'scheduled',
+      'saleStart': now.add(const Duration(days: 1)).toIso8601String()
+    };
+    expect(OccasionSetupSales.valid(data, now), isTrue);
+    expect(
+        OccasionSetupSales.valid({
+          ...data,
+          'saleEnd': now.add(const Duration(days: 3)).toIso8601String()
+        }, now),
+        isFalse);
+    expect(
+        OccasionSetupSales.valid(
+            {...data, 'saleStart': now.toIso8601String()}, now),
+        isFalse);
+    expect(
+        OccasionSetupSales.valid(
+            {...data, 'formEnabled': false, 'saleStart': 'broken'}, now),
+        isTrue);
+  });
+  testWidgetsWithEnvironment(
+      () => environment, 'sale labels name counts and use Czech plural rules',
+      (tester) async {
+    expect(OccasionSaleStrings.label(status([form()]), now, const Locale('cs')),
+        'V prodeji');
+    expect(
+        OccasionSaleStrings.label(
+            status([form(), form(mode: 'waitlist'), form(open: false)]),
+            now,
+            const Locale('cs')),
+        'V prodeji 2/3');
+    expect(
+        OccasionSaleStrings.label(
+            status([form(mode: 'waitlist'), form(open: false)]),
+            now,
+            const Locale('cs')),
+        'Náhradníci 1/2');
+    expect(
+        OccasionSaleStrings.label(
+            status([
+              form(open: false, preparation: true),
+              form(open: false, preparation: true)
+            ]),
+            now,
+            const Locale('cs')),
+        'V přípravě');
+    for (final pair in [
+      (1, '1 den'),
+      (2, '2 dny'),
+      (3, '3 dny'),
+      (5, '5 dní'),
+      (21, '21 dní')
+    ]) {
+      expect(
+          OccasionSaleStrings.duration(
+              Duration(days: pair.$1), const Locale('cs')),
+          pair.$2);
+    }
+    final future = status(
+        [form(start: now.add(const Duration(days: 3)), countdown: true)]);
+    expect(OccasionSaleStrings.label(future, now, const Locale('cs')),
+        'Prodej začíná za 3 dny');
+    final ending =
+        status([form(end: now.add(const Duration(hours: 2)), countdown: true)]);
+    expect(OccasionSaleStrings.label(ending, now, const Locale('cs')),
+        'Prodej končí za 2 h');
+    final fixed = status([form(start: now.add(const Duration(days: 3)))]);
+    expect(OccasionSaleStrings.label(fixed, now, const Locale('cs')),
+        startsWith('Prodej od '));
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'scheduled picker stores UTC and countdown never changes the window',
+      (tester) async {
+    final oldLocation = tz.local;
+    tz.setLocalLocation(tz.getLocation('Europe/Prague'));
+    addTearDown(() => tz.setLocalLocation(oldLocation));
+    final today = DateTime.now();
+    final selected = DateTime(
+        today.year,
+        today.month + (today.day >= 26 ? 1 : 0),
+        today.day >= 26 ? 2 : today.day + 2);
+    final data = <String, dynamic>{
+      'saleMode': 'scheduled',
+      'end': today.add(const Duration(days: 365)).toUtc().toIso8601String()
+    };
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+                    child: StatefulBuilder(
+                        builder: (context, setState) =>
+                            OccasionSetupSaleSettings(
+                                data: data,
+                                onChanged: (patch) =>
+                                    setState(() => data.addAll(patch))))))));
+    final dateField = find
+        .descendant(
+            of: find.byType(TimeDatePicker).first,
+            matching: find.byType(TextFormField))
+        .last;
+    await tester.tap(dateField);
+    await tester.pumpAndSettle();
+    expect(find.byType(CalendarDatePicker), findsOneWidget);
+    final calendarContext = tester.element(find.byType(CalendarDatePicker));
+    final material = MaterialLocalizations.of(calendarContext);
+    if (selected.month != today.month) {
+      await tester.tap(find.byTooltip(material.nextMonthTooltip));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('${selected.day}').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(material.okButtonLabel));
+    await tester.pumpAndSettle();
+    final instant =
+        tz.TZDateTime(tz.local, selected.year, selected.month, selected.day, 18)
+            .toUtc();
+    expect(DateTime.parse(data['saleStart']).isAtSameMomentAs(instant), isTrue);
+    expect(OccasionSetupSales.valid(data, DateTime.now()), isTrue);
+    final savedStart = data['saleStart'];
+    final savedEnd = data['end'];
+    final countdown = find.byType(CheckboxListTile);
+    await tester.ensureVisible(countdown);
+    await tester.tap(countdown);
+    await tester.pumpAndSettle();
+    expect(data['saleCountdown'], true);
+    await tester.tap(countdown);
+    await tester.pumpAndSettle();
+    expect(data['saleCountdown'], false);
+    expect(data['saleStart'], savedStart);
+    expect(data['end'], savedEnd);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
+      'completion closes before its caller navigates to list or administration',
+      (tester) async {
+    OccasionSetupNext? next;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Builder(
+                builder: (context) => Scaffold(
+                    body: TextButton(
+                        onPressed: () async {
+                          next = await Navigator.of(context)
+                              .push<OccasionSetupNext>(MaterialPageRoute(
+                                  builder: (_) => const OccasionSetupCompleted(
+                                      result: OccasionSetupResult(
+                                          occasionId: 1,
+                                          unit: 1,
+                                          link: 'event',
+                                          title: 'Akce',
+                                          formLink: 'saved-form'))));
+                        },
+                        child: const Text('Open'))))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, 'Kopírovat'), findsOneWidget);
+    await tester.tap(find.text('Spravovat akci'));
+    await tester.pumpAndSettle();
+    expect(next, OccasionSetupNext.manage);
+    expect(find.byType(OccasionSetupCompleted), findsNothing);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Přejít do přehledu akcí'));
+    await tester.pumpAndSettle();
+    expect(next, OccasionSetupNext.list);
+    expect(find.byType(OccasionSetupCompleted), findsNothing);
+  });
+
+  for (final animate in [true, false]) {
+    testWidgets(
+        'new occasion is revealed beyond the lazy viewport, animate=$animate',
+        (tester) async {
+      final grid = GlobalKey();
+      final controller = ScrollController();
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: SizedBox(
+                  width: 500,
+                  height: 500,
+                  child: CustomScrollView(controller: controller, slivers: [
+                    const SliverToBoxAdapter(child: SizedBox(height: 300)),
+                    SliverGrid(
+                        key: grid,
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 250,
+                                mainAxisExtent: 126,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16),
+                        delegate: SliverChildBuilderDelegate(
+                            (context, i) => Text('Event $i'),
+                            childCount: 100)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 64)),
+                  ])))));
+      expect(find.text('Event 72'), findsNothing);
+      final revealed = OccasionCreatedHighlight.reveal(
+          gridKey: grid, controller: controller, index: 72, animate: animate);
+      await tester.pumpAndSettle();
+      await revealed;
+      final rect = tester.getRect(find.text('Event 72'));
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.bottom, lessThanOrEqualTo(500));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    });
+  }
+
+  for (final scale in [1.0, 2.0]) {
+    testWidgetsWithEnvironment(() => environment,
+        'card fits 288px at text scale $scale and explains its badge',
+        (tester) async {
+      var opened = 0;
+      final occasion = OccasionModel(
+          id: 1,
+          title:
+              'Velmi dlouhý název společenského večera pro přátele a sousedy',
+          startTime: DateTime(2030, 1, 10),
+          endTime: DateTime(2030, 1, 11),
+          isOpen: false,
+          isHidden: true,
+          isPromoted: false,
+          stats: StatsModel(),
+          saleForms: [form(), form(mode: 'waitlist'), form(open: false)]);
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: MediaQuery(
+                      data:
+                          MediaQueryData(textScaler: TextScaler.linear(scale)),
+                      child: SizedBox(
+                          width: 288,
+                          height: 126 + (scale - 1) * 64,
+                          child: OccasionEditCard(
+                              occasion: occasion, onTap: () => opened++))))));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('V prodeji 2/3'), findsOneWidget);
+      await tester.tap(find.text('V prodeji 2/3'));
+      await tester.pump();
+      expect(find.textContaining('Otevřené formuláře: 2/3'), findsOneWidget);
+      expect(opened, 0,
+          reason: 'Opening status must not navigate to the occasion');
+      expect(tester.takeException(), isNull);
+    });
+  }
+}

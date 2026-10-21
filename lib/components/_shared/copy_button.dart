@@ -9,7 +9,8 @@ import 'common_strings.dart';
 /// Compact clipboard action with immediate, temporary success feedback.
 class CopyButton extends StatefulWidget {
   final String value;
-  const CopyButton({super.key, required this.value});
+  final bool showLabel;
+  const CopyButton({super.key, required this.value, this.showLabel = false});
 
   @override
   State<CopyButton> createState() => _CopyButtonState();
@@ -66,23 +67,31 @@ class _CopyButtonState extends State<CopyButton> {
     return Tooltip(
       key: _tooltipKey,
       message: _copied ? CommonStrings.copied : CommonStrings.copy,
-      child: SizedBox(
-        width: 24,
-        height: 30,
-        child: IconButton(
-          onPressed: widget.value.isEmpty ? null : _copy,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          iconSize: 16,
-          style: IconButton.styleFrom(
-            foregroundColor: _copied
-                ? (theme.brightness == Brightness.dark
-                    ? Colors.greenAccent.shade400 : Colors.green.shade700)
-                : theme.colorScheme.onSurfaceVariant,
-            backgroundColor: Colors.transparent,
-          ),
-          icon: Icon(_copied ? Icons.check : Icons.copy),
-        ),
-      ),
+      child: widget.showLabel
+          ? OutlinedButton.icon(
+              onPressed: widget.value.isEmpty ? null : _copy,
+              style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+              icon: Icon(_copied ? Icons.check : Icons.copy, size: 18),
+              label: Text(_copied ? CommonStrings.copied : CommonStrings.copy),
+            )
+          : SizedBox(
+              width: 24,
+              height: 30,
+              child: IconButton(
+                onPressed: widget.value.isEmpty ? null : _copy,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                iconSize: 16,
+                style: IconButton.styleFrom(
+                  foregroundColor: _copied
+                      ? (theme.brightness == Brightness.dark
+                          ? Colors.greenAccent.shade400
+                          : Colors.green.shade700)
+                      : theme.colorScheme.onSurfaceVariant,
+                  backgroundColor: Colors.transparent,
+                ),
+                icon: Icon(_copied ? Icons.check : Icons.copy),
+              ),
+            ),
     );
   }
 }

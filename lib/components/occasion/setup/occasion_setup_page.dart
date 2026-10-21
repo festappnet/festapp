@@ -1,3 +1,11 @@
+import 'package:fstapp/router_service.dart';
+import '../occasion_creation_notice.dart';
+import 'occasion_setup_result.dart';
+import 'package:fstapp/services/time_helper.dart';
+import '../occasion_sale_strings.dart';
+import 'occasion_setup_sales.dart';
+import 'occasion_setup_customer_preview.dart';
+import 'occasion_setup_completed.dart';
 import 'occasion_setup_source_picker.dart';
 import 'occasion_setup_references.dart';
 import 'occasion_setup_reference_dialog.dart';
@@ -47,8 +55,6 @@ import 'package:fstapp/services/dialog_helper.dart';
 
 import 'occasion_setup_draft.dart';
 
-import 'package:fstapp/router_service.dart';
-
 import 'occasion_setup_strings.dart';
 import 'occasion_setup_story.dart';
 import 'occasion_setup_story_shell.dart';
@@ -70,20 +76,10 @@ import 'package:fstapp/components/unit/verification/unit_legal_profile_section.d
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
-List<String> get _steps => [
-      'Zdroj',
-      'Základ',
-      AppConfig.isAppSupported ? 'Common.content'.tr() : 'Vstupenka',
-      'FeatureForm.title'.tr(),
-      AppConfig.isAppSupported ? CommonStrings.blueprint : 'Nastavení plateb',
-      'Kontrola',
-      CommonStrings.blueprint,
-    ];
-
 class OccasionSetupPage extends StatefulWidget {
   final OccasionSetupDraft draft;
   const OccasionSetupPage({super.key, required this.draft});
-  static Future<void> open(
+  static Future<OccasionSetupResult?> open(
     BuildContext context,
     OccasionSetupDraft draft,
   ) async {
@@ -92,16 +88,22 @@ class OccasionSetupPage extends StatefulWidget {
       futureFunction: () => OccasionSetupDrafts(Supabase.instance.client)
           .initializeDefaults(draft),
     );
-    if (initialized == null || !context.mounted) return;
-    final link = await Navigator.of(context).push<String>(
+    if (initialized == null || !context.mounted) return null;
+    final result = await Navigator.of(context).push<OccasionSetupResult>(
       MaterialPageRoute(builder: (_) => OccasionSetupPage(draft: initialized)),
     );
-    if (link != null && context.mounted) {
-      await RouterService.navigateToOccasionAdministration(
-        context,
-        occasionLink: link,
-      );
+    if (result != null && context.mounted) {
+      final next = await Navigator.of(context).push<OccasionSetupNext>(
+          MaterialPageRoute(
+              builder: (_) => OccasionSetupCompleted(result: result)));
+      if (next == OccasionSetupNext.manage && context.mounted) {
+        await RouterService.navigateToOccasionAdministration(context,
+            occasionLink: result.link);
+      }
     }
+    if (result != null)
+      OccasionCreationNotice.record(result.unit, result.occasionId);
+    return result;
   }
 
   @override
@@ -146,9 +148,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       'title': '',
       'link': '',
       'start': _stored.data['start_time'] ??
-          DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+          DateTime.now()
+              .add(const Duration(days: 30))
+              .toUtc()
+              .toIso8601String(),
       'end': _stored.data['end_time'] ??
-          DateTime.now().add(const Duration(days: 33)).toIso8601String(),
+          DateTime.now()
+              .add(const Duration(days: 33))
+              .toUtc()
+              .toIso8601String(),
       'source': 'Od nuly',
       'copyProgram': false,
       'copyInformation': false,
@@ -331,7 +339,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _ensureDefaultForm(draft);
       return;
     }
-    final source = _sources.firstWhere((s) => (s['occasion'] as Map)['id'] == sourceId);
+    final source =
+        _sources.firstWhere((s) => (s['occasion'] as Map)['id'] == sourceId);
     draft['source'] = _sourceLabel(source);
     draft['sourceId'] = (source['occasion'] as Map)['id'];
     draft.putIfAbsent('copy_locale', () => context.locale.languageCode);
@@ -512,7 +521,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   Future<void> _finalize() async {
-    if (_finalizing) return;
+    if (_finalizing ||
+        _finalizeCommand == null &&
+            (_data['reviewConfirmed'] != true ||
+                _reviewIssues(_data).isNotEmpty)) return;
     setState(() {
       _finalizing = true;
       _finalizeError = null;
@@ -689,16 +701,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       (d['deadline'] as String? ?? '').trim().isEmpty ||
       (int.tryParse(d['deadline'] as String? ?? '') ?? -1) >= 0;
 
-  int _progress(Map<String, dynamic> d) {
-    return ((OccasionSetupDraft.completedCount(d) /
-                OccasionSetupStory.applicableSteps(
-                  d,
-                  AppConfig.isAppSupported,
-                ).length) *
-            100)
-        .round();
-  }
-
   List<OccasionSetupQuestion> get _questions => OccasionSetupStory.questions(
         AppConfig.isAppSupported,
         data: _data,
@@ -719,6 +721,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
     if (q.optional) return true;
+    if (q.key == 'saleTiming')
+      return OccasionSetupSales.valid(d, DateTime.now());
     if (q.key == 'form')
       return _stepReady(
         d,
@@ -779,29 +783,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       _goToQuestion(x, index + 1);
     });
     if (question.key == 'verification') _refreshVerification();
-  }
-
-  void _review() {
-    final d = _active!;
-    if (d['reviewConfirmed'] != true) return;
-    final issues = _reviewIssues(d);
-    if (issues.isNotEmpty) {
-      setState(() => d['step'] = issues.first.key);
-      return;
-    }
-    for (final step in OccasionSetupDraft.supportedSteps.where((s) => s != 5)) {
-      if (!_stepReady(d, step)) {
-        setState(() => d['step'] = step);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ještě není dokončen krok ${_steps[step]}.')),
-        );
-        return;
-      }
-    }
-    _change((x) {
-      x['completed'] = OccasionSetupDraft.supportedSteps;
-      x['reviewed'] = true;
-    });
   }
 
   Future<void> _openBlueprint() async {
@@ -1030,13 +1011,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         : defaultDraftForm(
             Map<String, dynamic>.from(_data['defaultConfiguration'] as Map),
           );
-    final candidate = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
+    final candidate =
+        Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
     candidate['formDraft'] = serializeDraftForm(form);
     (candidate['formDraft'] as Map)['link'] = '';
     if (result is FormBundle && form.definition.blueprint != null) {
       for (final source in _sources) {
-        final selected = (source['blueprints'] as List).whereType<Map>()
-            .where((plan) => plan['id'] == form.definition.blueprint).firstOrNull;
+        final selected = (source['blueprints'] as List)
+            .whereType<Map>()
+            .where((plan) => plan['id'] == form.definition.blueprint)
+            .firstOrNull;
         if (selected != null) _applyBlueprint(candidate, selected);
       }
     }
@@ -1056,20 +1040,24 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       draft['blueprintTitle'] = next['blueprintTitle'];
       draft['ticketDraft'] = next['ticketDraft'];
       _adoptFormSettings(draft);
-      draft['formOrigin'] = result is FormBundle ? form.occasionModel?.title : null;
+      draft['formOrigin'] =
+          result is FormBundle ? form.occasionModel?.title : null;
     }, changesConfiguration: true);
   }
 
-  Future<Map<String, dynamic>?> _resolveReferences(Map<String, dynamic> candidate, Map<String, dynamic> previous) async {
+  Future<Map<String, dynamic>?> _resolveReferences(
+      Map<String, dynamic> candidate, Map<String, dynamic> previous) async {
     if (!OccasionSetupReferences(candidate).hasIssues) return candidate;
     return showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => OccasionSetupReferenceDialog(data: candidate, previous: previous),
+      builder: (_) =>
+          OccasionSetupReferenceDialog(data: candidate, previous: previous),
     );
   }
 
   Future<void> _repairReferences() async {
-    final candidate = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
+    final candidate =
+        Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
     final next = await _resolveReferences(candidate, candidate);
     if (!mounted || next == null) return;
     _change((draft) {
@@ -1157,15 +1145,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Widget _dateFields(Map<String, dynamic> d, String question) {
     final isStart = question == 'start';
-    final value = DateTime.tryParse(d[question] as String);
+    final value = DateTime.tryParse(d[question] as String)?.toOccasionTime();
     void update(DateTime selected) => _change((x) {
-          x[question] = selected.toIso8601String();
+          final instant = selected.toUtcFromOccasionTime();
+          x[question] = instant.toIso8601String();
           final end = DateTime.tryParse(x['end'] as String);
-          if (isStart && end != null && selected.isAfter(end)) {
-            x['end'] = selected.toIso8601String();
+          if (isStart && end != null && instant.isAfter(end)) {
+            x['end'] = instant.toIso8601String();
           }
         }, changesConfiguration: true);
-    final start = DateTime.tryParse(d['start'] as String);
+    final start = DateTime.tryParse(d['start'] as String)?.toOccasionTime();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1221,6 +1210,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(const MapEntry(1, 'Začátek a konec události nejsou platné.'));
     }
     if (d['formEnabled'] == true) {
+      if (!OccasionSetupSales.valid(d, DateTime.now()))
+        issues.add(MapEntry(3, OccasionSaleStrings.text('invalidTiming')));
       if (!communicationDraftValid(d))
         issues.add(
           MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')),
@@ -1314,7 +1305,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   String _dateForReview(String? raw) {
-    final value = DateTime.tryParse(raw ?? '');
+    final value = DateTime.tryParse(raw ?? '')?.toOccasionTime();
     if (value == null) return 'Neuvedeno';
     final localizations = MaterialLocalizations.of(context);
     return '${localizations.formatMediumDate(value)} ${value.year} · ${TimeOfDay.fromDateTime(value).format(context)}';
@@ -1353,8 +1344,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     List<MapEntry<int, String>> issues, {
     String? questionKey,
   }) {
-    final hasIssue = issues.any((issue) => issue.key == step) ||
-        (step == 5 && d['reviewed'] != true);
+    final hasIssue = issues.any((issue) => issue.key == step);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
@@ -1425,18 +1415,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           {'title': node['label']}
     ];
     final seatCount = _layoutSeatCount(d);
-    final applicable = OccasionSetupStory.applicableSteps(
-      d,
-      AppConfig.isAppSupported,
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text(
-          '${applicable.length - 1 - issues.map((issue) => issue.key).toSet().length} z ${applicable.length - 1} nastavení bez chyby · ${OccasionSetupDraft.completedCount(d)} z ${applicable.length} kroků potvrzeno${d['reviewed'] == true ? '' : ' · čeká finální kontrola'}',
-        ),
-        const SizedBox(height: 18),
         if (issues.isNotEmpty)
           Container(
             width: double.infinity,
@@ -1563,7 +1545,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   'FeatureFormSettings.labelFormLink'.tr(),
                   form.form.definition.link ?? '',
                 ),
-                _reviewRow('Stav', 'Zavřený'),
+                _reviewRow(
+                    OccasionSaleStrings.text('saleStart'),
+                    OccasionSaleStrings.text(
+                        'mode.${OccasionSetupSales.mode(d)}')),
+                if (OccasionSetupSales.mode(d) == 'scheduled')
+                  _reviewRow(OccasionSaleStrings.text('saleStart'),
+                      _dateForReview(d['saleStart'] as String?)),
+                _reviewRow(OccasionSaleStrings.text('saleEnd'),
+                    _dateForReview((d['saleEnd'] ?? d['end']) as String?)),
                 Text(
                   'Pole formuláře (${form.form.relatedFields.where((field) => field.definition.isTicketField != true).length})',
                   style: Theme.of(context).textTheme.titleSmall,
@@ -1636,7 +1626,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             issues,
             questionKey: 'communication',
           ),
-        if (!AppConfig.isAppSupported && OccasionSetupStory.hasTickets(d))
+        if (OccasionSetupStory.hasTickets(d))
           _reviewSection(
               d,
               2,
@@ -1649,7 +1639,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                       : 'Uložený návrh',
                 ),
               ],
-              issues),
+              issues,
+              questionKey: 'ticket'),
         if (!AppConfig.isAppSupported && OccasionSetupStory.hasPaidProducts(d))
           _reviewSection(
               d,
@@ -1709,40 +1700,62 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             5,
             'Soukromí a dokončení',
             [
-              const Text(
-                'Koncept je neveřejný. Vytvořená událost zůstane skrytá a formulář zavřený. Zveřejnění je samostatný krok.',
-              ),
+              Text(OccasionSaleStrings.text('privacy')),
+              if (d['formEnabled'] == true)
+                Text(OccasionSaleStrings.text(
+                    'completion.${OccasionSetupSales.mode(d)}')),
               const SizedBox(height: 8),
               Text(FormStrings.automaticPublicLink),
             ],
             issues),
-        if (d['reviewed'] != true) ...[
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: d['reviewConfirmed'] == true,
-            onChanged: issues.isEmpty
-                ? (value) =>
-                    _change((x) => x['reviewConfirmed'] = value == true)
-                : null,
-            title: Text(OccasionSetupStrings.story('reviewConfirmation')),
-            subtitle: const Text('Potvrzení zpřístupní dokončení kontroly.'),
+        if (d['formEnabled'] == true && d['formDraft'] is Map) ...[
+          OutlinedButton.icon(
+            icon: const Icon(Icons.preview_outlined),
+            label: Text(OccasionSaleStrings.text('customerPreview')),
+            onPressed: () => showDialog<void>(
+                context: context,
+                builder: (previewContext) => AppDialog(
+                      child: SizedBox(
+                          width: 800,
+                          height: MediaQuery.sizeOf(context).height * .85,
+                          child: Column(children: [
+                            AppDialogHeader(
+                                title: Text(OccasionSaleStrings.text(
+                                    'customerPreview')),
+                                onClose: () =>
+                                    Navigator.of(previewContext).pop()),
+                            Expanded(
+                                child: OccasionSetupCustomerPreview(
+                                    data: d, unitId: _stored.unit)),
+                          ])),
+                    )),
           ),
-        ] else ...[
-          const Text(
-            '100 % znamená dokončené nastavení. Koncept je stále neveřejný.',
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton(
-            onPressed: _leave,
-            child: const Text('Uložit dokončený koncept'),
-          ),
-          if (_finalizeError != null) Text(_finalizeError!),
+          const SizedBox(height: 16),
         ],
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          value: d['reviewConfirmed'] == true,
+          onChanged: issues.isEmpty
+              ? (value) => _change((x) => x['reviewConfirmed'] = value == true)
+              : null,
+          title: Text(OccasionSetupStrings.story('reviewConfirmation')),
+        ),
+        TextButton(
+            onPressed: _leave,
+            child: Text(OccasionSaleStrings.text('saveAndLeave'))),
+        if (_finalizeError != null) Text(_finalizeError!),
       ],
     );
   }
 
   Widget _body(Map<String, dynamic> d) {
+    if (_questions[_questionIndex(d)].key == 'ticket')
+      return _ticketSettings(d);
+    if (_questions[_questionIndex(d)].key == 'saleTiming')
+      return OccasionSetupSaleSettings(
+          data: d,
+          onChanged: (patch) =>
+              _change((x) => x.addAll(patch), changesConfiguration: true));
     if (_questions[_questionIndex(d)].key == 'promotion') {
       return OccasionSetupPromotion(
         data: d,
@@ -1755,6 +1768,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         key: const ValueKey('payment-timing'),
         paymentTiming: true,
         draftId: _stored.id,
+        unitId: _stored.unit,
         data: d,
         onChanged: (patch) =>
             _change((x) => x.addAll(patch), changesConfiguration: true),
@@ -1772,6 +1786,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       return OccasionSetupCommunication(
         key: const ValueKey('communication'),
         draftId: _stored.id,
+        unitId: _stored.unit,
         data: d,
         onChanged: (patch) =>
             _change((x) => x.addAll(patch), changesConfiguration: true),
@@ -1827,7 +1842,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               selectedId: d['sourceId'] as int?,
               unavailableLabel: d['source'] as String?,
               label: _sourceLabel,
-              onChanged: (id) => _change((x) => _applySource(x, id), changesConfiguration: true),
+              onChanged: (id) => _change((x) => _applySource(x, id),
+                  changesConfiguration: true),
             ),
             if (_sources.isEmpty && !_loadingSources && _sourceError == null)
               const Text(
@@ -1910,7 +1926,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           children: [
             if (referenceIssues) ...[
               Text(OccasionSetupStrings.copy('invalidReferences')),
-              OutlinedButton(onPressed: _repairReferences, child: Text(OccasionSetupStrings.copy('repairReferences'))),
+              OutlinedButton(
+                  onPressed: _repairReferences,
+                  child: Text(OccasionSetupStrings.copy('repairReferences'))),
               const SizedBox(height: 16),
             ],
             if (formBundle == null)
@@ -1947,6 +1965,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ),
               const SizedBox(height: 10),
               Text('$fields polí · $products produktů'),
+              const SizedBox(height: 12),
+              Text(OccasionSaleStrings.text('productsHelp')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
@@ -2122,7 +2142,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           : _pending != null || _dirty
               ? OccasionSetupStrings.saving
               : OccasionSetupStrings.saved,
-      readiness: OccasionSetupStrings.readiness(_progress(d)),
       questionCount: OccasionSetupStrings.questionNumber(
         index + 1,
         _questions.length,
@@ -2178,20 +2197,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ),
       primaryAction: FilledButton(
         style: FilledButton.styleFrom(minimumSize: const Size(160, 48)),
-        onPressed: _presentationUploading
+        onPressed: _presentationUploading || _finalizing
             ? null
             : isReview
-                ? d['reviewed'] == true
-                    ? (_finalizing || !reviewReady ? null : _finalize)
-                    : (reviewReady && d['reviewConfirmed'] == true
-                        ? _review
-                        : null)
+                ? (reviewReady && d['reviewConfirmed'] == true
+                    ? _finalize
+                    : null)
                 : _advance,
         child: Text(
           isReview
-              ? d['reviewed'] == true
-                  ? OccasionSetupStrings.createEvent
-                  : OccasionSetupStrings.story('confirmReview')
+              ? OccasionSetupSales.createLabel(d)
               : question.key == 'verification'
                   ? OccasionSetupStrings.story('skipVerification')
                   : CommonStrings.continueAction,

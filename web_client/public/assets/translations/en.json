@@ -491,7 +491,8 @@
     "embedHelp": "Paste the code into your website HTML. Automatic height requires an external script. If your website blocks it, use fixed height.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
-    "embedFixed": "Fixed height without script"
+    "embedFixed": "Fixed height without script",
+    "productsAndPrices": "Products and prices"
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -1480,7 +1481,17 @@
     "helpEscapeEdit": "Cancel dragging or selection; close a dialog",
     "helpEscapeView": "Exit order or swap mode; close a dialog",
     "helpSeatStates": "Seat states",
-    "orderSelectionTitle": "Select seats for an order"
+    "orderSelectionTitle": "Select seats for an order",
+    "imageUploadUncertain": "The upload result could not be verified. Before retrying, check whether the image was added.",
+    "seatStateDescriptions": {
+      "available": "Available to order.",
+      "selected": "Temporarily held by another customer.",
+      "ordered": "Included in an order.",
+      "used": "The ticket has already been checked in.",
+      "blocked": "Not available for sale.",
+      "empty": "No product is assigned to this seat.",
+      "selection": "Seat in your current selection."
+    }
   },
   "OccasionSettings": {
     "title": "Title",
@@ -1955,7 +1966,8 @@
     "keepEditing": "Keep editing",
     "copy": "Copy",
     "copied": "Copied",
-    "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity."
+    "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity.",
+    "contextLoadFailed": "Could not verify access. Please try again."
   },
   "BankAccount": {
     "organizationSettings": "organization settings",
@@ -2987,7 +2999,8 @@
       "endTime": "Event end time",
       "endBeforeStart": "The event must end at or after its start.",
       "incomplete": "This answer is incomplete. Required details and settings need to be checked.",
-      "questionNumber": "Question {current} of {total}"
+      "questionNumber": "Question {current} of {total}",
+      "saleTimingQuestion": "When should sales start?"
     },
     "draft": "Draft",
     "cancelDraft": "Discard draft",
@@ -2995,7 +3008,18 @@
     "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
     "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
-    "withoutWizard": "Without wizard"
+    "withoutWizard": "Without wizard",
+    "copy": {
+      "source": "Source",
+      "fromScratch": "From scratch",
+      "referencesTitle": "Connect the new form",
+      "referencesBody": "Choose replacements for products used by the seating plan and ticket. The layout and ticket content will be kept. Cancel to keep the current form.",
+      "seatProduct": "Seats: {title}",
+      "ticketType": "Ticket field: {title}",
+      "duplicateTypes": "Two ticket fields cannot refer to the same product group within one template. Choose different groups.",
+      "invalidReferences": "The seating plan or ticket refers to products missing from the selected form. Choose their replacements in the form step.",
+      "repairReferences": "Connect products"
+    }
   },
   "Waitlist": {
     "settings": "Capacity and waitlist",
@@ -3583,5 +3607,83 @@
     "switchAccount": "Sign in with a different account",
     "legacyInviteHint": "The selected users will receive an invitation. Team members receive a link without changing their password.",
     "legacyReinviteConfirm": "Some users have already received an invitation. Send it again?"
+  },
+  "EditorFileDrop": {
+    "hint": "Drop an image to replace the background",
+    "singleFile": "Drop exactly one file, not a folder.",
+    "unsupported": "This file type is not supported.",
+    "tooLarge": "The image exceeds the 20 MB limit."
+  },
+  "OccasionSales": {
+    "admission": "Admission",
+    "standardTicket": "Standard ticket",
+    "customerPreview": "Customer preview",
+    "previewSafe": "Try the fields and price. This preview saves nothing, opens no sales, reserves no seats and sends no orders or emails.",
+    "previewSeats": "Selecting specific seats is disabled here. Check the ticket appearance in the Ticket step.",
+    "previewTotal": "Total for selected products: {amount}",
+    "previewEmail": "Confirmation email examples",
+    "previewEmailSample": "The sample order uses draft products and inherited templates. It is independent of the form selection above.",
+    "previewUnavailable": "The email preview could not be loaded. Your settings remain saved; check email templates before opening sales.",
+    "manualPaymentsHelp": "Without a bank connection, payments require manual confirmation. Open Orders in administration, find the order and confirm the received payment. Confirmation triggers paid ticket delivery. Configure the connection through Manage bank accounts.",
+    "senderUnavailable": "System sender - the exact address is currently unavailable",
+    "preparation": "In preparation",
+    "scheduled": "Sale scheduled",
+    "selling": "On sale",
+    "waitlist": "Waitlist",
+    "soldOut": "Sold out",
+    "paused": "Paused",
+    "ended": "Sale ended",
+    "finished": "Event finished",
+    "startsIn": "Sale starts in {duration}",
+    "endsIn": "Sale ends in {duration}",
+    "startsSoon": "Sale starts within a minute",
+    "endsSoon": "Sale ends within a minute",
+    "startsOn": "Sale from {date}",
+    "days": {
+      "one": "{count} day",
+      "few": "{count} days",
+      "many": "{count} days",
+      "other": "{count} days"
+    },
+    "hours": "{count} h",
+    "minutes": "{count} min",
+    "counts": "Open forms: {active}/{total}. Selling: {selling}, waitlist: {waitlists}.",
+    "startAt": "Sale starts: {date}",
+    "endAt": "Sale ends: {date}",
+    "mode": {
+      "preparation": "Keep in preparation",
+      "scheduled": "Schedule opening",
+      "immediate": "Open immediately after creation"
+    },
+    "help": {
+      "preparation": "The form stays closed. Open sales later.",
+      "scheduled": "Sales open automatically at the selected time.",
+      "immediate": "The form will accept orders immediately."
+    },
+    "saleStart": "Sale start",
+    "saleEnd": "Sale end",
+    "time": "Time",
+    "endDefault": "Default: event end. You can choose an earlier time.",
+    "useEventEnd": "Use event end",
+    "countdown": "Show sale countdowns",
+    "countdownHelp": "Optional. Turning countdowns off does not change sale times.",
+    "invalidTiming": "Check sale times. The start must be in the future and before sale end; sales must end by event end.",
+    "create": "Create event",
+    "createScheduled": "Create and schedule sale",
+    "createOpen": "Create and open sale",
+    "products": "Products and prices",
+    "productsHelp": "Tickets are form products. Edit names, prices and variants below.",
+    "created": "Event created",
+    "completion": {
+      "preparation": "The sales form is ready. Sales are not open yet.",
+      "scheduled": "Sales will open automatically at the scheduled time.",
+      "immediate": "The sales form is open and ready to accept orders."
+    },
+    "salesLink": "Sales form link",
+    "openForm": "View form",
+    "backToList": "Go to event list",
+    "manage": "Manage event",
+    "privacy": "The event stays hidden in the catalogue. The selected sale settings control access to the sales form.",
+    "saveAndLeave": "Save draft and leave"
   }
 }
