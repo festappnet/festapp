@@ -666,7 +666,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   child: Text(
                       BlueprintStrings.protectedCount(protected ? 1 : blockers),
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.error))),
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant))),
             if (binding != null &&
                 _canOrder &&
                 controller.adapter.spots[binding.spotId] != null)
@@ -978,84 +979,88 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final mixed = members.any((seat) => seat.productId != defaultId);
     final blockers =
         members.where((seat) => controller.isProtected(seat.nodeId)).length;
-    final statusColor = mixed
-        ? (ThemeConfig.isDarkMode(context)
-            ? Colors.orangeAccent
-            : Colors.orange)
-        : defaultId == null
-            ? Theme.of(context).colorScheme.onSurfaceVariant
-            : ThemeConfig.greenColor(context);
+    final theme = Theme.of(context);
+    final statusColor = mixed || defaultId == null
+        ? theme.colorScheme.onSurfaceVariant
+        : ThemeConfig.greenColor(context);
     final showSeats = _showIndividualCommercialSeats || mixed;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Ink(
-          decoration: BoxDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: .3),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: Text(BlueprintStrings.groupDefaultProduct,
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(_productText(defaultId),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(
+                    mixed
+                        ? Icons.tune
+                        : defaultId == null
+                            ? Icons.info_outline
+                            : Icons.check_circle_outline,
+                    size: 16,
+                    color: statusColor),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(
+                        mixed
+                            ? BlueprintStrings.statusMixed
+                            : defaultId == null
+                                ? BlueprintStrings.noProductAssigned
+                                : BlueprintStrings.statusUniform,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: statusColor))),
+              ]),
+            ],
           ),
-          child: ListTile(
-            leading: const Icon(Icons.category_outlined),
-            title: Text(BlueprintStrings.groupDefaultProduct,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                    '${BlueprintStrings.currentProductPrefix}${_productText(defaultId)}'),
-                const SizedBox(height: 4),
-                Row(children: [
-                  Icon(
-                      mixed
-                          ? Icons.warning_amber_rounded
-                          : defaultId == null
-                              ? Icons.info_outline
-                              : Icons.check_circle_outline,
-                      size: 14,
-                      color: statusColor),
-                  const SizedBox(width: 4),
-                  Expanded(
-                      child: Text(
-                          mixed
-                              ? BlueprintStrings.statusMixed
-                              : defaultId == null
-                                  ? BlueprintStrings.noProductAssigned
-                                  : BlueprintStrings.statusUniform,
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: statusColor))),
-                ]),
-              ],
-            ),
-            trailing:
-                _canEdit ? const Icon(Icons.edit_outlined, size: 20) : null,
-            onTap: !_canEdit || _busy || blockers > 0
-                ? null
-                : () => _product(table.id, group: true),
-          ),
+          trailing: _canEdit && blockers == 0
+              ? const Icon(Icons.edit_outlined, size: 18)
+              : null,
+          onTap: !_canEdit || _busy || blockers > 0
+              ? null
+              : () => _product(table.id, group: true),
         ),
         if (blockers > 0) ...[
-          Text(BlueprintStrings.protectedCount(blockers),
-              style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          if (_canEdit)
-            TextButton(
+          const SizedBox(height: 8),
+          Semantics(
+            liveRegion: true,
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.people_outline,
+                  size: 18, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(BlueprintStrings.protectedCount(blockers),
+                      style: theme.textTheme.bodyMedium)),
+            ]),
+          ),
+          if (_canEdit) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
                 onPressed: _busy
                     ? null
                     : () => _product(table.id, group: true, freeOnly: true),
-                child: Text(BlueprintStrings.onlyFreeSeats)),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(BlueprintStrings.onlyFreeSeats)),
+          ],
         ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         SwitchListTile(
           key: const ValueKey('commercial-individual-seats'),
           contentPadding: EdgeInsets.zero,
-          controlAffinity: ListTileControlAffinity.leading,
-          title: Text(BlueprintStrings.customizeIndividualSeats),
+          dense: true,
+          title: Text(BlueprintStrings.customizeIndividualSeats,
+              style: theme.textTheme.bodyMedium),
           value: showSeats,
           onChanged: mixed
               ? null
@@ -1064,7 +1069,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   setState(() {});
                 },
         ),
-        const Divider(),
+        if (showSeats) const Divider(height: 16),
         if (showSeats)
           for (final seat in members)
             ListTile(

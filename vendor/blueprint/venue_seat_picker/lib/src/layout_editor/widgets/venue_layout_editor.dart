@@ -3426,6 +3426,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                                       ))
                                               : const {},
                                           pan: _tool == 'Pan' || !_canEdit,
+                                          touchPanOnEmpty: _tool == 'Select',
                                           onSelectDown: _selectDown,
                                           onContextMenu:
                                               (!_canEdit || _tool != 'Select')

@@ -14,6 +14,7 @@ import '../support/fixtures/root_supabase_fixture.dart';
 import '../support/fixtures/local_app_storage_fixture.dart';
 import '../support/fixtures/rights_context_fixture.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +34,7 @@ void main() {
   var bankRpcDispatches = 0;
   var unitUserUpdates = 0;
   var contextFailures = 0;
+  Completer<void>? contextGate;
   setUpAll(() async {
     PackageInfo.setMockInitialValues(
         appName: 'test',
@@ -67,13 +69,14 @@ void main() {
         final context = (jsonDecode(request.body)['data_in'] as Map)
             .cast<String, dynamic>();
         contexts.add(context);
+        await contextGate?.future;
         if (contextFailures > 0) {
           contextFailures--;
           throw http.ClientException('Fixture context unavailable');
         }
         return http.Response(
             jsonEncode({
-              'code': 200,
+              'code': context['link'] == 'server-denied' ? 403 : 200,
               if (context['unit_id'] == null)
                 'occasion': {
                   'id': 1072557,
@@ -108,10 +111,24 @@ void main() {
     bankRpcDispatches = 0;
     unitUserUpdates = 0;
     contextFailures = 0;
+    contextGate = null;
     final state = RightsContextFixture();
     addTearDown(state.dispose);
     final storage = await LocalAppStorageFixture.open();
     addTearDown(storage.dispose);
+  });
+
+  test('an explicit backend denial differs from a failed context request',
+      () async {
+    await expectLater(
+        RightsService.updateAppData(
+            link: 'server-denied', force: true, refreshOffline: false),
+        throwsA(isA<ContextAccessDenied>()));
+    contextFailures = 1;
+    await expectLater(
+        RightsService.updateAppData(
+            link: 'access-recovery', force: true, refreshOffline: false),
+        throwsA(isA<http.ClientException>()));
   });
 
   test('explicit administration link survives a configured landing occasion',
@@ -426,6 +443,24 @@ void main() {
       final link = revoked ? 'access-revoked' : 'access-recovery';
       await RightsService.updateAppData(
           link: link, force: true, refreshOffline: false);
+      if (!revoked) {
+        contextGate = Completer<void>();
+        final refreshing = RightsService.updateAppData(
+            link: link, force: true, refreshOffline: false);
+        final joining =
+            const RightsAdministrationAccess().load(link, reservations: false);
+        await Future<void>.delayed(Duration.zero);
+        expect(contexts, hasLength(2));
+        expect(RightsService.canSeeAdministration(), isFalse);
+        contextGate!.complete();
+        await refreshing;
+        expect(await joining, isTrue);
+        expect(contexts, hasLength(2),
+            reason:
+                'Boundary joins the existing refresh instead of invalidating it again');
+        contextGate = null;
+      }
+      final initialReads = contexts.length;
       contextFailures = 1;
       await RightsService.refreshAfterAuthorizationDenial();
       expect(RightsService.canSeeAdministration(), isFalse);
@@ -436,7 +471,7 @@ void main() {
           await const RightsAdministrationAccess()
               .load(link, reservations: false),
           !revoked);
-      expect(contexts, hasLength(3),
+      expect(contexts, hasLength(initialReads + 2),
           reason:
               'Retry must fetch current SQL capabilities for the same link');
       expect(AuthService.currentUserId(), actor);

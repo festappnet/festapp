@@ -7,6 +7,7 @@ class CommonStrings {
   static String get keepEditing => 'Common.keepEditing'.tr();
   // --- Common Actions ---
   static String get save => 'Common.save'.tr(); // "Save"
+  static String get contextLoadFailed => 'Common.contextLoadFailed'.tr();
   static String get unexpectedError =>
       'Common.unexpectedError'.tr(); // "An unexpected error occurred."
   static String get storno => 'Common.storno'.tr(); // "Storno"

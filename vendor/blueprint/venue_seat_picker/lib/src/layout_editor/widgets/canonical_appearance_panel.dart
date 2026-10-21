@@ -58,7 +58,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
 
   void change(List<String> path, Object? value, {bool unset = false}) {
     try {
-      final d = switch (scope) {
+      var d = switch (scope) {
         'document' => setDocumentLabelLeaf(
           c.document,
           path.last,
@@ -87,6 +87,48 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
           unset: unset,
         ),
       };
+      if (path.length == 1 && path.single == 'material') {
+        // Construction is a family choice. Remove conflicting construction
+        // leaves while preserving the independent palette and typography.
+        const leaves = ['seatStyle', 'cornerRadius', 'strokeWidth'];
+        if (scope == 'children') {
+          for (final leaf in leaves) {
+            d = setTableChildStyleLeaf(d, node.id, [leaf], unset: true);
+          }
+        } else if (scope == 'kind') {
+          for (final leaf in leaves) {
+            d = setKindStyleLeaf(d, kind, [leaf], unset: true);
+          }
+          if (kind == 'table') {
+            d = setKindStyleLeaf(
+              d,
+              'seat',
+              ['material'],
+              value: value,
+              unset: unset,
+            );
+            for (final leaf in leaves) {
+              d = setKindStyleLeaf(d, 'seat', [leaf], unset: true);
+            }
+          }
+        } else if (scope != 'document') {
+          for (final leaf in leaves) {
+            d = setNodeStyleLeaf(d, node.id, [leaf], unset: true);
+          }
+          if (node.kind == 'table') {
+            d = setTableChildStyleLeaf(
+              d,
+              node.id,
+              ['material'],
+              value: value,
+              unset: unset,
+            );
+            for (final leaf in leaves) {
+              d = setTableChildStyleLeaf(d, node.id, [leaf], unset: true);
+            }
+          }
+        }
+      }
       final accepted = c.apply(d, label: 'Style');
       setState(() => failure = accepted ? null : c.error);
     } catch (error) {
@@ -175,28 +217,25 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                           shrinkWrap: true,
                           children: [
                             for (final value in choices)
-                              MouseRegion(
-                                onEnter: (_) => preview(value),
-                                child: RadioListTile<String>(
-                                  value: value,
-                                  groupValue: selected,
-                                  onChanged: (_) => preview(value),
-                                  title: Text(tr(value)),
-                                  secondary: LayoutStylePreview(
-                                    size: const Size(64, 42),
-                                    appearance: title == 'Material'
-                                        ? layoutMaterialFamilyAppearances[value]!
-                                        : LayoutAppearance(
-                                            layoutMaterialFamilyAppearances['minimal']!
-                                                .object,
-                                            seats: {
-                                              ...layoutMaterialFamilyAppearances['minimal']!
-                                                  .seats!,
-                                              if (title == 'Chair style')
-                                                'seatStyle': value,
-                                            },
-                                          ),
-                                  ),
+                              RadioListTile<String>(
+                                value: value,
+                                groupValue: selected,
+                                onChanged: (_) => preview(value),
+                                title: Text(tr(value)),
+                                secondary: LayoutStylePreview(
+                                  size: const Size(64, 42),
+                                  appearance: title == 'Material'
+                                      ? layoutMaterialFamilyAppearances[value]!
+                                      : LayoutAppearance(
+                                          layoutMaterialFamilyAppearances['minimal']!
+                                              .object,
+                                          seats: {
+                                            ...layoutMaterialFamilyAppearances['minimal']!
+                                                .seats!,
+                                            if (title == 'Chair style')
+                                              'seatStyle': value,
+                                          },
+                                        ),
                                 ),
                               ),
                           ],
@@ -338,26 +377,43 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                 onPressed: enabled
                     ? () => _previewChoice(title, path, value, choices, values)
                     : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      LayoutStylePreview(
-                        size: const Size(56, 36),
-                        appearance: LayoutAppearance(
-                          {...values},
-                          seats: {
-                            ...layoutMaterialFamilyAppearances['minimal']!
-                                .seats!,
-                            if (title == 'Chair style') 'seatStyle': value,
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(tr(value))),
-                      const Icon(Icons.expand_more),
-                    ],
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
                   ),
+                  textStyle: Theme.of(context).textTheme.labelLarge,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr(value),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    LayoutStylePreview(
+                      size: const Size(48, 32),
+                      appearance: title == 'Material'
+                          ? layoutMaterialFamilyAppearances[value]!
+                          : LayoutAppearance(
+                              {...values},
+                              seats: {
+                                ...layoutMaterialFamilyAppearances['minimal']!
+                                    .seats!,
+                                'seatStyle': value,
+                              },
+                            ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.expand_more, size: 20),
+                  ],
                 ),
               )
             : DropdownButtonFormField<String>(
@@ -465,9 +521,9 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
                 filled: true,
-                fillColor: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,

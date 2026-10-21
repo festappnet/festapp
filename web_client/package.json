@@ -15,7 +15,7 @@
     "test:form-access-browser": "node scripts/test_form_access_browser.mjs"
   },
   "dependencies": {
-    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.2-818fef252831.tgz",
+    "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.3-2812e279130d.tgz",
     "@supabase/supabase-js": "^2.117.3",
     "css-tree": "^3.2.1",
     "dompurify": "^3.4.17",

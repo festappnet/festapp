@@ -35,6 +35,11 @@ class RightsAdministrationAccess implements AdministrationAccess {
           : RightsService.canSeeAdministration());
   @override
   Future<bool> load(String link, {required bool reservations}) async {
+    final pending = RightsService.pendingContextUpdate;
+    if (pending != null) {
+      await pending;
+      if (loadedLink == link) return canAccess(reservations: reservations);
+    }
     if (loadedLink == link && canAccess(reservations: reservations))
       return true;
     // A denied/failed refresh leaves this link selected with invalidated
@@ -78,6 +83,7 @@ class _OccasionAdministrationBoundaryState
   bool _denied = false;
   bool _loading = false;
   bool _loadFailed = false;
+  bool _loadErrored = false;
   @override
   void initState() {
     super.initState();
@@ -140,13 +146,21 @@ class _OccasionAdministrationBoundaryState
         return;
       }
       if (_inactive) setState(() => _inactive = false);
-      if (_loadFailed) return;
+      if (_loadFailed) {
+        if (widget.access.loadedLink != _link ||
+            !widget.access.canAccess(reservations: widget.reservations)) return;
+        setState(() {
+          _loadFailed = false;
+          _loadErrored = false;
+          _denied = false;
+        });
+      }
       if (widget.access.loadedLink == _link &&
           !widget.access.canAccess(reservations: widget.reservations)) {
-        if (!_denied)
-          setState(() {
-            _denied = true;
-          });
+        if (!_loading) {
+          setState(() => _denied = true);
+          _load(_link!, ++_generation);
+        }
         return;
       }
       if (widget.access.loadedLink != _link || (!_ready && !_loading)) {
@@ -162,6 +176,7 @@ class _OccasionAdministrationBoundaryState
   Future<void> _load(String link, int generation) async {
     _loading = true;
     _loadFailed = false;
+    _loadErrored = false;
     if (!widget.access.isSignedIn) {
       final intended = _root!.urlState.uri.toString();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -197,11 +212,12 @@ class _OccasionAdministrationBoundaryState
         _denied = !ready;
         _loadFailed = !ready;
       });
-    } catch (_) {
+    } catch (error) {
       if (mounted && generation == _generation)
         setState(() {
           _denied = true;
           _loadFailed = true;
+          _loadErrored = error is! ContextAccessDenied;
         });
     } finally {
       if (generation == _generation) _loading = false;
@@ -223,18 +239,22 @@ class _OccasionAdministrationBoundaryState
     final failure = Scaffold(
         body: Center(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Text('Access denied'),
+      Text(_loadErrored ? CommonStrings.contextLoadFailed : 'Access denied'),
       TextButton(
           onPressed: () {
             if (!_loading) _load(_link!, ++_generation);
           },
           child: Text(CommonStrings.retry)),
     ])));
-    if (_denied && !_ready) return failure;
     final loading = widget.loadingBuilder?.call(context) ??
         const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (!_ready) return loading;
-    final waiting = widget.access.loadedLink != _link;
+    if (!_ready)
+      return _loading
+          ? loading
+          : _denied
+              ? failure
+              : loading;
+    final waiting = _loading || widget.access.loadedLink != _link;
     // Previously authorized retained editors stay mounted behind the denial
     // screen. Initial denial never creates them; restored access keeps the same
     // native nested route stack and unsaved draft.
@@ -245,7 +265,7 @@ class _OccasionAdministrationBoundaryState
               enabled: !_denied && !waiting,
               child: KeyedSubtree(
                   key: ValueKey(_link), child: widget.builder(context)))),
-      if (_denied) failure else if (waiting) loading,
+      if (waiting) loading else if (_denied) failure,
     ]);
   }
 }

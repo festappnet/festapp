@@ -68,7 +68,7 @@ void main() {
         closeTo(worldZoom, .000001),
         reason: 'Viewport changes preserve zoom; Fit plan explicitly resets it',
       );
-      await tester.tap(find.text('Fit plan'));
+      await tester.tap(find.byTooltip('Fit plan'));
       await tester.pump();
       expect(camera.value, Matrix4.identity());
     },

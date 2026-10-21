@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import '../../support/navigation_fixture.dart';
 import 'dart:async';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -178,7 +179,30 @@ void main() {
     expect(access.requests, ['occasion-a', 'occasion-b']);
   });
 
-  testWidgets('denied context without a resolved link stops reloading',
+  testWidgets('invalidated active access reloads once without a false denial',
+      (tester) async {
+    final access = Access();
+    final router = FixtureRouter(access);
+    await mount(tester, router, '/occasion-a/reservations/orders/current');
+    final gate = Completer<void>();
+    access.beforeLoad = (_) async {
+      await gate.future;
+      access.allowed = true;
+    };
+    access.allowed = false;
+    access.notifyListeners();
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Access denied'), findsNothing);
+    expect(find.text('CURRENT CONTENT'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('CURRENT CONTENT'), findsOneWidget);
+    expect(access.requests, ['occasion-a', 'occasion-a']);
+  });
+
+  testWidgets('failed context without a resolved link stops reloading',
       (tester) async {
     final access = Access();
     access.beforeLoad = (_) async {
@@ -196,7 +220,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(access.requests, ['denied-occasion']);
-    expect(find.text('Access denied'), findsOneWidget);
+    expect(find.text(CommonStrings.contextLoadFailed), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse);
     access.beforeLoad = null;
     await tester.tap(find.byType(TextButton));

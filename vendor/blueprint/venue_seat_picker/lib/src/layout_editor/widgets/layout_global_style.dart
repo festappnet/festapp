@@ -19,8 +19,8 @@ Future<void> showLayoutGlobalStyleDialog(
   globalFontPickerBuilder: globalFontPickerBuilder,
 );
 
-/// A canvas-side appearance workspace. Hover is a reversible gesture; choosing
-/// a preset commits exactly that gesture as a single history entry.
+/// A canvas-side appearance workspace. Choosing a preset commits one history
+/// entry. Pointer motion never changes the selected appearance.
 class LayoutGlobalStylePanel extends StatefulWidget {
   const LayoutGlobalStylePanel({
     super.key,
@@ -55,7 +55,7 @@ class LayoutGlobalStylePanelState extends State<LayoutGlobalStylePanel> {
     if (ownsGesture && c.gestureActive) c.cancelGesture();
   }
 
-  void _hover(
+  void _prepareChoice(
     String id,
     VenueLayoutDocument Function(VenueLayoutDocument) apply,
   ) {
@@ -85,7 +85,7 @@ class LayoutGlobalStylePanelState extends State<LayoutGlobalStylePanel> {
     VenueLayoutDocument Function(VenueLayoutDocument) apply,
   ) {
     if (!_enabled) return;
-    if (_choice != id) _hover(id, apply);
+    if (_choice != id) _prepareChoice(id, apply);
     if (_choice != id || !identical(c.document, _preview)) return;
     _baseline = null;
     _preview = null;
@@ -127,52 +127,48 @@ class LayoutGlobalStylePanelState extends State<LayoutGlobalStylePanel> {
     required Widget preview,
     required VenueLayoutDocument Function(VenueLayoutDocument) apply,
     required bool selected,
-  }) => MouseRegion(
-    onEnter: (_) => _hover(id, apply),
-    onExit: (_) => cancelPreview(),
-    child: OutlinedButton(
-      key: ValueKey(
-        id
-            .replaceFirst('family:', 'appearance-family-')
-            .replaceFirst('palette:', 'layout-style-'),
+  }) => OutlinedButton(
+    key: ValueKey(
+      id
+          .replaceFirst('family:', 'appearance-family-')
+          .replaceFirst('palette:', 'layout-style-'),
+    ),
+    onPressed: _enabled ? () => _choose(id, apply) : null,
+    style: OutlinedButton.styleFrom(
+      padding: const EdgeInsets.all(8),
+      backgroundColor: selected
+          ? Theme.of(context).colorScheme.secondaryContainer
+          : null,
+      side: BorderSide(
+        color: selected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.outlineVariant,
       ),
-      onPressed: _enabled ? () => _choose(id, apply) : null,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(8),
-        backgroundColor: selected
-            ? Theme.of(context).colorScheme.secondaryContainer
-            : null,
-        side: BorderSide(
-          color: selected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outlineVariant,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          preview,
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (selected) ...[
-                const Icon(Icons.check, size: 13),
-                const SizedBox(width: 4),
-              ],
-              Flexible(
-                child: LayoutText(
-                  label,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        preview,
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (selected) ...[
+              const Icon(Icons.check, size: 13),
+              const SizedBox(width: 4),
             ],
-          ),
-        ],
-      ),
+            Flexible(
+              child: LayoutText(
+                label,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          ],
+        ),
+      ],
     ),
   );
 

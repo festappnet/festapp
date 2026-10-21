@@ -20,6 +20,12 @@ import 'package:fstapp/components/occasion/link_model.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
 
+/// A completed context read explicitly rejected access. Transport failures use
+/// their original exception so callers can distinguish retry from denial.
+class ContextAccessDenied implements Exception {
+  const ContextAccessDenied();
+}
+
 class RightsService {
   // The model is now wrapped in a ValueNotifier.
   static final occasionLinkModelNotifier =
@@ -56,6 +62,11 @@ class RightsService {
 
   // Serializes concurrent updateAppData calls to prevent state interleaving.
   static Future<bool> _lastUpdate = Future.value(true);
+  static Future<bool>? _activeUpdate;
+
+  /// Administration boundaries join the same context read during invalidation.
+  /// They must not invalidate and supersede an already running refresh.
+  static Future<bool>? get pendingContextUpdate => _activeUpdate;
   static int _contextGeneration = 0;
 
   static Future<bool> updateAppData(
@@ -81,7 +92,12 @@ class RightsService {
             refreshOffline: refreshOffline,
             formLink: formLink));
     _lastUpdate = current;
-    return current;
+    late final Future<bool> observed;
+    observed = current.whenComplete(() {
+      if (identical(_activeUpdate, observed)) _activeUpdate = null;
+    });
+    _activeUpdate = observed;
+    return observed;
   }
 
   static Future<bool> _doUpdateAppData(
@@ -147,7 +163,8 @@ class RightsService {
       if (checkedObject.isAccessDenied() || checkedObject.isNotFound()) {
         occasionLinkModelNotifier.value =
             checkedObject; // Update with error state to notify UI
-        throw Exception("Cannot continue. Access denied or not found.");
+        if (checkedObject.isAccessDenied()) throw const ContextAccessDenied();
+        throw StateError('Occasion context not found');
       }
 
       RouterService.canonicalizePublicLink(
