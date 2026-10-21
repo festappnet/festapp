@@ -49,10 +49,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:pwa_install/pwa_install.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-Future<void> main() => startApplication();
-
-/// Local integration fixtures supply the same bootstrap with their schema adapter.
-Future<void> startApplication({Future<void> Function()? initialize}) async {
+Future<void> main() async {
   debugProfileBuildsEnabled = true;
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,7 +66,7 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
           : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
-    initialize: initialize ?? initializeEverything,
+    initialize: initializeEverything,
     buildReadyApp: () => EasyLocalization(
       supportedLocales:
           AppConfig.availableLanguages().map((e) => e.locale).toList(),

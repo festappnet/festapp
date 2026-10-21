@@ -1,7 +1,7 @@
-import 'package:fstapp/components/_shared/copy_button.dart';
 // file: lib/helpers/csv_import_helper.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -466,9 +466,8 @@ class CsvImportHelper {
   }
 
   /// Copies [text] to the clipboard and shows a confirmation toast.
-  static Future<void> _copyToClipboard(
-      BuildContext context, String text) async {
-    if (!await CopyButton.copy(context, text) || !context.mounted) return;
+  static void _copyToClipboard(BuildContext context, String text) {
+    Clipboard.setData(ClipboardData(text: text));
     ToastHelper.Show(context, FeaturesStrings.csvCopiedToast,
         severity: ToastSeverity.Ok);
   }

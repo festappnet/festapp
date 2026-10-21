@@ -202,34 +202,19 @@ class TicketPreviewOccasion {
 }
 
 class TicketLayoutService {
-  final String? setupDraftId;
-  final int? setupUnitId;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;
   final Future<String?> Function(String) _readPreference;
   final Future<void> Function(String, String) _writePreference;
   TicketLayoutService(
       {this.transport,
-      this.setupDraftId,
-      this.setupUnitId,
       Future<String?> Function(String)? readPreference,
       Future<void> Function(String, String)? writePreference})
       : _readPreference = readPreference ?? ((key) => StorageHelper.get(key)),
         _writePreference =
             writePreference ?? ((key, value) => StorageHelper.set(key, value));
 
-  TicketLayoutService forSetupDraft(String draftId, int unitId) =>
-      TicketLayoutService(
-        setupDraftId: draftId,
-        setupUnitId: unitId,
-        transport: transport,
-        readPreference: _readPreference,
-        writePreference: _writePreference,
-      );
-
   TicketLayoutService withPreviewOccasion(TicketPreviewOccasion occasion) =>
       TicketLayoutService(
-          setupDraftId: setupDraftId,
-          setupUnitId: setupUnitId,
           readPreference: _readPreference,
           writePreference: _writePreference,
           transport: (body) => _request({
@@ -301,15 +286,14 @@ class TicketLayoutService {
 
   Future<bool> openTemplatePickerOnce(int occasionId, String userId,
       {required bool configured}) async {
-    final key = 'ticket-editor-opened:$userId:${setupDraftId ?? occasionId}';
+    final key = 'ticket-editor-opened:$userId:$occasionId';
     final opened = await _readPreference(key) == 'true';
     if (!opened) await _writePreference(key, 'true');
     return !configured && !opened;
   }
 
   Future<String?> uploadBackground(Uint8List bytes, int occasionId) =>
-      DbImages.uploadImage(
-          bytes, setupDraftId == null ? occasionId : null, setupUnitId,
+      DbImages.uploadImage(bytes, occasionId, null,
           profile: ImageUploadProfile.ticketBackground);
 
   Future<List<TicketProductType>> catalog(int occasionId) async {
@@ -420,11 +404,6 @@ class TicketLayoutService {
   }
 
   Future<Map<String, dynamic>> _request(Map<String, dynamic> body) async {
-    if (setupDraftId != null) {
-      body = {...body, 'setupDraftId': setupDraftId}
-        ..remove('occasionId')
-        ..remove('borrowResourcesOnly');
-    }
     if (transport != null) return transport!(body);
     final response = await Supabase.instance.client.functions
         .invoke('preview-ticket-layout', body: body);

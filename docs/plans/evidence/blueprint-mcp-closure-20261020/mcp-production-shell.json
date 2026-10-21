@@ -1,0 +1,7 @@
+{
+  "productionBuild": true,
+  "canonicalDictionary": true,
+  "invalidRequestRejected": true,
+  "noFlutterRuntime": true,
+  "route": "/settings/mcp-connect"
+}

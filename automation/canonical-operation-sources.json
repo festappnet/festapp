@@ -258,7 +258,6 @@
     "emails/legacy_template_delete.sql",
     "users/occasion_enrolment_internal.sql",
     "others/legacy_occasion_catalogs.sql",
-    "blueprint/resource_admission.sql",
-    "units/occasion_dashboard.sql"
+    "blueprint/resource_admission.sql"
   ]
 }

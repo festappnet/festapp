@@ -4,7 +4,6 @@
 This uses the recorded pre-change catalog, never changes the live database and
 never writes a historical migration. New functions do not become baseline rules.
 """
-from evidence import evidence_dir
 import json
 import re
 import sys
@@ -12,7 +11,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'automation'))
 from generate_canonical_source_contract import statements,CREATE,identity
-FOLDER=evidence_dir('catalog-before.json')
+FOLDER=ROOT/'docs/plans/evidence/canonical-authorization-20261020'
 base=json.loads((FOLDER/'catalog-before.json').read_text())
 key=lambda s:s.replace('public.','').replace(' ','')
 previous={key(p['signature']):p['definition']+';' for p in base['functions']}
