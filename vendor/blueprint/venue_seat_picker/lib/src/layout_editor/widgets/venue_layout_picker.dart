@@ -57,6 +57,7 @@ class _VenueLayoutPickerState extends State<VenueLayoutPicker> {
       if (quantity is num &&
           quantity.isFinite &&
           quantity >= 0 &&
+          (quantity > 0 || _quantities.containsKey(entry.key)) &&
           quantity == quantity.roundToDouble()) {
         _quantities[entry.key] = quantity.toInt();
       }
@@ -186,14 +187,14 @@ class _VenueLayoutPickerState extends State<VenueLayoutPicker> {
     final generation = _generation;
     final callback = widget.onQuantityRequested!;
     final p = widget.capacityPresentation[node.id] as Map? ?? const {};
-    if (_unavailable(p) && (_quantities[node.id] ?? 0) == 0) {
+    if ((_unavailable(p) || (p['available'] as num? ?? node.properties['capacity'] as num? ?? 0) <= 0) && (_quantities[node.id] ?? 0) == 0) {
       setState(() => _message = 'Standing places are unavailable.');
       return;
     }
     final maximum =
         (p['available'] as num? ?? node.properties['capacity'] as num? ?? 0)
             .toInt();
-    var value = (_quantities[node.id] ?? 0).clamp(0, maximum < 0 ? 0 : maximum);
+    var value = (_quantities[node.id] ?? 1).clamp(0, maximum < 0 ? 0 : maximum);
     final route = DialogRoute<int>(
       context: context,
       themes: InheritedTheme.capture(

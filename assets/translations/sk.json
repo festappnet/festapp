@@ -31,7 +31,15 @@
     "editPlan": "Úprava plániku",
     "reservationsAndOrders": "Rezervácie a objednávky",
     "unsavedPlan": "Neuložené úpravy plániku",
-    "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný."
+    "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný.",
+    "standingRequiresProduct": "Pre predaj priraďte produkt vstupenky a jeho kapacitu.",
+    "viewer": {
+      "addOne": "Pridať jedno",
+      "removeOne": "Odobrať jedno",
+      "standingNotConfigured": "Nie je priradená vstupenka na státie.",
+      "standingUnavailable": "Miesta na státie už nie sú dostupné.",
+      "standingSaleClosed": "Predaj miest na státie nie je dostupný."
+    }
   },
   "OrganizationVerification": {
     "verifiedDescription": "Právne údaje organizácie sú schválené a zobrazujú sa pri vašich formulároch.",
@@ -452,7 +460,8 @@
     "users": "Užívatelia",
     "resourceLimited": "Dočasne bol dosiahnutý limit využitia. Skúste to neskôr. Pre zvýšenie kapacity kontaktujte podporu.",
     "copyManually": "Skopírovať ručne",
-    "clipboardUnavailable": "Prístup ku schránke zlyhal. Text je vybraný - skopírujte ho klávesovou skratkou alebo cez ponuku výberu."
+    "clipboardUnavailable": "Prístup ku schránke zlyhal. Text je vybraný - skopírujte ho klávesovou skratkou alebo cez ponuku výberu.",
+    "saving": "Ukladanie…"
   },
   "Unit": {
     "copyTargetUnit": "Do organizácie",

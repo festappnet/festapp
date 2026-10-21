@@ -18,7 +18,15 @@
     "blockSeatHint": "Zablokowanego miejsca nie można wybrać do nowego zamówienia.",
     "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
     "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień.",
-    "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany."
+    "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany.",
+    "standingRequiresProduct": "Aby sprzedawać bilety, przypisz produkt biletu i jego pojemność.",
+    "viewer": {
+      "addOne": "Dodaj jedno",
+      "removeOne": "Usuń jedno",
+      "standingNotConfigured": "Nie przypisano biletu na miejsce stojące.",
+      "standingUnavailable": "Miejsca stojące nie są już dostępne.",
+      "standingSaleClosed": "Sprzedaż miejsc stojących jest niedostępna."
+    }
   },
   "OrganizationVerification": {
     "verifiedDescription": "Dane prawne organizacji zostały zatwierdzone i są widoczne pod Twoimi formularzami.",
@@ -439,7 +447,8 @@
     "users": "Użytkownicy",
     "resourceLimited": "Osiągnięto limit wykorzystania. Spróbuj ponownie później. Aby zwiększyć limit, skontaktuj się z pomocą techniczną.",
     "copyManually": "Skopiuj ręcznie",
-    "clipboardUnavailable": "Nie udało się uzyskać dostępu do schowka. Tekst jest zaznaczony - skopiuj go skrótem klawiaturowym lub z menu zaznaczenia."
+    "clipboardUnavailable": "Nie udało się uzyskać dostępu do schowka. Tekst jest zaznaczony - skopiuj go skrótem klawiaturowym lub z menu zaznaczenia.",
+    "saving": "Zapisywanie…"
   },
   "Unit": {
     "copyTargetUnit": "Organizacja docelowa",

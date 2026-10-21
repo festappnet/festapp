@@ -300,15 +300,24 @@ class _SeatReservationWidgetState extends State<SeatReservationWidget> {
   }
 
   Map<String, dynamic> get _capacityPresentation => {
+        for (final node in _snapshot!.document.nodes.where((n) =>
+            n.kind == 'capacityArea' && !_snapshot!.areaBindings.containsKey(n.id)))
+          node.id: {
+            'available': 0,
+            'selectable': false,
+            'status': 'unavailable',
+            'tooltip': BlueprintStrings.standingRequiresProduct,
+          },
         for (final binding in _snapshot!.areaBindings.values)
           binding.nodeId: {
             'quantity': widget.selectedAreaQuantity?.call(binding.nodeId) ?? 0,
             'available':
                 _blueprint!.areaAvailability[binding.nodeId]?['available'] ?? 0,
-            'selectable': widget.onQuantityRequested != null &&
+            'selectable': (_blueprint!.areaAvailability[binding.nodeId]?['available'] as num? ?? 0) > 0 && widget.onQuantityRequested != null &&
                 _blueprint!.areaAvailability[binding.nodeId]?['reason'] ==
                     null &&
                 _blueprint!.areaAvailability.containsKey(binding.nodeId),
+            'tooltip': (_blueprint!.areaAvailability[binding.nodeId]?['available'] as num? ?? 0) <= 0 ? BlueprintStrings.standingUnavailable : _adapter!.products[binding.productId]?.title ?? '',
             'label': _adapter!.products[binding.productId]?.title ?? '',
           },
       };

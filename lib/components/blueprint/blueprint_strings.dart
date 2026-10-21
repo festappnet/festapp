@@ -10,6 +10,10 @@ class BlueprintStrings {
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>
       'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
+  static String get standingUnavailable =>
+      'FeatureBlueprint.viewer.standingUnavailable'.tr();
+  static String get standingRequiresProduct =>
+      'FeatureBlueprint.standingRequiresProduct'.tr();
   static String get standingCapacity =>
       'FeatureBlueprint.standingCapacity'.tr();
   static String get capacitySaveHint =>

@@ -4,7 +4,7 @@ export class BlueprintStrings {
     static get unassignedProduct() { return LocalizationService.tr('FeatureBlueprint.noProductAssigned', {}, 'No product assigned'); }
     static seatState(state) { return LocalizationService.tr(`FeatureBlueprint.seatStates.${state}`); }
     static get viewerMessages() {
-        return Object.fromEntries(["viewerLabel", "places", "place", "standing", "availableCount", "confirmQuantity", "selectedQuantity", "quantityRejected", "placeUnavailable", "selectedPlaces", "releasedPlaces", "selectionRejected", "backgroundUnavailable", "placesTogether", "pending", "available", "occupied", "reserved", "blocked", "unavailable", "disabled", "sold"].map(key => [key, LocalizationService.tr(`FeatureBlueprint.viewer.${key}`)]));
+        return Object.fromEntries(["viewerLabel", "places", "place", "standing", "availableCount", "confirmQuantity", "addOne", "removeOne", "selectedQuantity", "quantityRejected", "placeUnavailable", "selectedPlaces", "releasedPlaces", "selectionRejected", "backgroundUnavailable", "placesTogether", "pending", "available", "occupied", "reserved", "blocked", "unavailable", "disabled", "sold"].map(key => [key, LocalizationService.tr(`FeatureBlueprint.viewer.${key}`)]));
     }
     static get layoutTitle() { return LocalizationService.tr('FeatureBlueprint.changeTitle', {}, 'Seat layout'); }
     static get layoutUnavailable() { return LocalizationService.tr('FeatureBlueprint.layoutUnavailable', {}, 'This layout is not ready.'); }

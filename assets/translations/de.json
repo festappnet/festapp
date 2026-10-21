@@ -18,7 +18,15 @@
     "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
     "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
     "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu.",
-    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde."
+    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde.",
+    "standingRequiresProduct": "Weisen Sie für den Verkauf ein Ticketprodukt und dessen Bestandskapazität zu.",
+    "viewer": {
+      "addOne": "Eins hinzufügen",
+      "removeOne": "Eins entfernen",
+      "standingNotConfigured": "Kein Stehplatzticket zugewiesen.",
+      "standingUnavailable": "Stehplätze sind nicht mehr verfügbar.",
+      "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft."
+    }
   },
   "OrganizationVerification": {
     "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",
@@ -439,7 +447,8 @@
     "users": "Benutzer",
     "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität.",
     "copyManually": "Manuell kopieren",
-    "clipboardUnavailable": "Der Zugriff auf die Zwischenablage ist fehlgeschlagen. Der Text ist ausgewählt - kopieren Sie ihn per Tastenkürzel oder Auswahlmenü."
+    "clipboardUnavailable": "Der Zugriff auf die Zwischenablage ist fehlgeschlagen. Der Text ist ausgewählt - kopieren Sie ihn per Tastenkürzel oder Auswahlmenü.",
+    "saving": "Wird gespeichert…"
   },
   "Unit": {
     "copyTargetUnit": "Zielorganisation",

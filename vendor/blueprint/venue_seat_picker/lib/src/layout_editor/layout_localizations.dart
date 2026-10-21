@@ -61,7 +61,7 @@ String _czechLayoutText(String text) {
   }
   final validValue = RegExp(r'^Enter a valid (.+)\.$').firstMatch(text);
   if (validValue != null) {
-    return 'Zadejte platnou hodnotu: ${_czechLayoutText(validValue[1]!)}.';
+    return 'Zadej platnou hodnotu: ${_czechLayoutText(validValue[1]!)}.';
   }
   final validated = RegExp(
     r'^(\d+) editable objects validated$',
@@ -194,7 +194,7 @@ const _cs = <String, String>{
   'Change bar side': 'Změnit stranu baru',
   'Change selected colors': 'Změnit vybrané barvy',
   'Edge padding': 'Odsazení od hrany',
-  'Enter a valid whole seat count.': 'Zadejte platný počet míst jako celé číslo.',
+  'Enter a valid whole seat count.': 'Zadej platný počet míst jako celé číslo.',
   'Resize grid surface': 'Změnit rozměry vlastní plochy',
   'Seats': 'Počet míst',
   'Text style': 'Řez písma',
@@ -314,7 +314,7 @@ const _cs = <String, String>{
   'This bar side is too short for its stools.':
       'Tato strana baru je pro stávající místa příliš krátká.',
   'Bar guest side must be top, right, bottom or left.':
-      'Vyberte platnou stranu baru pro hosty.',
+      'Vyber platnou stranu baru pro hosty.',
   'Bar stool': 'Barová stolička',
   'Bar and stools': 'Bar a barová místa',
   'Guest side': 'Strana pro hosty',
@@ -354,7 +354,7 @@ const _cs = <String, String>{
       'Stůl je plný. Zmenši židle nebo mezery mezi nimi.',
   'Distance from table corners': 'Odstup od rohů stolu',
   'Unable to change chair layout. Reduce the values or free up space around the tables.':
-      'Rozmístění židlí nelze změnit. Snižte hodnoty nebo uvolněte místo kolem stolů.',
+      'Rozmístění židlí nelze změnit. Sniž hodnoty nebo uvolni místo kolem stolů.',
   'Chair width': 'Šířka židle',
   'Chair depth': 'Hloubka židle',
   'Distance from table': 'Odstup od stolu',
@@ -414,9 +414,9 @@ const _cs = <String, String>{
   'Couches': 'Gauče',
   'Standing areas': 'Plochy ke stání',
   'Fill color': 'Barva výplně',
-  'Enter a number from 0 to 1.': 'Zadejte číslo od 0 do 1.',
-  'Enter a number of at least 1.': 'Zadejte číslo alespoň 1.',
-  'Enter a non-negative number.': 'Zadejte nezáporné číslo.',
+  'Enter a number from 0 to 1.': 'Zadej číslo od 0 do 1.',
+  'Enter a number of at least 1.': 'Zadej číslo alespoň 1.',
+  'Enter a non-negative number.': 'Zadej nezáporné číslo.',
   'Unable to apply plan style. Check the values.':
       'Styl plánku se nepodařilo použít. Zkontroluj zadané hodnoty.',
 
@@ -436,11 +436,11 @@ const _cs = <String, String>{
   'Text color': 'Barva textu',
   'Seat details': 'Detail místa',
   'Select a seat to view its details.':
-      'Kliknutím na místo zobrazíte jeho podrobnosti.',
+      'Kliknutím na místo zobrazíš jeho podrobnosti.',
   'Select a seat to view its details. Drag to pan; scroll to zoom.':
-      'Kliknutím zobrazíte detail místa. Tažením posunete pohled, kolečkem přiblížíte.',
+      'Kliknutím zobrazíš detail místa. Tažením posuneš pohled, kolečkem přiblížíš.',
   'Select a table or seat. Shift-click adds to the selection. Drag to pan; scroll to zoom.':
-      'Vyberte stůl nebo místo. Shift + klik přidá do výběru. Tažením posunete pohled, kolečkem přiblížíte.',
+      'Vyber stůl nebo místo. Shift + klik přidá do výběru. Tažením posuneš pohled, kolečkem přiblížíš.',
   'Canvas settings': 'Nastavení plátna',
   'Changes apply immediately. Undo restores the previous style.':
       'Změny se projeví ihned. Zpět obnoví předchozí styl.',
@@ -460,7 +460,7 @@ const _cs = <String, String>{
   "Preview table seats": "Náhled sedadel u stolu",
   "Existing seats keep their identities. Apply is one undo step.":
       "Původní sedadla zůstanou zachována. Celou úpravu vrátíš jednou akcí Zpět.",
-  "Enter a valid number.": "Zadejte platné číslo.",
+  "Enter a valid number.": "Zadej platné číslo.",
   "My object": "Můj objekt",
   "Object name": "Název objektu",
   "Chair": "Židle",
@@ -507,7 +507,7 @@ const _cs = <String, String>{
       "Souřadnice obrázku jsou v rozsahu 0 až 1. Původní obrazová data se zachovají.",
   "Read only": "Pouze pro čtení",
   "Layout canvas. Select an object, then use arrow keys to move. Shift moves ten steps. Escape cancels.":
-      "Plátno plánku. Vyberte objekt a posouvejte ho šipkami. Se Shiftem se posouvá o deset kroků. Escape zruší akci.",
+      "Plátno plánku. Vyber objekt a posouvej ho šipkami. Se Shiftem se posouvá o deset kroků. Escape zruší akci.",
   "Adjust rows": "Upravit řady",
   "Adjust zigzag": "Upravit cik-cak čáru",
   "Detach seat": "Oddělit sedadlo",
@@ -525,19 +525,19 @@ const _cs = <String, String>{
   'Object group': 'Skupina',
   'Seats on couch': 'Místa na gauči',
   'Enter a whole seat count of at least one.':
-      'Zadejte celé číslo, nejméně jedno místo.',
+      'Zadej celé číslo, nejméně jedno místo.',
   'Reserved or blocked seats prevent changing this couch.':
       'Rezervovaná nebo blokovaná místa brání změně počtu míst na gauči.',
   'Reserved or blocked seats prevent changing this seat group.':
       'Rezervovaná nebo blokovaná místa brání změně této skupiny sedadel.',
   'Add bend': 'Přidat zlom',
   'Click start and end, or drag to draw. Shift constrains the angle. Escape cancels.':
-      'Klikněte na začátek a konec nebo táhněte. Shift přichytí úhel, Escape zruší kreslení.',
+      'Klikni na začátek a konec nebo táhni. Shift přichytí úhel, Escape zruší kreslení.',
   'Click to add vertices. Double-click or Enter finishes. Backspace removes the last point.':
       'Klikáním přidávej body. Dvojklik nebo Enter dokončí kresbu, Backspace odebere poslední bod.',
 
   'Round table. Hold Shift to resize into an ellipse.':
-      'Kulatý stůl. Pro změnu na elipsu podržte Shift.',
+      'Kulatý stůl. Pro změnu na elipsu podrž Shift.',
   'Reserved or blocked seats prevent shrinking this table.':
       'Rezervovaná nebo blokovaná sedadla brání zmenšení tohoto stolu.',
   'Outline #RRGGBBAA': 'Barva čáry #RRGGBBAA',
@@ -561,7 +561,7 @@ const _cs = <String, String>{
   'Remove column': 'Odebrat sloupec',
   'Add block': 'Přidat blok',
   'Remove block': 'Odebrat blok',
-  'Enter a positive whole number.': 'Zadejte kladné celé číslo.',
+  'Enter a positive whole number.': 'Zadej kladné celé číslo.',
 
   'Table and seats': 'Stůl a sedadla',
   "Adjust assembly": "Upravit sestavu",
@@ -616,11 +616,11 @@ const _cs = <String, String>{
   'Your text': 'Tvůj text',
 
   'Objects stay in place. To move an object that fills the canvas, increase Width or Height first.':
-      'Objekty zůstanou na místě. Pokud objekt vyplňuje celé plátno, před přesunem nejprve zvětšete šířku nebo výšku plátna.',
+      'Objekty zůstanou na místě. Pokud objekt vyplňuje celé plátno, před přesunem nejprve zvětši šířku nebo výšku plátna.',
   'Schematic size. No physical measurements required.':
       'Rozměry jsou orientační. Nemusíš znát skutečné rozměry sálu.',
   'Canvas selected. Drag an edge or corner to resize. Escape exits.':
-      'Vybrané plátno. Velikost upravíte tažením hrany nebo rohu. Escape ukončí úpravy.',
+      'Vybrané plátno. Velikost upravíš tažením hrany nebo rohu. Escape ukončí úpravy.',
   'Unable to copy selection to the clipboard.':
       'Výběr se nepodařilo zkopírovat do schránky.',
   'Clipboard does not contain a valid layout selection, or access was denied.':
@@ -648,7 +648,7 @@ const _cs = <String, String>{
   'Swap colors': 'Prohodit barvy',
   'Set color': 'Nastavit barvu',
   'RGB hex': 'Barva HEX',
-  'Enter six RGB hex digits.': 'Zadejte šest znaků barvy HEX.',
+  'Enter six RGB hex digits.': 'Zadej šest znaků barvy HEX.',
   'Opacity': 'Krytí',
   'Used colors': 'Použité barvy',
   'From artwork': 'Z podkladu',
@@ -685,13 +685,13 @@ const _cs = <String, String>{
   'capacityArea': 'Stání',
   'group': 'Skupina',
   'Drag onto the plan, or click to place':
-      'Přetáhněte do sálu nebo vyberte a klikněte do plánku',
+      'Přetáhni do sálu nebo vyber a klikni do plánku',
   'Tap an object to add it. Drawing tools continue on the plan.':
       'Klepnutím přidáte objekt. Kreslení pokračuje v plánku.',
   'No free space found. Tap the plan to choose a position.':
       'Volné místo nenalezeno. Klepnutím do plánku vyberte umístění.',
   'Seating': 'Sezení',
-  'Paint a connected surface.': 'Namalujte souvislou plochu.',
+  'Paint a connected surface.': 'Namaluj souvislou plochu.',
   'Surface brush limit reached.': 'Plocha dosáhla maximální velikosti.',
   'Paint inside the canvas.': 'Maluj uvnitř plátna.',
   'Baggage': 'Zavazadla',
@@ -722,7 +722,7 @@ const _cs = <String, String>{
   'Custom outline': 'Vlastní obrys',
   'Current outline': 'Současný obrys',
   'The current outline is preserved until you choose a new shape.':
-      'Současný obrys zůstane zachován, dokud nevyberete nový tvar.',
+      'Současný obrys zůstane zachován, dokud nevybereš nový tvar.',
   'Blocks seat placement': 'Brání umístění židlí',
   'Change table shape': 'Změnit tvar stolu',
   'The selected shape cannot fit the existing chairs. Increase the table size first.':
@@ -731,9 +731,9 @@ const _cs = <String, String>{
   'Extend surface': 'Vytáhnout rameno',
   'Reshape surface': 'Upravit půdorys',
   'Pull an edge handle to extend the surface.':
-      'Tažením úchytu na hraně prodloužíte nebo zkrátíte rameno.',
+      'Tažením úchytu na hraně prodloužíš nebo zkrátíš rameno.',
   'Pull an edge handle to extend the surface. Drag corners to reshape it.':
-      'Tažením úchytu na hraně vytáhnete nové rameno. Rohy upravíte tažením bodů.',
+      'Tažením úchytu na hraně vytáhneš nové rameno. Rohy upravíš tažením bodů.',
   'Use as table': 'Použít jako stůl',
   'Use as bar': 'Použít jako bar',
   'Create surface': 'Vytvořit plochu',
@@ -741,7 +741,7 @@ const _cs = <String, String>{
   'Narrower surface': 'Zúžit plochu',
   'Wider surface': 'Rozšířit plochu',
   'Click along the surface center. Enter finishes; Escape cancels. Pull edge handles to add branches.':
-      'Klikáním načrtněte střed plochy. Enter dokončí, Escape zruší. Úchyty hran vytáhnou další ramena.',
+      'Klikáním načrtni střed plochy. Enter dokončí, Escape zruší. Úchyty hran vytáhnou další ramena.',
   'The surface outline cannot cross itself.': 'Obrys plochy se nesmí křížit.',
   'Contoured seats, headrests and armrests.':
       'Tvarovaná sedadla, opěrky hlavy a područky.',
@@ -841,13 +841,13 @@ const _cs = <String, String>{
   'Drag to rotate. Snap: 15°. Hold Alt for free rotation.':
       'Tažením otáčej po 15°. S Alt otáčej volně.',
   'Drag selected object to resize. Shift preserves proportions.':
-      'Tažením měňte velikost. Shift zachová poměr stran.',
+      'Tažením měň velikost. Shift zachová poměr stran.',
   'Drag to pan. Pinch or scroll to zoom.':
-      'Tažením posouvejte plátno. Kolečkem přibližujte.',
+      'Tažením posouvej plátno. Kolečkem přibližuj.',
   'Choose template': 'Šablony sálů',
-  'Choose a starting plan': 'Vyberte výchozí sál',
+  'Choose a starting plan': 'Vyber výchozí sál',
   'Every layout is editable. All sections stay on one plan.':
-      'Každý sál můžete upravit. Všechny části zůstávají v jednom plánku.',
+      'Každý sál můžeš upravit. Všechny části zůstávají v jednom plánku.',
   'Close gallery': 'Zavřít šablony',
   'Replace plan': 'Použít šablonu',
   'Classic ball': 'Klasický ples',
@@ -858,7 +858,7 @@ const _cs = <String, String>{
   'Auditorium': 'Řadový sál',
   'Two train carriages': 'Dva vlakové vozy',
   'Blank layout': 'Prázdný sál',
-  'Start with an empty canvas': 'Začněte s čistým plátnem',
+  'Start with an empty canvas': 'Začni s čistým plátnem',
   '12 tables, dance floor and stage': '12 stolů, taneční parket a pódium',
   '10 round tables, dance floor and stage':
       '10 kulatých stolů, parket a pódium',
@@ -941,15 +941,15 @@ const _cs = <String, String>{
   'Replace': 'Nahradit',
   'Replace unsaved draft?': 'Nahradit rozpracovaný plánek?',
   'Save or export first to keep your changes.':
-      'Pro zachování změn nejdřív plánek uložte nebo exportujte.',
+      'Pro zachování změn nejdřív plánek ulož nebo exportuj.',
   'Accessible seat list': 'Seznam míst',
-  'Choose seats or standing places': 'Vyberte místo nebo stání',
+  'Choose seats or standing places': 'Vyber místo nebo stání',
   'Confirm quantity': 'Potvrdit počet',
   'Quantity updated.': 'Počet upravený.',
   'Select an object to edit its properties.':
-      'Vyberte objekt v sále a upravte jeho vlastnosti.',
+      'Vyber objekt v sále a uprav jeho vlastnosti.',
   'Select an object on the plan or in Layers to edit it.':
-      'Vyberte objekt v sále nebo ve vrstvách. Tady upravíte jeho vlastnosti.',
+      'Vyber objekt v sále nebo ve vrstvách. Tady upravíš jeho vlastnosti.',
   'Set canvas size': 'Rozměry plátna',
   'Canvas size': 'Rozměry plátna',
   'Fit canvas to content': 'Přizpůsobit plátno obsahu',
@@ -966,7 +966,7 @@ const _cs = <String, String>{
   'Custom color #RRGGBBAA': 'Vlastní barva #RRGGBBAA',
   'Last two digits set opacity: 00-FF':
       'Poslední dvě číslice určují krytí: 00-FF',
-  'Use #RRGGBBAA including opacity.': 'Zadejte #RRGGBBAA včetně krytí.',
+  'Use #RRGGBBAA including opacity.': 'Zadej #RRGGBBAA včetně krytí.',
   'Transparent': 'Průhledná',
   'Font': 'Písmo',
 };

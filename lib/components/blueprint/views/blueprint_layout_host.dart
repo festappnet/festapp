@@ -863,9 +863,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       _commercialName(area, style: Theme.of(context).textTheme.titleMedium),
       Text(_productText(controller.snapshot.areaBindings[area.id]?.productId)),
       const SizedBox(height: 12),
-      Text(BlueprintStrings.standingAvailability(
-          (availability?['available'] as num?)?.toInt() ?? 0,
-          (availability?['capacity'] as num?)?.toInt() ?? capacity)),
+      if (!controller.snapshot.areaBindings.containsKey(area.id)) ...[
+        Text('${BlueprintStrings.standingCapacity}: $capacity'),
+        const SizedBox(height: 8),
+        Text(BlueprintStrings.standingRequiresProduct),
+      ] else
+        Text(BlueprintStrings.standingAvailability(
+            (availability?['available'] as num?)?.toInt() ?? 0,
+            (availability?['capacity'] as num?)?.toInt() ?? capacity)),
       if (_canEdit &&
           controller.snapshot.areaBindings.containsKey(area.id)) ...[
         const SizedBox(height: 16),

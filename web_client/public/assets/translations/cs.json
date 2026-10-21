@@ -1401,7 +1401,12 @@
       "blocked": "Blokované",
       "unavailable": "Nedostupné",
       "disabled": "Zakázané",
-      "sold": "Prodané"
+      "sold": "Prodané",
+      "addOne": "Přidat jedno",
+      "removeOne": "Odebrat jedno",
+      "standingNotConfigured": "Stání ještě není v prodeji - není přiřazená vstupenka.",
+      "standingUnavailable": "Místa ke stání již nejsou dostupná.",
+      "standingSaleClosed": "Prodej míst ke stání není dostupný."
     },
     "demoGeometryNotice": "Ukázkový plánek. Úpravy a uložení platí jen v této ukázce. Objednávky, rezervace a katalog se nemění.",
     "seatStates": {
@@ -1491,7 +1496,8 @@
       "blocked": "Místo není v prodeji.",
       "empty": "Místo nemá přiřazený produkt.",
       "selection": "Místo ve vašem aktuálním výběru."
-    }
+    },
+    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt vstupenky a jeho kapacitu."
   },
   "OccasionSettings": {
     "title": "Název",
@@ -1969,7 +1975,8 @@
     "resourceLimited": "Dočasně byl dosažen limit využití. Zkuste to později. Pro navýšení kapacity kontaktujte podporu.",
     "contextLoadFailed": "Oprávnění se nepodařilo ověřit. Zkuste to znovu.",
     "copyManually": "Zkopírovat ručně",
-    "clipboardUnavailable": "Přístup ke schránce se nezdařil. Text je vybraný - zkopírujte jej klávesovou zkratkou nebo přes nabídku výběru."
+    "clipboardUnavailable": "Přístup ke schránce se nezdařil. Text je vybraný - zkopírujte jej klávesovou zkratkou nebo přes nabídku výběru.",
+    "saving": "Ukládání…"
   },
   "BankAccount": {
     "organizationSettings": "nastavení organizace",

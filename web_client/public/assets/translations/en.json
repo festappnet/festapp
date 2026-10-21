@@ -1401,7 +1401,12 @@
       "blocked": "blocked",
       "unavailable": "unavailable",
       "disabled": "disabled",
-      "sold": "sold"
+      "sold": "sold",
+      "addOne": "Add one",
+      "removeOne": "Remove one",
+      "standingNotConfigured": "Standing admission is not configured yet.",
+      "standingUnavailable": "Standing places are no longer available.",
+      "standingSaleClosed": "Standing admission is not on sale."
     },
     "demoGeometryNotice": "Demo layout. Edits and saves apply only within this demonstration. Orders, reservations and the catalog are unchanged.",
     "seatStates": {
@@ -1491,7 +1496,8 @@
       "blocked": "Not available for sale.",
       "empty": "No product is assigned to this seat.",
       "selection": "Seat in your current selection."
-    }
+    },
+    "standingRequiresProduct": "The area capacity is ready. To sell admission, assign a ticket product and its inventory capacity."
   },
   "OccasionSettings": {
     "title": "Title",
@@ -1969,7 +1975,8 @@
     "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity.",
     "contextLoadFailed": "Could not verify access. Please try again.",
     "copyManually": "Copy manually",
-    "clipboardUnavailable": "Clipboard access failed. The text is selected - copy it with your keyboard shortcut or selection menu."
+    "clipboardUnavailable": "Clipboard access failed. The text is selected - copy it with your keyboard shortcut or selection menu.",
+    "saving": "Saving…"
   },
   "BankAccount": {
     "organizationSettings": "organization settings",

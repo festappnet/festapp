@@ -255,3 +255,17 @@ test('reopen drops stale seat payload and preserves standing tickets', () => {
     assert.equal(form.payload.ticket.some(ticket => ticket.spot === 11), false);
     assert.equal(form.state.tickets[0]._blueprintArea, 'standing');
 });
+
+test('standing availability disables sold out and unbound areas with an explanation', () => {
+    const source = data();
+    source.layout.nodes = [{id:'unbound',kind:'capacityArea',capacity:100},{id:'sold',kind:'capacityArea',capacity:100}];
+    source.areaBindings = [{nodeId:'sold',productId:9,inventoryContextId:3}];
+    source.areaAvailability = [{nodeId:'sold',capacity:100,available:0,reason:'PRODUCT_CAPACITY_EXCEEDED'}];
+    source.products.push({id:9,title:'Standing',price:80,currency_code:'CZK'});
+    const adapter = new BlueprintLayoutAdapter(source);
+    assert.equal(adapter.capacityPresentation.unbound.available,0);
+    assert.equal(adapter.capacityPresentation.unbound.selectable,false);
+    assert.ok(adapter.capacityPresentation.unbound.tooltip);
+    assert.equal(adapter.capacityPresentation.sold.selectable,false);
+    assert.ok(adapter.capacityPresentation.sold.tooltip);
+});
