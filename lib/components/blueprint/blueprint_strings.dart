@@ -13,6 +13,10 @@ class BlueprintStrings {
   static String get standingPreparationRetained =>
       'FeatureBlueprint.standingPreparationRetained'.tr();
 
+  static String get areaProduct => 'FeatureBlueprint.areaProduct'.tr();
+  static String get areaProductAssigned =>
+      'FeatureBlueprint.areaProductAssigned'.tr();
+
   static String get assignStandingProduct =>
       'FeatureBlueprint.assignStandingProduct'.tr();
   static String get standingSetupSaveHint =>
