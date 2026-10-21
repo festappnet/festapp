@@ -293,6 +293,11 @@
         "auth-session-create"
       ],
       "mutates_authority": true
+    },
+    "occasion-setup-email-preview": {
+      "trigger": "client-http",
+      "effects": ["database-read"],
+      "mutates_authority": false
     }
   },
   "workers": {

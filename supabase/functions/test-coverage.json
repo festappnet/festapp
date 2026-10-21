@@ -429,6 +429,14 @@
         "auth.mcp.exact-origin",
         "auth.mcp.issuer-budget"
       ]
+    },
+    "occasion-setup-email-preview": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/occasion-setup-email-preview/preview_test.ts"
+      ]
     }
   },
   "excluded": {

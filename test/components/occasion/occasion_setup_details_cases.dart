@@ -100,6 +100,9 @@ void main() {
       expect(value, 'ples-2090-2');
       expect(automatic, true);
       expect(valid, true);
+      expect(find.byType(TextField), findsNothing);
+      await tester.tap(find.byType(TextButton).first);
+      await tester.pump();
       await tester.enterText(find.byType(TextField), 'taken');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
@@ -151,6 +154,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     expect(value, 'new-2090');
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byType(TextButton).first);
+    await tester.pump();
     await tester.enterText(find.byType(TextField), 'personal-address');
     update(() => title = 'Another');
     await tester.pump();

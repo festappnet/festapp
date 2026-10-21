@@ -85,9 +85,11 @@ def prepare():
         sql('-c', "SET request.jwt.claim.role='service_role'", '-f', str(ROOT / 'supabase/seed.sql'))
         marker.write_text('Canonical baseline and forward migrations loaded.\n')
     # Draft functions may change while iterating; the canonical file is idempotent.
+    sql('-f', str(ROOT / 'database/functions/user_permissions/get_is_manager_on_unit.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/sources.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/finalize.sql'), admin=True)
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/email_preview.sql'), admin=True)
     sql('-c', "NOTIFY pgrst, 'reload schema'")
     status = json.loads(subprocess.check_output(['supabase', 'status', '--workdir', str(BACKEND), '--output', 'json'], stderr=subprocess.DEVNULL))
     if status['API_URL'] != 'http://127.0.0.1:56821':
@@ -133,7 +135,7 @@ if __name__ == '__main__':
                 capture_output=True, text=True)
             if edge.returncode != 0 or edge.stdout.strip() != 'true':
                 with LOG.open('a') as log:
-                    edge_args = ['supabase', 'functions', 'serve', 'preview-ticket-layout',
+                    edge_args = ['supabase', 'functions', 'serve',
                                  '--workdir', str(BACKEND)]
                     if os.environ.get('FESTAPP_WIZARD_EDGE_ENV'):
                         edge_args.extend(['--env-file', os.environ['FESTAPP_WIZARD_EDGE_ENV']])

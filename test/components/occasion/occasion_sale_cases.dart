@@ -352,6 +352,49 @@ void main() {
         startsWith('Prodej od '));
   });
   testWidgetsWithEnvironment(() => environment,
+      'scheduled mode seeds tomorrow once and preserves an edited start',
+      (tester) async {
+    final before = DateTime.now().add(const Duration(hours: 24));
+    final data = <String, dynamic>{
+      'saleMode': 'preparation',
+      'end': DateTime.now()
+          .add(const Duration(days: 30))
+          .toUtc()
+          .toIso8601String(),
+    };
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+          body: SingleChildScrollView(
+              child: StatefulBuilder(
+            builder: (context, setState) => OccasionSetupSaleSettings(
+                data: data,
+                onChanged: (patch) => setState(() => data.addAll(patch))),
+          )),
+        )));
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('scheduled');
+    await tester.pump();
+    final seeded = DateTime.parse(data['saleStart'] as String);
+    expect(seeded.isBefore(before), isFalse);
+    expect(seeded.difference(before).inSeconds, lessThan(10));
+    final edited =
+        DateTime.now().add(const Duration(days: 3)).toUtc().toIso8601String();
+    data['saleStart'] = edited;
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('preparation');
+    await tester.pump();
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('scheduled');
+    await tester.pump();
+    expect(data['saleStart'], edited);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgetsWithEnvironment(() => environment,
       'scheduled picker stores UTC and countdown never changes the window',
       (tester) async {
     final oldLocation = tz.local;

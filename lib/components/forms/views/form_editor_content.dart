@@ -37,17 +37,20 @@ class FormEditorContent extends StatefulWidget {
   final VoidCallback? onDataUpdated;
   final FormEditBundle? prototypeBundle;
   final ValueChanged<FormEditBundle>? onPrototypeSave;
+  final ValueChanged<FormEditBundle>? onPrototypeHydrated;
   final bool embedded;
   const FormEditorContent(
       {super.key, required this.formLink, this.onDataUpdated, this.loadBundle})
       : prototypeBundle = null,
         onPrototypeSave = null,
+        onPrototypeHydrated = null,
         embedded = false;
 
   const FormEditorContent.prototype({
     super.key,
     required FormEditBundle bundle,
     required this.onPrototypeSave,
+    this.onPrototypeHydrated,
     this.embedded = false,
   })  : loadBundle = null,
         formLink = '',
@@ -72,15 +75,18 @@ class _FormEditorContentState extends State<FormEditorContent>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !identical(_bundle, bundle)) return;
       _snapshot.accept(bundle.form.toEditedJson());
-      _draftChanged();
+      _draftChanged(hydrated: true);
     });
   }
 
-  void _draftChanged() => scheduleMicrotask(() {
+  void _draftChanged({bool hydrated = false}) => scheduleMicrotask(() {
         if (!mounted) return;
         _draftRevision.value++;
         if (widget.embedded && _bundle != null) {
-          widget.onPrototypeSave?.call(_bundle!);
+          (hydrated
+                  ? widget.onPrototypeHydrated ?? widget.onPrototypeSave
+                  : widget.onPrototypeSave)
+              ?.call(_bundle!);
         }
       });
   @override

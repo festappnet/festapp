@@ -329,3 +329,6 @@ verify_jwt = false
 # First-party origin, user proof and single-use broker request are checked in handler.
 [functions.mcp-session-exchange]
 verify_jwt = false
+
+[functions.occasion-setup-email-preview]
+verify_jwt = true

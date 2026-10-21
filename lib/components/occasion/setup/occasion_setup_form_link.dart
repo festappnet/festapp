@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
 import 'occasion_setup_details_strings.dart';
+import 'occasion_setup_strings.dart';
 
 typedef SuggestSetupLink = Future<Map<String, dynamic>> Function(
     String title, String? requested);
@@ -33,6 +34,7 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
   Timer? _debounce;
   int _request = 0;
   bool _checking = false;
+  bool _editing = false;
   bool _forceSuggestion = false;
   bool? _available;
   String? _error;
@@ -120,44 +122,49 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        TextField(
-          controller: _controller,
-          decoration: InputDecoration(
-            suffixIcon: IconButton(
-              onPressed: _checking
-                  ? null
-                  : () {
-                      _forceSuggestion = true;
-                      widget.onValidityChanged?.call(null);
-                      widget.onChanged('', true);
-                      _controller.clear();
-                      _schedule();
-                    },
-              icon: const Icon(Icons.auto_fix_high),
-              tooltip: OccasionSetupDetailsStrings.text('suggestLink'),
+        Text(OccasionSetupStrings.story('formLink')),
+        SelectableText(publicLinkUrl(_controller.text)),
+        Text(OccasionSetupStrings.story('linkAfterCreation')),
+        TextButton(
+            onPressed: () => setState(() => _editing = !_editing),
+            child: Text(OccasionSetupStrings.story('editLink'))),
+        if (_editing)
+          TextField(
+            controller: _controller,
+            decoration: InputDecoration(
+              suffixIcon: IconButton(
+                onPressed: _checking
+                    ? null
+                    : () {
+                        _forceSuggestion = true;
+                        widget.onValidityChanged?.call(null);
+                        widget.onChanged('', true);
+                        _controller.clear();
+                        _schedule();
+                      },
+                icon: const Icon(Icons.auto_fix_high),
+                tooltip: OccasionSetupDetailsStrings.text('suggestLink'),
+              ),
+              labelText: OccasionSetupDetailsStrings.text('formAddress'),
+              helperMaxLines: 3,
+              errorText: _error ??
+                  (_available == false
+                      ? OccasionSetupDetailsStrings.text('linkTaken')
+                      : null),
             ),
-            labelText: OccasionSetupDetailsStrings.text('formAddress'),
-            helperText: OccasionSetupDetailsStrings.text('linkPreviewHint'),
-            helperMaxLines: 3,
-            errorText: _error ??
-                (_available == false
-                    ? OccasionSetupDetailsStrings.text('linkTaken')
-                    : null),
+            onChanged: (value) {
+              setState(() {
+                _available = null;
+                _error = null;
+              });
+              widget.onValidityChanged?.call(null);
+              widget.onChanged(value, false);
+              _schedule();
+            },
           ),
-          onChanged: (value) {
-            setState(() {
-              _available = null;
-              _error = null;
-            });
-            widget.onValidityChanged?.call(null);
-            widget.onChanged(value, false);
-            _schedule();
-          },
-        ),
         const SizedBox(height: 8),
-        if (_checking) const LinearProgressIndicator(),
-        if (_available == true)
+        if (_editing && _checking) const LinearProgressIndicator(),
+        if (_editing && _available == true)
           Text(OccasionSetupDetailsStrings.text('linkAvailable')),
-        PublicLink(link: _controller.text),
       ]);
 }

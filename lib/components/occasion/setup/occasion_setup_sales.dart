@@ -82,7 +82,16 @@ class OccasionSetupSaleSettings extends StatelessWidget {
       RadioGroup<String>(
           groupValue: kind,
           onChanged: (value) {
-            if (value != null) onChanged({'saleMode': value});
+            if (value != null) {
+              onChanged({
+                'saleMode': value,
+                if (value == 'scheduled' && data['saleStart'] == null)
+                  'saleStart': DateTime.now()
+                      .add(const Duration(hours: 24))
+                      .toUtc()
+                      .toIso8601String(),
+              });
+            }
           },
           child: Column(children: [
             for (final option in ['preparation', 'scheduled', 'immediate'])

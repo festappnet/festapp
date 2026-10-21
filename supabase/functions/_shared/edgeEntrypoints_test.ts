@@ -57,6 +57,7 @@ const optionEntrypoints = [
   "process-email-queue",
   "email-confirmation-status",
   "preview-ticket-layout",
+  "occasion-setup-email-preview",
   "cancel-reception-registration",
   "confirm-account-deletion",
   "download-ticket",

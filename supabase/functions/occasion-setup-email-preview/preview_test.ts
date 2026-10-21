@@ -1,0 +1,116 @@
+import { previewOrder, renderDraftPreview } from "./content.ts";
+import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
+import { renderEmail } from "../_shared/emailDelivery.ts";
+import { previewHandler } from "./handler.ts";
+
+function assert(value: unknown, message = "assertion failed"): asserts value {
+  if (!value) throw new Error(message);
+}
+const resolved = {
+  template: {
+    id: 1,
+    subject: "{{occasionTitle}} {{orderSymbol}}",
+    html: "<p>Vlastní text</p>{{balanceReasoning}}{{fullOrder}}",
+  },
+  wrapper: { html: "<main>{{content}}</main>" },
+};
+const context = {
+  revision: 3,
+  title: "Ukázková událost",
+  tone: "formal",
+  replyTo: "support@example.invalid",
+  resolved,
+  has_custom_template: true,
+};
+
+Deno.test("preview and sending use identical substitutions and inherited wrapper", async () => {
+  const preview = await renderDraftPreview(context);
+  const sent = await renderEmail({
+    context: { organization: 1 },
+    to: "recipient@example.invalid",
+    substitutions: confirmationSubstitutions(
+      previewOrder(context.title, context.tone),
+    ),
+    replyTo: context.replyTo,
+  }, () => Promise.resolve(resolved));
+  assert(preview.html === sent.html && preview.subject === sent.subject);
+  assert(preview.replyTo === sent.replyTo);
+  assert(preview.html.includes("<main><p>Vlastní text</p>"));
+  assert(!preview.html.includes("recipient@example.invalid"));
+  assert(
+    !preview.html.includes("href="),
+    "Synthetic bank sample must have no capability links",
+  );
+  assert(sent.attachments.length === 0);
+});
+
+Deno.test("formal/informal only changes generated content, preserving custom static text", async () => {
+  const formal = await renderDraftPreview(context);
+  const informal = await renderDraftPreview({ ...context, tone: "informal" });
+  assert(formal.html !== informal.html);
+  assert(
+    formal.html.includes("Vlastní text") &&
+      informal.html.includes("Vlastní text"),
+  );
+});
+
+Deno.test("pure confirmation retains zero order and deposit semantics", () => {
+  const order: any = previewOrder("Test", "informal");
+  order.payment_info.amount = 0;
+  assert(confirmationSubstitutions(order).variableSymbol === "0000000000");
+  order.payment_info.amount = 1000;
+  order.payment_info.deposit_amount = 500;
+  order.occasion.features = [{ code: "deposit", deposit_deadline: "on_site" }];
+  const subs = confirmationSubstitutions(order);
+  assert(subs.balanceReasoning.includes("na místě"));
+  assert(subs.balanceReasoning.includes("500"));
+});
+
+function request(input: unknown, authorization = "Bearer user-jwt") {
+  return new Request("https://example.invalid/preview", {
+    method: "POST",
+    headers: { Authorization: authorization },
+    body: JSON.stringify(input),
+  });
+}
+const valid = { draftId: "00000000-0000-4000-8000-000000000001", revision: 3 };
+
+Deno.test("endpoint rejects unauthenticated requests and arbitrary hierarchy/template inputs", async () => {
+  let calls = 0;
+  const handler = previewHandler(async () => {
+    calls++;
+    return { data: context, error: null };
+  });
+  assert((await handler(request(valid, ""))).status === 401);
+  assert((await handler(request({ ...valid, occasion: 2 }))).status === 400);
+  assert((await handler(request({ ...valid, templateId: 5 }))).status === 400);
+  assert((await handler(request({ ...valid, tone: "formal" }))).status === 400);
+  assert(
+    (await handler(request({ ...valid, replyTo: "override@example.invalid" })))
+      .status === 400,
+  );
+  assert((await handler(request(null))).status === 400);
+  assert((await handler(request([]))).status === 400);
+  assert(calls === 0);
+});
+
+Deno.test("endpoint forwards user JWT and draft revision; denied/stale requests do not render", async () => {
+  const handler = previewHandler(async (jwt, params) => {
+    assert(jwt === "Bearer user-jwt");
+    assert(params.p_id === valid.draftId && params.p_expected_revision === 3);
+    return { data: context, error: null };
+  });
+  const response = await handler(request(valid));
+  assert(
+    response.status === 200 &&
+      response.headers.get("Cache-Control") === "no-store",
+  );
+  assert((await response.json()).revision === 3);
+  for (const [code, status] of [["42501", 403], ["40001", 409]] as const) {
+    const denied = previewHandler(async () => ({
+      data: null,
+      error: { code },
+    }));
+    assert((await denied(request(valid))).status === status);
+  }
+});

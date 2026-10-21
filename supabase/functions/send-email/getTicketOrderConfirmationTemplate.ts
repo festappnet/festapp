@@ -1,15 +1,8 @@
-import { confirmationPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
+import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
-import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
-import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
-import {
-  formatDatetime,
-  formatIBAN,
-} from "../_shared/utilities.ts";
 import { translations } from "../_shared/translations/translations.ts";
-import type { Tone } from "../_shared/translations/translations.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 
 type Attachment = {
@@ -67,7 +60,10 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     ? requestedLanguage as keyof typeof translations
     : "cs";
   const order = await withOrderIdentity(ticketOrder.order, async (params) => {
-    const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
+    const { data, error } = await supabaseAdmin.rpc(
+      "read_order_identity",
+      params,
+    );
     if (error) throw error;
     return data;
   }, { id: task.occasion, organization: task.organization });
@@ -96,7 +92,6 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-
   } else if (paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
@@ -117,33 +112,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     attachments,
   );
 
-  const tone: Tone = order.form?.data?.communication_tone === "informal"
-    ? "informal"
-    : "formal";
-  const paymentPresentation = confirmationPaymentSubstitutions(
-    paymentInfo, occasion.features ?? [], lang, tone,
-  );
-
   return {
-    subs: {
-      occasionTitle: occasion.title,
-      orderSymbol: order.order_symbol,
-      balanceReasoning: paymentPresentation.balanceReasoning,
-      price: paymentInfo.amount,
-      currencyCode: paymentInfo.currency_code,
-      amount: paymentPresentation.amount,
-      accountNumber: paymentInfo.account_number_human_readable,
-      iban: formatIBAN(paymentInfo.account_number),
-      variableSymbol: paymentReferenceValue(paymentInfo),
-      deadline: formatDatetime(paymentInfo.deadline, lang),
-      fullOrder: generateFullOrder(
-        order.data,
-        order.data.tickets,
-        occasion.features,
-        lang,
-        order.order_symbol,
-      ),
-    },
+    subs: confirmationSubstitutions(order, lang),
     sender: occasion.title,
     receiver: order.data.email,
     context: {
