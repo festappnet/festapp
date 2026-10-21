@@ -1,5 +1,12 @@
 {
   "flutter_roots": {
+    "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+      "kind": "environment",
+      "reason": "Mobile reservation canvas pinch and one-finger pan through the real venue editor require Flutter gesture arbitration and rendering.",
+      "sources": [
+        "test/components/blueprint/blueprint_mobile_pan_test.dart"
+      ]
+    },
     "test/data_services/external_login_context_test.dart": {
       "kind": "environment",
       "reason": "Actual client-sync projection/runtime/private SDK adapters or root auth/rights integration; pure sync orchestration is in core.",
