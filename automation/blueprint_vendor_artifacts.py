@@ -122,8 +122,7 @@ Do not patch these copies or add another rendering implementation here.
 The host uses repository-relative paths and needs no workstation checkout,
 unpublished Git revision or dependency override file.
 
-Only the npm archive selected by `web_client/package.json` and its lockfile is
-retained. Older host archives are recoverable from Git revision
-`a4296c57687294b34826e59c7b232eef582c9748`; they are not installation inputs.
+The old npm 0.2.3 archive is retained as immutable historical evidence;
+no active dependency points to it.
 ''')
 print(f'Installed Blueprint archives: {len(manifest["files"])} verified files.')

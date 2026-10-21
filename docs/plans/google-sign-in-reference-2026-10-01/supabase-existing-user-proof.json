@@ -1,0 +1,17 @@
+{
+  "missing": {
+    "status": 404,
+    "created": false
+  },
+  "existing": {
+    "status": 200,
+    "same_uuid": true,
+    "refresh_status": 200,
+    "password_unchanged": true,
+    "aal": "aal1",
+    "amr_methods": [
+      "otp"
+    ]
+  },
+  "banned_status": 403
+}

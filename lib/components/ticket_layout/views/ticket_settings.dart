@@ -270,13 +270,8 @@ class _TicketSettingsState extends State<TicketSettings> {
             onPressed: busy ||
                     unsupported ||
                     widget.readOnly ||
-                    !(widget.service.setupDraftId != null
-                        ? RightsService.currentUnit()?.id ==
-                                widget.service.setupUnitId &&
-                            RightsService.hasCapability(
-                                AuthorizationCapabilities.occasionsCreate)
-                        : RightsService.hasCapability(
-                            AuthorizationCapabilities.ticketLayoutsWrite))
+                    !RightsService.hasCapability(
+                        AuthorizationCapabilities.ticketLayoutsWrite)
                 ? null
                 : edit,
             icon: busy
