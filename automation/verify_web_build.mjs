@@ -274,7 +274,7 @@ const expectedIsAllUnit = configValue('WEB_IS_ALL_UNIT');
 const expectedIsAppSupported = configValue('IS_APP_SUPPORTED');
 assert.match(
   flutterConfig,
-  new RegExp(`static const bool isAppSupported = ${expectedIsAppSupported};`),
+  new RegExp(`static const bool isAppSupported\\s*=\\s*bool\\.fromEnvironment\\(\\s*'FESTAPP_APP_SUPPORTED',\\s*defaultValue:\\s*${expectedIsAppSupported}\\s*\\);`),
   'generated Flutter isAppSupported differs from project.conf',
 );
 assert.match(

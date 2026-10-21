@@ -105,7 +105,7 @@ grep -qE "supportedLanguages = \['cs', 'en', 'pl'\]" "$TMP_ROOT/festivalslunovra
 grep -qE 'organization = 4' "$TMP_ROOT/hvezdamorska/web_client/src/app_config.js"
 grep -qE 'organization = 3' "$TMP_ROOT/cavfotofest/web_client/src/app_config.js"
 grep -qE 'organization = 3' "$TMP_ROOT/festapptickets/web_client/src/app_config.js"
-grep -qE 'static const bool isAppSupported = false;' "$TMP_ROOT/festapptickets/lib/app_config.dart"
+grep -qF "static const bool isAppSupported = bool.fromEnvironment('FESTAPP_APP_SUPPORTED', defaultValue: false);" "$TMP_ROOT/festapptickets/lib/app_config.dart"
 grep -qF "backendActivationTenantId = 'festapptickets'" "$TMP_ROOT/festapptickets/web_client/src/app_config.js"
 grep -qF '"backend":"legacy"' "$TMP_ROOT/festapptickets/web_client/public/backend-activation.json"
 grep -qF "backendActivationTenantId = 'cavfotofest'" "$TMP_ROOT/cavfotofest/lib/app_config.dart"

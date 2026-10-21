@@ -247,6 +247,29 @@ fi
 # A completed transition bundle must bind the entire canonical profile. Merely
 # changing the source organization after compilation must invalidate both JS
 # artifacts through the profile fingerprint.
+# Environment overrides must retain the selected tenant's production default.
+BAD_APP_ROOT="$TMP_ROOT/bad-app-default"
+mkdir -p "$BAD_APP_ROOT/automation" "$BAD_APP_ROOT/lib"
+cp "$PROJECT_ROOT/automation/project.conf" "$BAD_APP_ROOT/automation/project.conf"
+cp "$PROJECT_ROOT/lib/app_config.dart" "$BAD_APP_ROOT/lib/app_config.dart"
+python3 - "$BAD_APP_ROOT" <<'BAD_DEFAULT'
+from pathlib import Path
+import re, sys
+root = Path(sys.argv[1])
+expected = re.search(r'^IS_APP_SUPPORTED=(true|false)$', (root / 'automation/project.conf').read_text(), re.M)[1]
+wrong = 'false' if expected == 'true' else 'true'
+p = root / 'lib/app_config.dart'
+p.write_text(re.sub(r"(FESTAPP_APP_SUPPORTED', defaultValue: )(true|false)", lambda m: m[1] + wrong, p.read_text()))
+BAD_DEFAULT
+if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" \
+    "$BAD_APP_ROOT/automation/project.conf" cloudflare > "$TMP_ROOT/bad-app-default.log" 2>&1; then
+    echo "  FAIL: build gate accepted the wrong app-supported default"; fail=1
+elif grep -Fq 'generated Flutter isAppSupported differs from project.conf' "$TMP_ROOT/bad-app-default.log"; then
+    echo "  ok: build gate rejects the wrong app-supported default"
+else
+    echo "  FAIL: app-supported default was rejected for the wrong reason"; fail=1
+fi
+
 ACTIVATION_ROOT="$TMP_ROOT/activation"
 mkdir -p "$ACTIVATION_ROOT/automation" "$ACTIVATION_ROOT/lib"
 mkdir -p "$ACTIVATION_ROOT/assets"
