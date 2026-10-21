@@ -30,7 +30,15 @@ BEGIN
     FROM public.unit_users m WHERE m.unit=unit_id AND m."user"=auth.uid()),false)
     INTO unit_catalog_reader;
 
-  -- Step 3: Aggregate occasions
+  -- Scope all aggregate work before counting tickets/users in other units.
+  WITH visible_occasions AS MATERIALIZED (
+    SELECT o.* FROM public.occasions o
+    WHERE o.unit = unit_id AND (unit_catalog_reader OR EXISTS (
+      SELECT 1 FROM public.occasion_users ou WHERE ou.occasion=o.id
+        AND ou."user"=auth.uid()
+        AND public.occasion_staff_navigation_rule(ou.is_manager,ou.is_editor,
+          ou.is_editor_view,ou.is_editor_order,ou.is_editor_order_view)))
+  )
   SELECT jsonb_agg(
     jsonb_build_object(
       'id', o.id,
@@ -48,7 +56,7 @@ BEGIN
       'unit', o.unit,
       'features', (
           SELECT jsonb_agg(
-              elem #- '{heavy_config}' -- OPTIMIZATION: Remove heavy_config from features
+              jsonb_build_object('code',elem->'code','is_enabled',elem->'is_enabled')
           )
           FROM jsonb_array_elements(o.features) elem
       ),
@@ -86,7 +94,7 @@ BEGIN
     ORDER BY o.start_time DESC
   )
   INTO occasion_data
-  FROM public.occasions o
+  FROM visible_occasions o
 
   -- Ticket Stats
   LEFT JOIN (
@@ -98,6 +106,7 @@ BEGIN
           COUNT(*) FILTER (WHERE state = 'ordered') AS ordered,
           COUNT(*) FILTER (WHERE state = 'used') AS used
       FROM eshop.tickets
+      WHERE occasion IN (SELECT id FROM visible_occasions)
       GROUP BY occasion
   ) AS ticket_stats ON o.id = ticket_stats.occasion
 
@@ -110,21 +119,11 @@ BEGIN
       LEFT JOIN public.organization_users org_u
           ON ou."user" = org_u."user"
           AND org_u.organization = org_id
-      WHERE (org_u.is_hidden IS NOT TRUE)
+      WHERE ou.occasion IN (SELECT id FROM visible_occasions)
+        AND (org_u.is_hidden IS NOT TRUE)
       GROUP BY ou.occasion
   ) AS user_stats ON o.id = user_stats.occasion
-
-  WHERE o.unit = unit_id
-  AND (
-      unit_catalog_reader
-      OR
-      EXISTS (
-          SELECT 1 FROM public.occasion_users ou
-          WHERE ou.occasion = o.id
-            AND ou."user" = auth.uid()
-            AND public.occasion_staff_navigation_rule(ou.is_manager,ou.is_editor,ou.is_editor_view,ou.is_editor_order,ou.is_editor_order_view)
-      )
-  );
+;
 
   IF occasion_data IS NULL THEN
     occasion_data := '[]'::jsonb;

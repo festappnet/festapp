@@ -1647,6 +1647,7 @@
     "paused": "Pozastavené",
     "ended": "Ukončené",
     "finished": "Uskutočnené",
+    "shortStartsIn": "O {duration}",
     "startsIn": "Predaj začína o {duration}",
     "endsIn": "Predaj končí o {duration}",
     "startsSoon": "Predaj začne do minúty",

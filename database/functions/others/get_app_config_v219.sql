@@ -24,6 +24,13 @@ BEGIN
     FROM public.occasions o
     WHERE o.id = v_occasion;
   END IF;
+  -- A direct unit route receives its catalogue and screen metadata in the
+  -- existing context request. Occasion/public contexts keep their old payload.
+  IF (v_result->>'code')::integer=200 AND data_in->>'unit_id' IS NOT NULL
+     AND public.can_read_unit_occasion_catalog((data_in->>'unit_id')::bigint) THEN
+    v_result := v_result || jsonb_build_object('unit_dashboard',
+      public.get_unit_occasion_dashboard_internal((data_in->>'unit_id')::bigint));
+  END IF;
   RETURN v_result || jsonb_build_object('client_sync_v1', v_enabled);
 END;
 $$;

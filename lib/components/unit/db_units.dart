@@ -1,9 +1,21 @@
+import 'unit_occasion_dashboard.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class DbUnits {
+  static Future<UnitOccasionDashboard> getOccasionDashboard(int unitId,
+      {SupabaseClient? client}) async {
+    final data = await (client ?? _supabase)
+        .rpc('get_unit_edit_data', params: {'p_unit_id': unitId});
+    final result =
+        UnitOccasionDashboard.fromJson(Map<String, dynamic>.from(data));
+    if (result.unitId != unitId)
+      throw StateError('Unit dashboard scope mismatch');
+    return result;
+  }
+
   static final _supabase = Supabase.instance.client;
   static UnitCommands get _commands => SupabaseUnitCommands(_supabase);
 

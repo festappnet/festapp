@@ -3698,6 +3698,7 @@
     "previewEmailSelection": "Emails show the selected products, price and entered contact details. This is a preview; nothing is sent.",
     "retrySender": "Reload sender address",
     "seatSelection": "Seat selection",
-    "previousQuestion": "Previous question"
+    "previousQuestion": "Previous question",
+    "shortStartsIn": "In {duration}"
   }
 }
