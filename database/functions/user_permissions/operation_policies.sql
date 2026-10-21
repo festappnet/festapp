@@ -232,8 +232,22 @@ ALTER POLICY "demo_read_fence" ON "public"."occasion_users"
   USING ((((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR can_read_orders(occasion))) AND ((NOT demo_entity_is_protected('ticket'::text, ticket)) OR (EXISTS ( SELECT 1
    FROM eshop.tickets demo_row
   WHERE ((demo_row.id = occasion_users.ticket) AND ((NOT is_demo_occasion(demo_row.occasion)) OR can_read_orders(demo_row.occasion))))))));
-ALTER POLICY "data_security_occasion_context_read" ON "public"."occasions"
+-- Rebind the existing read phase; do not install or bypass its compatibility gate.
+DO $authorization_context_read_phase$
+DECLARE policy_row record;
+BEGIN
+ SELECT polcmd,polpermissive,polroles INTO policy_row FROM pg_policy
+ WHERE polrelid='public.occasions'::regclass AND polname='data_security_occasion_context_read';
+ IF FOUND THEN
+  IF policy_row.polcmd<>'r' OR NOT policy_row.polpermissive OR
+     policy_row.polroles<>ARRAY['authenticated'::regrole::oid] THEN
+   RAISE EXCEPTION 'Unexpected occasion context read-policy contract'; END IF;
+  ALTER POLICY "data_security_occasion_context_read" ON "public"."occasions"
   USING (public.can_read_occasion_context_row(id));
+ ELSIF EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261018102000') THEN
+  RAISE EXCEPTION 'Read-ACL phase is recorded but its context policy is missing';
+ END IF;
+END $authorization_context_read_phase$;
 ALTER POLICY "demo_read_fence" ON "public"."path_groups"
   USING (((NOT demo_entity_is_protected('occasion'::text, occasion)) OR ((NOT is_demo_occasion(occasion)) OR can_read_orders(occasion))));
 ALTER POLICY "demo_read_fence" ON "public"."place_types"

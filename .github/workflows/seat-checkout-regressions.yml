@@ -71,6 +71,10 @@ jobs:
           pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
           agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
+      - name: Authorization read-phase upgrade contracts
+        env:
+          FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: node --test automation/tests/authorization_read_phase.test.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: '2.9.0'

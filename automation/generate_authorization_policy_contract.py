@@ -35,9 +35,28 @@ def render():
         if (p['schemaname'],p['tablename'],p['policyname'])==('public','occasion_users','Enable all for managers'):
             new=['public.can_manage_occasion_participants(occasion)']*2
         if old==new:continue
-        result.append('ALTER POLICY '+quote(p['policyname'])+' ON '+quote(p['schemaname'])+'.'+quote(p['tablename'])+
+        statement=('ALTER POLICY '+quote(p['policyname'])+' ON '+quote(p['schemaname'])+'.'+quote(p['tablename'])+
           (('\n  USING ('+new[0]+')') if new[0] is not None else '')+
           (('\n  WITH CHECK ('+new[1]+')') if new[1] is not None else '')+';')
+        if (p['schemaname'],p['tablename'],p['policyname'])==('public','occasions','data_security_occasion_context_read'):
+            # This separately gated read-ACL phase is intentionally absent on
+            # supported production installations. Never activate it implicitly.
+            statement='''-- Rebind the existing read phase; do not install or bypass its compatibility gate.
+DO $authorization_context_read_phase$
+DECLARE policy_row record;
+BEGIN
+ SELECT polcmd,polpermissive,polroles INTO policy_row FROM pg_policy
+ WHERE polrelid='public.occasions'::regclass AND polname='data_security_occasion_context_read';
+ IF FOUND THEN
+  IF policy_row.polcmd<>'r' OR NOT policy_row.polpermissive OR
+     policy_row.polroles<>ARRAY['authenticated'::regrole::oid] THEN
+   RAISE EXCEPTION 'Unexpected occasion context read-policy contract'; END IF;
+  '''+statement+'''
+ ELSIF EXISTS(SELECT 1 FROM supabase_migrations.schema_migrations WHERE version='20261018102000') THEN
+  RAISE EXCEPTION 'Read-ACL phase is recorded but its context policy is missing';
+ END IF;
+END $authorization_context_read_phase$;'''
+        result.append(statement)
     return '\n'.join(result)+'\n'
 
 if __name__=='__main__':
