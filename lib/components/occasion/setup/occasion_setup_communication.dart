@@ -10,7 +10,6 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'occasion_setup_story.dart';
-import 'occasion_form_draft.dart';
 import 'occasion_setup_details_strings.dart';
 
 void initializeCommunicationDraft(
@@ -334,10 +333,7 @@ class _OccasionSetupCommunicationState
           Text(t('paymentTimingHint')),
           const SizedBox(height: 20),
           TextFormField(
-            key: ValueKey('deadline-$_fieldRevision'),
-            initialValue:
-                '${effectiveSetupDeadlineSeconds(widget.data) / 86400}'
-                    .replaceFirst(RegExp(r'\.0$'), ''),
+            initialValue: widget.data['deadline'] as String? ?? '',
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: FormStrings.labelDeadlineDays,
@@ -346,14 +342,6 @@ class _OccasionSetupCommunicationState
             ),
             onChanged: (v) => widget.onChanged({'deadline': v}),
           ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-              onPressed: () {
-                widget.onChanged({'deadline': ''});
-                setState(() => _fieldRevision++);
-              },
-              icon: const Icon(Icons.restore),
-              label: Text(t('inheritOrganization'))),
           const SizedBox(height: 20),
           _choice('remindersMode', t('paymentReminders'), {
             'inherit':

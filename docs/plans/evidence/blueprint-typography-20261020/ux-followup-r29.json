@@ -1,0 +1,44 @@
+{
+  "revision": "r29",
+  "scope": "local preview only",
+  "changes": [
+    "Visible horizontal preset scrollbar",
+    "Transparent live appearance/font barriers",
+    "Reversible host font hover preview through shared opt-in picker",
+    "Compact sections without redundant separators",
+    "Inspector/context-menu return of attached manual chair to automatic seating"
+  ],
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/layout_style.dart": "3315f7ec36181990aa43391542dc99d473570d5ca7b76350c686cab93e6ad86a",
+    "lib/src/layout_editor/widgets/layout_inspector.dart": "a6f65592a633f0b74e252af6bf2e6ea0fdb45ef9cb0819f8c7bf399b043b4c03",
+    "lib/src/layout_editor/widgets/canonical_appearance_panel.dart": "0d0e355d71eec5911e20354a638f7482020b30aa31d982784707469ecd70ecc0",
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "d1973669849b8154986a0cadbe40c89fd8ece396e9f73b2143e84245b4ece577",
+    "lib/src/layout_editor/venue_layout_controller.dart": "37190ec15a8cc2de4c994d3608c9d81f456363ec579094e4c7966f2f5a095dc2"
+  },
+  "host_source_sha256": {
+    "lib/components/fonts/font_family_picker.dart": "2b2c771207f02693a3bbb7735059987375611aa1f63825da783ea702b7dcd1ed",
+    "lib/components/blueprint/views/blueprint_plan_editor.dart": "88bb0f9089560ee732c5f799c1e565fbbabab5d3f63e08189ef1306375471f71"
+  },
+  "tests": {
+    "package": {
+      "passed": 12,
+      "log": "/tmp/blueprint-r29-package-tests.log"
+    },
+    "host_font_owners": {
+      "passed": 3,
+      "log": "/tmp/blueprint-r29-font-tests.log",
+      "note": "Actual route assertion corrected for Flutter transparent barrier color=null; actual route owner rerun separately"
+    },
+    "actual_live_font_route": {
+      "passed": 1,
+      "log": "/tmp/blueprint-r29-live-font-pass.log"
+    }
+  },
+  "host_analysis": "/tmp/blueprint-r29-analyze-final.log",
+  "archive_gate": "/tmp/blueprint-r29-archive.log",
+  "host_build": "/tmp/blueprint-r29-host-build.log",
+  "interactive_browser_walkthrough": false,
+  "production_writes": false,
+  "main_js_sha256": "dbbea220188691de9c129ed5e0357c8cd446464880889110ea04248d3ca5e7bd",
+  "served_bytes_verified": true
+}

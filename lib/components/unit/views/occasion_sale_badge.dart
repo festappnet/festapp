@@ -7,7 +7,7 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
 import 'package:fstapp/components/occasion/occasion_sale_strings.dart';
 
-class OccasionSaleBadge extends StatelessWidget {
+class OccasionSaleBadge extends StatefulWidget {
   final OccasionModel occasion;
   final OccasionSaleStatus status;
   final DateTime now;
@@ -26,21 +26,25 @@ class OccasionSaleBadge extends StatelessWidget {
 
   static bool isVisible(OccasionSaleStatus? status, DateTime now) =>
       status != null &&
-      status.state != OccasionSaleState.finished &&
       !(status.state == OccasionSaleState.selling &&
           status.active == status.total &&
           status.waitlists == 0 &&
           !isClosingCountdown(status, now));
   @override
+  State<OccasionSaleBadge> createState() => _OccasionSaleBadgeState();
+}
+
+class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
+  final _tooltipKey = GlobalKey<TooltipState>();
+
+  @override
   Widget build(BuildContext context) {
-    final now = this.now;
-    final status = this.status;
-    final hasTickets = occasion.saleForms?.any((f) => f.hasTickets) ?? true;
-    String wording(String key, [Map<String, String>? args]) =>
-        OccasionSaleStrings.domainText(hasTickets, key, args);
-    final timezone = occasion.data?[Tb.occasions.data_timezone] as String?;
+    final now = widget.now;
+    final status = widget.status;
+    final timezone =
+        widget.occasion.data?[Tb.occasions.data_timezone] as String?;
     final label = OccasionSaleStrings.label(status, now, context.locale,
-        timezone: timezone, hasTickets: hasTickets);
+        timezone: timezone);
     final remaining = status.deadline?.difference(now);
     final closingCountdown = OccasionSaleBadge.isClosingCountdown(status, now);
     final icon = switch (status.state) {
@@ -58,52 +62,73 @@ class OccasionSaleBadge extends StatelessWidget {
     final count = status.active > 0 && status.total > 1
         ? '${status.active}/${status.total}'
         : null;
-    final duration = remaining != null && (status.starts || closingCountdown)
+    final duration = status.countdown &&
+            remaining != null &&
+            (status.starts || closingCountdown)
         ? OccasionSaleStrings.duration(remaining, context.locale)
         : null;
     final compactLabel = switch (status.state) {
-      OccasionSaleState.scheduled => duration != null
-          ? remaining!.inSeconds < 60
-              ? wording('startsSoon')
-              : wording('shortStartsIn', {'duration': duration})
+      OccasionSaleState.scheduled => status.countdown && duration != null
+          ? OccasionSaleStrings.text('shortStartsIn', {'duration': duration})
           : label,
       OccasionSaleState.selling => count ?? duration,
-      OccasionSaleState.waitlist => '${wording('waitlist')}'
+      OccasionSaleState.waitlist => '${OccasionSaleStrings.text('waitlist')}'
           '${count == null ? '' : ' $count'}',
-      _ => wording(status.state.name),
+      _ => OccasionSaleStrings.text(status.state.name),
     };
-    final foreground = Theme.of(context).colorScheme.onSurface;
+    final foreground = Theme.of(context).colorScheme.onSurfaceVariant;
     final detail = [
-      wording(status.state.name),
+      OccasionSaleStrings.text(status.state.name),
       if (status.total > 1)
-        wording('counts', {
+        OccasionSaleStrings.text('counts', {
           'active': '${status.active}',
           'total': '${status.total}',
           'selling': '${status.selling}',
           'waitlists': '${status.waitlists}'
         }),
       if (status.deadline != null)
-        wording(status.starts ? 'startAt' : 'endAt', {
+        OccasionSaleStrings.text(status.starts ? 'startAt' : 'endAt', {
           'date': DateFormat.yMd(context.locale.toLanguageTag())
               .add_Hm()
               .format(status.deadline!.toOccasionTime(timezone))
         }),
     ].join('\n');
-    return Semantics(
-      label: '$label. $detail',
-      child: ExcludeSemantics(
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16),
-          if (compactLabel != null) ...[
-            const SizedBox(width: 4),
-            Flexible(
-                child: Text(compactLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: foreground, fontWeight: FontWeight.w500))),
-          ],
-        ]),
+    return Tooltip(
+      key: _tooltipKey,
+      excludeFromSemantics: true,
+      message: '$label\n$detail',
+      triggerMode: TooltipTriggerMode.tap,
+      showDuration: const Duration(seconds: 8),
+      child: TextButton(
+        onPressed: () => _tooltipKey.currentState?.ensureTooltipVisible(),
+        onFocusChange: (focused) {
+          if (focused) _tooltipKey.currentState?.ensureTooltipVisible();
+        },
+        style: TextButton.styleFrom(
+          foregroundColor: foreground,
+          backgroundColor: Colors.transparent,
+          minimumSize: const Size(44, 44),
+          alignment: AlignmentDirectional.topEnd,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Semantics(
+          label: '$label. $detail',
+          child: ExcludeSemantics(
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 16),
+              if (compactLabel != null) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                    child: Text(compactLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: foreground, fontWeight: FontWeight.w500))),
+              ],
+            ]),
+          ),
+        ),
       ),
     );
   }

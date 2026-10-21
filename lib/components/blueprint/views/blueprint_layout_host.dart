@@ -1,4 +1,3 @@
-import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
 import 'blueprint_standing_capacity_control.dart';
@@ -104,11 +103,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (!mounted) return;
     setState(() {
       controller.layout.readOnly = !_canEdit;
-      if (controller.mode == BlueprintLayoutMode.block
-          ? !_canEdit
-          : !_canOrder) {
-        controller.setMode(BlueprintLayoutMode.manage);
-      }
+      if (!_canOrder) controller.setMode(BlueprintLayoutMode.manage);
     });
   }
 
@@ -231,10 +226,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   }
 
   void _startOperation(BlueprintLayoutMode mode) {
-    final blocking = mode == BlueprintLayoutMode.block;
-    if (_busy || _editingPlan || (blocking ? !_canEdit : !_canOrder)) return;
-    final selected =
-        Set<String>.from(blocking ? _blockableSeatIds : _detailSeatIds);
+    if (_busy || _editingPlan || !_canOrder) return;
+    final selected = Set<String>.from(_detailSeatIds);
     if (mode == BlueprintLayoutMode.order) {
       for (final unit in controller.layout.document.selectionUnits) {
         final members = Set<String>.from(unit['nodeIds'] as List);
@@ -244,9 +237,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     controller.setMode(mode);
     final eligible = selected.where((id) {
       final seat = controller.snapshot.seatBindings[id];
-      if (seat?.spotId == null) return false;
-      if (blocking) return !controller.isProtected(id);
-      if (seat!.blocked) return false;
+      if (seat?.spotId == null || seat!.blocked) return false;
       return mode != BlueprintLayoutMode.order ||
           (!controller.isProtected(id) &&
               controller.adapter.product(seat)?.price != null);
@@ -876,20 +867,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         Text('${BlueprintStrings.standingCapacity}: $capacity'),
         const SizedBox(height: 8),
         Text(BlueprintStrings.standingRequiresProduct),
-        if (_canEdit && _canOrder)
-          FilledButton.icon(
-              key: const ValueKey('assign-standing-product'),
-              onPressed: _busy
-                  ? null
-                  : () => showDialog<void>(
-                      context: context,
-                      builder: (_) => BlueprintStandingSetupDialog(
-                          controller: controller,
-                          nodeId: area.id,
-                          occasionLink:
-                              RightsService.currentOccasion()!.link!)),
-              icon: const Icon(Icons.add),
-              label: Text(BlueprintStrings.assignStandingProduct)),
       ] else
         Text(BlueprintStrings.standingAvailability(
             (availability?['available'] as num?)?.toInt() ?? 0,
@@ -897,7 +874,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       if (_canEdit &&
           controller.snapshot.areaBindings.containsKey(area.id)) ...[
         const SizedBox(height: 16),
-        Text(BlueprintStrings.standingSharedCapacityHint),
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],
@@ -1547,11 +1523,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       });
 
   Set<String> get _blockableSeatIds {
-    final ids = (controller.mode == BlueprintLayoutMode.block
-            ? controller.operationSelection
-            : _detailSeatIds)
-        .where((id) => !controller.isProtected(id))
-        .toSet();
+    final ids =
+        _detailSeatIds.where((id) => !controller.isProtected(id)).toSet();
     for (final unit in controller.layout.document.selectionUnits) {
       final members = Set<String>.from(unit['nodeIds'] as List? ?? const []);
       if (!members.any(ids.contains)) continue;
@@ -1569,10 +1542,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (_busy || !_canEdit || ids.isEmpty) return;
     final block =
         ids.any((id) => !controller.snapshot.seatBindings[id]!.blocked);
-    _run(() async {
-      controller.setBlockedForSeats(ids, block);
-      controller.setMode(BlueprintLayoutMode.manage);
-    });
+    _run(() async => controller.setBlockedForSeats(ids, block));
   }
 
   Widget _reservationAction(
@@ -1592,8 +1562,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         ids.every((id) => controller.snapshot.seatBindings[id]!.blocked);
     return _reservationAction(
       key: const ValueKey('blueprint-toggle-blocked'),
-      onPressed:
-          _busy ? null : () => _startOperation(BlueprintLayoutMode.block),
+      onPressed: _busy || ids.isEmpty ? null : _toggleSelectedBlocked,
       icon: unblock ? Icons.lock_open_outlined : Icons.block_outlined,
       label:
           unblock ? BlueprintStrings.unblockSeats : BlueprintStrings.blockSeats,
@@ -1622,7 +1591,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             enabled: !_busy,
             onSelected: (action) {
               if (action == 'swap') _startOperation(BlueprintLayoutMode.swap);
-              if (action == 'block') _startOperation(BlueprintLayoutMode.block);
+              if (action == 'block') _toggleSelectedBlocked();
             },
             itemBuilder: (context) => [
               if (_canOrder)
@@ -1634,6 +1603,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 PopupMenuItem(
                     value: 'block',
                     key: const ValueKey('blueprint-toggle-blocked'),
+                    enabled: ids.isNotEmpty,
                     child: Text(unblock
                         ? BlueprintStrings.unblockSeats
                         : BlueprintStrings.blockSeats)),
@@ -1681,18 +1651,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     if (_editingPlan || controller.mode == BlueprintLayoutMode.manage)
       return null;
     final ordering = controller.mode == BlueprintLayoutMode.order;
-    final blocking = controller.mode == BlueprintLayoutMode.block;
-    final blockIds = blocking ? _blockableSeatIds : <String>{};
-    final unblocking = blocking &&
-        blockIds.isNotEmpty &&
-        blockIds.every((id) => controller.snapshot.seatBindings[id]!.blocked);
-    final title = blocking
-        ? (unblocking
-            ? BlueprintStrings.unblockSeats
-            : BlueprintStrings.blockSeats)
-        : (ordering
-            ? BlueprintStrings.orderSelectionTitle
-            : BlueprintStrings.legendSwapSeats);
     final totals = <String?, double>{};
     for (final id in controller.operationSelection) {
       final binding = controller.snapshot.seatBindings[id];
@@ -1710,10 +1668,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 Utilities.formatPrice(context, e.value, currencyCode: e.key))
             .join(' + ');
     final valid = !_busy &&
-        (blocking
-            ? _canEdit && blockIds.isNotEmpty
-            : controller.selectedSpotIds.isNotEmpty &&
-                (ordering || controller.selectedSpotIds.length == 2));
+        controller.selectedSpotIds.isNotEmpty &&
+        (ordering || controller.selectedSpotIds.length == 2);
     return ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: Material(
@@ -1733,13 +1689,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 runSpacing: 8,
                 children: [
                   Icon(
-                      blocking
-                          ? (unblocking
-                              ? Icons.lock_open_outlined
-                              : Icons.block_outlined)
-                          : ordering
-                              ? Icons.shopping_cart_outlined
-                              : Icons.swap_horiz,
+                      ordering
+                          ? Icons.shopping_cart_outlined
+                          : Icons.swap_horiz,
                       color: Theme.of(context).colorScheme.primary),
                   Semantics(
                       liveRegion: true,
@@ -1747,32 +1699,25 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title,
+                            Text(
+                                ordering
+                                    ? BlueprintStrings.orderSelectionTitle
+                                    : BlueprintStrings.legendSwapSeats,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
-                            Text(blocking
-                                ? BlueprintStrings.selectedCount(
-                                    blockIds.length)
-                                : ordering
-                                    ? '${BlueprintStrings.selectedCount(controller.operationSelection.length)} · $total'
-                                    : '${controller.operationSelection.length} / 2'),
+                            Text(ordering
+                                ? '${BlueprintStrings.selectedCount(controller.operationSelection.length)} · $total'
+                                : '${controller.operationSelection.length} / 2'),
                           ])),
                   TextButton(
                       key: const ValueKey('blueprint-cancel-operation'),
                       onPressed: _busy ? null : _cancelOperation,
                       child: Text(CommonStrings.storno)),
                   FilledButton(
-                      key: const ValueKey('blueprint-confirm-operation'),
-                      onPressed: !valid
-                          ? null
-                          : blocking
-                              ? _toggleSelectedBlocked
-                              : (ordering ? _order : _swap),
-                      child: Text(blocking
-                          ? title
-                          : ordering
-                              ? BlueprintStrings.confirmOrder
-                              : BlueprintStrings.legendSwapSeats)),
+                      onPressed: valid ? (ordering ? _order : _swap) : null,
+                      child: Text(ordering
+                          ? BlueprintStrings.confirmOrder
+                          : BlueprintStrings.legendSwapSeats)),
                 ],
               )),
         ));

@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/time_data_range_picker.dart';
 import '../occasion_sale_strings.dart';
-import 'occasion_setup_story.dart';
 
 /// Creation intent only. Finalization writes the existing form schedule.
 class OccasionSetupSales {
-  static String text(Map<String, dynamic> data, String key,
-          [Map<String, String>? args]) =>
-      OccasionSaleStrings.domainText(
-          OccasionSetupStory.hasTickets(data), key, args);
   static String mode(Map<String, dynamic> data) =>
       data['saleMode'] as String? ?? 'preparation';
   static DateTime? start(Map<String, dynamic> data) =>
@@ -32,9 +27,8 @@ class OccasionSetupSales {
     return kind != 'immediate' || finish.isAfter(now);
   }
 
-  static String createLabel(Map<String, dynamic> data) => text(
-      data,
-      data['formEnabled'] == false
+  static String createLabel(Map<String, dynamic> data) =>
+      OccasionSaleStrings.text(data['formEnabled'] == false
           ? 'create'
           : switch (mode(data)) {
               'scheduled' => 'createScheduled',
@@ -63,7 +57,7 @@ class OccasionSetupSaleSettings extends StatelessWidget {
               date: value,
               time: value == null ? null : TimeOfDay.fromDateTime(value),
               dateLabel: label,
-              timeLabel: OccasionSetupSales.text(data, 'time'),
+              timeLabel: OccasionSaleStrings.text('time'),
               minDate: DateTime(2000),
               maxDate: DateTime(2101),
               onDateChanged: (d) => update(DateTime(d.year, d.month, d.day,
@@ -89,30 +83,29 @@ class OccasionSetupSaleSettings extends StatelessWidget {
               RadioListTile<String>(
                   contentPadding: EdgeInsets.zero,
                   value: option,
-                  title: Text(OccasionSetupSales.text(data, 'mode.$option')),
-                  subtitle:
-                      Text(OccasionSetupSales.text(data, 'help.$option'))),
+                  title: Text(OccasionSaleStrings.text('mode.$option')),
+                  subtitle: Text(OccasionSaleStrings.text('help.$option'))),
           ])),
       if (kind == 'scheduled')
-        _term(context, 'saleStart', OccasionSetupSales.text(data, 'saleStart'),
-            null),
-      _term(context, 'saleEnd', OccasionSetupSales.text(data, 'saleEnd'),
+        _term(
+            context, 'saleStart', OccasionSaleStrings.text('saleStart'), null),
+      _term(context, 'saleEnd', OccasionSaleStrings.text('saleEnd'),
           DateTime.tryParse(data['end'] as String? ?? '')?.toOccasionTime()),
       const SizedBox(height: 8),
       if (data['saleEnd'] == null)
-        Text(OccasionSetupSales.text(data, 'endDefault'))
+        Text(OccasionSaleStrings.text('endDefault'))
       else
         TextButton(
             onPressed: () => onChanged({'saleEnd': null}),
-            child: Text(OccasionSetupSales.text(data, 'useEventEnd'))),
+            child: Text(OccasionSaleStrings.text('useEventEnd'))),
       CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: data['saleCountdown'] == true,
           onChanged: (value) => onChanged({'saleCountdown': value == true}),
-          title: Text(OccasionSetupSales.text(data, 'countdown')),
-          subtitle: Text(OccasionSetupSales.text(data, 'countdownHelp'))),
+          title: Text(OccasionSaleStrings.text('countdown')),
+          subtitle: Text(OccasionSaleStrings.text('countdownHelp'))),
       if (!OccasionSetupSales.valid(data, DateTime.now()))
-        Text(OccasionSetupSales.text(data, 'invalidTiming'),
+        Text(OccasionSaleStrings.text('invalidTiming'),
             style: TextStyle(color: Theme.of(context).colorScheme.error)),
     ]);
   }
