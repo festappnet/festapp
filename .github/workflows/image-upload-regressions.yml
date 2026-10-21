@@ -79,5 +79,5 @@ jobs:
           test/components/ticket_layout/ticket_canvas_selection_cases.dart
           test/widgets/app_text_selection_cases.dart
       - run: >-
-          fvm flutter test --no-pub --platform chrome
-          test/components/html/html_image_preview_test.dart
+          fvm flutter test --no-pub --concurrency=1 --platform chrome
+          test/components/html/html_image_preview_cases.dart
