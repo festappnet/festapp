@@ -46,3 +46,17 @@ Validation:
 
 Release scope: vstupenky.online only; SQL migration 20261021230000, then web.
 Stripe and Edge Function changes are outside this release.
+
+## Header refinement
+
+The follow-up aligns the neutral state icon/label with the event date inside the
+card header, preserving 110px cards and 44px tooltip targets. The chevron uses
+its own reserved title space. Past events are muted without a state label, also
+when no form projection is present. Inactive dates use neutral text color.
+Scheduled starts on the administration card always use localized relative text
+(“Začíná za 2 dny”); the public form countdown setting remains unchanged.
+
+33 sale/widget cases passed, including 288px cards, 2x text, past-event behavior,
+countdown settings and real Futura font rendering in light/dark themes. The two
+font cases passed again after using the shared localization delegates. Targeted
+analysis has no errors/warnings (6 existing informational findings).
