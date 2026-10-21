@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/blueprint/seat_reservation/widgets/seat_reservation_widget.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_controller.dart';
@@ -25,7 +26,7 @@ import 'dart:async';
 import '../../support/fixtures/root_supabase_fixture.dart';
 import 'package:flutter/services.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
-import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
+import '../../support/fixtures/layout_canvas_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
 import 'package:fstapp/components/blueprint/blueprint_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
@@ -113,60 +114,107 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final rights = RightsService.occasionLinkModelNotifier.value;
-      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+      RightsService.occasionLinkModelNotifier.value =
+          OccasionLinkModel(capabilities: {
+        AuthorizationCapabilities.occasionsWrite: true,
+        AuthorizationCapabilities.ordersWrite: true
+      }, isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
-      final tables = [for (var i = 0; i < 8; i++)
-        tableLayout(shape: 'rect', count: 8, width: 200, height: 80,
-            x: i.isEven ? 180 : 820, y: 220 + (i ~/ 2) * 420)];
-      final document = VenueLayoutDocument(
-          canvas: {...VenueLayoutDocument.empty().canvas, 'width': 1000, 'height': 1800},
-          nodes: [for (final table in tables) ...table.nodes],
-          attachments: [for (final table in tables) ...table.attachments]);
+      final tables = [
+        for (var i = 0; i < 8; i++)
+          tableLayout(
+              shape: 'rect',
+              count: 8,
+              width: 200,
+              height: 80,
+              x: i.isEven ? 180 : 820,
+              y: 220 + (i ~/ 2) * 420)
+      ];
+      final document = VenueLayoutDocument(canvas: {
+        ...VenueLayoutDocument.empty().canvas,
+        'width': 1000,
+        'height': 1800
+      }, nodes: [
+        for (final table in tables) ...table.nodes
+      ], attachments: [
+        for (final table in tables) ...table.attachments
+      ]);
       final seats = document.nodes.where((n) => n.kind == 'seat').toList();
-      final source = BlueprintModel(layoutSnapshot: BlueprintLayoutSnapshot(
-          blueprintId: 1, occasionId: 1, title: 'Mobile', revision: 1,
-          document: document,
-          seatBindings: {for (var i = 0; i < seats.length; i++) seats[i].id:
-            BlueprintSeatBinding(nodeId: seats[i].id, spotId: i + 1,
-                title: 'A${i + 1}', productId: 1, groupNodeId: seats[i].parentId)},
-          groupProducts: {for (final table in tables) table.nodes.first.id: 1}),
-          products: [ProductModel(id: 1, title: 'Místo', price: 200,
-              productTypeString: ProductModel.spotType)],
-          spots: [for (var i = 0; i < seats.length; i++)
-            BlueprintObjectModel(id: i + 1, state: 'available')]);
+      final source = BlueprintModel(
+          layoutSnapshot: BlueprintLayoutSnapshot(
+              blueprintId: 1,
+              occasionId: 1,
+              title: 'Mobile',
+              revision: 1,
+              document: document,
+              seatBindings: {
+                for (var i = 0; i < seats.length; i++)
+                  seats[i].id: BlueprintSeatBinding(
+                      nodeId: seats[i].id,
+                      spotId: i + 1,
+                      title: 'A${i + 1}',
+                      productId: 1,
+                      groupNodeId: seats[i].parentId)
+              },
+              groupProducts: {
+                for (final table in tables) table.nodes.first.id: 1
+              }),
+          products: [
+            ProductModel(
+                id: 1,
+                title: 'Místo',
+                price: 200,
+                productTypeString: ProductModel.spotType)
+          ],
+          spots: [
+            for (var i = 0; i < seats.length; i++)
+              BlueprintObjectModel(id: i + 1, state: 'available')
+          ]);
       source.layoutResources = blueprintPreparedResourcesFixture(document);
-      await environment.pumpWidget(tester, MaterialApp(
-          locale: const Locale('cs'),
-          supportedLocales: VenueLayoutLocalizations.supportedLocales,
-          localizationsDelegates: VenueLayoutLocalizations.localizationsDelegates,
-          theme: ThemeConfig.theme(brightness: Brightness.dark),
-          builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(mobile.$3)),
-              child: child!),
-          home: BlueprintLayoutHost(source: source, reload: () async => source)));
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              locale: const Locale('cs'),
+              supportedLocales: VenueLayoutLocalizations.supportedLocales,
+              localizationsDelegates:
+                  VenueLayoutLocalizations.localizationsDelegates,
+              theme: ThemeConfig.theme(brightness: Brightness.dark),
+              builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(mobile.$3)),
+                  child: child!),
+              home: BlueprintLayoutHost(
+                  source: source, reload: () async => source)));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
       final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));
       expect(tester.getSize(toolbar).height, lessThanOrEqualTo(112));
-      expect(tester.getSize(find.byType(LayoutSceneSurface)).height,
-          greaterThan(mobile.$2 * .6));
-      expect(find.byKey(const ValueKey('blueprint-start-order')).hitTestable(), findsOneWidget);
-      expect(find.byKey(const ValueKey('layout-mobile-fit-plan')).hitTestable(), findsOneWidget);
+      expect(
+          tester.getSize(layoutCanvas()).height, greaterThan(mobile.$2 * .6));
+      expect(find.byKey(const ValueKey('blueprint-start-order')).hitTestable(),
+          findsOneWidget);
+      expect(find.byKey(const ValueKey('layout-mobile-fit-plan')).hitTestable(),
+          findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('blueprint-more-actions')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('blueprint-start-swap')).hitTestable(), findsOneWidget);
-      expect(find.byKey(const ValueKey('blueprint-toggle-blocked')), findsOneWidget);
+      expect(find.byKey(const ValueKey('blueprint-start-swap')).hitTestable(),
+          findsOneWidget);
+      expect(find.byKey(const ValueKey('blueprint-toggle-blocked')),
+          findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('blueprint-screen-mode')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
       await tester.pumpAndSettle();
-      expect(tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor)).interactionEnabled, isTrue);
+      expect(
+          tester
+              .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+              .interactionEnabled,
+          isTrue);
       expect(tester.getSize(toolbar).height, lessThanOrEqualTo(112));
-      expect(tester.getSize(find.byType(LayoutSceneSurface)).height,
-          greaterThan(mobile.$2 * .6));
+      expect(
+          tester.getSize(layoutCanvas()).height, greaterThan(mobile.$2 * .6));
       expect(tester.takeException(), isNull);
     });
   }
@@ -510,6 +558,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.occasionsWrite: true,
+          AuthorizationCapabilities.ordersWrite: true
+        },
         isAdmin: true,
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
@@ -665,6 +717,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.occasionsWrite: true},
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: false));
     editor.onViewSelectionChanged!({seats.first.id});
     await tester.pumpAndSettle();
@@ -804,8 +857,11 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final rights = RightsService.occasionLinkModelNotifier.value;
-      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+      RightsService.occasionLinkModelNotifier.value =
+          OccasionLinkModel(capabilities: {
+        AuthorizationCapabilities.occasionsWrite: true,
+        AuthorizationCapabilities.ordersWrite: true
+      }, isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
       final fixture = jsonDecode(
           File('test/fixtures/blueprint/canonical-text-scene.json')
@@ -889,880 +945,7 @@ void main() {
           compileScene(controller.document,
               resources: controller.resources)['issues'],
           isEmpty);
-      final surface =
-          tester.widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface));
-      surface.onDoubleTapAt!(const Offset(200, 180));
-      await tester.pump();
-      await tester.runAsync(
-          () async => Future<void>.delayed(const Duration(milliseconds: 30)));
-      await tester.pump();
-      final input = find.byKey(const ValueKey('layout-inline-label'));
-      expect(input, findsOneWidget);
-      await tester.showKeyboard(input);
-      tester.testTextInput.updateEditingValue(const TextEditingValue(
-          text: 'Completed composing text',
-          selection: TextSelection.collapsed(offset: 24),
-          composing: TextRange(start: 0, end: 24)));
-      await tester.pump();
-      expect(controller.document.toJson(), document.toJson(),
-          reason: 'composition has not yet committed into the valid scene');
-      final dynamic modeControl =
-          tester.widget(find.byKey(const ValueKey('blueprint-screen-mode')));
-      final dynamic nextMode = modeControl.selected.toSet();
-      nextMode.clear();
-      nextMode.add(modeControl.segments.first.value);
-      modeControl.onSelectionChanged(nextMode);
-      modeControl.onSelectionChanged(nextMode);
-      await tester.pump();
-      await tester.pump();
-      expect(batches, 1,
-          reason: 'one pending transition owns text preparation');
-      expect(controller.document.nodes.first.properties['text'],
-          'Completed composing text');
-      expect(
-          tester
-              .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor))
-              .busy,
-          isTrue);
-      final beforeResources = controller.resources;
-      if (outcome == 'changed') {
-        controller.updateNode(controller.document.nodes.first.copyWith(
-            properties: {
-              ...controller.document.nodes.first.properties,
-              'text': 'Newer draft'
-            }));
-      }
-      if (outcome == 'disposed') {
-        await environment.pumpWidget(tester, const SizedBox.shrink());
-      }
-      if (outcome == 'failed') {
-        response.completeError(StateError('transition_failed'));
-      } else {
-        response.complete();
-      }
-      await tester.pumpAndSettle();
-      if (outcome == 'disposed') {
-        expect(tester.takeException(), isNull);
-        return;
-      }
-      var editor =
-          tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
-      expect(editor.busy, isFalse);
-      if (outcome == 'changed' || outcome == 'failed') {
-        expect(editor.interactionEnabled, isTrue);
-        expect(controller.resources, beforeResources);
-        await tester.ensureVisible(
-            find.byKey(const ValueKey('blueprint-reservations-mode')));
-        await tester
-            .tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
-        await tester.pumpAndSettle();
-        editor = tester
-            .widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
-        expect(batches, 2);
-      }
-      expect(editor.interactionEnabled, isFalse);
-      expect(
-          compileScene(controller.document,
-              resources: controller.resources)['issues'],
-          isEmpty);
-    });
-  }
-  testWidgetsWithEnvironment(() => environment,
-      'setup and existing occasion share plan editor typography graphics and history',
-      (tester) async {
-    final fixture = jsonDecode(
-        File('test/fixtures/blueprint/canonical-text-scene.json')
-            .readAsStringSync()) as Map;
-    final document = VenueLayoutDocument.fromJson(
-        Map<String, dynamic>.from(fixture['document'] as Map));
-    final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
-    await tester.runAsync(TicketFontCatalog.loadFamilies);
-    tester.view.physicalSize = const Size(1280, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final rights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
-    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
-    final source = BlueprintModel(
-        layoutResources: resources,
-        layoutSnapshot: BlueprintLayoutSnapshot(
-            blueprintId: 1,
-            occasionId: 1,
-            title: 'Shared editor',
-            revision: 1,
-            document: document));
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
-    await tester
-        .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-    await tester.pump(const Duration(milliseconds: 200));
-    final shared =
-        tester.widget<BlueprintPlanEditor>(find.byType(BlueprintPlanEditor));
-    await tester.runAsync(shared.loadTextResources!);
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.byType(BlueprintPlanEditor), findsOneWidget);
-    expect(
-        find.widgetWithText(
-            ListTile,
-            VenueLayoutStrings.text(
-                tester.element(find.byType(BlueprintPlanEditor)),
-                'Insert image / SVG')),
-        findsOneWidget);
-    expect(
-        tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .fontPickerBuilder,
-        isNotNull);
-    final existing =
-        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    expect(existing.inlineTextStyleBuilder, isNotNull);
-    expect(existing.globalFontPickerBuilder, isNotNull);
-    await environment.pumpWidget(tester, const SizedBox.shrink());
-    final batches = <Map<String, dynamic>>[];
-    final provider = await tester.runAsync(() =>
-        BlueprintTextResources.forSetupDraft('draft-id',
-            service: TicketLayoutService(transport: (body) async {
-          expectSync(body['setupDraftId'], 'draft-id');
-          if (body['mode'] == 'font')
-            throw StateError(
-                'Native font raster is outside this transport fixture');
-          expectSync(body['mode'], 'layout-text');
-          final batch = Map<String, dynamic>.from(body['batch'] as Map);
-          batches.add(batch);
-          return {
-            'protocol': 2,
-            'fontFamilies': resources['fontFamilies'],
-            'numberSymbols': {},
-            'textLayouts': {
-              for (final raw in batch['requests'] as List)
-                LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
-                  'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
-                  'descriptor':
-                      LayoutTextRequest(Map<String, dynamic>.from(raw))
-                          .resourceDescriptor,
-                  'path': [
-                    ['M', 0, 0],
-                    ['L', 10, 10]
-                  ],
-                  'clip': raw['box'],
-                },
-            }
-          };
-        })));
-    VenueLayoutDocument? saved;
-    Map<String, dynamic>? savedResources;
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: BlueprintLayoutDemo(
-                initialDocument: document,
-                initialResources: resources,
-                unitId: 7,
-                prepareResources: (document, current) async {
-                  final prepared =
-                      await BlueprintTextPreparation(provider!.prepareTextBatch)
-                          .prepareSnapshot(
-                              document,
-                              {
-                                for (final family in provider.families)
-                                  family['id'] as String: family
-                              },
-                              current);
-                  savedResources = prepared;
-                  return prepared;
-                },
-                onSave: (document) async {
-                  saved = document;
-                },
-                loadTextResources: () async => provider!)));
-    await tester.pumpAndSettle();
-    expect(find.byType(BlueprintPlanEditor), findsOneWidget);
-    expect(
-        find.widgetWithText(
-            ListTile,
-            VenueLayoutStrings.text(
-                tester.element(find.byType(BlueprintPlanEditor)),
-                'Insert image / SVG')),
-        findsOneWidget);
-    expect(
-        tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .fontPickerBuilder,
-        isNotNull);
-    final setup =
-        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    expect(setup.inlineTextStyleBuilder, isNotNull);
-    expect(setup.globalFontPickerBuilder, isNotNull);
-    expect(batches, isEmpty, reason: 'persisted prepared paths are reused');
-    final text = setup.controller.document.nodes.first;
-    expect(
-        setup.controller.apply(document.copyWith(nodes: [
-          text.copyWith(properties: {
-            ...text.properties,
-            'text': 'Changed whole paragraph'
-          }),
-          ...document.nodes.skip(1),
-        ])),
-        isTrue);
-    await tester.pump(const Duration(milliseconds: 200));
-    await tester.pumpAndSettle();
-    expect(batches, isEmpty,
-        reason: 'native editing never dispatches vector preparation');
-    final saving =
-        tester.widget<EditorActionBar>(find.byType(EditorActionBar)).onSave();
-    await tester.pump();
-    await saving;
-    expect(saved!.toJson(), setup.controller.document.toJson());
-    for (final entry in (savedResources!['textLayouts'] as Map).entries) {
-      expect((setup.controller.resources['textLayouts'] as Map)[entry.key],
-          entry.value);
-    }
-    expect(batches, hasLength(1),
-        reason: 'only explicit save prepares the captured whole paragraph');
-    setup.controller.undo();
-    await tester.pumpAndSettle();
-    expect(setup.controller.document.toJson(), document.toJson());
-    expect(
-        compileScene(setup.controller.document,
-            resources: setup.controller.resources)['issues'],
-        isEmpty);
-    expect(tester.takeException(), isNull);
-  });
-  testWidgetsWithEnvironment(() => environment,
-      'standing capacity field commits and focused undo restores live capacity',
-      (tester) async {
-    final id = newLayoutId();
-    final c = BlueprintLayoutController(
-        source: BlueprintModel(
-            layoutSnapshot: BlueprintLayoutSnapshot(
-                blueprintId: 4,
-                occasionId: 8,
-                title: 'Hall',
-                revision: 2,
-                document: VenueLayoutDocument(nodes: [
-                  LayoutNode(
-                      id: id,
-                      kind: 'capacityArea',
-                      x: 400,
-                      y: 300,
-                      width: 200,
-                      height: 100,
-                      properties: {'capacity': 0})
-                ]),
-                seatBindings: {},
-                groupProducts: {},
-                areaBindings: {
-                  id: BlueprintAreaBinding(
-                      nodeId: id, inventoryContextId: 3, productId: 9)
-                }),
-            areaAvailability: {
-          id: {'capacity': 30, 'available': 12}
-        },
-            products: [
-          ProductModel(id: 9, title: 'Standing', price: 80)
-        ]));
-    addTearDown(c.dispose);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: AnimatedBuilder(
-                    animation: c,
-                    builder: (_, __) => BlueprintStandingCapacityControl(
-                        controller: c, nodeId: id, enabled: true)))));
-    final field = find.byKey(const ValueKey('standing-capacity-field'));
-    expect(tester.widget<TextField>(field).controller!.text, '30');
-    await tester.enterText(field, '25');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(c.areaCapacity(id), 25);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-    await tester.pumpAndSettle();
-    expect(c.areaCapacity(id), 30);
-    expect(tester.widget<TextField>(field).controller!.text, '30');
-  });
-  testWidgetsWithEnvironment(() => environment,
-      'admin order uses active form required customer and ticket fields without loaders',
-      (tester) async {
-    Map<String, dynamic>? submitted;
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: BlueprintCreateOrderDialog(
-          selectedSpotIds: const [71],
-          initialAnalysis: {
-            'total_price': 100,
-            'currency': 'CZK',
-            'conflicts': [],
-            'new_order_items': [
-              {
-                'spot_id': 71,
-                'spot_title': 'A1',
-                'product_title': 'Seat',
-                'price': 100
-              }
-            ],
-            'order_form': {
-              'key': '00000000-0000-4000-8000-000000000001',
-              'fields': [
-                {
-                  'id': 601,
-                  'type': 'name',
-                  'title': 'Jméno zákazníka',
-                  'is_required': true,
-                  'is_hidden': false,
-                  'is_ticket_field': false
-                },
-                {
-                  'id': 602,
-                  'type': 'text',
-                  'title': 'Jméno návštěvníka',
-                  'is_required': true,
-                  'is_hidden': false,
-                  'is_ticket_field': true
-                },
-              ]
-            },
-          },
-          submit: (_, data) async {
-            submitted = data;
-            throw StateError('test_stop');
-          },
-        ))));
-    await tester.pumpAndSettle();
-    expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    await tester.enterText(find.byType(TextFormField), 'local@example.test');
-    final confirm =
-        find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder);
-    await tester.ensureVisible(confirm);
-    await tester.tap(confirm);
-    await tester.pumpAndSettle();
-    expect(submitted, isNull);
-    final customer =
-        find.byWidgetPredicate((w) => w is FormBuilderField && w.name == '601');
-    final attendee =
-        find.byWidgetPredicate((w) => w is FormBuilderField && w.name == '602');
-    await tester.ensureVisible(customer);
-    await tester.enterText(customer, 'Jana');
-    await tester.ensureVisible(attendee);
-    await tester.enterText(attendee, 'Eva');
-    await tester.ensureVisible(confirm);
-    await tester.tap(confirm);
-    await tester.pumpAndSettle();
-    expect(submitted!['fields'], [
-      {'601': 'Jana'}
-    ]);
-    expect(submitted!['ticket_fields'], {
-      '71': [
-        {'602': 'Eva', 'text': 'Eva'}
-      ]
-    });
-    expect(submitted!['form_key'], '00000000-0000-4000-8000-000000000001');
-  });
-  testWidgetsWithEnvironment(() => environment,
-      'whole order cancellation email is an optional follow-up',
-      (tester) async {
-    await environment.pumpWidget(
-        tester, const MaterialApp(home: Scaffold(body: Text('Ready'))));
-    final context = tester.element(find.text('Ready'));
-    final skipped =
-        confirmCancelledOrderEmail(context, 'customer@example.test');
-    await tester.pumpAndSettle();
-    expect(find.textContaining('customer@example.test'), findsOneWidget);
-    await tester.tap(find.text('Teď neposílat'));
-    await tester.pumpAndSettle();
-    expect(await skipped, isFalse);
-    final accepted =
-        confirmCancelledOrderEmail(context, 'customer@example.test');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(OrdersStrings.sendEmailButton));
-    await tester.pumpAndSettle();
-    expect(await accepted, isTrue);
-  });
-  testWidgetsWithEnvironment(() => environment,
-      'local font can become the plan default through the shared picker',
-      (tester) async {
-    await tester.runAsync(TicketFontCatalog.loadFamilies);
-    final registry = blueprintFontRegistryFixture();
-    final roboto =
-        registry.entries.firstWhere((e) => e.value['family'] == 'Roboto').key;
-    final futura = registry.entries
-        .firstWhere((e) => e.value['family'] == 'Futura PT')
-        .key;
-    final text = LayoutNode(
-        id: newLayoutId(),
-        kind: 'text',
-        x: 200,
-        y: 200,
-        width: 200,
-        height: 60,
-        properties: const {
-          'text': 'Font'
-        },
-        style: {
-          'label': {'fontFamilyId': futura}
-        });
-    final document = VenueLayoutDocument(styles: {
-      'label': {'fontFamilyId': futura}
-    }, nodes: [
-      text
-    ]);
-    final controller = VenueLayoutController(document,
-        resources: blueprintPreparedResourcesFixture(document))
-      ..select({text.id});
-    addTearDown(controller.dispose);
-    final provider = await tester.runAsync(() =>
-        BlueprintTextResources.forSetupDraft('font-default-test',
-            service: TicketLayoutService(
-                transport: (body) async => throw StateError(
-                    'No shaping or font bytes expected in this metadata owner'))));
-    tester.view.physicalSize = const Size(1440, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: BlueprintPlanEditor(
-                controller: controller,
-                loadTextResources: () async => provider!)));
-    await tester.pumpAndSettle();
-    final action = find.byKey(const ValueKey('set-default-plan-font'));
-    expect(action, findsNothing);
-    final picker =
-        tester.widget<FontFamilyPicker>(find.byType(FontFamilyPicker));
-    await picker.onPreview!('Roboto');
-    await tester.pumpAndSettle();
-    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
-        roboto);
-    expect(controller.canUndo, isFalse);
-    picker.onPreviewEnd!();
-    await tester.pumpAndSettle();
-    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
-        futura);
-    expect(controller.canUndo, isFalse);
-    await picker.onSelected('Roboto');
-    await tester.pumpAndSettle();
-    expect(action, findsOneWidget);
-    await tester.ensureVisible(action);
-    await tester.tap(action);
-    await tester.pumpAndSettle();
-    expect(controller.document.styles['label']['fontFamilyId'], roboto);
-    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
-        roboto);
-    expect(action, findsNothing);
-    controller.undo();
-    expect(controller.document.styles['label']['fontFamilyId'], futura);
-    controller.undo();
-    expect(controller.document.nodes.single.style['label']['fontFamilyId'],
-        futura);
-    expect(action, findsNothing);
-    expect(controller.canUndo, isFalse);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgetsWithEnvironment(() => environment,
-      'reservation workspace groups selected seats, highlights parent tables and confirms cancellation',
-      (tester) async {
-    tester.view.physicalSize = const Size(1440, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final rights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        isAdmin: true,
-        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
-    addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
-    final tables = [
-      for (var i = 0; i < 3; i++)
-        LayoutNode(
-            id: newLayoutId(),
-            kind: 'table',
-            label: 'Desk ${i + 1}',
-            x: 300.0 + i * 400,
-            y: 300,
-            surface: {'type': 'rect'})
-    ];
-    final seats = [
-      for (var i = 0; i < 3; i++)
-        LayoutNode(
-            id: newLayoutId(),
-            kind: 'seat',
-            parentId: tables[i].id,
-            x: 0,
-            y: 100)
-    ];
-    final document = VenueLayoutDocument(nodes: [...tables, ...seats]);
-    final source = BlueprintModel(
-        layoutSnapshot: BlueprintLayoutSnapshot(
-            blueprintId: 1,
-            occasionId: 1,
-            title: 'Workspace',
-            revision: 1,
-            document: document,
-            seatBindings: {
-              for (var i = 0; i < 3; i++)
-                seats[i].id: BlueprintSeatBinding(
-                    nodeId: seats[i].id,
-                    spotId: 11 + i,
-                    title: 'Seat ${i + 1}',
-                    productId: 1,
-                    groupNodeId: tables[i].id)
-            },
-            groupProducts: {},
-            areaBindings: {}),
-        spots: [
-          BlueprintObjectModel(
-              id: 11, state: 'ordered', orderProductTicket: 101),
-          BlueprintObjectModel(id: 12, state: 'available'),
-          BlueprintObjectModel(id: 13, state: 'selected')
-        ],
-        tickets: [
-          TicketModel(id: 51, ticketSymbol: 'T51', state: 'ordered')
-        ],
-        orderProductTickets: [
-          OrderProductTicketModel(id: 101, ticketId: 51)
-        ],
-        products: [
-          ProductModel(
-              id: 1,
-              title: 'Seat',
-              price: 100,
-              productTypeString: ProductModel.spotType)
-        ]);
-    source.layoutResources = blueprintPreparedResourcesFixture(document);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
-    await tester.pumpAndSettle();
-    final editor =
-        tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor));
-    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await mouse.addPointer(location: const Offset(1400, 0));
-    final hoveredRow =
-        find.byKey(ValueKey('commercial-table-${tables.first.id}'));
-    await mouse.moveTo(tester.getCenter(hoveredRow));
-    await tester.pump();
-    expect(editor.controller.hoveredIds, contains(seats.first.id));
-    expect(editor.controller.selection, isEmpty);
-    expect(editor.controller.canUndo, isFalse);
-    await mouse.moveTo(const Offset(1400, 0));
-    await tester.pump();
-    expect(editor.controller.hoveredIds, isEmpty);
-    await mouse.removePointer();
-    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
-    await tester.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
-    for (final table in tables) {
-      final row = find.byKey(ValueKey('commercial-table-${table.id}'));
-      expect(tester.widget<ListTile>(row).selected, isTrue);
-      expect(
-          find.descendant(
-              of: find.byKey(const ValueKey('commercial-detail-panel')),
-              matching: find.text(table.label)),
-          findsOneWidget);
-    }
-    final block = find.byKey(const ValueKey('blueprint-toggle-blocked'));
-    await tester.tap(block);
-    await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.unblockSeats), findsOneWidget);
-    editor.controller.undo();
-    await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
-    final release = find.byKey(const ValueKey('commercial-release-holds'));
-    await tester.ensureVisible(release);
-    await tester.tap(release);
-    await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.releaseTemporaryReservationConfirm),
-        findsOneWidget);
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    source.spots!.last.setSeatState(BlueprintSeatState.available);
-    final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
-    await tester.ensureVisible(action);
-    await tester.tap(action);
-    await tester.pumpAndSettle();
-    final summary = tester.widget<DataGridActionSummary<TicketModel>>(
-        find.byType(DataGridActionSummary<TicketModel>));
-    expect(summary.items.map((ticket) => ticket.id), [51]);
-    // Dismissal must not send a cancellation command (the fixture rejects I/O).
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    expect(source.spots!.first.orderProductTicket, 101);
-    expect(tester.takeException(), isNull);
-    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
-    await tester.pumpAndSettle();
-    expect(
-        tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .viewSelection,
-        {seats[1].id, seats[2].id});
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
-    await tester.pumpAndSettle();
-    expect(
-        tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .viewSelection,
-        isEmpty,
-        reason: 'A three-seat selection must not silently choose a swap pair');
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    editor.onViewSelectionChanged!({seats.first.id, seats.last.id});
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('blueprint-start-swap')));
-    await tester.pumpAndSettle();
-    expect(
-        tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .viewSelection,
-        {seats.first.id, seats.last.id});
-    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-    await tester.pumpAndSettle();
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: false));
-    editor.onViewSelectionChanged!({seats.first.id});
-    await tester.pumpAndSettle();
-    expect(
-        find.byKey(const ValueKey('commercial-cancel-tickets')), findsNothing);
-  });
-
-  for (final outcome in ['merge', 'removed', 'replaced', 'reload', 'failed']) {
-    testWidgetsWithEnvironment(
-        () => environment, 'host delayed image load guards $outcome resources',
-        (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final bytes = base64Decode(
-          'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR4nGP4z8DwHwyBNBgAAEnICff5q7YNAAAAAElFTkSuQmCC');
-      final hash = sha256.convert(bytes).toString();
-      final ref = 'image:$hash';
-      final otherBytes = [...bytes, 0];
-      final otherHash = sha256.convert(otherBytes).toString();
-      final otherRef = 'image:$otherHash';
-      final manifest = <String, dynamic>{
-        'hash': hash,
-        'url': 'https://images.example.test/old.png',
-        'width': 2,
-        'height': 2,
-        'mimeType': 'image/png',
-        'byteLength': bytes.length
-      };
-      final fixture = jsonDecode(
-          File('test/fixtures/blueprint/canonical-text-scene.json')
-              .readAsStringSync()) as Map;
-      final document = VenueLayoutDocument.fromJson(
-          Map<String, dynamic>.from(fixture['document'] as Map));
-      final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
-      final source = BlueprintModel(
-          layoutResources: {
-            ...resources,
-            'assets': {ref: manifest}
-          },
-          layoutSnapshot: BlueprintLayoutSnapshot(
-              blueprintId: 1,
-              occasionId: 1,
-              title: 'Images',
-              revision: 1,
-              document: document));
-      final response = Completer<http.Response>();
-      var requests = 0;
-      final resolver =
-          BlueprintLayoutAssetResolver(client: MockClient((request) {
-        if (request.url.path == '/other.png')
-          return Future.value(http.Response.bytes(otherBytes, 200));
-        requests++;
-        return requests == 1
-            ? response.future
-            : Future.value(http.Response.bytes(bytes, 200));
-      }));
-      await environment.pumpWidget(
-          tester,
-          MaterialApp(
-              home: BlueprintLayoutHost(
-                  key: const ValueKey('old-host'),
-                  source: source,
-                  reload: () async => source,
-                  assetResolver: resolver)));
-      await tester.pump();
-      final controller = tester
-          .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-          .controller;
-      final latestAssets = <String, dynamic>{
-        if (outcome != 'removed')
-          ref: outcome == 'replaced'
-              ? {...manifest, 'url': 'https://images.example.test/replaced.png'}
-              : manifest,
-        otherRef: {
-          ...manifest,
-          'hash': otherHash,
-          'byteLength': otherBytes.length,
-          'url': 'https://images.example.test/other.png'
-        },
-      };
-      expect(
-          controller
-              .setResources({...controller.resources, 'assets': latestAssets}),
-          isTrue);
-      final latest = controller.resources;
-      if (outcome == 'reload') {
-        final fresh = BlueprintModel(
-            layoutResources: resources, layoutSnapshot: source.layoutSnapshot);
-        await environment.pumpWidget(
-            tester,
-            MaterialApp(
-                home: BlueprintLayoutHost(
-                    key: const ValueKey('new-host'),
-                    source: fresh,
-                    reload: () async => fresh)));
-      }
-      response.complete(
-          http.Response.bytes(bytes, outcome == 'failed' ? 500 : 200));
-      await tester.runAsync(
-          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
-      await tester.pumpAndSettle();
-      if (outcome == 'reload') {
-        final freshController = tester
-            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-            .controller;
-        expect(freshController.resources['assets'], resources['assets'] ?? {});
-        expect(tester.takeException(), isNull);
-        return;
-      }
-      if (outcome == 'failed') {
-        expect(controller.resources, latest);
-        await tester.runAsync(() async {
-          final retry = tester.widget<TextButton>(
-              find.widgetWithText(TextButton, CommonStrings.retry));
-          retry.onPressed!();
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        });
-        await tester.pumpAndSettle();
-      }
-      expect(controller.resources['assets'], latestAssets);
-      expect(controller.resources['fontFamilies'], resources['fontFamilies']);
-      expect(controller.resources['textLayouts'], resources['textLayouts']);
-      expect((controller.resources['images'] as Map).containsKey(ref),
-          outcome == 'merge' || outcome == 'failed');
-      expect(controller.dirty, isFalse);
-      expect(controller.canUndo, isFalse);
-    });
-  }
-  for (final outcome in ['complete', 'changed', 'failed', 'disposed']) {
-    testWidgetsWithEnvironment(() => environment,
-        'view transition finishes composing input and guards $outcome response',
-        (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      final rights = RightsService.occasionLinkModelNotifier.value;
-      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-          isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
-      addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
-      final fixture = jsonDecode(
-          File('test/fixtures/blueprint/canonical-text-scene.json')
-              .readAsStringSync()) as Map;
-      final document = VenueLayoutDocument.fromJson(
-          Map<String, dynamic>.from(fixture['document'] as Map));
-      final resources = Map<String, dynamic>.from(fixture['resources'] as Map);
-      final response = Completer<void>();
-      var batches = 0;
-      final provider = await tester.runAsync(() => BlueprintTextResources.load(
-              1, service: TicketLayoutService(transport: (body) async {
-            if (body['mode'] == 'font') {
-              final catalog = jsonDecode(File(
-                      'supabase/functions/_shared/ticket-assets/font-catalog.json')
-                  .readAsStringSync())['fonts'] as List;
-              final face =
-                  catalog.firstWhere((entry) => entry['id'] == body['fontId']);
-              final bytes = File(
-                      'test/fixtures/ticket_fonts/${face['family'].replaceAll(' ', '-')}.ttf')
-                  .readAsBytesSync();
-              return {
-                'id': face['id'],
-                'family': face['family'],
-                'weight': face['weight'],
-                'font': base64Encode(bytes),
-                'metrics': jsonDecode(
-                    File('test/fixtures/ticket_layout/resolve.json')
-                        .readAsStringSync())['metrics']
-              };
-            }
-            batches++;
-            if (batches == 1) await response.future;
-            final batch = body['batch'] as Map;
-            return {
-              'protocol': 2,
-              'fontFamilies': resources['fontFamilies'],
-              'numberSymbols': {},
-              'textLayouts': {
-                for (final raw in batch['requests'] as List)
-                  LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
-                    'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
-                    'descriptor':
-                        LayoutTextRequest(Map<String, dynamic>.from(raw))
-                            .resourceDescriptor,
-                    'path': [
-                      ['M', 0, 0],
-                      ['L', 10, 10]
-                    ],
-                    'clip': raw['box'],
-                  }
-              },
-            };
-          })));
-      await tester.runAsync(() => provider!.loadFace(
-          (resources['fontFamilies'] as Map).values.first['faces']['400:normal']
-              as String));
-      final source = BlueprintModel(
-          layoutResources: resources,
-          layoutSnapshot: BlueprintLayoutSnapshot(
-              blueprintId: 1,
-              occasionId: 1,
-              title: 'Transition',
-              revision: 1,
-              document: document));
-      await environment.pumpWidget(
-          tester,
-          MaterialApp(
-              home: BlueprintLayoutHost(
-                  source: source,
-                  reload: () async => source,
-                  loadTextResources: () async => provider!)));
-      await tester.pumpAndSettle();
-      await tester
-          .ensureVisible(find.byKey(const ValueKey('blueprint-edit-mode')));
-      await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
-      await tester.pumpAndSettle();
-      final controller = tester
-          .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
-          .controller;
-      expect(
-          compileScene(controller.document,
-              resources: controller.resources)['issues'],
-          isEmpty);
-      final surface =
-          tester.widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface));
-      surface.onDoubleTapAt!(const Offset(200, 180));
+      await doubleTapLayout(tester, const Offset(200, 180));
       await tester.pump();
       await tester.runAsync(
           () async => Future<void>.delayed(const Duration(milliseconds: 30)));
@@ -1853,8 +1036,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(capabilities: {
+      AuthorizationCapabilities.occasionsWrite: true,
+      AuthorizationCapabilities.ordersWrite: true
+    }, isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
     final source = BlueprintModel(
         layoutResources: resources,
@@ -2097,8 +1283,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(capabilities: {
+      AuthorizationCapabilities.occasionsWrite: true,
+      AuthorizationCapabilities.ordersWrite: true
+    }, isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
     final table = LayoutNode(
         id: newLayoutId(),
@@ -2224,8 +1413,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
-        isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(capabilities: {
+      AuthorizationCapabilities.occasionsWrite: true,
+      AuthorizationCapabilities.ordersWrite: true
+    }, isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
     final table = LayoutNode(
         id: newLayoutId(),
@@ -2250,11 +1442,36 @@ void main() {
             groupProducts: {}));
     source.layoutResources =
         blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
+    final provider = await tester.runAsync(() => BlueprintTextResources.load(1,
+            service: TicketLayoutService(transport: (body) async {
+          final batch = body['batch'] as Map;
+          return {
+            'protocol': 2,
+            'fontFamilies': source.layoutResources['fontFamilies'],
+            'numberSymbols': {},
+            'textLayouts': {
+              for (final raw in batch['requests'] as List)
+                LayoutTextRequest(Map<String, dynamic>.from(raw)).id: {
+                  'id': LayoutTextRequest(Map<String, dynamic>.from(raw)).id,
+                  'descriptor':
+                      LayoutTextRequest(Map<String, dynamic>.from(raw))
+                          .resourceDescriptor,
+                  'path': [
+                    ['M', 0, 0],
+                    ['L', 10, 10]
+                  ],
+                  'clip': raw['box'],
+                },
+            },
+          };
+        })));
     await environment.pumpWidget(
         tester,
         MaterialApp(
             home: BlueprintLayoutHost(
-                source: source, reload: () async => source)));
+                source: source,
+                reload: () async => source,
+                loadTextResources: () async => provider!)));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester
@@ -2353,6 +1570,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final originalRights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.occasionsWrite: true,
+          AuthorizationCapabilities.ordersWrite: true
+        },
         isAdmin: true,
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
     addTearDown(
@@ -2477,7 +1698,7 @@ void main() {
     expect(find.text(BlueprintStrings.selectTableOrSeat), findsOneWidget);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.byIcon(Icons.table_restaurant_outlined), findsNWidgets(2));
-    final canvasState = tester.state(find.byType(LayoutSceneSurface));
+    final canvasState = tester.element(layoutCanvas());
     final originalDocument = initialEditor.controller.document;
     final groupRow = find.byKey(const ValueKey(
         'commercial-table-10000000-0000-4000-8000-000000000002'));
@@ -2593,11 +1814,11 @@ void main() {
     await tester.pump();
     expect(find.text(BlueprintStrings.selectProduct), findsOneWidget);
     expect(initialEditor.controller.selection, isEmpty);
-    expect(
-        tester
-            .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
-            .onDragStart,
-        isNull);
+    final beforeDrag = initialEditor.controller.document.toJson();
+    await tester.drag(layoutCanvas(), const Offset(80, 0));
+    await tester.pump();
+    expect(initialEditor.controller.document.toJson(), beforeDrag,
+        reason: 'Reservation drags cannot edit geometry');
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
@@ -2690,7 +1911,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('blueprint-reservations-mode')));
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
-    expect(tester.state(find.byType(LayoutSceneSurface)), same(canvasState));
+    expect(tester.element(layoutCanvas()), same(canvasState));
     expect(find.byType(EditorActionBar), findsOneWidget);
     expect(
         tester.widget<EditorActionBar>(find.byType(EditorActionBar)).hasChanges,
@@ -2725,7 +1946,7 @@ void main() {
     final operationPanel =
         find.byKey(const ValueKey('blueprint-operation-panel'));
     expect(operationPanel, findsOneWidget);
-    final canvasRect = tester.getRect(find.byType(LayoutSceneSurface));
+    final canvasRect = tester.getRect(layoutCanvas());
     final operationRect = tester.getRect(operationPanel);
     expect(operationRect.center.dx, closeTo(canvasRect.center.dx, 1));
     expect(operationRect.bottom, lessThanOrEqualTo(canvasRect.bottom));
@@ -2790,6 +2011,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.occasionsWrite: true,
+          AuthorizationCapabilities.ordersWrite: true
+        },
         isAdmin: true,
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
@@ -2857,9 +2082,8 @@ void main() {
         findsNothing);
     expect(editor.viewSelectionTarget!(seatId), seatId);
     final pageOrigin = tester.getTopLeft(find.byType(BlueprintLayoutHost));
-    tester
-        .widget<LayoutSceneSurface>(find.byType(LayoutSceneSurface))
-        .onTap!(Offset(tables.last.x, tables.last.y));
+    await tester
+        .tapAt(layoutPoint(tester, Offset(tables.last.x, tables.last.y)));
     for (var frame = 0; frame < 20; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
       expect(tester.getTopLeft(find.byType(BlueprintLayoutHost)), pageOrigin,
@@ -2870,12 +2094,12 @@ void main() {
     expect(tester.getRect(scroll).contains(tester.getCenter(row)), isTrue);
     expect(tester.widget<ListTile>(row).selected, isTrue);
     expect(tester.getRect(row).right,
-        lessThan(tester.getRect(find.byType(LayoutSceneSurface)).left + 1));
+        lessThan(tester.getRect(layoutCanvas()).left + 1));
     expect(
         tester
             .getRect(find.byKey(const ValueKey('commercial-detail-panel')))
             .left,
-        greaterThan(tester.getRect(find.byType(LayoutSceneSurface)).left));
+        greaterThan(tester.getRect(layoutCanvas()).left));
     expect(
         find.byKey(const ValueKey('commercial-detail-panel')), findsOneWidget,
         reason: 'Canvas table clicks reveal the table and open its detail');
@@ -2930,6 +2154,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final rights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.occasionsWrite: true,
+          AuthorizationCapabilities.ordersWrite: true
+        },
         isAdmin: true,
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);

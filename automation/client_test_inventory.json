@@ -734,11 +734,6 @@
       "added_group": "czech_catalog_3 ticket_usage_action",
       "entrypoint": "test/sessions/shared_czech_test.dart"
     },
-    "test/components/blueprint/blueprint_editor_actions_cases.dart": {
-      "source": "test/components/blueprint/blueprint_editor_actions_test.dart",
-      "added_group": "czech_catalog_3 blueprint_editor_actions",
-      "entrypoint": "test/sessions/shared_czech_test.dart"
-    },
     "test/components/eshop/order_update_email_dialog_cases.dart": {
       "source": "test/components/eshop/order_update_email_dialog_test.dart",
       "added_group": "czech_catalog_3 order_update_email_dialog",
@@ -748,11 +743,6 @@
       "source": "test/components/bank_accounts/token_error_view_test.dart",
       "added_group": "bank_adapter_fixture token_error_view",
       "entrypoint": "test/sessions/shared_sdk_widgets_test.dart"
-    },
-    "test/components/blueprint/blueprint_draft_product_cases.dart": {
-      "source": "test/components/blueprint/blueprint_draft_product_test.dart",
-      "added_group": "czech_catalog_3 blueprint_draft_product",
-      "entrypoint": "test/sessions/shared_czech_test.dart"
     },
     "test/components/schedule/light_timeline_initial_day_cases.dart": {
       "source": "test/components/schedule/light_timeline_initial_day_test.dart",
@@ -1024,32 +1014,8 @@
       1
     ],
     [
-      "test/components/blueprint/blueprint_draft_product_test.dart",
-      "draft editor retains seat products and names after loading",
-      false,
-      1
-    ],
-    [
-      "test/components/blueprint/blueprint_editor_actions_test.dart",
-      "seat plan resize enables saving and discard restores the plan",
-      false,
-      1
-    ],
-    [
       "test/components/blueprint/blueprint_unit_test.dart",
       "blueprint_order_metadata blueprint editor consumes canonical order metadata from its own RPC projection",
-      false,
-      1
-    ],
-    [
-      "test/components/blueprint/blueprint_unit_test.dart",
-      "blueprint_seat_adapter BlueprintObjectModel satisfies the package seat contract",
-      false,
-      1
-    ],
-    [
-      "test/components/blueprint/blueprint_unit_test.dart",
-      "blueprint_seat_adapter missing coordinates are rejected instead of becoming zero",
       false,
       1
     ],
@@ -1067,37 +1033,37 @@
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating admin (without the crew flag) → NOT crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating admin (without the crew flag) \u2192 NOT crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating editor (without the crew flag) → NOT crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating editor (without the crew flag) \u2192 NOT crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating is_cleaning_crew flag → crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating is_cleaning_crew flag \u2192 crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating no occasion context → not crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating no occasion context \u2192 not crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating occasion user missing → not crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating occasion user missing \u2192 not crew",
       false,
       1
     ],
     [
       "test/components/cleaning/cleaning_gating_test.dart",
-      "RightsService.isCleaningCrew gating plain participant (no flags) → not crew",
+      "RightsService.canOpenCleaningCrewWorkspace gating plain participant (no flags) \u2192 not crew",
       false,
       1
     ],
@@ -1319,19 +1285,7 @@
     ],
     [
       "test/components/eshop/eshop_unit_test.dart",
-      "order_grid_permissions read-only order viewer cannot save grid changes",
-      false,
-      1
-    ],
-    [
-      "test/components/eshop/eshop_unit_test.dart",
-      "order_grid_permissions unit editor can save an order row deletion",
-      false,
-      1
-    ],
-    [
-      "test/components/eshop/eshop_unit_test.dart",
-      "order_grid_permissions unit manager can save an order row deletion",
+      "order_grid_permissions order writes or deletions enable saving the corresponding grid changes",
       false,
       1
     ],
@@ -2675,7 +2629,7 @@
     ],
     [
       "test/components/html/html_unit_test.dart",
-      "html_contact_links links 731 140 198 in existing and edited app content",
+      "html_contact_links links 731\u00a0140\u00a0198 in existing and edited app content",
       false,
       1
     ],
@@ -5386,18 +5340,6 @@
       1
     ],
     [
-      "test/components/scan/scan_field_mappings_test.dart",
-      "specificFieldMappings contains expected field IDs",
-      false,
-      1
-    ],
-    [
-      "test/components/scan/scan_field_mappings_test.dart",
-      "specificFieldMappings maps to non-empty labels",
-      false,
-      1
-    ],
-    [
       "test/components/schedule/event_commands_test.dart",
       "event save uses canonical RPC with legacy readers and preserves version and relations",
       false,
@@ -5610,24 +5552,6 @@
     [
       "test/components/schedule/schedule_unit_test.dart",
       "event_page_theme sliver height does not count the safe area twice",
-      false,
-      1
-    ],
-    [
-      "test/components/schedule/schedule_unit_test.dart",
-      "event_participants_access event participants access online editor-view, editors and admins load participants",
-      false,
-      1
-    ],
-    [
-      "test/components/schedule/schedule_unit_test.dart",
-      "event_participants_access event participants access participants are not loaded while offline",
-      false,
-      1
-    ],
-    [
-      "test/components/schedule/schedule_unit_test.dart",
-      "event_participants_access event participants access users without view, editor or admin rights cannot see participants",
       false,
       1
     ],
@@ -6041,7 +5965,7 @@
     ],
     [
       "test/components/speakers/speakers_unit_test.dart",
-      "speakers_mapping CounselingFeature config legacy \"speakers\" code has no special class → SimpleFeature",
+      "speakers_mapping CounselingFeature config legacy \"speakers\" code has no special class \u2192 SimpleFeature",
       false,
       1
     ],
@@ -9863,6 +9787,97 @@
       "to": null,
       "reason": "Canonical native offline map cutover removes the old renderer, benchmark override and native MBTiles Flutter adapter. Keep manifest/startup regressions against the single MapLibre contract.",
       "evidence": "test/components/map/offline_map_configuration_cases.dart; removed map_renderer_benchmark_override_cases.dart and test_dart/adapters/web_map_import_boundary_test.dart."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating admin (without the crew flag) \u2192 NOT crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating admin (without the crew flag) \u2192 NOT crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating editor (without the crew flag) \u2192 NOT crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating editor (without the crew flag) \u2192 NOT crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating is_cleaning_crew flag \u2192 crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating is_cleaning_crew flag \u2192 crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating no occasion context \u2192 not crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating no occasion context \u2192 not crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating occasion user missing \u2192 not crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating occasion user missing \u2192 not crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.isCleaningCrew gating plain participant (no flags) \u2192 not crew",
+        false
+      ],
+      "to": [
+        "test/components/cleaning/cleaning_gating_test.dart",
+        "RightsService.canOpenCleaningCrewWorkspace gating plain participant (no flags) \u2192 not crew",
+        false
+      ],
+      "reason": "Merged authorization migration renamed the client gate and projects navigation.cleaning_crew explicitly. All six original positive/negative scenarios and assertions remain."
+    },
+    {
+      "from": [
+        "test/components/eshop/eshop_unit_test.dart",
+        "order_grid_permissions read-only order viewer cannot save grid changes",
+        false
+      ],
+      "to": [
+        "test/components/eshop/eshop_unit_test.dart",
+        "order_grid_permissions order writes or deletions enable saving the corresponding grid changes",
+        false
+      ],
+      "reason": "Merged authorization migration replaces client role algebra with independent write/delete capability booleans. The replacement checks write-only, delete-only and neither permission in the same test."
     }
   ],
   "baseline_inventory_corrections": [
@@ -9912,6 +9927,84 @@
       ],
       "reason": "Canonical main removed TicketBackgroundImage and its tests before this integration. The current ticket artwork upload flow owns preparation; importing the completed test migration must not resurrect its obsolete helper.",
       "source": "lib/components/ticket_layout/views/ticket_layout_editor.dart"
+    },
+    {
+      "cases": [
+        [
+          "test/components/blueprint/blueprint_draft_product_test.dart",
+          "draft editor retains seat products and names after loading",
+          false,
+          1
+        ],
+        [
+          "test/components/blueprint/blueprint_editor_actions_test.dart",
+          "seat plan resize enables saving and discard restores the plan",
+          false,
+          1
+        ],
+        [
+          "test/components/blueprint/blueprint_unit_test.dart",
+          "blueprint_seat_adapter BlueprintObjectModel satisfies the package seat contract",
+          false,
+          1
+        ],
+        [
+          "test/components/blueprint/blueprint_unit_test.dart",
+          "blueprint_seat_adapter missing coordinates are rejected instead of becoming zero",
+          false,
+          1
+        ],
+        [
+          "test/components/scan/scan_field_mappings_test.dart",
+          "specificFieldMappings contains expected field IDs",
+          false,
+          1
+        ],
+        [
+          "test/components/scan/scan_field_mappings_test.dart",
+          "specificFieldMappings maps to non-empty labels",
+          false,
+          1
+        ]
+      ],
+      "reason": "Reconciled against 1c8b5a219: the seat-plan editor/BlueprintObjectModel SeatAdapter contract was replaced by VenueLayoutDocument + BlueprintSeatBinding. Existing blueprint_layout_host scenarios cover draft identity, commercial names/products, dirty save and undo. Removed specificFieldMappings was an obsolete tenant-specific constant; current getFieldValue/getTicketPrice behavior remains covered. No production code or assertion is restored to recreate these removed contracts.",
+      "source": "test/components/blueprint/blueprint_layout_host_cases.dart; test/components/blueprint/blueprint_layout_ui_cases.dart; lib/components/scan/scan_field_mappings.dart"
+    },
+    {
+      "cases": [
+        [
+          "test/components/eshop/eshop_unit_test.dart",
+          "order_grid_permissions unit editor can save an order row deletion",
+          false,
+          1
+        ],
+        [
+          "test/components/eshop/eshop_unit_test.dart",
+          "order_grid_permissions unit manager can save an order row deletion",
+          false,
+          1
+        ],
+        [
+          "test/components/schedule/schedule_unit_test.dart",
+          "event_participants_access event participants access online editor-view, editors and admins load participants",
+          false,
+          1
+        ],
+        [
+          "test/components/schedule/schedule_unit_test.dart",
+          "event_participants_access event participants access participants are not loaded while offline",
+          false,
+          1
+        ],
+        [
+          "test/components/schedule/schedule_unit_test.dart",
+          "event_participants_access event participants access users without view, editor or admin rights cannot see participants",
+          false,
+          1
+        ]
+      ],
+      "reason": "Merged canonical authorization migration df5d40560 removed role-based client authorization helpers. Order-grid replacement covers write-only/delete-only/neither capability combinations in test/components/eshop/order_grid_permissions_cases.dart. Event role authorization is now owned by public.can_read_schedule_participants and its projected schedule.participants.read capability; EventPage retains the offline AND capability admission gate. Do not resurrect the removed three-role Dart predicate to satisfy stale inventory. SQL parity checks cover the canonical predicate source; this is not a new executed EventPage integration test.",
+      "source": "test/components/eshop/order_grid_permissions_cases.dart; database/functions/user_permissions/feature_operations.sql; lib/components/schedule/event_page.dart:1357; database/tests/canonical_mutation_source_parity_test.sql"
     }
   ]
 }

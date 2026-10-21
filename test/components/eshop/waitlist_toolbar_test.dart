@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
@@ -6,7 +7,6 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
 import 'package:fstapp/components/eshop/models/waitlist_summary_model.dart';
@@ -74,6 +74,7 @@ void main() {
     proposalCalls.clear();
     final previous = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.ordersWrite: true},
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
@@ -319,6 +320,7 @@ void main() {
     await check(tester, 5);
     expect(toolbar(), findsNothing);
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.ordersRead: true},
         occasionUser:
             OccasionUserModel.fromJson({'is_editor_order_view': true}));
     await open(tester, [order(5)]);

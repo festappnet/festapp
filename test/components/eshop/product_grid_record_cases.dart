@@ -1,3 +1,4 @@
+import 'package:fstapp/services/exception_handler.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:flutter/material.dart';
@@ -40,13 +41,15 @@ void main() {
       late SingleDataGridController<ProductGridRecord> controller;
       await tester.pumpWidget(
           MaterialApp(home: Scaffold(body: Builder(builder: (context) {
-        ProductGridRecord record(ProductModel product) =>
-            ProductGridRecord(product: product, commands: commands);
+        ProductGridRecord record(ProductModel product) => ProductGridRecord(
+            product: product,
+            commands: commands,
+            guard: ExceptionHandler.guardVoid);
         controller = SingleDataGridController<ProductGridRecord>(
           context: context,
           loadData: () async => [record(persisted)],
-          fromPlutoJson: (json) =>
-              ProductGridRecord.fromPlutoJson(json, commands: commands),
+          fromPlutoJson: (json) => ProductGridRecord.fromPlutoJson(json,
+              commands: commands, guard: ExceptionHandler.guardVoid),
           idColumn: EshopColumnIds.PRODUCT_ID,
           firstColumnType: DataGridFirstColumn.delete,
           actionsExtended:
@@ -136,7 +139,8 @@ class _Commands implements EshopCommands {
   }
 
   @override
-  Future<void> deleteProduct(int id, {required int expectedVersion}) async => throw UnimplementedError();
+  Future<void> deleteProduct(int id, {required int expectedVersion}) async =>
+      throw UnimplementedError();
   @override
   Future<Map<String, dynamic>> updateTicketProducts(
           int id, List<Map<String, dynamic>> products) async =>

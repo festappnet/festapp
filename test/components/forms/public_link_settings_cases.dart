@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/forms/views/form_embed_code.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/users/occasion_user_model.dart';
@@ -96,6 +97,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.ordersWrite: true,
+          AuthorizationCapabilities.occasionsWrite: true
+        },
         occasionUser: OccasionUserModel(isEditor: true),
         occasion: OccasionModel(
             isOpen: true,

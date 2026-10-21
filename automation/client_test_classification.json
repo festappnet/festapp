@@ -130,7 +130,6 @@
         "test/components/navigation/tab_route_contract_cases.dart",
         "test/components/blueprint/blueprint_unit_cases.dart",
         "test/components/blueprint/blueprint_order_metadata_cases.dart",
-        "test/components/blueprint/blueprint_seat_adapter_cases.dart",
         "test/sessions/default_locale_2_cases.dart",
         "test/components/single_data_grid/single_data_grid_widget_cases.dart",
         "test/components/single_data_grid/data_grid_action_confirmation_cases.dart",
@@ -314,9 +313,7 @@
         "test/components/eshop/product_price_scheduling_cases.dart",
         "test/components/navigation/object_route_dirty_dialog_cases.dart",
         "test/components/eshop/ticket_usage_action_cases.dart",
-        "test/components/blueprint/blueprint_editor_actions_cases.dart",
         "test/components/eshop/order_update_email_dialog_cases.dart",
-        "test/components/blueprint/blueprint_draft_product_cases.dart",
         "test/sessions/czech_catalog_2_cases.dart",
         "test/components/forms/forms_editor_widget_cases.dart",
         "test/components/forms/default_product_price_cases.dart",
@@ -754,6 +751,55 @@
       "reason": "Setup details render bank-account, pricing, promotion and form-link widgets with injected callbacks.",
       "sources": [
         "test/components/occasion/occasion_setup_details_test.dart"
+      ]
+    },
+    "test/components/mcp/mcp_connection_test.dart": {
+      "kind": "environment",
+      "reason": "MCP consent and connection UI use widget lifecycle and browser adapter fixtures.",
+      "sources": [
+        "test/components/mcp/mcp_connection_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+      "kind": "environment",
+      "reason": "Editor feedback and public editor color transactions require rendering and modal focus.",
+      "sources": [
+        "test/components/blueprint/blueprint_editor_feedback_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_table_seating_test.dart": {
+      "kind": "environment",
+      "reason": "Real public layout controller preserves manual chair placement and table geometry.",
+      "sources": [
+        "test/components/blueprint/blueprint_table_seating_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_legend_test.dart": {
+      "kind": "environment",
+      "reason": "Legend geometry uses Flutter painting and text metrics.",
+      "sources": [
+        "test/components/blueprint/blueprint_legend_test.dart"
+      ]
+    },
+    "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
+      "kind": "environment",
+      "reason": "Current public editor file-drop import lock and failed-upload draft retention require widget and platform channel fixtures.",
+      "sources": [
+        "test/components/blueprint/blueprint_editor_file_drop_test.dart"
+      ]
+    },
+    "test/components/shared/editor_file_drop_region_test.dart": {
+      "kind": "environment",
+      "reason": "Native file-drop plugin and bounded import state use Flutter widget lifecycle and platform channels.",
+      "sources": [
+        "test/components/shared/editor_file_drop_region_test.dart"
+      ]
+    },
+    "test/components/organization/authorization_projection_test.dart": {
+      "kind": "environment",
+      "reason": "Root Supabase identity and scoped capability revocation require separate process isolation.",
+      "sources": [
+        "test/components/organization/authorization_projection_test.dart"
       ]
     }
   }

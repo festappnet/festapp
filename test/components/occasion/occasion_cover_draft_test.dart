@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -66,8 +67,9 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    RightsService.occasionLinkModelNotifier.value =
-        OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.occasionsWrite: true},
+        unitUser: OccasionUserModel(isEditor: true));
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
     final router = _Router();
     await _environment.pumpWidget(

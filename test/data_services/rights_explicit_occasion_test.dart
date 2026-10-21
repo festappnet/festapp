@@ -1,3 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/components/eshop/eshop_commands.dart';
+import 'package:fstapp/components/eshop/product_grid_record.dart';
+import 'package:fstapp/services/exception_handler.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart';
 import 'package:fstapp/components/users/db_users.dart';
@@ -235,6 +240,52 @@ void main() {
     expect(RightsService.canUpdateOrders(), isFalse);
     expect(RightsService.canSeeAdministration(), isTrue);
   });
+  for (final deleting in [false, true]) {
+    testWidgets(
+        'product ${deleting ? 'delete' : 'save'} denial refreshes capabilities and retains the record',
+        (tester) async {
+      RightsService.currentLink = 'product-denied';
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: const {'orders.write': true},
+      );
+      final denial = PostgrestException(
+          message: 'Product permission revoked', code: '42501');
+      final commands = _DeniedProductCommands(denial);
+      final product =
+          ProductModel(id: 7, title: 'Unsaved lunch', aggregateVersion: 4);
+      final record = ProductGridRecord(
+          product: product,
+          commands: commands,
+          guard: ExceptionHandler.guardVoid);
+      await tester
+          .pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+      final context = tester.element(find.byType(Scaffold));
+      const channel = MethodChannel('PonnamKarthik/fluttertoast');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      expect(messenger.checkMockMessageHandler(channel.name, null), isTrue);
+      messenger.setMockMethodCallHandler(channel, (_) async => true);
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      await tester.runAsync(() async {
+        await expectLater(
+            deleting
+                ? record.deleteMethod(context)
+                : record.updateMethod(context),
+            throwsA(same(denial)));
+      });
+      expect(commands.calls, [deleting ? 'delete' : 'save'],
+          reason: 'Authorization refresh cannot replay the denied mutation');
+      expect(commands.expectedVersion, 4);
+      expect(contexts, hasLength(1));
+      expect(contexts.single['link'], 'product-denied');
+      expect(RightsService.canUpdateOrders(), isFalse);
+      expect(RightsService.canSeeAdministration(), isTrue,
+          reason: 'The authoritative projection was loaded by the real guard');
+      expect(record.product, same(product));
+      expect(record.product.title, 'Unsaved lunch');
+      expect(record.product.aggregateVersion, 4);
+    });
+  }
   test('bank actions use scoped operation projections and clear them together',
       () {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel.fromJson({
@@ -336,4 +387,29 @@ void main() {
     expect(contexts.single['unit_id'], 12);
     expect(RightsService.hasCapability('media.unit.write'), isTrue);
   });
+}
+
+class _DeniedProductCommands implements EshopCommands {
+  _DeniedProductCommands(this.denial);
+  final PostgrestException denial;
+  final calls = <String>[];
+  int? expectedVersion;
+
+  @override
+  Future<SavedProduct> saveProduct(Map<String, dynamic> product) async {
+    calls.add('save');
+    expectedVersion = product['expected_aggregate_version'] as int;
+    throw denial;
+  }
+
+  @override
+  Future<void> deleteProduct(int id, {required int expectedVersion}) async {
+    expect(id, 7);
+    calls.add('delete');
+    this.expectedVersion = expectedVersion;
+    throw denial;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

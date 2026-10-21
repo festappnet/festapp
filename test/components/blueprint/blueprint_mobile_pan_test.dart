@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
-import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
+import '../../support/fixtures/layout_canvas_fixture.dart';
 
 void main() {
   testWidgets('mobile reservations retain one-finger pan after pinch zoom',
@@ -23,15 +23,9 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    final surface = find.byType(LayoutSceneSurface).first;
+    final surface = layoutCanvas();
     final center = tester.getCenter(surface);
-    final painter = tester
-        .widgetList<CustomPaint>(
-            find.descendant(of: surface, matching: find.byType(CustomPaint)))
-        .map((w) => w.painter)
-        .whereType<LayoutScenePainter>()
-        .single;
-    final camera = painter.camera!;
+    final TransformationController camera = layoutPainter(tester).camera;
     final initialZoom = camera.value.entry(0, 0);
     final first =
         await tester.startGesture(center - const Offset(35, 0), pointer: 1);

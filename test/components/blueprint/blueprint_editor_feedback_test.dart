@@ -4,7 +4,6 @@ import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
-import 'package:venue_seat_picker/src/layout_editor/widgets/canonical_appearance_panel.dart';
 
 void main() {
   testWidgets(
@@ -49,6 +48,7 @@ void main() {
       final node = document.nodes.first;
       final c = VenueLayoutController(document);
       addTearDown(c.dispose);
+      c.select({node.id});
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -59,15 +59,7 @@ void main() {
                 actions: dialog.actions,
                 alignment: Alignment.centerRight,
               ),
-              child: SizedBox(
-                width: 360,
-                child: SingleChildScrollView(
-                  child: CanonicalAppearancePanel(
-                    controller: c,
-                    nodeId: node.id,
-                  ),
-                ),
-              ),
+              child: VenueLayoutEditor(controller: c),
             ),
           ),
         ),
@@ -78,7 +70,13 @@ void main() {
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(find.byType(AppAlertDialog), findsOneWidget);
-        expect(tester.getCenter(find.byIcon(Icons.close)).dx, greaterThan(900));
+        expect(
+            tester
+                .getCenter(find.descendant(
+                    of: find.byType(AppAlertDialog),
+                    matching: find.byIcon(Icons.close)))
+                .dx,
+            greaterThan(900));
         final swatch = find.byKey(
           const ValueKey('editor-color-Basic colors-2563EB'),
         );
@@ -89,7 +87,8 @@ void main() {
       }
 
       await preview();
-      await tester.tap(find.byIcon(Icons.close));
+      await tester.tap(find.descendant(
+          of: find.byType(AppAlertDialog), matching: find.byIcon(Icons.close)));
       await tester.pumpAndSettle();
       expect(c.document.toJson(), document.toJson());
       await preview();

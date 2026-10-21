@@ -1,3 +1,6 @@
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -19,6 +22,14 @@ void main() {
   testWidgetsWithEnvironment(
       () => environment, 'dirty bank dialog can cancel barrier dismissal',
       (tester) async {
+    final previous = RightsService.occasionLinkModel;
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(capabilities: {
+      AuthorizationCapabilities.bankAccountsUnitManage: false
+    }, bankCapabilities: {
+      9: {AuthorizationCapabilities.bankAccountsWrite: true}
+    });
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
     final router = ObjectFixture()..realBankGeneral = true;
     await mount(tester, router, '/unit/5/edit/bank-accounts/9/general',
         environment: environment);
