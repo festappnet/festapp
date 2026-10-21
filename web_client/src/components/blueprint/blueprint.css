@@ -222,3 +222,24 @@ body.blueprint-active #floating-price-widget {
         transition: none;
     }
 }
+
+/* Fixed-size commerce controls follow the standing area, not the canvas zoom. */
+.blueprint-capacity-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.blueprint-capacity-control {
+    position: absolute; display: grid; align-items: center;
+    max-width: calc(100% - 16px); width: max-content; pointer-events: auto;
+    background: var(--card-bg, #fff); color: var(--text-color, #202124);
+    border: 1px solid var(--input-border, #9ca3af); border-radius: 8px;
+}
+.blueprint-capacity-control.is-editing { grid-template-columns: 44px minmax(80px, auto) 44px 44px; }
+.blueprint-capacity-control button {
+    min-width: 44px; min-height: 44px; padding: 8px; border: 0;
+    background: transparent; color: inherit; font: inherit; font-size: 16px;
+    border-radius: 6px; cursor: pointer;
+}
+.blueprint-capacity-control .blueprint-capacity-count { min-width: 80px; }
+.blueprint-capacity-control .blueprint-capacity-confirm { color: var(--primary-color, #4465a6); font-weight: 700; }
+.blueprint-capacity-control button:focus-visible { outline: 3px solid var(--primary-color, #4465a6); outline-offset: -3px; }
+.blueprint-capacity-control button:disabled { opacity: .45; cursor: default; }
+.blueprint-capacity-control [hidden] { display: none; }
+.blueprint-capacity-message { grid-column: 1 / -1; text-align: center; font-size: 12px; line-height: 1.4; padding: 0 8px 4px; max-width: 240px; }

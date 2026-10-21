@@ -32,8 +32,6 @@
     "reservationsAndOrders": "Rezervácie a objednávky",
     "unsavedPlan": "Neuložené úpravy plániku",
     "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný.",
-    "standingSalesLimit": "Predajný limit",
-    "standingSupplyHint": "Predajný limit nepridáva zásoby. Pre zvýšenie počtu dostupných miest upravte skupinu kapacity v Zásobách.",
     "standingNoAdmissionType": "Najprv vytvorte pre túto akciu vstupenkový formulár. Ten pripraví potrebný typ vstupenky.",
     "standingPreparationRetained": "Pripravené produkty a zásoby zostanú uložené aj po zatvorení dialógu. Spravovať ich môžete v Produktoch a Zásobách. Opakovanie zachová pripravenú kapacitu.",
     "areaProduct": "Produkt plochy",
@@ -41,15 +39,19 @@
     "assignStandingProduct": "Priradiť produkt",
     "standingSetupSaveHint": "Produkty a zásoby sa ukladajú ihneď. Priradenie plochy a zmeny kapacity sa použijú po uložení plánu.",
     "standingCapacityGroup": "Skupina kapacity",
-    "standingSharedCapacityHint": "Kapacita patrí ku skupine zásob. Zmena ovplyvní všetky produkty a plochy, ktoré ju zdieľajú.",
     "standingRequiresProduct": "Kapacita plochy je pripravená. Pre predaj priraďte produkt a jeho kapacitu.",
     "viewer": {
+      "placeCount_one": "{count} miesto",
+      "placeCount_few": "{count} miesta",
+      "placeCount_other": "{count} miest",
       "addOne": "Pridať jedno",
       "removeOne": "Odobrať jedno",
       "standingNotConfigured": "Nie je priradená vstupenka na státie.",
       "standingUnavailable": "Miesta na státie už nie sú dostupné.",
       "standingSaleClosed": "Predaj miest na státie nie je dostupný."
-    }
+    },
+    "standingCapacity": "Počet miest",
+    "capacitySaveHint": "Zmena sa prejaví po uložení plánku."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Právne údaje organizácie sú schválené a zobrazujú sa pri vašich formulároch.",

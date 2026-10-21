@@ -21,12 +21,16 @@
     "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde.",
     "standingRequiresProduct": "Weisen Sie für den Verkauf ein Ticketprodukt und dessen Bestandskapazität zu.",
     "viewer": {
+      "placeCount_one": "{count} Platz",
+      "placeCount_other": "{count} Plätze",
       "addOne": "Eins hinzufügen",
       "removeOne": "Eins entfernen",
       "standingNotConfigured": "Kein Stehplatzticket zugewiesen.",
       "standingUnavailable": "Stehplätze sind nicht mehr verfügbar.",
       "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft."
-    }
+    },
+    "standingCapacity": "Anzahl der Plätze",
+    "capacitySaveHint": "Wird beim Speichern des Plans übernommen."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",

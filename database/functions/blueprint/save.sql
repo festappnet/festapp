@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.save_blueprint_layout_impl_internal(p_blueprin
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE b eshop.blueprints; c jsonb; binding eshop.blueprint_seat_bindings; s eshop.spots;
  node uuid; group_id uuid; unit_id uuid; product_id bigint; spot_id bigint; blocked_value boolean; assignment_mode text;
- pool public.inventory_pools; capacity_int bigint;
+ pool public.inventory_pools; capacity_int bigint; physical_supply bigint;
  node_index jsonb; unit_index jsonb; seat_count bigint; text_ids text[]:='{}';
  doc jsonb:=p_blueprint->'layout'; result jsonb; expected bigint; issue text; all_seats uuid[]; supplied uuid[];
 BEGIN
@@ -133,6 +133,15 @@ BEGIN
     'id',pool.id,'occasion',pool.occasion,'title',pool.title,
     'description',pool.description,'type',pool.type,'data',pool.data,
     'sellable_capacity',capacity_int)));
+   -- The standing count owns the complete setup: a higher count must also
+   -- provide real supply. Preserve existing resources/allocations and add only
+   -- the missing quantity through the canonical inventory resource command.
+   SELECT coalesce(sum(r.capacity),0) INTO physical_supply
+    FROM public.resources r WHERE r.inventory_pool=pool.id;
+   IF physical_supply<capacity_int THEN
+    PERFORM public.update_resource(jsonb_build_object('inventory_pool',pool.id,
+     'title',coalesce(pool.title,b.title),'capacity',capacity_int-physical_supply));
+   END IF;
   END IF;
   INSERT INTO eshop.blueprint_area_bindings VALUES(b.id,node,(c->>'inventoryContextId')::bigint,product_id);
  END LOOP;

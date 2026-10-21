@@ -397,6 +397,10 @@ void main() {
                         controller: c, nodeId: id, enabled: true)))));
     final field = find.byKey(const ValueKey('standing-capacity-field'));
     expect(tester.widget<TextField>(field).controller!.text, '30');
+    expect(tester.widget<TextField>(field).decoration!.labelText,
+        BlueprintStrings.standingCapacity);
+    expect(tester.widget<TextField>(field).decoration!.helperText,
+        BlueprintStrings.capacitySaveHint);
     await tester.enterText(field, '25');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();

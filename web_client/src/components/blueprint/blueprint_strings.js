@@ -1,6 +1,10 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class BlueprintStrings {
+    static placeCount(count) {
+        const plural = new Intl.PluralRules(LocalizationService.currentLocale).select(count);
+        return LocalizationService.tr(`FeatureBlueprint.viewer.placeCount_${plural}`, {count}, `${count} places`);
+    }
     static get unassignedProduct() { return LocalizationService.tr('FeatureBlueprint.noProductAssigned', {}, 'No product assigned'); }
     static seatState(state) { return LocalizationService.tr(`FeatureBlueprint.seatStates.${state}`); }
     static get viewerMessages() {

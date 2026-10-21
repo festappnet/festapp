@@ -21,12 +21,18 @@
     "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany.",
     "standingRequiresProduct": "Aby sprzedawać bilety, przypisz produkt biletu i jego pojemność.",
     "viewer": {
+      "placeCount_one": "{count} miejsce",
+      "placeCount_few": "{count} miejsca",
+      "placeCount_many": "{count} miejsc",
+      "placeCount_other": "{count} miejsca",
       "addOne": "Dodaj jedno",
       "removeOne": "Usuń jedno",
       "standingNotConfigured": "Nie przypisano biletu na miejsce stojące.",
       "standingUnavailable": "Miejsca stojące nie są już dostępne.",
       "standingSaleClosed": "Sprzedaż miejsc stojących jest niedostępna."
-    }
+    },
+    "standingCapacity": "Liczba miejsc",
+    "capacitySaveHint": "Zmiana zostanie zastosowana po zapisaniu planu."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Dane prawne organizacji zostały zatwierdzone i są widoczne pod Twoimi formularzami.",

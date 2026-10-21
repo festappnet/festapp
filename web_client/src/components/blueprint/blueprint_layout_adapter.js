@@ -106,7 +106,7 @@ export class BlueprintLayoutAdapter {
                 selectedQuantity: quantity,
                 status: selectable ? 'available' : 'unavailable',
                 selectable,
-                tooltip: selectable ? product.title : LocalizationService.tr(`FeatureBlueprint.viewer.${reason}`, {}, 'Standing places are unavailable.'),
+                tooltip: selectable ? '' : LocalizationService.tr(`FeatureBlueprint.viewer.${reason}`, {}, 'Standing places are unavailable.'),
             }];
         }));
     }

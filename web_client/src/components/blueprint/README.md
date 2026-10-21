@@ -18,3 +18,13 @@ an empty allowlisted object. Product rows are deduplicated, and neither bindings
 nor layout resources contain secrets, customer/order metadata or private SVG
 originals. Loading failure keeps an explicit retry state and releases the
 selector's loading controls.
+
+The host standing-quantity overlay uses public kernel scene bounds and the
+viewer's SVG viewport transform, refreshing its anchors through the camera
+callback (including resize). Compact controls sit inside the area when space
+permits or immediately beside it. Only the generic standing detail controls are
+replaced; the package still owns map rendering, hit testing and seat gestures.
+Quantity edits remain drafts until explicit confirmation, with validation and
+checkout updates owned by the existing adapter and form session. Selectable
+standing areas suppress the duplicate product tooltip; unavailable areas retain
+their explanation.

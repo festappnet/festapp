@@ -911,7 +911,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       if (_canEdit &&
           controller.snapshot.areaBindings.containsKey(area.id)) ...[
         const SizedBox(height: 16),
-        Text(BlueprintStrings.standingSharedCapacityHint),
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],

@@ -984,12 +984,18 @@
     "description": "Ця функція дозволяє створювати схему розсадки з обмеженою кількістю місць. Наприклад, для автобуса чи залу з призначеними місцями.",
     "standingRequiresProduct": "Для продажу призначте квитковий продукт і його місткість.",
     "viewer": {
+      "placeCount_one": "{count} місце",
+      "placeCount_few": "{count} місця",
+      "placeCount_many": "{count} місць",
+      "placeCount_other": "{count} місця",
       "addOne": "Додати одне",
       "removeOne": "Прибрати одне",
       "standingNotConfigured": "Квиток на стояче місце не призначено.",
       "standingUnavailable": "Стоячі місця більше недоступні.",
       "standingSaleClosed": "Продаж стоячих місць недоступний."
-    }
+    },
+    "standingCapacity": "Кількість місць",
+    "capacitySaveHint": "Зміни застосуються після збереження плану."
   },
   "Dialogs": {
     "noResults": "Немає результатів."

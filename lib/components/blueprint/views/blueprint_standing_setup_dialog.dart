@@ -311,10 +311,6 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  if (inventory != null) ...[
-                    Text(BlueprintStrings.standingSharedCapacityHint),
-                    Text(BlueprintStrings.standingSupplyHint),
-                  ],
                   if (product != null && preparation.preparedCapacity != null)
                     Text(BlueprintStrings.standingPreparationRetained),
                 ],
