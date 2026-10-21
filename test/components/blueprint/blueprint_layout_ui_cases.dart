@@ -2396,17 +2396,31 @@ void main() {
           jsonEncode({
             'server_time': '2026-10-21T10:00:00Z',
             'product_types': [
-              {'id': 2, 'occasion': 1, 'title': 'Admission', 'type': 'spot'}
+              {'id': 2, 'title': 'Admission', 'type': 'spot'},
+              {'id': 3, 'title': 'Extras', 'type': 'other'}
             ],
             'products': [
               {
                 'id': 9,
-                'occasion': 1,
                 'title': 'Standing ticket',
                 'price': 80,
                 'currency_code': 'CZK',
                 'product_type': 2,
-                'type': 'spot'
+                'ordered_count': 1
+              },
+              {
+                'id': 10,
+                'title': 'Table ticket',
+                'price': 500,
+                'currency_code': 'CZK',
+                'product_type': 2,
+                'ordered_count': 0
+              },
+              {
+                'id': 11,
+                'title': 'Non-admission product',
+                'price': 50,
+                'product_type': 3
               }
             ],
             'inventory_pools': [
@@ -2433,6 +2447,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(BlueprintStandingSetupDialog), findsOneWidget);
     expect(find.byType(BlueprintProductOptions), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Table ticket'), findsOneWidget);
+    expect(find.text('Non-admission product'), findsNothing);
+    expect(find.text(BlueprintStrings.noSpotProducts), findsNothing);
+    await tester
+        .tap(find.widgetWithText(TextButton, BlueprintStrings.createProduct));
+    await tester.pumpAndSettle();
+    expect(find.byType(EditProductDialog), findsOneWidget);
+    expect(find.text(BlueprintStrings.standingNoAdmissionType), findsNothing);
+    await tester.tap(find.descendant(
+        of: find.byType(EditProductDialog),
+        matching: find.widgetWithText(TextButton, CommonStrings.storno)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Table ticket'));
+    await tester.pump();
+    final setupCapacity = find.descendant(
+        of: find.byType(BlueprintStandingSetupDialog),
+        matching: find.byType(TextField));
+    expect(tester.widget<TextField>(setupCapacity).controller!.text, '100');
+    expect(tester.widget<TextField>(setupCapacity).enabled, isTrue);
     await tester.tap(find.widgetWithText(ListTile, 'Standing ticket'));
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(

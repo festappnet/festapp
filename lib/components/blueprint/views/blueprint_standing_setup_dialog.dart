@@ -56,9 +56,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
 
   Future<void> _load() async {
     try {
-      final loaded = await DbEshop.getProductsAndTypesForOccasion(
-        widget.occasionLink,
-      );
+      final loaded = await loadCatalog();
       if (mounted)
         setState(() {
           catalog = loaded;
@@ -71,6 +69,25 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
           busy = false;
         });
     }
+  }
+
+  Future<ProductsEditBundle> loadCatalog() async {
+    final loaded = await DbEshop.getProductsAndTypesForOccasion(
+      widget.occasionLink,
+    );
+    final types = {for (final type in loaded.productTypes) type.id: type};
+    // The occasion-scoped catalog RPC returns product_type IDs, with type
+    // metadata in a separate list. It does not project occasion/type on products.
+    for (var i = 0; i < loaded.products.length; i++) {
+      final p = loaded.products[i];
+      final type = types[p.productTypeId];
+      loaded.products[i] = p.copyWith(
+        occasion: p.occasion ?? widget.controller.snapshot.occasionId,
+        productTypeString: p.productTypeString ?? type?.type,
+        productTypeTitleString: p.productTypeTitleString ?? type?.title,
+      );
+    }
+    return loaded;
   }
 
   List<InventoryContextModel> contexts(ProductModel p) => [
@@ -112,7 +129,8 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
     final type = catalog!.productTypes.firstWhereOrNull(
       (t) =>
           t.type == ProductModel.spotType &&
-          t.occasion == widget.controller.snapshot.occasionId,
+          (t.occasion == null ||
+              t.occasion == widget.controller.snapshot.occasionId),
     );
     if (type == null) {
       setState(() => error = BlueprintStrings.standingNoAdmissionType);
@@ -202,9 +220,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
         contextId = linked.includedInventories.single.inventoryContextId;
         // Linking inventory increments the product aggregate. Use the returned
         // catalog projection for later product edits, rather than a stale version.
-        final refreshed = await DbEshop.getProductsAndTypesForOccasion(
-          widget.occasionLink,
-        );
+        final refreshed = await loadCatalog();
         linked = refreshed.products.firstWhere((item) => item.id == p.id);
       }
       widget.controller.bindStandingArea(

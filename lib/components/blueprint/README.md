@@ -187,6 +187,9 @@ Undo after save therefore restores an explicit inventory capacity change, while
 geometry-only saves omit capacity. The reservation detail shows available places
 and a focused numeric control; product/physical inventory limits still apply.
 An unbound standing area can assign a visible, priced admission (`spot`) product.
+The occasion-scoped edit catalog returns type metadata separately from products.
+The setup resolves admission types and occasion ownership before filtering,
+creating products or refreshing them after inventory preparation.
 The setup reuses its existing quantity-one inventory context (unique within the
 blueprint), or prepares a pool, context, resource supply and product-context link
 through the inventory/catalog commands. Existing sold products without inventory
