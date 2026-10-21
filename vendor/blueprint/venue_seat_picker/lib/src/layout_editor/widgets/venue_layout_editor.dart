@@ -841,11 +841,17 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
           : 'shape',
       x: point.dx,
       y: point.dy,
-      width: kind == 'Seat' ? documentSeating(c.document).width : 160,
+      width: kind == 'Seat'
+          ? documentSeating(c.document).width
+          : kind == 'Standing'
+          ? 480
+          : 160,
       height: kind == 'Seat'
           ? documentSeating(c.document).height
           : ['Line', 'Arrow'].contains(kind)
           ? 1
+          : kind == 'Standing'
+          ? 240
           : 80,
       label: kind == 'Standing' ? 'Standing area' : '',
       style: kind == 'Text'
@@ -862,6 +868,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                   : '#CBD5E1FF',
               'stroke': '#334155FF',
               'strokeWidth': 2,
+              if (kind == 'Standing')
+                'label': {'size': 32, 'align': 'center'},
             },
       properties: kind == 'Text'
           ? {'text': VenueLayoutStrings.text(context, 'Your text')}

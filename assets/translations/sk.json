@@ -371,6 +371,7 @@
     "foodCreateHint": "Na vytvorenie jedla vyplňte názov, jedinečný kód a referenciu na program."
   },
   "Common": {
+    "saving": "Ukladanie…",
     "contextLoadFailed": "Oprávnenia sa nepodarilo overiť. Skúste to znova.",
     "add": "Pridať",
     "addExisting": "Pridať existujúci",

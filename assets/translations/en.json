@@ -1842,6 +1842,7 @@
     "newAccountPrompt": "Don’t have an account yet?"
   },
   "Common": {
+    "saving": "Saving…",
     "contextLoadFailed": "Could not verify access. Please try again.",
     "fieldCannotBeEmpty": "Field cannot be empty",
     "invalidFormat": "Invalid format",

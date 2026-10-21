@@ -107,6 +107,20 @@ void main() {
     expect(c.canUndo, isFalse);
   });
 
+  testWidgets('standing area starts larger with a readable label', (tester) async {
+    final c = await open(tester);
+    await choose(tester, 'Standing', 'Standing');
+    final area = c.document.nodes.single;
+    expect(area.kind, 'capacityArea');
+    expect(area.width, 480);
+    expect(area.height, 240);
+    expect((area.style['label'] as Map)['size'], 32);
+    expect(area.properties['capacity'], 100);
+    expect(c.error, isNull);
+    c.undo();
+    expect(c.document.nodes, isEmpty);
+  });
+
   testWidgets(
     'mobile drawing choice closes the library and continues on the canvas',
     (tester) async {

@@ -358,6 +358,7 @@
     "foodCreateHint": "Aby utworzyć jedzenie, wypełnij tytuł, unikalny kod i odniesienie do programu."
   },
   "Common": {
+    "saving": "Zapisywanie…",
     "contextLoadFailed": "Nie udało się sprawdzić dostępu. Spróbuj ponownie.",
     "add": "Dodaj",
     "addExisting": "Dodaj istniejący",
