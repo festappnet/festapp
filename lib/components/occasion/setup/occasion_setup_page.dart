@@ -389,6 +389,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   void _save() {
+    if (_stored.isFinalized) return;
     _dirty = true;
     _debounce?.cancel();
     if (!_conflict && _error == null) {
@@ -478,6 +479,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
         _error = null;
       } catch (e) {
+        if (e is PostgrestException &&
+            (e.code == '22023' || e.code == '40001')) {
+          try {
+            final current = await _store.get(_stored.id);
+            if (current.isFinalized) {
+              // Another window completed this draft. Preserve its receipt and
+              // allow this retained page to leave without another save.
+              _stored = current;
+              _dirty = false;
+              _conflict = false;
+              _error = null;
+              return true;
+            }
+          } catch (_) {
+            // A failed read cannot establish completion; keep the local edits.
+          }
+        }
         _dirty = true;
         _conflict = e is PostgrestException && e.code == '40001';
         _error = _conflict
@@ -540,7 +558,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   Future<void> _leave() async {
     if (_presentationUploading) return;
     if (_finalizing) return;
-    if (_finalizeCommand != null) {
+    if (_finalizeCommand != null || _stored.isFinalized) {
       setState(() => _allowPop = true);
       Navigator.of(context).pop();
       return;
@@ -560,8 +578,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      final rows = await _store.list(_stored.unit);
-      final current = rows.firstWhere((d) => d.id == _stored.id);
+      final current = await _store.get(_stored.id);
       if (!mounted) return;
       setState(() {
         _stored = current;

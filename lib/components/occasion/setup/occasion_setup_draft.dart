@@ -31,6 +31,8 @@ class OccasionSetupDraft {
           OccasionSetupStory.applicableSteps(data, AppConfig.isAppSupported))
       .length;
 
+  bool get isFinalized => data.containsKey('finalizedOccasion');
+
   String get title => data['title'] as String? ?? '';
   int get progress => data['completed'] is List
       ? ((completedCount(data) /
@@ -64,8 +66,13 @@ class OccasionSetupDrafts {
     return (rows as List)
         .map((row) =>
             OccasionSetupDraft.fromJson(Map<String, dynamic>.from(row)))
+        .where((draft) => !draft.isFinalized)
         .toList();
   }
+
+  Future<OccasionSetupDraft> get(String id) async =>
+      OccasionSetupDraft.fromJson(Map<String, dynamic>.from(await client.rpc(
+          'get_occasion_setup_draft', params: {'p_id': id})));
 
   Future<OccasionSetupDraft> create(int unit, String id) async =>
       OccasionSetupDraft.fromJson(Map<String, dynamic>.from(await client.rpc(

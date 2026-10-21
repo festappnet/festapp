@@ -18,6 +18,8 @@ BEGIN
   PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_drafts(bigint)','EXECUTE'),'Public callers cannot invoke draft RPC');
   PERFORM assert_false(has_function_privilege('authenticated','public.build_occasion_setup_configuration(bigint,uuid)','EXECUTE'),'Internal creation snapshot cannot be invoked directly');
   d := public.create_occasion_setup_draft(id,target);
+  PERFORM assert_eq(public.get_occasion_setup_draft(id),d,'Single read returns authorized draft');
+  PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_draft(uuid)','EXECUTE'),'Single read is private');
   PERFORM assert_true(d->'data' ? 'defaultConfiguration','Draft is initialized by the canonical creator');
   PERFORM assert_eq(d->'data'->'formDraft'->>'title','Registration','Canonical form title');
   PERFORM assert_eq((d->'data'->'formDraft'->>'deadline_duration_seconds')::int,604800,'Canonical deadline');
@@ -47,6 +49,7 @@ BEGIN
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN PERFORM public.save_occasion_setup_draft(id,2,'{}',0); RAISE EXCEPTION 'revoked editor write accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.get_occasion_setup_drafts(target); RAISE EXCEPTION 'revoked editor read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN PERFORM public.get_occasion_setup_draft(id); RAISE EXCEPTION 'revoked editor single read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM public.delete_occasion_setup_draft(id,target,2); RAISE EXCEPTION 'revoked editor delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   EXECUTE 'RESET ROLE';
   INSERT INTO public.unit_users("user",unit,is_editor) VALUES(actor,target,true);
