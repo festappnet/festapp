@@ -7,7 +7,6 @@ class CommonStrings {
   static String get keepEditing => 'Common.keepEditing'.tr();
   // --- Common Actions ---
   static String get save => 'Common.save'.tr(); // "Save"
-  static String get contextLoadFailed => 'Common.contextLoadFailed'.tr();
   static String get unexpectedError =>
       'Common.unexpectedError'.tr(); // "An unexpected error occurred."
   static String get storno => 'Common.storno'.tr(); // "Storno"
@@ -103,8 +102,6 @@ class CommonStrings {
   static String get contentChanged =>
       'Common.contentChanged'.tr(); // "Content has been changed."
   static String get copy => 'Common.copy'.tr();
-  static String get copyManually => 'Common.copyManually'.tr();
-  static String get clipboardUnavailable => 'Common.clipboardUnavailable'.tr();
   static String get copied => 'Common.copied'.tr();
   static String get copiedToClipboard =>
       'Common.copiedToClipboard'.tr(); // "Copied to clipboard"

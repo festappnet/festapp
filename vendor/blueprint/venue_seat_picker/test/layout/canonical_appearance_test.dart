@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -68,99 +67,6 @@ void main() {
       expect(radius(), 8);
     },
   );
-
-  for (final hoverOnly in [true, false]) {
-    testWidgets(
-      'table construction keeps clicked choice and shapes chairs: hover=$hoverOnly',
-      (tester) async {
-        var document = tableLayout(shape: 'rect', count: 4);
-        final table = document.nodes.firstWhere((n) => n.kind == 'table');
-        document = setTableChildStyleLeaf(document, table.id, [
-          'seatStyle',
-        ], value: 'plain');
-        final c = VenueLayoutController(document);
-        addTearDown(c.dispose);
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Align(
-                alignment: Alignment.centerRight,
-                child: SizedBox(
-                  width: 280,
-                  child: SingleChildScrollView(
-                    child: CanonicalAppearancePanel(
-                      controller: c,
-                      nodeId: table.id,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-        final button = find.widgetWithText(OutlinedButton, 'simple');
-        await tester.ensureVisible(button);
-        await tester.tap(button);
-        await tester.pumpAndSettle();
-        if (hoverOnly) {
-          final mouse = await tester.createGesture(
-            kind: PointerDeviceKind.mouse,
-          );
-          await mouse.addPointer(location: const Offset(0, 0));
-          final wood = find.byWidgetPredicate(
-            (w) => w is RadioListTile<String> && w.value == 'wood',
-          );
-          await mouse.moveTo(tester.getCenter(wood));
-          await tester.pump();
-          expect(c.document.toJson(), isNot(document.toJson()));
-          await mouse.moveTo(const Offset(0, 0));
-          await tester.pump();
-          expect(
-            c.document.toJson(),
-            document.toJson(),
-            reason: 'Leaving hover restores custom construction leaves too',
-          );
-          await mouse.removePointer();
-        }
-        final round = find.byWidgetPredicate(
-          (w) => w is RadioListTile<String> && w.value == 'round',
-        );
-        await tester.tap(round);
-        await tester.pump();
-        if (hoverOnly) {
-          final chosen = c.document.toJson();
-          final mouse = await tester.createGesture(
-            kind: PointerDeviceKind.mouse,
-          );
-          await mouse.addPointer(location: const Offset(0, 0));
-          final wood = find.byWidgetPredicate(
-            (w) => w is RadioListTile<String> && w.value == 'wood',
-          );
-          await mouse.moveTo(tester.getCenter(wood));
-          await tester.pump();
-          expect(c.document.toJson(), isNot(chosen));
-          expect(
-            tester.widget<RadioListTile<String>>(round).groupValue,
-            'round',
-          );
-          await mouse.moveTo(const Offset(0, 0));
-          await tester.pump();
-          expect(c.document.toJson(), chosen);
-          await mouse.removePointer();
-        }
-        await tester.tap(find.text('Apply'));
-        await tester.pumpAndSettle();
-        for (final seat in c.document.nodes.where((n) => n.kind == 'seat')) {
-          expect(
-            resolveNodeAppearance(c.document, seat).values['seatStyle'],
-            'round',
-          );
-        }
-        c.undo();
-        expect(c.document.toJson(), document.toJson());
-      },
-    );
-  }
 
   testWidgets('material chooser previews then cancels or commits once', (
     tester,

@@ -807,7 +807,6 @@ class _FormEditorContentState extends State<FormEditorContent>
             child: FormFieldsGenerator(
                 key: ObjectKey(_bundle),
                 bundle: _bundle!,
-                expandProducts: true,
                 editingEnabled: _canEdit,
                 onChanged: _draftChanged),
           ),
