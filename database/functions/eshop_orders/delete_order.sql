@@ -9,7 +9,6 @@ DECLARE
   order_product_ticket_ids BIGINT[];
   ticket_ids BIGINT[];
   order_oc BIGINT;
-  unit_id BIGINT;
   ou_record RECORD;
   form_id BIGINT;
   related_orders BIGINT[];
@@ -27,13 +26,7 @@ BEGIN
   END IF;
 
   -- Deletion belongs to scoped unit managers/editors and organization admins.
-  SELECT unit
-  INTO unit_id
-  FROM public.occasions
-  WHERE id = order_oc;
-
-  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
-      OR public.get_is_editor_on_unit(unit_id) OR public.get_is_admin_on_occasion(order_oc)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_delete_orders(order_oc) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
   END IF;
   -- The queue send gate locks global capacity before an order. Deletion must
@@ -57,9 +50,11 @@ BEGIN
       WHERE (a.target_order_id=delete_order_internal_v1.order_id OR a.source_order_id=delete_order_internal_v1.order_id) AND a.state='preparing') THEN
     RAISE EXCEPTION 'WAITLIST_ACCEPTANCE_IN_PROGRESS'; END IF;
   UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id IN(SELECT form FROM eshop.orders WHERE id=delete_order_internal_v1.order_id);
+  -- Match occasion configuration/deletion: forms precede the occasion row.
+  -- The group/activity advisory lock does not fence an occasion's unit move.
+  PERFORM 1 FROM public.occasions WHERE id=order_oc FOR SHARE;
   PERFORM public.lock_activity_aggregate_internal_v1(order_oc);
-  IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(unit_id)
-      OR public.get_is_editor_on_unit(unit_id) OR public.get_is_admin_on_occasion(order_oc)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_delete_orders(order_oc) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
   END IF;
 

@@ -14,7 +14,7 @@ BEGIN
   END IF;
   IF v_actor IS NULL OR p_spot_1 IS NULL OR p_spot_2 IS NULL
     OR p_spot_1=p_spot_2 OR v_occasion IS NULL
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'spot1',p_spot_1,'spot2',p_spot_2)::text,'UTF8'),'sha256'),'hex');

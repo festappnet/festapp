@@ -32,7 +32,7 @@ BEGIN
  SELECT * INTO STRICT occ FROM public.occasions WHERE id=o.occasion;
  IF p_reissue THEN
   IF NOT EXISTS(SELECT 1 FROM eshop.waitlist_capabilities WHERE order_id=o.id AND kind='manage' AND form_id=f.id AND organization_id=occ.organization) THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
-  IF NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=occ.id AND "user"=p_actor AND is_editor_order) THEN
+  IF NOT public.can_write_orders_as_actor_internal(p_actor,occ.id) THEN
    RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;
  ELSE
   IF o.state<>'waitlisted' OR NOT EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state='waitlisted') THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;

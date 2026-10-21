@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_sources(p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Source access denied' USING ERRCODE = '42501';
   END IF;
   RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(

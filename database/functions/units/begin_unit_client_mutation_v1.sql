@@ -10,8 +10,17 @@ BEGIN
      OR p_command_id IS NULL OR p_unit IS NULL
      OR p_command_name !~ '^[a-z][a-z0-9_.]{2,95}$'
      OR p_request_sha256 !~ '^[0-9a-f]{64}$'
-     OR NOT (public.get_is_manager_on_unit(p_unit) OR (public.get_is_editor_on_unit(p_unit)
-       AND p_command_name IN ('unit.information.save','unit.information.delete','unit.icon.save','unit.icon.delete'))) THEN
+     OR NOT (CASE WHEN p_command_name IN ('occasion.create','occasion.setup.finalize')
+       THEN public.can_create_occasion(p_unit)
+       WHEN p_command_name='occasion.delete' THEN public.can_delete_occasion_in_unit(p_unit)
+       WHEN p_command_name IN ('unit.information.save','unit.information.delete')
+         THEN public.can_write_unit_information(p_unit)
+       WHEN p_command_name IN ('unit.icon.save','unit.icon.delete')
+         THEN public.can_write_unit_icons(p_unit)
+       WHEN p_command_name='profile.unit_access.delete' THEN public.can_manage_unit_users(p_unit)
+       WHEN p_command_name='unit.config.save' THEN public.can_manage_unit_configuration(p_unit)
+       WHEN p_command_name='occasion.duplicate' THEN public.can_copy_occasion_target(p_unit)
+       ELSE false END) THEN
     RAISE insufficient_privilege USING MESSAGE='invalid unit mutation receipt claim';
   END IF;
   INSERT INTO public.client_mutation_receipts

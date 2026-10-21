@@ -30,7 +30,8 @@ BEGIN
         ba.creditor_name,
         ba.type,
         NULL::text as token_masked,
-        (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz as token_expiry_date,
+        CASE WHEN public.can_manage_bank_account(ba.id) THEN
+          (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz END as token_expiry_date,
         ba.supported_currencies,
         ARRAY(
             SELECT u.title 
@@ -40,7 +41,8 @@ BEGIN
         ) as linked_units,
         ba.last_fetch_time,
         ba.last_fio_fetch_time,
-        public.get_bank_sync_connection(ba.id) AS bank_sync
+        CASE WHEN public.can_manage_bank_account(ba.id) THEN
+          public.get_bank_sync_connection(ba.id) END AS bank_sync
     FROM eshop.bank_accounts ba
     JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
     WHERE bau."user" = auth.uid() AND bau.is_admin = true

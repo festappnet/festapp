@@ -1,3 +1,8 @@
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/users/unit_user_model.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import '../../support/fixtures/root_supabase_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -122,4 +127,52 @@ void main() {
     expect(writes.length, 2);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('unit role labels never substitute for creation capabilities and revocation hides controls', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+    await initializeDateFormatting();
+    var draftReads = 0;
+    final backend = await tester.runAsync(() => RootSupabaseFixture.open((request) async {
+      if (request.url.path.endsWith('/get_occasion_setup_drafts')) {
+        draftReads++;
+        return http.Response('[]', 200, request: request, headers: {'content-type': 'application/json'});
+      }
+      return http.Response(jsonEncode({'enabled': false, 'can_manage': false, 'items': []}), 200,
+          request: request, headers: {'content-type': 'application/json'});
+    }));
+    final previous = RightsService.occasionLinkModel;
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      RightsService.occasionLinkModelNotifier.value = previous;
+      await tester.runAsync(() => backend!.dispose());
+    });
+    final unit = UnitModel(id: 999, unitUser: UnitUserModel(isEditor: true, isManager: true));
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(unit: unit);
+    await tester.pumpWidget(EasyLocalization(
+        supportedLocales: const [Locale('cs')], startLocale: const Locale('cs'),
+        path: 'assets/translations', assetLoader: const _Translations(),
+        child: Builder(builder: (context) => MaterialApp(
+            locale: context.locale, supportedLocales: context.supportedLocales,
+            localizationsDelegates: context.localizationDelegates,
+            home: OccasionsScreen(unit: unit, initialOccasions: const [])))));
+    await tester.pumpAndSettle();
+    expect(draftReads, 0);
+    expect(find.byKey(const ValueKey('add-button')), findsNothing);
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(unit: unit,
+        capabilities: {AuthorizationCapabilities.occasionsCreate: true});
+    await tester.pumpAndSettle();
+    expect(draftReads, 1);
+    expect(find.byKey(const ValueKey('add-button')), findsOneWidget);
+    RightsService.invalidateCapabilities();
+    await tester.pumpAndSettle();
+    expect(draftReads, 1);
+    expect(find.byKey(const ValueKey('add-button')), findsNothing);
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(unit: UnitModel(id: 1000),
+        capabilities: {AuthorizationCapabilities.occasionsCreate: true});
+    await tester.pumpAndSettle();
+    expect(draftReads, 1, reason: 'a foreign unit projection cannot admit this screen');
+    expect(find.byKey(const ValueKey('add-button')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
 }

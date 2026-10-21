@@ -2,7 +2,7 @@ import {
   assertEquals,
   assertRejects,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { hasTeamAccess, sendTeamAccessNotice } from "./teamAccessNotice.ts";
+import { sendTeamAccessNotice } from "./teamAccessNotice.ts";
 
 Deno.test("existing editor/viewer/manager invitations deliver access notice without password or code", async () => {
   for (
@@ -13,7 +13,7 @@ Deno.test("existing editor/viewer/manager invitations deliver access notice with
     let authorized = false;
     const sent: unknown[] = [];
     await sendTeamAccessNotice({
-      access,
+      access: {...access, capabilities: {"emails.team_access_notice": true}},
       occasion: {
         id: 7,
         unit: 3,
@@ -51,11 +51,10 @@ Deno.test("existing editor/viewer/manager invitations deliver access notice with
   }
 });
 Deno.test("unauthorized notice never delivers; participants stay out of team path", async () => {
-  assertEquals(hasTeamAccess({}), false);
   let sent = false;
   await assertRejects(() =>
     sendTeamAccessNotice({
-      access: { is_editor: true },
+      access: { is_editor: true, capabilities: {"emails.team_access_notice": true} },
       occasion: {
         id: 7,
         unit: 3,

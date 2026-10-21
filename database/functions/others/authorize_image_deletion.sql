@@ -34,12 +34,9 @@ BEGIN
     FROM public.images AS image
     WHERE image.link = ANY(p_links)
       AND NOT (
-        (image.unit IS NOT NULL AND public.get_is_editor_on_unit(image.unit))
+        (image.unit IS NOT NULL AND public.can_upload_unit_media(image.unit))
         OR
-        (image.occasion IS NOT NULL AND (
-          public.get_is_editor_on_occasion(image.occasion)
-          OR public.get_is_editor_order_on_occasion(image.occasion)
-        ))
+        (image.occasion IS NOT NULL AND public.can_upload_occasion_media(image.occasion))
       )
   ) THEN
     RAISE EXCEPTION 'Permission denied for image deletion.' USING ERRCODE = '42501';

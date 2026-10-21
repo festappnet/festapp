@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/last_administration_context.dart';
 import 'package:flutter/foundation.dart';
@@ -28,7 +29,8 @@ class RightsUnitAdministrationAccess implements UnitAdministrationAccess {
   @override
   bool get hasOccasion => RightsService.currentOccasionId() != null;
   @override
-  bool get canAccess => RightsService.isUnitEditorView();
+  bool get canAccess => RightsService.hasCapability(
+      AuthorizationCapabilities.unitAdministrationRead);
   @override
   Future<void> load(int unitId, {required bool force}) async {
     await RightsService.updateAppData(

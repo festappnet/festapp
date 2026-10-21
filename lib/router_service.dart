@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/services/public_link_path.dart';
 import 'package:fstapp/services/last_administration_context.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
@@ -495,7 +496,8 @@ class RouterService {
                 unitId: id, force: true, refreshOffline: false);
             return RightsService.currentUser()?.id == userId &&
                 RightsService.currentUnit()?.id == id &&
-                RightsService.isUnitEditorView();
+                RightsService.hasCapability(
+                    AuthorizationCapabilities.unitAdministrationRead);
           }
           await RightsService.updateAppData(
               link: parts.first, force: true, refreshOffline: false);

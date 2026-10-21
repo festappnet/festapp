@@ -28,7 +28,7 @@ BEGIN
     END IF;
 
     -- 3. Verify if the user is an editor on the occasion
-    IF NOT get_is_editor_order_on_occasion(v_occasion_id) THEN
+    IF NOT can_write_orders(v_occasion_id) THEN
         RETURN jsonb_build_object(
             'code', 403,
             'message', 'User is not authorized to edit this occasion.'

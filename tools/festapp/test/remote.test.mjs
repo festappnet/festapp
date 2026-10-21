@@ -368,6 +368,13 @@ test('organizer consent needs requested create scope; read consent never exposes
     const listed = await new Operations(owner).invoke('access.inspect', {});
     assert.equal(listed.ok, true);
     assert.equal(listed.data.units[0].canCreateOccasions, false);
+    const start=f.calls.length;
+    assert.equal((await new Operations(owner).invoke('ticket_layouts.inspect',{occasionId:7})).ok,true);
+    const sqlRequests=f.calls.slice(start).filter(c=>c.url.pathname.startsWith('/rest/v1/rpc/'));
+    assert.equal(sqlRequests.length,1,'delegated inspection has no separate permission RPC');
+    assert.equal(sqlRequests[0].url.pathname,'/rest/v1/rpc/get_delegated_ticket_layout_for_authoring_v1');
+    const requestBody=JSON.parse(sqlRequests[0].init.body);
+    assert.equal(requestBody.p_unit,3);assert.equal(requestBody.p_organization,1);
     const withScope = await setup(t);
     const connected = await connect(withScope, { unitId: 3, create: true, scope: `${READ_SCOPE} ${CREATE_SCOPE}` });
     const authorized = new DelegatedOwner(withScope.config, withScope.storage,

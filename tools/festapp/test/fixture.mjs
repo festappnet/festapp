@@ -109,7 +109,7 @@ export async function fixture(
                 });
             if (url.pathname === '/rest/v1/rpc/get_operator_access_v1')
                 return reply({ units: [{ id: 3, title: 'Fixture organizer', canCreateOccasions: true }],
-                    occasions: [{ id: 7, title: 'Fixture occasion', unitId: 3 }] });
+                    occasions: [{ id: 7, title: 'Fixture occasion', unitId: 3, capabilities: { 'ticket_layouts.read': true } }] });
             if (url.pathname === '/rest/v1/user_info')
                 return reply({
                     id: userId,
@@ -125,8 +125,8 @@ export async function fixture(
                     ready: true,
                 });
             if (
-                url.pathname ===
-                '/rest/v1/rpc/get_ticket_layout_for_authoring_v1'
+                ['/rest/v1/rpc/get_ticket_layout_for_authoring_v1',
+                 '/rest/v1/rpc/get_delegated_ticket_layout_for_authoring_v1'].includes(url.pathname)
             )
                 return reply({
                     occasion: 7,

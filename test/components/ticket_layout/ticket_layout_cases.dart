@@ -19,7 +19,6 @@ import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/ticket_layout/ticket_snapping.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
-import 'package:fstapp/components/users/occasion_user_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -189,7 +188,13 @@ void main() {
       addTearDown(
           () => RightsService.occasionLinkModelNotifier.value = previousRights);
       RightsService.occasionLinkModelNotifier.value =
-          OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
+          OccasionLinkModel.fromJson({
+          'occasion': {'id': 1},
+          'capabilities': {
+            'ticket_layouts.write': true,
+            'ticket_layouts.read': true,
+          },
+        });
       final service = BackgroundDropService();
       await _environment.pumpWidget(
           tester,
@@ -1335,7 +1340,13 @@ void main() {
       'returning from the editor keeps its button ready while only changed thumbnails reload',
       (tester) async {
     RightsService.occasionLinkModelNotifier.value =
-        OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
+        OccasionLinkModel.fromJson({
+          'occasion': {'id': 1},
+          'capabilities': {
+            'ticket_layouts.write': true,
+            'ticket_layouts.read': true,
+          },
+        });
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
     final service = SettingsService();
     final feature = TicketFeature(code: 'ticket', ticketType: 'named');

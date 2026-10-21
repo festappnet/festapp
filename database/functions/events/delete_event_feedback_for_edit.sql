@@ -20,7 +20,7 @@ BEGIN
 
     IF v_actor IS NULL
        OR v_organization IS NULL
-       OR NOT public.check_is_admin_of_organization(v_organization) THEN
+       OR NOT public.can_delete_schedule_feedback(p_occasion) THEN
         RAISE insufficient_privilege
             USING MESSAGE = 'occasion admin required';
     END IF;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
+import { openDisposableDatabase } from './postgres.mjs';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { createOccasion } from '../src/operations/occasion-create.mjs';
@@ -9,15 +9,8 @@ import { operatorAccess } from '../src/operations/access.mjs';
 const connection = process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 test('real organizer rights, hidden creation, exact replay, future occasions and revoked rights',
     { skip: !connection }, async t => {
-    const url = new URL(connection);
-    assert.equal(url.hostname, '127.0.0.1');
-    assert.equal(url.port, '55432');
-    const { Client } = createRequire(new URL('../../../web_client/package.json', import.meta.url))('pg');
-    const db = new Client({ connectionString: connection });
-    await db.connect();
+    const db = await openDisposableDatabase(connection);
     t.after(async () => { await db.query('ROLLBACK'); await db.end(); });
-    assert.equal((await db.query('select project from festapp_test_support.disposable_environment')).rows[0].project,
-        'festapp-db-tests-pg15');
     await db.query('BEGIN');
     await db.query(await readFile(new URL('../../../database/functions/others/get_operator_access_v1.sql', import.meta.url), 'utf8'));
     await db.query("select public.create_user_for_test('mcp-organizer-node','mcp-organizer-node@example.invalid')");

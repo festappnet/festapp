@@ -94,7 +94,7 @@ class _TicketsTabState extends State<TicketsTab> {
       firstColumnType: DataGridFirstColumn.check,
       idColumn: EshopColumnIds.TICKET_ID,
       actionsExtended: DataGridActionsController(
-        areAllActionsEnabled: RightsService.isEditorOrder,
+        areAllActionsEnabled: RightsService.canUpdateOrders,
         isAddActionPossible: () => false,
       ),
       headerChildren: [
@@ -104,7 +104,7 @@ class _TicketsTabState extends State<TicketsTab> {
           action: (SingleDataGridController singleDataGrid, [_]) =>
               _stornoTickets(singleDataGrid),
           isEnabled: () =>
-              RightsService.isOrderEditor() &&
+              RightsService.canUpdateOrders() &&
               (_controller?.visibleCheckedRows
                       .every(OrderGridFilters.ticketIsNonCancelled) ??
                   false),
@@ -115,7 +115,7 @@ class _TicketsTabState extends State<TicketsTab> {
             requiresSelection: false,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
-            isEnabled: RightsService.isOrderEditor,
+            isEnabled: RightsService.canUpdateOrders,
           ),
       ],
       columns: EshopColumns.generateColumns(

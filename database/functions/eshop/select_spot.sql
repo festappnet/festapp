@@ -87,7 +87,7 @@ BEGIN
  IF s.secret=secret_id THEN RETURN jsonb_build_object('code',200,'message','Spot selected','expiresAt',s.secret_expiration_time); END IF;
  r:=public.blueprint_hold_admission_internal(fid,ARRAY[s.id],secret_id);
  IF (r->>'code')::integer<>200 THEN RETURN r; END IF;
- IF selecting AND public.get_is_editor_order_on_occasion(occ) IS NOT TRUE THEN
+ IF selecting AND public.can_write_orders(occ) IS NOT TRUE THEN
   form_data:=public.get_effective_form_data(fid);
   IF form_open IS NOT TRUE OR
    (coalesce(form_data#>>'{schedule,start_time}',form_data->>'start_time'))::timestamptz>clock_timestamp() OR

@@ -97,7 +97,7 @@ BEGIN
         -- The order payload captures the effective tone for its confirmation email.
         form_data := public.get_effective_form_data(form_id);
 
-        is_editor := public.get_is_editor_order_on_occasion(occasion_id);
+        is_editor := public.can_write_orders(occasion_id);
 
         -- Fetch organization, unit, and occasion title from the occasion
         SELECT organization, unit, title, features

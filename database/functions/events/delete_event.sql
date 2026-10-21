@@ -4,7 +4,7 @@ DECLARE oc bigint; ver bigint; r jsonb;
 BEGIN
  SELECT occasion INTO oc FROM public.events WHERE id=p_event;
  IF oc IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
- IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(oc) THEN RETURN jsonb_build_object('code',403); END IF;
+ IF auth.uid() IS NULL OR NOT public.can_write_schedule(oc) THEN RETURN jsonb_build_object('code',403); END IF;
  PERFORM public.lock_event_deletion_scope_internal_v1(oc,ARRAY[p_event]);
  PERFORM 1 FROM public.events WHERE id=p_event AND occasion=oc FOR UPDATE;
  SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v

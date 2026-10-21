@@ -23,7 +23,7 @@ BEGIN
     WHERE r.id=ANY(v_resource_ids);
   END IF;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='inventory editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'changes',p_changes)::text,'UTF8'),'sha256'),'hex');

@@ -1,8 +1,37 @@
 # Kanonická oprávnění pro aplikaci a MCP
 
 Datum: 2026-10-20  
-Stav: Připravený follow-up; implementace ani produkční změny nejsou součástí sepsání plánu  
+Stav: Lokální implementace vln 0-4 dokončená; produkční aplikace neprovedená. Evidence je v implementačním výsledku.
 Verification: standard
+
+## Implementační evidence a oprava premis
+
+Práce probíhá v izolovaném checkoutu `festapp-canonical-authorization-20261020`
+z fetched authoritative main `ce77a1e40057841bff9abe9f28ba0a4f0c4510dd`.
+Closure vlastník potvrdil, že jeho změny jsou na tomto main a checkout je čistý;
+backend/MCP vlastník neměl pending překryv. Aktivní Blueprint release byl
+upozorněn, že tato nepublikovaná authorization změna není připravená k zahrnutí.
+
+Skutečný předchozí create průchod vyžadoval současně unit managera (receipt)
+a unit editora (vlastní zápis a výchozí formulář), přestože vnější guard používal
+OR. Uživatel tento souběh 2026-10-20 výslovně opravil: editor sám stačí; správce
+pořadatele je další dostačující role. To je explicitně autorizovaná výjimka z D1,
+nikoli neoznačené rozšíření pod názvem refaktor. `unit_users.is_manager` podle
+existující správy rolí přiděluje unit role i sobě; `organization_users.is_admin`
+je odlišný tenantový rozsah. Další role se touto změnou globálně nerozšiřují.
+
+Uživatel 2026-10-21 výslovně upřesnil výjimku pro banku: správa účtu
+vyžaduje současně správce pořadatele a správce bankovního účtu. Dosavadní
+account-only SQL guard a přímý connection route tuto podmínku nezajišťovaly.
+`can_manage_bank_account` proto vyžaduje živé bank admin členství a živého
+managera alespoň jednoho skutečně připojeného pořadatele. Nové připojení
+vyžaduje managera cílového pořadatele a admina účtu; nesmí předpokládat již
+existující link. Toto explicitní zpřísnění parity je zdokumentované samostatně
+v [bankovní matici](canonical-authorization-BANK-2026-10-21.md).
+
+Nové zdroje a forward migrace, skutečné testy, uzavřený lokální inventář a
+výkonové podmínky jsou v [implementačním výsledku](canonical-authorization-RESULT-2026-10-20.md).
+Lokální dokončení vln 0-4 se nevydává za produkční aplikaci.
 
 ## Výsledek a rozsah
 

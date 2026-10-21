@@ -1,4 +1,4 @@
-import { getSupabaseUser, isUserEditorOrder, supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency } from "../_shared/utilities.ts";
 import { authorizeRequest } from "../_shared/auth.ts";
 import { getBaseOrderData } from "./shared.ts";

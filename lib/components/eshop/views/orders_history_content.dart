@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
@@ -126,9 +127,10 @@ class _OrdersHistoryContentState extends State<OrdersHistoryContent> {
         EshopColumnIds.HISTORY_PRICE,
         EshopColumnIds.HISTORY_CHANGES_SUMMARY,
       ]),
-      firstColumnType: RightsService.isUnitManager()
-          ? DataGridFirstColumn.delete
-          : DataGridFirstColumn.check,
+      firstColumnType:
+          RightsService.hasCapability(AuthorizationCapabilities.ordersDelete)
+              ? DataGridFirstColumn.delete
+              : DataGridFirstColumn.check,
     );
 
     if (mounted) {

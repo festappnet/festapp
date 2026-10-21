@@ -20,7 +20,7 @@ BEGIN
         FROM public.forms f
         WHERE f.key = form_key
           AND (NOT public.is_demo_occasion(f.occasion) OR public.can_read_demo_occasion(f.occasion))
-          AND (f.is_open = true OR public.get_is_editor_order_view_on_occasion(f.occasion))
+          AND (f.is_open = true OR public.can_read_orders(f.occasion))
           AND EXISTS (
               SELECT 1
               FROM eshop.blueprints b

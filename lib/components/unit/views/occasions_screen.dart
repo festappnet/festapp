@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'occasion_setup_draft_card.dart';
 import 'package:fstapp/components/occasion/occasion_creation_button.dart';
 import 'package:fstapp/components/occasion/past_occasion_years.dart';
@@ -41,10 +42,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   String? _draftError;
   bool get _canEditDrafts =>
       AppConfig.occasionSetupEnabled &&
-      (widget.unit.unitUser?.isEditor == true ||
-          widget.unit.unitUser?.isManager == true ||
-          (RightsService.currentUnit()?.id == widget.unit.id &&
-              (RightsService.isUnitEditor() || RightsService.isUnitManager())));
+      RightsService.currentUnit()?.id == widget.unit.id &&
+      RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate);
 
   List<OccasionSetupDraft> get _filteredDrafts {
     final query =
@@ -148,6 +147,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_onRightsChanged);
     _initializeOccasions();
     _loadDrafts();
     _loadLanding();
@@ -176,6 +176,15 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     }
   }
 
+  void _onRightsChanged() {
+    if (!mounted) return;
+    setState(() {
+      _drafts = [];
+      _draftError = null;
+    });
+    _loadDrafts();
+  }
+
   void _initializeOccasions() {
     if (widget.initialOccasions != null) {
       _allOccasions = widget.initialOccasions!;
@@ -192,6 +201,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
 
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_onRightsChanged);
     _searchController.removeListener(_filterOccasions);
     _searchFocusNode.removeListener(_onSearchFocusChange);
     _searchController.dispose();
@@ -400,7 +410,9 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
                         sizeFactor: animation,
                         axis: Axis.horizontal,
                         child: child),
-                    child: showButton
+                    child: showButton &&
+                            RightsService.currentUnit()?.id == widget.unit.id &&
+                            RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)
                         ? Row(
                             key: const ValueKey('add-button'),
                             children: [

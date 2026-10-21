@@ -17,7 +17,7 @@ BEGIN
     END IF;
 
     -- Verify if the user is an editor on the occasion
-    IF (SELECT get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
+    IF (SELECT can_write_orders(occasion_id)) <> TRUE THEN
         RAISE EXCEPTION 'User is not editor.';
     END IF;
 

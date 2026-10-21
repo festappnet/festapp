@@ -7,7 +7,7 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_pool bigint; v_version bigint; v_title text;
   v_begin jsonb; v_hash text; v_impacts jsonb; v_replacements jsonb:='[]'::jsonb;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_order_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_orders(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,
     'resourceId',p_resource,'expectedVersion',p_expected_version)::text,'UTF8'),'sha256'),'hex');

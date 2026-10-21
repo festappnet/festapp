@@ -35,10 +35,22 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,exte
   ELSE EXISTS(SELECT 1 FROM public.occasions o WHERE o.id=p_occasion
     AND public.get_is_manager_on_unit(o.unit)) END;
 $$;
+-- Scan the small registry, then look up each occasion by its primary key.
+-- OFFSET 0 keeps a unit filter from turning this into a scan of that unit's
+-- entire occasion history when the freshly seeded registry has no statistics.
+CREATE OR REPLACE FUNCTION public.demo_unit_ids_internal()
+RETURNS TABLE(unit_id bigint) LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT DISTINCT mapped.unit FROM public.demo_occasions demo
+ CROSS JOIN LATERAL (
+   SELECT occasion.unit FROM public.occasions occasion WHERE occasion.id=demo.occasion OFFSET 0
+ ) mapped WHERE mapped.unit IS NOT NULL;
+$$;
+REVOKE ALL ON FUNCTION public.demo_unit_ids_internal() FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.demo_unit_ids_internal() TO postgres;
+
 CREATE OR REPLACE FUNCTION public.is_demo_unit(p_unit bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT EXISTS(SELECT 1 FROM public.demo_occasions d JOIN public.occasions o
-  ON o.id=d.occasion WHERE o.unit=p_unit);
+ SELECT EXISTS(SELECT 1 FROM public.demo_unit_ids_internal() demo WHERE demo.unit_id=p_unit);
 $$;
 REVOKE ALL ON FUNCTION public.can_copy_occasion_source(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.can_copy_occasion_source(bigint) TO authenticated;

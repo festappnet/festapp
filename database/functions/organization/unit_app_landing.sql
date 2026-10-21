@@ -11,9 +11,8 @@ DECLARE
   v_admin boolean;
 BEGIN
   SELECT organization INTO v_org FROM public.units WHERE id = p_unit;
-  v_admin := public.get_is_admin_on_organization(v_org);
-  IF v_org IS NULL OR NOT (v_admin OR public.get_is_editor_view_on_unit(p_unit)
-      OR public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  v_admin := public.can_manage_unit_app_landing(p_unit);
+  IF v_org IS NULL OR NOT public.can_read_unit_app_landing(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE = 'Access denied';
   END IF;
   SELECT data INTO v_data FROM public.organizations WHERE id = v_org;
@@ -36,7 +35,7 @@ DECLARE
   v_current bigint;
 BEGIN
   SELECT organization INTO v_org FROM public.units WHERE id = p_unit;
-  IF v_org IS NULL OR NOT public.get_is_admin_on_organization(v_org) THEN
+  IF v_org IS NULL OR NOT public.can_manage_unit_app_landing(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE = 'Access denied';
   END IF;
   SELECT data INTO v_data FROM public.organizations WHERE id = v_org FOR UPDATE;

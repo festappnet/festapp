@@ -17,8 +17,7 @@ BEGIN
  IF b.id IS NULL OR (source->>'id')::bigint IS DISTINCT FROM b.id OR (source->>'occasion')::bigint IS DISTINCT FROM b.occasion
   OR (p_blueprint->>'occasion')::bigint IS DISTINCT FROM b.occasion
   OR p_blueprint->>'title' IS DISTINCT FROM coalesce(b.title,'') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_MIGRATION_SCOPE_MISMATCH'; END IF;
- IF auth.uid() IS NULL OR NOT (coalesce(public.get_is_editor_on_occasion(b.occasion),false) OR coalesce(public.get_is_manager_on_occasion(b.occasion),false) OR
-  (public.is_demo_occasion(b.occasion) AND EXISTS(SELECT 1 FROM public.occasion_users ou WHERE ou.occasion=b.occasion AND ou."user"=auth.uid() AND (ou.is_editor OR ou.is_manager)))) THEN
+ IF auth.uid() IS NULL OR NOT public.can_migrate_reviewed_legacy_blueprint(b.occasion) THEN
   RAISE insufficient_privilege USING MESSAGE='blueprint migration reviewer required'; END IF;
  request_hash:=encode(extensions.digest(convert_to(jsonb_build_object('sourceSha',p_source_sha,'request',p_blueprint)::text,'UTF8'),'sha256'),'hex');
  started:=public.begin_client_mutation_reviewed_impl_internal(p_command_id,'inventory.blueprint.migrate',b.occasion,auth.uid(),request_hash,true);

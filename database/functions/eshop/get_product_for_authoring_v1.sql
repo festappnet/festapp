@@ -3,7 +3,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,ex
 DECLARE oc bigint;
 BEGIN
  SELECT occasion INTO oc FROM eshop.products WHERE id=p_product;
- IF auth.uid() IS NULL OR oc IS NULL OR public.get_is_editor_order_view_on_occasion(oc) IS NOT TRUE THEN
+ IF auth.uid() IS NULL OR oc IS NULL OR public.can_read_orders(oc) IS NOT TRUE THEN
   RAISE insufficient_privilege USING MESSAGE='order editor view required'; END IF;
  RETURN (SELECT jsonb_build_object('id',p.id,'occasion',p.occasion,'product_type',p.product_type,
   'title',p.title,'description',p.description,'price',p.price,'currency_code',p.currency_code,'data',p.data,

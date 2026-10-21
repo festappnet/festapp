@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -89,6 +90,14 @@ class ExceptionHandler {
     bool showAsDialog = false,
   }) async {
     final AppError? appError = _parsePostgrestException(error);
+    if ((error is PostgrestException && error.code == '42501') ||
+        (error is FunctionException && error.status == 403) ||
+        appError?.code == 403 ||
+        appError?.code == '403') {
+      await RightsService.refreshAfterAuthorizationDenial(
+          error: error is Exception ? error : null);
+      if (!context.mounted) return;
+    }
 
     if (appError != null) {
       if (showAsDialog) {

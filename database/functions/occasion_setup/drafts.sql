@@ -19,7 +19,7 @@ REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_drafts(p_unit bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   RETURN COALESCE((SELECT jsonb_agg(to_jsonb(d) ORDER BY updated_at DESC)
@@ -35,7 +35,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extens
 DECLARE configuration jsonb; organization_id bigint;
   provisional_link text := 'draft-' || p_id::text;
 BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   SELECT organization INTO organization_id FROM public.units WHERE id = p_unit;
@@ -65,7 +65,7 @@ CREATE OR REPLACE FUNCTION public.create_occasion_setup_draft(p_id uuid, p_unit 
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE d public.occasion_setup_drafts; configuration jsonb; is_new boolean; policy jsonb;
 BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   -- Serialize identical UUIDs before inspecting existence, without charging retries.
@@ -103,7 +103,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extens
 DECLARE d public.occasion_setup_drafts; configuration jsonb; policy jsonb;
 BEGIN
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   IF d.data ? 'defaultConfiguration' THEN RETURN to_jsonb(d); END IF;
@@ -129,7 +129,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extens
 DECLARE d public.occasion_setup_drafts;
 BEGIN
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
@@ -161,7 +161,7 @@ CREATE OR REPLACE FUNCTION public.delete_occasion_setup_draft(p_id uuid, p_unit 
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE d public.occasion_setup_drafts;
 BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
+  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
   SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;

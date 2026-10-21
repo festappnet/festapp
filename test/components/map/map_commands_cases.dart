@@ -1,3 +1,4 @@
+import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/icons/place_type_model.dart';
 import 'package:fstapp/components/icons/icon_commands.dart';
@@ -16,6 +17,8 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          ...commandResponseFixture(params['p_command_id'] as String,
+              status: 'applied'),
           'status': 'applied',
           'code': 200,
           'data': {'version': 4, 'place': null},
@@ -43,6 +46,8 @@ void main() {
       (name, params) async {
         functionName = name;
         return {
+          ...commandResponseFixture(params['p_command_id'] as String,
+              status: 'applied'),
           'status': 'applied',
           'code': 200,
           'data': {
@@ -118,6 +123,8 @@ void main() {
         functionName = name;
         parameters = params;
         return {
+          ...commandResponseFixture(params['p_command_id'] as String,
+              status: 'applied'),
           'status': 'applied',
           'code': 200,
           'data': {
@@ -154,6 +161,8 @@ void main() {
         calls[name] = params;
         final isPath = name == 'save_path_client_sync_v1';
         return {
+          ...commandResponseFixture(params['p_command_id'] as String,
+              status: 'unchanged'),
           'status': 'unchanged',
           'code': 200,
           'data': {
@@ -201,6 +210,8 @@ void main() {
       (name, params) async {
         functionName = name;
         return {
+          ...commandResponseFixture(params['p_command_id'] as String,
+              status: 'applied'),
           'status': 'applied',
           'code': 200,
           'data': {

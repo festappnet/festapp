@@ -1,3 +1,5 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/drag_handle_dots.dart';
@@ -33,11 +35,15 @@ class UnitBankAccountCard extends StatelessWidget {
         if (selection != null) selection!,
         if (onOpen != null)
           IconButton(
-            tooltip: account.isAdmin
+            tooltip: RightsService.hasBankCapability(
+                    account.id, AuthorizationCapabilities.bankAccountsWrite)
                 ? CommonStrings.edit
                 : BankAccountStrings.bankAccountSettingsTitle,
             icon: Icon(
-              account.isAdmin ? Icons.edit_outlined : Icons.visibility_outlined,
+              RightsService.hasBankCapability(
+                      account.id, AuthorizationCapabilities.bankAccountsWrite)
+                  ? Icons.edit_outlined
+                  : Icons.visibility_outlined,
             ),
             onPressed: onOpen,
           ),
@@ -47,7 +53,9 @@ class UnitBankAccountCard extends StatelessWidget {
             icon: const Icon(Icons.link_off),
             onPressed: onUnlink,
           ),
-        if (selection == null && account.isAdmin)
+        if (selection == null &&
+            RightsService.hasCapability(
+                AuthorizationCapabilities.bankAccountsUnitManage))
           ReorderableDragStartListener(
             index: index,
             child: const SizedBox(

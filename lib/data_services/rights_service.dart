@@ -1,3 +1,6 @@
+import 'package:fstapp/services/app_logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -16,11 +19,8 @@ import 'package:fstapp/data_services/client_sync/client_sync_runtime.dart';
 import 'package:fstapp/components/occasion/link_model.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/components/organization/organization_model.dart';
-import 'package:fstapp/components/features/feature_constants.dart';
-import 'package:fstapp/components/features/feature_service.dart';
 
 class RightsService {
-
   // The model is now wrapped in a ValueNotifier.
   static final occasionLinkModelNotifier =
       ValueNotifier<OccasionLinkModel?>(null);
@@ -41,11 +41,22 @@ class RightsService {
   static String? currentLink;
   static bool useOfflineVersion = false;
 
-  static List<int>? bankAccountAdmin() =>
-      occasionLinkModelNotifier.value?.bankAccountsAdmin;
+  static bool hasBankCapability(int? accountId, String id) =>
+      accountId != null &&
+      occasionLinkModel?.capabilities.isNotEmpty == true &&
+      occasionLinkModel?.bankCapabilities[accountId]?[id] == true;
+
+  static List<int> banksWithCapability(String id) =>
+      occasionLinkModel?.capabilities.isNotEmpty != true
+          ? const []
+          : occasionLinkModel!.bankCapabilities.entries
+              .where((entry) => entry.value[id] == true)
+              .map((entry) => entry.key)
+              .toList(growable: false);
 
   // Serializes concurrent updateAppData calls to prevent state interleaving.
   static Future<bool> _lastUpdate = Future.value(true);
+  static int _contextGeneration = 0;
 
   static Future<bool> updateAppData(
       {int? unitId,
@@ -53,9 +64,17 @@ class RightsService {
       bool force = false,
       bool refreshOffline = AppConfig.isAppSupported,
       String? formLink}) {
+    final contextGeneration = ++_contextGeneration;
+    if (force ||
+        (unitId != null && unitId != currentUnit()?.id) ||
+        (link != null && link != currentLink) ||
+        formLink != null) {
+      invalidateCapabilities();
+    }
     final previous = _lastUpdate;
     final current = previous.catchError((_) => false).then((_) =>
         _doUpdateAppData(
+            contextGeneration: contextGeneration,
             unitId: unitId,
             link: link,
             force: force,
@@ -66,11 +85,13 @@ class RightsService {
   }
 
   static Future<bool> _doUpdateAppData(
-      {int? unitId,
+      {required int contextGeneration,
+      int? unitId,
       String? link,
       bool force = false,
       bool refreshOffline = AppConfig.isAppSupported,
       String? formLink}) async {
+    if (contextGeneration != _contextGeneration) return false;
     // Check if an update is needed
     // Logic: If force is true, update.
     // If unitId is specified (Unit Admin mode), only update if we aren't already on that unit.
@@ -107,7 +128,16 @@ class RightsService {
       }
 
       // Get the new data
+      final identity = _capabilityIdentity;
+      final actor = Supabase.instance.client.auth.currentUser?.id;
+      final organization = AppConfig.organization;
       var checkedObject = await SynchroService.getAppConfig(model);
+      if (contextGeneration != _contextGeneration ||
+          organization != AppConfig.organization ||
+          identity != _capabilityIdentity ||
+          actor != Supabase.instance.client.auth.currentUser?.id) {
+        return false;
+      }
 
       // Update global state from the fetched object
       RightsService.currentLink = checkedObject.occasion?.link;
@@ -152,134 +182,133 @@ class RightsService {
     return true;
   }
 
-  static bool canSeeAdmin() {
-    if (isDemoReadOnly) return true;
-    return isEditor() || isManager() || isUnitEditorView() || isAdmin();
+  static bool canSeeAdmin() =>
+      hasCapability(AuthorizationCapabilities.navigationAdminApp);
+
+  static int _capabilityIdentity = 0;
+  static void invalidateCapabilities({bool clearIdentity = false}) {
+    _capabilityIdentity++;
+    final context = occasionLinkModel;
+    if (context != null &&
+        (clearIdentity ||
+            (context.capabilities.isNotEmpty ||
+                context.bankCapabilities.isNotEmpty))) {
+      final invalidated =
+          context.copyWith(capabilities: const {}, bankCapabilities: const {});
+      if (clearIdentity) {
+        invalidated.occasionUser = null;
+        invalidated.unitUser = null;
+        invalidated.userInfo = null;
+        invalidated.bankAccountsAdmin = null;
+        invalidated.isAdmin = false;
+      }
+      occasionLinkModelNotifier.value = invalidated;
+    }
   }
 
-  static bool canUpdateUsers() {
-    return isManager() || isAdmin() || isUnitEditor();
+  static bool _authorizationRefreshing = false;
+  static final _handledAuthorizationDenials = Expando<bool>();
+
+  /// A rejection discards the informative snapshot before any further UI action.
+  /// Refreshes share the normal context RPC and never retry the denied mutation.
+  static Future<void> refreshAfterAuthorizationDenial(
+      {Exception? error}) async {
+    // The transport and UI can see the same exception. Refresh once for that
+    // response; a later failed request carries a new exception and checks again.
+    if (error != null) {
+      if (_handledAuthorizationDenials[error] == true) return;
+      _handledAuthorizationDenials[error] = true;
+    }
+    if (_authorizationRefreshing || occasionLinkModel == null) return;
+    _authorizationRefreshing = true;
+    try {
+      await refreshAfterAuthorizationChange();
+    } finally {
+      _authorizationRefreshing = false;
+    }
   }
 
-  static bool canUpdateOrders() {
-    return isEditorOrder() || isAdmin() || isUnitEditor();
+  /// Role/link changes can grant or revoke capabilities. Load their SQL
+  /// projection after the successful mutation, before continuing the workflow.
+  static Future<void> refreshAfterAuthorizationChange() async {
+    if (occasionLinkModel == null) return;
+    final unitId = currentOccasionId() == null ? currentUnit()?.id : null;
+    final link = currentLink;
+    invalidateCapabilities();
+    try {
+      await updateAppData(
+          unitId: unitId, link: link, force: true, refreshOffline: false);
+    } catch (error) {
+      AppLogger.error('Authorization context refresh failed: $error');
+    }
   }
 
-  /// Whether the current user is on the cleaning crew — the per-occasion
-  /// is_cleaning_crew flag ONLY. Editors/admins are deliberately NOT treated as
-  /// implicit crew: only actual crew receive the report push notifications, so
-  /// only they should see the crew section on the Cleaning page (tabs, reports,
-  /// "Cleaned", the notification opt-out). The backend get_cleaning_reports /
-  /// resolve_cleaning_place still permit editors for oversight, but the UI is
-  /// intentionally stricter.
-  static bool isCleaningCrew() {
-    return occasionLinkModelNotifier.value?.occasionUser?.isCleaningCrew ??
+  static bool hasGroupCapability(int? groupId, String id) {
+    if (groupId == null || occasionLinkModel?.capabilities.isNotEmpty != true) {
+      return false;
+    }
+    return currentUser()?.userGroups?.any(
+            (group) => group.id == groupId && group.capabilities[id] == true) ??
         false;
   }
 
-  static bool isReceptionist() =>
-      occasionLinkModelNotifier.value?.occasionUser?.isReceptionist ?? false;
+  static bool canMovePlace(int? placeId) {
+    if (placeId == null || occasionLinkModel?.capabilities.isNotEmpty != true) {
+      return false;
+    }
+    if (hasCapability(AuthorizationCapabilities.mapPlacesWrite)) return true;
+    return currentUser()?.userGroups?.any((group) =>
+            group.placeId == placeId &&
+            group.capabilities[AuthorizationCapabilities.mapPlaceMove] ==
+                true) ??
+        false;
+  }
 
-  static bool canManageReceptionParticipants() => isManager() || isAdmin();
+  static bool hasCapability(String id) =>
+      occasionLinkModel?.capabilities[id] == true;
+
+  static bool canUpdateUsers() =>
+      hasCapability(AuthorizationCapabilities.usersWrite);
+
+  static bool canUpdateOrders() =>
+      hasCapability(AuthorizationCapabilities.ordersWrite);
+
+  /// Crew navigation remains narrower than editor oversight of cleaning data.
+  static bool canOpenCleaningCrewWorkspace() =>
+      hasCapability(AuthorizationCapabilities.navigationCleaningCrew);
+
+  static bool canManageReceptionParticipants() =>
+      hasCapability(AuthorizationCapabilities.receptionParticipantsManage);
 
   static bool canUseReception() =>
-      FeatureService.isFeatureEnabled(FeatureConstants.reception) &&
-      (isReceptionist() || isManager() || isAdmin());
+      hasCapability(AuthorizationCapabilities.receptionUse);
 
-  static bool canSeeUnitUsers() {
-    return isUnitEditor() || isUnitManager() || isAdmin();
-  }
+  static bool canSeeUnitUsers() =>
+      hasCapability(AuthorizationCapabilities.unitUsersRead);
 
-  static bool canUpdateUnitUsers() {
-    return isUnitManager() || isAdmin();
-  }
+  static bool canUpdateUnitUsers() =>
+      hasCapability(AuthorizationCapabilities.unitUsersWrite);
 
-  static bool canEditOccasion() {
-    return isManager() || isEditor();
-  }
+  static bool canEditOccasion() =>
+      hasCapability(AuthorizationCapabilities.occasionsWrite);
 
   static bool get isDemoReadOnly =>
       occasionLinkModelNotifier.value?.demoReadOnly == true;
 
-  static bool canSeeReservations() {
-    if (isDemoReadOnly) return true;
-    return isUnitEditorView() || isEditorOrderView();
-  }
+  static bool canSeeReservations() =>
+      hasCapability(AuthorizationCapabilities.ordersRead);
 
-  static bool canSeeAdministration() {
-    if (isDemoReadOnly) return true;
-    return isUnitEditorView() || isEditorView();
-  }
+  static bool canSeeAdministration() =>
+      hasCapability(AuthorizationCapabilities.navigationAdministration);
 
-  static bool isAdmin() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.isAdmin ?? false;
-  }
+  static bool canUserSeeUnitWorkspace() =>
+      hasCapability(AuthorizationCapabilities.navigationUnitWorkspace);
 
-  static bool isEditor() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.occasionUser?.isEditor ?? false;
-  }
-
-  static bool isEditorView() {
-    if (isDemoReadOnly) return true;
-    return occasionLinkModelNotifier.value?.occasionUser?.isEditorView ?? false;
-  }
-
-  static bool isOrderEditor() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
-        false;
-  }
-
-  static bool isUnitEditor() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.unitUser?.isEditor ?? false;
-  }
-
-  static bool isUnitEditorView() {
-    return occasionLinkModelNotifier.value?.unitUser?.isEditorView ?? false;
-  }
-
-  static bool isEditorOrderView() {
-    if (isDemoReadOnly) return true;
-    return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrderView ??
-        false;
-  }
-
-  static bool isEditorOrder() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.occasionUser?.isEditorOrder ??
-        false;
-  }
-
-  static bool canUserSeeUnitWorkspace() {
-    if (currentUser()?.units?.any((u) => u.id == currentUnit()?.id) ?? false) {
-      return true;
-    }
-    return isUnitEditor() || isUnitManager() || isUnitEditorView();
-  }
-
-  static bool isManager() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.occasionUser?.isManager ?? false;
-  }
-
-  static bool isUnitManager() {
-    if (isDemoReadOnly) return false;
-    return occasionLinkModelNotifier.value?.unitUser?.isManager ?? false;
-  }
-
-  static bool isApprover() {
-    return occasionLinkModelNotifier.value?.occasionUser?.isApprover ?? false;
-  }
+  static bool canOpenScheduleEntryCheck() =>
+      hasCapability(AuthorizationCapabilities.navigationScheduleEntryCheck);
 
   static bool hasGroup() {
     return (currentUser()?.userGroups?.length ?? 0) > 0;
-  }
-
-  static bool isGroupAdmin() {
-    return currentUser()?.userGroups?.any((g) => g.isAdmin ?? false) ?? false;
   }
 
   static UserGroupInfoModel? currentUserGroup() {
@@ -289,20 +318,7 @@ class RightsService {
   static void updateOrganizationLocally(OrganizationModel newOrg) {
     var valid = occasionLinkModelNotifier.value;
     if (valid != null) {
-      // Create shallow copy to trigger ValueNotifier
-      occasionLinkModelNotifier.value = OccasionLinkModel(
-        code: valid.code,
-        userInfo: valid.userInfo,
-        occasionUser: valid.occasionUser,
-        unitUser: valid.unitUser,
-        bankAccountsAdmin: valid.bankAccountsAdmin,
-        occasion: valid.occasion,
-        unit: valid.unit,
-        isAdmin: valid.isAdmin,
-        organization: newOrg,
-        clientSyncV1: valid.clientSyncV1,
-        demoReadOnly: valid.demoReadOnly,
-      );
+      occasionLinkModelNotifier.value = valid.copyWith(organization: newOrg);
     }
   }
 }

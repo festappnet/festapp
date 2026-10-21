@@ -8,7 +8,7 @@ DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_current bigint[]; v_requested bigint[];
   v_publishable boolean; v_event_hidden boolean;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_schedule(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   SELECT COALESCE(array_agg(requested_speaker.speaker_id
       ORDER BY requested_speaker.speaker_id),'{}'::bigint[])

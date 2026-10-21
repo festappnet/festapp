@@ -12,7 +12,7 @@ BEGIN
     FROM public.speakers s JOIN public.occasions o ON o.id=s.occasion
     WHERE s.id=p_speaker;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_editor_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_speakers(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('speaker',p_speaker,
     'from',p_from)::text,'UTF8'),'sha256'),'hex');

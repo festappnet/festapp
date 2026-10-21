@@ -14,7 +14,7 @@ BEGIN
   IF v_blueprint IS NOT NULL THEN SELECT occasion INTO v_occasion FROM eshop.blueprints WHERE id=v_blueprint; END IF;
   ELSE v_blueprint:=NULLIF(p_blueprint->>'id','')::bigint; END IF;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR (coalesce(public.get_is_editor_on_occasion(v_occasion),false) OR coalesce(public.get_is_manager_on_occasion(v_occasion),false)) IS NOT TRUE THEN
+    OR public.can_write_blueprints(v_occasion) IS NOT TRUE THEN
     RAISE insufficient_privilege USING MESSAGE='blueprint editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'blueprint',p_blueprint)::text,'UTF8'),'sha256'),'hex');
