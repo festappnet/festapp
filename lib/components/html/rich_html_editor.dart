@@ -921,6 +921,19 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                               SliverToBoxAdapter(child: controller.authoring!.header(context) ?? const SizedBox.shrink()),
                                             SuperEditor(
                                               editor: controller.editor,
+                                              // The default opaque highlight obscures
+                                              // light text in dark mode.
+                                              selectionStyle: Theme.of(context)
+                                                          .brightness ==
+                                                      Brightness.dark
+                                                  ? SelectionStyles(
+                                                      selectionColor:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .primary
+                                                              .withValues(alpha: 0.35),
+                                                    )
+                                                  : defaultSelectionStyle,
                                               inputRole:
                                                   'html-${identityHashCode(controller)}',
                                               imeConfiguration:
