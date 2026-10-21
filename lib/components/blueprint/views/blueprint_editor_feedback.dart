@@ -9,7 +9,11 @@ class BlueprintEditorFeedback extends StatelessWidget {
     required this.child,
     required this.message,
     required this.onDismiss,
+    this.status,
+    this.saving = false,
   });
+  final String? status;
+  final bool saving;
   final Widget child;
   final String? message;
   final VoidCallback onDismiss;
@@ -18,6 +22,52 @@ class BlueprintEditorFeedback extends StatelessWidget {
   Widget build(BuildContext context) => Stack(
         children: [
           Positioned.fill(child: child),
+          if (status != null && message == null)
+            Positioned(
+                top: 72,
+                left: 16,
+                right: 16,
+                child: Center(
+                    child: Semantics(
+                        liveRegion: true,
+                        child: Material(
+                          key: const ValueKey('blueprint-save-status'),
+                          elevation: 3,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHigh,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant)),
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (saving)
+                                      const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2))
+                                    else
+                                      Icon(Icons.check_circle_outline,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                    const SizedBox(width: 12),
+                                    Flexible(
+                                        child: Text(status!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge)),
+                                  ])),
+                        )))),
           if (message != null)
             Positioned(
               left: 16,

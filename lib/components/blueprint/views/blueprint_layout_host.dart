@@ -20,7 +20,6 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
-import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/theme_config.dart';
@@ -79,6 +78,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   bool get _canEdit => RightsService.canEditOccasion();
   bool get _canOrder => RightsService.canUpdateOrders();
   bool get _busy =>
+      _saveFlight != null ||
       controller.isBusy ||
       _operationPending ||
       _assetsPending ||
@@ -109,6 +109,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
     _assets.dispose();
+    _saveNoticeTimer?.cancel();
     _hostFocus.dispose();
     controller.dispose();
     super.dispose();
@@ -309,11 +310,18 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     }
   }
 
+  Timer? _saveNoticeTimer;
+  bool _savedNotice = false;
   Future<void>? _saveFlight;
   Future<void> _save() {
     if (_saveFlight != null) return _saveFlight!;
-    final future = _saveCaptured().whenComplete(() => _saveFlight = null);
-    _saveFlight = future;
+    _saveNoticeTimer?.cancel();
+    _savedNotice = false;
+    final future = _saveCaptured().whenComplete(() {
+      _saveFlight = null;
+      if (mounted) setState(() {});
+    });
+    setState(() => _saveFlight = future);
     return future;
   }
 
@@ -356,8 +364,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         preparedResources: prepared);
     if (!mounted) return;
     if (result.accepted) {
-      ToastHelper.Show(context, CommonStrings.saved,
-          severity: ToastSeverity.Ok);
+      setState(() => _savedNotice = true);
+      _saveNoticeTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted) setState(() => _savedNotice = false);
+      });
       return;
     }
     setState(() => _message = [
@@ -1795,10 +1805,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   body: SafeArea(
                       child: BlueprintEditorFeedback(
                           message: _message,
+                          status: _saveFlight != null
+                              ? CommonStrings.saving
+                              : _savedNotice
+                                  ? CommonStrings.saved
+                                  : null,
+                          saving: _saveFlight != null,
                           onDismiss: () => setState(() => _message = null),
                           child: Column(children: [
-                            if (_saveFlight != null)
-                              const LinearProgressIndicator(),
                             if (_assetsFailed)
                               TextButton(
                                   onPressed:

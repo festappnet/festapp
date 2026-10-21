@@ -7,6 +7,31 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 
 void main() {
   testWidgets(
+      'save progress and success share a centered notice above the canvas',
+      (tester) async {
+    Future<void> render(bool saving) => tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: BlueprintEditorFeedback(
+                message: null,
+                onDismiss: () {},
+                status: saving ? 'Saving' : 'Saved',
+                saving: saving,
+                child: const Center(child: Text('Canvas'))))));
+    await render(true);
+    final canvas = tester.getRect(find.text('Canvas'));
+    final notice =
+        tester.getRect(find.byKey(const ValueKey('blueprint-save-status')));
+    expect(notice.center.dx, closeTo(canvas.center.dx, 1));
+    expect(notice.bottom, lessThan(canvas.top));
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await render(false);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(tester.getRect(find.text('Canvas')), canvas);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
     'editor error floats at bottom center and can be dismissed without moving content',
     (tester) async {
       String? message = 'Upload failed';

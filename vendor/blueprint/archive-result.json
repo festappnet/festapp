@@ -21,7 +21,5 @@
     "assets/layout_fonts/Roboto-700-normal.ttf": "a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d",
     "assets/layout_fonts/Roboto-700-italic.ttf": "07b9b53ecf7da2d6c4af6841bb5c9e16087594914c6723a782805a4201b3cdc5"
   },
-  "sourceCommit": "3eedf98814dfd7d22c53256a24c725e83023d4d4",
-  "sourceRepository": "https://github.com/festappnet/venue_seat_picker",
-  "originalGateReceiptSha256": "dd4216a2931c45e7475c4d9298fa60e1f32b927bff835c8ba335d7699260f5ed"
+  "sourceCommit": "0a59bed71c2da1a7aeb35d57096a0dfddd04c0bf"
 }

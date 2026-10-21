@@ -55,3 +55,25 @@ class TableSeating {
 TableSeating documentSeating(VenueLayoutDocument doc) {
   return TableSeating.fromRecord(doc.seatingDefaults);
 }
+
+/// New tables follow the prevailing existing table footprint. Existing explicit
+/// overrides remain intact. A deterministic tie prefers the smaller footprint.
+TableSeating documentTableSeating(VenueLayoutDocument doc) {
+  final counts = <String, int>{};
+  final values = <String, TableSeating>{};
+  for (final table in doc.nodes.where((n) => n.kind == 'table')) {
+    final seating = TableSeating.fromDocument(doc, table);
+    final key = seating.record.values.join(':');
+    counts[key] = (counts[key] ?? 0) + 1;
+    values[key] = seating;
+  }
+  if (counts.isEmpty) return documentSeating(doc);
+  final ranked = counts.keys.toList()
+    ..sort((a, b) {
+      final frequency = counts[b]!.compareTo(counts[a]!);
+      if (frequency != 0) return frequency;
+      final size = values[a]!.pitch.compareTo(values[b]!.pitch);
+      return size != 0 ? size : a.compareTo(b);
+    });
+  return values[ranked.first]!;
+}

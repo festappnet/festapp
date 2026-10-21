@@ -91,6 +91,7 @@ class CommonStrings {
   static String get endDate => 'Common.endDate'.tr(); // "End date"
 
   // --- Common Statuses & Feedback ---
+  static String get saving => 'Common.saving'.tr();
   static String get saved => 'Common.saved'.tr(); // "Saved"
   static String get deleted => 'Common.deleted'.tr(); // "Deleted"
   static String get success => 'Common.success'.tr(); // "Success"

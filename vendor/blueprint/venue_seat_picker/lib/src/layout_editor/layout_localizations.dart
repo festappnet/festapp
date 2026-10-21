@@ -244,6 +244,8 @@ const _cs = <String, String>{
   'Galaxy cinema': 'Galaktické kino',
   'Dark cinema with seven rows, 84 seats and four two-seat sofas':
       'Tmavé kino se sedmi řadami, 84 místy a čtyřmi dvojmístnými gauči',
+  'Reset placement': 'Obnovit rozmístění',
+  'Maximum seats': 'Maximum míst',
   'Restore automatic position': 'Vrátit k automatickému rozmístění',
   'Insert image / SVG': 'Vložit obrázek / SVG',
   'Set as default font for the plan': 'Použít písmo v celém plánku',

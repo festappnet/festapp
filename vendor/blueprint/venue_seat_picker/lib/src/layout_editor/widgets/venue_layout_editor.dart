@@ -715,7 +715,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       );
     }
     if (kind == 'Table') {
-      final seating = documentSeating(c.document), scale = seating.width / 40;
+      final seating = documentTableSeating(c.document),
+          scale = seating.width / 40;
       return tableLayout(
         shape: 'roundedRect',
         x: point.dx,
@@ -736,15 +737,15 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         shape: 'ellipse',
         x: point.dx,
         y: point.dy,
-        width: 160 * documentSeating(c.document).width / 40,
-        height: 160 * documentSeating(c.document).width / 40,
-        seating: documentSeating(c.document),
+        width: 160 * documentTableSeating(c.document).width / 40,
+        height: 160 * documentTableSeating(c.document).width / 40,
+        seating: documentTableSeating(c.document),
       );
     }
     if (kind == 'Bar') {
-      final scale = documentSeating(c.document).width / 40;
+      final scale = documentTableSeating(c.document).width / 40;
       final bar = barLayout(
-        seating: documentSeating(c.document),
+        seating: documentTableSeating(c.document),
         x: point.dx,
         y: point.dy,
         width: 280 * scale,
@@ -2752,20 +2753,10 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                 ),
             ]
           : [
-              if (c.document.nodes.any(
-                    (n) =>
-                        n.id == hit &&
-                        n.kind == 'seat' &&
-                        c.document.nodes.any(
-                          (parent) =>
-                              parent.id == n.parentId && parent.kind == 'table',
-                        ),
-                  ) &&
-                  seatAttachment(c.document, hit)?['placement']?['mode'] !=
-                      'automatic')
+              if (c.automaticChairTargets.isNotEmpty)
                 item(
                   'automaticChair',
-                  'Restore automatic position',
+                  '${VenueLayoutStrings.text(context, 'Reset placement')} (${c.automaticChairTargets.length})',
                   Icons.restart_alt,
                 ),
               if (c.document.nodes.any((n) => n.id == hit && n.kind == 'seat'))
@@ -2796,7 +2787,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
         if (hit != null) c.select({hit});
         _focus.requestFocus();
       case 'automaticChair':
-        if (hit != null) c.restoreAutomaticChairPosition(hit);
+        c.restoreAutomaticChairPositions(c.automaticChairTargets);
       case 'style':
         await showLayoutStyleDialog(context, c);
       case 'copyStyle':

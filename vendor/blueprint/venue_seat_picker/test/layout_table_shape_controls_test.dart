@@ -38,6 +38,112 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  test('new generic tables continue the prevailing numbered series', () {
+    final c = VenueLayoutController(
+      VenueLayoutDocument(
+        schemaVersion: 2,
+        nodes: [
+          for (final number in [132, 133, 134])
+            LayoutNode(
+              id: newLayoutId(),
+              kind: 'table',
+              label: 'S$number',
+              width: 180,
+              height: 100,
+              surface: const {'type': 'rect'},
+            ),
+        ],
+      ),
+    );
+    addTearDown(c.dispose);
+    final inserted = c.nameInsertedTables(
+      tableLayout(shape: 'rect'),
+      defaultTablePrefix: 'Stůl',
+    );
+    expect(inserted.nodes.firstWhere((n) => n.kind == 'table').label, 'S135');
+  });
+
+  test('new tables inherit existing chair footprint and end capacity', () {
+    final legacy = tableLayout(
+      shape: 'rect',
+      width: 240,
+      height: 120,
+      seating: const TableSeating(
+        width: 32,
+        height: 32,
+        spacing: 8,
+        edgePadding: 0,
+      ),
+    );
+    final inherited = documentTableSeating(legacy);
+    final original = legacy.nodes.firstWhere((n) => n.kind == 'table');
+    final fresh = tableLayout(
+      shape: 'rect',
+      width: original.width,
+      height: original.height,
+      seating: inherited,
+    );
+    expect(
+      tableCapacity(fresh.nodes.firstWhere((n) => n.kind == 'table')),
+      tableCapacity(original),
+    );
+    expect(
+      inherited.record,
+      TableSeating.fromDocument(legacy, original).record,
+    );
+  });
+
+  testWidgets('all selected manual chairs restore together in one undo step', (
+    tester,
+  ) async {
+    var doc = tableLayout(shape: 'rect');
+    final seats = doc.nodes
+        .where((n) => n.kind == 'seat')
+        .take(3)
+        .map((n) => n.id)
+        .toSet();
+    for (final id in seats) {
+      doc = setTableSeatPlacement(doc, id, const {'mode': 'free'});
+    }
+    final c = VenueLayoutController(doc)..select(seats);
+    await open(tester, c);
+    expect(find.text('Reset placement (3)'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('restore-automatic-chair')));
+    await tester.pumpAndSettle();
+    for (final id in seats) {
+      expect(
+        seatAttachment(c.document, id)?['placement']?['mode'],
+        'automatic',
+      );
+    }
+    expect(c.selection, seats);
+    c.undo();
+    for (final id in seats) {
+      expect(seatAttachment(c.document, id)?['placement']?['mode'], 'free');
+    }
+  });
+
+  testWidgets('capacity grows after resizing without adding seats implicitly', (
+    tester,
+  ) async {
+    final base = tableLayout(shape: 'rect', width: 180, height: 100, count: 8);
+    final table = base.nodes.firstWhere((n) => n.kind == 'table');
+    final c = VenueLayoutController(base)..select({table.id});
+    await open(tester, c);
+    expect(c.resizeObject(table.id, 240, 160), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Maximum seats: 12'), findsOneWidget);
+    expect(c.document.nodes.where((n) => n.kind == 'seat'), hasLength(8));
+    expect(
+      tester
+          .widget<IconButton>(
+            find.widgetWithIcon(IconButton, Icons.add_circle_outline),
+          )
+          .onPressed,
+      isNotNull,
+    );
+  });
+
   testWidgets(
     'manual chair can return to automatic layout with identity and undo intact',
     (tester) async {

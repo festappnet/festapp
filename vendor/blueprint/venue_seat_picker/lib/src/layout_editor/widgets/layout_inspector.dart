@@ -675,29 +675,46 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             ),
       count + remaining,
     );
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _number(couch ? 'Seats on couch' : 'Seats', count, (value) {
-            if (value != value.roundToDouble() || value < minimum) {
-              throw const FormatException('Enter a valid whole seat count.');
-            }
-            c.setSeatCount(node.id, value.toInt());
-          }),
+        Row(
+          children: [
+            Expanded(
+              child: _number(couch ? 'Seats on couch' : 'Seats', count, (
+                value,
+              ) {
+                if (value != value.roundToDouble() || value < minimum) {
+                  throw const FormatException(
+                    'Enter a valid whole seat count.',
+                  );
+                }
+                c.setSeatCount(node.id, value.toInt());
+              }),
+            ),
+            IconButton(
+              tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
+              onPressed: enabled && count > minimum
+                  ? () => c.setSeatCount(node.id, count - 1)
+                  : null,
+              icon: const Icon(Icons.remove_circle_outline),
+            ),
+            IconButton(
+              tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
+              onPressed: enabled && count < maximum
+                  ? () => c.setSeatCount(node.id, count + 1)
+                  : null,
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+          ],
         ),
-        IconButton(
-          tooltip: VenueLayoutStrings.text(context, 'Remove one seat'),
-          onPressed: enabled && count > minimum
-              ? () => c.setSeatCount(node.id, count - 1)
-              : null,
-          icon: const Icon(Icons.remove_circle_outline),
-        ),
-        IconButton(
-          tooltip: VenueLayoutStrings.text(context, 'Add one seat'),
-          onPressed: enabled && count < maximum
-              ? () => c.setSeatCount(node.id, count + 1)
-              : null,
-          icon: const Icon(Icons.add_circle_outline),
+        const SizedBox(height: 4),
+        Text(
+          '${VenueLayoutStrings.text(context, 'Maximum seats')}: $maximum',
+          key: const ValueKey('table-maximum-seats'),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -1339,23 +1356,6 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                   },
             child: const LayoutText('Crop image'),
           ),
-        if (node.kind == 'seat' &&
-            c.document.nodes.any(
-              (parent) => parent.id == node.parentId && parent.kind == 'table',
-            ) &&
-            seatAttachment(c.document, node.id)?['placement']?['mode'] !=
-                'automatic')
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: OutlinedButton.icon(
-              key: const ValueKey('restore-automatic-chair'),
-              onPressed: c.readOnly || c.saving || node.locked
-                  ? null
-                  : () => c.restoreAutomaticChairPosition(node.id),
-              icon: const Icon(Icons.restart_alt, size: 18),
-              label: const LayoutText('Restore automatic position'),
-            ),
-          ),
         _quickObjectStyles(node),
         CanonicalAppearancePanel(
           controller: c,
@@ -1926,6 +1926,36 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                       : 'Select an object on the plan or in Layers to edit it.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            if (c.automaticChairTargets.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    key: const ValueKey('restore-automatic-chair'),
+                    onPressed: c.readOnly || c.saving
+                        ? null
+                        : () => c.restoreAutomaticChairPositions(
+                            c.automaticChairTargets,
+                          ),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      textStyle: Theme.of(context).textTheme.labelLarge,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.restart_alt, size: 20),
+                    label: Text(
+                      '${VenueLayoutStrings.text(context, 'Reset placement')} (${c.automaticChairTargets.length})',
+                    ),
                   ),
                 ),
               ),
