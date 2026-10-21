@@ -12,6 +12,8 @@ BEGIN
     'forms', COALESCE((SELECT jsonb_agg(jsonb_build_object(
       'title',f.title,'link',f.link,'type',f.type,'data',f.data,'header',f.header,
       'header_off',f.header_off,'deadline_duration_seconds',f.deadline_duration_seconds,
+      'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+      'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
       'is_open',false,'blueprint',f.blueprint,
       'fields',COALESCE((SELECT jsonb_agg(jsonb_build_object(
         'title',ff.title,'description',ff.description,'data',ff.data,'type',ff.type,
@@ -36,8 +38,19 @@ BEGIN
         'areaBindings',coalesce((SELECT jsonb_agg(jsonb_build_object('nodeId',ab.node_id,'productId',ab.product,'inventoryContextId',ab.inventory_context) ORDER BY ab.node_id) FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id),'[]')) END,
       'id',b.id,'title',b.title) ORDER BY b.id)
       FROM eshop.blueprints b WHERE b.occasion=o.id AND b.layout IS NOT NULL),'[]'::jsonb),
-    'program',COALESCE((SELECT jsonb_agg(jsonb_build_object('title',e.title,
-      'start_time',e.start_time,'end_time',e.end_time,'description',e.description))
+    'program',COALESCE((SELECT jsonb_agg(jsonb_build_object('id',e.id,'title',e.title,
+      'start_time',e.start_time,'end_time',e.end_time,'description',e.description,
+      'max_participants',e.max_participants,'is_hidden',e.is_hidden,'is_group_event',e.is_group_event,
+      'split_for_men_women',e.split_for_men_women,'type',e.type,'order',e."order",
+      'place',(SELECT jsonb_build_object('id',p.id,'title',p.title,'description',p.description,'type',p.type,
+        'coordinates',p.coordinates,'is_hidden',p.is_hidden,'order',p."order",'icon',p.icon) FROM public.places p WHERE p.id=e.place),
+      'children',coalesce((SELECT jsonb_agg(eg.event_child ORDER BY eg.event_child) FROM public.event_groups eg
+        JOIN public.events child ON child.id=eg.event_child AND child.occasion=o.id WHERE eg.event_parent=e.id),'[]'::jsonb),
+      'roles',coalesce((SELECT jsonb_agg(jsonb_build_object('id',r.id,'title',r.title) ORDER BY r.id)
+        FROM public.event_roles er JOIN public.role_info r ON r.id=er.role WHERE er.event=e.id),'[]'::jsonb),
+      'exclusive_groups',coalesce((SELECT jsonb_agg(jsonb_build_object('id',g.id,'title',g.title) ORDER BY g.id)
+        FROM public.exclusive_events ee JOIN public.exclusive_groups g ON g.id=ee."group" WHERE ee.event=e.id),'[]'::jsonb)
+      ) ORDER BY e."order",e.id)
       FROM public.events e WHERE e.occasion=o.id),'[]'::jsonb),
     'information',COALESCE((SELECT jsonb_agg(jsonb_build_object('title',i.title,
       'description',i.description,'type',i.type,'data',i.data) ORDER BY i."order",i.id)

@@ -3010,7 +3010,18 @@
     "cancelDraftConfirm": "Opravdu zrušit koncept „{title}“? Rozpracované nastavení bude trvale smazáno.",
     "progress": "Dokončeno {value} %",
     "createStepByStep": "Vytvořit krok za krokem",
-    "withoutWizard": "Bez průvodce"
+    "withoutWizard": "Bez průvodce",
+    "copy": {
+      "source": "Předloha",
+      "fromScratch": "Od nuly",
+      "referencesTitle": "Propojit nový formulář",
+      "referencesBody": "Vyberte náhrady produktů použitých v plánku a vstupence. Rozložení a obsah vstupenky se zachovají. Zpět ponechá současný formulář.",
+      "seatProduct": "Místa: {title}",
+      "ticketType": "Pole vstupenky: {title}",
+      "duplicateTypes": "Dvě pole vstupenky nemohou v jedné šabloně odkazovat na stejnou skupinu produktů. Vyberte různé skupiny.",
+      "invalidReferences": "Plánek nebo vstupenka odkazuje na produkty, které ve vybraném formuláři chybí. Ve formuláři vyberte jejich náhrady.",
+      "repairReferences": "Propojit produkty"
+    }
   },
   "Waitlist": {
     "settings": "Kapacita a náhradníci",

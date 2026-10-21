@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OccasionSetupStrings {
+  static String copy(String key) => 'OccasionSetup.copy.$key'.tr();
+  static String copyReference(String key, String title) =>
+      'OccasionSetup.copy.$key'.tr(namedArgs: {'title': title});
   static String story(String key) => 'OccasionSetup.story.$key'.tr();
   static String readiness(int percent) =>
       'OccasionSetup.story.readiness'.tr(namedArgs: {'percent': '$percent'});

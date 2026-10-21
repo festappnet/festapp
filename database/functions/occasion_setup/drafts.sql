@@ -58,6 +58,7 @@ BEGIN
     PERFORM public.update_occasion_internal_v1(jsonb_build_object(
       'unit',p_unit,'organization',organization_id,'title','',
       'link',provisional_link,'is_hidden',true,'is_open',false,
+      'features','[{"code":"form","is_enabled":true}]'::jsonb,
       'start_time',now()+interval '30 days','end_time',now()+interval '33 days'));
     SELECT item INTO configuration
       FROM jsonb_array_elements(public.get_occasion_setup_sources(p_unit)) item
@@ -121,7 +122,9 @@ BEGIN
   IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
-  IF d.data ? 'defaultConfiguration' THEN RETURN to_jsonb(d); END IF;
+  IF d.data ? 'finalizedOccasion' OR
+     (jsonb_typeof(d.data#>'{defaultConfiguration,forms}')='array' AND
+      jsonb_array_length(d.data#>'{defaultConfiguration,forms}')>0) THEN RETURN to_jsonb(d); END IF;
   IF d.revision IS DISTINCT FROM p_expected_revision THEN
     RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
   END IF;
@@ -131,7 +134,7 @@ BEGIN
   UPDATE public.occasion_setup_drafts SET data =
     jsonb_build_object('defaultConfiguration',configuration,
       'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
-    || d.data, revision = revision+1, updated_at=now()
+    || (d.data-'defaultConfiguration'), revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(d.data::text),false,false,policy);
   RETURN to_jsonb(d);

@@ -1276,7 +1276,18 @@
     "quickCreationDescription": "Podaj nazwę, datę i godzinę. Pozostałe ustawienia uzupełnisz później.",
     "withoutWizard": "Bez kreatora",
     "createEvent": "Utwórz wydarzenie",
-    "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie."
+    "finalizeFailed": "Nie udało się potwierdzić utworzenia. Ponów to samo żądanie.",
+    "copy": {
+      "source": "Wzór",
+      "fromScratch": "Od początku",
+      "referencesTitle": "Połącz nowy formularz",
+      "referencesBody": "Wybierz zamienniki produktów używanych w planie miejsc i bilecie. Układ i treść biletu zostaną zachowane. Wstecz zachowa obecny formularz.",
+      "seatProduct": "Miejsca: {title}",
+      "ticketType": "Pole biletu: {title}",
+      "duplicateTypes": "Dwa pola biletu w jednym szablonie nie mogą wskazywać tej samej grupy produktów. Wybierz różne grupy.",
+      "invalidReferences": "Plan miejsc lub bilet wskazuje produkty, których brakuje w wybranym formularzu. Wybierz ich zamienniki w formularzu.",
+      "repairReferences": "Połącz produkty"
+    }
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

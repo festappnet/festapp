@@ -234,9 +234,7 @@ BEGIN
  final_features := features;
  UPDATE public.occasions SET features=final_features WHERE id=new_id;
  IF coalesce((payload->>'copyProgram')::boolean,false) THEN
-  INSERT INTO public.events(occasion,title,start_time,end_time,description)
-  SELECT new_id,e->>'title',(e->>'start_time')::timestamptz,(e->>'end_time')::timestamptz,e->>'description'
-  FROM jsonb_array_elements(coalesce(payload->'sourceProgram','[]')) e;
+  PERFORM public.materialize_occasion_setup_program_internal(coalesce(payload->'sourceProgram','[]'),new_id,d.unit);
  END IF;
  IF coalesce((payload->>'copyInformation')::boolean,false) THEN
   INSERT INTO public.information(occasion,unit,title,description,type,data)

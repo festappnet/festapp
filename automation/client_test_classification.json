@@ -327,6 +327,7 @@
       },
       "sources": [
         "test/sessions/shared_czech_test.dart",
+        "test/components/occasion/occasion_setup_copy_cases.dart",
         "test/sessions/czech_catalog_3_cases.dart",
         "test/components/eshop/occasion_report_cases.dart",
         "test/components/eshop/product_price_scheduling_cases.dart",
