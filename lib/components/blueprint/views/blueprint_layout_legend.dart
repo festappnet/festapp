@@ -107,7 +107,21 @@ class BlueprintLayoutLegend extends StatelessWidget {
       key: const ValueKey('blueprint-seat-legend'),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 6 : 16),
       child: compact
-          ? Wrap(spacing: 16, runSpacing: 0, children: entries)
+          ? LayoutBuilder(builder: (context, constraints) {
+              if (constraints.maxWidth > 600)
+                return Wrap(spacing: 16, runSpacing: 0, children: entries);
+              return ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: SingleChildScrollView(
+                      key: const ValueKey('blueprint-legend-scroll'),
+                      scrollDirection: Axis.horizontal,
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        for (var i = 0; i < entries.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 16),
+                          entries[i],
+                        ]
+                      ])));
+            })
           : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(BlueprintStrings.helpSeatStates,
                   style: Theme.of(context).textTheme.titleSmall),

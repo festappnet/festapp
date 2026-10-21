@@ -135,6 +135,31 @@ class _SceneGeometry {
   }
 }
 
+/// Visible background bounds use the same crop and transform as rendering.
+List<List<double>> backgroundHull(VenueLayoutDocument document) {
+  if (document.background == null) return const [];
+  final scene = compileSceneNodes(document, const {}, includeCanvas: true);
+  final items = (scene['items'] as List).where(
+    (item) => item['id'] == 'background',
+  );
+  if (items.isEmpty) return const [];
+  final item = items.first as Map;
+  final rect = item['destinationRect'] as Map;
+  final matrix = List<double>.from(item['matrix'] as List);
+  final x = (rect['x'] as num).toDouble(), y = (rect['y'] as num).toDouble();
+  final right = x + (rect['width'] as num),
+      bottom = y + (rect['height'] as num);
+  return [
+    for (final p in [
+      [x, y],
+      [right, y],
+      [right, bottom],
+      [x, bottom],
+    ])
+      transformPoint(matrix, p[0], p[1]),
+  ];
+}
+
 Map<String, dynamic> compileSceneNodes(
   VenueLayoutDocument document,
   Set<String> nodeIds, {

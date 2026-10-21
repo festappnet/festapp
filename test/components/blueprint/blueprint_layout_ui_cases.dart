@@ -18,6 +18,7 @@ import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_plan_editor.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 import 'dart:ui' show SemanticsAction;
+import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_layout_demo.dart';
 import 'dart:async';
@@ -103,6 +104,72 @@ void main() {
   tearDown(() {
     pickerResponse = null;
   });
+  for (final mobile in [(390.0, 844.0, 1.0), (320.0, 640.0, 1.6)]) {
+    testWidgetsWithEnvironment(() => environment,
+        'mobile blueprint keeps canvas dominant and all actions reachable ${mobile.$1}',
+        (tester) async {
+      tester.view.physicalSize = Size(mobile.$1, mobile.$2);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final rights = RightsService.occasionLinkModelNotifier.value;
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          isAdmin: true, occasionUser: OccasionUserModel(isEditor: true));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = rights);
+      final tables = [for (var i = 0; i < 8; i++)
+        tableLayout(shape: 'rect', count: 8, width: 200, height: 80,
+            x: i.isEven ? 180 : 820, y: 220 + (i ~/ 2) * 420)];
+      final document = VenueLayoutDocument(
+          canvas: {...VenueLayoutDocument.empty().canvas, 'width': 1000, 'height': 1800},
+          nodes: [for (final table in tables) ...table.nodes],
+          attachments: [for (final table in tables) ...table.attachments]);
+      final seats = document.nodes.where((n) => n.kind == 'seat').toList();
+      final source = BlueprintModel(layoutSnapshot: BlueprintLayoutSnapshot(
+          blueprintId: 1, occasionId: 1, title: 'Mobile', revision: 1,
+          document: document,
+          seatBindings: {for (var i = 0; i < seats.length; i++) seats[i].id:
+            BlueprintSeatBinding(nodeId: seats[i].id, spotId: i + 1,
+                title: 'A${i + 1}', productId: 1, groupNodeId: seats[i].parentId)},
+          groupProducts: {for (final table in tables) table.nodes.first.id: 1}),
+          products: [ProductModel(id: 1, title: 'Místo', price: 200,
+              productTypeString: ProductModel.spotType)],
+          spots: [for (var i = 0; i < seats.length; i++)
+            BlueprintObjectModel(id: i + 1, state: 'available')]);
+      source.layoutResources = blueprintPreparedResourcesFixture(document);
+      await environment.pumpWidget(tester, MaterialApp(
+          locale: const Locale('cs'),
+          supportedLocales: VenueLayoutLocalizations.supportedLocales,
+          localizationsDelegates: VenueLayoutLocalizations.localizationsDelegates,
+          theme: ThemeConfig.theme(brightness: Brightness.dark),
+          builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(mobile.$3)),
+              child: child!),
+          home: BlueprintLayoutHost(source: source, reload: () async => source)));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+      final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));
+      expect(tester.getSize(toolbar).height, lessThanOrEqualTo(112));
+      expect(tester.getSize(find.byType(LayoutSceneSurface)).height,
+          greaterThan(mobile.$2 * .6));
+      expect(find.byKey(const ValueKey('blueprint-start-order')).hitTestable(), findsOneWidget);
+      expect(find.byKey(const ValueKey('layout-mobile-fit-plan')).hitTestable(), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('blueprint-more-actions')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('blueprint-start-swap')).hitTestable(), findsOneWidget);
+      expect(find.byKey(const ValueKey('blueprint-toggle-blocked')), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('blueprint-screen-mode')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('blueprint-edit-mode')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor)).interactionEnabled, isTrue);
+      expect(tester.getSize(toolbar).height, lessThanOrEqualTo(112));
+      expect(tester.getSize(find.byType(LayoutSceneSurface)).height,
+          greaterThan(mobile.$2 * .6));
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgetsWithEnvironment(() => environment,
       'public picker reconciles lost hold response before enabling Continue',
       (tester) async {

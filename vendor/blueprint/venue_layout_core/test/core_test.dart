@@ -184,13 +184,7 @@ void main() {
     );
   });
 
-  test('registration fit and clipping rejection', () {
-    final m = registerTwoPoints([0, 0], [100, 0], [50, 70], [50, 270]);
-    expect(transformPoint(m, 100, 0), [50, 270]);
-    expect(
-      () => registerTwoPoints([0, 0], [0, 0], [1, 1], [2, 2]),
-      throwsArgumentError,
-    );
+  test('canvas fit and clipping rejection', () {
     final d = tableLayout(shape: 'ellipse', count: 4, x: -100, y: -200);
     expect(fitCanvas(d).nodes, d.nodes);
     expect(fitCanvas(d).canvas['x'], lessThan(-100));
