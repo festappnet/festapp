@@ -22,13 +22,15 @@ void main() {
             jsonDecode(File('assets/translations/cs.json').readAsStringSync()));
   });
   setUp(() {
+    final previousLink = RightsService.currentLink;
+    final previousRights = RightsService.occasionLinkModelNotifier.value;
+    addTearDown(() {
+      RightsService.currentLink = previousLink;
+      RightsService.occasionLinkModelNotifier.value = previousRights;
+    });
     RightsService.currentLink = 'occasion-a';
     RightsService.occasionLinkModelNotifier.value =
         OccasionLinkModel(code: 200, unit: UnitModel(id: 5));
-  });
-  tearDown(() {
-    RightsService.currentLink = null;
-    RightsService.occasionLinkModelNotifier.value = null;
   });
   testWidgetsWithEnvironment(() => environment,
       'single pool opens directly, preserves queries and can return to the list',

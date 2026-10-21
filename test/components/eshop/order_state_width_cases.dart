@@ -16,7 +16,10 @@ class _Translations extends AssetLoader {
 }
 
 void main() {
-  setUpAll(() async { SharedPreferences.setMockInitialValues({}); await EasyLocalization.ensureInitialized(); });
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
   TestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
       'status minimum grows with warning, expiry and accessibility text scaling',

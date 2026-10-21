@@ -6,8 +6,11 @@ import 'package:fstapp/components/html/html_image_preview.dart';
 import 'package:image/image.dart' as image;
 
 void main() {
-  testWidgets('large local preview is decoded at bounded size without changing upload bytes', (tester) async {
-    final bytes = Uint8List.fromList(image.encodeJpg(image.Image(width: 3000, height: 2000)));
+  testWidgets(
+      'large local preview is decoded at bounded size without changing upload bytes',
+      (tester) async {
+    final bytes = Uint8List.fromList(
+        image.encodeJpg(image.Image(width: 3000, height: 2000)));
     final copy = Uint8List.fromList(bytes);
     await tester.pumpWidget(const SizedBox());
     final context = tester.element(find.byType(SizedBox));

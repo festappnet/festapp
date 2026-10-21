@@ -1,3 +1,4 @@
+import 'package:timezone/timezone.dart' as fixtureTimezone;
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -53,7 +54,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting('cs');
-    tz.initializeTimeZones();
+    if (!fixtureTimezone.timeZoneDatabase.isInitialized) {
+      tz.initializeTimeZones();
+    }
+    final previousZone = fixtureTimezone.local;
+    addTearDown(() => fixtureTimezone.setLocalLocation(previousZone));
     _environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
         translations:
@@ -67,10 +72,12 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final previousRights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         capabilities: {AuthorizationCapabilities.occasionsWrite: true},
         unitUser: OccasionUserModel(isEditor: true));
-    addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+    addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = previousRights);
     final router = _Router();
     await _environment.pumpWidget(
         tester,

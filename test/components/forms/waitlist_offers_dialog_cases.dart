@@ -37,7 +37,11 @@ void main() {
         translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
-    zones.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   });
   for (final count in [1, 2, 5]) {

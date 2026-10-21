@@ -35,7 +35,11 @@ void main() {
         locale: const Locale('cs'),
         translations:
             jsonDecode(File('assets/translations/cs.json').readAsStringSync()));
-    zones.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   });
   testWithWidgetEnvironment(() => _environment,

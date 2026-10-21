@@ -854,6 +854,176 @@
       "source": "test/components/map/legacy_map_focus_contract_test.dart",
       "added_group": "default_locale_3 map_surface_widget raster_map_focus_contract",
       "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/forms/admin_offer_form_link_cases.dart": {
+      "source": "test/components/forms/admin_offer_form_link_test.dart",
+      "added_group": "admin_offer_form_link",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/eshop/tickets_tab_data_cases.dart": {
+      "source": "test/components/eshop/tickets_tab_data_test.dart",
+      "added_group": "tickets_tab_data",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/eshop/report_number_format_cases.dart": {
+      "source": "test/components/eshop/report_number_format_test.dart",
+      "added_group": "report_number_format",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/occasion/occasion_setup_story_cases.dart": {
+      "source": "test/components/occasion/occasion_setup_story_test.dart",
+      "added_group": "occasion_setup_story",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/occasion/demo_occasion_navigation_cases.dart": {
+      "source": "test/components/occasion/demo_occasion_navigation_test.dart",
+      "added_group": "demo_occasion_navigation",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/bank_accounts/bank_sync_contacts_cases.dart": {
+      "source": "test/components/bank_accounts/bank_sync_contacts_test.dart",
+      "added_group": "bank_sync_contacts",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/groups/group_save_reconciliation_cases.dart": {
+      "source": "test/components/groups/group_save_reconciliation_test.dart",
+      "added_group": "group_save_reconciliation",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/activities/activity_commands_cases.dart": {
+      "source": "test/components/activities/activity_commands_test.dart",
+      "added_group": "activity_commands",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/past_occasion_years_cases.dart": {
+      "source": "test/past_occasion_years_test.dart",
+      "added_group": "past_occasion_years",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/services/bounded_database_opener_cases.dart": {
+      "source": "test/services/bounded_database_opener_test.dart",
+      "added_group": "bounded_database_opener",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/services/last_administration_context_cases.dart": {
+      "source": "test/services/last_administration_context_test.dart",
+      "added_group": "last_administration_context",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/data_services/client_sync/client_command_activation_cases.dart": {
+      "source": "test/data_services/client_sync/client_command_activation_test.dart",
+      "added_group": "client_command_activation",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/images/recovering_image_cases.dart": {
+      "source": "test/components/images/recovering_image_test.dart",
+      "added_group": "recovering_image",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/html/html_image_preview_cases.dart": {
+      "source": "test/components/html/html_image_preview_test.dart",
+      "added_group": "html_image_preview",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/forms/form_read_only_inspection_cases.dart": {
+      "source": "test/components/forms/form_read_only_inspection_test.dart",
+      "added_group": "form_read_only_inspection",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/eshop/order_delete_availability_cases.dart": {
+      "source": "test/components/eshop/order_delete_availability_test.dart",
+      "added_group": "order_delete_availability",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/occasion/occasion_setup_invitations_cases.dart": {
+      "source": "test/components/occasion/occasion_setup_invitations_test.dart",
+      "added_group": "occasion_setup_invitations",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/occasion/occasion_setup_communication_cases.dart": {
+      "source": "test/components/occasion/occasion_setup_communication_test.dart",
+      "added_group": "occasion_setup_communication",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/occasion/occasion_setup_details_cases.dart": {
+      "source": "test/components/occasion/occasion_setup_details_test.dart",
+      "added_group": "occasion_setup_details",
+      "entrypoint": "test/sessions/shared_default_2_test.dart"
+    },
+    "test/components/forms/form_capacity_settings_cases.dart": {
+      "source": "test/components/forms/form_capacity_settings_test.dart",
+      "added_group": "form_capacity_settings",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/forms/waitlist_offers_dialog_cases.dart": {
+      "source": "test/components/forms/waitlist_offers_dialog_test.dart",
+      "added_group": "waitlist_offers_dialog",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/navigation/inventory_navigation_behavior_cases.dart": {
+      "source": "test/components/navigation/inventory_navigation_behavior_test.dart",
+      "added_group": "inventory_navigation_behavior",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/navigation/unit_occasion_draft_navigation_cases.dart": {
+      "source": "test/components/navigation/unit_occasion_draft_navigation_test.dart",
+      "added_group": "unit_occasion_draft_navigation",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/occasion_settings/advanced_link_visibility_cases.dart": {
+      "source": "test/components/occasion_settings/advanced_link_visibility_test.dart",
+      "added_group": "advanced_link_visibility",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/order_state_width_cases.dart": {
+      "source": "test/components/eshop/order_state_width_test.dart",
+      "added_group": "order_state_width",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/history_delete_cases.dart": {
+      "source": "test/components/eshop/history_delete_test.dart",
+      "added_group": "history_delete",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/waitlist_toolbar_cases.dart": {
+      "source": "test/components/eshop/waitlist_toolbar_test.dart",
+      "added_group": "waitlist_toolbar",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/waitlist_history_cases.dart": {
+      "source": "test/components/eshop/waitlist_history_test.dart",
+      "added_group": "waitlist_history",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/price_wave_availability_cases.dart": {
+      "source": "test/components/eshop/price_wave_availability_test.dart",
+      "added_group": "price_wave_availability",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/eshop/waitlist_order_detail_cases.dart": {
+      "source": "test/components/eshop/waitlist_order_detail_test.dart",
+      "added_group": "waitlist_order_detail",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/occasion/occasion_setup_draft_card_cases.dart": {
+      "source": "test/components/occasion/occasion_setup_draft_card_test.dart",
+      "added_group": "occasion_setup_draft_card",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/occasion/occasion_cover_draft_cases.dart": {
+      "source": "test/components/occasion/occasion_cover_draft_test.dart",
+      "added_group": "occasion_cover_draft",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/occasion/demo_occasions_section_cases.dart": {
+      "source": "test/components/occasion/demo_occasions_section_test.dart",
+      "added_group": "demo_occasions_section",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
+    },
+    "test/components/occasion/demo_occasion_banner_cases.dart": {
+      "source": "test/components/occasion/demo_occasion_banner_test.dart",
+      "added_group": "demo_occasion_banner",
+      "entrypoint": "test/sessions/shared_czech_test.dart"
     }
   },
   "cases": [
@@ -4645,7 +4815,7 @@
     ],
     [
       "test/components/navigation/routed_tab_navigation_test.dart",
-      "denied context without a resolved link stops reloading",
+      "failed context without a resolved link stops reloading",
       false,
       1
     ],
@@ -9373,6 +9543,210 @@
       "to": "test/components/users/google_login_panel_cases.dart",
       "entrypoint": "test/sessions/shared_locale_matrix_test.dart",
       "reason": "Reuse larger compatible environment for heavy and simple scenarios; body and assertions unchanged."
+    },
+    {
+      "from": "test/components/forms/admin_offer_form_link_test.dart",
+      "to": "test/components/forms/admin_offer_form_link_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/tickets_tab_data_test.dart",
+      "to": "test/components/eshop/tickets_tab_data_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/report_number_format_test.dart",
+      "to": "test/components/eshop/report_number_format_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_setup_story_test.dart",
+      "to": "test/components/occasion/occasion_setup_story_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/demo_occasion_navigation_test.dart",
+      "to": "test/components/occasion/demo_occasion_navigation_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/bank_accounts/bank_sync_contacts_test.dart",
+      "to": "test/components/bank_accounts/bank_sync_contacts_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/groups/group_save_reconciliation_test.dart",
+      "to": "test/components/groups/group_save_reconciliation_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/activities/activity_commands_test.dart",
+      "to": "test/components/activities/activity_commands_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/past_occasion_years_test.dart",
+      "to": "test/past_occasion_years_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/services/bounded_database_opener_test.dart",
+      "to": "test/services/bounded_database_opener_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/services/last_administration_context_test.dart",
+      "to": "test/services/last_administration_context_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/data_services/client_sync/client_command_activation_test.dart",
+      "to": "test/data_services/client_sync/client_command_activation_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/images/recovering_image_test.dart",
+      "to": "test/components/images/recovering_image_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/html/html_image_preview_test.dart",
+      "to": "test/components/html/html_image_preview_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/forms/form_read_only_inspection_test.dart",
+      "to": "test/components/forms/form_read_only_inspection_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/order_delete_availability_test.dart",
+      "to": "test/components/eshop/order_delete_availability_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_setup_invitations_test.dart",
+      "to": "test/components/occasion/occasion_setup_invitations_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_setup_communication_test.dart",
+      "to": "test/components/occasion/occasion_setup_communication_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_setup_details_test.dart",
+      "to": "test/components/occasion/occasion_setup_details_cases.dart",
+      "entrypoint": "test/sessions/shared_default_2_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/forms/form_capacity_settings_test.dart",
+      "to": "test/components/forms/form_capacity_settings_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/forms/waitlist_offers_dialog_test.dart",
+      "to": "test/components/forms/waitlist_offers_dialog_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/navigation/inventory_navigation_behavior_test.dart",
+      "to": "test/components/navigation/inventory_navigation_behavior_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/navigation/unit_occasion_draft_navigation_test.dart",
+      "to": "test/components/navigation/unit_occasion_draft_navigation_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion_settings/advanced_link_visibility_test.dart",
+      "to": "test/components/occasion_settings/advanced_link_visibility_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/order_state_width_test.dart",
+      "to": "test/components/eshop/order_state_width_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/history_delete_test.dart",
+      "to": "test/components/eshop/history_delete_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/waitlist_toolbar_test.dart",
+      "to": "test/components/eshop/waitlist_toolbar_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/waitlist_history_test.dart",
+      "to": "test/components/eshop/waitlist_history_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/price_wave_availability_test.dart",
+      "to": "test/components/eshop/price_wave_availability_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/eshop/waitlist_order_detail_test.dart",
+      "to": "test/components/eshop/waitlist_order_detail_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_setup_draft_card_test.dart",
+      "to": "test/components/occasion/occasion_setup_draft_card_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/occasion_cover_draft_test.dart",
+      "to": "test/components/occasion/occasion_cover_draft_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/demo_occasions_section_test.dart",
+      "to": "test/components/occasion/demo_occasions_section_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
+    },
+    {
+      "from": "test/components/occasion/demo_occasion_banner_test.dart",
+      "to": "test/components/occasion/demo_occasion_banner_cases.dart",
+      "entrypoint": "test/sessions/shared_czech_test.dart",
+      "reason": "Consolidate compatible loading into an existing explicit session; retain every body, assertion and skip. Restore public timezone/rights state in its owning suite."
     }
   ],
   "baseline_revisions": [
@@ -9878,6 +10252,20 @@
         false
       ],
       "reason": "Merged authorization migration replaces client role algebra with independent write/delete capability booleans. The replacement checks write-only, delete-only and neither permission in the same test."
+    },
+    {
+      "from": [
+        "test/components/navigation/routed_tab_navigation_test.dart",
+        "denied context without a resolved link stops reloading",
+        false
+      ],
+      "to": [
+        "test/components/navigation/routed_tab_navigation_test.dart",
+        "failed context without a resolved link stops reloading",
+        false
+      ],
+      "reason": "User-authorized repair of stale inventory before loading optimization: authoritative main commit 7115f22ce distinguishes failed context loading from access denial. The scenario retains bounded reload, no scheduled frame and retry assertions; its expected label is now CommonStrings.contextLoadFailed. No baseline regeneration.",
+      "evidence": "test/components/navigation/routed_tab_navigation_cases.dart:205; initial baseline/warmup/runner.log and baseline-blocker.json in .codex-artifacts/client-test-loading-20261021."
     }
   ],
   "baseline_inventory_corrections": [

@@ -336,7 +336,11 @@ void main() {
       () => _environment, 'offer opens canonical preparation directly',
       (tester) async {
     editor();
-    zones.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     final form =
         FormBundle(definition: FormDefinition(id: 7, waitlistEnabled: true));
@@ -551,7 +555,11 @@ void main() {
       'withdraws $count selected tickets across offers only after confirmation',
       (tester) async {
         editor();
-        zones.initializeTimeZones();
+        if (!tz.timeZoneDatabase.isInitialized) {
+          zones.initializeTimeZones();
+        }
+        final previousZone = tz.local;
+        addTearDown(() => tz.setLocalLocation(previousZone));
         tz.setLocalLocation(tz.getLocation('Europe/Prague'));
         tester.view.physicalSize = const Size(1000, 1200);
         tester.view.devicePixelRatio = 1;
@@ -668,7 +676,11 @@ void main() {
       tester,
     ) async {
       editor();
-      zones.initializeTimeZones();
+      if (!tz.timeZoneDatabase.isInitialized) {
+        zones.initializeTimeZones();
+      }
+      final previousZone = tz.local;
+      addTearDown(() => tz.setLocalLocation(previousZone));
       tz.setLocalLocation(tz.getLocation('Europe/Prague'));
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
@@ -768,7 +780,11 @@ void main() {
     tester,
   ) async {
     RightsService.invalidateCapabilities();
-    zones.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     await _environment.pumpWidget(
       tester,

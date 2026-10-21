@@ -40,6 +40,7 @@ void main() {
           tester.view.physicalSize = Size(width, 240);
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
+          final previousRights = RightsService.occasionLinkModelNotifier.value;
           RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
               demoReadOnly: true,
               occasion: OccasionModel(
@@ -48,8 +49,8 @@ void main() {
                   isHidden: false,
                   isPromoted: false,
                   title: 'Ples pod hvězdami s dlouhým názvem ukázkové akce'));
-          addTearDown(
-              () => RightsService.occasionLinkModelNotifier.value = null);
+          addTearDown(() =>
+              RightsService.occasionLinkModelNotifier.value = previousRights);
           final frame = GlobalKey();
           await _environment.pumpWidget(
               tester,

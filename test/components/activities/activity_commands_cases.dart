@@ -90,7 +90,11 @@ void main() {
   test(
       'UTC history and undo preserve instants across DST; restored graph keeps current session clocks',
       () {
-    tzdata.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      tzdata.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     final instant = DateTime.utc(2026, 10, 25, 1, 30);
     final assignment = ActivityAssignmentModel(

@@ -1,3 +1,4 @@
+import 'package:timezone/timezone.dart' as fixtureTimezone;
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'dart:convert';
@@ -29,7 +30,11 @@ void main() {
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
-    zones.initializeTimeZones();
+    if (!fixtureTimezone.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = fixtureTimezone.local;
+    addTearDown(() => fixtureTimezone.setLocalLocation(previousZone));
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

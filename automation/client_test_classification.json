@@ -80,7 +80,7 @@
     },
     "test/sessions/shared_default_2_test.dart": {
       "kind": "environment",
-      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass. Loading consolidation adds directly registered compatible suites; original hooks remain scoped, timezone/rights writers restore public prior state, normal/reverse registration is verified.",
       "environment": {
         "binding": "standard",
         "catalog": "default-uninitialized",
@@ -172,7 +172,26 @@
         "test/data_services/offline_data_service_cases.dart",
         "test/data_services/saved_program_pending_state_cases.dart",
         "test/data_services/update_service_cases.dart",
-        "test/components/map/raster_map_focus_contract_cases.dart"
+        "test/components/map/raster_map_focus_contract_cases.dart",
+        "test/components/forms/admin_offer_form_link_cases.dart",
+        "test/components/eshop/tickets_tab_data_cases.dart",
+        "test/components/eshop/report_number_format_cases.dart",
+        "test/components/occasion/occasion_setup_story_cases.dart",
+        "test/components/occasion/demo_occasion_navigation_cases.dart",
+        "test/components/bank_accounts/bank_sync_contacts_cases.dart",
+        "test/components/groups/group_save_reconciliation_cases.dart",
+        "test/components/activities/activity_commands_cases.dart",
+        "test/past_occasion_years_cases.dart",
+        "test/services/bounded_database_opener_cases.dart",
+        "test/services/last_administration_context_cases.dart",
+        "test/data_services/client_sync/client_command_activation_cases.dart",
+        "test/components/images/recovering_image_cases.dart",
+        "test/components/html/html_image_preview_cases.dart",
+        "test/components/forms/form_read_only_inspection_cases.dart",
+        "test/components/eshop/order_delete_availability_cases.dart",
+        "test/components/occasion/occasion_setup_invitations_cases.dart",
+        "test/components/occasion/occasion_setup_communication_cases.dart",
+        "test/components/occasion/occasion_setup_details_cases.dart"
       ]
     },
     "test/sessions/shared_default_3_test.dart": {
@@ -300,7 +319,7 @@
     },
     "test/sessions/shared_czech_test.dart": {
       "kind": "environment",
-      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass.",
+      "reason": "Share the actual compiled application across heavy and simple compatible tests. Preserve original nested groups and lifecycle. Work is balanced using previous body times; root SDK clients and alternate catalog matrices stay isolated. Both registration orders must pass. Loading consolidation adds directly registered compatible suites; original hooks remain scoped, timezone/rights writers restore public prior state, normal/reverse registration is verified.",
       "environment": {
         "binding": "standard",
         "catalog": "actual-cs",
@@ -328,7 +347,22 @@
         "test/components/fonts/form_design_font_loading_cases.dart",
         "test/components/eshop/cancelled_order_read_only_cases.dart",
         "test/sessions/czech_catalog_1_cases.dart",
-        "test/components/ticket_layout/ticket_layout_cases.dart"
+        "test/components/ticket_layout/ticket_layout_cases.dart",
+        "test/components/forms/form_capacity_settings_cases.dart",
+        "test/components/forms/waitlist_offers_dialog_cases.dart",
+        "test/components/navigation/inventory_navigation_behavior_cases.dart",
+        "test/components/navigation/unit_occasion_draft_navigation_cases.dart",
+        "test/components/occasion_settings/advanced_link_visibility_cases.dart",
+        "test/components/eshop/order_state_width_cases.dart",
+        "test/components/eshop/history_delete_cases.dart",
+        "test/components/eshop/waitlist_toolbar_cases.dart",
+        "test/components/eshop/waitlist_history_cases.dart",
+        "test/components/eshop/price_wave_availability_cases.dart",
+        "test/components/eshop/waitlist_order_detail_cases.dart",
+        "test/components/occasion/occasion_setup_draft_card_cases.dart",
+        "test/components/occasion/occasion_cover_draft_cases.dart",
+        "test/components/occasion/demo_occasions_section_cases.dart",
+        "test/components/occasion/demo_occasion_banner_cases.dart"
       ]
     },
     "test/sessions/shared_sdk_widgets_test.dart": {
@@ -396,53 +430,11 @@
         "test/components/images/image_upload_contract_test.dart"
       ]
     },
-    "test/services/last_administration_context_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/services/last_administration_context_test.dart"
-      ]
-    },
-    "test/data_services/client_sync/client_command_activation_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/data_services/client_sync/client_command_activation_test.dart"
-      ]
-    },
-    "test/components/eshop/waitlist_history_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/waitlist_history_test.dart"
-      ]
-    },
-    "test/components/occasion/demo_occasion_banner_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/occasion/demo_occasion_banner_test.dart"
-      ]
-    },
-    "test/components/eshop/order_state_width_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/order_state_width_test.dart"
-      ]
-    },
     "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
       "sources": [
         "test/components/navigation/admin_breadcrumb_navigation_test.dart"
-      ]
-    },
-    "test/components/activities/activity_commands_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/activities/activity_commands_test.dart"
       ]
     },
     "test/startup/startup_language_test.dart": {
@@ -459,46 +451,11 @@
         "test/components/bank_accounts/bank_account_card_test.dart"
       ]
     },
-    "test/components/eshop/waitlist_order_detail_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/waitlist_order_detail_test.dart"
-      ]
-    },
-    "test/components/groups/group_save_reconciliation_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/groups/group_save_reconciliation_test.dart"
-      ]
-    },
-    "test/components/occasion/demo_occasions_section_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/occasion/demo_occasions_section_test.dart"
-      ]
-    },
     "test/components/eshop/ticket_delivery_request_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
       "sources": [
         "test/components/eshop/ticket_delivery_request_test.dart"
-      ]
-    },
-    "test/components/forms/waitlist_offers_dialog_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/forms/waitlist_offers_dialog_test.dart"
-      ]
-    },
-    "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/navigation/unit_occasion_draft_navigation_test.dart"
       ]
     },
     "test/components/bank_accounts/connection_refresh_test.dart": {
@@ -508,60 +465,11 @@
         "test/components/bank_accounts/connection_refresh_test.dart"
       ]
     },
-    "test/components/forms/admin_offer_form_link_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/forms/admin_offer_form_link_test.dart"
-      ]
-    },
-    "test/components/forms/form_capacity_settings_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/forms/form_capacity_settings_test.dart"
-      ]
-    },
-    "test/components/eshop/waitlist_toolbar_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/waitlist_toolbar_test.dart"
-      ]
-    },
-    "test/components/bank_accounts/bank_sync_contacts_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/bank_accounts/bank_sync_contacts_test.dart"
-      ]
-    },
-    "test/components/html/html_image_preview_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/html/html_image_preview_test.dart"
-      ]
-    },
-    "test/services/bounded_database_opener_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/services/bounded_database_opener_test.dart"
-      ]
-    },
     "test/startup/public_occasion_scope_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
       "sources": [
         "test/startup/public_occasion_scope_test.dart"
-      ]
-    },
-    "test/components/eshop/history_delete_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/history_delete_test.dart"
       ]
     },
     "test/components/eshop/empty_orders_test.dart": {
@@ -571,32 +479,11 @@
         "test/components/eshop/empty_orders_test.dart"
       ]
     },
-    "test/past_occasion_years_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/past_occasion_years_test.dart"
-      ]
-    },
     "test/components/unit/app_landing_card_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
       "sources": [
         "test/components/unit/app_landing_card_test.dart"
-      ]
-    },
-    "test/components/forms/form_read_only_inspection_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/forms/form_read_only_inspection_test.dart"
-      ]
-    },
-    "test/components/eshop/tickets_tab_data_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/tickets_tab_data_test.dart"
       ]
     },
     "test/components/users/login_startup_session_test.dart": {
@@ -620,27 +507,6 @@
         "test/components/unit/app_landing_screen_test.dart"
       ]
     },
-    "test/components/occasion/demo_occasion_navigation_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/occasion/demo_occasion_navigation_test.dart"
-      ]
-    },
-    "test/components/eshop/order_delete_availability_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/eshop/order_delete_availability_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_cover_draft_test.dart": {
-      "kind": "environment",
-      "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
-      "sources": [
-        "test/components/occasion/occasion_cover_draft_test.dart"
-      ]
-    },
     "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
       "kind": "environment",
       "reason": "Existing canonical-main regression retained during client architecture integration; separate environment preserves its platform and service ownership.",
@@ -648,53 +514,11 @@
         "test/components/bank_accounts/order_bank_sync_warning_test.dart"
       ]
     },
-    "test/components/eshop/price_wave_availability_test.dart": {
-      "kind": "widget",
-      "reason": "Localized Flutter dialog interaction, narrow layouts, and visibility save callbacks.",
-      "sources": [
-        "test/components/eshop/price_wave_availability_test.dart"
-      ]
-    },
-    "test/components/occasion_settings/advanced_link_visibility_test.dart": {
-      "kind": "widget",
-      "reason": "Localized Flutter form visibility and validation under generated tenant app support.",
-      "sources": [
-        "test/components/occasion_settings/advanced_link_visibility_test.dart"
-      ]
-    },
-    "test/components/images/recovering_image_test.dart": {
-      "kind": "environment",
-      "reason": "Flutter image stream, decoded dart:ui images and retry timers require a widget binding.",
-      "sources": [
-        "test/components/images/recovering_image_test.dart"
-      ]
-    },
-    "test/components/navigation/inventory_navigation_behavior_test.dart": {
-      "kind": "environment",
-      "reason": "Flutter router, retained drafts and localized inventory widgets use scoped RightsService state.",
-      "sources": [
-        "test/components/navigation/inventory_navigation_behavior_test.dart"
-      ]
-    },
-    "test/components/eshop/report_number_format_test.dart": {
-      "kind": "environment",
-      "reason": "Current application report formatter is tested through its Flutter test adapter.",
-      "sources": [
-        "test/components/eshop/report_number_format_test.dart"
-      ]
-    },
     "test/data_services/client_command_identity_test.dart": {
       "kind": "environment",
       "reason": "Platform path-provider singleton and on-disk Sembast reopen/concurrency require an isolated binding.",
       "sources": [
         "test/data_services/client_command_identity_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_draft_card_test.dart": {
-      "kind": "widget",
-      "reason": "Actual draft card confirmation, pending deletion, resume interaction and responsive Flutter layout.",
-      "sources": [
-        "test/components/occasion/occasion_setup_draft_card_test.dart"
       ]
     },
     "test/components/forms/organization_identity_test.dart": {
@@ -718,39 +542,11 @@
         "test/components/users/occasion_team_invitation_test.dart"
       ]
     },
-    "test/components/occasion/occasion_setup_story_test.dart": {
-      "kind": "adapter",
-      "reason": "Application occasion draft and story transitions; exercises the Flutter application model without rendering widgets.",
-      "sources": [
-        "test/components/occasion/occasion_setup_story_test.dart"
-      ]
-    },
     "test/components/occasion/occasion_setup_story_shell_test.dart": {
       "kind": "widget",
       "reason": "Responsive story shell layout, rendered navigation, semantics and screenshot fixtures require Flutter widgets.",
       "sources": [
         "test/components/occasion/occasion_setup_story_shell_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_invitations_test.dart": {
-      "kind": "widget",
-      "reason": "Invitation role selection, recipient edits and send confirmation are verified through widget interactions.",
-      "sources": [
-        "test/components/occasion/occasion_setup_invitations_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_communication_test.dart": {
-      "kind": "widget",
-      "reason": "Communication setup renders inherited organization settings and exercises asynchronous save callbacks.",
-      "sources": [
-        "test/components/occasion/occasion_setup_communication_test.dart"
-      ]
-    },
-    "test/components/occasion/occasion_setup_details_test.dart": {
-      "kind": "widget",
-      "reason": "Setup details render bank-account, pricing, promotion and form-link widgets with injected callbacks.",
-      "sources": [
-        "test/components/occasion/occasion_setup_details_test.dart"
       ]
     },
     "test/components/mcp/mcp_connection_test.dart": {

@@ -78,8 +78,7 @@ void main() {
     }
   });
 
-  test('explicit event and checkout links do not restore administration',
-      () {
+  test('explicit event and checkout links do not restore administration', () {
     for (final path in [
       '/autumn/admin',
       '/unit/5/edit',

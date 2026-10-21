@@ -42,7 +42,11 @@ void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
-    zones.initializeTimeZones();
+    if (!tz.timeZoneDatabase.isInitialized) {
+      zones.initializeTimeZones();
+    }
+    final previousZone = tz.local;
+    addTearDown(() => tz.setLocalLocation(previousZone));
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
   });
   Future<Map<String, dynamic>> proposal(int form) async {
