@@ -3009,7 +3009,18 @@
     "cancelDraftConfirm": "Discard the draft “{title}”? Its unfinished settings will be permanently deleted.",
     "progress": "{value}% complete",
     "createStepByStep": "Create step by step",
-    "withoutWizard": "Without wizard"
+    "withoutWizard": "Without wizard",
+    "copy": {
+      "source": "Source",
+      "fromScratch": "From scratch",
+      "referencesTitle": "Connect the new form",
+      "referencesBody": "Choose replacements for products used by the seating plan and ticket. The layout and ticket content will be kept. Cancel to keep the current form.",
+      "seatProduct": "Seats: {title}",
+      "ticketType": "Ticket field: {title}",
+      "duplicateTypes": "Two ticket fields cannot refer to the same product group within one template. Choose different groups.",
+      "invalidReferences": "The seating plan or ticket refers to products missing from the selected form. Choose their replacements in the form step.",
+      "repairReferences": "Connect products"
+    }
   },
   "Waitlist": {
     "settings": "Capacity and waitlist",

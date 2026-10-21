@@ -1296,7 +1296,18 @@
     "quickCreationDescription": "Zadajte názov, dátum a čas. Ďalšie nastavenia doplníte neskôr.",
     "withoutWizard": "Bez sprievodcu",
     "createEvent": "Vytvoriť udalosť",
-    "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku."
+    "finalizeFailed": "Vytvorenie sa nepodarilo potvrdiť. Skúste znova rovnakú požiadavku.",
+    "copy": {
+      "source": "Predloha",
+      "fromScratch": "Od začiatku",
+      "referencesTitle": "Prepojiť nový formulár",
+      "referencesBody": "Vyberte náhrady produktov použitých v plániku a vstupenke. Rozloženie a obsah vstupenky sa zachovajú. Späť ponechá súčasný formulár.",
+      "seatProduct": "Miesta: {title}",
+      "ticketType": "Pole vstupenky: {title}",
+      "duplicateTypes": "Dve polia vstupenky nemôžu v jednej šablóne odkazovať na rovnakú skupinu produktov. Vyberte rôzne skupiny.",
+      "invalidReferences": "Plánik alebo vstupenka odkazuje na produkty, ktoré vo vybranom formulári chýbajú. Vo formulári vyberte ich náhrady.",
+      "repairReferences": "Prepojiť produkty"
+    }
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

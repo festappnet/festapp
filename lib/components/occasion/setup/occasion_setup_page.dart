@@ -1,3 +1,6 @@
+import 'occasion_setup_source_picker.dart';
+import 'occasion_setup_references.dart';
+import 'occasion_setup_reference_dialog.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'blueprint_setup_layout_draft.dart';
@@ -227,7 +230,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               .firstOrNull;
           if (selected != null) {
             _change((x) {
-              _applySource(x, _sourceLabel(selected));
+              _applySource(x, (selected['occasion'] as Map)['id'] as int);
               x.remove('sourceSelectionPending');
             });
           }
@@ -304,15 +307,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['bankAccountConfirmed'] = false;
   }
 
-  void _applySource(Map<String, dynamic> draft, String label) {
+  void _applySource(Map<String, dynamic> draft, int? sourceId) {
     _formLinkAvailable = null;
     _resetBankAccount(draft);
     _ticketFeature = null;
     _inlineFormBundle = null;
     _formEpoch++;
     draft.remove('ticketDraft');
-    draft['formDefaultsFollowEvent'] = label == 'Od nuly';
-    draft['source'] = label;
+    draft['formDefaultsFollowEvent'] = sourceId == null;
+    draft['source'] = OccasionSetupStrings.copy('fromScratch');
     draft['copyProgram'] = false;
     draft['copyInformation'] = false;
     draft['copyEmails'] = false;
@@ -324,11 +327,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['sourceProgram'] = <dynamic>[];
     draft['sourceInformation'] = <dynamic>[];
     draft['completed'] = <int>[];
-    if (label == 'Od nuly') {
+    if (sourceId == null) {
       _ensureDefaultForm(draft);
       return;
     }
-    final source = _sources.firstWhere((s) => _sourceLabel(s) == label);
+    final source = _sources.firstWhere((s) => (s['occasion'] as Map)['id'] == sourceId);
+    draft['source'] = _sourceLabel(source);
     draft['sourceId'] = (source['occasion'] as Map)['id'];
     draft.putIfAbsent('copy_locale', () => context.locale.languageCode);
     draft.putIfAbsent('copy_title_edited', () => false);
@@ -967,7 +971,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               .toList(),
           onChanged: (v) => _change((x) {
             x[keyName] = v;
-            if (keyName == 'source') _applySource(x, v!);
             if (keyName == 'blueprintMode' && v == 'Nový') {
               x.remove('blueprintLayoutDraft');
             }
@@ -1027,27 +1030,52 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         : defaultDraftForm(
             Map<String, dynamic>.from(_data['defaultConfiguration'] as Map),
           );
+    final candidate = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
+    candidate['formDraft'] = serializeDraftForm(form);
+    (candidate['formDraft'] as Map)['link'] = '';
+    if (result is FormBundle && form.definition.blueprint != null) {
+      for (final source in _sources) {
+        final selected = (source['blueprints'] as List).whereType<Map>()
+            .where((plan) => plan['id'] == form.definition.blueprint).firstOrNull;
+        if (selected != null) _applyBlueprint(candidate, selected);
+      }
+    }
+    final next = await _resolveReferences(candidate, _data);
+    if (!mounted || next == null) return;
     _change((draft) {
       _resetBankAccount(draft);
       _formEpoch++;
       _formLinkAvailable = null;
       _inlineFormBundle = null;
+      _ticketFeature = null;
       draft['formDefaultsFollowEvent'] = false;
-      draft['formDraft'] = serializeDraftForm(form);
-      (draft['formDraft'] as Map)['link'] = '';
+      draft['formDraft'] = next['formDraft'];
       draft['formLinkAutomatic'] = true;
+      draft['blueprintMode'] = next['blueprintMode'];
+      draft['blueprintLayoutDraft'] = next['blueprintLayoutDraft'];
+      draft['blueprintTitle'] = next['blueprintTitle'];
+      draft['ticketDraft'] = next['ticketDraft'];
       _adoptFormSettings(draft);
-      draft['formOrigin'] =
-          result is FormBundle ? form.occasionModel?.title : null;
-      if (result is FormBundle && form.definition.blueprint != null) {
-        for (final source in _sources) {
-          final plans = source['blueprints'] as List;
-          final selected = plans
-              .where((p) => (p as Map)['id'] == form.definition.blueprint)
-              .firstOrNull;
-          if (selected is Map) _applyBlueprint(draft, selected);
-        }
-      }
+      draft['formOrigin'] = result is FormBundle ? form.occasionModel?.title : null;
+    }, changesConfiguration: true);
+  }
+
+  Future<Map<String, dynamic>?> _resolveReferences(Map<String, dynamic> candidate, Map<String, dynamic> previous) async {
+    if (!OccasionSetupReferences(candidate).hasIssues) return candidate;
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => OccasionSetupReferenceDialog(data: candidate, previous: previous),
+    );
+  }
+
+  Future<void> _repairReferences() async {
+    final candidate = Map<String, dynamic>.from(jsonDecode(jsonEncode(_data)) as Map);
+    final next = await _resolveReferences(candidate, candidate);
+    if (!mounted || next == null) return;
+    _change((draft) {
+      draft['blueprintLayoutDraft'] = next['blueprintLayoutDraft'];
+      draft['ticketDraft'] = next['ticketDraft'];
+      _ticketFeature = null;
     }, changesConfiguration: true);
   }
 
@@ -1255,6 +1283,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         issues.add(MapEntry(AppConfig.isAppSupported ? 4 : 6,
             'Plánek zatím nemá žádná místa.'));
       }
+    }
+    if (OccasionSetupReferences(d).hasIssues) {
+      issues.add(MapEntry(3, OccasionSetupStrings.copy('invalidReferences')));
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
         !OccasionSetupStory.paymentAccountConfirmed(d)) {
@@ -1791,13 +1822,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 onPressed: _loadSources,
                 child: Text('$_sourceError Zkusit znovu'),
               ),
-            _choice(d, 'source', 'Zdroj', [
-              'Od nuly',
-              ..._sources.map(_sourceLabel),
-              if (d['source'] != 'Od nuly' &&
-                  !_sources.any((s) => _sourceLabel(s) == d['source']))
-                d['source'] as String,
-            ]),
+            OccasionSetupSourcePicker(
+              sources: _sources,
+              selectedId: d['sourceId'] as int?,
+              unavailableLabel: d['source'] as String?,
+              label: _sourceLabel,
+              onChanged: (id) => _change((x) => _applySource(x, id), changesConfiguration: true),
+            ),
             if (_sources.isEmpty && !_loadingSources && _sourceError == null)
               const Text(
                 'V této jednotce zatím nejsou žádné uložené předlohy.',
@@ -1873,9 +1904,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 .length ??
             0;
         final products = formBundle?.products.length ?? 0;
+        final referenceIssues = OccasionSetupReferences(d).hasIssues;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (referenceIssues) ...[
+              Text(OccasionSetupStrings.copy('invalidReferences')),
+              OutlinedButton(onPressed: _repairReferences, child: Text(OccasionSetupStrings.copy('repairReferences'))),
+              const SizedBox(height: 16),
+            ],
             if (formBundle == null)
               ElevatedButton.icon(
                 onPressed: _chooseForm,

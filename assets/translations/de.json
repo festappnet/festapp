@@ -1276,7 +1276,18 @@
     "quickCreationDescription": "Geben Sie Titel, Datum und Uhrzeit ein. Weitere Einstellungen ergänzen Sie später.",
     "withoutWizard": "Ohne Assistenten",
     "createEvent": "Veranstaltung erstellen",
-    "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage."
+    "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage.",
+    "copy": {
+      "source": "Vorlage",
+      "fromScratch": "Neu beginnen",
+      "referencesTitle": "Neues Formular verknüpfen",
+      "referencesBody": "Wählen Sie Ersatz für Produkte im Sitzplan und Ticket. Layout und Ticketinhalt bleiben erhalten. Zurück behält das aktuelle Formular.",
+      "seatProduct": "Plätze: {title}",
+      "ticketType": "Ticketfeld: {title}",
+      "duplicateTypes": "Zwei Ticketfelder dürfen in derselben Vorlage nicht dieselbe Produktgruppe verwenden. Wählen Sie unterschiedliche Gruppen.",
+      "invalidReferences": "Sitzplan oder Ticket verweist auf Produkte, die im ausgewählten Formular fehlen. Wählen Sie im Formular Ersatzprodukte.",
+      "repairReferences": "Produkte verknüpfen"
+    }
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",
