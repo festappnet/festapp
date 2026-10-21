@@ -1592,6 +1592,8 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
   },
   "FeatureBlueprint": {
+    "standingRequiresProduct": "Weisen Sie für den Verkauf ein Ticketprodukt und dessen Bestandskapazität zu.",
+    "viewer": {"addOne": "Eins hinzufügen", "removeOne": "Eins entfernen", "standingNotConfigured": "Kein Stehplatzticket zugewiesen.", "standingUnavailable": "Stehplätze sind nicht mehr verfügbar.", "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft."},
     "protectedCount": "Belegte Plätze: {count}.",
     "cancelReservation": "Ausgewählte Reservierungen stornieren",
     "assignSelectionProduct": "Gemeinsames Produkt und Preis",

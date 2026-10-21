@@ -24,6 +24,7 @@ export class BlueprintLayoutAdapter {
         this.bindings = new Map();
         this.areaBindings = new Map((data.areaBindings || []).map(binding => [binding.nodeId, {...binding}]));
         this.areaAvailability = new Map((data.areaAvailability || []).map(area => [area.nodeId, area.reason ? 0 : area.available]));
+        this.areaReasons = new Map((data.areaAvailability || []).map(area => [area.nodeId, area.reason]));
         const products = new Map((data.products || []).map(p => [String(p.id), p]));
         this.areaProducts = new Map([...this.areaBindings].map(([id, binding]) => [id, products.get(String(binding.productId))]));
         const spots = new Map((data.spots || []).map(s => [String(s.id), s]));
@@ -90,14 +91,28 @@ export class BlueprintLayoutAdapter {
         }));
     }
     get capacityPresentation() {
-        return Object.fromEntries([...this.areaBindings].map(([id]) => [id, {
-            available: this.areaAvailability.get(id) ?? 0,
-            selectedQuantity: this.session?.state?.tickets.filter(ticket => ticket._blueprintArea === id).length || 0,
-        }]));
+        const ids = new Set([...this.areaBindings.keys(), ...(this.document.nodes || []).filter(n => n.kind === 'capacityArea').map(n => n.id)]);
+        return Object.fromEntries([...ids].map(id => {
+            const product = this.areaProducts.get(id);
+            const quantity = this.session?.state?.tickets.filter(ticket => ticket._blueprintArea === id).length || 0;
+            const available = this.areaAvailability.get(id) ?? 0;
+            const missingProduct = !this.areaBindings.has(id) || !product;
+            const closed = product?.isAvailable === false || product?.is_dynamically_available === false || product?.is_available_dynamic_capacity === false;
+            const selectable = !missingProduct && !closed && !this.areaReasons.get(id) && available > 0;
+            const reason = missingProduct ? 'standingNotConfigured' : available === 0 ? 'standingUnavailable' : 'standingSaleClosed';
+            return [id, {
+                available: selectable ? available : 0,
+                quantity,
+                selectedQuantity: quantity,
+                status: selectable ? 'available' : 'unavailable',
+                selectable,
+                tooltip: selectable ? product.title : LocalizationService.tr(`FeatureBlueprint.viewer.${reason}`, {}, 'Standing places are unavailable.'),
+            }];
+        }));
     }
     async requestQuantity(nodeId, quantity) {
         const binding = this.areaBindings.get(nodeId), available = this.areaAvailability.get(nodeId);
-        if (this.disposed || !binding || !Number.isInteger(available)) return {accepted: false, message: 'area_quantity_unavailable'};
+        if (this.disposed || !binding || !Number.isInteger(available) || !Number.isInteger(quantity) || quantity < 0 || (quantity > 0 && !this.capacityPresentation[nodeId]?.selectable)) return {accepted: false, message: 'area_quantity_unavailable'};
         try {
             this.session.setAreaQuantity(binding, quantity, available, this.areaProducts.get(nodeId));
             this.onCapacityChanged?.(this.capacityPresentation);

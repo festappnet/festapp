@@ -1271,6 +1271,7 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "standingRequiresProduct": "Kapacita plochy je připravená. Pro prodej přiřaďte produkt vstupenky a jeho kapacitu.",
     "imageUploadUncertain": "Výsledek nahrání se nepodařilo ověřit. Před dalším pokusem zkontrolujte, zda byl obrázek přidaný.",
     "zoomControls": "Přiblížení plánku",
     "zoomIn": "Přiblížit",
@@ -1383,6 +1384,11 @@
     "catalogSaveNotice": "Změny katalogu se ukládají ihned. Zahození návrhu plánku je nevrátí.",
     "catalogAffectedSeats": "Tento sdílený produkt používá {count} míst. Ceny již prodaných vstupenek spravuje server.",
     "viewer": {
+      "addOne": "Přidat jedno",
+      "removeOne": "Odebrat jedno",
+      "standingNotConfigured": "Stání ještě není v prodeji - není přiřazená vstupenka.",
+      "standingUnavailable": "Místa ke stání již nejsou dostupná.",
+      "standingSaleClosed": "Prodej míst ke stání není dostupný.",
       "viewerLabel": "Plánek sálu",
       "places": "Místa",
       "place": "Místo",

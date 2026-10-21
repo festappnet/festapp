@@ -1271,6 +1271,7 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "standingRequiresProduct": "The area capacity is ready. To sell admission, assign a ticket product and its inventory capacity.",
     "imageUploadUncertain": "The upload result could not be verified. Before retrying, check whether the image was added.",
     "zoomControls": "Map zoom",
     "zoomIn": "Zoom in",
@@ -1383,6 +1384,11 @@
     "catalogSaveNotice": "Catalog changes are saved immediately. Discarding the layout draft does not undo them.",
     "catalogAffectedSeats": "This shared product is assigned to {count} seats. Existing sold ticket prices are managed by the server.",
     "viewer": {
+      "addOne": "Add one",
+      "removeOne": "Remove one",
+      "standingNotConfigured": "Standing admission is not configured yet.",
+      "standingUnavailable": "Standing places are no longer available.",
+      "standingSaleClosed": "Standing admission is not on sale.",
       "viewerLabel": "Venue layout",
       "places": "Places",
       "place": "Place",

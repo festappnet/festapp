@@ -1612,6 +1612,8 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
   },
   "FeatureBlueprint": {
+    "standingRequiresProduct": "Pre predaj priraďte produkt vstupenky a jeho kapacitu.",
+    "viewer": {"addOne": "Pridať jedno", "removeOne": "Odobrať jedno", "standingNotConfigured": "Nie je priradená vstupenka na státie.", "standingUnavailable": "Miesta na státie už nie sú dostupné.", "standingSaleClosed": "Predaj miest na státie nie je dostupný."},
     "protectedCount": "Obsadené miesta: {count}.",
     "cancelReservation": "Zrušiť vybrané rezervácie",
     "assignSelectionProduct": "Spoločný produkt a cena",
