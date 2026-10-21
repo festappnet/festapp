@@ -19,9 +19,7 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
-import '../db_units.dart';
-import '../unit_occasion_dashboard.dart';
-import '../../occasion/demo/demo_catalog.dart';
+import 'package:fstapp/components/occasion/db_occasions.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_creation_helper.dart';
@@ -33,35 +31,13 @@ import 'package:fstapp/components/unit/views/occasion_edit_card.dart';
 class OccasionsScreen extends StatefulWidget {
   final UnitModel unit;
   final List<OccasionModel>? initialOccasions;
-  final UnitOccasionDashboard? initialDashboard;
-  const OccasionsScreen(
-      {super.key,
-      required this.unit,
-      this.initialOccasions,
-      this.initialDashboard});
+  const OccasionsScreen({super.key, required this.unit, this.initialOccasions});
 
   @override
   _OccasionsScreenState createState() => _OccasionsScreenState();
 }
 
 class _OccasionsScreenState extends State<OccasionsScreen> {
-  DemoCatalog? _demoCatalog;
-  Future<void>? _dashboardLoad;
-  bool _dashboardFailed = false;
-  void _acceptDashboard(UnitOccasionDashboard dashboard) {
-    if (dashboard.unitId != widget.unit.id)
-      throw StateError('Unit dashboard scope mismatch');
-    _allOccasions = dashboard.occasions;
-    _filteredOccasions = dashboard.occasions;
-    _drafts = _canEditDrafts ? dashboard.drafts : [];
-    _draftError = null;
-    _landing = dashboard.landing;
-    _landingFailed = false;
-    _demoCatalog = dashboard.demos;
-    _dashboardFailed = false;
-    _isLoading = false;
-  }
-
   final _scrollController = ScrollController();
   final _createdGridKey = GlobalKey();
   int? _createdOccasionId;
@@ -109,11 +85,31 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         .toList();
   }
 
-  Future<void> _loadDrafts() => _loadOccasions();
+  Future<void> _loadDrafts() async {
+    if (!_canEditDrafts) return;
+    final unitId = widget.unit.id!;
+    try {
+      final drafts =
+          await OccasionSetupDrafts(Supabase.instance.client).list(unitId);
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() {
+          _drafts = drafts;
+          _draftError = null;
+        });
+      }
+    } catch (_) {
+      if (mounted && widget.unit.id == unitId && _canEditDrafts) {
+        setState(() => _draftError = OccasionSetupStrings.saveFailed);
+      }
+    }
+  }
 
   Future<void> _resumeDraft(OccasionSetupDraft draft) async {
-    await OccasionSetupPage.open(context, draft);
-    if (mounted) await _loadOccasions();
+    final result = await OccasionSetupPage.open(context, draft);
+    if (result != null && mounted) {
+      await _loadOccasions();
+    }
+    if (mounted) await _loadDrafts();
   }
 
   Future<void> _deleteDraft(OccasionSetupDraft draft) async {
@@ -122,7 +118,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
       await OccasionSetupDrafts(Supabase.instance.client).delete(draft);
     } on PostgrestException {
       // A stale revision needs fresh data, never a silent destructive retry.
-      if (mounted) await _loadOccasions();
+      if (mounted) await _loadDrafts();
       rethrow;
     }
     if (mounted && widget.unit.id == draft.unit) {
@@ -135,7 +131,20 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   bool _savingLanding = false;
   int _landingGeneration = 0;
 
-  Future<void> _loadLanding() => _loadOccasions();
+  Future<void> _loadLanding() async {
+    final generation = ++_landingGeneration;
+    try {
+      final landing = await AppLanding.load(widget.unit.id!);
+      if (!mounted || generation != _landingGeneration) return;
+      setState(() {
+        _landing = landing;
+        _landingFailed = false;
+      });
+    } catch (_) {
+      if (!mounted || generation != _landingGeneration) return;
+      setState(() => _landingFailed = true);
+    }
+  }
 
   Future<void> _setLanding(int? occasionId) async {
     final landing = _landing;
@@ -172,6 +181,8 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_onRightsChanged);
     _initializeOccasions();
+    _loadDrafts();
+    _loadLanding();
     _searchController.addListener(_filterOccasions);
     _searchFocusNode.addListener(_onSearchFocusChange);
   }
@@ -180,20 +191,30 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   void didUpdateWidget(covariant OccasionsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.unit.id != oldWidget.unit.id ||
-        widget.initialDashboard != oldWidget.initialDashboard ||
+        widget.unit.unitUser != oldWidget.unit.unitUser) {
+      _drafts = [];
+      _draftError = null;
+      _loadDrafts();
+    }
+    if (widget.unit.id != oldWidget.unit.id) {
+      _landing = null;
+      _landingFailed = false;
+      _savingLanding = false;
+      _loadLanding();
+    }
+    if (widget.unit.id != oldWidget.unit.id ||
         widget.initialOccasions != oldWidget.initialOccasions) {
-      _dashboardLoad = null;
       _initializeOccasions();
     }
   }
 
   void _onRightsChanged() {
     if (!mounted) return;
-    // Context refresh already contains the private unit snapshot. Never start
-    // a competing request from a capabilities-notifier callback.
     setState(() {
-      if (!_canEditDrafts) _drafts = [];
+      _drafts = [];
+      _draftError = null;
     });
+    _loadDrafts();
   }
 
   void _consumeCreationNotice() {
@@ -204,16 +225,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
   }
 
   void _initializeOccasions() {
-    final dashboard = widget.initialDashboard;
-    if (dashboard != null) {
-      _acceptDashboard(dashboard);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _filterOccasions();
-          _consumeCreationNotice();
-        }
-      });
-    } else if (widget.initialOccasions != null) {
+    if (widget.initialOccasions != null) {
       _allOccasions = widget.initialOccasions!;
       _filteredOccasions = widget.initialOccasions!;
       _isLoading = false;
@@ -249,32 +261,16 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
     }
   }
 
-  Future<void> _loadOccasions() {
-    final pending = _dashboardLoad;
-    if (pending != null) return pending;
-    final request = _fetchDashboard();
-    _dashboardLoad = request;
-    request.whenComplete(() {
-      if (identical(_dashboardLoad, request)) _dashboardLoad = null;
-    });
-    return request;
-  }
-
-  Future<void> _fetchDashboard() async {
-    final unitId = widget.unit.id!;
+  Future<void> _loadOccasions() async {
     if (!_isLoading) setState(() => _isLoading = true);
-    try {
-      final dashboard = await DbUnits.getOccasionDashboard(unitId);
-      if (!mounted || widget.unit.id != unitId) return;
-      setState(() => _acceptDashboard(dashboard));
-      _filterOccasions();
-      _consumeCreationNotice();
-    } catch (_) {
-      if (!mounted || widget.unit.id != unitId) return;
+    var occasions = await DbOccasions.getAllOccasionsForEdit(widget.unit.id!);
+    if (mounted) {
       setState(() {
-        _dashboardFailed = true;
+        _allOccasions = occasions;
+        _filteredOccasions = occasions;
         _isLoading = false;
       });
+      _consumeCreationNotice();
     }
   }
 
@@ -305,6 +301,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
       await _loadOccasions();
       if (created != null) _highlight(created);
     }
+    if (mounted) await _loadDrafts();
   }
 
   Future<void> _handleView(OccasionModel occasion) async {
@@ -324,11 +321,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         sourceUnitId: sourceUnitId,
         existingOccasions: _allOccasions,
         onCreated: (value) => created = value);
-    if (!mounted || widget.unit.id != sourceUnitId) return;
-    if (target == null) {
-      await _loadOccasions();
-      return;
-    }
+    if (!mounted || widget.unit.id != sourceUnitId || target == null) return;
     if (AppConfig.occasionSetupEnabled) {
       if (target.id != widget.unit.id && created != null) {
         await RouterService.navigateToUnitAdmin(context, target);
@@ -336,6 +329,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
       }
       await _loadOccasions();
       if (created != null) _highlight(created!);
+      if (mounted) await _loadDrafts();
     } else if (target.id == widget.unit.id) {
       await _loadOccasions();
     } else {
@@ -364,26 +358,17 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
             : RefreshIndicator(
                 onRefresh: () async {
                   await _loadOccasions();
+                  await _loadDrafts();
                 },
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
                     SliverToBoxAdapter(child: _buildHeaderControls()),
-                    if (_dashboardFailed)
-                      SliverToBoxAdapter(
-                          child: TextButton.icon(
-                              onPressed: _loadOccasions,
-                              icon: const Icon(Icons.refresh),
-                              label: Text(
-                                  '${UnitStrings.loadUnitFailed} - ${CommonStrings.retry}'))),
-                    if (_demoCatalog != null)
-                      SliverToBoxAdapter(
-                          child: DemoOccasionsSection(
-                              initialCatalog: _demoCatalog,
-                              load: () async => _demoCatalog!,
-                              hasOwnOccasions: _allOccasions.isNotEmpty,
-                              onCreateCopy: (item) =>
-                                  _handleCreateCopy(item.occasion))),
+                    SliverToBoxAdapter(
+                        child: DemoOccasionsSection(
+                            hasOwnOccasions: _allOccasions.isNotEmpty,
+                            onCreateCopy: (item) =>
+                                _handleCreateCopy(item.occasion))),
                     if (_canEditDrafts && _draftError != null)
                       SliverToBoxAdapter(
                           child: TextButton(
@@ -591,7 +576,7 @@ class _OccasionsScreenState extends State<OccasionsScreen> {
         key: createdIndex >= 0 ? _createdGridKey : null,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 420,
-          mainAxisExtent: 110 +
+          mainAxisExtent: 126 +
               (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(0, 100) *
                   4,
           mainAxisSpacing: 16,

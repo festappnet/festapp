@@ -1,7 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'dart:ui' as ui;
-import 'package:flutter/rendering.dart';
-import 'package:fstapp/components/unit/views/occasion_sale_badge.dart';
 import 'package:fstapp/components/unit/views/occasion_created_highlight.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_completed.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_result.dart';
@@ -18,7 +14,6 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_seat_preview.dar
 import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
@@ -440,15 +435,11 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, 'Kopírovat'), findsOneWidget);
-    await tester.ensureVisible(find.text('Spravovat akci'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Spravovat akci'));
     await tester.pumpAndSettle();
     expect(next, OccasionSetupNext.manage);
     expect(find.byType(OccasionSetupCompleted), findsNothing);
     await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Přejít do přehledu akcí'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Přejít do přehledu akcí'));
     await tester.pumpAndSettle();
@@ -496,87 +487,6 @@ void main() {
     });
   }
 
-  testWidgetsWithEnvironment(() => environment,
-      'ordinary open cards retain original typography and hide sale decoration',
-      (tester) async {
-    final occasion = OccasionModel(
-        id: 1,
-        title: 'Původní karta',
-        startTime: DateTime(2030, 1, 10),
-        endTime: DateTime(2030, 1, 11),
-        isOpen: true,
-        isHidden: false,
-        isPromoted: false,
-        stats: StatsModel(),
-        saleForms: [form(), form()]);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: SizedBox(
-                    width: 312,
-                    height: 110,
-                    child:
-                        OccasionEditCard(occasion: occasion, onTap: () {})))));
-    expect(find.byType(TextButton), findsNothing);
-    final title = tester.widget<Text>(find.text('Původní karta'));
-    expect(title.maxLines, 1);
-    expect(title.style!.fontSize, 16);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgetsWithEnvironment(() => environment,
-      'paused card shows a neutral informational status and remains editable',
-      (tester) async {
-    var opened = 0;
-    final occasion = OccasionModel(
-        id: 1,
-        title: 'Pozastavená akce',
-        startTime: DateTime(2030, 1, 10),
-        endTime: DateTime(2030, 1, 11),
-        isOpen: true,
-        isHidden: false,
-        isPromoted: false,
-        stats: StatsModel(),
-        saleForms: [form(open: false)]);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: SizedBox(
-                    width: 312,
-                    height: 110,
-                    child: OccasionEditCard(
-                        occasion: occasion, onTap: () => opened++)))));
-    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
-    final icon = tester.getRect(find.byIcon(Icons.lock_outline));
-    final card = tester.getRect(find.byType(OccasionEditCard));
-    final labelRect = tester.getRect(find.text('Pozastaveno'));
-    expect(labelRect.right, greaterThan(card.right - 24));
-    expect(icon.right, lessThan(labelRect.left));
-    final dateRect =
-        tester.getRect(find.byKey(const ValueKey('occasion-card-date')));
-    expect((labelRect.center.dy - dateRect.center.dy).abs(), lessThan(2));
-    expect(labelRect.top, greaterThanOrEqualTo(card.top + 12));
-    expect(dateRect.right, lessThanOrEqualTo(icon.left));
-    expect(icon.top, greaterThanOrEqualTo(card.top + 12));
-    expect(find.byType(TextButton), findsNothing);
-    expect(
-        find.descendant(
-            of: find.byType(OccasionSaleBadge), matching: find.byType(Tooltip)),
-        findsNothing);
-    final info = tester.widget<Semantics>(find
-        .descendant(
-            of: find.byType(OccasionSaleBadge),
-            matching: find.byType(Semantics))
-        .first);
-    expect(info.properties.label, contains('Pozastaveno'));
-    await tester.tap(find.byIcon(Icons.lock_outline));
-    expect(opened, 1,
-        reason: 'Status is part of the editable card, not a separate action');
-    expect(tester.takeException(), isNull);
-  });
-
   for (final scale in [1.0, 2.0]) {
     testWidgetsWithEnvironment(() => environment,
         'card fits 288px at text scale $scale and explains its badge',
@@ -602,304 +512,18 @@ void main() {
                           MediaQueryData(textScaler: TextScaler.linear(scale)),
                       child: SizedBox(
                           width: 288,
-                          height: 110 + (scale - 1) * 64,
+                          height: 126 + (scale - 1) * 64,
                           child: OccasionEditCard(
                               occasion: occasion, onTap: () => opened++))))));
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('2/3'), findsOneWidget);
-      expect(find.text('V prodeji 2/3'), findsNothing);
-      await tester.tap(find.text('2/3'));
+      expect(find.text('V prodeji 2/3'), findsOneWidget);
+      await tester.tap(find.text('V prodeji 2/3'));
       await tester.pump();
-      final info = tester.widget<Semantics>(find
-          .descendant(
-              of: find.byType(OccasionSaleBadge),
-              matching: find.byType(Semantics))
-          .first);
-      expect(info.properties.label, contains('Otevřené formuláře: 2/3'));
-      expect(opened, 1);
+      expect(find.textContaining('Otevřené formuláře: 2/3'), findsOneWidget);
+      expect(opened, 0,
+          reason: 'Opening status must not navigate to the occasion');
       expect(tester.takeException(), isNull);
     });
   }
-  for (final state in [...OccasionSaleState.values, null]) {
-    testWidgetsWithEnvironment(
-        () => environment, 'card mutes only inactive sales: $state',
-        (tester) async {
-      final instant = DateTime.now().toUtc();
-      final forms = switch (state) {
-        OccasionSaleState.preparation => [form(open: false, preparation: true)],
-        OccasionSaleState.scheduled => [
-            form(start: instant.add(const Duration(days: 4)))
-          ],
-        OccasionSaleState.paused => [form(open: false)],
-        OccasionSaleState.soldOut => [form(available: false)],
-        OccasionSaleState.waitlist => [
-            form(
-                mode: 'waitlist',
-                countdown: true,
-                end: instant.add(const Duration(days: 1))),
-            form(open: false)
-          ],
-        OccasionSaleState.ended => [
-            form(end: instant.subtract(const Duration(days: 1)))
-          ],
-        null => null,
-        _ => [form()],
-      };
-      var opened = 0;
-      final occasion = OccasionModel(
-          id: 1,
-          title: 'Stav události',
-          startTime: DateTime(2030, 1, 10),
-          endTime: DateTime(2030, 1, 11),
-          isOpen: true,
-          isHidden: false,
-          isPromoted: false,
-          stats: StatsModel(),
-          saleForms: forms,
-          saleOccasionEndUtc: state == OccasionSaleState.finished
-              ? instant.subtract(const Duration(days: 1))
-              : null);
-      await environment.pumpWidget(
-          tester,
-          MaterialApp(
-              home: Scaffold(
-                  body: SizedBox(
-                      width: 312,
-                      height: 110,
-                      child: OccasionEditCard(
-                          occasion: occasion, onTap: () => opened++)))));
-      final inactive = state != null &&
-          state != OccasionSaleState.selling &&
-          state != OccasionSaleState.waitlist;
-      expect(
-          tester
-              .widget<Opacity>(
-                  find.byKey(const ValueKey('occasion-sale-content')))
-              .opacity,
-          inactive ? lessThan(1.0) : equals(1.0));
-      if (state == OccasionSaleState.waitlist) {
-        expect(find.text('Náhradníci 1/2'), findsOneWidget);
-        final info = tester.widget<Semantics>(find
-            .descendant(
-                of: find.byType(OccasionSaleBadge),
-                matching: find.byType(Semantics))
-            .first);
-        expect(info.properties.label, contains('Předprodej končí:'));
-        expect(info.properties.label, isNot(contains('Předprodej začíná:')));
-      }
-      if (state == OccasionSaleState.finished) {
-        expect(find.byType(OccasionSaleBadge), findsNothing);
-        expect(find.text('Proběhlo'), findsNothing);
-      }
-      if (state == OccasionSaleState.soldOut) {
-        expect(find.text('Vyprodáno'), findsOneWidget);
-      }
-      await tester.tap(find.text('Stav události'));
-      expect(opened, 1, reason: 'Muted cards must remain navigable');
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
-  }
-
-  for (final countdown in [false, true]) {
-    for (final scale in [1.0, 2.0]) {
-      testWidgetsWithEnvironment(() => environment,
-          'scheduled label preserves date at scale $scale, countdown $countdown',
-          (tester) async {
-        final start =
-            DateTime.now().toUtc().add(const Duration(days: 3, hours: 12));
-        final occasion = OccasionModel(
-            id: 1,
-            title: 'Naplánovaná událost',
-            startTime: DateTime(2030, 12, 28),
-            endTime: DateTime(2031, 1, 3),
-            isOpen: true,
-            isHidden: false,
-            isPromoted: false,
-            stats: StatsModel(),
-            saleForms: [form(start: start, countdown: countdown)]);
-        await environment.pumpWidget(
-            tester,
-            MaterialApp(
-                home: Scaffold(
-                    body: MediaQuery(
-                        data: MediaQueryData(
-                            textScaler: TextScaler.linear(scale)),
-                        child: SizedBox(
-                            width: 288,
-                            height: 110 + (scale - 1) * 64,
-                            child: OccasionEditCard(
-                                occasion: occasion, onTap: () {}))))));
-        final label = find.text('Začíná za 3 dny');
-        expect(label, findsOneWidget);
-        final date = find.byKey(const ValueKey('occasion-card-date'));
-        expect(
-            (tester.getRect(label).center.dy - tester.getRect(date).center.dy)
-                .abs(),
-            lessThan(2));
-        expect(tester.getRect(label).overlaps(tester.getRect(date)), isFalse);
-        expect(
-            tester
-                .widget<Text>(find.text('Naplánovaná událost'))
-                .style!
-                .fontSize,
-            16);
-        final info = tester.widget<Semantics>(find
-            .descendant(
-                of: find.byType(OccasionSaleBadge),
-                matching: find.byType(Semantics))
-            .first);
-        expect(info.properties.label, contains('Předprodej začíná:'));
-        expect(info.properties.label, isNot(contains('Předprodej končí:')));
-        expect(find.textContaining('Prodej od'), findsNothing);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      });
-    }
-  }
-
-  for (final brightness in Brightness.values) {
-    testWidgetsWithEnvironment(
-        () => environment, 'real font header stays inset in $brightness',
-        (tester) async {
-      await tester.runAsync(() async {
-        final loader = FontLoader('CardPreviewFutura');
-        loader.addFont(Future.value(ByteData.sublistView(
-            await File('fonts/Futura PT Medium.ttf').readAsBytes())));
-        await loader.load();
-        if (const bool.fromEnvironment('OCCASION_CARD_PREVIEW')) {
-          final icons = FontLoader('MaterialIcons');
-          icons.addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
-          await icons.load();
-        }
-      });
-      await tester.binding.setSurfaceSize(const Size(1024, 160));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final boundary = GlobalKey();
-      final now = DateTime.now().toUtc();
-      await environment.pumpWidget(
-          tester,
-          Builder(
-              builder: (context) => MaterialApp(
-                    locale: context.locale,
-                    supportedLocales: context.supportedLocales,
-                    localizationsDelegates: context.localizationDelegates,
-                    theme: ThemeData(
-                        brightness: brightness,
-                        fontFamily: 'CardPreviewFutura'),
-                    home: Scaffold(
-                        body: RepaintBoundary(
-                            key: boundary,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(children: [
-                                for (final mode in [
-                                  'paused',
-                                  'scheduled',
-                                  'past'
-                                ])
-                                  SizedBox(
-                                      width: 320,
-                                      height: 110,
-                                      child: OccasionEditCard(
-                                          occasion: OccasionModel(
-                                              id: 1,
-                                              title: 'Setkání pořadatelů',
-                                              startTime: mode == 'past'
-                                                  ? now.subtract(
-                                                      const Duration(days: 4))
-                                                  : DateTime(2030, 11, 20),
-                                              endTime: mode == 'past'
-                                                  ? now.subtract(
-                                                      const Duration(days: 1))
-                                                  : DateTime(2030, 11, 23),
-                                              isOpen: true,
-                                              isHidden: false,
-                                              isPromoted: false,
-                                              stats: StatsModel(),
-                                              saleForms: mode == 'paused'
-                                                  ? [form(open: false)]
-                                                  : mode == 'scheduled'
-                                                      ? [
-                                                          form(
-                                                              start: now.add(
-                                                                  const Duration(
-                                                                      days: 2,
-                                                                      hours:
-                                                                          12)))
-                                                        ]
-                                                      : null),
-                                          onTap: () {})),
-                              ]),
-                            ))),
-                  )));
-      await tester.pumpAndSettle();
-      expect(find.text('Začíná za 2 dny'), findsOneWidget);
-      expect(find.text('Proběhlo'), findsNothing);
-      expect(find.byType(OccasionSaleBadge), findsNWidgets(2));
-      for (final label in ['Pozastaveno', 'Začíná za 2 dny']) {
-        expect(
-            (tester.renderObject(find.text(label)) as RenderParagraph)
-                .didExceedMaxLines,
-            isFalse);
-        final rect = tester.getRect(find.text(label));
-        final card = tester.getRect(
-            find.ancestor(of: find.text(label), matching: find.byType(Card)));
-        expect(rect.top, greaterThanOrEqualTo(card.top + 12));
-        expect(rect.right, lessThanOrEqualTo(card.right - 8));
-      }
-      expect(tester.takeException(), isNull);
-      if (const bool.fromEnvironment('OCCASION_CARD_PREVIEW')) {
-        await tester.runAsync(() async {
-          final image = await (boundary.currentContext!.findRenderObject()
-                  as RenderRepaintBoundary)
-              .toImage(pixelRatio: 2);
-          final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          await File('/tmp/occasion-card-header-${brightness.name}.png')
-              .writeAsBytes(data!.buffer.asUint8List());
-          image.dispose();
-        });
-      }
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
-  }
-
-  testWidgetsWithEnvironment(() => environment,
-      'one card tick updates both resolved status and inactive treatment',
-      (tester) async {
-    final occasion = OccasionModel(
-        id: 1,
-        title: 'Průběžný stav',
-        isOpen: true,
-        isHidden: false,
-        isPromoted: false,
-        saleForms: [form(open: false)]);
-    await environment.pumpWidget(
-        tester,
-        MaterialApp(
-            home: Scaffold(
-                body: SizedBox(
-                    width: 312,
-                    height: 110,
-                    child:
-                        OccasionEditCard(occasion: occasion, onTap: () {})))));
-    expect(find.text('Pozastaveno'), findsOneWidget);
-    // Change the projected window without rebuilding the widget. The card's
-    // clock must resolve it again, together with its presentation.
-    occasion.saleForms = [
-      form(start: DateTime.now().toUtc().subtract(const Duration(seconds: 1)))
-    ];
-    await tester.pump(const Duration(seconds: 30));
-    expect(find.byType(TextButton), findsNothing);
-    expect(
-        tester
-            .widget<Opacity>(
-                find.byKey(const ValueKey('occasion-sale-content')))
-            .opacity,
-        1);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 30));
-    expect(tester.takeException(), isNull);
-  });
 }

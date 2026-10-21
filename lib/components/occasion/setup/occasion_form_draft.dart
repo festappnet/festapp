@@ -1,12 +1,8 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
-import '../../features/feature.dart';
-import '../../features/feature_constants.dart';
-import '../occasion_model.dart';
 import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';
-import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -34,23 +30,6 @@ FormEditBundle draftFormBundle(Map<String, dynamic> data) {
   form.definition = form.definition.copyWith(occasionId: 0);
   form.definition = form.definition.copyWith(isOpen: false);
   form.availableBankAccounts = const [];
-  // A prototype owns its feature context; unrelated current occasions must
-  // never decide whether this draft exposes a quantity setting.
-  form.occasionModel = OccasionModel(
-      id: 0,
-      isOpen: false,
-      isHidden: true,
-      isPromoted: false,
-      features: [
-        SimpleFeature(
-            code: FeatureConstants.ticket,
-            isEnabled: form.relatedFields.any((f) =>
-                f.definition.type == 'ticket' &&
-                f.definition.isHidden != true)),
-        SimpleFeature(
-            code: FeatureConstants.blueprint,
-            isEnabled: form.usesSeatSelection),
-      ]);
   for (final field in form.relatedFields) {
     final type = field.definition.productType;
     if (type == null) continue;
@@ -130,20 +109,4 @@ void setDraftSeatSelection(Map<String, dynamic> data, bool enabled) {
       'order': fields.length
     });
   }
-}
-
-/// The displayed default does not become a form override on unrelated edits.
-int effectiveSetupDeadlineSeconds(Map<String, dynamic> data) {
-  final raw = (data['deadline'] as String? ?? '').trim();
-  final days = int.tryParse(raw);
-  final features = (((data['defaultConfiguration'] as Map?)?['occasion']
-              as Map?)?['features'] as List? ??
-          [])
-      .whereType<Map>();
-  final inherited = features
-      .where((f) => f['code'] == 'form')
-      .firstOrNull?['deadline_duration_seconds'] as num?;
-  return FormDefinition(
-          deadlineDurationSeconds: days == null ? null : days * 86400)
-      .effectiveDeadlineDurationSeconds(occasionDefault: inherited?.toInt());
 }

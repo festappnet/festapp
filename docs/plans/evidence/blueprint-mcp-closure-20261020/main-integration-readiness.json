@@ -1,0 +1,96 @@
+{
+  "timestamp": "2026-10-20T20:37:54.838827+00:00",
+  "closureCommit": "334717125",
+  "closureBase": "48d8b6db0479818b556e3852c7ea50ead4035d11",
+  "upstreamMerged": "be735509745b8ea80e5af8287bd3e2144fec4ac6",
+  "authorizedPublication": "direct main commit/push; production migration/deploy excluded",
+  "conflicts": {
+    "web_client/src/components/blueprint/blueprint_selector.js": "canonical V2 lifecycle retained; embedded focus and reveal events merged; exact query-preserving overlay tested",
+    "web_client/tests/core/home_startup.test.js": "new embedded startup stubs and canonical URL normalization retained"
+  },
+  "additionalMergeFix": "embed.js cache rule moved into canonical headers template so apply_config preserves emitted headers",
+  "verification": {
+    "js": {
+      "passed": 525,
+      "failed": 0,
+      "existingSkipped": 25
+    },
+    "flutterPublicLinks": {
+      "passed": 3,
+      "failed": 0
+    },
+    "hostingCsp": {
+      "passed": 10,
+      "failed": 0
+    },
+    "publishedTranslations": {
+      "passed": 12,
+      "failed": 0
+    },
+    "productionViteBuild": true,
+    "sqlSourcesChangedByMerge": false,
+    "sqlSourceGenerators": "all three check modes passed"
+  },
+  "sourceHashes": {
+    "web_client/src/components/blueprint/blueprint_selector.js": "e58f5ef5d3ed1895155cbad080f7d692272a0637cb583439620de10cb019957e",
+    "web_client/src/components/forms/form_page.js": "ba639707e566dce6d7f326a2f94c0acfa06556cc451d85a7289e498cc22db51a",
+    "web_client/src/components/forms/form_session.js": "d26dfd28858ea3b0793f2f0265e9efdeb158092089d17f09e2d104925a4a0149",
+    "web_client/src/services/router_service.js": "4f12e610fe3a487f4ed7bb8c96c68d3a84930c69268bebfad3fb44f805220695",
+    "automation/lib/web_headers.template": "5add500f81c0217c4ad94de967caad8dbbc5ddf63da862e09ca49ee4b103f6da",
+    "web/_headers": "ebb1c0d8e43f4a152528412557353a65cf13ea6813181c7cd712577877956290",
+    "web_client/public/_headers": "ebb1c0d8e43f4a152528412557353a65cf13ea6813181c7cd712577877956290",
+    "assets/translations/cs.json": "040e73c7064610759140a5aea06678900f2ba9b88f0b4a25cf92c0bdaaaf6277",
+    "assets/translations/en.json": "744456bf1d1b15fef82a5a9fabeaae11a225a9ddfed02f6b44629eddc7296c02"
+  },
+  "productionBuildHashes": {
+    ".well-known/apple-app-site-association": "ed4a74f8db0328a5f1a90df963c4d8ffa515ea0c87e2b77a5a22c3d56e264707",
+    ".well-known/assetlinks.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "CNAME": "847976606287856b9af3d00529b5b8fd002bc86843648d0de5cb53a40f4245a3",
+    "_headers": "ebb1c0d8e43f4a152528412557353a65cf13ea6813181c7cd712577877956290",
+    "_redirects": "9ccc062d91a3ace1ab219404084b719c366bbdf35e10f3557e9a52c6bfd1ddc1",
+    "android-chrome-192x192.png": "351ac6bf6bca9f5da43d5ecd6e79966650d767900ffc4d7bfebfc3b252025e0e",
+    "android-chrome-512x512.png": "83fbcfc2f807f3f0a9054f8f6c53eb49f6eafcc41d7e6bde9c7382b78d628a1b",
+    "apple-app-site-association": "ed4a74f8db0328a5f1a90df963c4d8ffa515ea0c87e2b77a5a22c3d56e264707",
+    "apple-touch-icon.png": "d208f8fb1223d503cef7e2ca68b8b3607268f364912cf61d010e69e26f2cf681",
+    "assets/icons/fstapplogo.svg": "437bb36863840735c46b53db24eb9848cfc907be8ad4c7ccb8386d0d44065374",
+    "assets/translations/cs.json": "040e73c7064610759140a5aea06678900f2ba9b88f0b4a25cf92c0bdaaaf6277",
+    "assets/translations/de.json": "6b8e62981ff79bd05d84c5efba57d6717d644604d0b1ce2a1a0cd1f0559315ec",
+    "assets/translations/en.json": "744456bf1d1b15fef82a5a9fabeaae11a225a9ddfed02f6b44629eddc7296c02",
+    "assets/translations/pl.json": "73136344d1e8b5e2d210ad69e00657fc69cc5b535c61a63228fb7b4bdf61bc59",
+    "assets/translations/sk.json": "6bf216fbab34748a10b28c92d8aeb095f1c6ba34ad87a3a43a2dcdc40468fed6",
+    "assets/translations/uk.json": "c8d6e8b09d7fd6636e9899c9759473e331788925f923feeeca691e05734f414e",
+    "auth_bridge.html": "7786602b73deaf70e308f9aa9d39c835cb4a4dee81e86dadaa0b017af9c47c8d",
+    "brand-logo.svg": "22880fdfb08a39583669f4df26924d87c4cc2144c45ee2deb2281b3948941685",
+    "demo-assets/weekend-nature.jpg": "0ec785784a7ddb7dcc6372d4495c4f4e6d823453315cd635b2ba19dbc6ab3343",
+    "embed.js": "06d3c8a0fa591365be962fdd84b619b4c3d3e728026e1fba69bdc10c6a6724da",
+    "favicon-16x16.png": "9fc540fe26eaeb66538be855e9e4b34813915aa1fc0170868b565a393bc0dcef",
+    "favicon-32x32.png": "348c9e0519f1fb240a639cf174830bc41c9fd6f6544d3e8f816594efdb3c3e7e",
+    "favicon.ico": "54bfa3a4f9bd2eed92b1e115a825b5dfae168c01ab4519ac06b563e0c55892f4",
+    "index.html": "330fe0e7a2e62ec1e4a80e0e70fed617f540dc7a50faa2661bbf1f4a19bac6ae",
+    "robots.txt": "70316acb837c22cf3c21e26030f779e84b4ba4a54564771224e70618c7a30c56",
+    "site.webmanifest": "b0ec1661eeda4be774eb4e57b67120c05168792c3da0cb85566fcd3a07804222",
+    "sitemap.xml": "c55f0fbccaa68b756788557f8fc4d450343747403b69d1e0625d99aa0c22e81f",
+    "web-assets/FuturaPTBook-CllV_rS_.ttf": "571b3803a43928d59f695acb37e73c9dc89666f5d541183e2b53c19c8986ab44",
+    "web-assets/FuturaPTMedium-Blo3J6Ks.ttf": "92f33ace41b7de22fd7c372943e9a24f6458017052fca957ea92b8b39e1d7dc2",
+    "web-assets/GillSansBold-BTBG3NhQ.otf": "afb62c29e3198cabbea1b8ef109274e4df58863455309045569f99a2a9a4b7bf",
+    "web-assets/_commonjsHelpers-CqkleIqs.js": "4c81dcd54e7e877a79145c4c6fde30ac0e8d857f412b73f48f6970e5d7eab938",
+    "web-assets/blueprint-Dv6lYibG.css": "39f71fa5ccd248bf58b555bac102ba4404138455e3c785f4cb42515023f8459a",
+    "web-assets/blueprint_selector-Dwjg26qG.js": "1bbba5ef6a21ef53d998722b4821c79b068ebf25842b54ef04bb000de2240b23",
+    "web-assets/form_field_labels-CtWLx6IN.js": "88d1513010e73549a3ecefef0191854aff71bf9be213b9b2d5ad44dace28e656",
+    "web-assets/form_page-CZu1wGNx.js": "3a4357e0554a168d1d229b8142ffa7fe250c62bb64da77be530f5db8fae5d3ef",
+    "web-assets/form_page-DcT2rOu3.css": "287116c8d73706273ee85dad6f8eea86c367864d283e90bdbc1dcf7cc2703a40",
+    "web-assets/index-DlIBtSDw-0.20.1-485.js": "f908f845ea43c04d5c5d6b618db1040db7ff7a92db82d27042a8ee89fb7c65a4",
+    "web-assets/index-Dy8cjqP_.css": "aabda659c4fd8f04ee2d84d11c5bde6d6d7b493d591a659269ccb52c392c0624",
+    "web-assets/jsQR-DTXHP3BW.js": "9707acd8d63f5f2acd4e0a4e0719f0f342e888a8cc80f4f2c5b7cec31ca18e4d",
+    "web-assets/mcp_connection_page-Bzt2auzT.js": "9197640ca18e545f8a94a17334ee5d9ed3193eff85fa0f9e3e1a0236b377a4cd",
+    "web-assets/order_preview-D-LDPasx.js": "ac9af5a928bb5d054969aea77dbf903633ac43e5b52f85f892d01a70d29e63c0",
+    "web-assets/order_preview-D3HM1-YS.css": "4bf4cb8ba358aea9cd97aefe7b5013b53d1fcebe02f1aa15f89e88f48fbffcf9",
+    "web-assets/scan-XmH6IScN.css": "87eb2be48bdae8aebbd9fe85dbed73d296ec4a03b7b241698f4abd613ae80b62",
+    "web-assets/scan-_8JnMLuw.js": "ea97fa309ded08122cbca86297cd34c3a5d5b5cfd460817d46a3f8a6109b4002",
+    "web-assets/scan_page-BinuUtYE.js": "b6a55983f512857ecf746cc8cd0f148e2211b9bd746b2bf3e8dc9aa7f026979a",
+    "web-assets/scanner_domain_page-DdPOj58j.js": "204ea62cee65e9205cfae2725bfe53a0e8a31dad6527b5417b4e3a4bdf2f31cf",
+    "web-assets/scanner_settings_page-CHxDiXp3.js": "b5251a3e22f850574cdf0b10d81bc20d9ecb472ca7faf8139d8c47075614731e",
+    "web-assets/settings_widget-BQvMd4IM.js": "4477a920e55e031618ba117caa065f5b8aaa01300c287f4026928a185645c4d3",
+    "web-assets/venue_layout_kernel-Bh2cwiGf.js": "d9bf41b1787d6341efcd5168606efdfd85fbdb6e240bb835cfbb6e0a0d873cdd"
+  }
+}

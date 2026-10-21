@@ -1,5 +1,6 @@
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/database_tables/tb.dart';
+import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,103 +8,104 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/occasion/occasion_sale_status.dart';
 import 'package:fstapp/components/occasion/occasion_sale_strings.dart';
 
-class OccasionSaleBadge extends StatelessWidget {
+class OccasionSaleBadge extends StatefulWidget {
   final OccasionModel occasion;
-  final OccasionSaleStatus status;
-  final DateTime now;
-  const OccasionSaleBadge(
-      {super.key,
-      required this.occasion,
-      required this.status,
-      required this.now});
+  const OccasionSaleBadge({super.key, required this.occasion});
+  @override
+  State<OccasionSaleBadge> createState() => _OccasionSaleBadgeState();
+}
 
-  static bool isClosingCountdown(OccasionSaleStatus status, DateTime now) =>
-      status.state == OccasionSaleState.selling &&
-      status.countdown &&
-      status.total == 1 &&
-      status.deadline != null &&
-      status.deadline!.difference(now).inDays < 3;
+class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
+  Timer? _timer;
+  final _tooltipKey = GlobalKey<TooltipState>();
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
 
-  static bool isVisible(OccasionSaleStatus? status, DateTime now) =>
-      status != null &&
-      status.state != OccasionSaleState.finished &&
-      !(status.state == OccasionSaleState.selling &&
-          status.active == status.total &&
-          status.waitlists == 0 &&
-          !isClosingCountdown(status, now));
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final now = this.now;
-    final status = this.status;
-    final hasTickets = occasion.saleForms?.any((f) => f.hasTickets) ?? true;
-    String wording(String key, [Map<String, String>? args]) =>
-        OccasionSaleStrings.domainText(hasTickets, key, args);
-    final timezone = occasion.data?[Tb.occasions.data_timezone] as String?;
+    final now = DateTime.now().toUtc();
+    final status = OccasionSaleStatus.resolve(widget.occasion.saleForms,
+        now: now, occasionEnd: widget.occasion.saleOccasionEndUtc);
+    if (status == null) return const SizedBox.shrink();
+    final timezone =
+        widget.occasion.data?[Tb.occasions.data_timezone] as String?;
     final label = OccasionSaleStrings.label(status, now, context.locale,
-        timezone: timezone, hasTickets: hasTickets);
-    final remaining = status.deadline?.difference(now);
-    final closingCountdown = OccasionSaleBadge.isClosingCountdown(status, now);
-    final icon = switch (status.state) {
-      OccasionSaleState.scheduled => Icons.schedule_outlined,
-      OccasionSaleState.selling => closingCountdown
-          ? Icons.schedule_outlined
-          : status.waitlists > 0
-              ? Icons.group_add_outlined
-              : Icons.lock_open_outlined,
-      OccasionSaleState.waitlist => Icons.group_add_outlined,
-      OccasionSaleState.paused => Icons.lock_outline,
-      OccasionSaleState.soldOut => Icons.block,
-      _ => Icons.lock_outline,
-    };
-    final count = status.active > 0 && status.total > 1
-        ? '${status.active}/${status.total}'
-        : null;
-    final duration = remaining != null && (status.starts || closingCountdown)
-        ? OccasionSaleStrings.duration(remaining, context.locale)
-        : null;
-    final compactLabel = switch (status.state) {
-      OccasionSaleState.scheduled => duration != null
-          ? remaining!.inSeconds < 60
-              ? wording('startsSoon')
-              : wording('shortStartsIn', {'duration': duration})
-          : label,
-      OccasionSaleState.selling => count ?? duration,
-      OccasionSaleState.waitlist => '${wording('waitlist')}'
-          '${count == null ? '' : ' $count'}',
-      _ => wording(status.state.name),
-    };
-    final foreground = Theme.of(context).colorScheme.onSurface;
+        timezone: timezone);
+    final colors = Theme.of(context).colorScheme;
+    final selling = status.state == OccasionSaleState.selling;
+    final warning = status.state == OccasionSaleState.waitlist ||
+        status.state == OccasionSaleState.paused;
+    final scheduled = status.state == OccasionSaleState.scheduled;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bg = selling
+        ? (dark ? const Color(0xff224632) : const Color(0xffe6f4ec))
+        : warning
+            ? (dark ? const Color(0xff513d20) : const Color(0xfffff1d9))
+            : scheduled
+                ? colors.primaryContainer
+                : colors.surfaceContainerHighest;
+    final fg = selling
+        ? (dark ? const Color(0xffb8e8ca) : const Color(0xff24623b))
+        : warning
+            ? (dark ? const Color(0xfff2d18e) : const Color(0xff80530c))
+            : scheduled
+                ? colors.onPrimaryContainer
+                : colors.onSurfaceVariant;
     final detail = [
-      wording(status.state.name),
+      OccasionSaleStrings.text(status.state.name),
       if (status.total > 1)
-        wording('counts', {
+        OccasionSaleStrings.text('counts', {
           'active': '${status.active}',
           'total': '${status.total}',
           'selling': '${status.selling}',
           'waitlists': '${status.waitlists}'
         }),
       if (status.deadline != null)
-        wording(status.starts ? 'startAt' : 'endAt', {
+        OccasionSaleStrings.text(status.starts ? 'startAt' : 'endAt', {
           'date': DateFormat.yMd(context.locale.toLanguageTag())
               .add_Hm()
               .format(status.deadline!.toOccasionTime(timezone))
         }),
     ].join('\n');
-    return Semantics(
-      label: '$label. $detail',
-      child: ExcludeSemantics(
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16),
-          if (compactLabel != null) ...[
-            const SizedBox(width: 4),
-            Flexible(
-                child: Text(compactLabel,
+    return Tooltip(
+      key: _tooltipKey,
+      excludeFromSemantics: true,
+      message: detail,
+      triggerMode: TooltipTriggerMode.tap,
+      child: Semantics(
+        container: true,
+        onTap: () => _tooltipKey.currentState?.ensureTooltipVisible(),
+        label: '$label. $detail',
+        button: true,
+        child: ExcludeSemantics(
+            child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Center(
+              widthFactor: 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                    color: bg, borderRadius: BorderRadius.circular(5)),
+                child: Text(label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: foreground, fontWeight: FontWeight.w500))),
-          ],
-        ]),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+              )),
+        )),
       ),
     );
   }

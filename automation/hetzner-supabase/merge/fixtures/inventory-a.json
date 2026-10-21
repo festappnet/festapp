@@ -1,0 +1,11 @@
+{
+  "source": { "alias": "a", "project_ref": "lwfpdjxsdmkfyrzqbrlk" },
+  "schema_fingerprint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "catalog": {
+    "postgres_version": "15.8",
+    "postgres_version_num": "150008",
+    "relations": [{ "schema_name": "public", "table_name": "organizations", "relkind": "r", "total_bytes": 999, "estimated_rows": 42 }],
+    "columns": [{ "schema_name": "public", "table_name": "organizations", "column_name": "id", "data_type": "integer" }],
+    "constraints": [], "routines": [], "policies": [], "extensions": []
+  }
+}

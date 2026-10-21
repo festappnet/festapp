@@ -113,8 +113,7 @@ class OccasionSetupDrafts {
         link: data['link'] as String,
         title: draft.title,
         formLink: data['formLink'] as String?,
-        saleMode: data['saleMode'] as String? ?? 'preparation',
-        hasTickets: OccasionSetupStory.hasTickets(draft.data));
+        saleMode: data['saleMode'] as String? ?? 'preparation');
   }
 
   Future<Map<String, dynamic>> blueprintResources(
