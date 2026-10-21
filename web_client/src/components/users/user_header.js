@@ -24,6 +24,13 @@ export class UserHeader extends HTMLElement {
         
         // Listen to context changes
         RightsService.addListener(this._handleContextChange);
+        // A header can mount after startup has already published account data.
+        // Read that completed snapshot without fetching or replacing unchanged
+        // navigation when an existing header is merely moved in the DOM.
+        if (RightsService.context && this.context !== RightsService.context) {
+            this._handleContextChange(RightsService.context);
+        }
+
 
         // Scroll Behavior
         this.lastScrollY = window.scrollY;
