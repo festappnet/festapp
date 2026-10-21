@@ -1,3 +1,5 @@
+> Archiv realizovaného zadání. Stav nasazení a důkazy shrnuje [výsledek](../../plans/occasion-setup-usability-performance-RESULT-2026-10-21.md).
+
 # Realizace zrychlení a zjednodušení tvorby událostí
 
 Pracuj v `/Users/miakh/source/festapp`. Přečti AGENTS.md, CLAUDE.md, docs/architecture/ai_context.md a celý autoritativní plán:
@@ -10,6 +12,9 @@ Zachovej rozsáhlou cizí rozpracovanou práci. Ověř aktuální větev, HEAD a
 
 Pro ohraničenou logiku a UX plánku je vyžádaný subagent `gpt-6-astra`, reasoning `medium`, `fork_turns="none"`. Dej mu konkrétní vlastnictví souborů/úseku a aktuální kontrakt. Nespouštěj další agenty na opakované audity. Zachovej SQL autoritu, revize autosave, command-id retry, sanitizaci kopií, bankovní oprávnění a oddělení dohledatelnosti od otevření prodeje.
 
-Runtime conversion error a příčina pomalosti dosud nejsou naměřené. Nevymýšlej čísla ani kořenovou příčinu. Slug s podtržítky je nevyjasněný a odporuje současnému kontraktu; vyjasni rozsah a mezitím pokračuj nezávislou prací. Bez potvrzení neprováděj plošnou změnu slugů. Nezanechávej skryté blokující validace ani druhou implementaci editoru nebo plateb.
+Runtime conversion error a příčina pomalosti dosud nejsou naměřené. Nevymýšlej čísla ani kořenovou příčinu. Uživatel potvrdil obecné povolení podtržítek a výchozí převod mezer na `_`; existující adresy se hromadně nemění. Nezanechávej skryté blokující validace ani druhou implementaci editoru nebo plateb.
 
 Bez samostatného zadání neprováděj commit, push, deploy, produkční zápis/migraci ani převod zdrojových plánků. Výsledek předej stručně: změny, skutečné časy před/po, cílené kontroly, neuzavřené body a přesné zbývající omezení. Hotovo vyhodnoť podle definice v plánu, ne podle pouhé kompilace.
+
+
+Aktualizace autorizace: uživatel výslovně zadal plnou realizaci a produkční nasazení se všemi připravenými změnami. Platí jen prod/festapptickets / vstupenky.online; použít lokální build a automation/deploy_direct.sh, nikoli GitHub workflow. Původní zákaz publikace výše je tímto překonaný. Výsledky měření: evidence/README.md.

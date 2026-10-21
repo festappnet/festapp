@@ -1,3 +1,5 @@
+> Archiv realizovaného zadání. Stav nasazení a důkazy shrnuje [výsledek](../../plans/occasion-setup-usability-performance-RESULT-2026-10-21.md).
+
 # Rychlejší a jednodušší vytváření událostí
 
 Datum: 2026-10-21  
@@ -151,10 +153,10 @@ Plánování nespouští testy ani Flutter. Implementace má jedno cílené SQL 
 - Smysluplné případy: různé jednotky/tenanty a odebraná práva; dvě revize; timeout/retry finalizace; půlnoc a DST; neplatný ruční konec; akce před měsíčním návrhem vlny a bez dalšího slotu; inherited/explicit/0; cizí účet; starší plánek; přepnutí na Bez plánku. Netestovat přesné znění přeložených popisků nebo každý padding.
 - Browser: izolovaný headless podle skills; kontrola viditelnosti/splnění dat a jeden potřebný vizuální průchod. Pokud Flutter canvas nejde posoudit accessibility snapshotem, použít screenshot. Deterministické repo E2E brány nenahrazovat přímým Playwright spouštěním.
 
-## Nejasnosti a jejich bezpečné řešení
+## Rozhodnutí a omezení po realizaci
 
 - **A1 - verze screenshotů:** přesná implementace z obrázků ani konkrétní conversion error nebyly v runtime ověřeny. Vlastník: realizátor vlny 0. Dopad: nelze tvrdit příčinu produkční pomalosti/chyby. Chybějící přístup brání jen těmto tvrzením, nikoli lokální implementaci ostatních bodů.
-- **A2 - podtržítka:** diktát pravděpodobně žádá `_` v nově navrhované adrese. Nynější kanonický kontrakt je zakazuje. Výchozí rozhodnutí pro tento balík: zachovat historické i nové platné adresy podle existujícího kontraktu a zaznamenat tento bod jako neuzavřený, ne jej tiše vypustit. Při realizaci vyžádat upřesnění rozsahu včas a pokračovat ostatními vlnami. Je-li potvrzeno, aktualizovat plán o jednotnou SQL/Dart/JS validaci a URL-generátor, kompatibilitu a testy; žádné hromadné přejmenování.
+- **A2 - podtržítka - uzavřeno:** uživatel potvrdil obecné povolení `_` pro adresy událostí i formulářů a výchozí převod mezer na `_`. SQL allocator a Dart validace sdílejí povolené oddělovače; existující JS čtení je přijímá. Návrh adresy používá existující serverovou funkci. Žádné hromadné přejmenování existujících adres. SQL test dokládá nové adresy i zachované aliasy.
 - **A3 - viditelnost/karty:** konkrétní status komponenta a význam nepovolené karty nejsou v tomto snapshotu určeny. Rozhodnout z runtime a kanonických flagů ve vlně 0, ne z podobného názvu souboru. Zachovat oddělení zvýraznění, veřejné dohledatelnosti a otevřeného prodeje.
 - **A4 - legacy plánek:** adaptace jde pouze v rámci prokazatelně podporovaných dat. Pokud vyžaduje zásadní nový formát nebo produkční převod, zaznamenat přesnou překážku a návrh; nezatajovat selhání pod obecným hlášením a nepřekročit oprávnění.
 
@@ -165,3 +167,12 @@ Jeden hlavní realizátor drží měření, průvodce a integraci. **Astra Mediu
 Hotovo znamená: měření před/po ve stejném prostředí, fungující převzetí i nový plánek bez zápisu do zdroje, bezpečný save/retry/finalize, správné datumové/platební defaulty, pokrytá tabulka požadavků, odstraněné zbytečné kroky i jejich validace, obnovení starších konceptů a cílené kontroly. Neuzavřené podtržítko nebo nedostupná produkční reprodukce musí být výslovně uvedeny; nejsou splněny pouhým dokončením ostatních částí.
 
 Implementace končí lokálním ověřeným výsledkem a krátkým handoffem. Commit, push, nasazení nebo produkční migrace vyžadují samostatné zadání. Případný budoucí release se týká jen výslovně vybraného vstupenky.online tenantu, zachová main/tenant ancestry a pravidla přímého lokálního deploye. Backendové rozšíření musí předcházet novému klientovi; odstranění prokázaně používaného starého RPC až po autorizované aktualizaci jeho klientů. Lokální rollback vrací vlastní patch, nikdy reset celého rozpracovaného stromu ani zdrojová data.
+
+
+## Výsledek realizace
+
+Autoritativní implementace je na aktuálním main, v izolovaném worktree. Měření a jeho omezení jsou v [evidenci](evidence/README.md). Úvodní zdroje mají v syntetické sadě 936 B místo 329376 B; opakované UI přechody zůstaly podobné. Nelze z toho tvrdit příčinu produkční pomalosti.
+
+Schéma2 a podporované schéma1 používají kanonický editor a explicitní awaited save do konceptu. Prostý starý grid bez podporované geometrie není automaticky převáděn; zobrazí konkrétní překážku a umožní nový nebo jiný plánek. Zdrojová událost se nemění. Skutečný browser reprodukoval chybu Map<dynamic,dynamic> při otevření převzatého formuláře před JSON roundtripem; oprava vlastní typ nového pole a přímý regresní test.
+
+Uživatel v této relaci výslovně autorizoval commit, push i produkční nasazení se všemi připravenými změnami, pouze prod/festapptickets. Tím nahradil původní omezení tohoto plánu na lokální handoff. Existující starší mezery migračního ledgeru nejsou součástí nového SQL balíku a nepřehrávají se naslepo.

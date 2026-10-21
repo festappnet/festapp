@@ -1245,8 +1245,8 @@
     "story": {
       "communicationIncomplete": "Nastavenie komunikácie nie je úplné. Je potrebné skontrolovať e-mail pre odpovede a predstih pripomenutia.",
       "communicationQuestion": "Ako bude nastavená komunikácia s účastníkmi?",
-      "bankAccountNotConfirmed": "Bankový účet nie je potvrdený",
-      "bankAccountRequired": "Pre platenú udalosť je potrebné vybrať a potvrdiť bankový účet.",
+      "bankAccountNotConfirmed": "Vyberte platný účet na príjem platieb.",
+      "bankAccountRequired": "Pre platenú akciu vyberte platný bankový účet.",
       "configureScanningHint": "Nepovinné nastavenie skenovania vstupeniek. Nemení vzhľad vstupenky a možno ho upraviť neskôr.",
       "configureScanning": "Nastaviť odbavenie na mieste",
       "scannerQuestion": "Ako bude nastavené odbavenie na mieste? (nepovinné)",

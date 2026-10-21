@@ -1225,8 +1225,8 @@
     "story": {
       "communicationIncomplete": "Die Kommunikationseinstellungen sind unvollständig. Bitte Antwortadresse und Vorlaufzeit der Erinnerung prüfen.",
       "communicationQuestion": "Wie soll die Kommunikation mit Teilnehmenden gestaltet werden?",
-      "bankAccountNotConfirmed": "Bankkonto nicht bestätigt",
-      "bankAccountRequired": "Für eine kostenpflichtige Veranstaltung muss ein Bankkonto ausgewählt und bestätigt werden.",
+      "bankAccountNotConfirmed": "Wählen Sie ein gültiges Konto für Zahlungseingänge.",
+      "bankAccountRequired": "Wählen Sie für eine kostenpflichtige Veranstaltung ein gültiges Bankkonto.",
       "configureScanningHint": "Optionale Einstellungen zum Scannen von Tickets. Sie ändern das Ticketdesign nicht und können später angepasst werden.",
       "configureScanning": "Einlass vor Ort konfigurieren",
       "scannerQuestion": "Wie soll der Einlass vor Ort funktionieren? (optional)",

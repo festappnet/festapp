@@ -2961,7 +2961,7 @@
       "communicationIncomplete": "Nastavení komunikace není úplné. Je nutné zkontrolovat e-mail pro odpovědi a předstih připomenutí.",
       "communicationQuestion": "Jak bude nastavena komunikace s účastníky?",
       "bankAccountNotConfirmed": "Vyberte platný účet pro příjem plateb.",
-      "bankAccountRequired": "Pro placenou událost je nutné vybrat a potvrdit bankovní účet.",
+      "bankAccountRequired": "Pro placenou událost vyberte platný bankovní účet.",
       "configureScanningHint": "Nepovinné nastavení skenování vstupenek. Nemění vzhled vstupenky a lze jej upravit později.",
       "configureScanning": "Nastavit odbavení na místě",
       "scannerQuestion": "Jak bude nastavené odbavení na místě? (nepovinné)",

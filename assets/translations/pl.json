@@ -1225,8 +1225,8 @@
     "story": {
       "communicationIncomplete": "Ustawienia komunikacji są niepełne. Należy sprawdzić adres do odpowiedzi i wyprzedzenie przypomnienia.",
       "communicationQuestion": "Jak ma być skonfigurowana komunikacja z uczestnikami?",
-      "bankAccountNotConfirmed": "Rachunek bankowy niepotwierdzony",
-      "bankAccountRequired": "Płatne wydarzenie wymaga wybrania i potwierdzenia rachunku bankowego.",
+      "bankAccountNotConfirmed": "Wybierz prawidłowy rachunek do przyjmowania płatności.",
+      "bankAccountRequired": "Płatne wydarzenie wymaga wybrania prawidłowego rachunku bankowego.",
       "configureScanningHint": "Opcjonalne ustawienia skanowania biletów. Nie zmieniają wyglądu biletu i można je dostosować później.",
       "configureScanning": "Skonfiguruj obsługę wejścia",
       "scannerQuestion": "Jak ma działać obsługa wejścia? (opcjonalnie)",

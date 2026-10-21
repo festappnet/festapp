@@ -135,6 +135,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   String? _error;
   bool _finalizing = false;
   String? _blueprintError;
+  bool _blueprintOpenFailed = false;
   bool _loadingBlueprintCandidate = false;
   int _blueprintSelectionRequest = 0;
   bool _openingBlueprint = false;
@@ -881,6 +882,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (_openingBlueprint) return;
     setState(() {
       _openingBlueprint = true;
+      _blueprintOpenFailed = false;
       _blueprintError = null;
     });
     final assets = BlueprintLayoutAssetResolver();
@@ -1020,7 +1022,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     }),
               )));
     } catch (error) {
-      if (mounted) setState(() => _blueprintError = error.toString());
+      if (mounted)
+        setState(() {
+          _blueprintOpenFailed = true;
+          _blueprintError = error.toString();
+        });
     } finally {
       assets.dispose();
       if (mounted) setState(() => _openingBlueprint = false);
@@ -1034,6 +1040,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Future<void> _selectBlueprint({bool chooseAnother = false}) async {
     if (_loadingBlueprintCandidate) return;
+    _blueprintOpenFailed = false;
     final request = ++_blueprintSelectionRequest;
     final sourceId = _data['sourceId'];
     final formEpoch = _formEpoch;
@@ -2250,7 +2257,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         if (_blueprintError != null) ...[
           Text(_blueprintError!),
           TextButton(
-              onPressed: _selectBlueprint, child: const Text('Zkusit znovu'))
+              onPressed:
+                  _blueprintOpenFailed ? _openBlueprint : _selectBlueprint,
+              child: const Text('Zkusit znovu'))
         ],
         if (SetupBlueprintConfiguration(d).active) ...[
           Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),

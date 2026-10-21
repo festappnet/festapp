@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 
@@ -101,13 +102,18 @@ def prepare():
     os.chmod(defines, 0o600)
     functions = BACKEND / 'supabase/functions'
     expected = ROOT / 'supabase/functions'
+    function_owner = BACKEND / 'functions-source'
     if functions.is_symlink():
         if functions.resolve() != expected.resolve():
             raise RuntimeError('Local Edge Functions directory points elsewhere')
-    elif functions.exists():
+        functions.unlink()
+    elif functions.exists() and (not function_owner.exists() or function_owner.read_text().strip() != str(expected)):
         raise RuntimeError('Local Edge Functions directory is not owned by this launcher')
-    else:
-        functions.symlink_to(expected, target_is_directory=True)
+    # Static asset globs must resolve inside the backend, not through a symlink:
+    # otherwise the local Edge filesystem can omit bundled font binaries.
+    shutil.copytree(expected, functions, dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('node_modules', '.DS_Store'))
+    function_owner.write_text(str(expected) + '\n')
     config = BACKEND / 'supabase/config.toml'
     text = config.read_text()
     if '[functions.preview-ticket-layout]' not in text:
@@ -127,9 +133,12 @@ if __name__ == '__main__':
                 capture_output=True, text=True)
             if edge.returncode != 0 or edge.stdout.strip() != 'true':
                 with LOG.open('a') as log:
+                    edge_args = ['supabase', 'functions', 'serve', 'preview-ticket-layout',
+                                 '--workdir', str(BACKEND)]
+                    if os.environ.get('FESTAPP_WIZARD_EDGE_ENV'):
+                        edge_args.extend(['--env-file', os.environ['FESTAPP_WIZARD_EDGE_ENV']])
                     subprocess.Popen(
-                        ['supabase', 'functions', 'serve', 'preview-ticket-layout',
-                         '--workdir', str(BACKEND)],
+                        edge_args,
                         stdin=subprocess.DEVNULL, stdout=log, stderr=log,
                         start_new_session=True)
             os.chdir(ROOT)

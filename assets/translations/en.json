@@ -2959,8 +2959,8 @@
     "story": {
       "communicationIncomplete": "Communication settings are incomplete. Check the reply-to email and reminder lead time.",
       "communicationQuestion": "How should participant communication be configured?",
-      "bankAccountNotConfirmed": "Bank account not confirmed",
-      "bankAccountRequired": "A paid event requires a selected and confirmed bank account.",
+      "bankAccountNotConfirmed": "Select a valid account to receive payments.",
+      "bankAccountRequired": "A paid event requires a valid selected bank account.",
       "configureScanningHint": "Optional ticket scanning settings. These do not change the ticket design and can be adjusted later.",
       "configureScanning": "Configure on-site check-in",
       "scannerQuestion": "How should on-site check-in work? (optional)",

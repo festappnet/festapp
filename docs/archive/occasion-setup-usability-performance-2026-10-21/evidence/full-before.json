@@ -1,0 +1,198 @@
+[
+  {
+    "run": 0,
+    "stage": "overview",
+    "rpc": "get_unit_edit_data",
+    "ms": 37.34,
+    "bytes": 6212
+  },
+  {
+    "run": 0,
+    "stage": "create",
+    "rpc": "create_occasion_setup_draft",
+    "ms": 40.96,
+    "bytes": 2943
+  },
+  {
+    "run": 0,
+    "stage": "sources",
+    "rpc": "get_occasion_setup_sources",
+    "ms": 18.06,
+    "bytes": 329376
+  },
+  {
+    "run": 0,
+    "stage": "saveBlueprint",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 15.67,
+    "bytes": 56744
+  },
+  {
+    "run": 0,
+    "stage": "editorResources",
+    "rpc": "get_occasion_setup_blueprint_resources",
+    "ms": 7.67,
+    "bytes": 251
+  },
+  {
+    "run": 0,
+    "stage": "save",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 6.47,
+    "bytes": 56751
+  },
+  {
+    "run": 0,
+    "stage": "finalize",
+    "rpc": "finalize_occasion_setup_draft",
+    "ms": 70.41,
+    "bytes": 133
+  },
+  {
+    "run": 1,
+    "stage": "overview",
+    "rpc": "get_unit_edit_data",
+    "ms": 10.04,
+    "bytes": 6212
+  },
+  {
+    "run": 1,
+    "stage": "create",
+    "rpc": "create_occasion_setup_draft",
+    "ms": 16.72,
+    "bytes": 2947
+  },
+  {
+    "run": 1,
+    "stage": "sources",
+    "rpc": "get_occasion_setup_sources",
+    "ms": 15.15,
+    "bytes": 329376
+  },
+  {
+    "run": 1,
+    "stage": "saveBlueprint",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 10.01,
+    "bytes": 56747
+  },
+  {
+    "run": 1,
+    "stage": "editorResources",
+    "rpc": "get_occasion_setup_blueprint_resources",
+    "ms": 5.39,
+    "bytes": 251
+  },
+  {
+    "run": 1,
+    "stage": "save",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 7.35,
+    "bytes": 56754
+  },
+  {
+    "run": 1,
+    "stage": "finalize",
+    "rpc": "finalize_occasion_setup_draft",
+    "ms": 57.29,
+    "bytes": 133
+  },
+  {
+    "run": 2,
+    "stage": "overview",
+    "rpc": "get_unit_edit_data",
+    "ms": 7.67,
+    "bytes": 6212
+  },
+  {
+    "run": 2,
+    "stage": "create",
+    "rpc": "create_occasion_setup_draft",
+    "ms": 13.27,
+    "bytes": 2947
+  },
+  {
+    "run": 2,
+    "stage": "sources",
+    "rpc": "get_occasion_setup_sources",
+    "ms": 11.35,
+    "bytes": 329376
+  },
+  {
+    "run": 2,
+    "stage": "saveBlueprint",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 6.22,
+    "bytes": 56747
+  },
+  {
+    "run": 2,
+    "stage": "editorResources",
+    "rpc": "get_occasion_setup_blueprint_resources",
+    "ms": 4.09,
+    "bytes": 251
+  },
+  {
+    "run": 2,
+    "stage": "save",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 5.2,
+    "bytes": 56754
+  },
+  {
+    "run": 2,
+    "stage": "finalize",
+    "rpc": "finalize_occasion_setup_draft",
+    "ms": 49.4,
+    "bytes": 133
+  },
+  {
+    "run": 3,
+    "stage": "overview",
+    "rpc": "get_unit_edit_data",
+    "ms": 8.92,
+    "bytes": 6212
+  },
+  {
+    "run": 3,
+    "stage": "create",
+    "rpc": "create_occasion_setup_draft",
+    "ms": 11.97,
+    "bytes": 2947
+  },
+  {
+    "run": 3,
+    "stage": "sources",
+    "rpc": "get_occasion_setup_sources",
+    "ms": 13.84,
+    "bytes": 329376
+  },
+  {
+    "run": 3,
+    "stage": "saveBlueprint",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 6.32,
+    "bytes": 56747
+  },
+  {
+    "run": 3,
+    "stage": "editorResources",
+    "rpc": "get_occasion_setup_blueprint_resources",
+    "ms": 5.97,
+    "bytes": 251
+  },
+  {
+    "run": 3,
+    "stage": "save",
+    "rpc": "save_occasion_setup_draft",
+    "ms": 6.15,
+    "bytes": 56754
+  },
+  {
+    "run": 3,
+    "stage": "finalize",
+    "rpc": "finalize_occasion_setup_draft",
+    "ms": 50.16,
+    "bytes": 133
+  }
+]
