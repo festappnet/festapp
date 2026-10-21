@@ -156,6 +156,32 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
     }
   }
 
+  Future<void> editProduct(ProductModel selected) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) =>
+          EditProductDialog(product: selected.copyWith(), isCreating: false),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final saved = await DbEshop.saveProductBasics(selected.copyWith(
+          title: result['title'] as String, price: result['price'] as double));
+      widget.controller.upsertCatalogProduct(saved);
+      if (!mounted) return;
+      final index = catalog!.products.indexWhere((p) => p.id == saved.id);
+      catalog!.products[index] = saved;
+      if (product?.id == saved.id) product = saved;
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> assign() async {
     final p = product;
     final count = int.tryParse(capacity.text);
@@ -220,27 +246,11 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
                   ),
                 if (catalog != null) ...[
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: product?.id,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: BlueprintStrings.selectProduct,
-                    ),
-                    items: [
-                      for (final p in catalog!.products.where(eligible))
-                        DropdownMenuItem(
-                          value: p.id,
-                          child: Text(
-                            p.title ?? '',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: busy
-                        ? null
-                        : (id) => choose(
-                              catalog!.products.firstWhere((p) => p.id == id),
-                            ),
+                  BlueprintProductOptions(
+                    products: catalog!.products.where(eligible).toList(),
+                    currentProductId: product?.id,
+                    onSelected: busy ? null : choose,
+                    onEdit: busy ? null : editProduct,
                   ),
                   TextButton.icon(
                     onPressed: busy ? null : createProduct,

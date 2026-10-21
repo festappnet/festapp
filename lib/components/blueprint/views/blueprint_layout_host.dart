@@ -869,27 +869,41 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final availability = controller.adapter.areaAvailability[area.id];
     final capacity = controller.areaCapacity(area.id);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _commercialName(area, style: Theme.of(context).textTheme.titleMedium),
-      Text(_productText(controller.snapshot.areaBindings[area.id]?.productId)),
+      BlueprintProductDetail(
+        key: ValueKey(controller.snapshot.areaBindings.containsKey(area.id)
+            ? 'commercial-area-product'
+            : 'assign-standing-product'),
+        title: BlueprintStrings.areaProduct,
+        productText:
+            _productText(controller.snapshot.areaBindings[area.id]?.productId),
+        status: controller.snapshot.areaBindings.containsKey(area.id)
+            ? BlueprintStrings.areaProductAssigned
+            : BlueprintStrings.noProductAssigned,
+        statusIcon: controller.snapshot.areaBindings.containsKey(area.id)
+            ? Icons.check_circle_outline
+            : Icons.info_outline,
+        statusColor: controller.snapshot.areaBindings.containsKey(area.id)
+            ? ThemeConfig.greenColor(context)
+            : Theme.of(context).colorScheme.onSurfaceVariant,
+        onTap: !_canEdit || _busy
+            ? null
+            : controller.snapshot.areaBindings.containsKey(area.id)
+                ? () => _editAreaProduct(area)
+                : !_canOrder
+                    ? null
+                    : () => showDialog<void>(
+                        context: context,
+                        builder: (_) => BlueprintStandingSetupDialog(
+                            controller: controller,
+                            nodeId: area.id,
+                            occasionLink:
+                                RightsService.currentOccasion()!.link!)),
+      ),
       const SizedBox(height: 12),
       if (!controller.snapshot.areaBindings.containsKey(area.id)) ...[
         Text('${BlueprintStrings.standingCapacity}: $capacity'),
         const SizedBox(height: 8),
         Text(BlueprintStrings.standingRequiresProduct),
-        if (_canEdit && _canOrder)
-          FilledButton.icon(
-              key: const ValueKey('assign-standing-product'),
-              onPressed: _busy
-                  ? null
-                  : () => showDialog<void>(
-                      context: context,
-                      builder: (_) => BlueprintStandingSetupDialog(
-                          controller: controller,
-                          nodeId: area.id,
-                          occasionLink:
-                              RightsService.currentOccasion()!.link!)),
-              icon: const Icon(Icons.add),
-              label: Text(BlueprintStrings.assignStandingProduct)),
       ] else
         Text(BlueprintStrings.standingAvailability(
             (availability?['available'] as num?)?.toInt() ?? 0,
@@ -901,14 +915,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],
-      if (_canEdit &&
-          controller.products.containsKey(
-              controller.snapshot.areaBindings[area.id]?.productId))
-        TextButton.icon(
-            key: const ValueKey('commercial-area-product'),
-            onPressed: _busy ? null : () => _editAreaProduct(area),
-            icon: const Icon(Icons.sell_outlined, size: 18),
-            label: Text(BlueprintStrings.editAreaProduct)),
     ]);
   }
 
@@ -980,45 +986,20 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(BlueprintStrings.groupDefaultProduct,
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(_productText(defaultId),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(
-                    mixed
-                        ? Icons.tune
-                        : defaultId == null
-                            ? Icons.info_outline
-                            : Icons.check_circle_outline,
-                    size: 16,
-                    color: statusColor),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
-                        mixed
-                            ? BlueprintStrings.statusMixed
-                            : defaultId == null
-                                ? BlueprintStrings.noProductAssigned
-                                : BlueprintStrings.statusUniform,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: statusColor))),
-              ]),
-            ],
-          ),
-          trailing: _canEdit && blockers == 0
-              ? const Icon(Icons.edit_outlined, size: 18)
-              : null,
+        BlueprintProductDetail(
+          title: BlueprintStrings.groupDefaultProduct,
+          productText: _productText(defaultId),
+          status: mixed
+              ? BlueprintStrings.statusMixed
+              : defaultId == null
+                  ? BlueprintStrings.noProductAssigned
+                  : BlueprintStrings.statusUniform,
+          statusIcon: mixed
+              ? Icons.tune
+              : defaultId == null
+                  ? Icons.info_outline
+                  : Icons.check_circle_outline,
+          statusColor: statusColor,
           onTap: !_canEdit || _busy || blockers > 0
               ? null
               : () => _product(table.id, group: true),
@@ -1269,6 +1250,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 if (tables.containsKey(entry.key) &&
                     entry.value.contains(entry.key))
                   _commercialName(tables[entry.key]!,
+                      style: Theme.of(context).textTheme.titleSmall)
+                else if (byId[entry.key]?.kind == 'capacityArea')
+                  _commercialName(byId[entry.key]!,
                       style: Theme.of(context).textTheme.titleSmall)
                 else
                   Text(

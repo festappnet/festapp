@@ -2432,9 +2432,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('assign-standing-product')));
     await tester.pumpAndSettle();
     expect(find.byType(BlueprintStandingSetupDialog), findsOneWidget);
-    await tester.tap(find.byType(DropdownButtonFormField<int>).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Standing ticket').last);
+    expect(find.byType(BlueprintProductOptions), findsOneWidget);
+    await tester.tap(find.widgetWithText(ListTile, 'Standing ticket'));
     await tester.pumpAndSettle();
     await tester.tap(find.descendant(
         of: find.byType(BlueprintStandingSetupDialog),
@@ -2443,6 +2442,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(BlueprintStandingSetupDialog), findsNothing);
     expect(find.byKey(const ValueKey('assign-standing-product')), findsNothing);
+    expect(find.byType(BlueprintProductDetail), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(BlueprintProductDetail),
+            matching: find.textContaining('Standing ticket (')),
+        findsOneWidget);
     final capacityField = tester.widget<TextField>(
         find.byKey(const ValueKey('standing-capacity-field')));
     expect(capacityField.controller!.text, '25');
