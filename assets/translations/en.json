@@ -2667,6 +2667,18 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "style_concert_stub": "Concert · admission stub",
+    "style_ball_silk": "Ball · silk invitation",
+    "style_festival_poster": "Festival · mini poster",
+    "style_club_panorama": "Club · panoramic",
+    "style_theatre_program": "Theatre · classic programme",
+    "style_gallery_square": "Exhibition · square",
+    "style_gala_invitation": "Gala · tall invitation",
+    "style_boarding_pass": "Conference · boarding pass",
+    "style_cinema_strip": "Cinema · film strip",
+    "style_sports_arena": "Sports · arena ticket",
+    "style_festival_badge": "Festival · personal credential",
+    "style_workshop_card": "Workshop · studio card",
     "resetCrop": "Show entire image",
     "cropImageHint": "Drag the corners to crop. Drag inside to move the crop.",
     "cropImage": "Crop image",

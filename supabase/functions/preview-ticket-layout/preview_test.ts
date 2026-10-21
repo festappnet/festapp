@@ -27,7 +27,7 @@ Deno.test('preview bounds input and rejects secrets, real IDs and unapproved ima
 Deno.test('resolve returns style choices and uses known occasion details in every scenario',async()=>{
   const s=setup();s.deps.occasion=async()=>({id:7,title:'Festival v naší obci',start_time:'2026-11-07T18:00:00Z',end_time:'2026-11-07T23:00:00Z',data:{place_name:'Sokolovna'},features:[]});
   const result=await (await handlePreview(req(),s.deps)).json();
-  assertEquals(Object.keys(result.presets),['classic','compact','event','portrait','portrait_compact','portrait_event']);
+  assertEquals(Object.keys(result.presets),['classic','compact','event','portrait','portrait_compact','portrait_event','concert_stub','ball_silk','festival_poster','club_panorama','theatre_program','gallery_square','gala_invitation','boarding_pass','cinema_strip','sports_arena','festival_badge','workshop_card']);
   for(const scenario of Object.values(result.scenarios) as any[]) {assertEquals(scenario.occasionTitle,'Festival v naší obci');assert(scenario.occasionDatePlace.includes('Sokolovna'));assert(scenario.occasionDatePlace.includes('11. 2026'));assertEquals(scenario.qr,'festapp-preview:X3827K6M8R');}
 });
 Deno.test('image-backed presets inherit existing text color without weakening QR colors',async()=>{
@@ -324,4 +324,22 @@ Deno.test('first occasion resolves and renders a ticket from an authorized setup
  assertEquals(s.counts(),[0,2,0]);assertEquals(drafts,2);
  s.deps.authorizeSetupDraft=async()=>false;
  assertEquals((await handlePreview(req(request),s.deps)).status,403);assertEquals(drafts,2);assertEquals(s.counts(),[0,2,0]);
+});
+
+Deno.test('gallery supplies independent artwork, bundled font metrics and preserves curated contrast',async()=>{
+  const {loadLayoutResources}=await import('../_shared/ticketGeneration.ts');
+  const {galleryFontIds,galleryBackgrounds}=await import('../_shared/ticketGallery.ts');
+  const s=setup();
+  s.deps.occasion=async()=>({id:7,features:[{code:'ticket',darkColor:'FFFFFF'}]});
+  s.deps.resources=loadLayoutResources;
+  const response=await handlePreview(req({...body,type:'wide'}),s.deps);
+  assertEquals(response.status,200);
+  const result=await response.json();
+  for(const id of galleryFontIds)assert(result.fonts[id].font.length>0);
+  for(const [key,url] of Object.entries(galleryBackgrounds)){
+    assertEquals(result.presetArtwork[key].background,url);
+    assertEquals(result.presetArtwork[key].image!==null,url!==null);
+  }
+  assertEquals(result.presets.ball_silk.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'222A31');
+  assertEquals(result.presets.club_panorama.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'F5F4EF');
 });

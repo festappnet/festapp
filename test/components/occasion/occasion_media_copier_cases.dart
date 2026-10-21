@@ -49,6 +49,32 @@ void main() {
     expect(occasion.data!['image'], endsWith('-copy'));
   });
 
+  test('shared ticket gallery artwork survives duplication without an upload',
+      () async {
+    const background =
+        'https://img.festapp.net/ticket-presets/v1/silk-ivory-v1.jpg';
+    final ticket = TicketFeature(
+      code: FeatureConstants.ticket,
+      ticketBackground: background,
+    );
+    final occasion = OccasionModel(
+      id: 42,
+      unit: 7,
+      isOpen: false,
+      isHidden: true,
+      isPromoted: false,
+      features: [ticket],
+      data: {'image': 'https://img.festapp.net/images/event.jpg'},
+    );
+    final copied = <String>[];
+    await copyOccasionMedia(occasion, (url, occasionId, unitId) async {
+      copied.add(url);
+      return '$url-copy';
+    });
+    expect(copied, ['https://img.festapp.net/images/event.jpg']);
+    expect(ticket.ticketBackground, background);
+  });
+
   test('copy without media performs one SQL command and no follow-up save',
       () async {
     final fixture = _DuplicationFixture();

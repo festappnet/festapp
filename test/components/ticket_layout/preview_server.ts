@@ -5,6 +5,7 @@ import { serveDir } from 'jsr:@std/http/file-server';
 import { handlePreview } from '../../../supabase/functions/preview-ticket-layout/handler.ts';
 import { fontMetrics } from '../../../supabase/functions/_shared/ticketFonts.ts';
 import {loadLayoutResources} from '../../../supabase/functions/_shared/ticketGeneration.ts';
+import {galleryBackground} from '../../../supabase/functions/_shared/ticketGallery.ts';
 import {indexProductCatalog} from '../../../supabase/functions/_shared/ticketRenderData.ts';
 const root = Deno.args[0] ?? '/tmp/festapp-ticket-editor-web';
 const font = await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf'), metrics = fontMetrics(font);
@@ -49,7 +50,7 @@ Deno.serve({ hostname: '127.0.0.1', port: 8769 }, async req => {
       occasion: async () => ({id:1, title:'Slavnostní večer', start_time:'2026-11-20T18:00:00Z', data:{place_name:'Společenský sál'}, features:[]}),
       products:async()=>indexProductCatalog({product_types:[{id:123,occasion:1,title:'VIP menu',offered:true,referenced:true},{id:124,occasion:1,title:'Odvoz po skončení slavnostního programu - velmi dlouhý název skupiny pro zkoušku úzkého panelu',offered:true,referenced:true}],products:[{id:22,product_type:123,title:'VIP menu',data:{short_title:'Řízek'},price:170,currency_code:'CZK'},{id:23,product_type:124,title:'Autobus',price:50,currency_code:'CZK'}]},1),
       resources: async (_occasion, feature) => {
-        const background = feature.background ? images.get(feature.background) : undefined;
+        const background = feature.background ? images.get(feature.background) ?? await galleryBackground(feature.background) : undefined;
         if (feature.background && !background) throw new Error('Unknown local background');
         return {...await loadLayoutResources(_occasion,{...feature,background:null}),background};
       },

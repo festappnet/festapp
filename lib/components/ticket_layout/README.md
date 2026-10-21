@@ -383,3 +383,26 @@ schema-3 extension does not change existing templates or their combined date/pla
 Free text additionally requires `20261016220000_ticket_free_text.sql` and the
 shared Edge renderer before client deployment. Its `text` binding carries at most
 2000 Unicode characters; legacy footer bindings continue to render unchanged.
+
+## Event design gallery
+
+`ticketGallery.ts` owns the concert, ball, festival, club, theatre, exhibition,
+gala, conference, cinema, sports, credential and workshop presets. Each has its own physical format and composition;
+their geometry is authored in millimetres and converted into PDF points. All
+twelve use ticket-sized pages, independently of the legacy storage slot.
+Their immutable `https://img.festapp.net/ticket-presets/v1/` identities resolve
+from bundled bytes in `ticket-assets/backgrounds`, including when a saved ticket
+is rendered for email or download. No upload or external image host is needed.
+`presetArtwork` supplies each gallery entry's source and decoded preview bytes;
+the selected source is saved through the ordinary background field. The two
+curated Google Fonts are bundled with licenses and verified against the canonical
+font catalog hashes. Regenerate procedural gradients with
+`node automation/tickets/generate-backgrounds.mjs`; publish changed artwork under
+a new versioned filename so existing tickets retain their appearance.
+
+On macOS, generate the self-contained gallery and real PDF samples with
+`deno run --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write --allow-env --allow-run=sips automation/tickets/preview-gallery.ts /absolute/output/directory`.
+The gallery opens directly from disk and includes source references and QR
+palettes. Each design pairs its QR ink with an opaque, contrasting backing and
+a four-module quiet zone; the existing validators own print constraints. Its graphic
+perforation marks do not request physical finishing from a printer.

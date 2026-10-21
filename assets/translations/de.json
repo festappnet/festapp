@@ -767,6 +767,18 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "style_concert_stub": "Konzert · Kontrollabschnitt",
+    "style_ball_silk": "Ball · Seidene Einladung",
+    "style_festival_poster": "Festival · Miniplakat",
+    "style_club_panorama": "Club · Panorama",
+    "style_theatre_program": "Theater · Klassisches Programm",
+    "style_gallery_square": "Ausstellung · Quadrat",
+    "style_gala_invitation": "Gala · Schmale Einladung",
+    "style_boarding_pass": "Konferenz · Boardingpass",
+    "style_cinema_strip": "Kino · Filmstreifen",
+    "style_sports_arena": "Sport · Arenaticket",
+    "style_festival_badge": "Festival · Persönlicher Ausweis",
+    "style_workshop_card": "Workshop · Studiokarte",
     "text": "Freier Text",
     "textDefault": "Ihr Text",
     "textContent": "Text auf dem Ticket",
