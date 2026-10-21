@@ -71,10 +71,11 @@ const MAX_EXPLICIT_PRUNE_OPERATIONS = 100;
 const EMERGENCY_RECOVERY_CACHE_NAMES = new Set([
   'festapp-app-shell-0.19.85+418',
 ]);
-// This shell rejected uncached assets when navigator.onLine was false, even
-// when requests worked. A successful install proves the network is available;
-// activate immediately for those stranded clients so they can reload.
-const FALSE_OFFLINE_RECOVERY_CACHE_NAMES = new Set([
+// This generation's web HTML has no version reporter or update coordinator.
+// Its lazy imports can disappear from the deployment while its cached home
+// still works. Recovery must also run when Safari correctly reports online.
+// A complete installation, not navigator.onLine, proves a replacement exists.
+const LEGACY_WEB_RECOVERY_CACHE_NAMES = new Set([
   'festapp-app-shell-0.20.17+501',
 ]);
 // These releases predate the web-client -> Flutter runtime coordinator. A new
@@ -136,9 +137,16 @@ async function precacheAtomically() {
 async function requiresEmergencyCutover() {
   try {
     const names = await withStorageTimeout(caches.keys());
-    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name) ||
-      (self.navigator.onLine === false &&
-        FALSE_OFFLINE_RECOVERY_CACHE_NAMES.has(name)));
+    return names.some((name) => EMERGENCY_RECOVERY_CACHE_NAMES.has(name));
+  } catch (_) {
+    return false;
+  }
+}
+
+async function requiresLegacyWebRecovery() {
+  try {
+    const names = await withStorageTimeout(caches.keys());
+    return names.some((name) => LEGACY_WEB_RECOVERY_CACHE_NAMES.has(name));
   } catch (_) {
     return false;
   }
@@ -221,6 +229,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     await precacheAtomically();
     if (await requiresEmergencyCutover() ||
+        await requiresLegacyWebRecovery() ||
         await requiresHandoffBootstrapActivation()) {
       await self.skipWaiting();
     }
@@ -427,6 +436,16 @@ self.addEventListener('message', (event) => {
   }
 });
 
+function beginActivationNavigation(client) {
+  // The browser owns the navigation once requested. Its controlled fetches
+  // cannot finish until activate completes, so including navigate()'s result
+  // in this event's waitUntil would deadlock WebKit. Handle rejection without
+  // deleting the cached shell or holding activation open.
+  try {
+    client.navigate(client.url).catch(() => {});
+  } catch (_) {}
+}
+
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     let windowClients = [];
@@ -439,6 +458,7 @@ self.addEventListener('activate', (event) => {
       // Activation remains available, but reconciliation below fails closed.
     }
     const emergencyCutover = await requiresEmergencyCutover();
+    const legacyWebRecovery = await requiresLegacyWebRecovery();
     // Do not guess one "previous" cache for every already-open tab: multiple
     // old generations can legitimately coexist. After claim, runtime fetches
     // wait briefly for each page's exact version report and fail closed if it
@@ -451,15 +471,25 @@ self.addEventListener('activate', (event) => {
       for (const client of windowClients) {
         clientCacheNames.delete(client.id);
         await recordClientVersion(client.id, BUILD_VERSION);
-        try {
-          await client.navigate(client.url);
-        } catch (_) {
-          // A later manual navigation remains recoverable by resultingClientId.
-        }
+        beginActivationNavigation(client);
       }
     } else {
       for (const client of windowClients) {
         client.postMessage({ type: 'FESTAPP_REPORT_VERSION' });
+      }
+      if (legacyWebRecovery) {
+        await Promise.all(windowClients.map(async (client) => {
+          // The presence of a broken cache does not make every tab broken.
+          // Preserve reporting modern pages and their in-progress form edits.
+          if (!await restoreClientVersion(client.id)) {
+            await waitForClientVersion(client.id);
+          }
+          const version = clientVersions.get(client.id);
+          if (version && !LEGACY_WEB_RECOVERY_CACHE_NAMES.has(CACHE_PREFIX + version)) return;
+          // A full navigation binds the new document to this fully installed
+          // shell before any module request. No cookies or app data change.
+          beginActivationNavigation(client);
+        }));
       }
     }
     await scheduleShellReconcile({ apply: true });
@@ -489,6 +519,16 @@ function isFlutterExecutable(pathname) {
     /^\\/main\\.dart\\.(?:[0-9][0-9A-Za-z.+-]*\\.)?js_\\d+\\.part\\.js$/.test(pathname) ||
     pathname === '/flutter.js' ||
     pathname === '/flutter_bootstrap.js';
+}
+
+async function navigateToInstalledShell(clientId) {
+  try {
+    const client = clientId ? await self.clients.get(clientId) : null;
+    if (client) await client.navigate(client.url);
+  } catch (_) {
+    // A rejected navigation must not mix executable generations. The next
+    // manual navigation can still use the fully installed current shell.
+  }
 }
 
 function isFlutterBootstrapExecutable(pathname) {
@@ -651,6 +691,16 @@ self.addEventListener('fetch', (event) => {
     }
 
 
+    // Lazy web imports belong to the same immutable graph as their entry
+    // module. When an older tab lacks a chunk, its old deployment may already
+    // be gone. Re-enter the fully installed shell at the requested form URL;
+    // never leave the failed import behind an otherwise interactive catalogue.
+    if (selectedCacheName !== CACHE_NAME &&
+        /^\\/web-assets\\/.+\\.m?js$/.test(url.pathname)) {
+      await navigateToInstalledShell(clientId);
+      return Response.error();
+    }
+
     // A Flutter main bundle and its deferred parts are one indivisible build.
     // Recover an evicted/corrupt cache entry only while the network deployment
     // still matches this worker. A newer manifest must cut over atomically via
@@ -672,15 +722,7 @@ self.addEventListener('fetch', (event) => {
           if (currentExecutable) return currentExecutable;
           return recoverCurrentExecutable(request, currentCache, true);
         }
-        try {
-          const client = clientId
-            ? await self.clients.get(clientId)
-            : null;
-          if (client) await client.navigate(client.url);
-        } catch (_) {
-          // Returning a failed executable request is still safer than mixing
-          // Flutter builds if the browser rejects the navigation request.
-        }
+        await navigateToInstalledShell(clientId);
         return Response.error();
       }
       return recoverCurrentExecutable(
