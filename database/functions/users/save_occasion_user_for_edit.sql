@@ -31,8 +31,7 @@ BEGIN
     -- Keep the write boundary at occasion management level. In particular,
     -- a unit editor must not gain the ability to assign manager/editor flags
     -- through this SECURITY DEFINER function.
-    IF NOT public.get_is_manager_on_occasion(v_occasion)
-       AND NOT public.get_is_admin_on_occasion(v_occasion) THEN
+    IF NOT public.can_manage_occasion_participants(v_occasion) THEN
         RETURN jsonb_build_object('code', 403, 'message', 'Not authorized to update occasion users');
     END IF;
 
@@ -122,7 +121,7 @@ CREATE OR REPLACE FUNCTION public.save_occasion_user_for_edit(input_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE oc bigint:=(input_data->>'occasion')::bigint; usr uuid:=(input_data->>'user')::uuid; ver bigint; r jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT(public.get_is_manager_on_occasion(oc) OR public.get_is_admin_on_occasion(oc)) THEN RETURN jsonb_build_object('code',403); END IF;
+ IF auth.uid() IS NULL OR NOT(public.can_manage_occasion_participants(oc)) THEN RETURN jsonb_build_object('code',403); END IF;
  PERFORM 1 FROM public.user_info WHERE id=usr FOR UPDATE;
  PERFORM 1 FROM public.occasion_users WHERE occasion=oc AND "user"=usr FOR UPDATE;
  IF NOT FOUND THEN RETURN jsonb_build_object('code',404); END IF;

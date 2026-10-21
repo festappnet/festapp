@@ -19,11 +19,11 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE='invalid occasion aggregate'; END IF;
   v_unit:=NULLIF(p_config->>'unit','')::bigint;
   v_organization:=NULLIF(p_config->>'organization','')::bigint;
+  PERFORM 1 FROM public.units u WHERE u.id=v_unit FOR SHARE;
   IF v_actor IS NULL OR v_unit IS NULL OR v_organization IS NULL
     OR NOT EXISTS (SELECT 1 FROM public.units u
       WHERE u.id=v_unit AND u.organization=v_organization)
-    OR NOT (public.get_is_manager_on_unit(v_unit)
-      OR public.get_is_editor_on_unit(v_unit)) THEN
+    OR NOT public.can_create_occasion(v_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(p_config::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_unit_client_mutation_v1(p_command_id,

@@ -7,6 +7,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
@@ -108,13 +109,16 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   int fontGeneration = 0;
   bool fontBusy = false;
   bool saving = false;
+  bool get _canAuthor =>
+      RightsService.currentOccasionId() == widget.occasionId &&
+      RightsService.hasCapability(AuthorizationCapabilities.ticketLayoutsWrite);
   bool get _canChangeBackground =>
       mounted &&
       !saving &&
       !imageBusy &&
       !fontBusy &&
       !pdfBusy &&
-      RightsService.isUnitEditor();
+      _canAuthor;
   bool get _canImport =>
       _canChangeBackground && editorFileDropIsActive(context);
   late final fontCatalog = TicketFontCatalog.load();
@@ -329,7 +333,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           bytes,
           widget.occasionId,
         );
-        if (!mounted || uploaded == null || !RightsService.isUnitEditor())
+        if (!mounted || uploaded == null || !_canAuthor)
           return;
         final resolved = await widget.service.resolve(
           widget.occasionId,
@@ -337,7 +341,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           draftLayout,
           uploaded,
         );
-        if (!mounted || !RightsService.isUnitEditor()) {
+        if (!mounted || !_canAuthor) {
           resolved.dispose();
           return;
         }
@@ -399,7 +403,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     await ExceptionHandler.guard(context, futureFunction: () async {
       final resolved = await widget.service
           .resolve(widget.occasionId, widget.type, draftLayout, null);
-      if (!mounted || !RightsService.isUnitEditor()) {
+      if (!mounted || !_canAuthor) {
         resolved.dispose();
         return;
       }

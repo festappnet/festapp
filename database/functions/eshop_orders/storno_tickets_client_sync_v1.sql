@@ -13,7 +13,7 @@ BEGIN
     OR (SELECT count(*) FROM eshop.tickets t
       WHERE t.id=ANY(p_tickets) AND t.occasion=v_occasion)
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id))
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'tickets',v_request_tickets)::text,'UTF8'),'sha256'),'hex');

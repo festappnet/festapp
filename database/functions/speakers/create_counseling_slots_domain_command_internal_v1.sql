@@ -9,7 +9,7 @@ DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
 BEGIN
   SELECT s.occasion INTO v_occasion FROM public.speakers s WHERE s.id=p_speaker;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_editor_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_speakers(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('speaker',p_speaker,
     'start',p_start,'end',p_end,'slotMinutes',p_slot_minutes,'place',p_place,

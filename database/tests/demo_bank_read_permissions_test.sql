@@ -1,7 +1,7 @@
 -- Run against the owned synthetic demo fixture, never production.
 BEGIN;
 DO $$
-DECLARE actor uuid; oc bigint; bank bigint; pay bigint; foreign_org bigint; n bigint;
+DECLARE actor uuid; oc bigint; bank bigint; pay bigint; foreign_org bigint; n bigint; demo_unit bigint;
 BEGIN
  PERFORM create_user_for_test('demo_bank_reader','demo-bank-reader@example.invalid');
  actor:=get_user_id('demo_bank_reader');
@@ -9,6 +9,7 @@ BEGIN
  SELECT occasion,bank_account INTO STRICT oc,bank FROM public.demo_occasions
   WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='ball';
  SELECT payment_info INTO STRICT pay FROM eshop.orders WHERE occasion=oc AND payment_info IS NOT NULL LIMIT 1;
+ SELECT unit INTO demo_unit FROM public.occasions WHERE id=oc;
  UPDATE public.demo_occasions SET is_listed=true WHERE occasion=oc;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
@@ -32,6 +33,10 @@ BEGIN
  PERFORM assert_false(public.get_is_manager_on_unit((SELECT unit FROM public.occasions WHERE id=oc)),'demo unit manager blocked');
  PERFORM assert_false(public.check_upload_permission(p_unit_id => (SELECT unit FROM public.occasions WHERE id=oc)),'demo unit media upload blocked');
  SET LOCAL ROLE authenticated;
+ PERFORM assert_false(public.can_manage_bank_account(bank),'raw demo roles do not grant bank management');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.get_bank_accounts_for_unit_management(demo_unit) account
+   WHERE account.id=bank AND account.bank_sync->>'remote_bank_account_id' IS NULL),
+   'demo bank list remains readable with raw admin flags and omits private connection metadata');
  BEGIN
   UPDATE eshop.bank_accounts SET title='Unauthorized change' WHERE id=bank;
   GET DIAGNOSTICS n=ROW_COUNT;

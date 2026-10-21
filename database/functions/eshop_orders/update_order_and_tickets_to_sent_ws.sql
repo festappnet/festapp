@@ -15,7 +15,7 @@ BEGIN
         RAISE EXCEPTION 'Order not found or no associated occasion.';
     END IF;
 
-    IF (SELECT get_is_editor_order_on_occasion(v_occasion_id)) <> TRUE THEN
+    IF (SELECT can_write_orders(v_occasion_id)) <> TRUE THEN
         RAISE EXCEPTION 'User is not editor.';
     END IF;
 

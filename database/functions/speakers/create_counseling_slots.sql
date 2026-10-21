@@ -32,7 +32,7 @@ BEGIN
         RETURN jsonb_build_object('code', 404);
     END IF;
 
-    IF NOT public.get_is_editor_on_occasion(v_occasion) THEN
+    IF NOT public.can_write_speakers(v_occasion) THEN
         RETURN jsonb_build_object('code', 403);
     END IF;
 

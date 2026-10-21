@@ -64,10 +64,14 @@ All functions MUST be created in the `public` schema. Never create functions in 
 
 Every `SECURITY DEFINER` function MUST:
 1. Set `search_path = public, extensions` — always use explicit `eshop.tablename` for eshop schema tables, never rely on search_path to resolve them
-2. Check permissions explicitly (`check_is_editor_order_on_occasion`, `check_is_manager_on_unit`, etc.)
+2. Check the canonical typed operation predicate in `user_permissions/` before data access, mutations and receipt replay; bind resource scope from stored rows.
 3. Use parameterized queries, never `EXECUTE` with raw strings
 
-Permission patterns: `check_is_*` raises exception (for writes), `get_is_*` returns boolean (for reads).
+Operation predicates (`can_read_orders`, `can_create_occasion`, etc.) own authorization. Private immutable expression rules also serve the SQL capability projection. `get_is_*` helpers provide live role facts; new callers must not rebuild combinations of them. Dart/JS consume capabilities in the normal context response and fail closed after identity, role or context changes.
+
+Occasion creation and setup finalization accept a unit editor or unit manager independently. Bank management is the explicit two-role exception: account admin AND manager of an actually linked non-demo unit. Linking a new account requires account admin AND manager of the target unit. Tenant admin is a distinct scope and does not substitute for either bank role. See the [bank matrix](../plans/canonical-authorization-BANK-2026-10-21.md).
+
+This authorization migration and its inventory, contraction and performance gates are complete locally; production application remains a separate, unperformed step. See the [execution result](../plans/canonical-authorization-RESULT-2026-10-20.md) for evidence and deployment status.
 
 ## Critical: No Persistent Application Triggers
 

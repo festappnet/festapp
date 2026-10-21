@@ -8,7 +8,7 @@ DECLARE v_actor uuid:=auth.uid(); v_id bigint; v_version bigint; v_begin jsonb;
   v_hash text; v_current jsonb; v_entity jsonb; v_publishable boolean;
   v_old_hidden boolean; v_new_hidden boolean; v_content_impact boolean;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_speakers(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;
   IF p_topic IS NULL OR jsonb_typeof(p_topic)<>'object'

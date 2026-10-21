@@ -13,8 +13,7 @@ declare
 begin
     -- 1. Validate Entity Type and Permissions
     if p_entity_type = 'occasion' then
-        if (public.get_is_editor_on_occasion(p_entity_id) IS NOT TRUE
-            AND public.get_is_editor_order_on_occasion(p_entity_id) IS NOT TRUE) then
+        if (public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE) then
             perform public.raise_error('permission_denied');
         end if;
 
@@ -26,7 +25,7 @@ begin
         returning organization, title into v_org_id, v_entity_title;
 
     elsif p_entity_type = 'unit' then
-        if (public.get_is_editor_on_unit(p_entity_id) IS NOT TRUE) then
+        if (public.can_write_unit_email_templates(p_entity_id) IS NOT TRUE) then
             perform public.raise_error('permission_denied');
         end if;
 

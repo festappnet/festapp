@@ -1,2 +1,5 @@
 /web/backend-activation.json text eol=lf
 /web_client/public/backend-activation.json text eol=lf
+
+# Generated local authorization catalog, raw measurements and evidence receipts.
+docs/plans/evidence/canonical-authorization-20261020/** linguist-generated=true

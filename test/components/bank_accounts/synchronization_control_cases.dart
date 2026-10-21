@@ -1,3 +1,5 @@
+import 'package:timezone/data/latest.dart' as timezone_data;
+import '../../support/fixtures/rights_context_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
@@ -16,7 +18,10 @@ class _Translations extends AssetLoader {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUpAll(() => SharedPreferences.setMockInitialValues({}));
+  setUpAll(() {
+    timezone_data.initializeTimeZones();
+    SharedPreferences.setMockInitialValues({});
+  });
   for (final scenario in [
     'paused-admin',
     'active-admin',
@@ -30,6 +35,9 @@ void main() {
       final translations =
           jsonDecode(File('assets/translations/cs.json').readAsStringSync())
               as Map<String, dynamic>;
+      final rights = RightsContextFixture.bankAccounts(
+          manageableAccounts: scenario.endsWith('nonadmin') ? {} : {1});
+      addTearDown(rights.dispose);
       bool? requested;
       final controller = TextEditingController();
       final paused = scenario.startsWith('paused');

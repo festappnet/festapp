@@ -21,7 +21,7 @@ DECLARE oc public.occasions; s public.scanner_sessions; cfg public.scanner_setti
 BEGIN
  IF NOT public.check_scan_attempt_budget_v1(p_occasion) THEN RETURN jsonb_build_object('code',429,'reason','abuse_limit_exceeded','retry_after_ms',30000,'server_time',now()); END IF;
  IF p_scan_code IS NOT NULL THEN
-  SELECT o.* INTO oc FROM public.occasions o JOIN public.occasions_hidden oh ON oh.id=o.occasion_hidden WHERE oh.secret=p_scan_code LIMIT 1;
+  SELECT * INTO oc FROM public.get_scanner_occasion_for_scan_code_internal(p_scan_code) LIMIT 1;
   -- record assignment above must match the occasion row exactly
   origin:='scan_link'; sec:=p_scan_code;
  ELSE
@@ -39,7 +39,7 @@ BEGIN
  RETURN jsonb_build_object('code',200,'server_time',now(),'data',jsonb_build_object('session_id',s.id,'token',token,'occasion_id',oc.id,'organization_id',oc.organization,
  'title',oc.title,'epoch',s.epoch,'expires_at',s.expires_at,'offline_until',s.offline_until,'settings_revision',cfg.revision,'settings',cfg.config,'device_name',s.device_name,
  'capabilities',jsonb_build_object('search_tickets',(cfg.config#>>'{manual_search,tickets}')::boolean,'search_users',(cfg.config#>>'{manual_search,users}')::boolean,
- 'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.get_is_editor_order_on_occasion(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
+ 'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.can_write_orders(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
 END $$;
 CREATE OR REPLACE FUNCTION public.revoke_scanner_session(p_session uuid,p_token text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$

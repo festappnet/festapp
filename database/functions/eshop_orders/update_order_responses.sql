@@ -46,7 +46,7 @@ BEGIN
     END IF;
 
     -- Check if the current user has order editing permissions for this occasion
-    IF (SELECT get_is_editor_order_on_occasion(v_occasion_id)) <> TRUE THEN
+    IF (SELECT can_write_orders(v_occasion_id)) <> TRUE THEN
         RAISE EXCEPTION 'User does not have permission to edit this order.';
     END IF;
 

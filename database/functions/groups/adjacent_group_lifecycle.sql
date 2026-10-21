@@ -12,9 +12,7 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_unit bigint;
 BEGIN
   SELECT o.unit,NOT o.is_hidden INTO v_unit,v_publishable
     FROM public.occasions o WHERE o.id=p_occasion;
-  IF v_actor IS NULL OR NOT (public.get_is_manager_on_occasion(p_occasion)
-    OR public.get_is_admin_on_occasion(p_occasion)
-    OR public.get_is_editor_on_unit(v_unit)) THEN
+  IF v_actor IS NULL OR NOT public.get_can_manage_occasion_users(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='profile import permission required'; END IF;
   IF p_rows IS NULL OR jsonb_typeof(p_rows)<>'array'
     OR p_delete_user_ids IS NULL OR jsonb_typeof(p_delete_user_ids)<>'array'
@@ -32,7 +30,7 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.users.import',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
-  IF NOT (public.get_is_manager_on_occasion(p_occasion) OR public.get_is_admin_on_occasion(p_occasion) OR public.get_is_editor_on_unit(v_unit)) THEN RAISE insufficient_privilege USING MESSAGE='profile import permission required'; END IF;
+  IF NOT public.get_can_manage_occasion_users(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='profile import permission required'; END IF;
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   PERFORM pg_catalog.pg_advisory_xact_lock(p_occasion);
   PERFORM 1 FROM public.user_group_info g WHERE g.occasion=p_occasion
@@ -139,8 +137,7 @@ DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_private_impacts jsonb; v_publishable boolean;
   v_actor_replacements jsonb:='[]'::jsonb;
 BEGIN
-  IF v_actor IS NULL OR NOT (public.get_is_manager_on_occasion(p_occasion)
-    OR public.get_is_admin_on_occasion(p_occasion)) THEN
+  IF v_actor IS NULL OR NOT public.can_manage_occasion_participants(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,
@@ -149,7 +146,7 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.user.delete',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
-  IF NOT (public.get_is_manager_on_occasion(p_occasion) OR public.get_is_admin_on_occasion(p_occasion)) THEN RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
+  IF NOT public.can_manage_occasion_participants(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   PERFORM 1 FROM public.occasion_users ou WHERE ou.occasion=p_occasion
     AND ou."user"=p_user FOR UPDATE;

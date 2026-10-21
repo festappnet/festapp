@@ -1,3 +1,5 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 
@@ -170,7 +172,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               value: sync.state == 'connected' || sync.state == 'degraded',
               onChanged: !widget.isReadOnly &&
                       !widget.isSaving &&
-                      widget.account.isAdmin &&
+                      RightsService.hasBankCapability(widget.account.id,
+                          AuthorizationCapabilities.bankSyncManage) &&
                       [
                         'connected',
                         'degraded',

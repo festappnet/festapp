@@ -13,7 +13,7 @@ SET search_path = public, extensions AS $$
         END IF;
 
         -- Check if the user has the right to edit the given occasion
-        IF (get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
+        IF (can_write_orders(occasion_id)) <> TRUE THEN
             -- Return an error if the user is not authorized
             RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
         END IF;

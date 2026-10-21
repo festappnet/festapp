@@ -1,10 +1,13 @@
 DO $$
-DECLARE v_bank bigint; v_user uuid; v_id uuid:=gen_random_uuid(); v_new uuid:=gen_random_uuid(); v_context jsonb; v_intent jsonb;
+DECLARE v_bank bigint; authz_unit bigint; v_user uuid; v_id uuid:=gen_random_uuid(); v_new uuid:=gen_random_uuid(); v_context jsonb; v_intent jsonb;
 BEGIN
   SELECT id INTO v_user FROM public.user_info LIMIT 1;
   INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
     VALUES('BankSync recovery fixture','FIO','8888/2010',ARRAY['CZK']) RETURNING id INTO v_bank;
   INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(v_bank,v_user,true);
+  INSERT INTO public.units(title,organization) SELECT 'Bank authorization fixture',id FROM public.organizations LIMIT 1 RETURNING id INTO authz_unit;
+  INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(authz_unit,v_user,true);
+  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(authz_unit,v_bank,0);
   PERFORM set_config('request.jwt.claim.sub',v_user::text,true);
   v_intent:=public.begin_bank_sync_operation(v_id,v_bank,'set_token',repeat('a',64));
   v_intent:=public.begin_bank_sync_operation(v_new,v_bank,'set_token',repeat('a',64));

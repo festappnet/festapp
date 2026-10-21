@@ -9,7 +9,7 @@ BEGIN
  SELECT unit,organization INTO target_unit,target_org FROM public.occasions WHERE id=target.occasion;
  IF r.id IS NULL OR target.id IS NULL OR NOT public.can_copy_occasion_source(r.occasion)
   OR target_org IS DISTINCT FROM (SELECT organization FROM public.occasions WHERE id=r.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy source denied'; END IF;
- IF public.get_is_editor_order_on_occasion(target.occasion) IS NOT TRUE AND public.get_is_manager_on_unit(target_unit) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy target denied'; END IF;
+ IF public.can_copy_inventory_target(target.occasion) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy target denied'; END IF;
  IF p_place IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.places WHERE id=p_place AND occasion=target.occasion) THEN RAISE check_violation USING MESSAGE='Inventory copy place denied'; END IF;
  INSERT INTO public.resources(title,description,capacity,booking_rules,inventory_pool,place,occasion,unit,data)
  VALUES(r.title,r.description,r.capacity,r.booking_rules,p_pool,p_place,target.occasion,target_unit,r.data) RETURNING id INTO new_id;
@@ -29,7 +29,7 @@ BEGIN
  IF source.id IS NULL OR NOT public.can_copy_occasion_source(source.occasion)
   OR (SELECT organization FROM public.occasions WHERE id=p_occasion) IS DISTINCT FROM
      (SELECT organization FROM public.occasions WHERE id=source.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy source denied'; END IF;
- IF public.get_is_editor_order_on_occasion(p_occasion) IS NOT TRUE AND public.get_is_manager_on_unit((SELECT unit FROM public.occasions WHERE id=p_occasion)) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy target denied'; END IF;
+ IF public.can_copy_inventory_target(p_occasion) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='Inventory copy target denied'; END IF;
  IF (p_product IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.products WHERE id=p_product AND occasion=p_occasion))
   OR (p_blueprint IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.blueprints WHERE id=p_blueprint AND occasion=p_occasion))
   OR (p_context IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.inventory_contexts c JOIN public.inventory_pools p ON p.id=c.inventory_pool WHERE c.id=p_context AND p.occasion=p_occasion))

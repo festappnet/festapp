@@ -111,20 +111,6 @@ $$;
 REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_bank_sync_connections_for_unit(p_unit_id bigint)
-RETURNS TABLE(connection_id bigint,remote_bank_account_id text)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  RETURN QUERY SELECT DISTINCT c.id,c.remote_bank_account_id FROM eshop.bank_sync_connections c
-    JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
-      (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
-    WHERE uba.unit=p_unit_id AND c.state IN ('connected','degraded') AND c.mode='api' AND c.legacy_blocked_at IS NOT NULL;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) TO service_role;
-
 CREATE OR REPLACE FUNCTION public.record_bank_sync_pull(p_id bigint,p_success_at timestamptz,p_error text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN

@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
@@ -246,7 +247,7 @@ class _MySchedulePageState extends State<MySchedulePage> {
     if (mounted && result.kind == MapVisitKind.returned) await loadData();
   }
 
-  bool _isUserApprover() => RightsService.isApprover();
+  bool _isUserApprover() => RightsService.canOpenScheduleEntryCheck();
 
   Future<void> _handleScanButtonPressed(
       BuildContext context, int eventId) async {
@@ -266,8 +267,8 @@ class _MySchedulePageState extends State<MySchedulePage> {
           await loadData();
         },
         canSignIn: () {
-          final currentItem = _dots?.firstWhereOrNull(
-              (element) => element.id == timeBlockItem.id);
+          final currentItem = _dots
+              ?.firstWhereOrNull((element) => element.id == timeBlockItem.id);
           return currentItem?.canSignIn() ?? false;
         },
       ),
@@ -369,7 +370,8 @@ class _MySchedulePageState extends State<MySchedulePage> {
             controller: AdvancedTimelineController(
               events: _dots!,
               onEventPressed: _eventPressed,
-              showAddNewEventButton: RightsService.isEditor,
+              showAddNewEventButton: () => RightsService.hasCapability(
+                  AuthorizationCapabilities.scheduleWrite),
               onSignInEvent: _handleSignIn,
               onSignOutEvent: _handleSignOut,
               onAddToProgramEvent: _handleAdd,

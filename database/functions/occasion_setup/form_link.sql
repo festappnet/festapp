@@ -5,7 +5,7 @@ RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,
 DECLARE d public.occasion_setup_drafts; base text; candidate text; suffix integer:=1; year text;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id;
- IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+ IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  IF length(coalesce(p_title,''))>500 OR length(coalesce(p_requested_link,''))>80 THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid public link input'; END IF;

@@ -20,7 +20,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
-  for (final bank in ['2010', '3030', '0800']) {
+  for (final bank in ['2010', '3030', '0800', '9999']) {
     testWidgets('email connection availability for bank $bank', (tester) async {
       await EasyLocalization.ensureInitialized();
       final data =
@@ -59,8 +59,8 @@ void main() {
       final button = find.widgetWithText(
           OutlinedButton, data['BankAccount']['connect_email']);
       expect(tester.widget<OutlinedButton>(button).onPressed == null,
-          bank == '0800');
-      if (bank == '0800') {
+          bank == '9999');
+      if (bank == '9999') {
         expect(find.text(data['BankAccount']['emailBankUnsupported']),
             findsOneWidget);
       } else {

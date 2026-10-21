@@ -14,10 +14,9 @@ BEGIN
     END IF;
 
     IF p_unit_id IS NOT NULL THEN
-        RETURN public.get_is_editor_on_unit(p_unit_id);
+        RETURN public.can_upload_unit_media(p_unit_id);
     ELSIF p_occasion_id IS NOT NULL THEN
-        RETURN public.get_is_editor_on_occasion(p_occasion_id)
-            OR public.get_is_editor_order_on_occasion(p_occasion_id);
+        RETURN public.can_upload_occasion_media(p_occasion_id);
     END IF;
 
     RETURN false;

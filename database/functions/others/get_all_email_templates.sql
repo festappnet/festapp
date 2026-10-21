@@ -42,8 +42,7 @@ BEGIN
       RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
     END IF;
     IF NOT public.is_service_role()
-       AND public.get_is_editor_view_on_occasion(v_occ) IS NOT TRUE
-       AND public.get_is_editor_order_view_on_occasion(v_occ) IS NOT TRUE THEN
+       AND public.can_read_occasion_email_templates(v_occ) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE = 'Occasion template access denied';
     END IF;
     v_unit := v_actual_unit;
@@ -54,14 +53,12 @@ BEGIN
       RAISE insufficient_privilege USING MESSAGE = 'Invalid email template hierarchy';
     END IF;
     IF NOT public.is_service_role()
-       AND public.get_is_manager_on_unit(v_unit) IS NOT TRUE
-       AND public.get_is_editor_on_unit(v_unit) IS NOT TRUE
-       AND public.get_is_editor_view_on_unit(v_unit) IS NOT TRUE THEN
+       AND public.can_read_unit_email_templates(v_unit) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE = 'Unit template access denied';
     END IF;
     v_org := v_actual_org;
   ELSIF NOT public.is_service_role() THEN
-    IF v_org IS NULL OR public.get_is_admin_on_organization(v_org) IS NOT TRUE THEN
+    IF v_org IS NULL OR public.can_manage_organization_email_templates(v_org) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE = 'Organization template access denied';
     END IF;
   END IF;

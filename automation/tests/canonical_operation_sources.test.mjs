@@ -82,11 +82,27 @@ test('effective SQL source fingerprints are reproducible from release inputs', (
   execFileSync('python3',['-m','unittest','discover','-s','automation/tests','-p','test_canonical_source_contract.py']);
 });
 
-test('retired profile implementations have no authored definition or SQL caller', () => {
-  const retired = JSON.parse(read('automation/canonical-source-contract.json')).retiredSignatures;
-  const sql = files('database/functions').map(read).join('\n');
-  for (const signature of retired) {
-    const name = signature.split('(')[0].split('.').at(-1);
-    assert.doesNotMatch(sql, new RegExp(`\\b${name}\\s*\\(`, 'i'), signature);
-  }
+test('retired implementations have no authored identity or live SQL caller', () => {
+  // Parse declarations rather than matching names inside guarded DROP metadata.
+  // A retained overload (update_user(jsonb)) is a distinct PostgreSQL identity.
+  execFileSync('python3', ['-c', String.raw`
+import sys,json,re
+from pathlib import Path
+sys.path.insert(0,'automation')
+from generate_canonical_source_contract import statements,CREATE,identity
+retired=set(json.loads(Path('automation/canonical-source-contract.json').read_text())['retiredSignatures'])
+functions=[]
+for path in Path('database/functions').rglob('*.sql'):
+ for statement in statements(path.read_text()):
+  if match:=CREATE.search(statement):
+   signature=identity(match[1],match[2],True)
+   assert signature not in retired,(str(path),signature)
+   functions.append((signature,match[5],str(path)))
+active_names={sig.split('(')[0] for sig,_,_ in functions}
+retired_names={sig.split('(')[0] for sig in retired}-active_names
+for signature,body,path in functions:
+ body=re.sub(r"--[^\n]*|/\*.*?\*/|'(?:''|[^'])*'",'',body,flags=re.S)
+ for name in retired_names:
+  assert not re.search(r'\b'+re.escape(name.removeprefix('public.'))+r'\s*\(',body,re.I),(path,signature,name)
+`], {stdio:'pipe'});
 });

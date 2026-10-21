@@ -9,7 +9,7 @@ DECLARE
 BEGIN
 
   SELECT occasion INTO v_occasion_id FROM eshop.orders WHERE id = order_id;
-  IF NOT get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+  IF NOT can_read_orders(v_occasion_id) THEN
     RAISE EXCEPTION 'User is not authorized to view transactions for this occasion.' USING ERRCODE = 'P0001';
   END IF;
 

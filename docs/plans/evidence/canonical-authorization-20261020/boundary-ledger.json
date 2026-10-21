@@ -1,0 +1,701 @@
+{
+  "state": "all inventoried transport/dynamic SQL candidates explicitly classified",
+  "limits": "Boundary descriptions are source inspection. Provider/Auth delivery is mocked in tests; no production or paid provider was called.",
+  "transportBoundaries": [
+    {
+      "source": "supabase/functions/_shared/accountDeletion.ts",
+      "line": 32,
+      "code": "fetch: typeof fetch;",
+      "admission": "Dependency fetch type, not an endpoint. Protected own-account deletion service flow.",
+      "sourceSha256": "5db35d2bfc13da98ca28d777d068204a1742d00c06acf968b4d086aa53f5ffa1"
+    },
+    {
+      "source": "supabase/functions/_shared/googleAuthFlow.ts",
+      "line": 39,
+      "code": "fetch(input, { ...init, signal: AbortSignal.timeout(8000) });",
+      "admission": "Shared OAuth state/nonce/code/origin verification; fetch dependency injection, not another domain-policy boundary.",
+      "sourceSha256": "0f625dfb7ac5dfdde257c10ef87a3eb8ee00e709b16f0d86e42dc7f9ff6b5576"
+    },
+    {
+      "source": "supabase/functions/_shared/googleAuthFlow.ts",
+      "line": 46,
+      "code": "global: { fetch: boundedFetch },",
+      "admission": "Shared OAuth state/nonce/code/origin verification; fetch dependency injection, not another domain-policy boundary.",
+      "sourceSha256": "0f625dfb7ac5dfdde257c10ef87a3eb8ee00e709b16f0d86e42dc7f9ff6b5576"
+    },
+    {
+      "source": "supabase/functions/_shared/ticketFonts.ts",
+      "line": 46,
+      "code": "store:FontStore; fetch:typeof fetch; bundled(asset:FontAsset):Promise<Uint8Array|null>;",
+      "admission": "Font fetch/store interface, not an endpoint; admitted renderer/service font requests only.",
+      "sourceSha256": "ae39123bab36310114f57ddadb1d444154dd5b3fc60b5ab11f4b56247fe68f0e"
+    },
+    {
+      "source": "supabase/functions/auth-email-hook/index.ts",
+      "line": 3,
+      "code": "Deno.serve(",
+      "admission": "Verified Auth hook signature; durable account email enqueue. Technical sender identity, not organizer editorial authority.",
+      "sourceSha256": "d98217ea5cea954b16e623362f2fc8de63b93ac8934f1e731761681b99ccc84c"
+    },
+    {
+      "source": "supabase/functions/bank-sync-manage/index.ts",
+      "line": 15,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Verified JWT; check_is_admin_bank_account delegates to two-role bank owner; connect/update SQL rechecks actual account before mutation.",
+      "sourceSha256": "14106d6819c6989385ed56a135b0333ec09b57037dc6f1db54fe37b1413580d6"
+    },
+    {
+      "source": "supabase/functions/bank-sync-reconcile/index.ts",
+      "line": 6,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Protected system request secret and explicit monitor organization; service reconciliation owns stored bank connections, no caller role override.",
+      "sourceSha256": "e6066886be53467fb51915c7be8c94c27dccb7caae6006a8f449ac5112972ec7"
+    },
+    {
+      "source": "supabase/functions/bank-sync-webhook/index.ts",
+      "line": 4,
+      "code": "Deno.serve((req) => bankSyncWebhook(req, {",
+      "admission": "BankSync webhook secret; authenticated provider event resolves stored connection before service processing.",
+      "sourceSha256": "e85dea405ff890e6ad112f913c727515a7c5ea1c89403319238bcdd46ed33153"
+    },
+    {
+      "source": "supabase/functions/cancel-reception-registration/index.ts",
+      "line": 10,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Caller JWT passed to canonical reception cancellation command; stored registration binds occasion and scoped participant-manage predicate.",
+      "sourceSha256": "bbe84927948336d37fa2445f57e395f134ebbc977f783ac8907be21c7568d7b2"
+    },
+    {
+      "source": "supabase/functions/confirm-account-deletion/index.ts",
+      "line": 25,
+      "code": "Deno.serve(async (request) => {",
+      "admission": "One-use account deletion proof; SQL request/expiry/state transition and protected asset cleanup service boundary.",
+      "sourceSha256": "efb2ec29ec76d3e0078749ee28d423081ab734d93996967474012613be655f51"
+    },
+    {
+      "source": "supabase/functions/customer-order-access/index.ts",
+      "line": 11,
+      "code": "Deno.serve(async request => {",
+      "admission": "Verified user or scoped customer proof; service resolve_customer_order_access_v1 binds actual order, actor and delivery.",
+      "sourceSha256": "a98799bba5185148f234d44b40a475d2248fd983e59a3061467465e1d5fe5b9d"
+    },
+    {
+      "source": "supabase/functions/delete-order/index.ts",
+      "line": 12,
+      "code": "Deno.serve(async (request) => {",
+      "admission": "JWT user command locks/authorizes actual order; service invoice saga follows admitted receipt, no arbitrary service order deletion.",
+      "sourceSha256": "0558f83eab2f735082a36c72a49efe3b301070e616e9b2c502235a9590fa5b4a"
+    },
+    {
+      "source": "supabase/functions/download-ticket/index.ts",
+      "line": 15,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Scoped customer access proof, caller JWT canonical ticket-read SQL, or protected system request-secret lane. Ticket/order relationship resolved in SQL.",
+      "sourceSha256": "57fe9a81f8cd061410a9fdfde4602c809b9a1185137db1005b0c977cf4cca69f"
+    },
+    {
+      "source": "supabase/functions/email-confirmation-status/index.ts",
+      "line": 8,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "SHA256 of one-use confirmation capability; SQL returns limited confirmation state, not email/profile content.",
+      "sourceSha256": "4a9c82e2a7672daf5fe268e58927657e0fba36ae3d0b85b6eb181278e7d33b6a"
+    },
+    {
+      "source": "supabase/functions/email-provider-events/index.ts",
+      "line": 3,
+      "code": "Deno.serve(",
+      "admission": "Verified provider event signature; durable message/attempt references, no arbitrary organizer role.",
+      "sourceSha256": "5185ff39590afabced634070f5230060ce78e19f0b367ca62df320611648b852"
+    },
+    {
+      "source": "supabase/functions/exchange-login-qr/index.ts",
+      "line": 20,
+      "code": "Deno.serve((req) => handleQrExchange(req, {",
+      "admission": "One-use login QR proof and SQL consume/expiry boundary; identity exchange, no editorial capability snapshot.",
+      "sourceSha256": "3532fb77cb9179da00e7f7e1b418f82ae3111ec88fbf5c9ad14b360d732b28fe"
+    },
+    {
+      "source": "supabase/functions/exchange-sign-in-code/index.ts",
+      "line": 18,
+      "code": "fetch(input, {",
+      "admission": "One-use sign-in proof consumed by Auth/SQL flow; durable authentication email lifecycle, no organizer policy formula.",
+      "sourceSha256": "fdadbadf0cadf816dc0142f9a6884146968f1d26b0bbf7b6579c3c67eb4b5b23"
+    },
+    {
+      "source": "supabase/functions/exchange-sign-in-code/index.ts",
+      "line": 24,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "One-use sign-in proof consumed by Auth/SQL flow; durable authentication email lifecycle, no organizer policy formula.",
+      "sourceSha256": "fdadbadf0cadf816dc0142f9a6884146968f1d26b0bbf7b6579c3c67eb4b5b23"
+    },
+    {
+      "source": "supabase/functions/fetch-http-data/handler.ts",
+      "line": 94,
+      "code": "fetch: dependencies.fetch ? (url, init) => send(url, init) : fetchPinnedHttps,",
+      "admission": "Caller JWT admit_external_image_fetch_v1 shares media owner before bounded pinned public HTTPS fetch. No service-secret bypass.",
+      "sourceSha256": "ea9f3d3c341e45c4e28c0239605f0f33e494d25aace991f8fe503a19d4102384"
+    },
+    {
+      "source": "supabase/functions/fetch-http-data/index.ts",
+      "line": 3,
+      "code": "Deno.serve((request: Request) => handleFetchHttpData(request, {",
+      "admission": "Caller JWT admit_external_image_fetch_v1 shares media owner before bounded pinned public HTTPS fetch. No service-secret bypass.",
+      "sourceSha256": "7f4bdaa2a982f88ac3b5251d4d2d19a1733144bf88be021b983435c457552e08"
+    },
+    {
+      "source": "supabase/functions/fetch-http-data/safeFetch.ts",
+      "line": 10,
+      "code": "fetch(input: URL, init: RequestInit, address: string): Promise<Response>;",
+      "admission": "Bounded DNS/IP/content validation and pinned public HTTPS fetch after caller admission. Fetch interface is not independent editorial authority.",
+      "sourceSha256": "ff1cf739ac92424ff44cfd2c0740e48e88462e3180cd9b622e2ad006d27e35aa"
+    },
+    {
+      "source": "supabase/functions/fetch-http-data/safeFetch.ts",
+      "line": 15,
+      "code": "fetch: fetchPinnedHttps,",
+      "admission": "Bounded DNS/IP/content validation and pinned public HTTPS fetch after caller admission. Fetch interface is not independent editorial authority.",
+      "sourceSha256": "ff1cf739ac92424ff44cfd2c0740e48e88462e3180cd9b622e2ad006d27e35aa"
+    },
+    {
+      "source": "supabase/functions/fetch-transactions/index.ts",
+      "line": 5,
+      "code": "Deno.serve(createTransactionFetchHandler({",
+      "admission": "Verified JWT; canonical two-role scoped unit-account query, provider only after nonempty authorized result. No global service unit listing.",
+      "sourceSha256": "624c9524682e8b9da04cdc6c35798252bbe99bcaa3ee0806e8c934e39a3290f9"
+    },
+    {
+      "source": "supabase/functions/generate-order-agreement/index.ts",
+      "line": 460,
+      "code": "Deno.serve(async (req: Request) => {",
+      "admission": "Caller JWT canonical order-read context, or protected system request-secret lane; actual order binds agreement data.",
+      "sourceSha256": "80ad82d8bd00a3704a30f87fbefe6ba2146a81e62a043cb548aad21d0e2198bb"
+    },
+    {
+      "source": "supabase/functions/google-auth-callback/index.ts",
+      "line": 2,
+      "code": "Deno.serve((request) => handleGoogleAuth(\"callback\", request));",
+      "admission": "Shared Google OAuth state/nonce, origin and code verification; external identity authentication, not domain roles.",
+      "sourceSha256": "9a87e07639fb64d469dc40af1ea6e263e36bb3d2d53252c81e118950f5e3bc34"
+    },
+    {
+      "source": "supabase/functions/google-auth-complete/index.ts",
+      "line": 2,
+      "code": "Deno.serve((request) => handleGoogleAuth(\"complete\", request));",
+      "admission": "Shared Google OAuth state/nonce and one-use completion; external identity authentication, not domain roles.",
+      "sourceSha256": "b4caed67bbf1f10f98ddd9263e9959dd23b1301352e9687d1d03fc577bf8ccf3"
+    },
+    {
+      "source": "supabase/functions/google-auth-start/index.ts",
+      "line": 2,
+      "code": "Deno.serve((request) => handleGoogleAuth(\"start\", request));",
+      "admission": "Shared origin-validated Google OAuth state/nonce setup; no organizer authorization grants.",
+      "sourceSha256": "e0b1255991985d258dcb5d012c4dd6e6928dc634138a597da8ba6ad6e3e5a4fb"
+    },
+    {
+      "source": "supabase/functions/mcp-session-exchange/index.ts",
+      "line": 11,
+      "code": "Deno.serve(req => {",
+      "admission": "Allowlisted configured tenant origin, one-use session exchange and verified user; SQL operations separately intersect consent/OAuth scope.",
+      "sourceSha256": "d46e0b3d9c89f89d59bc06ea45ccc960e32008bf9f1a98c895a45fb09ce7b1f6"
+    },
+    {
+      "source": "supabase/functions/notify/index.ts",
+      "line": 6,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Protected webhook token and stored organization push configuration. Technical push delivery, not a public editorial endpoint.",
+      "sourceSha256": "a4cd9c49862e77b428aa804a541721aa24a811c15791ccf5a7026951de8a54e7"
+    },
+    {
+      "source": "supabase/functions/preview-ticket-layout/index.ts",
+      "line": 7,
+      "code": "Deno.serve(req=>handlePreview(req,{",
+      "admission": "Caller JWT canonical authoring/read-only layout or owned setup-draft admission; renderer receives only admitted bytes.",
+      "sourceSha256": "0ed2d63b2a37b6b35b80d3e91ce7a22082baa055806b80afaf222d097223ad65"
+    },
+    {
+      "source": "supabase/functions/process-email-queue/index.ts",
+      "line": 14,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Protected system request secret; service claim/attempt state transitions and current intent validation, no arbitrary public enqueue.",
+      "sourceSha256": "9642b7522d5aeeba011ff60b4589467fe5f5156ec9dead8efe40e8de6b2ab211"
+    },
+    {
+      "source": "supabase/functions/register/index.ts",
+      "line": 20,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Public account registration Auth flow, configured organization initialization, durable verification email and abuse controls; no existing organizer role override.",
+      "sourceSha256": "866727039ca59d82e782212d6b70d87c04df214532576188922aca35430c0703"
+    },
+    {
+      "source": "supabase/functions/report-exchange-rates/index.ts",
+      "line": 2,
+      "code": "Deno.serve(createRateHandler({authorize: async authorization => {",
+      "admission": "Verified Auth user identity, bounded external exchange-rate report. No tenant-private reads or mutations.",
+      "sourceSha256": "15dc3ee4fb8867bb90fb81248cac34fa33ee0aa4c4fc8d00c98aac379875bf65"
+    },
+    {
+      "source": "supabase/functions/request-account-deletion/index.ts",
+      "line": 16,
+      "code": "Deno.serve(async (request) => {",
+      "admission": "Verified JWT user; own account one-use deletion request and durable confirmation email, no caller-selected victim.",
+      "sourceSha256": "0ac18362782437dd7177241093804485303c0ae7ddf5900e0da729894d190764"
+    },
+    {
+      "source": "supabase/functions/send-app-links/index.ts",
+      "line": 27,
+      "code": "Deno.serve(async (request) => {",
+      "admission": "Verified actor; enqueue_participant_notice_for_actor_v1 rechecks live participant-management rule and stored recipient/template before dedupe.",
+      "sourceSha256": "88133ba1d17f9f98545689a8fe36a6d6bd7f424f13723ff1c14104d76458373b"
+    },
+    {
+      "source": "supabase/functions/send-custom-email/index.ts",
+      "line": 19,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Verified actor; enqueue_custom_email_for_actor_v1 owns live custom-email rule, actual scope and dedupe authorization.",
+      "sourceSha256": "25e82ce98eb8708523e1ff3287067db5dcc4d8b64825ba4441bcaeb865c7ed30"
+    },
+    {
+      "source": "supabase/functions/send-email/index.ts",
+      "line": 9,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Protected system request-secret lane or verified caller; canonical enqueue_order_email owns order intent and actor authority.",
+      "sourceSha256": "87121f75203011da71d968ee6dd954a353102a0a4c820f3daef8eaa0aa1788a6"
+    },
+    {
+      "source": "supabase/functions/send-occasion-team-invitations/index.ts",
+      "line": 5,
+      "code": "Deno.serve(createInvitationHandler({",
+      "admission": "Caller JWT setup invitation access; service enqueue validates stored invitation/creator scope and intended recipient.",
+      "sourceSha256": "71508a68700a3937184ecfbe50df30977bd31e454e1c045998250400a7db397b"
+    },
+    {
+      "source": "supabase/functions/send-reset-password-link/index.ts",
+      "line": 54,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Public bounded Auth reset request; durable account email flow, no organizer role or arbitrary private profile data.",
+      "sourceSha256": "e1755e49d13d143febdb2389a01877250ea4a5113b90bf6636b85d1ea0a719f6"
+    },
+    {
+      "source": "supabase/functions/send-sign-in-code/index.ts",
+      "line": 28,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Own sign-in/Auth proof flow; optional team notice uses SQL projection and actor-bound enqueue owner. Role fields only format recipient labels.",
+      "sourceSha256": "f92cebab2855fcbdae5c617adefb71ab67b6121d7e8ecd11f8a08ad0ada3d4ed"
+    },
+    {
+      "source": "supabase/functions/send-ticket-order/index.ts",
+      "line": 15,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "JWT replacement command or scoped public order submission path; canonical order/invoice command binds resource and receipt before provider side effects.",
+      "sourceSha256": "afb1b9092866a21efe6cada1a633cfffb778d1f05bad557ee6a96981883d2913"
+    },
+    {
+      "source": "supabase/functions/send-tickets/index.ts",
+      "line": 10,
+      "code": "Deno.serve(async (req) => {",
+      "admission": "Verified actor or protected system request secret; canonical enqueue_order_email owns live order admission and dedupe.",
+      "sourceSha256": "55ea6bcd34cd150656943aabdd522ddba58f405fa5a0e4e4a123031275aca181"
+    },
+    {
+      "source": "supabase/functions/waitlist-commands/index.ts",
+      "line": 28,
+      "code": "Deno.serve(async (request) => {",
+      "admission": "Verified JWT actor passed only over trusted service boundary; execute_waitlist_command_client_sync_v1 owns actual order/offer/capability and replay.",
+      "sourceSha256": "75bef72f6c55dd2fdf0c084fcd2dc9f24c2ca3afc06a21c6f9d08b86c0c8a8a2"
+    },
+    {
+      "source": "tools/festapp/src/auth/session.mjs",
+      "line": 102,
+      "code": "global: { fetch: this.fetch, ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}) },",
+      "admission": "Transport identity/session adapter; no domain role formulas. SQL commands own live admission.",
+      "sourceSha256": "cbcd501c2f6860ab6b9b888c75d8ce3f4e0896818a1ad7a2ed38168a3bb66522"
+    },
+    {
+      "source": "tools/festapp/src/mcp/server.mjs",
+      "line": 17,
+      "code": "const registered = server.registerTool(",
+      "admission": "Fixed catalog MCP tool/resource registration. Identity, OAuth and consent narrow calls; domain SQL owns resource admission.",
+      "sourceSha256": "70cff9cf0d96d640e6345e3ab61900283450cf35f8734f5c0490ea2f30169daa"
+    },
+    {
+      "source": "tools/festapp/src/mcp/server.mjs",
+      "line": 78,
+      "code": "server.registerResource(",
+      "admission": "Fixed catalog MCP tool/resource registration. Identity, OAuth and consent narrow calls; domain SQL owns resource admission.",
+      "sourceSha256": "70cff9cf0d96d640e6345e3ab61900283450cf35f8734f5c0490ea2f30169daa"
+    },
+    {
+      "source": "tools/festapp/src/operations/catalog.mjs",
+      "line": 270,
+      "code": "await this.owner.authorizeOperation?.(id, args);",
+      "admission": "Fixed operation dispatch plus input validation and consent narrowing; SQL owner checks current actual resource.",
+      "sourceSha256": "39a84aa10c4f55aa443ccb18305f715cb0c132ca689da93c5fdb4f98678e40dd"
+    },
+    {
+      "source": "tools/festapp/src/remote/delegation.mjs",
+      "line": 39,
+      "code": "authorizeOperation(id, args) {",
+      "admission": "Consent/OAuth resource narrowing, expiry/revocation and verified actor; no detached authoritative role preflight.",
+      "sourceSha256": "42451418af9c5f467fb6a343ef32fbf92fd01fbd5e6dbf40cc702e35f1b90ae1"
+    },
+    {
+      "source": "web_client/src/services/flutter_runtime_handoff.js",
+      "line": 79,
+      "code": "fetch: overrides.fetch || root.fetch.bind(root),",
+      "admission": "Fetch dependency for compiled runtime handoff/version activation, not private domain authorization.",
+      "sourceSha256": "729c603a653355ea39621e862813ab0b34e20839a5bae9bfd3775bc122be1e4f"
+    },
+    {
+      "source": "workers/image-worker/src/index.ts",
+      "line": 18,
+      "code": "async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {",
+      "admission": "Public R2 reads; private/presign/upload/delete delegate JWT plus canonical scoped SQL admission. Account-assets/fonts use protected service boundary.",
+      "sourceSha256": "a629865164fa59c109839da34447ca77e1321a8f5a057efab1975a42c6de7abe"
+    },
+    {
+      "source": "workers/self-hosted-monitor/src/index.mjs",
+      "line": 79,
+      "code": "fetch: env.MONITORING_SERVICE?.fetch.bind(env.MONITORING_SERVICE) ?? fetchImpl,",
+      "admission": "Scheduled fixed-target health checks with monitoring token; no domain role combination or arbitrary tenant operation.",
+      "sourceSha256": "2862342335f57ec14f9ad7b2f3cae3472c021d9a4c1cfbed4754bf7f19411c1b"
+    },
+    {
+      "source": "workers/self-hosted-monitor/src/index.mjs",
+      "line": 114,
+      "code": "async scheduled(_controller, env, ctx) {",
+      "admission": "Scheduled fixed-target health checks with monitoring token; no domain role combination or arbitrary tenant operation.",
+      "sourceSha256": "2862342335f57ec14f9ad7b2f3cae3472c021d9a4c1cfbed4754bf7f19411c1b"
+    },
+    {
+      "source": "workers/storage-retirement/index.mjs",
+      "line": 3,
+      "code": "fetch(request) {",
+      "admission": "Rejects retired Storage paths; no private asset read/write admission.",
+      "sourceSha256": "c08d9b61efe3a93f55c70d44decd2821fc2aab671a39881bad2529bddaae39f2"
+    },
+    {
+      "source": "workers/supabase-legacy-keepalive/src/index.mjs",
+      "line": 72,
+      "code": "async fetch() {",
+      "admission": "HTTP returns404; scheduled fixed legacy Auth pings only. No domain data writes or provider migration.",
+      "sourceSha256": "9aac8cd0ba2549bae66a4ce09cc80914390d08314b29206a3cc0f459717c9526"
+    },
+    {
+      "source": "workers/supabase-legacy-keepalive/src/index.mjs",
+      "line": 75,
+      "code": "async scheduled(_controller, env, ctx) {",
+      "admission": "HTTP returns404; scheduled fixed legacy Auth pings only. No domain data writes or provider migration.",
+      "sourceSha256": "9aac8cd0ba2549bae66a4ce09cc80914390d08314b29206a3cc0f459717c9526"
+    },
+    {
+      "source": "workers/sync-publisher/src/worker.ts",
+      "line": 133,
+      "code": "fetch: handlePublicationTick,",
+      "admission": "Protected wake token or scheduled fixed service publication; SQL materialization owns stored resource publication. Publishes public projection only.",
+      "sourceSha256": "ea0c3694e1195ed412668747600fe9c55742c09fe10a43647287d981732e1b11"
+    },
+    {
+      "source": "workers/sync-publisher/src/worker.ts",
+      "line": 134,
+      "code": "async scheduled(controller: ScheduledController, env: Env): Promise<void> {",
+      "admission": "Protected wake token or scheduled fixed service publication; SQL materialization owns stored resource publication. Publishes public projection only.",
+      "sourceSha256": "ea0c3694e1195ed412668747600fe9c55742c09fe10a43647287d981732e1b11"
+    },
+    {
+      "source": "workers/sync-worker/src/index.ts",
+      "line": 117,
+      "code": "fetch(request, env, ctx) {",
+      "admission": "Public read-only GET/HEAD R2 sync heads, bounded path and cache; no private data or mutations.",
+      "sourceSha256": "290d14fa45b02a3adc6afe379b534a1be0c21119aa077f013c1058adba310ca9"
+    }
+  ],
+  "dynamicSqlCandidates": [
+    {
+      "source": "database/functions/abuse/image_projects.sql",
+      "line": 9,
+      "code": "EXECUTE $adopt$INSERT INTO public.image_project_imports",
+      "review": "Migration-time fixed import/adoption DML, not a per-request dynamic endpoint.",
+      "sourceSha256": "99354df247bb17b7bf38b17ce9c8ef69bbc3812e177f17296ddf9de51a1c6536"
+    },
+    {
+      "source": "database/functions/abuse/operation_write_fences.sql",
+      "line": 18,
+      "code": "EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE ON TABLE %s FROM PUBLIC',relation);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f4dde3eff255677f10507f73dc0b7af2b14d7574312eccf41de8bb8761320b86"
+    },
+    {
+      "source": "database/functions/abuse/operation_write_fences.sql",
+      "line": 19,
+      "code": "EXECUTE format('REVOKE INSERT(%s),UPDATE(%s) ON TABLE %s FROM PUBLIC',column_names,column_names,relation);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f4dde3eff255677f10507f73dc0b7af2b14d7574312eccf41de8bb8761320b86"
+    },
+    {
+      "source": "database/functions/abuse/operation_write_fences.sql",
+      "line": 25,
+      "code": "EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE ON TABLE %s FROM %I',relation,role_name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f4dde3eff255677f10507f73dc0b7af2b14d7574312eccf41de8bb8761320b86"
+    },
+    {
+      "source": "database/functions/abuse/operation_write_fences.sql",
+      "line": 26,
+      "code": "EXECUTE format('REVOKE INSERT(%s),UPDATE(%s) ON TABLE %s FROM %I',column_names,column_names,relation,role_name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f4dde3eff255677f10507f73dc0b7af2b14d7574312eccf41de8bb8761320b86"
+    },
+    {
+      "source": "database/functions/abuse/schema.sql",
+      "line": 38,
+      "code": "EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "d1bd25da3bfa8580b2194e63a4d9ec4363fcb88ffe1ccd6247dd6b7da410fcf5"
+    },
+    {
+      "source": "database/functions/abuse/schema.sql",
+      "line": 39,
+      "code": "EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC,anon,authenticated,service_role',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "d1bd25da3bfa8580b2194e63a4d9ec4363fcb88ffe1ccd6247dd6b7da410fcf5"
+    },
+    {
+      "source": "database/functions/account_deletion/retire_storage.sql",
+      "line": 4,
+      "code": "-- Execute as the protected database owner supabase_admin. PostgreSQL grants",
+      "review": "Comment candidate, not executable dynamic SQL.",
+      "sourceSha256": "f869aaa1653bde7f63f685afad1b0c89e541ba03429db29dd489b854ea0bff71"
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "line": 399,
+      "code": "EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC,anon,authenticated',p.signature);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "31752af4679099732f68117caae986176c328d361356a55bcb65c77d834d1746"
+    },
+    {
+      "source": "database/functions/emails/email_queue.sql",
+      "line": 400,
+      "code": "EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role',p.signature);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "31752af4679099732f68117caae986176c328d361356a55bcb65c77d834d1746"
+    },
+    {
+      "source": "database/functions/emails/email_schema.sql",
+      "line": 108,
+      "code": "EXECUTE format('DROP POLICY %I ON public.email_messages',p.policyname); END LOOP; END $$;",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "b281d1812eedd32eb7109ec93c098d0a45e306080aa1e63c833522b25ea5aa95"
+    },
+    {
+      "source": "database/functions/eshop_payment_references/schema.sql",
+      "line": 48,
+      "code": "EXECUTE format('ALTER TABLE eshop.%I OWNER TO postgres',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c3c22a6bd674bd2e304361420add1d689f15a20c277c26e36bdbb61ef83930b3"
+    },
+    {
+      "source": "database/functions/eshop_payment_references/schema.sql",
+      "line": 49,
+      "code": "EXECUTE format('ALTER TABLE eshop.%I ENABLE ROW LEVEL SECURITY',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c3c22a6bd674bd2e304361420add1d689f15a20c277c26e36bdbb61ef83930b3"
+    },
+    {
+      "source": "database/functions/eshop_payment_references/schema.sql",
+      "line": 50,
+      "code": "EXECUTE format('REVOKE ALL ON eshop.%I FROM PUBLIC,anon,authenticated,service_role',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c3c22a6bd674bd2e304361420add1d689f15a20c277c26e36bdbb61ef83930b3"
+    },
+    {
+      "source": "database/functions/eshop_payment_references/schema.sql",
+      "line": 51,
+      "code": "EXECUTE format('GRANT SELECT ON eshop.%I TO service_role',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c3c22a6bd674bd2e304361420add1d689f15a20c277c26e36bdbb61ef83930b3"
+    },
+    {
+      "source": "database/functions/eshop_waitlist/schema.sql",
+      "line": 62,
+      "code": "EXECUTE format('ALTER TABLE eshop.%I ENABLE ROW LEVEL SECURITY',n);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "0e7ab0958940a3932221b8091b874c3ccfc111d1714b3bfec39989c451e524b1"
+    },
+    {
+      "source": "database/functions/eshop_waitlist/schema.sql",
+      "line": 63,
+      "code": "EXECUTE format('REVOKE ALL ON TABLE eshop.%I FROM PUBLIC,anon,authenticated',n);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "0e7ab0958940a3932221b8091b874c3ccfc111d1714b3bfec39989c451e524b1"
+    },
+    {
+      "source": "database/functions/security/data_security_defaults.sql",
+      "line": 12,
+      "code": "EXECUTE format('ALTER DEFAULT PRIVILEGES FOR ROLE %I REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC,anon,authenticated',owner_name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f20000bac06062d864a963c8d8c138c7bb4c7f024e872970cfe3280ec34da52a"
+    },
+    {
+      "source": "database/functions/security/data_security_defaults.sql",
+      "line": 15,
+      "code": "EXECUTE format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA %I REVOKE ALL ON %s FROM PUBLIC,anon,authenticated',owner_name,schema_name,object_kind);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f20000bac06062d864a963c8d8c138c7bb4c7f024e872970cfe3280ec34da52a"
+    },
+    {
+      "source": "database/functions/security/data_security_defaults.sql",
+      "line": 25,
+      "code": "EXECUTE format('REVOKE TRUNCATE,REFERENCES,TRIGGER ON TABLE %s FROM PUBLIC,anon,authenticated',t.name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "f20000bac06062d864a963c8d8c138c7bb4c7f024e872970cfe3280ec34da52a"
+    },
+    {
+      "source": "database/functions/security/data_security_reads.sql",
+      "line": 68,
+      "code": "EXECUTE format('REVOKE %s (%s) ON TABLE public.%I FROM %s',",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "9810e8ab7986a34d8bc0f20a8a34ccb79ad90ddd7e8eb05ff04851626220ebe6"
+    },
+    {
+      "source": "database/functions/security/external_sync_acl.sql",
+      "line": 6,
+      "code": "EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c530afbc3deada576b1b8e1b18c28cfab2c2f65dab64ec6a6c84cc39dcd50ea7"
+    },
+    {
+      "source": "database/functions/security/external_sync_acl.sql",
+      "line": 8,
+      "code": "EXECUTE format('DROP POLICY %I ON public.%I', policy.policyname,t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c530afbc3deada576b1b8e1b18c28cfab2c2f65dab64ec6a6c84cc39dcd50ea7"
+    },
+    {
+      "source": "database/functions/security/external_sync_acl.sql",
+      "line": 10,
+      "code": "EXECUTE format('REVOKE ALL ON TABLE public.%I FROM PUBLIC, anon, authenticated, service_role', t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c530afbc3deada576b1b8e1b18c28cfab2c2f65dab64ec6a6c84cc39dcd50ea7"
+    },
+    {
+      "source": "database/functions/security/external_sync_acl.sql",
+      "line": 11,
+      "code": "EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.%I TO service_role',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c530afbc3deada576b1b8e1b18c28cfab2c2f65dab64ec6a6c84cc39dcd50ea7"
+    },
+    {
+      "source": "database/functions/security/external_sync_acl.sql",
+      "line": 12,
+      "code": "EXECUTE format('CREATE POLICY service_only ON public.%I TO service_role USING (true) WITH CHECK (true)',t);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c530afbc3deada576b1b8e1b18c28cfab2c2f65dab64ec6a6c84cc39dcd50ea7"
+    },
+    {
+      "source": "database/functions/security/server_security_containment.sql",
+      "line": 8,
+      "code": "EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated', signature);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "875446a2c172edae86166dac3121c127c7b41339bacf20f4958b6331cac1acb8"
+    },
+    {
+      "source": "database/functions/security/server_security_hygiene.sql",
+      "line": 15,
+      "code": "EXECUTE format('REVOKE TRUNCATE, REFERENCES, TRIGGER ON TABLE %s FROM PUBLIC,anon,authenticated', t.name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "539696dda79de2a50d295a9cf1966e41406516951d1a81bdb6d08aec4e4af50d"
+    },
+    {
+      "source": "database/functions/security/server_security_hygiene.sql",
+      "line": 22,
+      "code": "EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC,anon,authenticated',f.name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "539696dda79de2a50d295a9cf1966e41406516951d1a81bdb6d08aec4e4af50d"
+    },
+    {
+      "source": "database/functions/security/server_security_search_paths.sql",
+      "line": 79,
+      "code": "EXECUTE format('ALTER FUNCTION %s SET search_path = public, extensions',signature);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "c5b8ddae2b0ecec2ea2b3264e24db98e294d9535929d0c396b87ce0eb6bc90f8"
+    },
+    {
+      "source": "database/functions/seed/triggers.sql",
+      "line": 20,
+      "code": "EXECUTE format('DROP TRIGGER IF EXISTS handle_updated_at ON public.%I', relation_name);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "7f0ec36de179a02f0ee6da37367b383c047bc590f663942d25c16bdb8cb0e299"
+    },
+    {
+      "source": "database/functions/seed/triggers.sql",
+      "line": 21,
+      "code": "EXECUTE format(",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "7f0ec36de179a02f0ee6da37367b383c047bc590f663942d25c16bdb8cb0e299"
+    },
+    {
+      "source": "database/functions/user_permissions/operation_rules.sql",
+      "line": 3,
+      "code": "-- the same request. Callers cannot execute these with fabricated role facts.",
+      "review": "Comment candidate, not executable dynamic SQL.",
+      "sourceSha256": "06ca38f164aaf77522ef06b24a73a19e990eaaf9ba60f7994fe3af1dd8fc02ec"
+    },
+    {
+      "source": "database/functions/utilities/generate_schema_triggers_ddl.sql",
+      "line": 43,
+      "code": "|| 'EXECUTE ' || action_statement || ';'",
+      "review": "Schema-DDL text generator; EXECUTE appears in returned DDL text, not dynamic application authorization.",
+      "sourceSha256": "2064d73766afcb72454b6081cdca79eb61e78bb86eeb2c62f749a77b69998640"
+    },
+    {
+      "source": "database/functions/utils/reset_all_sequences.sql",
+      "line": 25,
+      "code": "EXECUTE 'SELECT last_value FROM ' || r.seq INTO v_seq_last_value;",
+      "review": "Trusted maintenance utility, quoted stored catalog identifiers; invoker privilege boundary, not application role dispatch.",
+      "sourceSha256": "09453bb25972e55041c9b1caef1346d7d53799e6ff3bb767e43be65d24c83512"
+    },
+    {
+      "source": "database/functions/utils/reset_all_sequences.sql",
+      "line": 28,
+      "code": "EXECUTE 'SELECT COALESCE(MAX(' || quote_ident(r.column_name) || '), 0) FROM \"' || r.table_schema || '\".\"' || r.table_name || '\"' INTO v_max_id;",
+      "review": "Trusted maintenance utility, quoted stored catalog identifiers; invoker privilege boundary, not application role dispatch.",
+      "sourceSha256": "09453bb25972e55041c9b1caef1346d7d53799e6ff3bb767e43be65d24c83512"
+    },
+    {
+      "source": "database/functions/utils/reset_all_sequences.sql",
+      "line": 38,
+      "code": "EXECUTE v_sql;",
+      "review": "Trusted maintenance utility, quoted stored catalog identifiers; invoker privilege boundary, not application role dispatch.",
+      "sourceSha256": "09453bb25972e55041c9b1caef1346d7d53799e6ff3bb767e43be65d24c83512"
+    },
+    {
+      "source": "database/policies/04_ticket_layout_writes.sql",
+      "line": 11,
+      "code": "EXECUTE format('REVOKE UPDATE, INSERT ON public.occasions FROM %I',v_role);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "742ee67500206d805b93df9f23c74525e8785d2ad35dba1347f97424a398e5dc"
+    },
+    {
+      "source": "database/policies/04_ticket_layout_writes.sql",
+      "line": 12,
+      "code": "EXECUTE format('REVOKE UPDATE(features), INSERT(features) ON public.occasions FROM %I',v_role);",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "742ee67500206d805b93df9f23c74525e8785d2ad35dba1347f97424a398e5dc"
+    },
+    {
+      "source": "database/policies/04_ticket_layout_writes.sql",
+      "line": 13,
+      "code": "IF v_update THEN EXECUTE format('GRANT UPDATE (%s) ON public.occasions TO %I',v_columns,v_role); END IF;",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "742ee67500206d805b93df9f23c74525e8785d2ad35dba1347f97424a398e5dc"
+    },
+    {
+      "source": "database/policies/04_ticket_layout_writes.sql",
+      "line": 14,
+      "code": "IF v_insert THEN EXECUTE format('GRANT INSERT (%s) ON public.occasions TO %I',v_columns,v_role); END IF;",
+      "review": "Migration/schema installation DDL over catalog-owned quoted identifiers; explicit grants, policies or technical triggers, not runtime domain dispatch.",
+      "sourceSha256": "742ee67500206d805b93df9f23c74525e8785d2ad35dba1347f97424a398e5dc"
+    }
+  ]
+}

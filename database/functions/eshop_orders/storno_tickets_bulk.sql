@@ -33,7 +33,7 @@ BEGIN
     LOOP
         -- 2. SECURITY CHECK
         -- Verify that the current user has editor permissions on the occasion associated with the order.
-        IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
+        IF NOT public.can_write_orders(v_occasion_id) THEN
             RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
         END IF;
 

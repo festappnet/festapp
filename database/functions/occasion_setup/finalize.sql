@@ -12,7 +12,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  blueprint_id bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
- IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+ IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  IF d.data ? 'finalizeResponse' THEN RETURN d.data->'finalizeResponse'; END IF;
  started := public.begin_unit_client_mutation_v1(p_command_id,'occasion.setup.finalize',d.unit,auth.uid(),

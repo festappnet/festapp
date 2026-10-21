@@ -16,11 +16,7 @@ DECLARE
 BEGIN
  PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   v_id:=(p_group->>'id')::bigint;
-  IF v_actor IS NULL OR NOT (public.get_is_editor_on_occasion(p_occasion)
-    OR (v_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.user_groups ug
-      JOIN public.user_group_info g ON g.id=ug."group"
-      WHERE ug."group"=v_id AND ug."user"=v_actor AND ug.is_admin
-        AND g.occasion=p_occasion))) THEN
+  IF v_actor IS NULL OR NOT public.can_write_group(p_occasion,v_id) THEN
     RAISE insufficient_privilege USING MESSAGE='group editor required';
   END IF;
   IF p_group IS NULL OR jsonb_typeof(p_group)<>'object'
@@ -71,11 +67,7 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.group.save',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_group_occasion_internal_v1(p_occasion);
-  IF v_actor IS NULL OR NOT (public.get_is_editor_on_occasion(p_occasion)
-    OR (v_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.user_groups ug
-      JOIN public.user_group_info g ON g.id=ug."group"
-      WHERE ug."group"=v_id AND ug."user"=v_actor AND ug.is_admin
-        AND g.occasion=p_occasion))) THEN
+  IF v_actor IS NULL OR NOT public.can_write_group(p_occasion,v_id) THEN
     RAISE insufficient_privilege USING MESSAGE='group editor required';
   END IF;
   IF EXISTS(SELECT 1 FROM unnest(v_new_users) id LEFT JOIN public.occasion_users ou ON ou.occasion=p_occasion AND ou."user"=id WHERE ou."user" IS NULL) THEN RAISE invalid_parameter_value USING MESSAGE='invalid group participants after lock'; END IF;

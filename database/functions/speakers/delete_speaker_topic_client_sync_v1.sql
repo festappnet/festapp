@@ -7,7 +7,7 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_version bigint; v_begin jsonb; v_hash text;
   v_entity jsonb; v_publishable boolean;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_speakers(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,

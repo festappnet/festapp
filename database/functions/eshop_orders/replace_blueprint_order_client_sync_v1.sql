@@ -11,7 +11,7 @@ BEGIN
     OR (SELECT count(*) FROM eshop.spots s
       WHERE s.id=ANY(p_spot_ids) AND s.occasion=v_occasion)
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id))
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   IF public.payment_reference_scope_enabled_internal((SELECT id FROM public.forms WHERE occasion=v_occasion ORDER BY id LIMIT 1)) THEN
     RETURN jsonb_build_object('status','rejected','code',409,'data',jsonb_build_object('errorCode','ATOMIC_REPLACEMENT_REQUIRED')); END IF;
@@ -52,7 +52,7 @@ BEGIN
     OR (SELECT count(*) FROM eshop.spots s
       WHERE s.id=ANY(p_spot_ids) AND s.occasion=v_occasion)
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id))
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'spots',p_spot_ids,'input',p_input_data)::text,'UTF8'),'sha256'),'hex');

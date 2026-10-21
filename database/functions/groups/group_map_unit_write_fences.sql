@@ -2,9 +2,9 @@
 -- this forward ACL cutover is activated; trusted definer owners retain access.
 REVOKE INSERT,UPDATE,DELETE ON public.user_group_info,public.user_groups,public.places,public.units FROM anon,authenticated;
 REVOKE INSERT,UPDATE,DELETE ON public.user_info,public.occasion_users FROM anon,authenticated;
--- Flattened CSV owner includes its validation; the historical renamed body and
--- unused three-argument profile writer cannot bypass canonical versions.
-REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.update_user(uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+-- Flattened CSV includes its validation; the renamed body cannot bypass it.
+-- The unused profile overload is retired by the authorization contraction.
+REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 REVOKE INSERT,UPDATE,DELETE ON public.occasions FROM anon,authenticated;
 -- Unused invoker maintenance routine is not an application mutation surface.
 REVOKE ALL ON FUNCTION public.shift_occasion_schedule_backward(bigint,integer) FROM PUBLIC,anon,authenticated,service_role;

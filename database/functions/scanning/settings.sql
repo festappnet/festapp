@@ -1,7 +1,7 @@
 -- Same-occasion editing rights only; a scan code never grants configuration access.
 CREATE OR REPLACE FUNCTION public.scanner_can_manage_settings_internal(p_occasion bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT auth.uid() IS NOT NULL AND (public.get_is_editor_on_occasion(p_occasion) OR public.get_is_editor_order_on_occasion(p_occasion));
+ SELECT public.scanner_settings_rule(auth.uid() IS NOT NULL,public.get_is_editor_on_occasion(p_occasion),public.can_write_orders(p_occasion));
 $$;
 REVOKE ALL ON FUNCTION public.scanner_can_manage_settings_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.scanner_require_settings_editor_internal(p_occasion bigint)

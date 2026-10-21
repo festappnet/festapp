@@ -74,7 +74,7 @@ class _ReportTabState extends State<ReportTab> {
     if (active &&
         !_tabActive &&
         _link != null &&
-        (widget.identityKey != null || RightsService.isEditorOrderView())) {
+        (widget.identityKey != null || RightsService.canSeeReservations())) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted)
           setState(() {
@@ -97,7 +97,7 @@ class _ReportTabState extends State<ReportTab> {
           AppRouter.linkFormatted,
         );
     final identity = widget.identityKey ??
-        '${Supabase.instance.client.auth.currentUser?.id}/${RightsService.currentUser()?.id}/${RightsService.currentOccasion()?.organization}/${RightsService.isEditorOrderView()}';
+        '${Supabase.instance.client.auth.currentUser?.id}/${RightsService.currentUser()?.id}/${RightsService.currentOccasion()?.organization}/${RightsService.canSeeReservations()}';
     final key = '$identity/$link';
     if (key == _key) return;
     _onlyValid = true;
@@ -109,7 +109,7 @@ class _ReportTabState extends State<ReportTab> {
     _loading = false;
     if (widget.identityKey != null ||
         (Supabase.instance.client.auth.currentUser != null &&
-            RightsService.isEditorOrderView())) {
+            RightsService.canSeeReservations())) {
       _load();
     } else {
       _error = true;

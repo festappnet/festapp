@@ -1,3 +1,5 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 import 'package:fstapp/services/app_logger.dart';
@@ -109,7 +111,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
   final _formKey = GlobalKey<FormState>();
 
-  bool get _isReadOnly => widget.readOnly || _account.type == 'CASH';
+  bool get _isReadOnly =>
+      widget.readOnly ||
+      _account.type == 'CASH' ||
+      (_account.id != 0 &&
+          !RightsService.hasBankCapability(
+              _account.id, AuthorizationCapabilities.bankAccountsWrite));
 
   @override
   void initState() {
@@ -227,7 +234,10 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   bool _isChangingSynchronization = false;
 
   Future<void> _changeSynchronization(bool enabled) async {
-    if (_isSaving || _isReadOnly || !_account.isAdmin) return;
+    if (_isSaving ||
+        _isReadOnly ||
+        !RightsService.hasBankCapability(
+            _account.id, AuthorizationCapabilities.bankSyncManage)) return;
     setState(() {
       _isSaving = true;
       _isChangingSynchronization = true;
@@ -397,6 +407,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         organizationId: widget.organizationId,
       );
       final savedAccount = updatedAccount.copyWith(id: newId);
+      if (isCreation) await RightsService.refreshAfterAuthorizationChange();
 
       if (!mounted) return;
 
@@ -706,7 +717,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         isReadOnly: _isReadOnly,
       );
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder(
+        valueListenable: RightsService.occasionLinkModelNotifier,
+        builder: (context, _, __) => _buildContent(context),
+      );
+
+  Widget _buildContent(BuildContext context) {
     if (widget.connectionOnly) {
       return NavigationDraftBoundary(
         isDirty: () => _hasDraft,

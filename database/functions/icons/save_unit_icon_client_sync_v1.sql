@@ -9,7 +9,7 @@ DECLARE
   v_begin jsonb; v_hash text; v_commit jsonb; v_icon jsonb; v_response jsonb;
 BEGIN
   SELECT u.organization INTO v_organization FROM public.units u WHERE u.id=p_unit;
-  IF v_actor IS NULL OR p_unit IS NULL OR NOT public.get_is_editor_on_unit(p_unit) THEN
+  IF v_actor IS NULL OR p_unit IS NULL OR NOT public.can_write_unit_icons(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit editor required';
   END IF;
   IF p_icon IS NULL OR jsonb_typeof(p_icon)<>'object'

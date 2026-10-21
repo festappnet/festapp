@@ -13,16 +13,7 @@ AS $$
       o.unit,
       o.organization,
       coalesce(o.data->>'timezone', 'UTC') AS timezone,
-      public.get_is_manager_on_occasion(p_occasion)
-        OR public.get_is_admin_on_occasion(p_occasion) AS can_occasion,
-      CASE
-        WHEN o.unit IS NULL THEN false
-        ELSE public.get_is_manager_on_unit(o.unit)
-      END AS can_unit,
-      CASE
-        WHEN o.organization IS NULL THEN false
-        ELSE public.get_is_admin_on_organization(o.organization)
-      END AS can_organization
+      public.can_read_client_activity(p_occasion) AS can_read
     FROM public.occasions o
     WHERE o.id = p_occasion
   ),
@@ -63,7 +54,7 @@ AS $$
     WHEN NOT EXISTS (
       SELECT 1
       FROM scope s
-      WHERE s.can_occasion OR s.can_unit OR s.can_organization
+      WHERE s.can_read
     ) THEN jsonb_build_object('code', 403)
     ELSE jsonb_build_object(
       'code', 200,

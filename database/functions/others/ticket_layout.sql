@@ -1,13 +1,4 @@
--- Layout writes are accepted only through the explicit occasion-save boundary.
-CREATE OR REPLACE FUNCTION public.can_edit_ticket_layout(p_occasion bigint)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT auth.uid() IS NOT NULL AND COALESCE((SELECT public.get_is_editor_on_unit(o.unit)
-    FROM public.occasions o WHERE o.id=p_occasion),false);
-$$;
-REVOKE ALL ON FUNCTION public.can_edit_ticket_layout(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.can_edit_ticket_layout(bigint) TO authenticated;
-
+-- Layout validation and merge; authorization is owned by user_permissions/ticket_layout.sql.
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql STABLE
 SET search_path = public, extensions AS $$

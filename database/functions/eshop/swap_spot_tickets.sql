@@ -221,9 +221,9 @@ BEGIN
 
     -- Check permission
     BEGIN
-        SELECT get_is_editor_order_on_occasion(occasion_id_common) INTO has_permission;
+        SELECT can_write_orders(occasion_id_common) INTO has_permission;
     EXCEPTION
-        WHEN undefined_function THEN RAISE EXCEPTION 'Permission check function get_is_editor_order_on_occasion() does not exist.' USING ERRCODE = '42883';
+        WHEN undefined_function THEN RAISE EXCEPTION 'Permission check function can_write_orders() does not exist.' USING ERRCODE = '42883';
         WHEN OTHERS THEN RAISE EXCEPTION 'Error during permission check: %', SQLERRM;
     END;
     IF has_permission <> TRUE THEN
@@ -298,7 +298,7 @@ BEGIN
  SELECT min(occasion) INTO occ FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2);
  IF occ IS NULL OR (SELECT count(*) FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2) AND occasion=occ)<>2 THEN
   RAISE EXCEPTION 'BLUEPRINT_SPOT_SCOPE_MISMATCH'; END IF;
- IF public.get_is_editor_order_on_occasion(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+ IF public.can_write_orders(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
  PERFORM public.check_occasion_writable(occ);
  PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
  ids1:=public.blueprint_selection_unit_spots_internal(spot_id_1);

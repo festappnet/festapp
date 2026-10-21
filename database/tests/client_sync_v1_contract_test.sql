@@ -104,8 +104,8 @@ BEGIN
     'occasion audit permission cannot expose sibling occasion commits');
   PERFORM assert_true(pg_get_functiondef(
       'public.get_client_commit_v1(uuid)'::regprocedure)
-      LIKE '%get_is_manager_on_unit(c.unit)%',
-    'audit detail accepts the same unit-manager scope as the list');
+      LIKE '%can_read_client_commit(c.commit_id)%',
+    'audit detail delegates resource authorization to the canonical commit owner');
   PERFORM assert_true(pg_get_functiondef(
       'public.get_client_activity_v1(bigint,timestamptz,timestamptz)'::regprocedure)
       NOT LIKE '%''actorDisplay''%'
@@ -360,11 +360,11 @@ BEGIN
     'ordinary occasion save cannot hide an enabled sync scope');
   PERFORM assert_true(pg_get_functiondef(
     'public.save_occasion_client_sync_v1(bigint,uuid,bigint,jsonb)'::regprocedure)
-      LIKE '%get_is_editor_on_unit%',
+      LIKE '%can_edit_occasion%',
     'occasion save accepts the unit editor role used by occasion settings');
   PERFORM assert_true(pg_get_functiondef(
     'public.save_occasion_domain_command_internal_v1(bigint,uuid,bigint,jsonb)'::regprocedure)
-      LIKE '%get_is_editor_on_unit%',
+      LIKE '%can_edit_occasion%',
     'occasion domain save preserves unit editor authorization');
   PERFORM assert_true(pg_get_functiondef(
     'public.complete_client_mutation_applied_v1(uuid,bigint,text,text,jsonb,text[],jsonb,jsonb,jsonb,text[],jsonb,text,text,jsonb,bigint[])'::regprocedure)
@@ -372,8 +372,8 @@ BEGIN
     'authenticated mutation finalization uses the internal public materializer');
   PERFORM assert_true(pg_get_functiondef(
     'public.get_public_client_sync_component_core_v1(text,text,bigint)'::regprocedure)
-      LIKE '%get_is_editor_on_unit%',
-    'internal public materialization accepts the unit editor save role');
+      LIKE '%can_materialize_public_occasion%',
+    'internal public materialization delegates to the canonical resource policy');
   PERFORM assert_true(pg_get_functiondef(
     'public.delete_occasion_client_sync_v1(bigint,uuid)'::regprocedure)
       LIKE '%public.delete_occasion_domain_command_internal_v1(p_occasion,p_command_id)%'

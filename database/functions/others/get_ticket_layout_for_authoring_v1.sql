@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.get_ticket_layout_for_authoring_v1(p_occasion 
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
 BEGIN
- IF NOT public.can_edit_ticket_layout(p_occasion) THEN
+ IF NOT public.can_read_ticket_layout(p_occasion) THEN
   RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
  SELECT jsonb_build_object('occasion',o.id,'aggregate_version',coalesce(v.version,0),
   'schemaVersion',3,'appearance',coalesce((SELECT jsonb_build_object('layout',f->'layout',

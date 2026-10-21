@@ -44,7 +44,7 @@ BEGIN
  IF occ IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
  -- Match checkout and cancellation: scope precedes the form/order parents.
  PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
- IF p_operation IN ('send','cancel') AND NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=occ AND "user"=p_actor AND is_editor_order) THEN
+ IF p_operation IN ('send','cancel') AND NOT public.can_write_orders_as_actor_internal(p_actor,occ) THEN
   RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;
  previous_sub:=current_setting('request.jwt.claim.sub',true);
  PERFORM set_config('request.jwt.claim.sub',coalesce(p_actor::text,''),true);

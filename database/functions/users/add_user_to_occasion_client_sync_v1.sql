@@ -8,8 +8,7 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_before jsonb;
   v_after jsonb; v_result jsonb; v_version bigint; v_replacements jsonb:='[]';
 BEGIN
   IF v_actor IS NULL OR p_user IS NULL OR NOT (
-    v_actor=p_user OR public.get_is_manager_on_occasion(p_occasion)
-    OR public.get_is_admin_on_occasion(p_occasion)) THEN
+    v_actor=p_user OR public.can_manage_occasion_participants(p_occasion)) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion membership permission required';
   END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(

@@ -8,6 +8,7 @@ DECLARE
   v_source bigint;
   v_copy bigint;
   v_blueprint bigint;
+  v_seat_node uuid := gen_random_uuid();
   v_product_type bigint;
   v_product bigint;
   v_spot bigint;
@@ -36,8 +37,8 @@ BEGIN
      '[{"code":"ticket","is_enabled":true,"ticket_background":"https://img.festapp.net/images/ticket.jpg"}]'::jsonb)
   RETURNING id INTO v_source;
 
-  INSERT INTO eshop.blueprints(occasion, organization, title, objects)
-  VALUES (v_source, v_organization, 'Dance floor', '[]'::jsonb)
+  INSERT INTO eshop.blueprints(occasion, organization, title)
+  VALUES (v_source, v_organization, 'Dance floor')
   RETURNING id INTO v_blueprint;
   INSERT INTO eshop.product_types(occasion, title, type)
   VALUES (v_source, 'Seat category', 'ticket') RETURNING id INTO v_product_type;
@@ -47,8 +48,12 @@ BEGIN
   INSERT INTO eshop.spots(occasion, blueprint, product, title)
   VALUES (v_source, v_blueprint, v_product, 'A1') RETURNING id INTO v_spot;
   UPDATE eshop.blueprints
-  SET objects = jsonb_build_array(jsonb_build_object('type', 'spot', 'id', v_spot))
+  SET layout = jsonb_set('{"schemaVersion":2,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":400,"height":200,"fill":"#FFFFFFFF"},"styles":{},"seatingDefaults":{},"textPolicy":{"language":"und","direction":"auto"},"nodes":[]}'::jsonb,'{nodes}',jsonb_build_array(jsonb_build_object(
+    'id',v_seat_node,'kind','seat','width',40,'height',40,
+    'transform',jsonb_build_object('x',0,'y',0,'rotation',0))))
   WHERE id = v_blueprint;
+  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot,blocked,product_assignment_mode)
+  VALUES(v_blueprint,v_seat_node,v_spot,false,'override');
   INSERT INTO public.forms(occasion, blueprint, title, link)
   VALUES (v_source, v_blueprint, 'Tickets', 'copy-form-' || gen_random_uuid()::text)
   RETURNING id INTO v_form;

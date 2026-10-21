@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -16,7 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/admin_strings.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserHeaderWidget extends StatefulWidget {
   final Color? appBarIconColor;
@@ -193,19 +193,6 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     );
   }
 
-  Future<bool> _checkOrganizationAdmin(int organizationId) async {
-    if (RightsService.isDemoReadOnly) return false;
-    try {
-      return await Supabase.instance.client.rpc(
-            'check_is_admin_of_organization',
-            params: {'organization_id': organizationId},
-          ) ==
-          true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   /// Combined popover for signed in state.
   void _showSignedInPopover() {
     final rootRouter = context.router.root;
@@ -216,7 +203,6 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
     final Size size = button.size;
     final organizationId = AppConfig.organization;
     final openedUserId = RightsService.currentUser()?.id;
-    final organizationAdmin = _checkOrganizationAdmin(organizationId);
     showMenu(
       context: context,
       constraints: const BoxConstraints(maxWidth: _popoverWidth),
@@ -308,9 +294,12 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
 
                     // This divider separates the content above from the sign out button
                     const Divider(),
-                    FutureBuilder<bool>(
-                      future: organizationAdmin,
-                      builder: (context, access) => access.data == true &&
+                    ValueListenableBuilder(
+                      valueListenable: RightsService.occasionLinkModelNotifier,
+                      builder: (context, rights, _) => RightsService
+                                  .hasCapability(AuthorizationCapabilities
+                                      .organizationSettingsWrite) &&
+                              !RightsService.isDemoReadOnly &&
                               RightsService.currentUser()?.id == openedUserId &&
                               AppConfig.organization == organizationId
                           ? ListTile(

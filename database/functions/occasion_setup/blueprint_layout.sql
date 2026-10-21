@@ -4,7 +4,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE d public.occasion_setup_drafts;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_draft;
- IF d.id IS NULL OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+ IF d.id IS NULL OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  IF d.data ? 'finalizedOccasion' OR p_bytes IS NULL OR p_bytes<=0 THEN RAISE invalid_parameter_value USING MESSAGE='Invalid draft preview'; END IF;
  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('ticket.preview',d.unit,d.organization),
@@ -19,7 +19,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE d public.occasion_setup_drafts; doc jsonb; source_id bigint; resources jsonb; source_resources jsonb;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_draft;
- IF d.id IS NULL OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
+ IF d.id IS NULL OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  source_id:=(d.data->>'sourceId')::bigint;
  IF source_id IS NOT NULL AND (NOT public.can_copy_occasion_source(source_id) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id AND organization=d.organization)) THEN RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
  doc:=coalesce(d.data#>'{blueprintLayoutDraft,layout}',jsonb_build_object(

@@ -12,7 +12,7 @@ BEGIN
     WHERE pi.id = payment_info_id
     LIMIT 1;
 
-    IF NOT EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=bank_acc AND public.get_is_editor_order_view_on_occasion(demo_bank.occasion)) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=bank_acc AND public.can_read_orders(demo_bank.occasion)) THEN
         PERFORM public.check_is_admin_for_bank_account(bank_acc);
     END IF;
 

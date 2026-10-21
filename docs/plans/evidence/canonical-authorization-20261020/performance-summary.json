@@ -1,0 +1,1132 @@
+{
+  "state": "passed local paired warm and first-request gates",
+  "cold": {
+    "file": "performance-first-request-navigation-final.json",
+    "sha256": "51ea541587c483bcaf005a56ea0a7de091a68e3d4d8588c0bb4e0230acdcb429",
+    "summaries": [
+      {
+        "occasions": 8,
+        "mode": "sequentialMs",
+        "values": {
+          "before": {
+            "p50": 4.103145499999755,
+            "p95": 4.913416999999981,
+            "samples": 96
+          },
+          "after": {
+            "p50": 3.7441045000000486,
+            "p95": 4.76845800000001,
+            "samples": 96
+          }
+        },
+        "p95Change": -2.950268621612462,
+        "gate": true
+      },
+      {
+        "occasions": 8,
+        "mode": "concurrentMs",
+        "values": {
+          "before": {
+            "p50": 8.250271500000053,
+            "p95": 10.192167000000154,
+            "samples": 96
+          },
+          "after": {
+            "p50": 7.645041999999876,
+            "p95": 9.671540999999706,
+            "samples": 96
+          }
+        },
+        "p95Change": -5.1080991902942685,
+        "gate": true
+      },
+      {
+        "occasions": 1000,
+        "mode": "sequentialMs",
+        "values": {
+          "before": {
+            "p50": 4.622937500000262,
+            "p95": 5.237374999999702,
+            "samples": 96
+          },
+          "after": {
+            "p50": 4.157395500000348,
+            "p95": 5.227541000000201,
+            "samples": 96
+          }
+        },
+        "p95Change": -0.18776581779041956,
+        "gate": true
+      },
+      {
+        "occasions": 1000,
+        "mode": "concurrentMs",
+        "values": {
+          "before": {
+            "p50": 9.224416499999734,
+            "p95": 11.22375000000011,
+            "samples": 96
+          },
+          "after": {
+            "p50": 8.339145499999631,
+            "p95": 10.328875000000153,
+            "samples": 96
+          }
+        },
+        "p95Change": -7.973048223632451,
+        "gate": true
+      }
+    ],
+    "unrelatedFinalFunctionDifferences": [
+      "_swap_spots_generate_product_json(bigint,bigint)",
+      "blueprint_area_availability_internal(bigint,bigint)",
+      "blueprint_form_product_catalog_internal(bigint)",
+      "blueprint_form_products_internal(bigint)",
+      "blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+      "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+      "get_blueprint(uuid,uuid,bigint)",
+      "get_customer_order_overview(text,bigint)",
+      "get_order_details_for_email(bigint)",
+      "get_orders(text,text,jsonb)",
+      "order_spot_metadata_internal(bigint)",
+      "order_tickets_with_seating_internal(bigint,jsonb)",
+      "save_blueprint_layout_impl_internal(jsonb,boolean)"
+    ],
+    "finalContextClosureUnchanged": true
+  },
+  "rejectedExperiments": [
+    {
+      "file": "performance-context-single-plan.json",
+      "reason": "One materialized SQL expression plan increased warmed context p95; source restored."
+    },
+    {
+      "file": "performance-context-fact-plan.json",
+      "reason": "Combined PL/pgSQL fact initialization did not close first-use regression; original constructor restored."
+    }
+  ],
+  "limits": [
+    "Static call closure is conservative provenance evidence; explicit source-bound dynamic dispatch and service registries are recorded in the boundary/domain ledgers.",
+    "The final navigation projection supersedes earlier context timings only; the remaining five measured workload closures are unchanged.",
+    "Later scanner proof and direct DELETE ACL contraction do not alter the six measured workload closures.",
+    "Fresh connection/function plans do not flush shared buffers or the operating-system cache.",
+    "The synthetic database accumulated benchmark fixtures; no production distribution or production latency is claimed."
+  ],
+  "results": [
+    {
+      "file": "performance-serial-canonical-final.json",
+      "sha256": "0e71c5c5b2fe6b0b1dcebe29b5fb91d2753cd897ecb68f3111001ba75da7b3aa",
+      "measuredMigrationSha256": "ead61e06ef9214337f916c402bf11e200f540ad50d2555d6d50bf9af04824e07",
+      "finalContractDifferences": [
+        "_swap_spots_generate_product_json(bigint,bigint)",
+        "blueprint_area_availability_internal(bigint,bigint)",
+        "blueprint_form_product_catalog_internal(bigint)",
+        "blueprint_form_products_internal(bigint)",
+        "blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+        "cleaning_crew_navigation_rule(boolean)",
+        "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+        "get_all_user_basics_for_scan(text)",
+        "get_blueprint(uuid,uuid,bigint)",
+        "get_context_capabilities_v1(bigint,occasion_users,unit_users,boolean,boolean,boolean,boolean,boolean,boolean,boolean)",
+        "get_customer_order_overview(text,bigint)",
+        "get_order_details_for_email(bigint)",
+        "get_orders(text,text,jsonb)",
+        "get_scanner_occasion_for_scan_code_internal(text)",
+        "get_ticket_layout_write_contract_v1()",
+        "open_scanner_session(text,bigint,text)",
+        "order_spot_metadata_internal(bigint)",
+        "order_tickets_with_seating_internal(bigint,jsonb)",
+        "save_blueprint_layout_impl_internal(jsonb,boolean)",
+        "scan_ticket_v2(text,text)",
+        "schedule_entry_navigation_rule(boolean)"
+      ],
+      "summaries": [
+        {
+          "occasions": 8,
+          "workload": "operator",
+          "medianOfRounds": {
+            "before": {
+              "p50": 11.320957999999962,
+              "p95": 12.842020500000103,
+              "throughputPerSecond": 86.53122676241192
+            },
+            "after": {
+              "p50": 0.6383959999993749,
+              "p95": 0.7267294999994647,
+              "throughputPerSecond": 1540.7689347072394
+            }
+          },
+          "percentageChange": {
+            "p50": -94.36093659212077,
+            "p95": -94.3410034269961,
+            "throughputPerSecond": 1680.592963205891
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              53.700333,
+              12.564500000000407,
+              11.150916999999026,
+              11.13354199999958
+            ],
+            "after": [
+              1.1520419999997102,
+              0.9147910000001502,
+              0.8648749999993015,
+              0.863416000000143
+            ]
+          },
+          "firstUseMedianChange": -92.49574232660764,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "editor_bundle",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.0753540000000612,
+              "p95": 1.2356040000000803,
+              "throughputPerSecond": 909.6624045258872
+            },
+            "after": {
+              "p50": 0.9809580000001006,
+              "p95": 1.0527920000004087,
+              "throughputPerSecond": 1013.979926344609
+            }
+          },
+          "percentageChange": {
+            "p50": -8.778132596331556,
+            "p95": -14.795355146119604,
+            "throughputPerSecond": 11.467718276550265
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              4.5467499999999745,
+              1.3971669999991718,
+              1.3708330000008573,
+              1.5844579999993584
+            ],
+            "after": [
+              1.4187090000000353,
+              1.2821249999997235,
+              1.237583000000086,
+              1.3301250000004075
+            ]
+          },
+          "firstUseMedianChange": -12.388378820226597,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "layout_authoring",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.4262085000004845,
+              "p95": 1.6146455000007336,
+              "throughputPerSecond": 688.9919554062103
+            },
+            "after": {
+              "p50": 0.39235400000052323,
+              "p95": 0.45868749999999636,
+              "throughputPerSecond": 2537.6506235746074
+            }
+          },
+          "percentageChange": {
+            "p50": -72.48971661574097,
+            "p95": -71.59206153921787,
+            "throughputPerSecond": 268.31353452864045
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              2.3602090000000544,
+              1.8875840000000608,
+              1.8112920000003214,
+              1.8965829999997368
+            ],
+            "after": [
+              0.6537920000000668,
+              0.5800410000001648,
+              0.5970830000005662,
+              0.5648330000003625
+            ]
+          },
+          "firstUseMedianChange": -68.89344471317483,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "rls_list",
+          "medianOfRounds": {
+            "before": {
+              "p50": 52.979062500000055,
+              "p95": 55.93931249999969,
+              "throughputPerSecond": 18.633408409969462
+            },
+            "after": {
+              "p50": 5.981603999999834,
+              "p95": 6.9591454999997495,
+              "throughputPerSecond": 163.02943389049346
+            }
+          },
+          "percentageChange": {
+            "p50": -88.70949443471216,
+            "p95": -87.55947259809497,
+            "throughputPerSecond": 774.930824804267
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              55.62495799999999,
+              53.63762499999939,
+              54.583833000000595,
+              59.37929199999962
+            ],
+            "after": [
+              6.117291000000023,
+              5.690833999999995,
+              6.04175000000032,
+              6.661291000000347
+            ]
+          },
+          "firstUseMedianChange": -88.96726759301781,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "write",
+          "medianOfRounds": {
+            "before": {
+              "p50": 33.57062450000103,
+              "p95": 35.72312500000044,
+              "throughputPerSecond": 29.41185897992867
+            },
+            "after": {
+              "p50": 29.9854164999997,
+              "p95": 35.935395499999686,
+              "throughputPerSecond": 32.243031548597145
+            }
+          },
+          "percentageChange": {
+            "p50": -10.67959876647877,
+            "p95": 0.5942103329404924,
+            "throughputPerSecond": 9.625955879227256
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              37.798541000000114,
+              36.01729199999863,
+              35.945207999999184,
+              45.057833999999275
+            ],
+            "after": [
+              29.97624999999971,
+              65.86991699999999,
+              31.056791999999405,
+              32.22033300000112
+            ]
+          },
+          "firstUseMedianChange": -14.277029157143561,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "operator",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1096.0530625000029,
+              "p95": 1285.3213749999995,
+              "throughputPerSecond": 0.8856357514756983
+            },
+            "after": {
+              "p50": 3.4374585000114166,
+              "p95": 3.7869580000005953,
+              "throughputPerSecond": 286.1384592575304
+            }
+          },
+          "percentageChange": {
+            "p50": -99.686378459436,
+            "p95": -99.70536878374091,
+            "throughputPerSecond": 32208.81982584259
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              1172.5006670000002,
+              1078.234666999997,
+              1122.9154580000031,
+              1143.405375000002
+            ],
+            "after": [
+              4.423625000003085,
+              4.2033749999973224,
+              4.714375000010477,
+              4.4001249999855645
+            ]
+          },
+          "firstUseMedianChange": -99.61065750834986,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "editor_bundle",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.108645999993314,
+              "p95": 1.396082999992359,
+              "throughputPerSecond": 884.381365798851
+            },
+            "after": {
+              "p50": 1.0068335000069055,
+              "p95": 1.0744994999949995,
+              "throughputPerSecond": 977.7951910547935
+            }
+          },
+          "percentageChange": {
+            "p50": -9.183499510846794,
+            "p95": -23.03469779369275,
+            "throughputPerSecond": 10.56261799134166
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              3.857624999996915,
+              5.98399999999674,
+              4.003375000000233,
+              5.143500000005588
+            ],
+            "after": [
+              1.3601249999992433,
+              1.2830419999954756,
+              1.3175409999967087,
+              1.4357920000038575
+            ]
+          },
+          "firstUseMedianChange": -70.72589272298738,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "layout_authoring",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.6791459999949438,
+              "p95": 2.695771499995317,
+              "throughputPerSecond": 555.762900044851
+            },
+            "after": {
+              "p50": 0.3944794999952137,
+              "p95": 0.46249999999417923,
+              "throughputPerSecond": 2533.430652970561
+            }
+          },
+          "percentageChange": {
+            "p50": -76.50713517488047,
+            "p95": -82.84350138745133,
+            "throughputPerSecond": 355.8473861364457
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              2.3966660000005504,
+              2.8172079999931157,
+              2.574457999988226,
+              2.961582999996608
+            ],
+            "after": [
+              0.6277090000003227,
+              0.6024170000018785,
+              0.6306660000118427,
+              0.6388330000045244
+            ]
+          },
+          "firstUseMedianChange": -76.66073899947585,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "rls_list",
+          "medianOfRounds": {
+            "before": {
+              "p50": 61.281228999985615,
+              "p95": 67.07364649999363,
+              "throughputPerSecond": 16.381040930663
+            },
+            "after": {
+              "p50": 5.6908335000043735,
+              "p95": 6.350437499997497,
+              "throughputPerSecond": 172.95595345881785
+            }
+          },
+          "percentageChange": {
+            "p50": -90.71357805176245,
+            "p95": -90.53214215810065,
+            "throughputPerSecond": 955.8300549452182
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              57.62579199999891,
+              355.43649999999616,
+              76.38441599998623,
+              74.9469579999859
+            ],
+            "after": [
+              5.88408299999719,
+              5.875167000005604,
+              6.129000000015367,
+              6.018708999996306
+            ]
+          },
+          "firstUseMedianChange": -92.1346171085477,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "write",
+          "medianOfRounds": {
+            "before": {
+              "p50": 53.9929584999918,
+              "p95": 65.23133300000336,
+              "throughputPerSecond": 18.107742490084064
+            },
+            "after": {
+              "p50": 48.8704379999981,
+              "p95": 53.326499499999045,
+              "throughputPerSecond": 20.08830028203642
+            }
+          },
+          "percentageChange": {
+            "p50": -9.487386211656613,
+            "p95": -18.250176644410598,
+            "throughputPerSecond": 10.93762954182127
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              63.492000000005646,
+              121.85391599999275,
+              69.45524999999907,
+              71.9917500000156
+            ],
+            "after": [
+              52.57066699999996,
+              52.692708999995375,
+              52.31645899999421,
+              52.43904100000509
+            ]
+          },
+          "firstUseMedianChange": -25.76038516193757,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        }
+      ]
+    },
+    {
+      "file": "performance-concurrent-canonical-final.json",
+      "sha256": "e43a497d8e24b2716a09ec07c9ecb8ac1fb652933aaf3bc22a02fe5604921a4f",
+      "measuredMigrationSha256": "ead61e06ef9214337f916c402bf11e200f540ad50d2555d6d50bf9af04824e07",
+      "finalContractDifferences": [
+        "_swap_spots_generate_product_json(bigint,bigint)",
+        "blueprint_area_availability_internal(bigint,bigint)",
+        "blueprint_form_product_catalog_internal(bigint)",
+        "blueprint_form_products_internal(bigint)",
+        "blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+        "cleaning_crew_navigation_rule(boolean)",
+        "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+        "get_all_user_basics_for_scan(text)",
+        "get_blueprint(uuid,uuid,bigint)",
+        "get_context_capabilities_v1(bigint,occasion_users,unit_users,boolean,boolean,boolean,boolean,boolean,boolean,boolean)",
+        "get_customer_order_overview(text,bigint)",
+        "get_order_details_for_email(bigint)",
+        "get_orders(text,text,jsonb)",
+        "get_scanner_occasion_for_scan_code_internal(text)",
+        "get_ticket_layout_write_contract_v1()",
+        "open_scanner_session(text,bigint,text)",
+        "order_spot_metadata_internal(bigint)",
+        "order_tickets_with_seating_internal(bigint,jsonb)",
+        "save_blueprint_layout_impl_internal(jsonb,boolean)",
+        "scan_ticket_v2(text,text)",
+        "schedule_entry_navigation_rule(boolean)"
+      ],
+      "summaries": [
+        {
+          "occasions": 8,
+          "workload": "operator",
+          "medianOfRounds": {
+            "before": {
+              "p50": 25.9117499999993,
+              "p95": 40.80616699999996,
+              "throughputPerSecond": 125.52124553878402
+            },
+            "after": {
+              "p50": 0.721958000001905,
+              "p95": 1.4932090000002063,
+              "throughputPerSecond": 1704.0079175023889
+            }
+          },
+          "percentageChange": {
+            "p50": -97.21378139260403,
+            "p95": -96.34072712587731,
+            "throughputPerSecond": 1257.5454180590316
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              26.14825000000002,
+              66.19854199999827,
+              26.184042000000773
+            ],
+            "after": [
+              1.2934170000007725,
+              1.2888749999983702,
+              3.004124999999476
+            ]
+          },
+          "firstUseMedianChange": -95.0602851920237,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "editor_bundle",
+          "medianOfRounds": {
+            "before": {
+              "p50": 2.2283749999987776,
+              "p95": 5.043708000004699,
+              "throughputPerSecond": 724.5780653614464
+            },
+            "after": {
+              "p50": 1.384582999999111,
+              "p95": 2.7859580000003916,
+              "throughputPerSecond": 1112.8189791276902
+            }
+          },
+          "percentageChange": {
+            "p50": -37.865799068833994,
+            "p95": -44.763693695237784,
+            "throughputPerSecond": 53.58165425178512
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              2.3769999999999527,
+              9.105458999998518,
+              3.6321659999957774
+            ],
+            "after": [
+              2.829749999998967,
+              2.550999999999476,
+              3.242583999999624
+            ]
+          },
+          "firstUseMedianChange": -22.091941832992855,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "layout_authoring",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.9211669999999685,
+              "p95": 4.667416999996931,
+              "throughputPerSecond": 799.8711354276318
+            },
+            "after": {
+              "p50": 0.42779199999858974,
+              "p95": 0.609708000003593,
+              "throughputPerSecond": 2638.935849118873
+            }
+          },
+          "percentageChange": {
+            "p50": -77.73270100940748,
+            "p95": -86.93692892655629,
+            "throughputPerSecond": 229.92012490962432
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              4.462374999999838,
+              4.478374999998778,
+              3.963625000003958
+            ],
+            "after": [
+              1.0345840000009048,
+              1.2626669999990554,
+              0.9112499999973807
+            ]
+          },
+          "firstUseMedianChange": -76.81539538920548,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "rls_list",
+          "medianOfRounds": {
+            "before": {
+              "p50": 137.31554100000358,
+              "p95": 167.15024999999878,
+              "throughputPerSecond": 25.40583035225024
+            },
+            "after": {
+              "p50": 12.202541000000565,
+              "p95": 16.260957999998936,
+              "throughputPerSecond": 261.4777852831585
+            }
+          },
+          "percentageChange": {
+            "p50": -91.11350331423867,
+            "p95": -90.27165200171758,
+            "throughputPerSecond": 929.2038546183511
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              60.92716699999983,
+              152.54912499999773,
+              137.01191699999617
+            ],
+            "after": [
+              14.939875000000029,
+              18.84233299999687,
+              13.172124999997322
+            ]
+          },
+          "firstUseMedianChange": -89.09593024670953,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 8,
+          "workload": "write",
+          "medianOfRounds": {
+            "before": {
+              "p50": 137.56087499999558,
+              "p95": 187.13608400000157,
+              "throughputPerSecond": 24.3485879768585
+            },
+            "after": {
+              "p50": 130.91620899999543,
+              "p95": 193.73849999999948,
+              "throughputPerSecond": 25.160063654633966
+            }
+          },
+          "percentageChange": {
+            "p50": -4.830345837797523,
+            "p95": 3.5281362412167727,
+            "throughputPerSecond": 3.3327422458612865
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              47.91750000000047,
+              58.18633299999783,
+              45.61579199999687
+            ],
+            "after": [
+              50.389124999999694,
+              37.306375000000116,
+              42.73791599999822
+            ]
+          },
+          "firstUseMedianChange": -10.809378619506859,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "operator",
+          "medianOfRounds": {
+            "before": {
+              "p50": 3967.7036669999943,
+              "p95": 6082.957916999992,
+              "throughputPerSecond": 0.8835353139054845
+            },
+            "after": {
+              "p50": 7.801207999989856,
+              "p95": 11.015542000008281,
+              "throughputPerSecond": 361.6755985620274
+            }
+          },
+          "percentageChange": {
+            "p50": -99.80338229225953,
+            "p95": -99.81891142187219,
+            "throughputPerSecond": 40835.04728897768
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              2548.177958,
+              2663.907540999993,
+              3367.739459000004
+            ],
+            "after": [
+              10.350834000011673,
+              7.084666999988258,
+              10.02554100000998
+            ]
+          },
+          "firstUseMedianChange": -99.6236528165596,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "editor_bundle",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.9758750000037253,
+              "p95": 3.4138749999692664,
+              "throughputPerSecond": 862.7212745269627
+            },
+            "after": {
+              "p50": 1.5225829999835696,
+              "p95": 3.238791999989189,
+              "throughputPerSecond": 956.5509985006235
+            }
+          },
+          "percentageChange": {
+            "p50": -22.94132979157594,
+            "p95": -5.12857090495854,
+            "throughputPerSecond": 10.876018332236947
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              6.263290999981109,
+              5.562625000020489,
+              6.449166000005789
+            ],
+            "after": [
+              3.592833000002429,
+              4.418000000005122,
+              2.4508749999804422
+            ]
+          },
+          "firstUseMedianChange": -42.63665858710276,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "layout_authoring",
+          "medianOfRounds": {
+            "before": {
+              "p50": 3.3179590000072494,
+              "p95": 6.173750000016298,
+              "throughputPerSecond": 646.4192290931196
+            },
+            "after": {
+              "p50": 0.4315000000060536,
+              "p95": 0.7429169999959413,
+              "throughputPerSecond": 2524.8827723224463
+            }
+          },
+          "percentageChange": {
+            "p50": -86.99501711729678,
+            "p95": -87.9665195384656,
+            "throughputPerSecond": 290.5952451112381
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              4.345624999987194,
+              3.9436659999773838,
+              10.146458000002895
+            ],
+            "after": [
+              1.0209590000158641,
+              0.8724579999980051,
+              0.9845419999910519
+            ]
+          },
+          "firstUseMedianChange": -77.34406443275816,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "rls_list",
+          "medianOfRounds": {
+            "before": {
+              "p50": 199.74654199997894,
+              "p95": 239.92774999997346,
+              "throughputPerSecond": 17.671204814960173
+            },
+            "after": {
+              "p50": 12.013750000012806,
+              "p95": 17.046332999976585,
+              "throughputPerSecond": 250.9825354492947
+            }
+          },
+          "percentageChange": {
+            "p50": -93.98550288794783,
+            "p95": -92.89522241592377,
+            "throughputPerSecond": 1320.2910219048374
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              154.89658300002338,
+              103.07566700002644,
+              243.95449999999255
+            ],
+            "after": [
+              14.412917000008747,
+              8.28416599999764,
+              9.893167000031099
+            ]
+          },
+          "firstUseMedianChange": -93.61305019877062,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "write",
+          "medianOfRounds": {
+            "before": {
+              "p50": 249.56191699998453,
+              "p95": 336.86275000002934,
+              "throughputPerSecond": 14.103630331743435
+            },
+            "after": {
+              "p50": 217.48533400002634,
+              "p95": 262.80133300001035,
+              "throughputPerSecond": 16.152549340831012
+            }
+          },
+          "percentageChange": {
+            "p50": -12.853156196888882,
+            "p95": -21.985635692878635,
+            "throughputPerSecond": 14.527600063907077
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              69.34537500000442,
+              111.34962500003166,
+              90.81070800003363
+            ],
+            "after": [
+              65.07887500000652,
+              69.52116699999897,
+              73.79858299996704
+            ]
+          },
+          "firstUseMedianChange": -23.443866333501962,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        }
+      ]
+    },
+    {
+      "file": "performance-context-navigation-final.json",
+      "sha256": "6edcc7090091a9503f36fd9631b540d95355c087cf0f14c12567d40cdd6e1c85",
+      "measuredMigrationSha256": "7ecb8fc86c344cc07cca08b25e175042290621484aa1adcda88315c2c1fe7f42",
+      "finalContractDifferences": [
+        "_swap_spots_generate_product_json(bigint,bigint)",
+        "blueprint_area_availability_internal(bigint,bigint)",
+        "blueprint_form_product_catalog_internal(bigint)",
+        "blueprint_form_products_internal(bigint)",
+        "blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+        "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+        "get_blueprint(uuid,uuid,bigint)",
+        "get_customer_order_overview(text,bigint)",
+        "get_order_details_for_email(bigint)",
+        "get_orders(text,text,jsonb)",
+        "order_spot_metadata_internal(bigint)",
+        "order_tickets_with_seating_internal(bigint,jsonb)",
+        "save_blueprint_layout_impl_internal(jsonb,boolean)"
+      ],
+      "summaries": [
+        {
+          "occasions": 8,
+          "workload": "context",
+          "medianOfRounds": {
+            "before": {
+              "p50": 1.5530000000000541,
+              "p95": 1.7611255000000483,
+              "throughputPerSecond": 634.508932442674
+            },
+            "after": {
+              "p50": 0.8199994999999944,
+              "p95": 1.1108745000000795,
+              "throughputPerSecond": 1171.931878363329
+            }
+          },
+          "percentageChange": {
+            "p50": -47.19900193174721,
+            "p95": -36.92246804670939,
+            "throughputPerSecond": 84.69903549690522
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              4.530958999999996,
+              2.7013750000000982,
+              2.682707999999934,
+              2.796875
+            ],
+            "after": [
+              2.9718330000000037,
+              2.115083000000027,
+              2.2891250000000127,
+              2.121415999999954
+            ]
+          },
+          "firstUseMedianChange": -19.78282180694061,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "context",
+          "medianOfRounds": {
+            "before": {
+              "p50": 2.362833000000137,
+              "p95": 3.572624499999847,
+              "throughputPerSecond": 409.62984174455227
+            },
+            "after": {
+              "p50": 1.2235005,
+              "p95": 1.468417000000045,
+              "throughputPerSecond": 789.7569015366555
+            }
+          },
+          "percentageChange": {
+            "p50": -48.218917714458485,
+            "p95": -58.898087386454755,
+            "throughputPerSecond": 92.79769710458568
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              3.479625000000169,
+              3.159375000000182,
+              3.3911669999997684,
+              5.467415999999957
+            ],
+            "after": [
+              2.6083329999999023,
+              2.377958000000035,
+              3.6605420000000777,
+              3.1416669999998703
+            ]
+          },
+          "firstUseMedianChange": -16.312413474315267,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        }
+      ]
+    },
+    {
+      "file": "performance-concurrent-navigation-final.json",
+      "sha256": "6708845c882b09e21d6d26a808f875ab8cab89b2e9621de196f4f822f4318bd0",
+      "measuredMigrationSha256": "7ecb8fc86c344cc07cca08b25e175042290621484aa1adcda88315c2c1fe7f42",
+      "finalContractDifferences": [
+        "_swap_spots_generate_product_json(bigint,bigint)",
+        "blueprint_area_availability_internal(bigint,bigint)",
+        "blueprint_form_product_catalog_internal(bigint)",
+        "blueprint_form_products_internal(bigint)",
+        "blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+        "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+        "get_blueprint(uuid,uuid,bigint)",
+        "get_customer_order_overview(text,bigint)",
+        "get_order_details_for_email(bigint)",
+        "get_orders(text,text,jsonb)",
+        "order_spot_metadata_internal(bigint)",
+        "order_tickets_with_seating_internal(bigint,jsonb)",
+        "save_blueprint_layout_impl_internal(jsonb,boolean)"
+      ],
+      "summaries": [
+        {
+          "occasions": 8,
+          "workload": "context",
+          "medianOfRounds": {
+            "before": {
+              "p50": 2.078292000000147,
+              "p95": 4.0936249999999745,
+              "throughputPerSecond": 820.9127523665386
+            },
+            "after": {
+              "p50": 0.9368339999999762,
+              "p95": 1.9451660000000857,
+              "throughputPerSecond": 1304.8460077828627
+            }
+          },
+          "percentageChange": {
+            "p50": -54.92288860276082,
+            "p95": -52.4830437570589,
+            "throughputPerSecond": 58.95063196682408
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              8.096249999999998,
+              5.181249999999977,
+              7.917874999999867
+            ],
+            "after": [
+              7.499416999999994,
+              5.90462500000001,
+              6.824917000000141
+            ]
+          },
+          "firstUseMedianChange": -13.803678385927343,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        },
+        {
+          "occasions": 1000,
+          "workload": "context",
+          "medianOfRounds": {
+            "before": {
+              "p50": 3.5813749999997526,
+              "p95": 5.838457999999719,
+              "throughputPerSecond": 700.734362604666
+            },
+            "after": {
+              "p50": 1.5559170000001359,
+              "p95": 3.9014579999998205,
+              "throughputPerSecond": 874.3870182674019
+            }
+          },
+          "percentageChange": {
+            "p50": -56.55531744092022,
+            "p95": -33.17656819660245,
+            "throughputPerSecond": 24.781524202303995
+          },
+          "warmedMedianGate": true,
+          "firstUseSamplesMs": {
+            "before": [
+              8.070457999999917,
+              9.788790999999947,
+              9.197541000000001
+            ],
+            "after": [
+              8.298624999999902,
+              8.66387500000019,
+              6.979584000000159
+            ]
+          },
+          "firstUseMedianChange": -9.773438357057596,
+          "finalChangedStaticCallCandidates": [],
+          "rpcCountPerDomainRequest": 1
+        }
+      ]
+    }
+  ]
+}

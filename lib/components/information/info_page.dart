@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'dart:async';
@@ -84,7 +85,8 @@ class _InfoPageState extends State<InfoPage> {
   }
 
   @override
-  Widget build(BuildContext context) => HtmlEditingScope(coordinator: _htmlSave, child: _buildHtmlParent(context));
+  Widget build(BuildContext context) => HtmlEditingScope(
+      coordinator: _htmlSave, child: _buildHtmlParent(context));
 
   Widget _buildHtmlParent(BuildContext context) {
     return Scaffold(
@@ -185,21 +187,48 @@ class _InfoPageState extends State<InfoPage> {
                                     )
                                   : Column(
                                       children: [
-                                        Padding(padding: const EdgeInsets.all(12),
-                                          child: EditableHtmlField(key: ValueKey('information-html-${item.id}'),
-                                            html: item.description, enabled: RightsService.isEditor(),
-                                            owner: item.unit != null ? HtmlMediaOwner.unit(item.unit) :
-                                              HtmlMediaOwner.occasion(RightsService.currentOccasionId()),
-                                            twoFingersOn: onPinchStart, twoFingersOff: onPinchEnd,
-                                            onChanged: (_) {}, onSave: (html) async {
-                                              final snapshot = InformationModel(id: item.id, title: item.title,
-                                                description: html, type: item.type, isHidden: item.isHidden,
-                                                order: item.order, unit: item.unit, data: item.data,
-                                                informationHidden: item.informationHidden, updatedAt: item.updatedAt,
-                                                aggregateVersion: htmlVersion);
-                                              await DbInformation.updateInformation(snapshot);
-                                              if (mounted) await loadData();
-                                            })),
+                                        Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: EditableHtmlField(
+                                                key: ValueKey(
+                                                    'information-html-${item.id}'),
+                                                html: item.description,
+                                                enabled:
+                                                    RightsService.hasCapability(
+                                                        AuthorizationCapabilities
+                                                            .informationWrite),
+                                                owner: item.unit != null
+                                                    ? HtmlMediaOwner.unit(
+                                                        item.unit)
+                                                    : HtmlMediaOwner.occasion(
+                                                        RightsService
+                                                            .currentOccasionId()),
+                                                twoFingersOn: onPinchStart,
+                                                twoFingersOff: onPinchEnd,
+                                                onChanged: (_) {},
+                                                onSave: (html) async {
+                                                  final snapshot =
+                                                      InformationModel(
+                                                          id: item.id,
+                                                          title: item.title,
+                                                          description: html,
+                                                          type: item.type,
+                                                          isHidden:
+                                                              item.isHidden,
+                                                          order: item.order,
+                                                          unit: item.unit,
+                                                          data: item.data,
+                                                          informationHidden: item
+                                                              .informationHidden,
+                                                          updatedAt:
+                                                              item.updatedAt,
+                                                          aggregateVersion:
+                                                              htmlVersion);
+                                                  await DbInformation
+                                                      .updateInformation(
+                                                          snapshot);
+                                                  if (mounted) await loadData();
+                                                })),
                                       ],
                                     ),
                               isExpanded: item.isExpanded,

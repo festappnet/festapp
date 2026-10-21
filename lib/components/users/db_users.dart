@@ -376,7 +376,13 @@ class DbUsers {
     });
     var code = response['code'];
     if (code != 200 && code != 201) {
+      if (code == 403) {
+        await RightsService.refreshAfterAuthorizationDenial();
+      }
       throw Exception(response['message']);
+    }
+    if (uum.user != null && uum.user == RightsService.currentUser()?.id) {
+      await RightsService.refreshAfterAuthorizationChange();
     }
   }
 
@@ -394,6 +400,9 @@ class DbUsers {
     oum
       ..user = result.userId ?? oum.user
       ..aggregateVersion = result.version;
+    if (oum.user != null && oum.user == RightsService.currentUser()?.id) {
+      await RightsService.refreshAfterAuthorizationChange();
+    }
   }
 
   static Future<void> addUserToOccasion(String id, int occasion) =>
