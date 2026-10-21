@@ -39,7 +39,6 @@ class AuthService {
     final session = Map<String, dynamic>.from(result['session'] as Map);
     try {
       DbEvents.invalidateSavedProgramMutationScope();
-      RightsService.invalidateCapabilities(clearIdentity: true);
       final auth =
           await _supabase.auth.setSession(session['refresh_token'] as String);
       if (auth.session?.user.id != result['userId']) {
@@ -56,10 +55,11 @@ class AuthService {
       }
       // Bootstrap can still hold anonymous data after the OAuth round trip.
       // Load the installed identity's full context before publishing success.
-      await _finalizeLogin(auth.session!);
+      await RightsService.updateAppData(force: true, refreshOffline: false);
       if (RightsService.currentUser()?.id != result['userId']) {
         throw const AuthException('account_identity_inconsistent');
       }
+      await _finalizeLogin(auth.session!);
     } catch (_) {
       await _supabase.auth.signOut(scope: SignOutScope.local);
       await _secureStorage.delete(key: REFRESH_TOKEN_KEY);
@@ -119,16 +119,15 @@ class AuthService {
   }
 
   static Future<void> _finalizeLogin(Session session) async {
-    RightsService.invalidateCapabilities(clearIdentity: true);
     if (!await validateCurrentOrganization()) {
       throw Exception('Account is not available for this organization.');
     }
     await _secureStorage.write(
         key: REFRESH_TOKEN_KEY, value: session.refreshToken.toString());
     try {
-      await RightsService.updateAppData(force: true, refreshOffline: false);
       if (AppConfig.isAppSupported) {
         if (ClientSyncRuntime.isV1Selected) {
+          await RightsService.updateAppData(force: true, refreshOffline: false);
           await ClientSyncRuntime.identityChanged();
           await ClientSyncRuntime.refresh(SyncReason.login,
               privateConsumer: true);
@@ -149,7 +148,6 @@ class AuthService {
   }
 
   static Future<void> logout() async {
-    RightsService.invalidateCapabilities(clearIdentity: true);
     DbEvents.invalidateSavedProgramMutationScope();
     await runLogoutFlow(
       signOutLocal: () => _supabase.auth.signOut(scope: SignOutScope.local),
@@ -157,7 +155,11 @@ class AuthService {
       clearPrivateData: OfflineDataService.clearUserData,
       resetIdentity: ClientSyncRuntime.identityChanged,
       clearRights: () {
-        RightsService.invalidateCapabilities(clearIdentity: true);
+        RightsService.occasionLinkModel?.occasionUser = null;
+        RightsService.occasionLinkModel?.unitUser = null;
+        RightsService.occasionLinkModel?.userInfo = null;
+        RightsService.occasionLinkModelNotifier.value =
+            RightsService.occasionLinkModel;
       },
       detachNotifications: () => NotificationHelper.logoutCurrentUser()
           .timeout(const Duration(seconds: 2)),

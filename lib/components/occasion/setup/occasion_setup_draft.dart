@@ -1,4 +1,3 @@
-import 'occasion_setup_result.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,8 +30,6 @@ class OccasionSetupDraft {
       .intersection(
           OccasionSetupStory.applicableSteps(data, AppConfig.isAppSupported))
       .length;
-
-  bool get isFinalized => data.containsKey('finalizedOccasion');
 
   String get title => data['title'] as String? ?? '';
   int get progress => data['completed'] is List
@@ -67,13 +64,8 @@ class OccasionSetupDrafts {
     return (rows as List)
         .map((row) =>
             OccasionSetupDraft.fromJson(Map<String, dynamic>.from(row)))
-        .where((draft) => !draft.isFinalized)
         .toList();
   }
-
-  Future<OccasionSetupDraft> get(String id) async =>
-      OccasionSetupDraft.fromJson(Map<String, dynamic>.from(
-          await client.rpc('get_occasion_setup_draft', params: {'p_id': id})));
 
   Future<OccasionSetupDraft> create(int unit, String id) async =>
       OccasionSetupDraft.fromJson(Map<String, dynamic>.from(await client.rpc(
@@ -98,30 +90,19 @@ class OccasionSetupDrafts {
         'p_step': step
       })));
 
-  Future<OccasionSetupResult> finalize(
-      OccasionSetupDraft draft, String commandId) async {
+  Future<String> finalize(OccasionSetupDraft draft, String commandId) async {
     final response = Map<String, dynamic>.from(
         await client.rpc('finalize_occasion_setup_draft', params: {
       'p_id': draft.id,
       'p_expected_revision': draft.revision,
       'p_command_id': commandId,
     }));
-    final data = response['data'] as Map;
-    return OccasionSetupResult(
-        occasionId: data['occasionId'] as int,
-        unit: draft.unit,
-        link: data['link'] as String,
-        title: draft.title,
-        formLink: data['formLink'] as String?,
-        saleMode: data['saleMode'] as String? ?? 'preparation',
-        hasTickets: OccasionSetupStory.hasTickets(draft.data));
+    return (response['data'] as Map)['link'] as String;
   }
 
-  Future<Map<String, dynamic>> blueprintResources(
-      OccasionSetupDraft draft) async {
+  Future<Map<String, dynamic>> blueprintResources(OccasionSetupDraft draft) async {
     final response = Map<String, dynamic>.from(await client.rpc(
-        'get_occasion_setup_blueprint_resources',
-        params: {'p_draft': draft.id}));
+      'get_occasion_setup_blueprint_resources', params: {'p_draft': draft.id}));
     return Map<String, dynamic>.from(response['resources'] as Map);
   }
 

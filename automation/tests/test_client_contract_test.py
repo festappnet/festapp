@@ -70,21 +70,20 @@ sys.exit(1 if fail else 0)
                 self.assertEqual(result.returncode == 0, not failures, result.stderr)
                 self.assertCountEqual((self.root / "calls").read_text().splitlines(), ["core", "flutter", "adapters"])
 
-    def test_concurrency_is_one_and_higher_overrides_are_rejected(self):
+    def test_concurrency_is_bounded_by_default_and_explicitly_overridable(self):
         self.env.pop('FESTAPP_CLIENT_CONCURRENCY', None)
         result = self.run_client()
         self.assertEqual(result.returncode, 0, result.stderr)
         summary = json.loads((self.root / 'results/summary.json').read_text())
-        self.assertEqual(summary['concurrency'], 1)
+        self.assertGreaterEqual(summary['concurrency'], 1)
+        self.assertLessEqual(summary['concurrency'], 2)
         arguments = self.root / 'arguments.jsonl'
-        self.env.update(FESTAPP_CLIENT_CONCURRENCY='1', ARGUMENTS=str(arguments))
+        self.env.update(FESTAPP_CLIENT_CONCURRENCY='3', ARGUMENTS=str(arguments))
         result = self.run_client()
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = [json.loads(line) for line in arguments.read_text().splitlines()]
         self.assertEqual(len(commands), 3)
-        self.assertTrue(all('--concurrency=1' in command for command in commands))
-        self.env['FESTAPP_CLIENT_CONCURRENCY'] = '2'
-        self.assertIn('must be 1', self.run_client().stderr)
+        self.assertTrue(all('--concurrency=3' in command for command in commands))
         for invalid in ('0', '-1', 'many'):
             self.env['FESTAPP_CLIENT_CONCURRENCY'] = invalid
             result = self.run_client()

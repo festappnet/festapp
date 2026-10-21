@@ -1,4 +1,3 @@
-import { AuthorizationCapabilities } from './authorization_capabilities.js';
 import { SupabaseService } from './supabase_service.js';
 import { AppConfig } from '../app_config.js';
 import { LocalizationService } from './localization_service.js';
@@ -6,19 +5,6 @@ import { LocalizationService } from './localization_service.js';
 export class RightsService {
     static _context = null;
     static _listeners = [];
-    static _requestGeneration = 0;
-    static _identityClient = null;
-    static _identitySubscription = null;
-
-    static clearCapabilities() {
-        this._requestGeneration++;
-        this._context = null;
-        this._notifyListeners();
-    }
-
-    static hasCapability(id) {
-        return this._context?.capabilities?.[id] === true;
-    }
 
     static get context() {
         return this._context;
@@ -42,12 +28,6 @@ export class RightsService {
         
         // Mirror Flutter rights_service.dart: forceOccasionLink overrides when no explicit link given.
         const effectiveLink = link || AppConfig.forceOccasionLink || null;
-        const request = ++this._requestGeneration;
-        const organization = AppConfig.organization;
-        if (this._context) {
-            this._context = { ...this._context, capabilities: {} };
-            this._notifyListeners();
-        }
 
         try {
             const client = SupabaseService.getClient();
@@ -60,13 +40,6 @@ export class RightsService {
                 });
             }
 
-            if (this._identityClient !== client) {
-                this._identitySubscription?.unsubscribe();
-                this._identityClient = client;
-                this._identitySubscription = client.auth?.onAuthStateChange?.((event) => {
-                    if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') this.clearCapabilities();
-                })?.data?.subscription;
-            }
             const { data, error } = await client.rpc('get_app_config_v218', {
                 data_in: {
                     link: effectiveLink,
@@ -78,7 +51,6 @@ export class RightsService {
             });
 
             if (error) {
-                if (request === this._requestGeneration) this.clearCapabilities();
                 console.error("RightsService: Error fetching app config", error);
                 return false;
             }
@@ -87,7 +59,6 @@ export class RightsService {
             // only from Main. Never publish renderable context until the shared
             // translation dictionary is ready.
             await LocalizationService.init();
-            if (request !== this._requestGeneration || organization !== AppConfig.organization) return false;
             this._context = data;
             this._notifyListeners();
             return true;
@@ -116,12 +87,37 @@ export class RightsService {
 
     // --- Rights Checks (Mirrors Flutter) ---
     static canSeeReservations() {
-        return this.hasCapability(AuthorizationCapabilities.ordersRead);
+        return this.isUnitEditorView() || this.isEditorOrderView();
     }
     
+    static isEditorOrderView() {
+        return this.occasionUser?.is_editor_order_view === true;
+    }
     
+    static isUnitEditorView() {
+        return this._context?.unit_user?.is_editor_view === true;
+    }
+
+    static isAdmin() {
+        return !!this._context?.is_admin;
+    }
+
+    static isEditor() {
+        return !!this.occasionUser?.is_editor;
+    }
+
+    static isManager() {
+        return !!this.occasionUser?.is_manager;
+    }
+
+
     static canSeeAdmin() {
-        return this.hasCapability(AuthorizationCapabilities.navigationAdminWeb);
+        const admin = this.isAdmin();
+        const editor = this.isEditor();
+        const manager = this.isManager();
+        const unitEditorView = this.isUnitEditorView();
+        const hasUnits = this.hasUnits();
+        return admin || editor || manager || unitEditorView || hasUnits;
     }
 
     static hasUnits() {

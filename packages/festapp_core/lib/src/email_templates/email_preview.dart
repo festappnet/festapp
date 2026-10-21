@@ -19,35 +19,27 @@ String escapeEmailHtml(String value) => value
     .replaceAll('>', '&gt;');
 
 /// Mirrors the production pure finalizer; shared fixtures assert parity.
-String completeEmailContent(
-  String html,
-  List<EmailRequiredLink> links, [
-  String? wrapperHtml,
-]) => _completeEmailContent(_wrapEmailContent(html, wrapperHtml), links);
+String completeEmailContent(String html, List<EmailRequiredLink> links,
+        [String? wrapperHtml]) =>
+    _completeEmailContent(_wrapEmailContent(html, wrapperHtml), links);
 
 String _wrapEmailContent(String content, String? wrapperHtml) =>
     wrapperHtml == null || wrapperHtml.isEmpty
-    ? content
-    : wrapperHtml.replaceFirst('{{content}}', content);
+        ? content
+        : wrapperHtml.replaceFirst('{{content}}', content);
 
 bool _missingRequiredLink(String html, EmailRequiredLink link) =>
-    link.url.isNotEmpty &&
-    !html.contains('href="${escapeEmailHtml(link.url)}"');
+    link.url.isNotEmpty && !html.contains('href="${escapeEmailHtml(link.url)}"');
 
 String _completeEmailContent(
-  String html,
-  List<EmailRequiredLink> links, {
-  void Function(int offset, String html, int replacedLength)? onInsertion,
-}) {
+    String html, List<EmailRequiredLink> links,
+    {void Function(int offset, String html, int replacedLength)? onInsertion}) {
   for (final link in links) {
     if (!_missingRequiredLink(html, link)) continue;
     if (html.contains(emailOverviewSlot)) {
-      onInsertion?.call(
-        html.indexOf(emailOverviewSlot),
-        link.html,
-        emailOverviewSlot.length,
-      );
+      onInsertion?.call(html.indexOf(emailOverviewSlot), link.html, emailOverviewSlot.length);
       html = html.replaceFirst(emailOverviewSlot, link.html);
+
     }
   }
   return html.replaceAll(emailOverviewSlot, '');
@@ -57,16 +49,11 @@ String _completeEmailContent(
 class EmailAuthoringCompletion {
   final Map<String, List<String>> tokenHtml;
   final String leadingHtml, trailingHtml;
-  const EmailAuthoringCompletion({
-    required this.tokenHtml,
-    required this.leadingHtml,
-    required this.trailingHtml,
-  });
+  const EmailAuthoringCompletion({required this.tokenHtml,
+    required this.leadingHtml, required this.trailingHtml});
   String? forToken(String code, int occurrence) {
     final values = tokenHtml[code];
-    return values != null && occurrence < values.length
-        ? values[occurrence]
-        : null;
+    return values != null && occurrence < values.length ? values[occurrence] : null;
   }
 }
 
@@ -82,9 +69,7 @@ class _AuthoringCompletionCapture {
   final leading = StringBuffer(), trailing = StringBuffer();
   int bodyStart = 0;
   void insert(int offset, String html, int replacedLength) {
-    final owner = spans
-        .where((s) => offset >= s.start && offset < s.end)
-        .firstOrNull;
+    final owner = spans.where((s) => offset >= s.start && offset < s.end).firstOrNull;
     if (owner != null) {
       final local = offset - owner.start;
       owner.html = owner.html.replaceRange(local, local + replacedLength, html);
@@ -102,19 +87,13 @@ class _AuthoringCompletionCapture {
     }
     if (offset < bodyStart) bodyStart += delta;
   }
-
   EmailAuthoringCompletion finish() {
     final values = <String, List<String>>{};
     for (final span in spans) {
-      values
-          .putIfAbsent(span.code, () => [])
-          .add(span.html.replaceAll(emailOverviewSlot, ''));
+      values.putIfAbsent(span.code, () => []).add(span.html.replaceAll(emailOverviewSlot, ''));
     }
-    return EmailAuthoringCompletion(
-      tokenHtml: values,
-      leadingHtml: leading.toString(),
-      trailingHtml: trailing.toString(),
-    );
+    return EmailAuthoringCompletion(tokenHtml: values,
+      leadingHtml: leading.toString(), trailingHtml: trailing.toString());
   }
 }
 
@@ -124,8 +103,6 @@ class EmailPreviewScenario {
   final Set<String> richCodes;
   final Map<String, String> contextTemplates;
   final Map<String, String> applicationContextTemplates;
-  final Map<String, String> singleApplicationTemplates;
-  final Map<String, String> singleApplicationDefaults;
   final Map<String, String> contextDefaults;
   final List<EmailRequiredLink> requiredLinks;
   const EmailPreviewScenario({
@@ -137,19 +114,11 @@ class EmailPreviewScenario {
     required this.richCodes,
     this.contextTemplates = const {},
     this.applicationContextTemplates = const {},
-    this.singleApplicationTemplates = const {},
-    this.singleApplicationDefaults = const {},
     this.contextDefaults = const {},
     required this.requiredLinks,
   });
   factory EmailPreviewScenario.fromJson(Map<String, dynamic> json) =>
       EmailPreviewScenario(
-        singleApplicationTemplates: Map<String, String>.from(
-          json['singleApplicationTemplates'] as Map? ?? const {},
-        ),
-        singleApplicationDefaults: Map<String, String>.from(
-          json['singleApplicationDefaults'] as Map? ?? const {},
-        ),
         applicationContextTemplates: Map<String, String>.from(
           json['applicationContextTemplates'] as Map? ?? const {},
         ),
@@ -186,11 +155,6 @@ class EmailPreviewScenario {
     },
     richCodes: richCodes.intersection(codes),
     contextDefaults: contextDefaults,
-    singleApplicationDefaults: singleApplicationDefaults,
-    singleApplicationTemplates: {
-      for (final entry in singleApplicationTemplates.entries)
-        if (codes.contains(entry.key)) entry.key: entry.value,
-    },
     contextTemplates: {
       for (final entry in contextTemplates.entries)
         if (codes.contains(entry.key)) entry.key: entry.value,
@@ -205,7 +169,6 @@ class EmailPreviewScenario {
   EmailPreviewScenario withContext(EmailPreviewContext context) {
     final bindings = {
       ...contextDefaults,
-      if (context.singleApplication) ...singleApplicationDefaults,
       ...context.bindings(zero: scenario == 'zero'),
     };
     final result = Map<String, String>.from(values);
@@ -214,10 +177,8 @@ class EmailPreviewScenario {
         result[code] = context.occasionTitle!;
     }
     if (context.paymentAccount != null) {
-      if (result.containsKey('accountNumber'))
-        result['accountNumber'] = context.paymentAccount!.accountNumber;
-      if (result.containsKey('iban'))
-        result['iban'] = context.paymentAccount!.iban;
+      if (result.containsKey('accountNumber')) result['accountNumber'] = context.paymentAccount!.accountNumber;
+      if (result.containsKey('iban')) result['iban'] = context.paymentAccount!.iban;
     }
     if (context.deadline != null && result.containsKey('deadline'))
       result['deadline'] = context.deadline!;
@@ -226,7 +187,6 @@ class EmailPreviewScenario {
     final templates = {
       ...contextTemplates,
       if (context.ticketsEnabled == false) ...applicationContextTemplates,
-      if (context.singleApplication) ...singleApplicationTemplates,
     };
     for (final entry in templates.entries) {
       if (!result.containsKey(entry.key)) continue;
@@ -238,20 +198,15 @@ class EmailPreviewScenario {
           // Preserve the renderer's copyable account markup and prevent mail
           // clients from turning a numeric account into a phone link.
           return m[1] == 'preview_account_number'
-              ? escaped.replaceAllMapped(
-                  RegExp(r'\d{1,3}'),
-                  (digits) =>
-                      '<span style="display: inline-block;">${digits[0]}</span>',
-                )
+              ? escaped.replaceAllMapped(RegExp(r'\d{1,3}'),
+                  (digits) => '<span style="display: inline-block;">${digits[0]}</span>')
               : escaped;
         },
       );
     }
-    if ((context.products.isNotEmpty || context.singleApplication) &&
-        result.containsKey('amount'))
+    if (context.products.isNotEmpty && result.containsKey('amount'))
       result['amount'] =
-          bindings[templateCode == 'TICKET_ORDER_PAYMENT_DONE' &&
-                  scenario == 'deposit'
+          bindings[templateCode == 'TICKET_ORDER_PAYMENT_DONE' && scenario == 'deposit'
               ? 'preview_deposit'
               : 'preview_total']!;
 
@@ -265,8 +220,6 @@ class EmailPreviewScenario {
       requiredLinks: requiredLinks,
       contextTemplates: contextTemplates,
       applicationContextTemplates: applicationContextTemplates,
-      singleApplicationTemplates: singleApplicationTemplates,
-      singleApplicationDefaults: singleApplicationDefaults,
       contextDefaults: contextDefaults,
     );
   }
@@ -281,20 +234,14 @@ class EmailPreviewScenario {
   String composeHtml(String html, {String? wrapperHtml}) =>
       _compose(html, wrapperHtml: wrapperHtml);
 
-  EmailAuthoringCompletion authoringCompletion(
-    String html, {
-    String? wrapperHtml,
-  }) {
+  EmailAuthoringCompletion authoringCompletion(String html, {String? wrapperHtml}) {
     final capture = _AuthoringCompletionCapture();
     _compose(html, wrapperHtml: wrapperHtml, capture: capture);
     return capture.finish();
   }
 
   String _compose(
-    String html, {
-    String? wrapperHtml,
-    _AuthoringCompletionCapture? capture,
-  }) {
+      String html, {String? wrapperHtml, _AuthoringCompletionCapture? capture}) {
     final out = StringBuffer();
     var offset = 0;
     var inTag = false;
@@ -334,14 +281,7 @@ class EmailPreviewScenario {
           if (value != null &&
               (!inTag || (quote.isNotEmpty && !richCodes.contains(code)))) {
             if (capture != null && richCodes.contains(code)) {
-              capture.spans.add(
-                _PreviewTokenSpan(
-                  code,
-                  out.length,
-                  out.length + value.length,
-                  value,
-                ),
-              );
+              capture.spans.add(_PreviewTokenSpan(code, out.length, out.length + value.length, value));
             }
             final escaped = escapeEmailHtml(value);
             out.write(
@@ -387,10 +327,7 @@ class EmailPreviewScenario {
         }
       }
     }
-    return _completeEmailContent(
-      wrapped,
-      requiredLinks,
-      onInsertion: capture?.insert,
-    );
+    return _completeEmailContent(wrapped, requiredLinks,
+        onInsertion: capture?.insert);
   }
 }

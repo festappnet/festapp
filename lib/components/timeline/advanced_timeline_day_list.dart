@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 // day_list.dart
 import 'package:flutter/material.dart';
@@ -279,8 +278,7 @@ class _EventCardState extends State<_EventCard>
     final showInlineButtons = screenWidth >= _kMinWidthForInlineButtons;
     final hasDescription = !HtmlHelper.isHtmlEmptyOrNull(event.description);
     final hasPlace = event.timeBlockPlace?.title != null;
-    final isEditor =
-        RightsService.hasCapability(AuthorizationCapabilities.scheduleWrite);
+    final isEditor = RightsService.isEditor();
     final haveChildren = event.haveChildren();
 
     final hasDetails = hasDescription || hasPlace || haveChildren;

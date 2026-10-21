@@ -244,8 +244,6 @@ const _cs = <String, String>{
   'Galaxy cinema': 'Galaktické kino',
   'Dark cinema with seven rows, 84 seats and four two-seat sofas':
       'Tmavé kino se sedmi řadami, 84 místy a čtyřmi dvojmístnými gauči',
-  'Reset placement': 'Obnovit rozmístění',
-  'Maximum seats': 'Maximum míst',
   'Restore automatic position': 'Vrátit k automatickému rozmístění',
   'Insert image / SVG': 'Vložit obrázek / SVG',
   'Set as default font for the plan': 'Použít písmo v celém plánku',
@@ -686,10 +684,6 @@ const _cs = <String, String>{
   'group': 'Skupina',
   'Drag onto the plan, or click to place':
       'Přetáhni do sálu nebo vyber a klikni do plánku',
-  'Tap an object to add it. Drawing tools continue on the plan.':
-      'Klepnutím přidáte objekt. Kreslení pokračuje v plánku.',
-  'No free space found. Tap the plan to choose a position.':
-      'Volné místo nenalezeno. Klepnutím do plánku vyberte umístění.',
   'Seating': 'Sezení',
   'Paint a connected surface.': 'Namaluj souvislou plochu.',
   'Surface brush limit reached.': 'Plocha dosáhla maximální velikosti.',

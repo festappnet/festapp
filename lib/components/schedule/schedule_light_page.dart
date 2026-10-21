@@ -1,4 +1,3 @@
-import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:auto_route/auto_route.dart';
 import 'dart:async';
 
@@ -229,8 +228,7 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
                             final info = await PackageInfo.fromPlatform();
                             ToastHelper.Show(context,
                                 "${info.appName} ${info.version}+${info.buildNumber}");
-                            if (RightsService.hasCapability(
-                                AuthorizationCapabilities.scheduleWrite)) {
+                            if (RightsService.isEditor()) {
                               TimeHelper.toggleTimeTravel?.call();
                               setState(() {});
                             }
@@ -296,8 +294,7 @@ class _ScheduleLightPageState extends State<ScheduleLightPage>
               events: _dots,
               sessionOccasionId: RightsService.currentOccasionId(),
               onEventPressed: _eventPressed,
-              showAddNewEventButton: () => RightsService.hasCapability(
-                  AuthorizationCapabilities.scheduleWrite),
+              showAddNewEventButton: RightsService.isEditor,
               onAddNewEvent: (ctx, groups, p) =>
                   AddNewEventDialog.showAddEventDialog(ctx, groups, p)
                       .then((_) => loadData()),

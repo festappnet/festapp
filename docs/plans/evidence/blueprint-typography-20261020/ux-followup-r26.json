@@ -1,0 +1,39 @@
+{
+  "revision": "r26",
+  "scope": "local preview only",
+  "changes": [
+    "Distinct segmented screen modes",
+    "Commercial table navigation left and persistent grouped seat detail right",
+    "Owning table highlights for selected seats",
+    "Bulk and individual product/price assignment through existing draft owners",
+    "Ticket cancellation through existing confirmation/command and shared email follow-up"
+  ],
+  "host_source_sha256": {
+    "lib/components/blueprint/views/blueprint_layout_host.dart": "67bc3a4ba4ce4c4bbcdb189b3fa7885fa68ac3e37949128b8ba0d430d441fd17",
+    "lib/components/blueprint/views/blueprint_plan_editor.dart": "802be39d6bcf566e8b2a6b0c5f86840fb5861a135f1e4c2f5f90fa0f31726f5e",
+    "lib/components/eshop/ticket_cancellation_updates.dart": "6465d97ac3fbd30244782779bcf4fa53ee18fed24ec5e05c4d8f925b16461a13",
+    "lib/components/eshop/tickets_tab.dart": "d9f60acf4cbacf4d42ffc635892dfec11ad72ad10f8a6e8767a3d0b6f2cdb5e9"
+  },
+  "package_source_sha256": {
+    "lib/src/layout_editor/widgets/venue_layout_editor.dart": "eed301f42815ab7540865fb6dfe2143c5d19f3b2e89dc3d1ca3e7b1fd03134f0"
+  },
+  "tests": {
+    "workspace_and_commands": {
+      "passed": 5,
+      "log": "/tmp/blueprint-r26-workspace-tests-final.log",
+      "note": "Remaining stale bulk-control condition fixed and owning mode test rerun separately"
+    },
+    "mode_bulk_and_draft": {
+      "passed": 1,
+      "log": "/tmp/blueprint-r26-operation-test-final.log"
+    }
+  },
+  "archive_gate": "/tmp/blueprint-r26-archive.log",
+  "host_analysis": "/tmp/blueprint-r26-analyze-final.log",
+  "host_build": "/tmp/blueprint-r26-host-build.log",
+  "interactive_browser_walkthrough": false,
+  "live_cancellations_performed": false,
+  "production_writes": false,
+  "main_js_sha256": "8e8ea9c58e542b61d13e71d536ec62b2b23841589e935919a830fec7c7158248",
+  "served_bytes_verified": true
+}

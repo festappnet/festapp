@@ -7,7 +7,6 @@ import 'package:fstapp/components/groups/user_group_info_model.dart';
 
 class OccasionLinkModel {
   int? code;
-  final Map<String, dynamic>? unitDashboard;
   OccasionModel? occasion;
   UnitModel? unit;
   UserInfoModel? userInfo;
@@ -18,8 +17,6 @@ class OccasionLinkModel {
   OrganizationModel? organization;
   bool clientSyncV1;
   final bool demoReadOnly;
-  final Map<String, bool> capabilities;
-  final Map<int, Map<String, bool>> bankCapabilities;
 
   bool isAvailable() => code == 200;
   bool isAccessDenied() => code == 403;
@@ -48,26 +45,10 @@ class OccasionLinkModel {
     }
     return OccasionLinkModel(
       code: json["code"],
-      unitDashboard: json["unit_dashboard"] == null
-          ? null
-          : Map<String, dynamic>.unmodifiable(json["unit_dashboard"]),
-      capabilities: Map<String, bool>.unmodifiable({
-        for (final entry in (json['capabilities'] as Map? ?? {}).entries)
-          if (entry.key is String) entry.key as String: entry.value == true,
-      }),
       userInfo: userInfo,
       unitUser: unitUser,
       occasionUser: occasionUser,
       bankAccountsAdmin: List<int>.from(json["bank_accounts_admin"] ?? []),
-      bankCapabilities: Map.unmodifiable({
-        for (final entry in (json['bank_capabilities'] as Map? ?? {}).entries)
-          if (int.tryParse(entry.key.toString()) case final id?)
-            id: Map<String, bool>.unmodifiable({
-              for (final capability in (entry.value as Map? ?? {}).entries)
-                if (capability.key is String)
-                  capability.key as String: capability.value == true,
-            }),
-      }),
       occasion: json["occasion"] != null && json["occasion"]["id"] != null
           ? OccasionModel.fromJson(json["occasion"])
           : null,
@@ -81,7 +62,6 @@ class OccasionLinkModel {
 
   OccasionLinkModel({
     this.code,
-    this.unitDashboard,
     this.userInfo,
     this.occasionUser,
     this.unitUser,
@@ -92,28 +72,5 @@ class OccasionLinkModel {
     this.organization,
     this.clientSyncV1 = false,
     this.demoReadOnly = false,
-    this.capabilities = const {},
-    this.bankCapabilities = const {},
   });
-  OccasionLinkModel copyWith({
-    OrganizationModel? organization,
-    Map<String, bool>? capabilities,
-    Map<int, Map<String, bool>>? bankCapabilities,
-  }) =>
-      OccasionLinkModel(
-        code: code,
-        unitDashboard: unitDashboard,
-        userInfo: userInfo,
-        occasionUser: occasionUser,
-        unitUser: unitUser,
-        bankAccountsAdmin: bankAccountsAdmin,
-        occasion: occasion,
-        unit: unit,
-        isAdmin: isAdmin,
-        organization: organization ?? this.organization,
-        clientSyncV1: clientSyncV1,
-        demoReadOnly: demoReadOnly,
-        capabilities: capabilities ?? this.capabilities,
-        bankCapabilities: bankCapabilities ?? this.bankCapabilities,
-      );
 }

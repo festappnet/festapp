@@ -11,7 +11,7 @@ class AddCashPaymentDialog extends StatefulWidget {
   final String currency;
   final String variableSymbol;
   final int paymentInfoId;
-  final bool canManageBankTransactions;
+  final bool isBankAdmin;
 
   const AddCashPaymentDialog({
     super.key,
@@ -19,7 +19,7 @@ class AddCashPaymentDialog extends StatefulWidget {
     required this.currency,
     required this.variableSymbol,
     required this.paymentInfoId,
-    this.canManageBankTransactions = false,
+    this.isBankAdmin = false,
   });
 
   @override
@@ -180,7 +180,7 @@ class _AddCashPaymentDialogState extends State<AddCashPaymentDialog> {
                   ),
                 ],
               ),
-              if (widget.canManageBankTransactions) ...[
+              if (widget.isBankAdmin) ...[
                 const SizedBox(height: 16),
                 Row(
                   children: [

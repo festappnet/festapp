@@ -11,7 +11,8 @@ AS $$
 DECLARE
   v_result jsonb;
 BEGIN
-  IF NOT public.can_read_occasion_directory(p_occasion) THEN
+  IF NOT COALESCE(public.get_is_editor_view_on_occasion(p_occasion), false)
+     AND NOT COALESCE(public.get_is_editor_order_view_on_occasion(p_occasion), false) THEN
     RAISE insufficient_privilege USING MESSAGE = 'occasion editor required';
   END IF;
 
