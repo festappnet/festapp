@@ -86,7 +86,7 @@ Production application of the new guard remains part of the normal release.
 ## Measured PR delta
 
 Across every changed path, including replacement SQL, tooling, generated
-inventories and this documentation: 9,836 -> 9,927 bytes
-and 130 -> 131 LF-delimited lines. Net reduction:
-**-91 bytes and -1 lines**.
+inventories and this documentation: 4,287,837 -> 3,273,700 bytes
+and 101,327 -> 81,954 LF-delimited lines. Net reduction:
+**1,014,137 bytes and 19,373 lines**.
 No savings from ignored scratch files or unrelated concurrent work are included.
