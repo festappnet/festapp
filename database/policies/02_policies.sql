@@ -123,19 +123,19 @@ DROP POLICY IF EXISTS "Enable select for editors" ON public.events;
 CREATE POLICY "Enable select for editors" ON public.events
 AS PERMISSIVE FOR SELECT
 TO authenticated
-USING (get_is_editor_view_on_occasion(occasion));
+USING (can_read_schedule_editor(occasion));
 
 DROP POLICY IF EXISTS "Enable delete for editors" ON public.events;
 CREATE POLICY "Enable delete for editors" ON public.events
 AS PERMISSIVE FOR DELETE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion));
+USING (can_write_schedule(occasion));
 
 DROP POLICY IF EXISTS "Enable insert for editors" ON public.events;
 CREATE POLICY "Enable insert for editors" ON public.events
 AS PERMISSIVE FOR INSERT
 TO authenticated
-WITH CHECK (get_is_editor_on_occasion(occasion));
+WITH CHECK (can_write_schedule(occasion));
 
 DROP POLICY IF EXISTS "Enable read for all" ON public.events;
 CREATE POLICY "Enable read for all" ON public.events
@@ -147,8 +147,8 @@ DROP POLICY IF EXISTS "Enable update for editors" ON public.events;
 CREATE POLICY "Enable update for editors" ON public.events
 AS PERMISSIVE FOR UPDATE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion))
-WITH CHECK (get_is_editor_on_occasion(occasion));
+USING (can_write_schedule(occasion))
+WITH CHECK (can_write_schedule(occasion));
 
 ----------------------------------------------------------------
 -- public.exclusive_events
@@ -343,7 +343,7 @@ DROP POLICY IF EXISTS "Enable delete for editors" ON public.information;
 CREATE POLICY "Enable delete for editors" ON public.information
 AS PERMISSIVE FOR DELETE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion));
+USING (can_write_information(occasion));
 
 DROP POLICY IF EXISTS "Enable all for unit editors" ON public.information;
 CREATE POLICY "Enable all for unit editors" ON public.information
@@ -356,14 +356,14 @@ DROP POLICY IF EXISTS "Enable update for editors" ON public.information;
 CREATE POLICY "Enable update for editors" ON public.information
 AS PERMISSIVE FOR UPDATE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion))
-WITH CHECK (get_is_editor_on_occasion(occasion));
+USING (can_write_information(occasion))
+WITH CHECK (can_write_information(occasion));
 
 DROP POLICY IF EXISTS "Enable select for editors" ON public.information;
 CREATE POLICY "Enable select for editors" ON public.information
 AS PERMISSIVE FOR SELECT
 TO authenticated
-USING (get_is_editor_view_on_occasion(occasion));
+USING (can_read_information_editor_bundle(occasion));
 
 DROP POLICY IF EXISTS "Enable read for all" ON public.information;
 CREATE POLICY "Enable read for all" ON public.information
@@ -375,7 +375,7 @@ DROP POLICY IF EXISTS "Enable insert for editors" ON public.information;
 CREATE POLICY "Enable insert for editors" ON public.information
 AS PERMISSIVE FOR INSERT
 TO authenticated
-WITH CHECK (get_is_editor_on_occasion(occasion));
+WITH CHECK (can_write_information(occasion));
 
 ----------------------------------------------------------------
 -- public.information_hidden
@@ -443,7 +443,7 @@ DROP POLICY IF EXISTS "Enable insert for editors" ON public.news;
 CREATE POLICY "Enable insert for editors" ON public.news
 AS PERMISSIVE FOR INSERT
 TO authenticated
-WITH CHECK (get_is_editor_on_occasion(occasion));
+WITH CHECK (can_write_news(occasion));
 
 DROP POLICY IF EXISTS "Enable read for all" ON public.news;
 CREATE POLICY "Enable read for all" ON public.news
@@ -455,8 +455,8 @@ DROP POLICY IF EXISTS "Enable update for editors" ON public.news;
 CREATE POLICY "Enable update for editors" ON public.news
 AS PERMISSIVE FOR UPDATE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion))
-WITH CHECK (get_is_editor_on_occasion(occasion));
+USING (can_write_news(occasion))
+WITH CHECK (can_write_news(occasion));
 
 DROP POLICY IF EXISTS "Enable select for editors" ON public.news;
 CREATE POLICY "Enable select for editors" ON public.news
@@ -468,7 +468,7 @@ DROP POLICY IF EXISTS "Enable delete for editors" ON public.news;
 CREATE POLICY "Enable delete for editors" ON public.news
 AS PERMISSIVE FOR DELETE
 TO authenticated
-USING (get_is_editor_on_occasion(occasion));
+USING (can_write_news(occasion));
 
 ----------------------------------------------------------------
 -- public.occasion_users

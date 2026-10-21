@@ -27,7 +27,7 @@ BEGIN
   IF auth.uid() IS NULL OR v_source_unit IS NULL OR v_target_unit IS NULL
      OR NOT public.can_copy_occasion_source(oc)
      OR public.is_demo_unit(v_target_unit)
-     OR NOT public.get_is_manager_on_unit(v_target_unit)
+     OR NOT public.can_copy_occasion_target(v_target_unit)
      OR NOT EXISTS (SELECT 1 FROM public.units
        WHERE id = v_target_unit AND organization = v_organization) THEN
     RAISE insufficient_privilege USING MESSAGE = 'source and target unit manager required within one organization';

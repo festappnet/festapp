@@ -24,7 +24,7 @@ BEGIN
   END IF;
 
   -- Verify if the current user is an editor for the order's occasion
-  IF NOT get_is_editor_order_view_on_occasion(occ_id) THEN
+  IF NOT can_read_orders(occ_id) THEN
       RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to view this.');
   END IF;
 

@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.get_map_editor_bundle_v1(p_occasion bigint)
  STABLE SECURITY DEFINER
  SET search_path = public, extensions
 AS $function$
-  SELECT CASE WHEN (public.get_is_editor_view_on_occasion(p_occasion) OR public.get_is_editor_on_occasion(p_occasion)) IS NOT TRUE
+  SELECT CASE WHEN public.can_read_map_editor_bundle(p_occasion) IS NOT TRUE
     THEN jsonb_build_object('code',403)
     ELSE jsonb_build_object(
       'code',200,

@@ -32,7 +32,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE occ bigint;
 BEGIN
  SELECT occasion INTO occ FROM eshop.tickets WHERE id=p_ticket;
- IF occ IS NULL OR NOT (public.is_service_role() OR (auth.uid() IS NOT NULL AND public.get_is_editor_order_view_on_occasion(occ))) THEN
+ IF occ IS NULL OR NOT (public.is_service_role() OR (auth.uid() IS NOT NULL AND public.can_read_orders(occ))) THEN
   RAISE insufficient_privilege USING MESSAGE='ticket document access denied'; END IF;
  PERFORM public.admit_ticket_document_internal_v1(occ);
  RETURN public.bound_document_data_v1(public.get_ticket_details_for_generating(p_ticket));
@@ -44,7 +44,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE occ bigint;
 BEGIN
  SELECT occasion INTO occ FROM eshop.orders WHERE id=p_order;
- IF occ IS NULL OR NOT (public.is_service_role() OR (auth.uid() IS NOT NULL AND public.get_is_editor_order_on_occasion(occ))) THEN
+ IF occ IS NULL OR NOT (public.is_service_role() OR (auth.uid() IS NOT NULL AND public.can_write_orders(occ))) THEN
   RAISE insufficient_privilege USING MESSAGE='order document access denied'; END IF;
  PERFORM public.check_occasion_writable(occ);
  PERFORM public.admit_ticket_document_internal_v1(occ);
@@ -71,7 +71,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE o public.occasions;
 BEGIN
  IF p_read_only THEN
-  IF auth.uid() IS NULL OR NOT (coalesce(public.get_is_editor_on_occasion(p_occasion),false) OR coalesce(public.get_is_editor_view_on_occasion(p_occasion),false) OR coalesce(public.get_is_editor_order_on_occasion(p_occasion),false) OR coalesce(public.get_is_editor_order_view_on_occasion(p_occasion),false)) THEN RETURN NULL; END IF;
+  IF NOT public.can_preview_ticket_readonly(p_occasion) THEN RETURN NULL; END IF;
   IF p_bytes IS NULL OR p_bytes<=0 THEN RAISE invalid_parameter_value USING MESSAGE='preview bytes required'; END IF;
   SELECT * INTO STRICT o FROM public.occasions WHERE id=p_occasion;
   PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('ticket.preview',o.unit,o.organization),jsonb_build_object('actor',auth.uid(),'unit',o.unit,'organization',o.organization),jsonb_build_object('ticket.preview.payload.bytes',p_bytes));

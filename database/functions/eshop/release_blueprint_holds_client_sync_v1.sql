@@ -7,7 +7,7 @@ BEGIN
  IF actor IS NULL OR coalesce(cardinality(p_spots),0)=0 OR cardinality(p_spots)>256 THEN
   RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
  SELECT min(b.occasion),min(s.blueprint) INTO occ,bp FROM eshop.spots s JOIN eshop.blueprints b ON b.id=s.blueprint WHERE s.id=ANY(p_spots);
- IF occ IS NULL OR public.get_is_editor_order_on_occasion(occ) IS NOT TRUE OR
+ IF occ IS NULL OR public.can_write_orders(occ) IS NOT TRUE OR
   (SELECT count(*) FROM eshop.spots WHERE id=ANY(p_spots) AND blueprint=bp) <>
   cardinality(ARRAY(SELECT DISTINCT x FROM unnest(p_spots) x)) THEN
   RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;

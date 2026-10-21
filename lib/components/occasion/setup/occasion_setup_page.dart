@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'blueprint_setup_layout_draft.dart';
 import '../../blueprint/blueprint_layout_resources.dart';
@@ -1755,7 +1756,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           const SizedBox(height: 20),
           UnitLegalProfileSection(
             unitId: _stored.unit,
-            canEdit: RightsService.isUnitManager(),
+            canEdit: RightsService.hasCapability(
+                AuthorizationCapabilities.unitLegalProfileWrite),
           ),
         ],
       );

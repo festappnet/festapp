@@ -17,13 +17,10 @@ BEGIN
     'public.create_user_in_organization_with_data_ws(bigint,text,text,jsonb)',
     'public.create_user_with_data(bigint,text,text,jsonb)',
     'public.delete_entity_email_template(text,bigint,text)',
-    'public.delete_form_ws_obsolete_v1(bigint)',
     'public.delete_inventory_pool(bigint)',
     'public.delete_occasion_email_template(bigint,text)',
-    'public.delete_order(bigint)',
     'public.delete_resource(bigint)',
     'public.delete_unit(bigint)',
-    'public.duplicate_form_ws(bigint)',
     'public.game_get_correctly_guessed_checkpoints(bigint)',
     'public.get_activities_for_edit(bigint)',
     'public.get_all_occasions(bigint)',
@@ -70,19 +67,14 @@ BEGIN
     'public.groups_get_user_groups()',
     'public.scan_ticket_v2(text,text)',
     'public.set_user_password(uuid,bigint,text)',
-    'public.storno_ticket(bigint)',
-    'public.storno_ticket_221(bigint)',
     'public.synchronize_my_schedule(bigint[],boolean)',
     'public.update_activities(bigint)',
     'public.update_bank_account_user(bigint,text,boolean,boolean)',
     'public.update_entity_email_banner(text,bigint,text)',
-    'public.update_inclusion_type_group(jsonb)',
     'public.update_order_and_tickets_to_sent_ws(bigint,bigint[])',
     'public.update_order_and_tickets_to_storno_with_security(bigint)',
     'public.update_resource(jsonb)',
-    'public.update_ticket_products_ws(bigint,bigint[])',
-    'public.update_unit_user(jsonb)',
-    'public.update_user(uuid,bigint,jsonb)'] LOOP
+    'public.update_unit_user(jsonb)'] LOOP
     IF to_regprocedure(signature) IS NOT NULL THEN
       EXECUTE format('ALTER FUNCTION %s SET search_path = public, extensions',signature);
     END IF;

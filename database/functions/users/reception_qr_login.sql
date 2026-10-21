@@ -46,8 +46,7 @@ BEGIN
   FROM public.user_info ui
   WHERE ui.organization=v_org AND lower(btrim(ui.email_readonly))=v_email;
   IF v_user IS NOT NULL THEN
-    IF (public.get_is_admin_on_occasion(p_occasion)
-        OR public.get_is_manager_on_occasion(p_occasion))
+    IF (public.can_manage_occasion_participants(p_occasion))
       AND EXISTS(SELECT 1 FROM public.occasion_users ou
         WHERE ou.occasion=p_occasion AND ou."user"=v_user) THEN
       RETURN jsonb_build_object('code',200,'userId',v_user,'email',v_email,
@@ -84,8 +83,7 @@ BEGIN
   IF NOT public.get_can_use_reception(p_occasion) THEN RETURN jsonb_build_object('code',403,'message','reception_unavailable'); END IF;
   IF NOT public.reception_rate_limit_v1('issue') THEN RETURN jsonb_build_object('code',429,'message','rate_limited'); END IF;
   IF NOT EXISTS(SELECT 1 FROM public.occasion_users ou WHERE ou.occasion=p_occasion AND ou."user"=p_user)
-    OR NOT (public.get_is_admin_on_occasion(p_occasion)
-      OR public.get_is_manager_on_occasion(p_occasion) OR EXISTS(
+    OR NOT (public.can_manage_occasion_participants(p_occasion) OR EXISTS(
       SELECT 1 FROM public.reception_registrations r
       WHERE r.occasion=p_occasion AND r."user"=p_user AND r.status='active'
         AND r.created_by=v_actor AND r.created_at>now()-interval '30 minutes')) THEN
@@ -106,8 +104,7 @@ CREATE OR REPLACE FUNCTION public.get_reception_occasion_users_v1(p_occasion big
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 SELECT CASE
   WHEN public.get_can_use_reception(p_occasion)
-    AND (public.get_is_admin_on_occasion(p_occasion)
-      OR public.get_is_manager_on_occasion(p_occasion))
+    AND (public.can_manage_occasion_participants(p_occasion))
   THEN COALESCE(jsonb_agg(jsonb_build_object(
     'userId',q.id,'name',q.name,'surname',q.surname,'email',q.email_readonly
   ) ORDER BY q.surname,q.name,q.email_readonly),'[]'::jsonb)
@@ -155,8 +152,7 @@ BEGIN
     SELECT 1 FROM public.reception_registrations r
     WHERE r.occasion=p_occasion AND r."user"=p_user AND r.status='active'
       AND ((r.created_by=v_actor AND r.created_at>now()-interval '30 minutes')
-        OR public.get_is_manager_on_occasion(p_occasion)
-        OR public.get_is_admin_on_occasion(p_occasion))
+        OR public.can_manage_occasion_participants(p_occasion))
   ) THEN
     RETURN jsonb_build_object('code',403,'message','registration_unavailable');
   END IF;
@@ -190,7 +186,7 @@ BEGIN
   PERFORM public.lock_activity_aggregate_internal_v1(p_occasion);
   SELECT * INTO v_r FROM public.reception_registrations WHERE occasion=p_occasion AND "user"=p_user FOR UPDATE;
   IF NOT FOUND THEN RETURN jsonb_build_object('code',404,'message','registration_unavailable'); END IF;
-  IF NOT public.get_can_use_reception(p_occasion) OR NOT (public.get_is_manager_on_occasion(p_occasion) OR public.get_is_admin_on_occasion(p_occasion) OR (v_r.created_by=v_actor AND (v_r.status='cancelled' OR v_r.created_at>now()-interval '30 minutes'))) THEN
+  IF NOT public.get_can_use_reception(p_occasion) OR NOT (public.can_manage_occasion_participants(p_occasion) OR (v_r.created_by=v_actor AND (v_r.status='cancelled' OR v_r.created_at>now()-interval '30 minutes'))) THEN
     RETURN jsonb_build_object('code',403,'message','registration_unavailable'); END IF;
   IF v_r.status='cancelled' THEN RETURN jsonb_build_object('code',200,'status',CASE WHEN v_r.auth_revoked_at IS NULL THEN 'domain_blocked_auth_revocation_pending' ELSE 'cancelled' END,'targetUser',p_user); END IF;
   IF NOT public.reception_rate_limit_v1('cancel') THEN RETURN jsonb_build_object('code',429,'message','rate_limited'); END IF;

@@ -7,7 +7,7 @@ DECLARE b eshop.blueprints; c jsonb; binding eshop.blueprint_seat_bindings; s es
  doc jsonb:=p_blueprint->'layout'; result jsonb; expected bigint; issue text; all_seats uuid[]; supplied uuid[];
 BEGIN
  IF nullif(p_blueprint->>'id','') IS NULL THEN
-  IF (coalesce(public.get_is_editor_on_occasion((p_blueprint->>'occasion')::bigint),false) OR coalesce(public.get_is_manager_on_occasion((p_blueprint->>'occasion')::bigint),false)) IS NOT TRUE THEN
+  IF public.can_write_blueprints((p_blueprint->>'occasion')::bigint) IS NOT TRUE THEN
    RAISE insufficient_privilege USING MESSAGE='blueprint editor required'; END IF;
   INSERT INTO eshop.blueprints(occasion,organization,title) SELECT id,organization,p_blueprint->>'title' FROM public.occasions WHERE id=(p_blueprint->>'occasion')::bigint RETURNING * INTO b;
  ELSE
@@ -17,9 +17,9 @@ BEGIN
  END IF;
  IF b.id IS NULL THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_NOT_FOUND'; END IF;
  IF p_reviewed_demo AND public.is_demo_occasion(b.occasion) THEN
-  IF NOT EXISTS(SELECT 1 FROM public.occasion_users ou WHERE ou.occasion=b.occasion AND ou."user"=auth.uid() AND (ou.is_editor OR ou.is_manager)) THEN RAISE insufficient_privilege USING MESSAGE='blueprint migration reviewer required'; END IF;
+  IF NOT public.can_migrate_reviewed_legacy_blueprint(b.occasion) THEN RAISE insufficient_privilege USING MESSAGE='blueprint migration reviewer required'; END IF;
  ELSE
- IF (coalesce(public.get_is_editor_on_occasion(b.occasion),false) OR coalesce(public.get_is_manager_on_occasion(b.occasion),false)) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='blueprint editor required'; END IF;
+ IF public.can_write_blueprints(b.occasion) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='blueprint editor required'; END IF;
  END IF;
  IF p_reviewed_demo AND public.is_demo_occasion(b.occasion) THEN
   IF b.layout IS NOT NULL THEN RAISE check_violation USING MESSAGE='BLUEPRINT_MIGRATION_INITIAL_LAYOUT_REQUIRED'; END IF;

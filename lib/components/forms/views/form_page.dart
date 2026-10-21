@@ -213,7 +213,8 @@ class _FormPageState extends State<FormPage> {
   /// Hides the SeatReservationWidget and resolves the completer
   void _hideSeatReservation(List<BlueprintSeat>? seats) {
     if (!_isSeatReservationVisible ||
-        (seats != null && formHolder?.controller?.reservationPending == true)) return;
+        (seats != null && formHolder?.controller?.reservationPending == true))
+      return;
     _isClosingProgrammatically = true;
     RouterService.goBackProgrammatically();
 
@@ -275,7 +276,8 @@ class _FormPageState extends State<FormPage> {
                 if (mounted) setState(() {});
               });
             },
-            beforeReservationRequest: formHolder!.controller!.rememberReservation,
+            beforeReservationRequest:
+                formHolder!.controller!.rememberReservation,
             onSessionChanged: formHolder!.controller!.updateReservationSession,
             onSelectionChanged: (sts) {
               formSession!.updateSeats(sts);
@@ -478,7 +480,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future<void> _sendOrder() async {
-    if (formHolder == null || form == null ||
+    if (formHolder == null ||
+        form == null ||
         formHolder?.controller?.reservationPending == true) return;
     if (form!.demoSimulation) {
       _hideOrderPreview();
@@ -539,7 +542,8 @@ class _FormPageState extends State<FormPage> {
           return response;
         },
         onOrderConfirmed: () async {
-          await submittingController.capabilityStore?.clear(submittedCapability);
+          await submittingController.capabilityStore
+              ?.clear(submittedCapability);
           // Reset session tickets?
           // `_formKey.currentState?.reset()` resets the form fields.
           // TicketHolder might need manual reset or re-loadData will handle it.
@@ -719,7 +723,7 @@ class _FormPageState extends State<FormPage> {
 
     dynamic previewParam = context.routeData.queryParams.get('preview', false);
     bool isPreviewParam = previewParam.toString().toLowerCase() == 'true';
-    bool canPreview = RightsService.isEditorOrderView();
+    bool canPreview = RightsService.canSeeReservations();
     // Only allow preview if specifically requested AND user is editor
     bool showPreview = canPreview && isPreviewParam;
     bool showCountdown = isBeforeStart &&
@@ -954,7 +958,9 @@ class _FormPageState extends State<FormPage> {
                                         ButtonsHelper.primaryButton(
                                           context: context,
                                           onPressed: (_isLoading ||
-                                                  formHolder?.controller?.reservationPending == true ||
+                                                  formHolder?.controller
+                                                          ?.reservationPending ==
+                                                      true ||
                                                   (!form!.definition
                                                           .isWaitlist &&
                                                       (formSession?.totalProducts ??
@@ -1454,8 +1460,11 @@ class _FormPageState extends State<FormPage> {
         setState(() {});
       });
 
-      final capabilityStore = form!.demoSimulation ? null : ReservationCapabilityStore(
-          backend: Supabase.instance.client.rest.url, formKey: form!.definition.key!);
+      final capabilityStore = form!.demoSimulation
+          ? null
+          : ReservationCapabilityStore(
+              backend: Supabase.instance.client.rest.url,
+              formKey: form!.definition.key!);
       final restoredCapability = await capabilityStore?.restore();
       if (!mounted) return;
       formHolder!.controller = FormHolderController(
@@ -1469,15 +1478,18 @@ class _FormPageState extends State<FormPage> {
         ..capabilityStore = capabilityStore
         ..capability = restoredCapability
         ..reservationExpiresAt = restoredCapability?.expiresAt;
-      if (restoredCapability != null && formHolder!.controller!.blueprintId != null) {
+      if (restoredCapability != null &&
+          formHolder!.controller!.blueprintId != null) {
         final restoredController = formHolder!.controller!;
         restoredController.reservationPending = true;
         try {
           final source = await DbForms.getBlueprint(restoredController.secret!,
               restoredController.formKey!, restoredController.blueprintId!);
           if (!mounted) return;
-          if (source?.layoutSnapshot == null) throw StateError('layout_unavailable');
-          formSession!.updateSeats(BlueprintLayoutAdapter(source!).selectedSeats(source));
+          if (source?.layoutSnapshot == null)
+            throw StateError('layout_unavailable');
+          formSession!.updateSeats(
+              BlueprintLayoutAdapter(source!).selectedSeats(source));
           await restoredController.updateReservationSession(
               restoredController.secret!, source.reservationExpiresAt);
           restoredController.reservationPending = false;
@@ -1485,7 +1497,6 @@ class _FormPageState extends State<FormPage> {
           // Keep checkout gated. Opening the picker provides authoritative Retry.
         }
       }
-
 
       setState(() {
         _isLoading = false;

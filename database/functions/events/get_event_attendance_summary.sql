@@ -9,10 +9,7 @@ AS $function$
   FROM public.events e
   LEFT JOIN public.event_users eu ON eu.event = e.id
   WHERE e.id = ANY(p_events)
-    AND (
-      public.get_is_event_allowed(e.id)
-      OR public.get_is_editor_view_on_occasion(e.occasion)
-    )
+    AND public.event_attendance_read_rule(public.get_is_event_allowed(e.id),public.get_is_editor_view_on_occasion(e.occasion))
   GROUP BY e.id;
 $function$;
 

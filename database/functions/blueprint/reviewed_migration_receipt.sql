@@ -8,7 +8,7 @@ AS $function$
 DECLARE v_receipt public.client_mutation_receipts%ROWTYPE; v_inserted integer;
 BEGIN
   IF p_reviewed_demo AND public.is_demo_occasion(p_occasion) THEN
-    IF NOT EXISTS(SELECT 1 FROM public.occasion_users ou WHERE ou.occasion=p_occasion AND ou."user"=auth.uid() AND (ou.is_editor OR ou.is_manager)) THEN
+    IF NOT public.can_migrate_reviewed_legacy_blueprint(p_occasion) THEN
       RAISE insufficient_privilege USING MESSAGE='blueprint migration reviewer required'; END IF;
   ELSE PERFORM public.check_occasion_writable(p_occasion); END IF;
   IF p_command_id IS NULL OR p_actor_id IS NULL OR p_actor_id IS DISTINCT FROM auth.uid() THEN

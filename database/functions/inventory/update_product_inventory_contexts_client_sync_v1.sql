@@ -22,7 +22,7 @@ BEGIN
   IF v_actor IS NULL OR v_occasion IS NULL OR p_contexts IS NULL
     OR jsonb_typeof(p_contexts)<>'array' OR jsonb_array_length(p_contexts)>1000
     OR octet_length(p_contexts::text)>1048576
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='inventory editor required'; END IF;
   SELECT coalesce(jsonb_agg(c ORDER BY (c->>'inventory_context_id')::bigint),'[]') INTO p_contexts FROM jsonb_array_elements(p_contexts) c;
   v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(

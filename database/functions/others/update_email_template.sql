@@ -28,8 +28,7 @@ BEGIN
     END IF;
     v_unit := v_actual_unit;
     v_org := v_actual_org;
-    IF NOT public.is_service_role() AND public.get_is_editor_on_occasion(v_occ) IS NOT TRUE
-       AND public.get_is_editor_order_on_occasion(v_occ) IS NOT TRUE THEN
+    IF NOT public.is_service_role() AND public.can_write_occasion_email_templates(v_occ) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE='Occasion template write denied';
     END IF;
   ELSIF v_unit IS NOT NULL THEN
@@ -38,11 +37,11 @@ BEGIN
       RAISE insufficient_privilege USING MESSAGE='Invalid email template hierarchy';
     END IF;
     v_org := v_actual_org;
-    IF NOT public.is_service_role() AND public.get_is_editor_on_unit(v_unit) IS NOT TRUE THEN
+    IF NOT public.is_service_role() AND public.can_write_unit_email_templates(v_unit) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE='Unit template write denied';
     END IF;
   ELSIF NOT public.is_service_role() THEN
-    IF v_org IS NULL OR public.get_is_admin_on_organization(v_org) IS NOT TRUE THEN
+    IF v_org IS NULL OR public.can_manage_organization_email_templates(v_org) IS NOT TRUE THEN
       RAISE insufficient_privilege USING MESSAGE='Organization template write denied';
     END IF;
   END IF;

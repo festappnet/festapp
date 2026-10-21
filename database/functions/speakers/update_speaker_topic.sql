@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.update_speaker_topic(p_occasion bigint,p_topic
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_id bigint:=(p_topic->>'id')::bigint; v_version bigint; v_payload jsonb; r jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+ IF auth.uid() IS NULL OR NOT public.can_write_speakers(p_occasion) THEN
   RETURN jsonb_build_object('code',403); END IF;
  IF v_id IS NOT NULL THEN
   PERFORM 1 FROM public.speaker_topics WHERE id=v_id AND occasion=p_occasion FOR UPDATE;

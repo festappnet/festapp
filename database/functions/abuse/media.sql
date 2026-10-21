@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION public.admit_image_upload_v1(p_bytes bigint,p_occasio
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  IF p_profile IS DISTINCT FROM 'blueprint-background' OR (p_occasion_id IS NULL)=(p_unit_id IS NULL) OR auth.uid() IS NULL
-  OR NOT (CASE WHEN p_unit_id IS NULL THEN (coalesce(public.get_is_editor_on_occasion(p_occasion_id),false) OR coalesce(public.get_is_manager_on_occasion(p_occasion_id),false)) ELSE (coalesce(public.get_is_editor_on_unit(p_unit_id),false) OR coalesce(public.get_is_manager_on_unit(p_unit_id),false)) END) THEN RAISE insufficient_privilege USING MESSAGE='blueprint image editor required'; END IF;
+  OR NOT public.can_upload_blueprint_background(p_occasion_id,p_unit_id) THEN RAISE insufficient_privilege USING MESSAGE='blueprint image editor required'; END IF;
  RETURN public.admit_image_upload_budget_internal(p_bytes,p_occasion_id,p_unit_id);
 END $$;
 REVOKE ALL ON FUNCTION public.admit_image_upload_v1(bigint,bigint,bigint,text) FROM PUBLIC,anon;
@@ -78,7 +78,7 @@ CREATE OR REPLACE FUNCTION public.admit_image_storage_v1(p_bytes bigint,p_occasi
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  IF p_profile IS DISTINCT FROM 'blueprint-background' OR (p_occasion_id IS NULL)=(p_unit_id IS NULL) OR auth.uid() IS NULL
-  OR NOT (CASE WHEN p_unit_id IS NULL THEN (coalesce(public.get_is_editor_on_occasion(p_occasion_id),false) OR coalesce(public.get_is_manager_on_occasion(p_occasion_id),false)) ELSE (coalesce(public.get_is_editor_on_unit(p_unit_id),false) OR coalesce(public.get_is_manager_on_unit(p_unit_id),false)) END) THEN RAISE insufficient_privilege USING MESSAGE='blueprint image editor required'; END IF;
+  OR NOT public.can_upload_blueprint_background(p_occasion_id,p_unit_id) THEN RAISE insufficient_privilege USING MESSAGE='blueprint image editor required'; END IF;
  RETURN public.admit_image_storage_budget_internal(p_bytes,p_occasion_id,p_unit_id);
 END $$;
 REVOKE ALL ON FUNCTION public.admit_image_storage_v1(bigint,bigint,bigint,text) FROM PUBLIC,anon;

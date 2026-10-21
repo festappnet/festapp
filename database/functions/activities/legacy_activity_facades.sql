@@ -3,7 +3,7 @@
 CREATE OR REPLACE FUNCTION public.update_activities(p_occasion_id bigint,p_activities_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
- IF auth.uid() IS NULL OR NOT coalesce(public.get_is_editor_on_occasion(p_occasion_id),false) THEN
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_write_activity_plan(p_occasion_id),false) THEN
   RETURN jsonb_build_object('code',403); END IF;
  RETURN jsonb_build_object('code',426,'message','Upgrade required for atomic activity publication');
 END $$;
@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION public.save_activity_history(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE version bigint; result jsonb; canonical_history jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT coalesce(public.get_is_editor_on_occasion(p_occasion_id),false) THEN
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_write_activity_plan(p_occasion_id),false) THEN
   RETURN jsonb_build_object('code',403); END IF;
  IF p_history_type IS DISTINCT FROM 'AUTOSAVE' THEN
   RETURN jsonb_build_object('code',426,'message','Upgrade required for atomic activity publication'); END IF;
@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION public.delete_autosave_history(p_occasion_id bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE draft bigint; result jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT coalesce(public.get_is_editor_on_occasion(p_occasion_id),false) THEN
+ IF auth.uid() IS NULL OR NOT coalesce(public.can_write_activity_plan(p_occasion_id),false) THEN
   RETURN jsonb_build_object('code',403); END IF;
  PERFORM public.lock_activity_editor_internal_v1(p_occasion_id);
  SELECT id INTO draft FROM public.activity_history WHERE occasion_id=p_occasion_id

@@ -12,10 +12,10 @@ export const occasionCreateResult = z.strictObject({
     commandId: z.uuid(), occasionId: id, unitId: id, title: z.string(),
     hidden: z.literal(true), salesOpen: z.literal(false),
 });
-export async function createOccasion(client, profile, args) {
+export async function createOccasion(client, profile, args, { delegated = false } = {}) {
     // The UI's canonical command owns defaults, links, admission, audit and
     // idempotency. A timed-out call must retry this exact commandId and payload.
-    const { data, error } = await client.rpc('create_occasion_client_sync_v1', {
+    const { data, error } = await client.rpc(delegated ? 'create_delegated_occasion_client_sync_v1' : 'create_occasion_client_sync_v1', {
         p_command_id: args.commandId,
         p_config: { unit: args.unitId, organization: profile.organizationId,
             title: args.title, description: args.description,

@@ -1,4 +1,4 @@
-import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
+import { emailRpc, enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import { EmailTemplateNotFoundError } from "../_shared/emailDelivery.ts";
 import { AuthError, authorizeRequest } from "../_shared/auth.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
@@ -53,12 +53,14 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "invalid_request" }, 400);
   }
 
+  let actorId: string;
   try {
-    await authorizeRequest({
+    const identity = await authorizeRequest({
       authorizationHeader: authorization,
       occasionId,
       permission: "manageUsers",
     });
+    actorId = identity.user.id;
   } catch (error) {
     if (error instanceof AuthError) {
       return jsonResponse({
@@ -131,9 +133,16 @@ Deno.serve(async (request) => {
       appLinks,
       fromEmail: Deno.env.get("DEFAULT_EMAIL") || "",
     }, {
-      deliverEmail: enqueueAndAwaitEmail,
+      deliverEmail: input => enqueueAndAwaitEmail(input, {
+        enqueuePrepared: parameters => emailRpc("enqueue_participant_notice_for_actor_v1", {
+          ...parameters, p_actor: actorId,
+        }),
+      }),
     });
   } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "42501") {
+      return jsonResponse({ error: "forbidden" }, 403);
+    }
     if (error instanceof EmailTemplateNotFoundError) {
       return jsonResponse({ error: "email_template_not_found" }, 404);
     }

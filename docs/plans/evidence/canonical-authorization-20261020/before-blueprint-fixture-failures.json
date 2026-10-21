@@ -1,0 +1,117 @@
+{
+  "scope": "Task-owned fenced 61022; exact recorded before definitions substituted inside rollback transactions. Paired-definition comparison, not a pristine full baseline rebuild.",
+  "results": [
+    {
+      "path": "database/tests/duplicate_occasion_target_unit_test.sql",
+      "state": "failed",
+      "code": "23514",
+      "message": "BLUEPRINT_LAYOUT_MIGRATION_REQUIRED",
+      "definitions": [
+        {
+          "signature": "duplicate_occasion(bigint)",
+          "sha256": "619056cba10833692ba22dbbd8d855c8dc91ff5672e9af615746fe1a3c1c3b6f"
+        },
+        {
+          "signature": "duplicate_occasion(bigint,bigint)",
+          "sha256": "3faf7f018632d133f4a68f716b5a42f6aad588edd7d79ca532d29f57ed895604"
+        },
+        {
+          "signature": "duplicate_occasion(bigint,bigint,text)",
+          "sha256": "fb882a8d779f417ea2ee78eb3bf15f444efab533ed5a80fd61b1395eb585bdbb"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid)",
+          "sha256": "68e4322b88659b37845d8a2a9f50b74d289c5b71dbb8dafe9976e71b8933b64a"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid,bigint)",
+          "sha256": "bfe0c52c5f3e690c19cdd5c545f77b04f7e4a22793ea693a7bd635151ca7990d"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)",
+          "sha256": "31d187ef28e966d630a0c00aa27a922c366761b86ac1c43d583bc7cc2e7008a2"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint)",
+          "sha256": "de2751386dc764eca6329b106278596906bcaee6787f1db768aba398428f109f"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint,bigint)",
+          "sha256": "dafed88ba5521437132ed704eb5f272b183e91de96d43b4213c211b3d7989e3e"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint,bigint,text)",
+          "sha256": "a47cf04c711bb35f27ef967d741677492f54780a8eeea80d82f5107db92d6fd3"
+        },
+        {
+          "signature": "get_occasion_copy_units(bigint)",
+          "sha256": "d0c4d647eb84ad639c6aeeb49e418ec815be28489921fcf9e71063b032e0f38d"
+        }
+      ]
+    },
+    {
+      "path": "database/tests/duplicate_occasion_creator_editor_test.sql",
+      "state": "failed",
+      "code": "23514",
+      "message": "BLUEPRINT_LAYOUT_MIGRATION_REQUIRED",
+      "definitions": [
+        {
+          "signature": "duplicate_occasion(bigint)",
+          "sha256": "619056cba10833692ba22dbbd8d855c8dc91ff5672e9af615746fe1a3c1c3b6f"
+        },
+        {
+          "signature": "duplicate_occasion(bigint,bigint)",
+          "sha256": "3faf7f018632d133f4a68f716b5a42f6aad588edd7d79ca532d29f57ed895604"
+        },
+        {
+          "signature": "duplicate_occasion(bigint,bigint,text)",
+          "sha256": "fb882a8d779f417ea2ee78eb3bf15f444efab533ed5a80fd61b1395eb585bdbb"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid)",
+          "sha256": "68e4322b88659b37845d8a2a9f50b74d289c5b71dbb8dafe9976e71b8933b64a"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid,bigint)",
+          "sha256": "bfe0c52c5f3e690c19cdd5c545f77b04f7e4a22793ea693a7bd635151ca7990d"
+        },
+        {
+          "signature": "duplicate_occasion_client_sync_v1(bigint,uuid,bigint,text)",
+          "sha256": "31d187ef28e966d630a0c00aa27a922c366761b86ac1c43d583bc7cc2e7008a2"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint)",
+          "sha256": "de2751386dc764eca6329b106278596906bcaee6787f1db768aba398428f109f"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint,bigint)",
+          "sha256": "dafed88ba5521437132ed704eb5f272b183e91de96d43b4213c211b3d7989e3e"
+        },
+        {
+          "signature": "duplicate_occasion_internal_v1(bigint,bigint,text)",
+          "sha256": "a47cf04c711bb35f27ef967d741677492f54780a8eeea80d82f5107db92d6fd3"
+        },
+        {
+          "signature": "get_occasion_copy_units(bigint)",
+          "sha256": "d0c4d647eb84ad639c6aeeb49e418ec815be28489921fcf9e71063b032e0f38d"
+        }
+      ]
+    },
+    {
+      "path": "database/tests/occasion_setup/feature_choices_test.sql",
+      "state": "failed",
+      "code": "22023",
+      "message": "Selected blueprint has no places",
+      "definitions": [
+        {
+          "signature": "begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)",
+          "sha256": "1b835fa96f1dbcd826e03610c05e31e69b8e6ff7d1644a24702a3c3799c63878"
+        },
+        {
+          "signature": "finalize_occasion_setup_draft(uuid,bigint,uuid)",
+          "sha256": "deb3b35d6923720c4958b2717afd2fe10dd72ede6249a1612b5da4fa9c94ccac"
+        }
+      ]
+    }
+  ]
+}

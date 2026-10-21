@@ -1,11 +1,14 @@
 -- Run transactionally: local details and recoverable remote intent are inseparable.
 DO $$
-DECLARE u uuid; a bigint; op uuid; old_title text;
+DECLARE u uuid; authz_unit bigint; a bigint; op uuid; old_title text;
 BEGIN
  SELECT id INTO u FROM public.user_info LIMIT 1;
  PERFORM set_config('request.jwt.claim.sub',u::text,true);
  INSERT INTO eshop.bank_accounts(account_number,title,type) VALUES('CZ6508000000192000145399','Original','FIO') RETURNING id INTO a;
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(a,u,true);
+  INSERT INTO public.units(title,organization) SELECT 'Bank authorization fixture',id FROM public.organizations LIMIT 1 RETURNING id INTO authz_unit;
+  INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(authz_unit,u,true);
+  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(authz_unit,a,0);
  INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,provider,mode,state,manifest_sha256)
  VALUES('details-test','festapp','987654321',a,'CZ6508000000192000145399','FIO','api','connected',repeat('a',64));
  PERFORM public.update_bank_account(a,'CZ6508000000192000145399','Renamed','FIO',ARRAY['CZK'],NULL,NULL,'Beneficiary');
@@ -27,7 +30,7 @@ BEGIN
  BEGIN
   PERFORM public.update_bank_account(a,'CZ6508000000192000145399','Unauthorized','FIO');
   RAISE EXCEPTION 'expected admin permission denial';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'Permission denied: Only bank account admins can update details.' THEN RAISE; END IF;
+ EXCEPTION WHEN insufficient_privilege THEN IF SQLERRM <> 'Permission denied: Only bank account admins can update details.' THEN RAISE; END IF;
  END;
  RAISE NOTICE 'BankSync account details atomicity, fencing and authorization passed';
 END $$;

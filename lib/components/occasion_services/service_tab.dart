@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
@@ -91,13 +92,15 @@ class _ServiceTabState extends State<ServiceTab> {
               name: OccasionServicesStrings.accommodationSettings,
               action: (SingleDataGridController p0, [_]) =>
                   _accommodationDefinition(p0),
-              isEnabled: RightsService.isManager,
+              isEnabled: () => RightsService.hasCapability(
+                  AuthorizationCapabilities.servicesWrite),
             ),
           if (_allowFood)
             DataGridAction(
               name: OccasionServicesStrings.foodSettings,
               action: (SingleDataGridController p0, [_]) => _foodDefinition(p0),
-              isEnabled: RightsService.isManager,
+              isEnabled: () => RightsService.hasCapability(
+                  AuthorizationCapabilities.servicesWrite),
             ),
         ],
         columns: _buildColumns(),

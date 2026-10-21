@@ -6,8 +6,6 @@ CREATE OR REPLACE FUNCTION public.get_user_group_info_with_users(p_group_id bigi
 AS $function$
 DECLARE
     v_occasion_id bigint;
-    v_is_member boolean;
-    v_is_editor_view boolean;
     v_current_user_is_admin boolean;
     result_json jsonb;
 BEGIN
@@ -18,11 +16,7 @@ BEGIN
     END IF;
 
     -- Authorization Check: User must be a member or have editor view permissions on the occasion.
-    SELECT EXISTS (SELECT 1 FROM public.user_groups WHERE "group" = p_group_id AND "user" = auth.uid()) INTO v_is_member;
-    v_is_editor_view := public.get_is_editor_view_on_occasion(v_occasion_id)
-      OR public.get_is_editor_on_occasion(v_occasion_id);
-
-    IF NOT v_is_member AND NOT v_is_editor_view THEN
+    IF NOT public.can_read_group_members(p_group_id) THEN
         RAISE EXCEPTION 'NOT_AUTHORIZED';
     END IF;
 

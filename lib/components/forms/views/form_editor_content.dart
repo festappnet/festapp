@@ -93,7 +93,7 @@ class _FormEditorContentState extends State<FormEditorContent>
   final ScrollController _scrollController = ScrollController();
   bool _prototypeSaved = false;
   bool get _prototype => widget.prototypeBundle != null;
-  bool get _canEdit => _prototype || RightsService.isOrderEditor();
+  bool get _canEdit => _prototype || RightsService.canUpdateOrders();
   bool get _canSeeReservations =>
       !_prototype && RightsService.canSeeReservations();
 

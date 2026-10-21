@@ -1,5 +1,5 @@
 DO $$
-DECLARE v_bank bigint; v_connection bigint; v_user uuid; v_result jsonb;
+DECLARE v_bank bigint; authz_unit bigint; v_connection bigint; v_user uuid; v_result jsonb;
 BEGIN
   PERFORM assert_false(has_function_privilege('anon','public.ingest_bank_sync_transaction(text,text,text,jsonb)','EXECUTE'),'anonymous cannot ingest signed bank facts');
   PERFORM assert_false(has_function_privilege('authenticated','public.ingest_bank_sync_transaction(text,text,text,jsonb)','EXECUTE'),'user JWT cannot forge bank ingest');
@@ -13,10 +13,13 @@ BEGIN
   BEGIN
     PERFORM public.get_bank_sync_connection(v_bank);
     RAISE EXCEPTION 'foreign account metadata exposed';
-  EXCEPTION WHEN raise_exception THEN
+  EXCEPTION WHEN insufficient_privilege THEN
     IF SQLERRM NOT LIKE 'User is not an admin%' THEN RAISE; END IF;
   END;
   INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(v_bank,v_user,true);
+  INSERT INTO public.units(title,organization) SELECT 'Bank authorization fixture',id FROM public.organizations LIMIT 1 RETURNING id INTO authz_unit;
+  INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(authz_unit,v_user,true);
+  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(authz_unit,v_bank,0);
   INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,physical_account,
     provider,mode,state,pairing_code,manifest_sha256) VALUES('test-permissions','festapp','43',v_bank,'9876/2010','FIO','api','shadow','abcdef0123',repeat('a',64)) RETURNING id INTO v_connection;
   v_result:=public.get_bank_sync_connection(v_bank);

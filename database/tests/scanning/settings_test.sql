@@ -1,8 +1,10 @@
+-- One transaction retains the injected scanner fixture across every DO block.
 BEGIN;
 DO $$
-DECLARE oc bigint; cfg jsonb; r jsonb;
+DECLARE fx jsonb; oc bigint; cfg jsonb; r jsonb;
 BEGIN
- SELECT occasion_id,config INTO oc,cfg FROM public.scanner_settings LIMIT 1;
+ fx:=public.scanner_test_fixture();oc:=(fx->>'occasion')::bigint;
+ SELECT config INTO cfg FROM public.scanner_settings WHERE occasion_id=oc;
  PERFORM public.scanner_validate_settings_internal(oc,cfg);
  BEGIN PERFORM public.scanner_validate_settings_internal(oc,jsonb_set(cfg,'{products,ids}','[99999999999]'));PERFORM assert_fail('foreign product');EXCEPTION WHEN invalid_parameter_value THEN NULL;END;
  BEGIN PERFORM public.scanner_validate_settings_internal(oc,jsonb_set(cfg,'{fields}','[{"source":"ticket_field","form_id":99999999,"field_id":99999999,"key":"ticket:99999999:99999999"}]'));PERFORM assert_fail('foreign field');EXCEPTION WHEN invalid_parameter_value THEN NULL;END;
@@ -10,8 +12,6 @@ BEGIN
  SELECT dto INTO r FROM public.scanner_ticket_projection_internal(oc,cfg) LIMIT 1;
  PERFORM assert_not_null(r,'projection fixture');PERFORM assert_false(r ? 'remaining_amount','price withheld on server');PERFORM assert_false(r ? 'note_hidden','hidden note withheld');PERFORM assert_eq(r->'products','[]'::jsonb,'none mode actually withholds products');
 END $$;
-ROLLBACK;
-BEGIN;
 DO $$
 DECLARE fx jsonb; oc bigint; un bigint; usr uuid:=gen_random_uuid(); cfg jsonb; revision bigint; ff bigint; prod bigint; copy bigint; response jsonb;
 BEGIN
@@ -41,8 +41,6 @@ BEGIN
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.scanner_sessions WHERE occasion_id=copy),'no sessions copied');
  PERFORM assert_true((SELECT occasion_hidden IS NULL FROM public.occasions WHERE id=copy),'no scan secret copied');
 END $$;
-ROLLBACK;
-BEGIN;
 DO $$
 DECLARE fx jsonb; oc bigint; tid bigint; ff bigint; cfg jsonb; dto jsonb;
 BEGIN

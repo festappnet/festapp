@@ -22,8 +22,7 @@ REVOKE ALL ON public.blueprint_image_assets FROM PUBLIC,anon,authenticated,servi
 CREATE OR REPLACE FUNCTION public.get_blueprint_image_upload_access(p_occasion bigint,p_project text,p_unit bigint DEFAULT NULL)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT auth.uid() IS NOT NULL AND (p_occasion IS NULL)<>(p_unit IS NULL) AND p_project IN ('default','a','slunovrat')
- AND CASE WHEN p_occasion IS NOT NULL THEN (public.get_is_editor_on_occasion(p_occasion) IS TRUE OR public.get_is_manager_on_occasion(p_occasion) IS TRUE)
- ELSE (public.get_is_editor_on_unit(p_unit) IS TRUE OR public.get_is_manager_on_unit(p_unit) IS TRUE) END
+ AND public.can_upload_blueprint_background(p_occasion,p_unit)
  AND EXISTS(SELECT 1 FROM (SELECT organization FROM public.occasions WHERE id=p_occasion UNION ALL SELECT organization FROM public.units WHERE id=p_unit) o
  WHERE coalesce((SELECT project FROM public.image_project_imports WHERE organization=o.organization),'default')=p_project)
 $$;

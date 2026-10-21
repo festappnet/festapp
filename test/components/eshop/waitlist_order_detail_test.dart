@@ -46,7 +46,8 @@ void main() {
             jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                 as Map<String, dynamic>);
     final previous = RightsService.occasionLinkModelNotifier.value;
-    RightsService.occasionLinkModelNotifier.value = null;
+    RightsService.occasionLinkModelNotifier.value =
+        OccasionLinkModel(capabilities: const {'orders.write': true});
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
 
@@ -55,6 +56,7 @@ void main() {
     required String lifecycle,
     String? displayName,
   }) async {
+    RightsService.invalidateCapabilities();
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -130,7 +132,8 @@ void main() {
     () => _environment,
     'single readonly waiting ticket uses canonical application label',
     (tester) async {
-      expect(RightsService.isEditorOrder(), isFalse);
+      RightsService.invalidateCapabilities();
+      expect(RightsService.canUpdateOrders(), isFalse);
       await open(tester, lifecycle: 'waiting');
       expect(find.text(OrderItemStrings.itemSingular), findsOneWidget);
       expect(
@@ -144,6 +147,7 @@ void main() {
     (tester) async {
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
+        capabilities: const {'orders.write': true},
       );
       var lifecycle = 'waiting';
       var gridLabel = '1 Čeká';
@@ -273,6 +277,7 @@ void main() {
   void editor() =>
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         occasionUser: OccasionUserModel.fromJson({'is_editor_order': true}),
+        capabilities: const {'orders.write': true},
       );
 
   testWidgetsWithEnvironment(
@@ -762,6 +767,7 @@ void main() {
       'read-only pending offers never expose editor actions', (
     tester,
   ) async {
+    RightsService.invalidateCapabilities();
     zones.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     await _environment.pumpWidget(

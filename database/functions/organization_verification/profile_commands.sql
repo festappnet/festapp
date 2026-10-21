@@ -4,7 +4,7 @@ DECLARE p public.unit_legal_profiles; org bigint; admin boolean; result jsonb;
 BEGIN
  SELECT organization INTO org FROM public.units WHERE id=p_unit;
  admin:=coalesce(public.check_is_admin_of_organization(org),false);
- IF auth.uid() IS NULL OR org IS NULL OR NOT (public.get_is_manager_on_unit(p_unit) OR admin) THEN
+ IF auth.uid() IS NULL OR org IS NULL OR NOT public.can_read_unit_legal_profile(p_unit) THEN
   RAISE EXCEPTION 'Legal profile access denied' USING ERRCODE='42501';
  END IF;
  SELECT * INTO p FROM public.unit_legal_profiles WHERE unit_id=p_unit;
@@ -27,7 +27,7 @@ DECLARE p public.unit_legal_profiles; n public.unit_legal_profiles; org bigint; 
  errors jsonb:='{}'; normalized jsonb; old_values jsonb; checksum integer:=0; i integer;
 BEGIN
  SELECT organization INTO org FROM public.units WHERE id=p_unit FOR UPDATE;
- IF auth.uid() IS NULL OR org IS NULL OR NOT public.get_is_manager_on_unit(p_unit) OR public.is_demo_unit(p_unit) THEN
+ IF auth.uid() IS NULL OR org IS NULL OR NOT public.can_manage_unit_legal_profile(p_unit) THEN
   RAISE EXCEPTION 'Legal profile write denied' USING ERRCODE='42501';
  END IF;
  SELECT * INTO p FROM public.unit_legal_profiles WHERE unit_id=p_unit FOR UPDATE;
@@ -101,7 +101,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE p public.unit_legal_profiles; org bigint; errors jsonb:='{}'; k text; v text;
 BEGIN
  SELECT organization INTO org FROM public.units WHERE id=p_unit FOR UPDATE;
- IF auth.uid() IS NULL OR org IS NULL OR NOT public.get_is_manager_on_unit(p_unit) OR public.is_demo_unit(p_unit) THEN
+ IF auth.uid() IS NULL OR org IS NULL OR NOT public.can_manage_unit_legal_profile(p_unit) THEN
   RAISE EXCEPTION 'Legal profile submission denied' USING ERRCODE='42501';
  END IF;
  SELECT * INTO p FROM public.unit_legal_profiles WHERE unit_id=p_unit FOR UPDATE;

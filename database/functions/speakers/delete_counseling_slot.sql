@@ -21,7 +21,7 @@ BEGIN
   IF v_occasion IS NULL THEN
     RETURN NULL;
   END IF;
-  IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(v_occasion) THEN
+  IF auth.uid() IS NULL OR NOT public.can_write_speakers(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE = 'occasion editor required';
   END IF;
 

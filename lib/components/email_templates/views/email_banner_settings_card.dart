@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:typed_data';
 
@@ -33,8 +34,10 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
   bool _isExpanded = false;
 
   bool get _canEdit => _isOccasion
-      ? RightsService.canEditOccasion() || RightsService.isOrderEditor()
-      : RightsService.isUnitEditor();
+      ? RightsService.hasCapability(
+          AuthorizationCapabilities.emailTemplatesOccasionWrite)
+      : RightsService.hasCapability(
+          AuthorizationCapabilities.emailTemplatesUnitWrite);
   bool get _isOccasion => widget.response.occasion != null;
   OccasionModel? get _occasion => widget.response.occasion;
   UnitModel get _unit => widget.response.unit;

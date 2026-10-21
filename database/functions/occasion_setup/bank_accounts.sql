@@ -12,7 +12,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE d public.occasion_setup_drafts;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id;
- IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+ IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  RETURN jsonb_build_object('canManage',public.get_is_manager_on_unit(d.unit),'accounts',coalesce((
   SELECT jsonb_agg(jsonb_build_object('id',b.id,'title',b.title,

@@ -40,7 +40,7 @@ BEGIN
   END IF;
 
   -- Permission Check: User must have "Order View" rights on this occasion
-  IF public.get_is_editor_order_view_on_occasion(v_occasion_id) IS NOT TRUE THEN
+  IF public.can_read_orders(v_occasion_id) IS NOT TRUE THEN
      RAISE EXCEPTION 'Permission denied. User does not have view rights for occasion %.', v_occasion_id;
   END IF;
 

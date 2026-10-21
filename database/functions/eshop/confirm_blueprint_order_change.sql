@@ -20,7 +20,7 @@ BEGIN
   PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
   SELECT occasion INTO v_occasion_id FROM eshop.spots WHERE id=p_spot_ids[1];
-  IF NOT coalesce(public.get_is_editor_order_on_occasion(v_occasion_id),false) THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+  IF NOT coalesce(public.can_write_orders(v_occasion_id),false) THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   IF EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND secret IS NOT NULL
     AND secret_expiration_time>clock_timestamp()
     AND secret IS DISTINCT FROM (p_input_data->>'secret')::uuid) THEN
@@ -57,7 +57,7 @@ BEGIN
   SELECT occasion INTO v_occasion_id FROM eshop.spots WHERE id = p_spot_ids[1];
 
   -- Security Check: User must be editor
-  IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
+  IF NOT public.can_write_orders(v_occasion_id) THEN
       RAISE EXCEPTION 'Permission denied. User is not an editor for occasion %', v_occasion_id;
   END IF;
 

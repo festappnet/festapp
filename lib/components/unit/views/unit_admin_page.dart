@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
@@ -441,7 +442,8 @@ class UnitAdministrationTabsPage extends StatelessWidget {
             route: const UnitQuotesRoute(),
             label: UnitStrings.quotes,
             icon: Icons.format_quote),
-      if (RightsService.isUnitEditor())
+      if (RightsService.hasCapability(
+          AuthorizationCapabilities.bankAccountsUnitManage))
         RoutedTabDefinition(
             slug: NavigationPaths.bankAccounts,
             route: const UnitBankAccountsNavigationRoute(),

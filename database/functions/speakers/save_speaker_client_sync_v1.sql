@@ -10,7 +10,7 @@ DECLARE
   v_topic_ids bigint[]; v_old_hidden boolean; v_new_hidden boolean;
   v_publishable boolean; v_content_impact boolean; v_program_impact boolean;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_speakers(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required';
   END IF;
   SELECT NOT o.is_hidden INTO v_publishable FROM public.occasions o WHERE o.id=p_occasion;

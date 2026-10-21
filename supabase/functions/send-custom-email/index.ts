@@ -2,8 +2,6 @@ import { emailRpc } from "../_shared/emailQueueClient.ts";
 import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import {
   getSupabaseUser,
-  isUserEditor,
-  isUserEditorOrder,
   createUserClient,
   supabaseAdmin,
   getEmailTemplateAndWrapper,
@@ -99,12 +97,10 @@ Deno.serve(async (req) => {
 
     // Verify that the user is an editor for the occasion specified in the template.
     const userId = user.user.id;
-    var isEditor = await isUserEditor(userId, template.occasion);
-    if (!isEditor) {
-      isEditor = await isUserEditorOrder(userId, template.occasion);
-    }
+    const { data: isEditor, error: permissionError } = await createUserClient(authHeader)
+      .rpc("can_send_custom_email", { p_occasion: template.occasion });
 
-    if (!isEditor) {
+    if (permissionError || isEditor !== true) {
       console.error(
         `User ${userId} is not an editor for occasion ${template.occasion}`,
       );
@@ -136,6 +132,10 @@ Deno.serve(async (req) => {
       substitutions: subs,
       template,
       from: `Festapp <${_DEFAULT_EMAIL}>`,
+    }, {
+      enqueuePrepared: (parameters) => emailRpc("enqueue_custom_email_for_actor_v1", {
+        ...parameters, p_actor: userId,
+      }),
     });
 
     return new Response(JSON.stringify({ email }), {

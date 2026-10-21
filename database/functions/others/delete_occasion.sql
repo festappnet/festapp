@@ -14,7 +14,7 @@ BEGIN
   FROM public.occasions
   WHERE id = oc;
 
-  PERFORM check_is_manager_on_unit(unit_id);
+  IF NOT public.can_delete_occasion_in_unit(unit_id) THEN RAISE EXCEPTION 'User is not manager.'; END IF;
 
 -- ***********************************************************
   -- 0. SAFETY CHECK: Strict Order Check

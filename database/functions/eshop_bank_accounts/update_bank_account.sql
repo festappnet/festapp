@@ -35,9 +35,13 @@ BEGIN
     v_account_number := TRIM(p_account_number);
 
     IF p_id IS NULL THEN
-        -- Creation: If p_unit_id is provided, enforce that creator is Manager of that unit
-        IF p_unit_id IS NOT NULL THEN
-             PERFORM check_is_manager_on_unit(p_unit_id);
+        -- A new account has no account admin yet: a managed target unit is
+        -- mandatory, and creation grants the second role atomically below.
+        IF p_unit_id IS NULL THEN
+            RAISE EXCEPTION 'A managed unit is required to create a bank account.' USING ERRCODE='42501';
+        END IF;
+        IF NOT public.can_manage_unit_bank_accounts(p_unit_id) THEN
+            RAISE insufficient_privilege USING MESSAGE='User is not manager.';
         END IF;
 
         -- Check for duplicate account number on insert
@@ -65,11 +69,8 @@ BEGIN
         END IF;
 
         -- Security Check: Caller must be an Admin of the bank account
-        IF NOT EXISTS (
-            SELECT 1 FROM eshop.bank_account_users
-            WHERE bank_account = p_id AND "user" = auth.uid() AND is_admin = true
-        ) THEN
-            RAISE EXCEPTION 'Permission denied: Only bank account admins can update details.';
+        IF NOT public.can_manage_bank_account(p_id) THEN
+            RAISE EXCEPTION 'Permission denied: Only bank account admins can update details.' USING ERRCODE='42501';
         END IF;
 
         PERFORM 1 FROM eshop.bank_accounts WHERE id=p_id FOR UPDATE;

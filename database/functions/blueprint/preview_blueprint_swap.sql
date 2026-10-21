@@ -6,7 +6,7 @@ DECLARE ids bigint[]; order_ids bigint[]; before_orders jsonb; sides jsonb; resu
 BEGIN
  SELECT min(occasion) INTO occ FROM eshop.spots WHERE id IN(p_spot_1,p_spot_2);
  IF occ IS NULL THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
- IF public.get_is_editor_order_on_occasion(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+ IF public.can_write_orders(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
  PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
  ids:=public.blueprint_selection_unit_spots_internal(p_spot_1)||public.blueprint_selection_unit_spots_internal(p_spot_2);
  SELECT array_agg(DISTINCT opt."order") INTO order_ids FROM eshop.spots s JOIN eshop.order_product_ticket opt ON opt.id=s.order_product_ticket WHERE s.id=ANY(ids);

@@ -7,7 +7,7 @@ BEGIN
  ELSIF p_operation='send' THEN fid:=(p_payload->>'formId')::bigint;
  ELSE RAISE EXCEPTION 'Invalid email context operation'; END IF;
  SELECT * INTO STRICT f FROM public.forms WHERE id=fid; SELECT * INTO STRICT occ FROM public.occasions WHERE id=f.occasion;
- IF p_operation='send' AND NOT EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=occ.id AND "user"=p_actor AND is_editor_order) THEN
+ IF p_operation='send' AND NOT public.order_editor_membership_as_actor_internal(p_actor,occ.id) THEN
   RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;
  contexts:='[]';
  IF p_operation='register' THEN contexts:=jsonb_build_array(jsonb_build_object('recipient',p_payload->>'email','organization',occ.organization,

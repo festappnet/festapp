@@ -37,14 +37,14 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',manager::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  SET LOCAL ROLE authenticated;
- response:=public.update_user(jsonb_build_object('occasion',target_o,'data',jsonb_build_object('email','managed@test.local','name','Managed')));
+ response:=public.create_occasion_user_client_sync_v1(p_occasion=>target_o,p_command_id=>gen_random_uuid(),p_profile=>jsonb_build_object('occasion',target_o,'data',jsonb_build_object('email','managed@test.local','name','Managed')));
  IF (response->>'code')::int NOT IN (200,201) THEN RAISE EXCEPTION 'scoped manager creation failed: %',response; END IF;
  RESET ROLE;
  -- A manager role does not override a disabled public registration policy.
  response:=public.create_user_from_registration(org,'not-public@test.local','12345678','{}');
  PERFORM assert_eq((response->>'code')::int,403,'manager cannot reopen public registration');
  SET LOCAL ROLE authenticated;
- response:=public.update_user(jsonb_build_object('unit',target_unit,'data',jsonb_build_object('email','foreign@test.local')));
+ response:=public.update_unit_user(jsonb_build_object('unit',target_unit,'data',jsonb_build_object('email','foreign@test.local')));
  IF response->>'code'<>'403' THEN RAISE EXCEPTION 'occasion manager acquired unit-wide creation'; END IF;
  BEGIN PERFORM public.create_user_in_organization_with_data_ws(org,'bypass@test.local','12345678','{}');
  RAISE EXCEPTION 'internal writer callable'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;

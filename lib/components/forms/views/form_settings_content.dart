@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'form_variable_symbol_settings.dart';
 
 import 'package:flutter/foundation.dart';
@@ -501,7 +502,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         .toList()
       ..sort();
     final unitId = RightsService.currentUnit()?.id;
-    final canManageAccounts = unitId != null && RightsService.isUnitEditor();
+    final canManageAccounts = unitId != null &&
+        RightsService.hasCapability(
+            AuthorizationCapabilities.bankAccountsUnitManage);
 
     final guidance = missingCurrencies.isNotEmpty
         ? (canManageAccounts
