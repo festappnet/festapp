@@ -104,7 +104,7 @@ these integration checks do not claim a new production performance result.
 ## Measured PR delta
 
 Across every changed path, including replacement SQL, tooling, generated
-inventories and this documentation: 4,287,837 -> 3,273,700 bytes
-and 101,327 -> 81,954 LF-delimited lines. Net reduction:
-**1,014,137 bytes and 19,373 lines**.
+inventories and this documentation: 5,470,385 -> 4,510,728 bytes
+and 122,597 -> 105,206 LF-delimited lines. Net reduction:
+**959,657 bytes and 17,391 lines**.
 No savings from ignored scratch files or unrelated concurrent work are included.
