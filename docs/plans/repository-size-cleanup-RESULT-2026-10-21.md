@@ -47,6 +47,8 @@ MapLibre overrides, fonts and active inventories remain intact. The earlier
 - Refresh discovered-route/admission metadata and canonical-only adapter evidence.
   A retained installed group helper is covered by the existing release fingerprint
   contract rather than incorrectly claimed as an authored current function.
+- Recover the security-containment regression fixture from the immutable
+  historical baseline, preserving its pre-retirement definitions.
 - Update setup tests to use the current layout/seat-binding contract and the
   current protected-seat error, preserving their permission and atomicity checks.
 
@@ -84,7 +86,7 @@ Production application of the new guard remains part of the normal release.
 ## Measured PR delta
 
 Across every changed path, including replacement SQL, tooling, generated
-inventories and this documentation: 4,278,001 -> 3,263,634 bytes
-and 101,197 -> 81,821 LF-delimited lines. Net reduction:
-**1,014,367 bytes and 19,376 lines**.
+inventories and this documentation: 9,836 -> 9,927 bytes
+and 130 -> 131 LF-delimited lines. Net reduction:
+**-91 bytes and -1 lines**.
 No savings from ignored scratch files or unrelated concurrent work are included.
