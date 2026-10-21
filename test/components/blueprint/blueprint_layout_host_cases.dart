@@ -109,6 +109,7 @@ void main() {
         occasion: 8,
         title: 'Standing',
         price: 80,
+        orderedCount: 4,
         productTypeString: ProductModel.spotType,
       );
       await expectLater(preparation.prepare(product, 25), throwsStateError);
@@ -216,7 +217,7 @@ void main() {
       reloaded.layout.readOnly = true;
       expect(() => reloaded.setAreaCapacity(id, 5), throwsStateError);
       await expectLater(
-        preparation.prepare(product.copyWith(orderedCount: 1), 25),
+        preparation.prepare(linked, 25),
         throwsStateError,
       );
     },

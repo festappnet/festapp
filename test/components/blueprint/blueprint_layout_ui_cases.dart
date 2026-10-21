@@ -2377,7 +2377,7 @@ void main() {
     expect(find.byType(EditProductDialog), findsNothing);
   });
   testWidgetsWithEnvironment(() => environment,
-      'unbound standing shows its configured capacity instead of sold out stock',
+      'unbound standing offers sold table products and keeps its configured capacity',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
@@ -2462,7 +2462,7 @@ void main() {
                 'price': 500,
                 'currency_code': 'CZK',
                 'product_type': 2,
-                'ordered_count': 0
+                'ordered_count': 4
               },
               {
                 'id': 11,
