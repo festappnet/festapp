@@ -33,6 +33,7 @@ import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_create_order_dialog.dart';
 import 'blueprint_layout_legend.dart';
+import 'blueprint_editor_feedback.dart';
 import 'blueprint_product_dialogs.dart';
 
 enum _BlueprintScreenMode { reservations, edit }
@@ -1746,18 +1747,11 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 onKeyEvent: _hostHistoryKey,
                 child: Scaffold(
                   body: SafeArea(
+                      child: BlueprintEditorFeedback(
+                      message: _message,
+                      onDismiss: () => setState(() => _message = null),
                       child: Column(children: [
                     if (_saveFlight != null) const LinearProgressIndicator(),
-                    if (_message != null)
-                      Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Semantics(
-                              liveRegion: true,
-                              child: Text(_message!,
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error)))),
                     if (_assetsFailed)
                       TextButton(
                           onPressed: _assetsPending ? null : _loadAssets,
@@ -1848,7 +1842,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                     ? _editFromCanvas
                                     : null,
                                 onNodeActivated: controller.activateNode))),
-                  ])),
+                  ]))),
                 )));
       });
 }

@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import '../images/image_control_client.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show GraphicImportFailure;
 
@@ -32,6 +33,9 @@ class BlueprintStrings {
   static String get seatProductRequired =>
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
+    if (error is ImageUploadOutcomeUnknown)
+      return 'FeatureBlueprint.imageUploadUncertain'.tr();
+    if (error is ImageUploadRejected) return toastImageUploadFail;
     if (error is GraphicImportFailure) {
       final reason = error.reason;
       final key = reason.endsWith('_limit')

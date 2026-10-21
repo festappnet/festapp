@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'layout_style.dart';
 import 'layout_font_size_control.dart';
 import 'layout_floor_style.dart';
+
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/editor_ui.dart';
 
@@ -403,16 +405,28 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               ),
       );
       Future<void> color(List<String> path, String value) async {
-        final result = await showEditorDialog<EditorColorResult>(
-          context: context,
-          builder: (_) => EditorColorDialog(
-            value: EditorColorValue.fromRgba(value),
-            usedColors: usedColors(),
-            translate: tr,
-          ),
-        );
-        if (result != null && mounted) {
-          change(path, result.primary.rgba);
+        c.beginGesture();
+        EditorColorResult? result;
+        try {
+          result = await showEditorDialog<EditorColorResult>(
+            context: context,
+            barrierColor: Colors.transparent,
+            builder: (_) => EditorColorDialog(
+              value: EditorColorValue.fromRgba(value),
+              usedColors: usedColors(),
+              translate: tr,
+              onPreview: (result) {
+                if (mounted) change(path, result.primary.rgba);
+              },
+            ),
+          );
+          if (result != null && mounted) change(path, result.primary.rgba);
+        } finally {
+          if (result != null && mounted) {
+            c.commitGesture();
+          } else {
+            c.cancelGesture();
+          }
         }
       }
 
@@ -451,9 +465,9 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               decoration: InputDecoration(
                 border: const OutlineInputBorder(),
                 filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
+                fillColor: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 14,

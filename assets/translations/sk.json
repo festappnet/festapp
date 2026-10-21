@@ -1,5 +1,6 @@
 {
   "FeatureBlueprint": {
+    "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný.",
     "protectedCount": "Obsadené miesta: {count}.",
     "cancelReservation": "Zrušiť vybrané rezervácie",
     "assignSelectionProduct": "Spoločný produkt a cena",

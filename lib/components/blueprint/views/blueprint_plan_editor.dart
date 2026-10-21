@@ -1,4 +1,7 @@
 import '../blueprint_font_selection.dart';
+import 'blueprint_editor_feedback.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:venue_seat_picker/editor_ui.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -384,7 +387,9 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
           final scope =
               node != null ? 'node:${node.id}' : 'kind:$appearanceKind';
           final selected = catalog.where((font) => font['id'] == id);
-          return Column(
+          return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 FontFamilyPicker(
@@ -450,7 +455,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                                     selectedFont: id as String,
                                     appearanceKind: 'document')),
                           ))),
-              ]);
+              ]));
         },
       );
 
@@ -486,17 +491,15 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                     shape: const WidgetStatePropertyAll(StadiumBorder()),
                     minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
       ),
-      child: Column(children: [
-        if (_error != null)
-          Padding(
-              padding: const EdgeInsets.all(8),
-              child: Semantics(
-                  liveRegion: true,
-                  child: Text(_error!,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error)))),
+      child: EditorColorDialogTheme(
+          builder: (context, dialog) => AppAlertDialog(
+              title: dialog.title, content: dialog.content, actions: dialog.actions,
+              alignment: MediaQuery.sizeOf(context).width >= 900
+                  ? Alignment.centerRight : Alignment.center,
+              insetPadding: const EdgeInsets.all(16)),
+          child: BlueprintEditorFeedback(
+          message: _error, onDismiss: () => setState(() => _error = null),
+          child: Column(children: [
         if (_failed)
           TextButton(
               onPressed: () {
@@ -575,5 +578,5 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                     showGallery: widget.showGallery,
                     onEditRequested: widget.onEditRequested,
                     onNodeActivated: widget.onNodeActivated))),
-      ]));
+      ]))));
 }

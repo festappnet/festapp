@@ -1,5 +1,6 @@
 {
   "FeatureBlueprint": {
+    "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany.",
     "protectedCount": "Zajęte miejsca: {count}.",
     "cancelReservation": "Anuluj wybrane rezerwacje",
     "assignSelectionProduct": "Wspólny produkt i cena",
