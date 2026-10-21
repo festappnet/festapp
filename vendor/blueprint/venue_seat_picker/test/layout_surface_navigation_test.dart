@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,10 +57,14 @@ void main() {
         camera.value,
         painter().offset + Offset(2400, 1600) * painter().scale,
       );
-      expect(origin.dx, greaterThanOrEqualTo(15.99));
-      expect(end.dx, lessThanOrEqualTo(784.01));
-      expect(origin.dy, greaterThanOrEqualTo(15.99));
-      expect(end.dy, lessThanOrEqualTo(584.01));
+      expect(
+        math.min(800, end.dx) - math.max(0, origin.dx),
+        greaterThanOrEqualTo(math.min(end.dx - origin.dx, 800) / 2 - .01),
+      );
+      expect(
+        math.min(600, end.dy) - math.max(0, origin.dy),
+        greaterThanOrEqualTo(math.min(end.dy - origin.dy, 600) / 2 - .01),
+      );
       final worldZoom = painter().scale * camera.value.entry(0, 0);
       await tester.binding.setSurfaceSize(const Size(360, 700));
       await tester.pump();

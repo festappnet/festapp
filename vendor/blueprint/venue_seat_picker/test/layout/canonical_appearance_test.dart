@@ -102,6 +102,26 @@ void main() {
         await tester.ensureVisible(button);
         await tester.tap(button);
         await tester.pumpAndSettle();
+        if (hoverOnly) {
+          final mouse = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+          await mouse.addPointer(location: const Offset(0, 0));
+          final wood = find.byWidgetPredicate(
+            (w) => w is RadioListTile<String> && w.value == 'wood',
+          );
+          await mouse.moveTo(tester.getCenter(wood));
+          await tester.pump();
+          expect(c.document.toJson(), isNot(document.toJson()));
+          await mouse.moveTo(const Offset(0, 0));
+          await tester.pump();
+          expect(
+            c.document.toJson(),
+            document.toJson(),
+            reason: 'Leaving hover restores custom construction leaves too',
+          );
+          await mouse.removePointer();
+        }
         final round = find.byWidgetPredicate(
           (w) => w is RadioListTile<String> && w.value == 'round',
         );
@@ -117,6 +137,13 @@ void main() {
             (w) => w is RadioListTile<String> && w.value == 'wood',
           );
           await mouse.moveTo(tester.getCenter(wood));
+          await tester.pump();
+          expect(c.document.toJson(), isNot(chosen));
+          expect(
+            tester.widget<RadioListTile<String>>(round).groupValue,
+            'round',
+          );
+          await mouse.moveTo(const Offset(0, 0));
           await tester.pump();
           expect(c.document.toJson(), chosen);
           await mouse.removePointer();

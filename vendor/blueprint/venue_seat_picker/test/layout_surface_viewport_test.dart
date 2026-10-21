@@ -7,7 +7,7 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface
 
 void main() {
   testWidgets(
-    'tall plan stays horizontally centered through off-center zoom and pan',
+    'tall plan pans freely within half-visible bounds without recentering',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 600));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -53,10 +53,13 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expectCentered();
+      final beforePan = painter().camera!.value.clone();
       await tester.drag(surface, const Offset(-300, 80));
       await tester.pumpAndSettle();
-      expectCentered();
+      expect(
+        painter().camera!.value.entry(0, 3),
+        isNot(closeTo(beforePan.entry(0, 3), .001)),
+      );
       await tester.sendEventToBinding(
         const PointerScrollEvent(
           position: Offset(800, 450),
@@ -64,13 +67,32 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expectCentered();
-      final p = painter();
-      final center = MatrixUtils.transformPoint(
-        p.camera!.value,
-        p.offset + const Offset(300, 1000) * p.scale,
-      );
-      expect(center.dy, closeTo(300, .001));
+      for (final movement in [
+        const Offset(-5000, -5000),
+        const Offset(10000, 10000),
+      ]) {
+        await tester.drag(surface, movement);
+        await tester.pumpAndSettle();
+        final p = painter();
+        final start = MatrixUtils.transformPoint(
+          p.camera!.value,
+          p.offset + const Offset(100, 200) * p.scale,
+        );
+        final end = MatrixUtils.transformPoint(
+          p.camera!.value,
+          p.offset + const Offset(500, 1800) * p.scale,
+        );
+        final visibleWidth = math.min(1000, end.dx) - math.max(0, start.dx);
+        final visibleHeight = math.min(600, end.dy) - math.max(0, start.dy);
+        expect(
+          visibleWidth,
+          greaterThanOrEqualTo(math.min((end.dx - start.dx) / 2, 500) - .01),
+        );
+        expect(
+          visibleHeight,
+          greaterThanOrEqualTo(math.min((end.dy - start.dy) / 2, 300) - .01),
+        );
+      }
     },
   );
 

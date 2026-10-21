@@ -7,10 +7,10 @@
   "archivedExampleBuilt": true,
   "archivedExampleBrowser": true,
   "requiredNpmFiles": {
-    "src/index.js": "1f942da283da5a92780f009f4952425142208d693906a194fdc10c88a798066a",
+    "src/index.js": "c3119e431d84dcdc8a7f32cd7bc8ec001eb9071daed6b3ea268386f2f1803842",
     "src/index.d.ts": "5c434a542f8207fd9217e30c3ef8ed8596649d4496ef72cb93a1047b9ad285ac",
     "dist/venue_layout_kernel.js": "0ccd33fd8aa0a7be5112fcac71fece58c9d1d493679a9ff62cc589a6915a7847",
-    "dist/manifest.json": "81616a3f7821166641fd17bbc561265cfe986c544c41cc6d05647489d792d6d8",
+    "dist/manifest.json": "ff2a9ae56d04a6f6ab0487ce871c4df3d9640233fe8edd68d270792ca758ffe3",
     "demo/index.html": "fdffd579eb9e9623ee64e866f96d00193d8b88e4d0426854da3bc06e8615c60c",
     "LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
     "assets/layout_fonts/fixtures.json": "65274bb0050d5c1da58394053065eaeef0d0cf2bbfcf57dfb4994626d039d33d",
@@ -21,5 +21,5 @@
     "assets/layout_fonts/Roboto-700-normal.ttf": "a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d",
     "assets/layout_fonts/Roboto-700-italic.ttf": "07b9b53ecf7da2d6c4af6841bb5c9e16087594914c6723a782805a4201b3cdc5"
   },
-  "sourceCommit": "ed50fb62a75068084e96823b47261a2b4a6a6d98"
+  "sourceCommit": "c412aff054ea2ae673bf6b2f16b25f51694ea275"
 }

@@ -7,7 +7,7 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_global_style.
 
 void main() {
   testWidgets(
-    'global style changes only on click; hover and Escape preserve choice',
+    'global style hover previews without choosing; click commits and Escape restores',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -36,8 +36,9 @@ void main() {
       final wood = find.byKey(const ValueKey('appearance-family-wood'));
       await mouse.moveTo(tester.getCenter(wood));
       await tester.pump();
-      expect(c.gestureActive, isFalse);
-      expect(c.document.toJson(), original.toJson());
+      expect(c.gestureActive, isTrue);
+      expect(c.document.styles['kinds']['seat']['seatStyle'], 'wood');
+      expect(c.canUndo, isFalse);
       await mouse.moveTo(const Offset(10, 10));
       await tester.pump();
       expect(c.document.toJson(), original.toJson());
@@ -53,7 +54,7 @@ void main() {
       final palette = find.byKey(const ValueKey('layout-style-Warm'));
       await mouse.moveTo(tester.getCenter(palette));
       await tester.pump();
-      expect(c.gestureActive, isFalse);
+      expect(c.gestureActive, isTrue);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pump();
       expect(closed, isTrue);

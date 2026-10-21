@@ -1,6 +1,6 @@
 name: venue_seat_picker
 description: Interactive, editable venue seat layouts for Flutter, built for and used in production by Festapp.
-version: 0.3.3
+version: 0.3.4
 homepage: https://festapp.net
 repository: https://github.com/festappnet/venue_seat_picker
 issue_tracker: https://github.com/festappnet/venue_seat_picker/issues
