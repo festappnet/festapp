@@ -72,7 +72,7 @@ void main() {
         findsOneWidget);
     expect(find.byType(DropFile), findsOneWidget);
     expect(tester.widget<DropFile>(find.byType(DropFile)).allowedExtensions,
-        ['png', 'jpg', 'jpeg', 'webp']);
+        ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']);
     expect(picks, 0);
     expect(
         find.descendant(

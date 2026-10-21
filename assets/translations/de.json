@@ -1597,5 +1597,11 @@
     "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
     "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
     "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu."
-  }
+  },
+  "EditorFileDrop": {
+    "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
+    "singleFile": "Legen Sie genau eine Datei ab, keinen Ordner.",
+    "unsupported": "Dieser Dateityp wird nicht unterstützt.",
+    "tooLarge": "Das Bild überschreitet das Limit von 20 MB."
+}
 }

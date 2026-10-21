@@ -1630,5 +1630,11 @@
     "editPlan": "Úprava plániku",
     "reservationsAndOrders": "Rezervácie a objednávky",
     "unsavedPlan": "Neuložené úpravy plániku"
-  }
+  },
+  "EditorFileDrop": {
+    "hint": "Pretiahnutím obrázka nahraďte podklad",
+    "singleFile": "Pretiahnite práve jeden súbor, nie priečinok.",
+    "unsupported": "Tento typ súboru nie je podporovaný.",
+    "tooLarge": "Obrázok prekračuje limit 20 MB."
+}
 }

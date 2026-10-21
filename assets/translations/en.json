@@ -3596,5 +3596,11 @@
     "switchAccount": "Sign in with a different account",
     "legacyInviteHint": "The selected users will receive an invitation. Team members receive a link without changing their password.",
     "legacyReinviteConfirm": "Some users have already received an invitation. Send it again?"
-  }
+  },
+  "EditorFileDrop": {
+    "hint": "Drop an image to replace the background",
+    "singleFile": "Drop exactly one file, not a folder.",
+    "unsupported": "This file type is not supported.",
+    "tooLarge": "The image exceeds the 20 MB limit."
+}
 }

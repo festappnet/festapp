@@ -1,3 +1,8 @@
+import 'dart:typed_data';
+import '../../images/image_control_client.dart';
+import 'package:cross_file/cross_file.dart';
+import '../../_shared/editor_file_drop_region.dart';
+import '../../_shared/editor_file_drop_strings.dart';
 import '../blueprint_font_selection.dart';
 import 'blueprint_editor_feedback.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -53,8 +58,12 @@ class BlueprintPlanEditor extends StatefulWidget {
       this.interactionEnabled = true,
       this.showGallery = true,
       this.onEditRequested,
-      this.onNodeActivated});
+      this.onNodeActivated,
+      this.uploadBitmap,
+      this.assetResolver});
   final VenueLayoutController controller;
+  final Future<ImageUploadResult> Function(Uint8List)? uploadBitmap;
+  final BlueprintLayoutAssetResolver? assetResolver;
   final Future<BlueprintTextResources> Function()? loadTextResources;
   final int? occasionId, unitId;
   final bool busy, interactionEnabled, showGallery;
@@ -82,7 +91,7 @@ class BlueprintPlanEditor extends StatefulWidget {
 class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
   VenueLayoutController get controller => widget.controller;
   Future<BlueprintTextResources> get _fonts => widget.loadTextResources!();
-  final _assets = BlueprintLayoutAssetResolver();
+  late final _assets = widget.assetResolver ?? BlueprintLayoutAssetResolver();
   int _fontGeneration = 0;
   Timer? _debounce;
   VenueLayoutDocument? _observed;
@@ -204,40 +213,56 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
   }
 
   Future<void> _upload({required bool graphic}) async {
+    if (_busy || !_editing || !editorFileDropIsActive(context)) return;
     final session = controller;
-    final selection = await showBlueprintBackgroundPicker(context,
-        graphic: graphic,
-        extensions: graphic ? blueprintGraphicExtensions : null);
-    if (selection == null ||
-        !mounted ||
-        !identical(session, controller) ||
-        _busy) return;
     await _run(() async {
-      if (graphic) {
-        await uploadBlueprintGraphic(
-            selection: selection,
-            controller: controller,
-            assets: _assets,
-            isMounted: () => mounted && identical(session, controller),
-            occasionId: widget.occasionId,
-            unitId: widget.unitId,
-            prepareText: (text) async {
-              final provider = await _fonts;
-              return BlueprintSvgTextPreparation(
-                      {for (final f in provider.families) f['id'] as String: f},
-                      provider.prepareTextBatch)
-                  .call(text);
-            });
-      } else {
-        await uploadBlueprintBackground(
-            selection: selection,
-            controller: controller,
-            assets: _assets,
-            isMounted: () => mounted && identical(session, controller),
-            occasionId: widget.occasionId,
-            unitId: widget.unitId);
-      }
+      final selection = await showBlueprintBackgroundPicker(context,
+          graphic: graphic,
+          extensions: graphic ? blueprintGraphicExtensions : null);
+      if (selection == null ||
+          !mounted ||
+          !identical(session, controller) ||
+          !_editing) return;
+      await _importSelection(selection, graphic: graphic);
     });
+  }
+
+  Future<void> _importSelection(XFile selection,
+      {required bool graphic}) async {
+    final session = controller;
+    if (graphic) {
+      await uploadBlueprintGraphic(
+          selection: selection,
+          controller: controller,
+          assets: _assets,
+          uploadBitmap: widget.uploadBitmap,
+          isMounted: () =>
+              mounted && _editing && identical(session, controller),
+          occasionId: widget.occasionId,
+          unitId: widget.unitId,
+          prepareText: (text) async {
+            final provider = await _fonts;
+            return BlueprintSvgTextPreparation(
+                    {for (final f in provider.families) f['id'] as String: f},
+                    provider.prepareTextBatch)
+                .call(text);
+          });
+    } else {
+      await uploadBlueprintBackground(
+          selection: selection,
+          controller: controller,
+          assets: _assets,
+          uploadBitmap: widget.uploadBitmap,
+          isMounted: () =>
+              mounted && _editing && identical(session, controller),
+          occasionId: widget.occasionId,
+          unitId: widget.unitId);
+    }
+  }
+
+  Future<void> _dropBackground(XFile selection) async {
+    if (_busy || !_editing || !editorFileDropIsActive(context)) return;
+    await _run(() => _importSelection(selection, graphic: false));
   }
 
   Future<void> _prepareFonts(
@@ -390,74 +415,89 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
           return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FontFamilyPicker(
-                  value: selected.isEmpty
-                      ? null
-                      : selected.first['family'] as String,
-                  enabled: !_busy &&
-                      !controller.readOnly &&
-                      !(node?.locked ?? false),
-                  families:
-                      catalog.map((font) => font['family'] as String).toList(),
-                  extraFamilies: catalog
-                      .where((font) => font['source'] == 'bundled')
-                      .map((font) => font['family'] as String)
-                      .toList(),
-                  previewStyle: (family) => _fontPreviewStyle(provider, family),
-                  onPreview: (family) => _previewFont(
-                      family == null
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FontFamilyPicker(
+                      value: selected.isEmpty
                           ? null
-                          : catalog.firstWhere(
-                                  (font) => font['family'] == family)['id']
-                              as String,
-                      nodeId: node?.id,
-                      kind: appearanceKind),
-                  onPreviewEnd: _cancelFontPreview,
-                  onSelected: (family) async {
-                    _cancelFontPreview();
-                    final selectedId = family == null
-                        ? null
-                        : catalog.firstWhere(
-                            (font) => font['family'] == family)['id'] as String;
-                    await _run(() async {
-                      await _prepareFonts(
-                          selectedFont: selectedId,
+                          : selected.first['family'] as String,
+                      enabled: !_busy &&
+                          !controller.readOnly &&
+                          !(node?.locked ?? false),
+                      families: catalog
+                          .map((font) => font['family'] as String)
+                          .toList(),
+                      extraFamilies: catalog
+                          .where((font) => font['source'] == 'bundled')
+                          .map((font) => font['family'] as String)
+                          .toList(),
+                      previewStyle: (family) =>
+                          _fontPreviewStyle(provider, family),
+                      onPreview: (family) => _previewFont(
+                          family == null
+                              ? null
+                              : catalog.firstWhere(
+                                      (font) => font['family'] == family)['id']
+                                  as String,
                           nodeId: node?.id,
-                          appearanceKind: appearanceKind);
-                      if (mounted && selectedId != null && selectedId != id) {
-                        setState(() => _changedFonts[scope] = selectedId);
-                      }
-                    });
-                  },
-                ),
-                if (id is String &&
-                    appearanceKind != 'document' &&
-                    _changedFonts[scope] == id &&
-                    (document.styles['label'] as Map?)?['fontFamilyId'] != id)
-                  Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 16),
-                      child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            key: const ValueKey('set-default-plan-font'),
-                            icon: const Icon(Icons.text_fields, size: 18),
-                            label: Text(VenueLayoutStrings.text(
-                                context, 'Set as default font for the plan')),
-                            onPressed: _busy ||
-                                    controller.readOnly ||
-                                    (controller.document.styles['label']
-                                            as Map?)?['fontFamilyId'] ==
-                                        id
-                                ? null
-                                : () => _run(() => _prepareFonts(
-                                    selectedFont: id as String,
-                                    appearanceKind: 'document')),
-                          ))),
-              ]));
+                          kind: appearanceKind),
+                      onPreviewEnd: _cancelFontPreview,
+                      onSelected: (family) async {
+                        _cancelFontPreview();
+                        final selectedId = family == null
+                            ? null
+                            : catalog.firstWhere(
+                                    (font) => font['family'] == family)['id']
+                                as String;
+                        await _run(() async {
+                          await _prepareFonts(
+                              selectedFont: selectedId,
+                              nodeId: node?.id,
+                              appearanceKind: appearanceKind);
+                          if (mounted &&
+                              selectedId != null &&
+                              selectedId != id) {
+                            setState(() => _changedFonts[scope] = selectedId);
+                          }
+                        });
+                      },
+                    ),
+                    if (id is String &&
+                        appearanceKind != 'document' &&
+                        _changedFonts[scope] == id &&
+                        (document.styles['label'] as Map?)?['fontFamilyId'] !=
+                            id)
+                      Padding(
+                          padding: const EdgeInsets.only(top: 8, bottom: 16),
+                          child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                key: const ValueKey('set-default-plan-font'),
+                                icon: const Icon(Icons.text_fields, size: 18),
+                                label: Text(VenueLayoutStrings.text(context,
+                                    'Set as default font for the plan')),
+                                onPressed: _busy ||
+                                        controller.readOnly ||
+                                        (controller.document.styles['label']
+                                                as Map?)?['fontFamilyId'] ==
+                                            id
+                                    ? null
+                                    : () => _run(() => _prepareFonts(
+                                        selectedFont: id as String,
+                                        appearanceKind: 'document')),
+                              ))),
+                  ]));
         },
       );
+
+  Widget _dropRegion(Widget child) => EditorFileDropRegion(
+      enabled: _editing && !_busy && !_preparing &&
+          (widget.occasionId != null || widget.unitId != null),
+      active: TickerMode.valuesOf(context).enabled,
+      hint: EditorFileDropStrings.hint,
+      allowedExtensions: blueprintBackgroundExtensions,
+      onFileDropped: _dropBackground,
+      child: child);
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -491,7 +531,7 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                     shape: const WidgetStatePropertyAll(StadiumBorder()),
                     minimumSize: const WidgetStatePropertyAll(Size(44, 44)))),
       ),
-      child: EditorColorDialogTheme(
+      child: _dropRegion(EditorColorDialogTheme(
           builder: (context, dialog) => AppAlertDialog(
               title: dialog.title, content: dialog.content, actions: dialog.actions,
               alignment: MediaQuery.sizeOf(context).width >= 900
@@ -578,5 +618,5 @@ class _BlueprintPlanEditorState extends State<BlueprintPlanEditor> {
                     showGallery: widget.showGallery,
                     onEditRequested: widget.onEditRequested,
                     onNodeActivated: widget.onNodeActivated))),
-      ]))));
+      ])))));
 }

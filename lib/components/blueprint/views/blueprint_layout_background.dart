@@ -1,3 +1,5 @@
+import '../../images/image_upload_limits.dart';
+import '../../_shared/editor_file_drop_strings.dart';
 import '../../images/image_file_format.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -13,8 +15,15 @@ import '../../images/image_control_client.dart';
 import '../blueprint_layout_resources.dart';
 import '../blueprint_strings.dart';
 
-const blueprintBackgroundExtensions = ['png', 'jpg', 'jpeg', 'webp'];
-const blueprintGraphicExtensions = [...blueprintBackgroundExtensions, 'svg'];
+const blueprintBackgroundExtensions = [
+  'png',
+  'jpg',
+  'jpeg',
+  'webp',
+  'gif',
+  'svg'
+];
+const blueprintGraphicExtensions = blueprintBackgroundExtensions;
 
 Future<XFile?> _pickBackgroundFile(
     {bool graphic = false, List<String>? extensions}) async {
@@ -67,10 +76,13 @@ Future<XFile?> showBlueprintBackgroundPicker(BuildContext context,
                               color: Theme.of(context).colorScheme.error))),
                 DropFile(
                   height: 220,
+                  singleFileOnly: true,
+                  onInvalidDrop: () =>
+                      setState(() => error = EditorFileDropStrings.singleFile),
                   hint: extensions?.map((e) => e.toUpperCase()).join(', ') ??
                       (graphic
-                          ? 'PNG, JPG, JPEG, WebP, SVG'
-                          : 'PNG, JPG, JPEG, WebP'),
+                          ? 'PNG, JPG, JPEG, WebP, GIF, SVG'
+                          : 'PNG, JPG, JPEG, WebP, GIF, SVG'),
                   allowedExtensions: extensions ??
                       (graphic
                           ? blueprintGraphicExtensions
@@ -150,8 +162,11 @@ Future<Map<String, dynamic>> _uploadBitmap(
     int? occasionId,
     int? unitId,
     Future<ImageUploadResult> Function(Uint8List bytes)? uploadBitmap}) async {
+  if (await selection.length() > ImageUploadLimits.maxInputBytes) {
+    throw FormatException(EditorFileDropStrings.tooLarge);
+  }
   final bytes = await selection.readAsBytes();
-  ImageFileFormat.detect(bytes);
+  ImageFileFormat.detect(bytes, allowSvg: true);
   if (!isMounted()) throw StateError('graphic_import_cancelled');
   final uploaded = await (uploadBitmap?.call(bytes) ??
       DbImages.uploadImageWithResult(bytes, occasionId, unitId,
@@ -216,6 +231,9 @@ Future<void> uploadBlueprintGraphic(
     int? unitId,
     Future<ImageUploadResult> Function(Uint8List bytes)? uploadBitmap}) async {
   if (!isMounted()) return;
+  if (await selection.length() > ImageUploadLimits.maxInputBytes) {
+    throw FormatException(EditorFileDropStrings.tooLarge);
+  }
   final bytes = await selection.readAsBytes();
   final format = blueprintGraphicFormat(bytes);
   if (format == ImageFileFormat.svg) {

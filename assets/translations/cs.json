@@ -3597,5 +3597,11 @@
     "switchAccount": "Přihlásit se jiným účtem",
     "legacyInviteHint": "Vybraným uživatelům odešleme pozvánku. Členům týmu pošleme odkaz bez změny hesla.",
     "legacyReinviteConfirm": "Někteří uživatelé již obdrželi pozvánku. Odeslat ji znovu?"
-  }
+  },
+  "EditorFileDrop": {
+    "hint": "Přetažením obrázku nahraďte podklad",
+    "singleFile": "Přetáhněte právě jeden soubor, nikoli složku.",
+    "unsupported": "Tento typ souboru není podporován.",
+    "tooLarge": "Obrázek překračuje limit 20 MB."
+}
 }

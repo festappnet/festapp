@@ -1,3 +1,6 @@
+import '../../support/editor_file_drop.dart';
+import 'package:fstapp/components/images/image_area.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -110,6 +113,24 @@ class FakeService extends TicketLayoutService {
   }
 }
 
+class BackgroundDropService extends FakeService {
+  int uploads = 0;
+  bool fail = false;
+  final uploadPending = Completer<String?>();
+  @override
+  Future<String?> uploadBackground(Uint8List bytes, int occasionId) {
+    uploads++;
+    if (fail) throw StateError('upload failed');
+    return uploadPending.future;
+  }
+
+  @override
+  Future<TicketLayoutResources> resolve(int occasionId, String type,
+          Map<String, dynamic>? layout, String? background,
+          {bool borrowResourcesOnly = false, bool readOnly = false}) async =>
+      resources();
+}
+
 void main() {
   test('draft ticket preview context scopes resolve and PDF but not catalog or saved previews', () async {
     final calls = <Map<String, dynamic>>[];
@@ -151,6 +172,76 @@ void main() {
         reason:
             'Editor tests must resolve real translations without warnings.');
   });
+  for (final previous in <String?>[null, 'https://example.test/old.png']) {
+    testWidgetsWithEnvironment(() => _environment,
+        'background drop imports once with nested picker, previous=$previous',
+        (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+              const MethodChannel('PonnamKarthik/fluttertoast'), null));
+      final previousRights = RightsService.occasionLinkModel;
+      addTearDown(
+          () => RightsService.occasionLinkModelNotifier.value = previousRights);
+      RightsService.occasionLinkModelNotifier.value =
+          OccasionLinkModel(unitUser: OccasionUserModel(isEditor: true));
+      final service = BackgroundDropService();
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: TicketLayoutEditor(
+            occasionId: 1,
+            type: 'wide',
+            resources: resources(),
+            background: previous,
+            service: service,
+          )));
+      await tester.pumpAndSettle();
+      final dynamic state = tester.state(find.byType(TicketLayoutEditor));
+      final area = find.byType(ImageArea);
+      expect(area, findsOneWidget);
+      await tester.ensureVisible(area);
+      await tester.pumpAndSettle();
+      final point = tester.getCenter(area);
+      final bytes = <int>[137, 80, 78, 71, 13, 10, 26, 10];
+      await pluginDrop(tester, point, [droppedFile('background.png', bytes)]);
+      await pluginDrop(tester, point, [droppedFile('background.png', bytes)]);
+      expect(service.uploads, 1);
+      expect(state.background, previous);
+      // Save/discard cannot race the pending import.
+      await state.apply();
+      await state.cancel();
+      expect(find.byType(TicketLayoutEditor), findsOneWidget);
+      service.uploadPending.complete('https://example.test/new.png');
+      await tester.pumpAndSettle();
+      expect(state.background, 'https://example.test/new.png');
+      expect(state.dirty, isTrue);
+      expect(find.text('TicketLayout.aspectChange'.tr()), findsOneWidget);
+      await tester.tap(find.text('TicketLayout.keep'.tr()));
+      await tester.pumpAndSettle();
+      service.fail = true;
+      await state
+          .upload(XFile.fromData(Uint8List.fromList(bytes), name: 'fail.png'));
+      await tester.pumpAndSettle();
+      expect(service.uploads, 2);
+      expect(state.background, 'https://example.test/new.png');
+      expect(state.imageBusy, isFalse);
+      final oversized = OversizedEditorImage();
+      await state.upload(oversized);
+      expect(oversized.read, isFalse);
+      expect(service.uploads, 2);
+      RightsService.occasionLinkModelNotifier.value = null;
+      await state.upload(
+          XFile.fromData(Uint8List.fromList(bytes), name: 'denied.png'));
+      expect(service.uploads, 2);
+      await tester.pump(const Duration(seconds: 4));
+    });
+  }
   testWidgetsWithEnvironment(() => _environment,
       'selected tools and dimensions dialog use the editor dark palette',
       (tester) async {

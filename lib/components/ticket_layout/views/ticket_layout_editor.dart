@@ -1,3 +1,8 @@
+import 'package:cross_file/cross_file.dart';
+import '../../_shared/editor_file_drop_region.dart';
+import '../../_shared/editor_file_drop_strings.dart';
+import '../../images/image_upload_limits.dart';
+import '../../images/image_file_format.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/router_service.dart';
@@ -103,6 +108,15 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   int fontGeneration = 0;
   bool fontBusy = false;
   bool saving = false;
+  bool get _canChangeBackground =>
+      mounted &&
+      !saving &&
+      !imageBusy &&
+      !fontBusy &&
+      !pdfBusy &&
+      RightsService.isUnitEditor();
+  bool get _canImport =>
+      _canChangeBackground && editorFileDropIsActive(context);
   late final fontCatalog = TicketFontCatalog.load();
   bool snap = true, grid = false;
   late TicketTemplate _propertyDefaults = resources.preset;
@@ -188,7 +202,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
         }
       });
   Future<void> cancel() async {
-    if (saving) return;
+    if (saving || imageBusy) return;
     fontGeneration++;
     if (mounted) setState(() => fontBusy = false);
     if (dirty) {
@@ -213,7 +227,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   Future<void> apply() async {
     FocusManager.instance.primaryFocus?.unfocus();
     controller.endGesture();
-    if (fontBusy || saving) return;
+    if (fontBusy || saving || imageBusy) return;
     final repaired = ensureTicketCodeFits(
         controller.document,
         resources.metricsFor(
@@ -298,27 +312,32 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     if (mounted) setState(() => pdfBusy = false);
   }
 
-  Future<String?> upload(dynamic file) async {
-    if (imageBusy) return null;
+  Future<String?> upload(XFile file) async {
+    if (!_canChangeBackground) return null;
     setState(() => imageBusy = true);
     String? uploaded;
     bool committed = false;
     await ExceptionHandler.guard(
       context,
       futureFunction: () async {
+        if (await file.length() > ImageUploadLimits.maxInputBytes) {
+          throw FormatException(EditorFileDropStrings.tooLarge);
+        }
         final bytes = await file.readAsBytes();
+        ImageFileFormat.detect(bytes);
         uploaded = await widget.service.uploadBackground(
           bytes,
           widget.occasionId,
         );
-        if (!mounted || uploaded == null) return;
+        if (!mounted || uploaded == null || !RightsService.isUnitEditor())
+          return;
         final resolved = await widget.service.resolve(
           widget.occasionId,
           widget.type,
           draftLayout,
           uploaded,
         );
-        if (!mounted) {
+        if (!mounted || !RightsService.isUnitEditor()) {
           resolved.dispose();
           return;
         }
@@ -375,12 +394,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   }
 
   Future<void> removeBackground() async {
-    if (imageBusy) return;
+    if (!_canChangeBackground) return;
     setState(() => imageBusy = true);
     await ExceptionHandler.guard(context, futureFunction: () async {
       final resolved = await widget.service
           .resolve(widget.occasionId, widget.type, draftLayout, null);
-      if (!mounted) {
+      if (!mounted || !RightsService.isUnitEditor()) {
         resolved.dispose();
         return;
       }
@@ -1146,7 +1165,9 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                   image, controller.document.backgroundCrop)));
                     }),
                 hint: TicketLayoutStrings.background,
-                enabled: !imageBusy,
+                enabled: _canChangeBackground,
+                dropEnabled: false,
+                allowedExtensions: editorRasterExtensions,
                 onFileSelected: upload,
                 onRemove: removeBackground)),
         Padding(
@@ -1648,6 +1669,14 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
       disabledForegroundColor: Colors.white38,
       side: const BorderSide(color: Colors.white30));
 
+  Widget _dropRegion(Widget child) => EditorFileDropRegion(
+      enabled: _canImport,
+      active: TickerMode.valuesOf(context).enabled,
+      hint: EditorFileDropStrings.hint,
+      allowedExtensions: editorRasterExtensions,
+      onFileDropped: (file) async { await upload(file); },
+      child: AbsorbPointer(absorbing: imageBusy, child: child));
+
   Widget _buildEditor(BuildContext context) => Focus(
       autofocus: true,
       onKeyEvent: _historyKey,
@@ -1659,7 +1688,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
           child: Scaffold(
             appBar: AppDialogAppBar(
                 onClose: cancel,
-                closeEnabled: !saving,
+                closeEnabled: !saving && !imageBusy,
                 title: Text(TicketLayoutStrings.title,
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 actions: [
@@ -1702,7 +1731,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                   ),
                   const SizedBox(width: 16)
                 ]),
-            body: SafeArea(
+            body: _dropRegion(SafeArea(
                 top: false,
                 child: Column(children: [
                   if (saving) const LinearProgressIndicator(),
@@ -1956,6 +1985,6 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                                 editCanvas ? 340 : 280)
                           ]);
                   })),
-                ])),
+                ]))),
           )));
 }

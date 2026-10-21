@@ -1767,5 +1767,11 @@
     "allowCreate": "Allow creating new occasions",
     "allowCreateHint": "New occasions will be hidden, with sales closed.",
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
-  }
+  },
+  "EditorFileDrop": {
+    "hint": "Перетягніть зображення, щоб замінити тло",
+    "singleFile": "Перетягніть один файл, а не папку.",
+    "unsupported": "Цей тип файлу не підтримується.",
+    "tooLarge": "Зображення перевищує ліміт 20 МБ."
+}
 }
