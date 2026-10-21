@@ -1,11 +1,7 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:festapp_core/email_templates.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fstapp/components/email_templates/db_email_templates.dart';
-import 'package:fstapp/components/email_templates/email_preview_examples.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'package:fstapp/components/forms/form_session.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
@@ -14,27 +10,56 @@ import 'package:fstapp/components/html/html_view.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import '../occasion_sale_strings.dart';
 import 'occasion_form_draft.dart';
-import 'occasion_setup_story.dart';
+import 'occasion_setup_seat_preview.dart';
+import 'blueprint_setup_layout_draft.dart';
+import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
+import 'package:fstapp/components/forms/models/holder_models/ticket_holder.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 
 /// Uses the customer fields and pricing session without checkout, persistence,
 /// reservation callbacks or a public URL. Its copy is isolated from the draft.
 class OccasionSetupCustomerPreview extends StatefulWidget {
   const OccasionSetupCustomerPreview(
-      {super.key, required this.data, required this.unitId});
+      {super.key,
+      required this.data,
+      required this.unitId,
+      required this.draftId,
+      this.loadBlueprintResources,
+      this.emailLoader});
   final Map<String, dynamic> data;
   final int unitId;
+  final String draftId;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)?
+      emailLoader;
+  final Future<Map<String, dynamic>> Function()? loadBlueprintResources;
   @override
   State<OccasionSetupCustomerPreview> createState() => _CustomerPreviewState();
 }
 
 class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
   final _key = GlobalKey<FormBuilderState>();
-  late final _bundle = draftFormBundle(Map<String, dynamic>.from(
-      jsonDecode(jsonEncode(widget.data['formDraft']))));
+  late final _bundle = () {
+    final data = Map<String, dynamic>.from(
+        jsonDecode(jsonEncode(widget.data['formDraft'])));
+    final fields = (data['fields'] as List? ?? []).cast<Map>();
+    final used = fields.map((f) => f['id']).whereType<int>().toSet();
+    var next = -1;
+    for (final field in fields) {
+      if (field['id'] != null) continue;
+      while (used.contains(next)) {
+        next--;
+      }
+      field['id'] = next;
+      used.add(next--);
+    }
+    return draftFormBundle(data);
+  }();
   late final _holder = FormHolder.fromDefinition(_bundle.form.freeze());
   late final _session = FormSession(
       form: _bundle.form.toBundle(), formHolder: _holder, formKey: _key);
-  late final _emails = _loadEmails();
+  Future<List<Widget>>? _emails;
 
   @override
   void initState() {
@@ -43,14 +68,44 @@ class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
       demoSimulation: true,
       globalKey: _key,
       updateTotalPrice: _session.recalculateTotals,
-      // Seat selection in a draft must never acquire holds on a source event.
-      showSeatReservation: (_) async => null,
+      showSeatReservation: (selected) async {
+        final raw = widget.data['blueprintLayoutDraft'];
+        if (raw is! Map || widget.loadBlueprintResources == null) return null;
+        final result = await showDialog<OccasionSetupSeatSelection>(
+            context: context,
+            builder: (_) => OccasionSetupSeatPreview(
+                  draft: BlueprintSetupLayoutDraft.fromJson(
+                      Map<String, dynamic>.from(raw)),
+                  products: _bundle.products,
+                  maximum: _holder.getTicket()?.maxTickets ?? 1,
+                  quantities: {
+                    for (final area in raw['areaBindings'] as List? ?? [])
+                      area['nodeId'] as String:
+                          _session.areaQuantity(area['nodeId'] as String)
+                  },
+                  selected: selected,
+                  loadResources: widget.loadBlueprintResources!,
+                ));
+        if (!mounted || result == null) return null;
+        _session.updateSeats(result.seats);
+        for (final area in (raw['areaBindings'] as List? ?? [])) {
+          final binding =
+              BlueprintAreaBinding.fromJson(Map<String, dynamic>.from(area));
+          _session.setAreaQuantity(
+              binding, result.quantities[binding.nodeId] ?? 0,
+              available: area['capacity'] as int? ?? 0,
+              product: _bundle.products
+                  .where((p) => p.id == binding.productId)
+                  .firstOrNull);
+        }
+        return result.seats;
+      },
     );
     _session.addListener(_changed);
   }
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _emails = null);
   }
 
   @override
@@ -61,78 +116,69 @@ class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
   }
 
   Future<List<Widget>> _loadEmails() async {
-    final source = widget.data['copyEmails'] == true
-        ? widget.data['sourceId'] as int?
-        : null;
-    final scope =
-        await DbEmailTemplates.getEntityEmailTemplates(unitId: widget.unitId);
-    final templates = {
-      for (final template in scope.templates) template.code: template
-    };
-    if (source != null) {
-      final copied =
-          await DbEmailTemplates.getEntityEmailTemplates(occasionId: source);
-      for (final template
-          in copied.templates.where((t) => t.occasion == source)) {
-        templates[template.code] = template;
+    List<int> ids(dynamic value) {
+      if (value is FormOptionProductModel) return [int.parse(value.id)];
+      if (value is Iterable) return value.expand(ids).toList();
+      return [];
+    }
+
+    final tickets = <Map<String, dynamic>>[];
+    final fields = <String, String>{};
+    final extras = <int>[];
+    for (final field in _holder.fields) {
+      if (field is TicketHolder) {
+        for (final ticket in field.tickets) {
+          final selected = <int>[
+            if (ticket.seat?.seat?.product?.id != null)
+              ticket.seat!.seat!.product!.id!,
+            for (final entry in ticket.ticketValues)
+              if (entry.fieldType == FormMetadata.fieldTypeProductType)
+                ...ids(entry.getValue(ticket.ticketKey) ??
+                    ticket.productDefaults[entry.id]),
+          ];
+          tickets.add({
+            'products': selected,
+            if (ticket.seat != null)
+              'seat': {
+                'group': ticket.seat!.seat?.group?.title ?? '',
+                'title': ticket.seat!.seat?.title ?? ''
+              }
+          });
+        }
+      } else {
+        final value = field.getValue(_key);
+        if (field.fieldType == FormMetadata.fieldTypeProductType)
+          extras.addAll(ids(value));
+        if (['name', 'surname', 'email', 'phone', 'note']
+                .contains(field.fieldType) &&
+            value is String) fields[field.fieldType] = value;
       }
     }
-    final authoring = await DbEmailTemplates.getAuthoringContext(
-        scope, 'TICKET_ORDER_CONFIRMATION');
-    final raw = jsonDecode(await rootBundle
-            .loadString('assets/email_templates/preview_examples.json'))
-        as Map<String, dynamic>;
-    final examples = EmailPreviewExamples.fromJson(raw,
-        context: EmailPreviewContext(
-          occasionTitle: widget.data['title'] as String?,
-          ticketsEnabled: OccasionSetupStory.hasTickets(widget.data),
-          products: [
-            for (final product in _bundle.products)
-              if (product.isHidden != true)
-                EmailPreviewProduct(
-                    title: product.title ?? '',
-                    typeTitle: product.productTypeTitleString ?? '',
-                    price: (product.price ?? 0).toDouble(),
-                    currency: product.currencyCode ?? 'CZK')
-          ],
-        ));
-    if (!mounted) return [];
-    final locale = context.locale.languageCode;
-    final defaults = widget.data['communicationDefaults'] as Map? ?? {};
-    final tone = widget.data['communicationTone'] == 'inherit'
-        ? defaults['tone'] ?? 'formal'
-        : widget.data['communicationTone'] ?? 'formal';
-    final result = <Widget>[];
-    for (final code in [
-      'TICKET_ORDER_CONFIRMATION',
-      'TICKET_ORDER_PAYMENT_DONE'
-    ]) {
-      final template = templates[code];
-      if (template == null) continue;
-      final scenarios = examples.scenariosFor(code,
-          paymentAccounts: authoring.paymentAccounts);
-      final scenario = scenarios
-          .where((s) =>
-              s.locale == locale &&
-              s.tone == tone &&
-              s.scenario ==
-                  (OccasionSetupStory.hasPaidProducts(widget.data)
-                      ? (code == 'TICKET_ORDER_CONFIRMATION'
-                          ? 'unpaid'
-                          : 'paid')
-                      : 'zero'))
-          .firstOrNull;
-      if (scenario == null) continue;
-      result.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: EmailReceivedMessage(
-              senderAddress: authoring.senderAddress,
-              subject: scenario.composeSubject(template.subject ?? ''),
-              html: authoring.composeHtml(scenario, template.html ?? ''),
-              allowedRemoteImageSources: authoring.bannerImageSources)));
-    }
-    if (result.isEmpty) throw StateError('Preview examples unavailable');
-    return result;
+    if (extras.isNotEmpty) tickets.add({'products': extras});
+    final input = <String, dynamic>{
+      'action': 'setupPreview',
+      'draftId': widget.draftId,
+      'locale': context.locale.languageCode,
+      'tickets': tickets,
+      'fields': fields
+    };
+    final result = widget.emailLoader != null
+        ? await widget.emailLoader!(input)
+        : Map<String, dynamic>.from((await Supabase.instance.client.functions
+                .invoke('send-custom-email', body: input))
+            .data as Map);
+    return [
+      for (final message in result['messages'] as List)
+        Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: EmailReceivedMessage(
+                recipientLabel: fields['email']?.isNotEmpty == true
+                    ? fields['email']
+                    : 'preview@example.invalid',
+                senderAddress: message['senderAddress'],
+                subject: message['subject'],
+                html: message['html']))
+    ];
   }
 
   @override
@@ -141,13 +187,10 @@ class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(OccasionSaleStrings.text('previewSafe')),
-          if (_bundle.form.usesSeatSelection) ...[
-            const SizedBox(height: 12),
-            Text(OccasionSaleStrings.text('previewSeats')),
-          ],
           const SizedBox(height: 20),
           FormBuilder(
               key: _key,
+              onChanged: _changed,
               child: Column(children: [
                 if (_bundle.form.definition.header?.isNotEmpty == true)
                   HtmlView(html: _bundle.form.definition.header!),
@@ -161,18 +204,32 @@ class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
           const Divider(height: 40),
           Text(OccasionSaleStrings.text('previewEmail'),
               style: Theme.of(context).textTheme.titleMedium),
-          Text(OccasionSaleStrings.text('previewEmailSample')),
-          FutureBuilder<List<Widget>>(
-              future: _emails,
-              builder: (context, state) {
-                if (state.hasError)
-                  return Padding(
-                      padding: const EdgeInsets.all(12),
-                      child:
-                          Text(OccasionSaleStrings.text('previewUnavailable')));
-                if (!state.hasData) return const LinearProgressIndicator();
-                return Column(children: state.data!);
-              }),
+          Text(OccasionSaleStrings.text('previewEmailSelection')),
+          OutlinedButton.icon(
+            onPressed: () {
+              final request = _loadEmails();
+              request.ignore();
+              setState(() {
+                _emails = request;
+              });
+            },
+            icon: const Icon(Icons.email_outlined),
+            label: Text(_emails == null
+                ? OccasionSaleStrings.text('previewSelectedEmails')
+                : CommonStrings.retry),
+          ),
+          if (_emails != null)
+            FutureBuilder<List<Widget>>(
+                future: _emails,
+                builder: (context, state) {
+                  if (state.hasError)
+                    return Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                            OccasionSaleStrings.text('previewUnavailable')));
+                  if (!state.hasData) return const LinearProgressIndicator();
+                  return Column(children: state.data!);
+                }),
         ]),
       );
 }

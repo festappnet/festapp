@@ -277,6 +277,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         (draft['formDefaultsInitialized'] == true ||
             (existing['fields'] as List? ?? []).isNotEmpty)) {
       draft['formDefaultsInitialized'] = true;
+      if (draft['formDefaultsFollowEvent'] == true &&
+          draft['starterNamesLocalized'] != true) {
+        draft['formDraft'] = serializeDraftForm(localizeStarterProducts(
+            draftFormBundle(Map<String, dynamic>.from(existing)).form));
+        draft['starterNamesLocalized'] = true;
+      }
       return;
     }
     draft['formDefaultsInitialized'] = true;
@@ -952,6 +958,12 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               .toList(),
           onChanged: (v) => _change((x) {
             x[keyName] = v;
+            if (keyName == 'blueprintMode' &&
+                (v == 'Nový' || v == 'Bez plánku')) {
+              setDraftSeatSelection(x, v == 'Nový');
+              _inlineFormBundle = null;
+              _formEpoch++;
+            }
             if (keyName == 'blueprintMode' && v == 'Nový') {
               x.remove('blueprintLayoutDraft');
             }
@@ -1712,23 +1724,30 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           OutlinedButton.icon(
             icon: const Icon(Icons.preview_outlined),
             label: Text(OccasionSaleStrings.text('customerPreview')),
-            onPressed: () => showDialog<void>(
-                context: context,
-                builder: (previewContext) => AppDialog(
-                      child: SizedBox(
-                          width: 800,
-                          height: MediaQuery.sizeOf(context).height * .85,
-                          child: Column(children: [
-                            AppDialogHeader(
-                                title: Text(OccasionSaleStrings.text(
-                                    'customerPreview')),
-                                onClose: () =>
-                                    Navigator.of(previewContext).pop()),
-                            Expanded(
-                                child: OccasionSetupCustomerPreview(
-                                    data: d, unitId: _stored.unit)),
-                          ])),
-                    )),
+            onPressed: () async {
+              if (!await _flush() || !mounted) return;
+              await showDialog<void>(
+                  context: context,
+                  builder: (previewContext) => AppDialog(
+                        child: SizedBox(
+                            width: 800,
+                            height: MediaQuery.sizeOf(context).height * .85,
+                            child: Column(children: [
+                              AppDialogHeader(
+                                  title: Text(OccasionSaleStrings.text(
+                                      'customerPreview')),
+                                  onClose: () =>
+                                      Navigator.of(previewContext).pop()),
+                              Expanded(
+                                  child: OccasionSetupCustomerPreview(
+                                      data: d,
+                                      unitId: _stored.unit,
+                                      draftId: _stored.id,
+                                      loadBlueprintResources: () =>
+                                          _store.blueprintResources(_stored))),
+                            ])),
+                      ));
+            },
           ),
           const SizedBox(height: 16),
         ],
@@ -2013,12 +2032,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Widget _ticketSettings(Map<String, dynamic> d) {
     final feature = _ticketDraftFeature(d);
-    // Preview resources come from an authorized event; saved edits belong only
-    // to this draft. The source event's feature configuration is never updated.
-    final previewId = d['sourceId'] as int? ??
-        (_sources.isEmpty
-            ? null
-            : (_sources.first['occasion'] as Map)['id'] as int);
     return EditorDraftScope(
       onChanged: () => _change(
         (x) => x['ticketDraft'] = feature.toJson(),
@@ -2027,25 +2040,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (previewId == null)
-            const Text('Pro náhled vstupenky zatím není dostupná předloha.')
-          else
-            Center(
-              child: TicketSettings(
-                key: ValueKey('${d['id']}-ticket-$previewId-$_editEpoch'),
-                feature: feature,
-                occasionId: previewId,
-                productEditing: false,
-                showScanningSettings: false,
-                borrowResourcesOnly: d['sourceId'] == null,
-                previewOccasion: TicketPreviewOccasion(
-                  title: d['title'] as String,
-                  startTime: DateTime.tryParse(d['start'] as String),
-                  endTime: DateTime.tryParse(d['end'] as String),
-                  placeName: d['placeName'] as String?,
-                ),
+          Center(
+            child: TicketSettings(
+              key: ValueKey('${d['id']}-ticket-$_editEpoch'),
+              feature: feature,
+              occasionId: 0,
+              service:
+                  TicketLayoutService().forSetupDraft(_stored.id, _stored.unit),
+              productEditing: false,
+              showScanningSettings: false,
+              previewOccasion: TicketPreviewOccasion(
+                title: d['title'] as String,
+                startTime: DateTime.tryParse(d['start'] as String),
+                endTime: DateTime.tryParse(d['end'] as String),
+                placeName: d['placeName'] as String?,
               ),
             ),
+          ),
           const SizedBox(height: 24),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
@@ -2104,6 +2115,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     appBar: AppBar(title: Text(BlueprintStrings.tryLayoutDemo)),
                     body: const BlueprintLayoutDemo())))),
         if (d['blueprintMode'] != 'Bez plánku') ...[
+          if (OccasionSetupStory.hasTickets(d))
+            SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: Text(FormStrings.seatSelection),
+                value: ((d['formDraft'] as Map?)?['fields'] as List? ?? [])
+                    .whereType<Map>()
+                    .any((f) => f['type'] == 'spot' && f['is_hidden'] != true),
+                onChanged: (value) => _change((x) {
+                      setDraftSeatSelection(x, value);
+                      _inlineFormBundle = null;
+                      _formEpoch++;
+                    }, changesConfiguration: true)),
           Text(BlueprintStrings.seatCount(_layoutSeatCount(d))),
           if (_layoutAreaCount(d) > 0)
             Text(BlueprintStrings.areaCount(_layoutAreaCount(d))),
@@ -2147,7 +2170,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _questions.length,
       ),
       segmentStates: [
-        OccasionSetupStrings.story('completedQuestion'),
+        OccasionSaleStrings.text('previousQuestion'),
         OccasionSetupStrings.story('currentQuestion'),
         OccasionSetupStrings.story('upcomingQuestion'),
       ],

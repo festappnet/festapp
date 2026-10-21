@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
 import 'blueprint_standing_capacity_control.dart';
 import 'blueprint_layout_help.dart';
@@ -384,9 +385,10 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
               actions: [
                 TextButton(
                     onPressed: () async {
-                      await Clipboard.setData(ClipboardData(
-                          text: jsonEncode(controller.snapshot.toJson())));
-                      if (dialogContext.mounted) Navigator.pop(dialogContext);
+                      final copied = await CopyButton.copy(dialogContext,
+                          jsonEncode(controller.snapshot.toJson()));
+                      if (copied && dialogContext.mounted)
+                        Navigator.pop(dialogContext);
                     },
                     child: Text(BlueprintStrings.copyDraft)),
                 TextButton(
@@ -627,8 +629,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _commercialName(
-                binding != null ? node : commercialGroup ?? node,
+            _commercialName(binding != null ? node : commercialGroup ?? node,
                 name: binding?.title ?? commercialGroup?.label ?? node.label,
                 enabled: !protected,
                 style: Theme.of(context).textTheme.titleMedium),
@@ -859,8 +860,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final availability = controller.adapter.areaAvailability[area.id];
     final capacity = controller.areaCapacity(area.id);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _commercialName(area,
-          style: Theme.of(context).textTheme.titleMedium),
+      _commercialName(area, style: Theme.of(context).textTheme.titleMedium),
       Text(_productText(controller.snapshot.areaBindings[area.id]?.productId)),
       const SizedBox(height: 12),
       Text(BlueprintStrings.standingAvailability(

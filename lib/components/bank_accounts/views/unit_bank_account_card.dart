@@ -15,6 +15,7 @@ class UnitBankAccountCard extends StatelessWidget {
   final VoidCallback? onOpen;
   final VoidCallback? onUnlink;
   final Widget? selection;
+  final bool showSyncHelp;
 
   const UnitBankAccountCard({
     super.key,
@@ -24,6 +25,7 @@ class UnitBankAccountCard extends StatelessWidget {
     this.onOpen,
     this.onUnlink,
     this.selection,
+    this.showSyncHelp = true,
   });
 
   @override
@@ -78,7 +80,7 @@ class UnitBankAccountCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(number, style: Theme.of(context).textTheme.bodyMedium),
         ],
-        BankAccountSyncStatus(account: account),
+        BankAccountSyncStatus(account: account, showHelp: showSyncHelp),
         if (account.supportedCurrencies.isNotEmpty) ...[
           const SizedBox(height: 4),
           Wrap(

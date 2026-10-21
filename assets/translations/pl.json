@@ -1,6 +1,5 @@
 {
   "FeatureBlueprint": {
-    "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany.",
     "protectedCount": "Zajęte miejsca: {count}.",
     "cancelReservation": "Anuluj wybrane rezerwacje",
     "assignSelectionProduct": "Wspólny produkt i cena",
@@ -18,7 +17,8 @@
     "blockSeat": "Zablokuj miejsce",
     "blockSeatHint": "Zablokowanego miejsca nie można wybrać do nowego zamówienia.",
     "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
-    "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień."
+    "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień.",
+    "imageUploadUncertain": "Nie udało się potwierdzić wyniku przesyłania. Przed ponowną próbą sprawdź, czy obraz został dodany."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Dane prawne organizacji zostały zatwierdzone i są widoczne pod Twoimi formularzami.",
@@ -437,7 +437,9 @@
     "updateAppPrompt": "Zaktualizuj aplikację do najnowszej wersji, aby uzyskać dostęp do wszystkich funkcji.",
     "updatedItem": "Zaktualizowano: {item}.",
     "users": "Użytkownicy",
-    "resourceLimited": "Osiągnięto limit wykorzystania. Spróbuj ponownie później. Aby zwiększyć limit, skontaktuj się z pomocą techniczną."
+    "resourceLimited": "Osiągnięto limit wykorzystania. Spróbuj ponownie później. Aby zwiększyć limit, skontaktuj się z pomocą techniczną.",
+    "copyManually": "Skopiuj ręcznie",
+    "clipboardUnavailable": "Nie udało się uzyskać dostępu do schowka. Tekst jest zaznaczony - skopiuj go skrótem klawiaturowym lub z menu zaznaczenia."
   },
   "Unit": {
     "copyTargetUnit": "Organizacja docelowa",
@@ -1592,41 +1594,19 @@
     "allowCreateHint": "New occasions will be hidden, with sales closed.",
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
   },
-  "FeatureBlueprint": {
-    "protectedCount": "Zajęte miejsca: {count}.",
-    "cancelReservation": "Anuluj wybrane rezerwacje",
-    "assignSelectionProduct": "Wspólny produkt i cena",
-    "assignmentSaveNotice": "Przypisanie produktu zostanie zapisane po kliknięciu Zapisz na planie.",
-    "insertGraphic": "Wstaw obraz lub SVG",
-    "svgImportLimit": "SVG przekracza limit rozmiaru lub złożoności.",
-    "svgExternalDependency": "SVG odwołuje się do pliku zewnętrznego. Przed importem osadź potrzebną grafikę w SVG.",
-    "svgInteractiveContent": "Skryptów i interaktywnej zawartości SVG nie można przekształcić w grafikę statyczną.",
-    "svgDocumentType": "Definicje DTD nie są obsługiwane. Wyeksportuj SVG bez DTD.",
-    "svgInvalid": "Ten plik nie jest prawidłowym SVG.",
-    "svgEmbeddedBitmap": "SVG zawiera obraz bitmapowy. Wstaw go do planu osobno jako obraz.",
-    "svgComplexText": "Tekst SVG używa nieobsługiwanego pozycjonowania lub mieszanych stylów. Przed importem zamień go na krzywe.",
-    "svgUnsupportedEffect": "Tego efektu SVG nie można jeszcze przekształcić bez zmiany wyglądu.",
-    "svgConversionFailed": "Nie udało się przekształcić SVG. Plan pozostał bez zmian.",
-    "blockSeat": "Zablokuj miejsce",
-    "blockSeatHint": "Zablokowanego miejsca nie można wybrać do nowego zamówienia.",
-    "placementInvalid": "Plan zawiera nakładające się obiekty lub obiekty poza obszarem planu. Popraw elementy zaznaczone na czerwono.",
-    "seatProductRequired": "Nowe miejsca wymagają produktu z ceną. Przypisz go w trybie rezerwacji i zamówień."
-  },
   "EditorFileDrop": {
     "hint": "Upuść obraz, aby zastąpić tło",
     "singleFile": "Upuść dokładnie jeden plik, a nie folder.",
     "unsupported": "Ten typ pliku nie jest obsługiwany.",
     "tooLarge": "Obraz przekracza limit 20 MB."
-},
+  },
   "OccasionSales": {
     "admission": "Wstęp",
     "standardTicket": "Bilet standardowy",
     "customerPreview": "Podgląd klienta",
     "previewSafe": "Wypróbuj pola i cenę. Podgląd niczego nie zapisuje, nie otwiera sprzedaży, nie rezerwuje miejsc i nie wysyła zamówień ani e-maili.",
-    "previewSeats": "Wybór konkretnych miejsc jest tu wyłączony. Wygląd biletu sprawdź w kroku Bilet.",
     "previewTotal": "Razem za wybrane produkty: {amount}",
     "previewEmail": "Przykłady e-maili z potwierdzeniem",
-    "previewEmailSample": "Przykładowe zamówienie korzysta z produktów szkicu i odziedziczonych szablonów. Jest niezależne od wyboru w formularzu powyżej.",
     "previewUnavailable": "Nie udało się wczytać podglądu e-maila. Ustawienia pozostają zapisane; przed otwarciem sprzedaży sprawdź szablony e-maili.",
     "manualPaymentsHelp": "Bez połączenia z bankiem płatności wymagają ręcznego potwierdzenia. Otwórz Zamówienia w administracji, znajdź zamówienie i potwierdź otrzymaną płatność. Potwierdzenie uruchomi dostarczenie opłaconego biletu. Połączenie ustawisz przez Zarządzaj kontami bankowymi.",
     "senderUnavailable": "Nadawca systemowy - dokładny adres jest obecnie niedostępny",
@@ -1688,6 +1668,11 @@
     "backToList": "Przejdź do listy wydarzeń",
     "manage": "Zarządzaj wydarzeniem",
     "privacy": "Wydarzenie pozostaje ukryte w katalogu. Dostępność formularza zależy od wybranych ustawień sprzedaży.",
-    "saveAndLeave": "Zapisz szkic i wyjdź"
+    "saveAndLeave": "Zapisz szkic i wyjdź",
+    "previewSelectedEmails": "Pokaż e-maile dla tego wyboru",
+    "previewEmailSelection": "E-maile pokazują wybrane produkty, cenę i wprowadzone dane kontaktowe. To tylko podgląd; nic nie zostanie wysłane.",
+    "retrySender": "Wczytaj ponownie adres nadawcy",
+    "seatSelection": "Wybór miejsc",
+    "previousQuestion": "Poprzednie pytanie"
   }
 }

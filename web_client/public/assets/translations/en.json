@@ -1967,7 +1967,9 @@
     "copy": "Copy",
     "copied": "Copied",
     "resourceLimited": "The usage limit has been reached. Try again later. Contact support to request more capacity.",
-    "contextLoadFailed": "Could not verify access. Please try again."
+    "contextLoadFailed": "Could not verify access. Please try again.",
+    "copyManually": "Copy manually",
+    "clipboardUnavailable": "Clipboard access failed. The text is selected - copy it with your keyboard shortcut or selection menu."
   },
   "BankAccount": {
     "organizationSettings": "organization settings",
@@ -3684,6 +3686,11 @@
     "backToList": "Go to event list",
     "manage": "Manage event",
     "privacy": "The event stays hidden in the catalogue. The selected sale settings control access to the sales form.",
-    "saveAndLeave": "Save draft and leave"
+    "saveAndLeave": "Save draft and leave",
+    "previewSelectedEmails": "Preview emails for this selection",
+    "previewEmailSelection": "Emails show the selected products, price and entered contact details. This is a preview; nothing is sent.",
+    "retrySender": "Reload sender address",
+    "seatSelection": "Seat selection",
+    "previousQuestion": "Previous question"
   }
 }

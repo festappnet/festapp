@@ -29,6 +29,30 @@ void main() {
       .instance.defaultBinaryMessenger
       .setMockMethodCallHandler(SystemChannels.platform, null));
 
+  testWidgets(
+      'denied clipboard exposes the saved value selected for manual copy without success feedback',
+      (tester) async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData')
+        throw PlatformException(code: 'copy_fail');
+      return null;
+    });
+    const value = 'https://example.invalid/form/saved';
+    await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(body: CopyButton(value: value, showLabel: true))));
+    await tester.tap(find.text(CommonStrings.copy));
+    await tester.pumpAndSettle();
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, value);
+    expect(field.controller!.selection,
+        const TextSelection(baseOffset: 0, extentOffset: value.length));
+    expect(find.text(CommonStrings.copied), findsNothing);
+    Navigator.of(tester.element(find.byType(TextField))).pop();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('labelled completion copy is accessible and copies the saved URL',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(

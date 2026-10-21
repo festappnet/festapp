@@ -13,6 +13,7 @@ const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'au
 export interface PreviewDependencies {
   authorize(header:string,occasionId:number,bytes:number,readOnly?:boolean,resourceMode?:'font'|'layout-text'):Promise<false|{abuseLimits:Record<string,number>}>;
   authorizeSetupDraft?:(header:string,draftId:string,bytes:number)=>Promise<false|{abuseLimits:Record<string,number>}>;
+  setupDraft?:(header:string,id:string)=>Promise<{occasion:any;products:ProductCatalog}>;
   occasion(id:number):Promise<any>;
   products(id:number):Promise<ProductCatalog>;
   font?:(id:string)=>Promise<TicketFont>;
@@ -44,9 +45,11 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     const {occasionId,setupDraftId,mode,type,scenario='normal'}=body;
     const setup=setupDraftId!==undefined;
     const validContext=setup
-      ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&(mode==='layout-text'||mode==='font')&&!('layout' in body)&&!('background' in body)&&!('borrowResourcesOnly' in body)
+      ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&['layout-text','font','resolve','pdf','catalog'].includes(mode)&&!('borrowResourcesOnly' in body)&&body.readOnly!==true
       : Number.isSafeInteger(occasionId)&&occasionId>0;
     if(!validContext||!['resolve','pdf','font','catalog','layout-text'].includes(mode)||(!['font','catalog','layout-text'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
+    if(setup&&['resolve','pdf','catalog'].includes(mode)&&Object.keys(body).some(k=>!['setupDraftId','mode','type','scenario','fontProtocol','layout','background','previewOccasion'].includes(k)))return reply(400,{error:'Invalid draft preview request'});
+    if(setup&&['font','layout-text'].includes(mode)&&('layout' in body||'background' in body))return reply(400,{error:'Invalid draft resource request'});
     const readOnly=body.readOnly===true;
     if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
@@ -72,10 +75,12 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       const font=await deps.font(body.fontId);
       return boundedReply(200,fontReply(font));
     }
-    const occasion=await deps.occasion(occasionId);
+    const draftContext=setup?await deps.setupDraft?.(auth,setupDraftId):undefined;
+    if(setup&&!draftContext)return reply(403,{error:'Draft context unavailable'});
+    const occasion=draftContext?.occasion??await deps.occasion(occasionId);
     if(readOnly&&type!==(occasion.features?.find((f:any)=>f.code==='ticket')?.ticket_type==='named'?'named':'wide'))return reply(400,{error:'Saved ticket type mismatch'});
     let products:ProductCatalog;let catalogError=false;
-    try {products=await deps.products(occasionId);} catch(error){if(mode!=='resolve'||readOnly)throw error;catalogError=true;products={types:new Map(),products:new Map()};}
+    try {products=draftContext?.products??await deps.products(occasionId);} catch(error){if(mode!=='resolve'||readOnly)throw error;catalogError=true;products={types:new Map(),products:new Map()};}
     if(mode==='catalog')return boundedReply(200,{catalog:[...products.types.values()]});
     const feature={...(occasion.features?.find((f:any)=>f.code==='ticket')??{}),ticket_type:type};
     if(body.borrowResourcesOnly===true&&mode==='resolve'){delete feature.layout;feature.background=null;products={types:new Map(),products:new Map()};}

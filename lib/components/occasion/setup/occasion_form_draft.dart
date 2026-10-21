@@ -63,6 +63,10 @@ FormEditorDraft defaultDraftForm(Map<String, dynamic> configuration) {
   final draft = FormEditorDraft.fromJson(
       Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))));
   draft.definition = draft.definition.copyWith(link: '');
+  return localizeStarterProducts(draft);
+}
+
+FormEditorDraft localizeStarterProducts(FormEditorDraft draft) {
   // Only the generated starter is renamed. Existing source products retain
   // their organizer-owned titles, IDs, prices and order limits.
   for (final field in draft.relatedFields) {
@@ -81,4 +85,28 @@ FormEditorDraft defaultDraftForm(Map<String, dynamic> configuration) {
     );
   }
   return draft;
+}
+
+/// Explicit blueprint intent uses the existing public form's seat field.
+void setDraftSeatSelection(Map<String, dynamic> data, bool enabled) {
+  final form = data['formDraft'];
+  if (form is! Map) return;
+  final fields = form['fields'] as List? ?? [];
+  final spot = fields
+      .whereType<Map>()
+      .where((f) => f['type'] == 'spot' && f['is_ticket_field'] == true)
+      .firstOrNull;
+  if (spot != null) {
+    spot['is_hidden'] = !enabled;
+  } else if (enabled &&
+      fields.whereType<Map>().any((f) => f['type'] == 'ticket')) {
+    fields.add({
+      'type': 'spot',
+      'is_ticket_field': true,
+      'is_hidden': false,
+      'is_required': true,
+      'title': OccasionSaleStrings.text('seatSelection'),
+      'order': fields.length
+    });
+  }
 }

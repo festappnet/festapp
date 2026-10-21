@@ -103,6 +103,8 @@ class CommonStrings {
   static String get contentChanged =>
       'Common.contentChanged'.tr(); // "Content has been changed."
   static String get copy => 'Common.copy'.tr();
+  static String get copyManually => 'Common.copyManually'.tr();
+  static String get clipboardUnavailable => 'Common.clipboardUnavailable'.tr();
   static String get copied => 'Common.copied'.tr();
   static String get copiedToClipboard =>
       'Common.copiedToClipboard'.tr(); // "Copied to clipboard"

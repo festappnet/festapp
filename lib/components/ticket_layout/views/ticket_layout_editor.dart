@@ -109,9 +109,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
   int fontGeneration = 0;
   bool fontBusy = false;
   bool saving = false;
-  bool get _canAuthor =>
-      RightsService.currentOccasionId() == widget.occasionId &&
-      RightsService.hasCapability(AuthorizationCapabilities.ticketLayoutsWrite);
+  bool get _canAuthor => widget.service.setupDraftId != null
+      ? RightsService.currentUnit()?.id == widget.service.setupUnitId &&
+          RightsService.hasCapability(AuthorizationCapabilities.occasionsCreate)
+      : RightsService.currentOccasionId() == widget.occasionId &&
+          RightsService.hasCapability(
+              AuthorizationCapabilities.ticketLayoutsWrite);
   bool get _canChangeBackground =>
       mounted &&
       !saving &&

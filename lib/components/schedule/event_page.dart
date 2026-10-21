@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:fstapp/components/schedule/event_presentation.dart';
@@ -7,7 +8,6 @@ import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/features/schedule_feature.dart';
 import 'package:fstapp/router_service.dart';
@@ -388,10 +388,12 @@ class _EventPageState extends State<EventPage> {
                               title: Row(children: [
                                 IconButton(
                                     onPressed: () async {
-                                      await Clipboard.setData(ClipboardData(
-                                          text: _participants
+                                      final copied = await CopyButton.copy(
+                                          context,
+                                          _participants
                                               .map((e) => e.toFullNameString())
-                                              .join("\n")));
+                                              .join("\n"));
+                                      if (!copied || !context.mounted) return;
                                       ToastHelper.Show(context,
                                           ScheduleStrings.participantsCopied);
                                     },

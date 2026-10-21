@@ -6,6 +6,7 @@ import {
   supabaseAdmin,
   getEmailTemplateAndWrapper,
 } from "../_shared/supabaseUtil.ts";
+import { setupPreviewResponse } from "./setupPreview.ts";
 import { authoringContextResponse } from "./authoringContext.ts";
 import { loadAuthoringPaymentAccounts } from "./authoringPaymentAccounts.ts";
 
@@ -24,6 +25,30 @@ Deno.serve(async (req) => {
     }
 
     const reqData = await req.json();
+
+    if (reqData.action === 'setupPreview') {
+      if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405,headers:corsHeaders});
+      return await setupPreviewResponse(reqData,req.headers.get('Authorization')||'',{
+        senderAddress:_DEFAULT_EMAIL||'',resolve:getEmailTemplateAndWrapper,
+        draft:async(auth,id,bytes)=>{
+          const client=createUserClient(auth);
+          const admitted=await client.rpc('admit_occasion_setup_blueprint_resources_v1',{p_draft:id,p_bytes:bytes});
+          if(admitted.error)return null;
+          const {data,error}=await client.rpc('get_occasion_setup_draft',{p_id:id});
+          return error?null:data;
+        },
+        catalog:async(auth,id)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_entity_email_templates',{p_entity_type:'unit',p_entity_id:id});return error?null:data;
+        },
+        sourceTemplates:async(auth,id)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_entity_email_templates',{p_entity_type:'occasion',p_entity_id:id});return error?null:data;
+        },
+        bank:async(auth,id,accountId)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_occasion_setup_bank_accounts',{p_id:id});
+          return error?null:data?.accounts?.find((a:any)=>a.id===accountId)?.display??null;
+        },
+      },corsHeaders);
+    }
 
     if (reqData.action === "authoringContext") {
       if (req.method !== "POST") {

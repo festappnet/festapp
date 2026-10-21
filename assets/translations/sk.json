@@ -1,6 +1,5 @@
 {
   "FeatureBlueprint": {
-    "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný.",
     "protectedCount": "Obsadené miesta: {count}.",
     "cancelReservation": "Zrušiť vybrané rezervácie",
     "assignSelectionProduct": "Spoločný produkt a cena",
@@ -31,7 +30,8 @@
     "orderAction": "Objednávka",
     "editPlan": "Úprava plániku",
     "reservationsAndOrders": "Rezervácie a objednávky",
-    "unsavedPlan": "Neuložené úpravy plániku"
+    "unsavedPlan": "Neuložené úpravy plániku",
+    "imageUploadUncertain": "Výsledok nahrávania sa nepodarilo overiť. Pred ďalším pokusom skontrolujte, či bol obrázok pridaný."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Právne údaje organizácie sú schválené a zobrazujú sa pri vašich formulároch.",
@@ -450,7 +450,9 @@
     "updateAppPrompt": "Aktualizujte aplikáciu na najnovšiu verziu pre prístup ku všetkým funkciám.",
     "updatedItem": "Aktualizované: {item}.",
     "users": "Užívatelia",
-    "resourceLimited": "Dočasne bol dosiahnutý limit využitia. Skúste to neskôr. Pre zvýšenie kapacity kontaktujte podporu."
+    "resourceLimited": "Dočasne bol dosiahnutý limit využitia. Skúste to neskôr. Pre zvýšenie kapacity kontaktujte podporu.",
+    "copyManually": "Skopírovať ručne",
+    "clipboardUnavailable": "Prístup ku schránke zlyhal. Text je vybraný - skopírujte ho klávesovou skratkou alebo cez ponuku výberu."
   },
   "Unit": {
     "copyTargetUnit": "Do organizácie",
@@ -1612,54 +1614,19 @@
     "allowCreateHint": "New occasions will be hidden, with sales closed.",
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
   },
-  "FeatureBlueprint": {
-    "protectedCount": "Obsadené miesta: {count}.",
-    "cancelReservation": "Zrušiť vybrané rezervácie",
-    "assignSelectionProduct": "Spoločný produkt a cena",
-    "assignmentSaveNotice": "Priradenie produktu sa uloží až tlačidlom Uložiť v plániku.",
-    "insertGraphic": "Vložiť obrázok alebo SVG",
-    "svgImportLimit": "SVG prekračuje limit veľkosti alebo zložitosti.",
-    "svgExternalDependency": "SVG odkazuje na externý súbor. Pred importom vložte potrebnú grafiku priamo do SVG.",
-    "svgInteractiveContent": "Skripty a interaktívny obsah SVG nemožno previesť na statickú grafiku.",
-    "svgDocumentType": "Import nepodporuje definície DTD. Exportujte SVG bez DTD.",
-    "svgInvalid": "Súbor nie je platný SVG.",
-    "svgEmbeddedBitmap": "SVG obsahuje bitmapový obrázok. Vložte ho do plániku samostatne ako obrázok.",
-    "svgComplexText": "Text v SVG používa nepodporované rozmiestnenie alebo kombináciu štýlov. Pred importom ho preveďte na krivky.",
-    "svgUnsupportedEffect": "Tento SVG efekt zatiaľ nemožno previesť bez zmeny vzhľadu.",
-    "svgConversionFailed": "SVG sa nepodarilo previesť. Plánik zostal bez zmeny.",
-    "blockSeat": "Blokovať miesto",
-    "blockSeatHint": "Blokované miesto nemožno vybrať do novej objednávky.",
-    "placementInvalid": "Plán obsahuje prekrývajúce sa objekty alebo objekty mimo plátna. Oprav červeno označené miesta.",
-    "seatProductRequired": "Novým miestam chýba produkt s cenou. Priraď ho v režime Rezervácie a objednávky.",
-    "editAreaProduct": "Upraviť produkt a cenu",
-    "tablesTitle": "Stoly",
-    "standingAreas": "Státie",
-    "tableSelectionHint": "Klikni na stôl. Shift pridá ďalší.",
-    "noTables": "V plániku zatiaľ nie sú stoly.",
-    "selectTableOrSeat": "Vyber stôl alebo jednotlivé miesto.",
-    "useTableDefault": "Použiť predvolený produkt stola",
-    "defaultProductHint": "Predvolený produkt platí pre nové a zdedené miesta. Vlastné produkty jednotlivých miest zostanú.",
-    "unsavedPlanShort": "Neuložené",
-    "orderAction": "Objednávka",
-    "editPlan": "Úprava plániku",
-    "reservationsAndOrders": "Rezervácie a objednávky",
-    "unsavedPlan": "Neuložené úpravy plániku"
-  },
   "EditorFileDrop": {
     "hint": "Pretiahnutím obrázka nahraďte podklad",
     "singleFile": "Pretiahnite práve jeden súbor, nie priečinok.",
     "unsupported": "Tento typ súboru nie je podporovaný.",
     "tooLarge": "Obrázok prekračuje limit 20 MB."
-},
+  },
   "OccasionSales": {
     "admission": "Vstupné",
     "standardTicket": "Základná vstupenka",
     "customerPreview": "Náhľad pre zákazníka",
     "previewSafe": "Vyskúšajte polia a cenu. Náhľad nič neukladá, neotvára predaj, nerezervuje miesta a neodosiela objednávky ani e-maily.",
-    "previewSeats": "Výber konkrétnych miest tu nie je aktívny. Vzhľad vstupenky skontrolujte v kroku Vstupenka.",
     "previewTotal": "Spolu za vybrané produkty: {amount}",
     "previewEmail": "Ukážka potvrdzovacích e-mailov",
-    "previewEmailSample": "Ukážková objednávka používa produkty konceptu a zdedené šablóny. Nie je prepojená s výberom vo formulári vyššie.",
     "previewUnavailable": "Náhľad e-mailu sa nepodarilo načítať. Nastavenia zostávajú uložené; pred otvorením predaja overte e-mailové šablóny.",
     "manualPaymentsHelp": "Bez prepojenia s bankou sa platby nepotvrdzujú automaticky. V administrácii otvorte Objednávky, vyhľadajte objednávku a potvrďte prijatú platbu. Potvrdenie spustí doručenie platenej vstupenky. Prepojenie nastavíte cez Spravovať bankové účty.",
     "senderUnavailable": "Systémový odosielateľ - presná adresa teraz nie je dostupná",
@@ -1721,6 +1688,11 @@
     "backToList": "Prejsť do prehľadu akcií",
     "manage": "Spravovať akciu",
     "privacy": "Akcia zostane skrytá v katalógu. Dostupnosť predajného formulára určuje zvolené nastavenie predaja.",
-    "saveAndLeave": "Uložiť koncept a odísť"
+    "saveAndLeave": "Uložiť koncept a odísť",
+    "previewSelectedEmails": "Ukázať e-maily pre tento výber",
+    "previewEmailSelection": "E-maily zobrazia vybrané produkty, cenu a vyplnené kontaktné údaje. Je to iba náhľad; nič sa neodošle.",
+    "retrySender": "Znovu načítať adresu odosielateľa",
+    "seatSelection": "Výber miest",
+    "previousQuestion": "Predchádzajúca otázka"
   }
 }

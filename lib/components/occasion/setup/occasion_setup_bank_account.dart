@@ -160,6 +160,7 @@ class _OccasionSetupBankAccountState extends State<OccasionSetupBankAccount> {
             else ...[
               for (final account in _accounts)
                 UnitBankAccountCard(
+                  showSyncHelp: false,
                   account: BankAccountModel.fromJson({
                     ...account,
                     'account_number_human_readable': account['display'],

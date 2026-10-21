@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 
 import 'common_strings.dart';
 
@@ -11,6 +11,43 @@ class CopyButton extends StatefulWidget {
   final String value;
   final bool showLabel;
   const CopyButton({super.key, required this.value, this.showLabel = false});
+
+  /// Canonical clipboard action for widgets and menu commands. Returns true
+  /// only after a successful system write; denied access offers manual copying.
+  static Future<bool> copy(BuildContext context, String value) async {
+    if (value.isEmpty) return false;
+    try {
+      await Clipboard.setData(ClipboardData(text: value));
+    } on PlatformException {
+      if (!context.mounted) return false;
+      final controller = TextEditingController(text: value)
+        ..selection = TextSelection(baseOffset: 0, extentOffset: value.length);
+      final route = DialogRoute<void>(
+          context: context,
+          builder: (dialogContext) => AppAlertDialog(
+                title: Text(CommonStrings.copyManually),
+                content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(CommonStrings.clipboardUnavailable),
+                      const SizedBox(height: 16),
+                      TextField(
+                          controller: controller,
+                          autofocus: true,
+                          readOnly: true,
+                          enableInteractiveSelection: true,
+                          minLines: 1,
+                          maxLines: 4),
+                    ]),
+              ));
+      await Navigator.of(context, rootNavigator: true).push(route);
+      await route.completed;
+      controller.dispose();
+      return false;
+    }
+    return true;
+  }
 
   @override
   State<CopyButton> createState() => _CopyButtonState();
@@ -41,9 +78,8 @@ class _CopyButtonState extends State<CopyButton> {
 
   Future<void> _copy() async {
     final value = widget.value;
-    final success = await ExceptionHandler.guardVoid(context,
-        futureFunction: () => Clipboard.setData(ClipboardData(text: value)));
-    if (!success || !mounted || widget.value != value) return;
+    if (!await CopyButton.copy(context, value)) return;
+    if (!mounted || widget.value != value) return;
     _timer?.cancel();
     setState(() {
       _copied = true;

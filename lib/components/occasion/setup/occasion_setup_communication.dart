@@ -124,6 +124,7 @@ class _OccasionSetupCommunicationState
   String? _error;
   bool _loading = true, _saving = false;
   int _fieldRevision = 0;
+  bool _senderLoading = false;
   String t(String key) => OccasionSetupDetailsStrings.text(key);
   @override
   void initState() {
@@ -163,6 +164,8 @@ class _OccasionSetupCommunicationState
   }
 
   Future<void> _resolveSender() async {
+    if (_senderLoading) return;
+    setState(() => _senderLoading = true);
     try {
       final unitId = widget.unitId;
       if (unitId == null) return;
@@ -177,6 +180,8 @@ class _OccasionSetupCommunicationState
     } catch (_) {
       // A missing preview service must not block saving an otherwise valid draft.
       // The UI explicitly reports that the effective address is unavailable.
+    } finally {
+      if (mounted) setState(() => _senderLoading = false);
     }
   }
 
@@ -292,6 +297,13 @@ class _OccasionSetupCommunicationState
                 '${t('inheritOrganization')} (${defaults['replyTo'] ?? defaults['senderAddress'] ?? OccasionSaleStrings.text('senderUnavailable')})',
             'custom': t('customForEvent'),
           }),
+          if (defaults['replyTo'] == null &&
+              defaults['senderAddress'] == null &&
+              widget.data['replyToMode'] != 'custom')
+            TextButton.icon(
+                onPressed: _senderLoading ? null : _resolveSender,
+                icon: const Icon(Icons.refresh),
+                label: Text(OccasionSaleStrings.text('retrySender'))),
           if (!widget.paymentTiming && widget.data['replyToMode'] == 'custom')
             TextFormField(
               key: const ValueKey('communication-reply'),

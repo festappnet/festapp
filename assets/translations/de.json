@@ -1,6 +1,5 @@
 {
   "FeatureBlueprint": {
-    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde.",
     "protectedCount": "Belegte Plätze: {count}.",
     "cancelReservation": "Ausgewählte Reservierungen stornieren",
     "assignSelectionProduct": "Gemeinsames Produkt und Preis",
@@ -18,7 +17,8 @@
     "blockSeat": "Platz sperren",
     "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
     "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
-    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu."
+    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu.",
+    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde."
   },
   "OrganizationVerification": {
     "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",
@@ -437,7 +437,9 @@
     "updateAppPrompt": "Aktualisieren Sie die App auf die neueste Version, um auf alle Funktionen zuzugreifen.",
     "updatedItem": "Aktualisiert: {item}.",
     "users": "Benutzer",
-    "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität."
+    "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität.",
+    "copyManually": "Manuell kopieren",
+    "clipboardUnavailable": "Der Zugriff auf die Zwischenablage ist fehlgeschlagen. Der Text ist ausgewählt - kopieren Sie ihn per Tastenkürzel oder Auswahlmenü."
   },
   "Unit": {
     "copyTargetUnit": "Zielorganisation",
@@ -1592,41 +1594,19 @@
     "allowCreateHint": "New occasions will be hidden, with sales closed.",
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
   },
-  "FeatureBlueprint": {
-    "protectedCount": "Belegte Plätze: {count}.",
-    "cancelReservation": "Ausgewählte Reservierungen stornieren",
-    "assignSelectionProduct": "Gemeinsames Produkt und Preis",
-    "assignmentSaveNotice": "Die Produktzuordnung wird erst mit Speichern im Plan gespeichert.",
-    "insertGraphic": "Bild oder SVG einfügen",
-    "svgImportLimit": "Die SVG überschreitet die Größen- oder Komplexitätsgrenze.",
-    "svgExternalDependency": "Die SVG verweist auf eine externe Datei. Betten Sie die benötigte Grafik vor dem Import in die SVG ein.",
-    "svgInteractiveContent": "Skripte und interaktive SVG-Inhalte können nicht in statische Grafiken umgewandelt werden.",
-    "svgDocumentType": "DTD-Definitionen werden nicht unterstützt. Exportieren Sie die SVG ohne DTD.",
-    "svgInvalid": "Diese Datei ist keine gültige SVG.",
-    "svgEmbeddedBitmap": "Die SVG enthält ein Rasterbild. Fügen Sie es separat als Bild in den Plan ein.",
-    "svgComplexText": "Der SVG-Text verwendet eine nicht unterstützte Positionierung oder gemischte Stile. Wandeln Sie ihn vor dem Import in Pfade um.",
-    "svgUnsupportedEffect": "Dieser SVG-Effekt lässt sich noch nicht ohne Änderung der Darstellung umwandeln.",
-    "svgConversionFailed": "Die SVG konnte nicht umgewandelt werden. Ihr Plan bleibt unverändert.",
-    "blockSeat": "Platz sperren",
-    "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
-    "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
-    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu."
-  },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
     "singleFile": "Legen Sie genau eine Datei ab, keinen Ordner.",
     "unsupported": "Dieser Dateityp wird nicht unterstützt.",
     "tooLarge": "Das Bild überschreitet das Limit von 20 MB."
-},
+  },
   "OccasionSales": {
     "admission": "Eintritt",
     "standardTicket": "Standardticket",
     "customerPreview": "Kundenvorschau",
     "previewSafe": "Testen Sie Felder und Preis. Diese Vorschau speichert nichts, öffnet keinen Verkauf, reserviert keine Plätze und sendet keine Bestellungen oder E-Mails.",
-    "previewSeats": "Die Auswahl konkreter Plätze ist hier deaktiviert. Prüfen Sie das Ticket im Schritt Ticket.",
     "previewTotal": "Gesamtpreis der ausgewählten Produkte: {amount}",
     "previewEmail": "Beispiele für Bestätigungs-E-Mails",
-    "previewEmailSample": "Die Beispielbestellung verwendet Entwurfsprodukte und geerbte Vorlagen. Sie ist unabhängig von der Formularauswahl oben.",
     "previewUnavailable": "Die E-Mail-Vorschau konnte nicht geladen werden. Ihre Einstellungen bleiben gespeichert; prüfen Sie vor Verkaufsbeginn die E-Mail-Vorlagen.",
     "manualPaymentsHelp": "Ohne Bankverbindung müssen Zahlungen manuell bestätigt werden. Öffnen Sie Bestellungen in der Verwaltung, suchen Sie die Bestellung und bestätigen Sie den Zahlungseingang. Die Bestätigung löst den Versand bezahlter Tickets aus. Die Verbindung richten Sie unter Bankkonten verwalten ein.",
     "senderUnavailable": "Systemabsender - die genaue Adresse ist derzeit nicht verfügbar",
@@ -1688,6 +1668,11 @@
     "backToList": "Zur Veranstaltungsübersicht",
     "manage": "Veranstaltung verwalten",
     "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Verkaufseinstellungen bestimmen die Verfügbarkeit des Formulars.",
-    "saveAndLeave": "Entwurf speichern und verlassen"
+    "saveAndLeave": "Entwurf speichern und verlassen",
+    "previewSelectedEmails": "E-Mails für diese Auswahl anzeigen",
+    "previewEmailSelection": "E-Mails zeigen die gewählten Produkte, den Preis und die eingegebenen Kontaktdaten. Dies ist nur eine Vorschau; nichts wird gesendet.",
+    "retrySender": "Absenderadresse erneut laden",
+    "seatSelection": "Platzauswahl",
+    "previousQuestion": "Vorherige Frage"
   }
 }

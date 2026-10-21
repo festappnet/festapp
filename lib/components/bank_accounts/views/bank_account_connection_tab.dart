@@ -1,10 +1,10 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'bank_account_dialog_scope.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
@@ -339,10 +339,10 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                       ? const Icon(Icons.lock_outline, color: Colors.grey)
                       : IconButton(
                           icon: const Icon(Icons.copy),
-                          onPressed: () {
-                            Clipboard.setData(
-                              ClipboardData(text: forwardingEmail),
-                            );
+                          onPressed: () async {
+                            if (!await CopyButton.copy(
+                                    context, forwardingEmail) ||
+                                !context.mounted) return;
                             ToastHelper.Show(
                               context,
                               BankAccountStrings.copyEmail,

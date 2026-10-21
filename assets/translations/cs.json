@@ -1967,7 +1967,9 @@
     "copy": "Kopírovat",
     "copied": "Zkopírováno",
     "resourceLimited": "Dočasně byl dosažen limit využití. Zkuste to později. Pro navýšení kapacity kontaktujte podporu.",
-    "contextLoadFailed": "Oprávnění se nepodařilo ověřit. Zkuste to znovu."
+    "contextLoadFailed": "Oprávnění se nepodařilo ověřit. Zkuste to znovu.",
+    "copyManually": "Zkopírovat ručně",
+    "clipboardUnavailable": "Přístup ke schránce se nezdařil. Text je vybraný - zkopírujte jej klávesovou zkratkou nebo přes nabídku výběru."
   },
   "BankAccount": {
     "organizationSettings": "nastavení organizace",
@@ -3685,6 +3687,11 @@
     "backToList": "Přejít do přehledu akcí",
     "manage": "Spravovat akci",
     "privacy": "Akce zůstane skrytá v katalogu. Dostupnost prodejního formuláře určuje zvolené nastavení prodeje.",
-    "saveAndLeave": "Uložit koncept a odejít"
+    "saveAndLeave": "Uložit koncept a odejít",
+    "previewSelectedEmails": "Ukázat e-maily pro tento výběr",
+    "previewEmailSelection": "E-maily zobrazí právě vybrané produkty, cenu a vyplněné kontaktní údaje. Jde pouze o náhled; nic se neodešle.",
+    "retrySender": "Znovu načíst adresu odesílatele",
+    "seatSelection": "Výběr míst",
+    "previousQuestion": "Předchozí otázka"
   }
 }

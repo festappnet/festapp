@@ -8,6 +8,11 @@ import 'dart:convert';
 import 'package:fstapp/components/occasion/setup/occasion_form_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_customer_preview.dart';
 import 'dart:io';
+import 'package:venue_seat_picker/venue_seat_picker.dart';
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_seat_preview.dart';
+import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
+import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -78,7 +83,7 @@ void main() {
       'formDraft': {
         'title': 'Form',
         'fields': [
-          {'id': -1, 'type': 'email', 'title': 'E-mail', 'is_required': true}
+          {'id': null, 'type': 'email', 'title': 'E-mail', 'is_required': true}
         ]
       }
     };
@@ -87,7 +92,10 @@ void main() {
         tester,
         MaterialApp(
             home: Scaffold(
-                body: OccasionSetupCustomerPreview(data: data, unitId: 1))));
+                body: OccasionSetupCustomerPreview(
+                    data: data,
+                    unitId: 1,
+                    draftId: '00000000-0000-4000-8000-000000000001'))));
     await tester.pumpAndSettle();
     expect(find.textContaining('Náhled nic neukládá'), findsOneWidget);
     await tester.enterText(
@@ -96,6 +104,108 @@ void main() {
     expect(jsonEncode(data), saved);
     expect(find.text('Vytvořit objednávku'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'preview emails receive entered fields, can retry and are invalidated after editing',
+      (tester) async {
+    final data = <String, dynamic>{
+      'title': 'Preview',
+      'formDraft': {
+        'fields': [
+          {'id': null, 'type': 'email', 'title': 'E-mail', 'is_required': true}
+        ]
+      }
+    };
+    final requests = <Map<String, dynamic>>[];
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: OccasionSetupCustomerPreview(
+          data: data,
+          unitId: 1,
+          draftId: '00000000-0000-4000-8000-000000000001',
+          emailLoader: (input) async {
+            requests.add(input);
+            if (requests.length == 1) throw StateError('temporary');
+            return {
+              'messages': [
+                {
+                  'subject': 'Exact selection',
+                  'html': '<p>Preview only</p>',
+                  'senderAddress': 'sender@example.invalid'
+                }
+              ]
+            };
+          },
+        ))));
+    await tester.enterText(
+        find.byType(TextField).first, 'first@example.invalid');
+    await tester.tap(find.text('Ukázat e-maily pro tento výběr'));
+    await tester.pumpAndSettle();
+    expect(requests.single['fields']['email'], 'first@example.invalid');
+    await tester.tap(find.text('Zkusit znovu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Exact selection'), findsOneWidget);
+    await tester.enterText(
+        find.byType(TextField).first, 'second@example.invalid');
+    await tester.pumpAndSettle();
+    expect(find.text('Exact selection'), findsNothing);
+    expect(requests.length, 2);
+  });
+
+  testWidgets(
+      'draft seat picker enforces paired capacity and returns only synthetic identities',
+      (tester) async {
+    const first = '00000000-0000-4000-8000-000000000011';
+    const second = '00000000-0000-4000-8000-000000000012';
+    final doc = VenueLayoutDocument(nodes: [
+      LayoutNode(id: first, kind: 'seat', label: 'A'),
+      LayoutNode(id: second, kind: 'seat', x: 100, label: 'B')
+    ]);
+    final draft = BlueprintSetupLayoutDraft.empty(document: doc, resources: {})
+        .reconcile(doc, defaultProductId: 42);
+    OccasionSetupSeatSelection? result;
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: Builder(
+                    builder: (context) => TextButton(
+                          child: const Text('Open'),
+                          onPressed: () async {
+                            result =
+                                await showDialog<OccasionSetupSeatSelection>(
+                                    context: context,
+                                    builder: (_) => OccasionSetupSeatPreview(
+                                        draft: draft,
+                                        products: [
+                                          ProductModel(
+                                              id: 42,
+                                              title: 'Admission',
+                                              price: 100,
+                                              currencyCode: 'CZK')
+                                        ],
+                                        maximum: 1,
+                                        loadResources: () async =>
+                                            blueprintPreparedResourcesFixture(
+                                                doc)));
+                          },
+                        )))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    var picker =
+        tester.widget<VenueLayoutPicker>(find.byType(VenueLayoutPicker));
+    expect((await picker.onSelectionRequested({first, second}, true)).accepted,
+        isFalse);
+    expect((await picker.onSelectionRequested({first}, true)).accepted, isTrue);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pokračovat'));
+    await tester.pumpAndSettle();
+    expect(result!.seats.single.seat!.id, lessThan(0));
+    expect(result!.seats.single.seat!.product!.price, 100);
+    expect(draft.seatBindings[first]!.spotId, isNull);
   });
 
   final now = DateTime.utc(2030, 1, 1, 12);

@@ -313,3 +313,15 @@ Deno.test('canonical layout text admits scope before fonts, bounds output before
  assertEquals((await handlePreview(req({...withoutOccasion,setupDraftId:'10000000-0000-4000-8000-000000000001'}),draft.deps)).status,200);
  for(const extra of [{batch:{...input.batch,requests:Array(33).fill(request)}},{batch:{...input.batch,numericFaces:[{fontFamilyId:family.id,fontFaceId:'foreign'}]}},{camera:{}},{readOnly:true}])assertEquals((await handlePreview(req({...input,...extra}),s.deps)).status,400);
 });
+
+Deno.test('first occasion resolves and renders a ticket from an authorized setup draft without reading any source occasion',async()=>{
+ const s=setup();let drafts=0;
+ s.deps.authorizeSetupDraft=async()=>admission;
+ s.deps.setupDraft=async()=>{drafts++;return {occasion:{id:0,title:'First event',features:[],data:{}},products:{types:new Map(),products:new Map()}};};
+ const request={setupDraftId:'00000000-0000-4000-8000-000000000001',type:'wide',mode:'resolve',fontProtocol:2};
+ const response=await handlePreview(req(request),s.deps);assertEquals(response.status,200);const resolved=await response.json();assert(resolved.template.elements.length>0);
+ const pdf=await handlePreview(req({...request,mode:'pdf'}),s.deps);assertEquals(pdf.status,200);assert(atob((await pdf.json()).file).startsWith('%PDF'));
+ assertEquals(s.counts(),[0,2,0]);assertEquals(drafts,2);
+ s.deps.authorizeSetupDraft=async()=>false;
+ assertEquals((await handlePreview(req(request),s.deps)).status,403);assertEquals(drafts,2);assertEquals(s.counts(),[0,2,0]);
+});
