@@ -1,0 +1,55 @@
+{
+  "version": "2026-08-27.1",
+  "source": {
+    "alias": "default",
+    "projectRef": "kjdpmixlnhntmxjedpxh"
+  },
+  "targetSchemaFingerprint": "574e6ed0d6f3a7e0afad597fec7b20246a7267592d0bdd9944f5f54cb2ffd042",
+  "status": "blocked-pending-private-companion-decisions",
+  "rules": [
+    {
+      "table": "public.activities",
+      "column": "order",
+      "action": "preserve",
+      "precondition": "source-null-count-equals-zero",
+      "onFailure": "block"
+    },
+    {
+      "table": "public.inventory_pools",
+      "column": "order",
+      "action": "omit-obsolete-null-column",
+      "precondition": "source-nonnull-count-equals-zero",
+      "onFailure": "block"
+    },
+    {
+      "table": "public.log_emails",
+      "column": "data",
+      "action": "omit-obsolete-null-column",
+      "precondition": "source-nonnull-count-equals-zero",
+      "onFailure": "block"
+    },
+    {
+      "table": "public.user_companions",
+      "columns": ["occasion", "origin", "created_by"],
+      "action": "derive-only-unique-common-occasion",
+      "derivedValues": {
+        "occasion": "the single shared occasion_users occasion",
+        "origin": "self_created",
+        "created_by": "source user"
+      },
+      "precondition": "exactly-one-common-occasion-or-private-explicit-decision",
+      "onFailure": "block"
+    }
+  ],
+  "evidence": {
+    "activities": { "rows": 4, "nullOrder": 0 },
+    "inventoryPools": { "rows": 3, "nonnullOrder": 0 },
+    "logEmails": { "rows": 3882, "nonnullData": 0 },
+    "userCompanions": {
+      "rows": 3,
+      "commonOccasionCountHistogram": { "0": 2, "1": 1 },
+      "unresolvedRows": 2
+    }
+  },
+  "productionMutationsPerformed": false
+}

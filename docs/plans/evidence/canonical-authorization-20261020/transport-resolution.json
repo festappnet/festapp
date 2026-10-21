@@ -1,0 +1,896 @@
+{
+  "scope": "Dynamic forwarding origins only; not full entrypoint or domain-policy closure",
+  "reviewedDispatchSites": 42,
+  "unresolvedDispatchSites": [],
+  "sites": [
+    {
+      "source": "lib/components/activities/activity_commands.dart",
+      "line": 91,
+      "kind": "dynamic-invokeIntent",
+      "target": null,
+      "code": ".invokeIntent(",
+      "dispatchDecision": {
+        "source": "lib/components/activities/activity_commands.dart",
+        "sourceSha256": "b832882d6eeb754b23da346281f1266fb3332c79b7d42b4710805877b9e264dd",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _invoke receives literal activity command names; invokeIntent first argument is a resource/idempotency key. SQL activity command and receipt own live editor admission."
+      },
+      "lexicalSqlCandidates": [
+        "discard_activity_draft_client_sync_v1",
+        "publish_activities_client_sync_v1",
+        "save_activity_draft_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/bank_accounts/supabase_bank_accounts.dart",
+      "line": 18,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(function, params: params);",
+      "dispatchDecision": {
+        "source": "lib/components/bank_accounts/supabase_bank_accounts.dart",
+        "sourceSha256": "51c55743506d55ef32971de5c5806e4b8ff31bd4f3f560f95714ce6e703f8948",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _rpc forwards literal bank RPC names from methods in this class. Bank management/link predicates own the two-role and actual-link decision; the Dart wrapper only refreshes denied capabilities."
+      },
+      "lexicalSqlCandidates": [
+        "get_bank_account_users",
+        "get_bank_accounts_for_unit_management",
+        "get_my_admin_bank_accounts",
+        "link_bank_account_to_unit",
+        "update_bank_account",
+        "update_bank_account_user"
+      ],
+      "lexicalEdgeCandidates": [
+        "bank-sync-manage"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/cleaning/cleaning_commands.dart",
+      "line": 87,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(name, parameters),",
+      "dispatchDecision": {
+        "source": "lib/components/cleaning/cleaning_commands.dart",
+        "sourceSha256": "22aa086112146f19d4c86ef0d9899a160798921151d0f736de52b27b27ce6b9b",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _invoke receives literal cleaning command names. Reporter participation, crew resolution, editor unblocking and notification preference are distinct SQL operations, not a client editor OR rule."
+      },
+      "lexicalSqlCandidates": [
+        "report_cleaning_issue_client_sync_v1",
+        "resolve_cleaning_place_client_sync_v1",
+        "set_cleaning_notifications_muted_client_sync_v1",
+        "set_cleaning_reporter_blocked_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/email_delivery/email_delivery_history.dart",
+      "line": 44,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params: params);",
+      "dispatchDecision": {
+        "source": "lib/components/email_delivery/email_delivery_history.dart",
+        "sourceSha256": "388d0d73f05c1c86d0494112a6fbbc078ada94c6acf7af04d0ad6920be58a740",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Injected read callback is a test/UI transport seam. Literal history/overview/detail calls originate here and in email_delivery_model.dart; SQL resolves occasion/organization/order/user scope."
+      },
+      "lexicalSqlCandidates": [
+        "get_email_delivery_detail",
+        "get_email_delivery_overview"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/email_delivery/email_delivery_history.dart",
+      "line": 78,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params: args);",
+      "dispatchDecision": {
+        "source": "lib/components/email_delivery/email_delivery_history.dart",
+        "sourceSha256": "388d0d73f05c1c86d0494112a6fbbc078ada94c6acf7af04d0ad6920be58a740",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Injected read callback is a test/UI transport seam. Literal history/overview/detail calls originate here and in email_delivery_model.dart; SQL resolves occasion/organization/order/user scope."
+      },
+      "lexicalSqlCandidates": [
+        "get_email_delivery_detail",
+        "get_email_delivery_overview"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/forms/supabase_form_commands.dart",
+      "line": 85,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(functionName, parameters),",
+      "dispatchDecision": {
+        "source": "lib/components/forms/supabase_form_commands.dart",
+        "sourceSha256": "5f3ff93ef846a81d64d78190f66f22efe1e51848bccd984f84b06fdbfd4d85ec",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private form command adapter receives literal create/update/delete/copy and Blueprint names. Actual functionName is separate from the invokeIntent resource key. Stored source/target form scope belongs to SQL."
+      },
+      "lexicalSqlCandidates": [
+        "create_form_client_sync_v1",
+        "delete_form_client_sync_v1",
+        "duplicate_form_to_occasion_client_sync_v1",
+        "update_blueprint_client_sync_v1",
+        "update_form_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/forms/waitlist_commands.dart",
+      "line": 116,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(endpoint,",
+      "dispatchDecision": {
+        "source": "lib/components/forms/waitlist_commands.dart",
+        "sourceSha256": "85eb6546999e1d459b0d1c847d3872a7035eac06a60c57a4866ca1f856025016",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private Edge forwarding adapter receives waitlist-commands or send-ticket-order selected by fixed methods. Buyer capability and verified actor lanes stay in SQL; endpoint is not accepted from a request body."
+      },
+      "lexicalSqlCandidates": [
+        "get_customer_order_overview",
+        "get_waitlist_offer_email_preview",
+        "get_waitlist_offer_form",
+        "get_waitlist_offer_proposal",
+        "get_waitlist_order_detail"
+      ],
+      "lexicalEdgeCandidates": [
+        "customer-order-access",
+        "send-ticket-order",
+        "waitlist-commands"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/forms/waitlist_commands.dart",
+      "line": 129,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(endpoint, snapshot, commandId: commandId);",
+      "dispatchDecision": {
+        "source": "lib/components/forms/waitlist_commands.dart",
+        "sourceSha256": "85eb6546999e1d459b0d1c847d3872a7035eac06a60c57a4866ca1f856025016",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private Edge forwarding adapter receives waitlist-commands or send-ticket-order selected by fixed methods. Buyer capability and verified actor lanes stay in SQL; endpoint is not accepted from a request body."
+      },
+      "lexicalSqlCandidates": [
+        "get_customer_order_overview",
+        "get_waitlist_offer_email_preview",
+        "get_waitlist_offer_form",
+        "get_waitlist_offer_proposal",
+        "get_waitlist_order_detail"
+      ],
+      "lexicalEdgeCandidates": [
+        "customer-order-access",
+        "send-ticket-order",
+        "waitlist-commands"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/groups/group_commands.dart",
+      "line": 186,
+      "kind": "dynamic-invokeIntent",
+      "target": null,
+      "code": ".invokeIntent(",
+      "dispatchDecision": {
+        "source": "lib/components/groups/group_commands.dart",
+        "sourceSha256": "6a6c3c80bb92f06ecf3a92d1851f7c80768cfbe326c2203b73f1ac4a0aaae7e0",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private group adapter receives literal save/delete/member/assignment commands; invokeIntent key does not grant group rights. SQL loads actual group membership and resource owner before replay."
+      },
+      "lexicalSqlCandidates": [
+        "add_user_group_members_client_sync_v1",
+        "delete_user_group_client_sync_v1",
+        "replace_group_assignments_client_sync_v1",
+        "save_user_group_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/information/information_commands.dart",
+      "line": 77,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(",
+      "dispatchDecision": {
+        "source": "lib/components/information/information_commands.dart",
+        "sourceSha256": "fb818e143b4f542d472b6986372acb2a4dbbfe7bc956480321726ca93be99220",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Fixed information/unit-information command ternaries and game-guess intent. Unit versus occasion is explicit and checked against stored SQL scope, not a role branch in Dart."
+      },
+      "lexicalSqlCandidates": [
+        "delete_information_client_sync_v1",
+        "delete_unit_information_client_sync_v1",
+        "game_guess_client_sync_v1",
+        "save_information_client_sync_v1",
+        "save_unit_information_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/information/information_commands.dart",
+      "line": 111,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(",
+      "dispatchDecision": {
+        "source": "lib/components/information/information_commands.dart",
+        "sourceSha256": "fb818e143b4f542d472b6986372acb2a4dbbfe7bc956480321726ca93be99220",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Fixed information/unit-information command ternaries and game-guess intent. Unit versus occasion is explicit and checked against stored SQL scope, not a role branch in Dart."
+      },
+      "lexicalSqlCandidates": [
+        "delete_information_client_sync_v1",
+        "delete_unit_information_client_sync_v1",
+        "game_guess_client_sync_v1",
+        "save_information_client_sync_v1",
+        "save_unit_information_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/inventory/inventory_commands.dart",
+      "line": 95,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(name, parameters),",
+      "dispatchDecision": {
+        "source": "lib/components/inventory/inventory_commands.dart",
+        "sourceSha256": "792da1b48df30203191b7f1ffa370f3304a7afda4bc8d3151e86db6ce1dab593",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _invoke receives fixed resource/pool command names; transport does not calculate inventory permissions. SQL derives pool/resource occasion, locks it and checks the canonical order operation."
+      },
+      "lexicalSqlCandidates": [
+        "delete_inventory_pool_client_sync_v1",
+        "delete_resource_client_sync_v1",
+        "save_inventory_pool_client_sync_v1",
+        "save_resource_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/occasion/occasion_commands.dart",
+      "line": 211,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(functionName, parameters),",
+      "dispatchDecision": {
+        "source": "lib/components/occasion/occasion_commands.dart",
+        "sourceSha256": "7ff714a977752bb2f48e1c33286d5d57139b87bfe3f98d6f3295866c962bc7d1",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private adapter forwards literal occasion/service/game commands. The create operation uses unit editor OR manager; edit/copy/delete retain their separate stored source/target rules in SQL."
+      },
+      "lexicalSqlCandidates": [
+        "create_occasion_client_sync_v1",
+        "create_service_item_client_sync_v1",
+        "delete_occasion_client_sync_v1",
+        "delete_service_item_client_sync_v1",
+        "duplicate_occasion_client_sync_v1",
+        "game_update_settings_client_sync_v1",
+        "save_occasion_client_sync_v1",
+        "update_service_item_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/reception/reception_service.dart",
+      "line": 75,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params: params);",
+      "dispatchDecision": {
+        "source": "lib/components/reception/reception_service.dart",
+        "sourceSha256": "4d690a94b33c694566857c48220ce7ee1e25776189bc2b32959613add24c153f",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private typed _rpc wrapper forwards literal reception methods. SQL owns receptionist/manager/admin admission and actual participant/occasion binding; QR exchange has a separate technical proof."
+      },
+      "lexicalSqlCandidates": [
+        "create_reception_user_v1",
+        "get_my_recent_reception_registrations_v1",
+        "get_reception_occasion_users_v1",
+        "get_reception_registration_options_v1",
+        "issue_reception_login_qr_v1"
+      ],
+      "lexicalEdgeCandidates": [
+        "cancel-reception-registration"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/schedule/saved_program_commands.dart",
+      "line": 31,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params: parameters),",
+      "dispatchDecision": {
+        "source": "lib/components/schedule/saved_program_commands.dart",
+        "sourceSha256": "31f08fc6e643bfea025fb8d27ea7659a463b2baf16019d1b586bffbaa9f89aef",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Injected RPC callback forwards the literal set_saved_program_client_sync_v1 command. SQL binds the saved-program actor; selecting the RPC is not an authorization decision."
+      },
+      "lexicalSqlCandidates": [
+        "set_saved_program",
+        "set_saved_program_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/speakers/speaker_commands.dart",
+      "line": 230,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(functionName, parameters));",
+      "dispatchDecision": {
+        "source": "lib/components/speakers/speaker_commands.dart",
+        "sourceSha256": "0de9ff46b57166f0d7427d23bfcfd9d828831b41bf548c35586a837144cfdf76",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private adapter forwards literal speaker/topic/event-speaker/counseling commands. SQL distinguishes editor authoring from participant counseling enrollment."
+      },
+      "lexicalSqlCandidates": [
+        "create_counseling_slots_client_sync_v1",
+        "delete_counseling_slot_client_sync_v1",
+        "delete_empty_counseling_slots_client_sync_v1",
+        "delete_speaker_client_sync_v1",
+        "delete_speaker_topic_client_sync_v1",
+        "save_event_speakers_client_sync_v1",
+        "save_speaker_client_sync_v1",
+        "save_speaker_topic_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/unit/verification/db_unit_verification.dart",
+      "line": 12,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params: params));",
+      "dispatchDecision": {
+        "source": "lib/components/unit/verification/db_unit_verification.dart",
+        "sourceSha256": "0bb94a0f74916d4d9d74fb8c35e434c0e78a8907e4dc9d87cb7ecabfc5e28e43",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _call/_rpc injection seam receives literal legal-profile and verification RPCs. SQL owns unit-manager edit/submit and tenant-admin review; injection exists for deterministic tests."
+      },
+      "lexicalSqlCandidates": [
+        "get_unit_legal_profile",
+        "get_unit_verification_queue",
+        "review_unit_verification",
+        "save_unit_legal_profile",
+        "submit_unit_verification"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/unit/verification/db_unit_verification.dart",
+      "line": 16,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": "_rpc(name, params).timeout(const Duration(seconds: 20)));",
+      "dispatchDecision": {
+        "source": "lib/components/unit/verification/db_unit_verification.dart",
+        "sourceSha256": "0bb94a0f74916d4d9d74fb8c35e434c0e78a8907e4dc9d87cb7ecabfc5e28e43",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _call/_rpc injection seam receives literal legal-profile and verification RPCs. SQL owns unit-manager edit/submit and tenant-admin review; injection exists for deterministic tests."
+      },
+      "lexicalSqlCandidates": [
+        "get_unit_legal_profile",
+        "get_unit_verification_queue",
+        "review_unit_verification",
+        "save_unit_legal_profile",
+        "submit_unit_verification"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/users/account_deletion_service.dart",
+      "line": 35,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": "_invoke();",
+      "dispatchDecision": {
+        "source": "lib/components/users/account_deletion_service.dart",
+        "sourceSha256": "4bd8a337f27408961794cf4d453daf3f853068b67a26b76c865c2910b6a90007",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "_invoke() is a zero-argument injected request callback, not a dynamic endpoint call. Its default implementation invokes request-account-deletion with the current bearer identity."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [
+        "request-account-deletion"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/users/companion/companion_commands.dart",
+      "line": 57,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(name, {",
+      "dispatchDecision": {
+        "source": "lib/components/users/companion/companion_commands.dart",
+        "sourceSha256": "8a3334a2add2dad48bbe1078f1ea20dda201ed161ba9aa03a8d48d5dfe59d3e7",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private adapter forwards fixed companion command names. SQL binds the actual parent/companion owner and occasion; an arbitrary caller-selected user ID does not grant access."
+      },
+      "lexicalSqlCandidates": [
+        "assign_existing_companion_client_sync_v1",
+        "create_companion_client_sync_v1",
+        "delete_owned_companion_client_sync_v1",
+        "unassign_existing_companion_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/users/profile_commands.dart",
+      "line": 128,
+      "kind": "dynamic-invokeIntent",
+      "target": null,
+      "code": ".invokeIntent(",
+      "dispatchDecision": {
+        "source": "lib/components/users/profile_commands.dart",
+        "sourceSha256": "f6c0b9be0c577bfac4edaeb9a2dad5e9bcff7cf425401b60b33f8233bceae0fe",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private adapter forwards fixed profile/import/join/delete commands and separate intent keys. SQL command/receipt owns self versus manager authorization and live replay checks."
+      },
+      "lexicalSqlCandidates": [
+        "add_user_to_occasion_client_sync_v1",
+        "create_occasion_user_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "import_profiles_client_sync_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "save_profile_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/components/users/profile_commands.dart",
+      "line": 130,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(name, parameters)));",
+      "dispatchDecision": {
+        "source": "lib/components/users/profile_commands.dart",
+        "sourceSha256": "f6c0b9be0c577bfac4edaeb9a2dad5e9bcff7cf425401b60b33f8233bceae0fe",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private adapter forwards fixed profile/import/join/delete commands and separate intent keys. SQL command/receipt owns self versus manager authorization and live replay checks."
+      },
+      "lexicalSqlCandidates": [
+        "add_user_to_occasion_client_sync_v1",
+        "create_occasion_user_client_sync_v1",
+        "delete_occasion_user_client_sync_v1",
+        "import_profiles_client_sync_v1",
+        "import_users_from_tickets_client_sync_v1",
+        "save_profile_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/data_services/client_sync/client_command_transport.dart",
+      "line": 37,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(functionName, params: parameters),",
+      "dispatchDecision": {
+        "source": "lib/data_services/client_sync/client_command_transport.dart",
+        "sourceSha256": "c835aa3ce9712543850ac5298784cd97d67230556c074cab721c09e6e5af288a",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Shared RPC sink receives domain command names from repository command adapters indexed separately. It adds durable identity, handles results and denial invalidation; it is not a role/policy dispatcher."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/data_services/client_sync/client_command_transport.dart",
+      "line": 129,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": "_rpc(functionName, boundParameters);",
+      "dispatchDecision": {
+        "source": "lib/data_services/client_sync/client_command_transport.dart",
+        "sourceSha256": "c835aa3ce9712543850ac5298784cd97d67230556c074cab721c09e6e5af288a",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Shared RPC sink receives domain command names from repository command adapters indexed separately. It adds durable identity, handles results and denial invalidation; it is not a role/policy dispatcher."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/data_services/synchro_service.dart",
+      "line": 146,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(functionName, params: params),",
+      "dispatchDecision": {
+        "source": "lib/data_services/synchro_service.dart",
+        "sourceSha256": "d1fd04f1fee5fcde4f3375c121648e20209801b2e3d4af965bf31ab7c1699e4a",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Function name comes from app_config_rpc.dart fixed v219/v218/v2 negotiation. Existing missing-function fallback chooses a response protocol; all present versions delegate the same SQL context owner."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "lib/services/google_auth_service.dart",
+      "line": 129,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(",
+      "dispatchDecision": {
+        "source": "lib/services/google_auth_service.dart",
+        "sourceSha256": "d0d14b59828bf0eb3c033eb2e4dce7c7339374b870b8591e9b508376ed1f44ee",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private _request constructs google-auth-start or google-auth-complete from fixed call sites. Callback is a server route. Google state/nonce/client/origin/token verification is an identity protocol, not editor authorization."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "supabase/functions/_shared/bankSyncHealth.ts",
+      "line": 7,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name,params).abortSignal(AbortSignal.timeout(10_000));",
+      "dispatchDecision": {
+        "source": "supabase/functions/_shared/bankSyncHealth.ts",
+        "sourceSha256": "f185e99160b37de1a8c6ac95879150e3d8b43134c21818e85ba44be2c4dbd819",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Lexically private rpc() receives literal health observation/enqueue names. This is the trusted monitor lane scoped to its configured organization and mapped remote connection, not a user-role bypass."
+      },
+      "lexicalSqlCandidates": [
+        "enqueue_bank_sync_health_alerts",
+        "get_bank_sync_health_targets",
+        "record_bank_sync_health"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "supabase/functions/_shared/bankSyncOperation.ts",
+      "line": 12,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, params).abortSignal(AbortSignal.timeout(10_000));",
+      "dispatchDecision": {
+        "source": "supabase/functions/_shared/bankSyncOperation.ts",
+        "sourceSha256": "f88f69c252a614694a21a00a84220d57b23704054752837acf343a531c04802f",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Lexically private rpc() receives literal operation/connection methods after claiming the durable operation. SQL owns service grants, operation identity and stored bank binding; a committed intent may finish as system work."
+      },
+      "lexicalSqlCandidates": [
+        "activate_bank_sync_connection",
+        "claim_bank_sync_operation",
+        "complete_bank_sync_operation",
+        "record_bank_sync_pull",
+        "reset_bank_sync_control_health",
+        "save_bank_sync_connection",
+        "update_bank_sync_connection_metadata"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "supabase/functions/_shared/emailQueueClient.ts",
+      "line": 14,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, args);",
+      "dispatchDecision": {
+        "source": "supabase/functions/_shared/emailQueueClient.ts",
+        "sourceSha256": "5e3dd26aba7956c9247524e771ad1f8d0ea3554b9f1e229aeaab906467f8a40e",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Exported emailRpc is a trusted service transport used by literal repository producers/dispatcher methods. Actor-triggered custom/participant mail uses actor-bound SQL enqueue; generic queue maintenance remains a separate service lane."
+      },
+      "lexicalSqlCandidates": [
+        "admit_email_preparation_v1",
+        "enqueue_prepared_email",
+        "get_internal_email_state"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "supabase/functions/send-ticket-order/index.ts",
+      "line": 119,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(",
+      "dispatchDecision": {
+        "source": "supabase/functions/send-ticket-order/index.ts",
+        "sourceSha256": "afb1b9092866a21efe6cada1a633cfffb778d1f05bad557ee6a96981883d2913",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "rpcName is a closed ternary: execute_waitlist_command_client_sync_v1, replace_blueprint_order_client_sync_v1 or create_ticket_order_client_sync_v1. Ordinary authenticated versus buyer/technical acceptance selects the existing SQL boundary; payload cannot supply an RPC name."
+      },
+      "lexicalSqlCandidates": [
+        "abort_fakturoid_ticket_order_v1",
+        "complete_fakturoid_ticket_order_v1",
+        "create_email_confirmation_receipt",
+        "create_ticket_order_client_sync_v1",
+        "execute_waitlist_command_client_sync_v1",
+        "get_external_services",
+        "get_fakturoid_ticket_order_state_v1",
+        "read_order_identity",
+        "replace_blueprint_order_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "supabase/functions/send-ticket-order/index.ts",
+      "line": 131,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(",
+      "dispatchDecision": {
+        "source": "supabase/functions/send-ticket-order/index.ts",
+        "sourceSha256": "afb1b9092866a21efe6cada1a633cfffb778d1f05bad557ee6a96981883d2913",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "rpcName is a closed ternary: execute_waitlist_command_client_sync_v1, replace_blueprint_order_client_sync_v1 or create_ticket_order_client_sync_v1. Ordinary authenticated versus buyer/technical acceptance selects the existing SQL boundary; payload cannot supply an RPC name."
+      },
+      "lexicalSqlCandidates": [
+        "abort_fakturoid_ticket_order_v1",
+        "complete_fakturoid_ticket_order_v1",
+        "create_email_confirmation_receipt",
+        "create_ticket_order_client_sync_v1",
+        "execute_waitlist_command_client_sync_v1",
+        "get_external_services",
+        "get_fakturoid_ticket_order_state_v1",
+        "read_order_identity",
+        "replace_blueprint_order_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "tools/festapp/src/cli/main.mjs",
+      "line": 137,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(",
+      "dispatchDecision": {
+        "source": "tools/festapp/src/cli/main.mjs",
+        "sourceSha256": "9c113712e08f08ec1ff8339c96fc731165b1cac738bf21ba7a83f138f175b9e3",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "invoke() addresses the validated operation catalog, not PostgREST directly. CLI argument validation, fixed operation schemas and SQL domain boundaries remain authoritative."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "tools/festapp/src/mcp/server.mjs",
+      "line": 34,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(operation.id, args);",
+      "dispatchDecision": {
+        "source": "tools/festapp/src/mcp/server.mjs",
+        "sourceSha256": "70cff9cf0d96d640e6345e3ab61900283450cf35f8734f5c0490ea2f30169daa",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "operation.id originates from the fixed catalog used to register MCP tools. Resource tools validate inputs and call the same owner; there is no arbitrary endpoint tool."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "tools/festapp/src/operations/catalog.mjs",
+      "line": 225,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(",
+      "dispatchDecision": {
+        "source": "tools/festapp/src/operations/catalog.mjs",
+        "sourceSha256": "39a84aa10c4f55aa443ccb18305f715cb0c132ca689da93c5fdb4f98678e40dd",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Layout inspection selects exactly ordinary or delegated SQL reader. Delegated scope is narrowed in the atomic SQL data request; catalog dispatch never calculates role combinations."
+      },
+      "lexicalSqlCandidates": [
+        "get_delegated_ticket_layout_for_authoring_v1",
+        "get_ticket_layout_for_authoring_v1",
+        "get_ticket_layout_write_contract_v1"
+      ],
+      "lexicalEdgeCandidates": [
+        "preview-ticket-layout"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "tools/festapp/src/operations/occasion-create.mjs",
+      "line": 18,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(delegated ? 'create_delegated_occasion_client_sync_v1' : 'create_occasion_client_sync_v1', {",
+      "dispatchDecision": {
+        "source": "tools/festapp/src/operations/occasion-create.mjs",
+        "sourceSha256": "fdbaf42f0d03b50aca61595a5107acbb267d2c2a5f3cc9074b5829c6d1f732ad",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Closed ordinary/delegated create RPC ternary. Delegated create requires explicit consent opt-in and OAuth scope plus the same live SQL creation rule."
+      },
+      "lexicalSqlCandidates": [
+        "create_delegated_occasion_client_sync_v1",
+        "create_occasion_client_sync_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "web_client/src/components/forms/waitlist_commands.js",
+      "line": 72,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": "_invoke(endpoint, body) {",
+      "dispatchDecision": {
+        "source": "web_client/src/components/forms/waitlist_commands.js",
+        "sourceSha256": "397d1206908da8e786581f224662837df7d75349297b13a442f34e0663744cad",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "_invoke(endpoint,body) declaration is not itself a network call. Private callers choose fixed Edge endpoints; SQL validates buyer proof or verified editor actor before durable command execution."
+      },
+      "lexicalSqlCandidates": [
+        "get_customer_order_overview",
+        "get_waitlist_offer_form"
+      ],
+      "lexicalEdgeCandidates": [
+        "customer-order-access",
+        "download-ticket",
+        "send-ticket-order",
+        "waitlist-commands"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "web_client/src/components/forms/waitlist_commands.js",
+      "line": 76,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(endpoint, {",
+      "dispatchDecision": {
+        "source": "web_client/src/components/forms/waitlist_commands.js",
+        "sourceSha256": "397d1206908da8e786581f224662837df7d75349297b13a442f34e0663744cad",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "_invoke(endpoint,body) declaration is not itself a network call. Private callers choose fixed Edge endpoints; SQL validates buyer proof or verified editor actor before durable command execution."
+      },
+      "lexicalSqlCandidates": [
+        "get_customer_order_overview",
+        "get_waitlist_offer_form"
+      ],
+      "lexicalEdgeCandidates": [
+        "customer-order-access",
+        "download-ticket",
+        "send-ticket-order",
+        "waitlist-commands"
+      ],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "web_client/src/services/google_auth_service.js",
+      "line": 17,
+      "kind": "dynamic-invoke",
+      "target": null,
+      "code": ".invoke(`google-auth-${endpoint}`, {",
+      "dispatchDecision": {
+        "source": "web_client/src/services/google_auth_service.js",
+        "sourceSha256": "96ff05e159721cf32da6db4d55bb7c7678b169db653f53b65947dc83102688bc",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private request constructs a fixed Google-auth endpoint for start/complete. Server state machine owns origin/client/state/identity proof; no domain roles are calculated in this adapter."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "web_client/src/services/router_service.js",
+      "line": 416,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(...args);",
+      "dispatchDecision": {
+        "source": "web_client/src/services/router_service.js",
+        "sourceSha256": "4f12e610fe3a487f4ed7bb8c96c68d3a84930c69268bebfad3fb44f805220695",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "rpc(...args) is a lazy initialization proxy supplied to ScanPage/ScannerDomainPage. It forwards ScannerApi calls unchanged; scanner SQL validates actual session/token/resource scope."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "web_client/src/services/scanner_api.js",
+      "line": 9,
+      "kind": "dynamic-rpc",
+      "target": null,
+      "code": ".rpc(name, { ...(scoped ? { p_session: this.session.session_id, p_token: this.session.token } : {}), ...params });",
+      "dispatchDecision": {
+        "source": "web_client/src/services/scanner_api.js",
+        "sourceSha256": "ff17a6c85b3caf04e2f4a391da2786a533e4930f7d0e39b63f83c253b08572b6",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private call(name) receives literal scanner SQL names from typed methods in this class. Session ID/token are technical proofs checked in SQL, not editor permission claims."
+      },
+      "lexicalSqlCandidates": [
+        "get_scanner_receipts",
+        "get_scanner_snapshot_page",
+        "get_scanner_summary",
+        "lookup_scanner_ticket",
+        "open_scanner_session",
+        "prepare_scanner_snapshot",
+        "search_scanner_tickets",
+        "sync_scanner_operations"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "workers/image-worker/scripts/blueprint_local_bridge.mjs",
+      "line": 27,
+      "kind": "dynamic-rpc-url",
+      "target": null,
+      "code": "if(url.origin!=='https://api.festapp.net'||!url.pathname.startsWith('/rest/v1/rpc/'))return new Response('External network forbidden in owned fixture',{status:502});",
+      "dispatchDecision": {
+        "source": "workers/image-worker/scripts/blueprint_local_bridge.mjs",
+        "sourceSha256": "993f8925a651eb0311220eb656f60ae86fad72171903cb5d0c7ff216d4d08160",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Development-only Miniflare bridge: canonical RPC URLs are rewritten to fixed localhost:59521, all other outbound origins/paths deny; font-service routes reject browser Origin. It is not a deployed application endpoint or production Storage producer. Reviewed again against current main."
+      },
+      "lexicalSqlCandidates": [],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    },
+    {
+      "source": "workers/sync-publisher/src/supabase_database.ts",
+      "line": 12,
+      "kind": "dynamic-rpc-url",
+      "target": null,
+      "code": "const response = await fetch(`${this.origin}/rest/v1/rpc/${name}`, {",
+      "dispatchDecision": {
+        "source": "workers/sync-publisher/src/supabase_database.ts",
+        "sourceSha256": "9144622d6541124a4685ab36ac706cf41a39641ee9ce1a50c801c078593472bc",
+        "decision": "transport forwarding reviewed; domain SQL proof remains separate",
+        "mechanism": "Private class rpc(name) receives literal publication/retention methods. SQL service guards bind dirty claims, publication revisions, scope and retention cutoff; there is no user capability calculation in the Worker."
+      },
+      "lexicalSqlCandidates": [
+        "claim_client_projection_dirty_scopes_v1",
+        "claim_client_projection_dirty_v1",
+        "compact_client_mutation_receipts_v1",
+        "complete_client_sync_publication_classes_v1",
+        "delete_client_sync_artifact_metadata_v1",
+        "get_client_sync_artifact_retention_candidates_v1",
+        "get_client_sync_publication_state_v1",
+        "get_public_client_sync_component_v1",
+        "next_client_sync_release_revision_v1",
+        "refresh_cleaning_public_state_v1",
+        "refresh_event_public_state_v1",
+        "release_client_projection_claims_v1"
+      ],
+      "lexicalEdgeCandidates": [],
+      "domainAuthorizationState": "Separate SQL operation/grant/technical-proof evidence; not inferred from forwarding."
+    }
+  ]
+}
