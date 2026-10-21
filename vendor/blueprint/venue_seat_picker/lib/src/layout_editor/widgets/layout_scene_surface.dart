@@ -36,6 +36,7 @@ class LayoutSceneSurface extends StatefulWidget {
     this.highlightedIds = const {},
     this.selectableIds,
     this.canvasSelected = false,
+    this.backgroundSelected = false,
     this.transientForegroundIds = const {},
     this.warningIds = const {},
     this.blockedPlacementHulls = const [],
@@ -93,7 +94,7 @@ class LayoutSceneSurface extends StatefulWidget {
   final bool showGrid;
   final double gridStep;
   final Offset gridOrigin;
-  final bool canvasSelected;
+  final bool canvasSelected, backgroundSelected;
   final Rect? marquee;
   final LayoutNode? inlineNode;
   final ValueChanged<String>? onInlineSubmit;
@@ -1141,6 +1142,8 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               // commercial check marker presentation.
                               emphasizeSelection: true,
                               selectionHulls: [
+                                if (widget.backgroundSelected)
+                                  backgroundHull(widget.document),
                                 for (final node in widget.document.nodes.where(
                                   (n) => widget.highlightedIds.contains(n.id),
                                 ))
@@ -1584,6 +1587,20 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                               ),
                             );
                           },
+                        )
+                      : size.width < 700
+                      ? IconButton.filledTonal(
+                          key: const ValueKey('layout-mobile-fit-plan'),
+                          tooltip: VenueLayoutStrings.text(context, 'Fit plan'),
+                          constraints: const BoxConstraints(
+                            minWidth: 44,
+                            minHeight: 44,
+                          ),
+                          onPressed: () => setState(() {
+                            _frame = null;
+                            _camera.value = Matrix4.identity();
+                          }),
+                          icon: const Icon(Icons.fit_screen),
                         )
                       : FilledButton.tonalIcon(
                           onPressed: () => setState(() {

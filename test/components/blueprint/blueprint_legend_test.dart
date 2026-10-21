@@ -41,6 +41,24 @@ void main() {
     expect(hovered, isNull);
     await mouse.removePointer();
   });
+  testWidgetsWithEnvironment(() => environment,
+      'mobile legend stays one row and exposes every state by horizontal scrolling',
+      (tester) async {
+    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(body: Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(width: 360, child: BlueprintLayoutLegend(
+        compact: true, states: const [BlueprintSeatState.available])),
+    ))));
+    final legend = find.byKey(const ValueKey('blueprint-seat-legend'));
+    final scroll = find.byKey(const ValueKey('blueprint-legend-scroll'));
+    expect(tester.getSize(legend).height, lessThanOrEqualTo(60));
+    expect(scroll, findsOneWidget);
+    await tester.drag(scroll, const Offset(-900, 0));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('blueprint-legend-hover-selectedByMe')).hitTestable(),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   for (final brightness in Brightness.values) {
     for (final compact in [false, true]) {
       testWidgetsWithEnvironment(() => environment,

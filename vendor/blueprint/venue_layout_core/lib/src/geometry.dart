@@ -596,33 +596,6 @@ List<List<String>> layoutCollisions(VenueLayoutDocument d) {
   return out;
 }
 
-List<double> registerTwoPoints(
-  List<double> a1,
-  List<double> a2,
-  List<double> b1,
-  List<double> b2,
-) {
-  final ax = a2[0] - a1[0],
-      ay = a2[1] - a1[1],
-      bx = b2[0] - b1[0],
-      by = b2[1] - b1[1];
-  final al = sqrt(ax * ax + ay * ay), bl = sqrt(bx * bx + by * by);
-  if (al < 1 || bl < 1)
-    throw ArgumentError('Registration points must be at least one unit apart');
-  final angle = atan2(by, bx) - atan2(ay, ax),
-      s = bl / al,
-      c = cos(angle) * s,
-      t = sin(angle) * s;
-  return [
-    c,
-    t,
-    -t,
-    c,
-    b1[0] - c * a1[0] + t * a1[1],
-    b1[1] - t * a1[0] - c * a1[1],
-  ].map(quantize).toList();
-}
-
 Map<String, dynamic> backgroundPlacement(
   double sw,
   double sh,

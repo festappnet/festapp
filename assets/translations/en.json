@@ -1271,6 +1271,7 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "imageUploadUncertain": "The upload result could not be verified. Before retrying, check whether the image was added.",
     "zoomControls": "Map zoom",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",

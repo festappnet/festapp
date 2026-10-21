@@ -33,6 +33,7 @@ import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_create_order_dialog.dart';
 import 'blueprint_layout_legend.dart';
+import 'blueprint_editor_feedback.dart';
 import 'blueprint_product_dialogs.dart';
 
 enum _BlueprintScreenMode { reservations, edit }
@@ -1493,7 +1494,40 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           },
       };
 
-  Widget _modeSelector() => ConstrainedBox(
+  Widget _modeSelector() => LayoutBuilder(builder: (context, constraints) {
+    if (constraints.maxWidth < 400 || MediaQuery.sizeOf(context).width < 700) {
+      return PopupMenuButton<_BlueprintScreenMode>(
+        key: const ValueKey('blueprint-screen-mode'),
+        enabled: !_busy,
+        initialValue: _screenMode,
+        onSelected: _setScreenMode,
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            key: const ValueKey('blueprint-reservations-mode'),
+            value: _BlueprintScreenMode.reservations,
+            child: Text(BlueprintStrings.reservationsAndOrders)),
+          if (_canEdit) PopupMenuItem(
+            key: const ValueKey('blueprint-edit-mode'),
+            value: _BlueprintScreenMode.edit,
+            child: Text(BlueprintStrings.editPlan)),
+        ],
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(24)),
+          child: Row(children: [
+            Icon(_editingPlan ? Icons.edit_outlined : Icons.event_seat_outlined, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(_editingPlan ? BlueprintStrings.editPlan : BlueprintStrings.reservationsAndOrders,
+              maxLines: 1, overflow: TextOverflow.ellipsis)),
+            const Icon(Icons.arrow_drop_down),
+          ]),
+        ),
+      );
+    }
+    return ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 460),
         child: LayoutBuilder(
           builder: (context, constraints) =>
@@ -1541,6 +1575,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           ),
         ),
       );
+  });
 
   Set<String> get _blockableSeatIds {
     final ids =
@@ -1589,7 +1624,37 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     );
   }
 
-  Widget _toolbarActions() => Wrap(
+  Widget _toolbarActions() {
+    if (MediaQuery.sizeOf(context).width < 700) {
+      if (_editingPlan || controller.mode != BlueprintLayoutMode.manage) return const SizedBox.shrink();
+      final ids = _blockableSeatIds;
+      final unblock = ids.isNotEmpty && ids.every((id) => controller.snapshot.seatBindings[id]!.blocked);
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        if (_canOrder) IconButton(
+          key: const ValueKey('blueprint-start-order'),
+          tooltip: BlueprintStrings.orderAction,
+          onPressed: _busy ? null : () => _startOperation(BlueprintLayoutMode.order),
+          icon: const Icon(Icons.add_shopping_cart)),
+        if (_canOrder || _canEdit) PopupMenuButton<String>(
+          key: const ValueKey('blueprint-more-actions'),
+          enabled: !_busy,
+          onSelected: (action) {
+            if (action == 'swap') _startOperation(BlueprintLayoutMode.swap);
+            if (action == 'block') _toggleSelectedBlocked();
+          },
+          itemBuilder: (context) => [
+            if (_canOrder) PopupMenuItem(value: 'swap',
+              key: const ValueKey('blueprint-start-swap'),
+              child: Text(BlueprintStrings.legendSwapSeats)),
+            if (_canEdit) PopupMenuItem(value: 'block',
+              key: const ValueKey('blueprint-toggle-blocked'),
+              enabled: ids.isNotEmpty,
+              child: Text(unblock ? BlueprintStrings.unblockSeats : BlueprintStrings.blockSeats)),
+          ],
+        ),
+      ]);
+    }
+    return Wrap(
         key: const ValueKey('blueprint-toolbar-actions'),
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 8,
@@ -1624,6 +1689,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             _blockAction(),
         ],
       );
+  }
 
   Widget? _operationPanel() {
     if (_editingPlan || controller.mode == BlueprintLayoutMode.manage)
@@ -1746,18 +1812,11 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 onKeyEvent: _hostHistoryKey,
                 child: Scaffold(
                   body: SafeArea(
+                      child: BlueprintEditorFeedback(
+                      message: _message,
+                      onDismiss: () => setState(() => _message = null),
                       child: Column(children: [
                     if (_saveFlight != null) const LinearProgressIndicator(),
-                    if (_message != null)
-                      Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Semantics(
-                              liveRegion: true,
-                              child: Text(_message!,
-                                  style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error)))),
                     if (_assetsFailed)
                       TextButton(
                           onPressed: _assetsPending ? null : _loadAssets,
@@ -1848,7 +1907,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                                     ? _editFromCanvas
                                     : null,
                                 onNodeActivated: controller.activateNode))),
-                  ])),
+                  ]))),
                 )));
       });
 }

@@ -1271,6 +1271,7 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "imageUploadUncertain": "Výsledek nahrání se nepodařilo ověřit. Před dalším pokusem zkontrolujte, zda byl obrázek přidaný.",
     "zoomControls": "Přiblížení plánku",
     "zoomIn": "Přiblížit",
     "zoomOut": "Oddálit",

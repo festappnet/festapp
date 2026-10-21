@@ -74,14 +74,6 @@ void main() {
         cs.text('8 seats · spacing 56.0/64.0'),
         '8 sedadel · rozestupy 56.0/64.0',
       );
-      expect(
-        cs.text('1. Tap two recognizable points on the source image (1/2).'),
-        '1. Vyber dva rozpoznatelné body v podkladovém obrázku (1/2).',
-      );
-      expect(
-        cs.text('2. Tap the matching plan positions in the same order (0/2).'),
-        '2. Ve stejném pořadí vyber odpovídající body v plánku (0/2).',
-      );
       expect(cs.text('Export My custom sofa'), 'Exportovat: My custom sofa');
       expect(cs.text('My custom sofa'), 'My custom sofa');
       expect(en.text('18 placed · 2 unplaced'), '18 placed · 2 unplaced');

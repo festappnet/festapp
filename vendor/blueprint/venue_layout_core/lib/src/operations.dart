@@ -1706,26 +1706,6 @@ VenueLayoutDocument renumberSeats(
   );
 }
 
-Map<String, dynamic> registerBackground(
-  Map<String, dynamic> background,
-  List<double> a1,
-  List<double> a2,
-  List<double> b1,
-  List<double> b2,
-) {
-  final m = registerTwoPoints(a1, a2, b1, b2),
-      w = (background['width'] as num).toDouble(),
-      h = (background['height'] as num).toDouble(),
-      center = transformPoint(m, w / 2, h / 2);
-  return {
-    ...background,
-    'x': center[0],
-    'y': center[1],
-    'scale': sqrt(m[0] * m[0] + m[1] * m[1]),
-    'rotation': atan2(m[1], m[0]) * 180 / pi,
-  };
-}
-
 VenueLayoutDocument reconcileAssembly(
   VenueLayoutDocument d,
   String rootId,
