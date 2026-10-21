@@ -46,9 +46,12 @@ BEGIN
  -- Copied form metadata must not silently defeat explicit inheritance.
  payload:=jsonb_set(payload,'{formDraft,data}','{"communication_tone":"informal","is_reminder_enabled":true,"reminder_interval_seconds":123,"fixture_retained":"yes"}');
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,5);
- BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Editor bypassed manager publication gate'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  EXECUTE 'RESET ROLE';
- UPDATE public.unit_users SET is_manager=true WHERE unit=unit_id AND "user"=actor;
+ UPDATE public.unit_users SET is_editor=false WHERE unit=unit_id AND "user"=actor;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Revoked editor published draft'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ UPDATE public.unit_users SET is_editor=true WHERE unit=unit_id AND "user"=actor;
  UPDATE public.units SET data=data||'{"reply_to":"fresh@test.local","communication_tone":"formal","is_reminder_enabled":false,"reminder_interval_seconds":172800}' WHERE id=unit_id;
  SELECT data INTO unit_data FROM public.units WHERE id=unit_id;
  EXECUTE 'SET LOCAL ROLE authenticated';
@@ -69,6 +72,7 @@ BEGIN
  PERFORM assert_eq(public.get_effective_form_data(inherited_form)->>'communication_tone','informal','Inherited tone follows later unit changes');
  PERFORM assert_eq((SELECT f->>'reminder_interval_seconds' FROM public.occasions o CROSS JOIN LATERAL jsonb_array_elements(o.features) f WHERE o.id=event_id AND f->>'code'='form'),'172800','Reminder snapshot does not follow later unit changes');
  SELECT data INTO unit_data FROM public.units WHERE id=unit_id;
+ UPDATE public.unit_users SET is_manager=true WHERE unit=unit_id AND "user"=actor;
  -- Event-specific overrides must not change the unit, even for a manager.
  draft:=gen_random_uuid();
  EXECUTE 'SET LOCAL ROLE authenticated';

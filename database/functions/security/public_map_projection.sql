@@ -6,16 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_public_client_sync_component_core_v1(p_com
 AS $function$
 DECLARE v_revision bigint; v_payload jsonb; v_organization bigint; v_unit bigint; v_generated_at timestamptz;
 BEGIN
-  IF NOT public.is_service_role()
-     AND NOT (
-       public.get_is_editor_on_occasion(p_scope_id)
-       OR public.get_is_admin_on_occasion(p_scope_id)
-       OR EXISTS (
-         SELECT 1 FROM public.occasions o
-         WHERE o.id=p_scope_id AND o.unit IS NOT NULL
-           AND public.get_is_editor_on_unit(o.unit)
-       )
-     ) THEN
+  IF NOT public.can_materialize_public_occasion(p_scope_id) THEN
     RAISE insufficient_privilege USING MESSAGE='publisher or occasion editor required';
   END IF;
   IF p_scope_type <> 'occasion' OR NOT EXISTS (

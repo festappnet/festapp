@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,6 +12,35 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseBankAccounts {
   SupabaseBankAccounts(this._supabase);
   final SupabaseClient _supabase;
+
+  Future<dynamic> _rpc(String function, {Map<String, dynamic>? params}) async {
+    try {
+      return await _supabase.rpc(function, params: params);
+    } on PostgrestException catch (error) {
+      if (error.code == '42501') {
+        await RightsService.refreshAfterAuthorizationDenial(error: error);
+      }
+      rethrow;
+    }
+  }
+
+  Future<FunctionResponse> _invokeBankSync(
+      {required Map<String, dynamic> body}) async {
+    try {
+      final response =
+          await _supabase.functions.invoke('bank-sync-manage', body: body);
+      if (response.status == 403) {
+        await RightsService.refreshAfterAuthorizationDenial();
+      }
+      return response;
+    } on FunctionException catch (error) {
+      if (error.status == 403) {
+        await RightsService.refreshAfterAuthorizationDenial(error: error);
+      }
+      rethrow;
+    }
+  }
+
   final connectionChanges = ValueNotifier<({int accountId, int revision})>(
       (accountId: 0, revision: 0));
   final Map<int, String> _connectionSnapshots = {};
@@ -33,8 +63,7 @@ class SupabaseBankAccounts {
     final operationId = _operationIds.putIfAbsent(key, () => const Uuid().v4());
     late final FunctionResponse response;
     try {
-      response = await _supabase.functions.invoke(
-        'bank-sync-manage',
+      response = await _invokeBankSync(
         body: {
           'account_id': accountId,
           'operation': operation,
@@ -63,10 +92,13 @@ class SupabaseBankAccounts {
   }
 
   Future<BankSyncConnection?> getConnection(int accountId) async {
-    final response = await _supabase.functions.invoke(
-      'bank-sync-manage',
+    final response = await _invokeBankSync(
       body: {'account_id': accountId, 'operation': 'status'},
     );
+    if (response.status >= 400) {
+      throw BankSyncError.fromResponse(
+          response.data is Map ? response.data as Map : const {});
+    }
     if (response.data == null) return null;
     final connection = BankSyncConnection.fromJson(
         Map<String, dynamic>.from(response.data as Map));
@@ -80,7 +112,7 @@ class SupabaseBankAccounts {
   Future<List<BankAccountModel>> getBankAccountsForUnit(
     int unitId,
   ) async {
-    final response = await _supabase.rpc(
+    final response = await _rpc(
       'get_bank_accounts_for_unit_management',
       params: {'p_unit_id': unitId},
     );
@@ -100,7 +132,7 @@ class SupabaseBankAccounts {
     int? organizationId,
   }) async {
     // Account details remain owned by Festapp; SQL queues the BankSync update.
-    final response = await _supabase.rpc(
+    final response = await _rpc(
       'update_bank_account',
       params: {
         'p_id': account.id == 0 ? null : account.id,
@@ -130,7 +162,7 @@ class SupabaseBankAccounts {
     int bankAccountId, {
     int? unitId,
   }) async {
-    final response = await _supabase.rpc(
+    final response = await _rpc(
       "get_bank_account_users",
       params: {"p_bank_account_id": bankAccountId, "p_unit_id": unitId},
     );
@@ -143,7 +175,7 @@ class SupabaseBankAccounts {
     bool isAdmin,
     bool isSupport,
   ) async {
-    await _supabase.rpc(
+    await _rpc(
       'update_bank_account_user',
       params: {
         'p_bank_account_id': bankAccountId,
@@ -159,7 +191,7 @@ class SupabaseBankAccounts {
     String email,
   ) async {
     // To remove, we update with both flags as false/null
-    await _supabase.rpc(
+    await _rpc(
       'update_bank_account_user',
       params: {
         'p_bank_account_id': bankAccountId,
@@ -186,7 +218,7 @@ class SupabaseBankAccounts {
   }
 
   Future<List<BankAccountModel>> getMyAdminBankAccounts() async {
-    final response = await _supabase.rpc('get_my_admin_bank_accounts');
+    final response = await _rpc('get_my_admin_bank_accounts');
     return (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
   }
 
@@ -197,7 +229,7 @@ class SupabaseBankAccounts {
     bool hard = false,
   }) async {
     try {
-      await _supabase.rpc(
+      await _rpc(
         'link_bank_account_to_unit',
         params: {
           'p_unit_id': unitId,

@@ -32,10 +32,10 @@ Status: implementation prepared for an explicitly authorized draft PR; GitHub pr
 | Requested HTML/detail/SVG/viewport/card Node batch | 21 passed |
 | CSP policy + hosting + public SEO + Google auth hosting | 24 passed |
 | Startup contract (`bash automation/test_web_startup.sh`) | 59 passed |
-| `npm run build` in web_client | Passed; actual Vite production build, main development-template version 0.20.1+485, not a tenant release build |
+| `pnpm run build` in web_client | Passed; actual Vite production build, main development-template version 0.20.1+485, not a tenant release build |
 | Isolated real Chromium security fixture | Passed without CSP and with enforcing fixture CSP: rich detail, gradients/clip/local use/text, zoom/pan, seat callback, reserve callback, Escape, malformed SVG rejection, no XSS execution, inline handler blocked |
 | Browser synthetic report through actual Worker report handler on loopback | HTTP 204; sanitized local log contains only directive/disposition/profile/source. This is not a live report receipt |
-| `npm run test:seat-checkout-browser` | Passed on both original disposable DB and fresh owned DB: actual map click -> SQL reservation -> preview -> order -> selected seat bound to ticket |
+| `pnpm run test:seat-checkout-browser` | Passed on both original disposable DB and fresh owned DB: actual map click -> SQL reservation -> preview -> order -> selected seat bound to ticket |
 | First full `./automation/test_all.sh` | Web 416 passed / 9 skipped. SQL failed against preexisting stale disposable DB on 55432; no reset of that DB |
 | Full suite with fresh owned main-baseline DB | Web 409 passed / 7 DB-dependent failures / 9 skipped; SQL 180 passed / 35 failed. SQL phase exits before later suites |
 | Remaining Flutter/integration/automation lanes | Core 157 cases passed; adapters 78 cases passed (1 skipped); Flutter 1305 cases, 2 failed, architecture check failed for 3 unclassified roots; Deno 358 passed; image-worker integration 27 skipped because its required fixture credentials are absent |
@@ -45,7 +45,7 @@ Status: implementation prepared for an explicitly authorized draft PR; GitHub pr
 | Dependabot YAML parse and requested root count | Passed |
 | `git diff --check` | Passed |
 
-The new browser command is `npm run test:security-browser` in web_client. It uses a named local headless session with task-owned provider-free config and closes its server/session. The existing deterministic seat-checkout command was used unchanged. No production test content, order, notification or email was created.
+The new browser command is `pnpm run test:security-browser` in web_client. It uses a named local headless session with task-owned provider-free config and closes its server/session. The existing deterministic seat-checkout command was used unchanged. No production test content, order, notification or email was created.
 
 ## Concrete publication blockers
 

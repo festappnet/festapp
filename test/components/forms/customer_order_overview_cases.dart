@@ -25,7 +25,7 @@ Map<String, dynamic> fixture({String ticketState = 'unused'}) => {
           'state': 'paid',
           'total': 1000,
           'currency': 'CZK',
-          'items': [],
+          'items': [{'title': 'Místo', 'price': 450, 'currency': 'CZK', 'spotGroupTitle': '7', 'spotTitle': '3'}],
           'payment': {
             'status': 'deposit_paid',
             'received': 300,
@@ -68,6 +68,7 @@ void main() {
     })))));
     await tester.pumpAndSettle();
     expect(find.text('CHILD'), findsOneWidget);
+    expect(find.text('OrderOverview.table: 7 · OrderOverview.seat: 3'), findsOneWidget);
     expect(find.textContaining('300 CZK'), findsOneWidget);
     expect(find.textContaining('700 CZK'), findsNWidgets(2));
     expect(find.byType(Checkbox), findsNothing);

@@ -19,7 +19,7 @@ GRANT EXECUTE ON FUNCTION public.email_reporting_state(public.email_messages) TO
 CREATE OR REPLACE FUNCTION public.get_order_email_summaries(p_occasion bigint,p_orders bigint[]) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_summary jsonb;
 BEGIN
- IF NOT coalesce(public.get_is_editor_order_view_on_occasion(p_occasion),false) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
+ IF NOT coalesce(public.can_read_orders(p_occasion),false) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=ANY(p_orders) AND occasion<>p_occasion) THEN RAISE EXCEPTION 'email_scope_mismatch'; END IF;
  WITH messages AS (
  SELECT m.*,public.email_reporting_state(m) reporting_state FROM public.email_messages m WHERE m.order_id=ANY(p_orders) AND m.occasion=p_occasion
@@ -50,7 +50,7 @@ CREATE OR REPLACE FUNCTION public.email_report_allowed(p_org bigint,p_occasion b
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT coalesce(public.get_is_admin_on_organization(p_org),false) OR
  (p_occasion IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion AND organization=p_org)
- AND coalesce(public.get_is_editor_order_view_on_occasion(p_occasion),false)
+ AND coalesce(public.can_read_orders(p_occasion),false)
  AND (p_user IS NULL OR EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user)));
 $$;
 REVOKE ALL ON FUNCTION public.email_report_allowed(bigint,bigint,uuid) FROM PUBLIC,anon;

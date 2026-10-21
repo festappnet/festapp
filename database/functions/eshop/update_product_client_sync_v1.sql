@@ -21,7 +21,7 @@ BEGIN
   END IF;
   END IF;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   IF jsonb_typeof(p_product->'inventory_contexts')='array' THEN
     p_product:=jsonb_set(p_product,'{inventory_contexts}',coalesce((SELECT jsonb_agg(c ORDER BY (c->>'inventory_context_id')::bigint)

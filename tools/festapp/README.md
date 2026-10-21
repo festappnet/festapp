@@ -25,10 +25,10 @@ Both the saved and explicit-candidate paths use the canonical schema/parser.
 ## Install and provision the selected tenant
 
 Requires Node >=22.13 and macOS Keychain for persistent operator sessions.
-`npm test` also requires Deno for the canonical renderer fixture.
+`pnpm test` also requires Deno for the canonical renderer fixture.
 
 ```sh
-npm ci --prefix tools/festapp
+pnpm --dir tools/festapp install --frozen-lockfile
 ```
 
 Use an explicitly reviewed tenant `project.conf`, never main's generic config.
@@ -175,8 +175,8 @@ E1. If deployment is absent or rolled back, the runtime contract fails closed.
 ## Verification and next wave
 
 ```sh
-npm test --prefix tools/festapp
-FESTAPP_MCP_TEST_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB npm test --prefix tools/festapp
+pnpm --dir tools/festapp test
+FESTAPP_MCP_TEST_DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB pnpm --dir tools/festapp test
 DATABASE_URL=YOUR_DISPOSABLE_LOCAL_DB node web_client/scripts/run_db_tests.js database/tests/ticket_layout_mcp_read_test.sql
 ```
 
@@ -269,7 +269,7 @@ native client uses the same scoped read handlers and separate OAuth grant.
 ### First-party consent
 
 The pilot redirects OAuth connections to the configured tenant's
-`/settings/mcp-connect` page. On vstupenky.online, use the existing application
+`/settings/mcp-connect` web-client page (no Flutter runtime is loaded). On vstupenky.online, use the existing application
 login, select occasions and approve. The tenant exchanges the app access proof
 for a separate MCP-owned Auth session over the first-party Edge broker. No app
 refresh token is shared and no token is placed in a redirect URL. Deployment

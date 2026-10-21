@@ -1,3 +1,5 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:url_launcher/link.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -20,7 +22,9 @@ class BankSyncWarningButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contacts = warning.uniqueContacts;
-    final canManage = warning.isAdmin && warning.bankAccountId != null;
+    final canManage = RightsService.hasBankCapability(
+            warning.bankAccountId, AuthorizationCapabilities.bankSyncManage) &&
+        warning.bankAccountId != null;
     final guidance = warning.code == 'suspended'
         ? OrdersStrings.bankSyncWarningEnable
         : OrdersStrings.bankSyncWarningManage;

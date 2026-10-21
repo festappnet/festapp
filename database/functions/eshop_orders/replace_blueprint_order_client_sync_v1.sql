@@ -4,13 +4,14 @@ CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_result jsonb; v_before_users uuid[];
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   SELECT min(s.occasion) INTO v_occasion FROM eshop.spots s
     WHERE s.id=ANY(p_spot_ids);
   IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_spot_ids)=0
     OR (SELECT count(*) FROM eshop.spots s
       WHERE s.id=ANY(p_spot_ids) AND s.occasion=v_occasion)
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id))
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   IF public.payment_reference_scope_enabled_internal((SELECT id FROM public.forms WHERE occasion=v_occasion ORDER BY id LIMIT 1)) THEN
     RETURN jsonb_build_object('status','rejected','code',409,'data',jsonb_build_object('errorCode','ATOMIC_REPLACEMENT_REQUIRED')); END IF;
@@ -44,13 +45,14 @@ CREATE OR REPLACE FUNCTION public.replace_blueprint_order_client_sync_v1(
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_prepare jsonb; v_result jsonb; v_before_users uuid[];
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
   SELECT min(s.occasion) INTO v_occasion FROM eshop.spots s
     WHERE s.id=ANY(p_spot_ids);
   IF v_actor IS NULL OR v_occasion IS NULL OR cardinality(p_spot_ids)=0
     OR (SELECT count(*) FROM eshop.spots s
       WHERE s.id=ANY(p_spot_ids) AND s.occasion=v_occasion)
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id))
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'spots',p_spot_ids,'input',p_input_data)::text,'UTF8'),'sha256'),'hex');

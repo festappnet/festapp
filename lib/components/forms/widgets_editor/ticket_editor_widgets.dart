@@ -18,6 +18,14 @@ import 'package:fstapp/components/forms/models/holder_models/ticket_holder.dart'
 import 'product_type_editor.dart';
 
 class TicketEditorWidgets {
+  static bool _featureEnabled(FormEditorDraft form, String code) =>
+      FeatureService.isFeatureEnabled(code,
+          features: form.occasionModel?.features);
+
+  static bool _allowsMultipleItems(FormEditorDraft form) =>
+      _featureEnabled(form, FeatureConstants.ticket) ||
+      _featureEnabled(form, FeatureConstants.blueprint);
+
   static String formatOrderedCount(int? orderedCount, int? maximum) {
     final count = orderedCount ?? 0;
     final maxStr = (maximum != null && maximum != 0) ? maximum.toString() : '∞';
@@ -46,13 +54,12 @@ class TicketEditorWidgets {
   static Widget buildTicketEditorReadOnly(
       BuildContext context, FormEditorDraft form, FormFieldDraft ticketField) {
     List<Widget> children = [];
-    if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint)) {
+    if (_featureEnabled(form, FeatureConstants.blueprint)) {
       children.add(buildSpotFieldReadOnly(context, form));
       children.add(const SizedBox(height: 8));
     }
 
-    // Show "Max tickets per order" only if ticket feature be enabled.
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
+    if (_allowsMultipleItems(form)) {
       children.add(_buildMaxTicketsReadOnly(context, ticketField));
       children.add(const SizedBox(height: 8));
     }
@@ -94,7 +101,7 @@ class TicketEditorWidgets {
       List<ProductTypeModel> allProductTypes,
       VoidCallback refresh) {
     List<Widget> children = [];
-    if (FeatureService.isFeatureEnabled(FeatureConstants.blueprint)) {
+    if (_featureEnabled(form, FeatureConstants.blueprint)) {
       children.add(buildSpotFieldEditor(context, form, () {
         if (!form.usesSeatSelection) {
           for (final productType in allProductTypes
@@ -115,10 +122,14 @@ class TicketEditorWidgets {
       children.add(const SizedBox(height: 16));
     }
 
-    // Show "Max tickets per order" only if ticket feature be enabled.
-    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket)) {
+    if (_allowsMultipleItems(form)) {
       children.add(_buildMaxTicketsEditor(context, ticketField, refresh));
       children.add(const SizedBox(height: 24));
+    } else {
+      ticketField.definition = ticketField.definition.copyWith(data: {
+        ...?ticketField.definition.data,
+        FormMetadata.maxTickets: 1,
+      });
     }
 
     final productTypeFields = form.relatedFields
@@ -271,7 +282,8 @@ class TicketEditorWidgets {
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
                 if (value == 'deposit') {
-                  ticketField.definition = ticketField.definition.copyWith(data: {
+                  ticketField.definition =
+                      ticketField.definition.copyWith(data: {
                     ...?ticketField.definition.data,
                     TicketHolder.metaShowDepositDescription: !showDeposit
                   });

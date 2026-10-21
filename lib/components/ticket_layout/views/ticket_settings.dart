@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
@@ -269,7 +270,13 @@ class _TicketSettingsState extends State<TicketSettings> {
             onPressed: busy ||
                     unsupported ||
                     widget.readOnly ||
-                    !RightsService.isUnitEditor()
+                    !(widget.service.setupDraftId != null
+                        ? RightsService.currentUnit()?.id ==
+                                widget.service.setupUnitId &&
+                            RightsService.hasCapability(
+                                AuthorizationCapabilities.occasionsCreate)
+                        : RightsService.hasCapability(
+                            AuthorizationCapabilities.ticketLayoutsWrite))
                 ? null
                 : edit,
             icon: busy

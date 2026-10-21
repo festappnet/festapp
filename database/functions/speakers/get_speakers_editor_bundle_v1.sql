@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_speakers_editor_bundle_v1(p_occasion bigin
 AS $function$
 DECLARE v_speakers jsonb; v_topics jsonb;
 BEGIN
-  IF NOT public.get_is_editor_view_on_occasion(p_occasion) THEN
+  IF NOT public.can_read_speakers_editor(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor view required';
   END IF;
   SELECT COALESCE(jsonb_agg(q.value ORDER BY q.sort_order,q.sort_title),'[]'::jsonb)

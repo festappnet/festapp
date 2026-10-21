@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'dart:async';
 
@@ -356,7 +357,7 @@ class _SchedulePageState extends State<SchedulePage>
       AddNewEventDialog.showAddEventDialog(ctx, groups, p)
           .then((_) => loadData());
 
-  bool _isUserApprover() => RightsService.isApprover();
+  bool _isUserApprover() => RightsService.canOpenScheduleEntryCheck();
 
   Future<void> _handleScanButtonPressed(
       BuildContext context, int eventId) async {
@@ -376,8 +377,8 @@ class _SchedulePageState extends State<SchedulePage>
           await loadData();
         },
         canSignIn: () {
-          final currentItem = _dots.firstWhereOrNull(
-              (element) => element.id == timeBlockItem.id);
+          final currentItem = _dots
+              .firstWhereOrNull((element) => element.id == timeBlockItem.id);
           return currentItem?.canSignIn() ?? false;
         },
       ),
@@ -462,7 +463,8 @@ class _SchedulePageState extends State<SchedulePage>
                               final info = await PackageInfo.fromPlatform();
                               ToastHelper.Show(context,
                                   "${info.appName} ${info.version}+${info.buildNumber}");
-                              if (RightsService.isEditor()) {
+                              if (RightsService.hasCapability(
+                                  AuthorizationCapabilities.scheduleWrite)) {
                                 TimeHelper.toggleTimeTravel?.call();
                                 setState(() {});
                               }
@@ -550,7 +552,9 @@ class _SchedulePageState extends State<SchedulePage>
                           events: _dots,
                           onEventPressed: _eventPressed,
                           showAddNewEventButton: () =>
-                              (RightsService.isEditor() &&
+                              (RightsService.hasCapability(
+                                      AuthorizationCapabilities
+                                          .scheduleWrite) &&
                                   subScheduleIsEnabled),
                           onAddNewEvent: _openAddDialog,
                           onSignInEvent: _handleSignIn,

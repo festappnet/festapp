@@ -13,7 +13,7 @@ BEGIN
   v_occasion:=NULLIF(p_form->>'occasion','')::bigint;
   v_form:=NULLIF(p_form->>'id','')::bigint;
   IF v_actor IS NULL OR v_occasion IS NULL OR v_form IS NULL
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'form',p_form)::text,'UTF8'),'sha256'),'hex');

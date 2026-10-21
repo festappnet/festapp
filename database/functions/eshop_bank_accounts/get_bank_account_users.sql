@@ -27,13 +27,7 @@ BEGIN
     ) THEN
         RAISE insufficient_privilege USING MESSAGE = 'Bank account is not linked to this unit';
     END IF;
-    IF NOT public.is_service_role() AND NOT (
-        EXISTS (
-            SELECT 1 FROM eshop.bank_account_users actor
-            WHERE actor.bank_account = p_bank_account_id AND actor."user" = auth.uid()
-              AND (actor.is_admin IS TRUE OR actor.is_support IS TRUE)
-        ) OR (p_unit_id IS NOT NULL AND public.get_is_manager_on_unit(p_unit_id) IS TRUE)
-    ) THEN
+    IF NOT public.is_service_role() AND NOT public.can_read_bank_account_users(p_bank_account_id,p_unit_id) THEN
         RAISE insufficient_privilege USING MESSAGE = 'Bank account access denied';
     END IF;
     -- If unit context is provided, find the organization

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
+import { openDisposableDatabase } from './postgres.mjs';
 import { fixture, reply, profile } from './fixture.mjs';
 import { canonicalPreview } from './render-fixture.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
@@ -12,26 +12,11 @@ test(
     'MCP preview/save/replay/conflict uses the real canonical PostgreSQL owner as authenticated',
     { skip: !connection },
     async (t) => {
-        const url = new URL(connection);
-        assert.equal(url.hostname, '127.0.0.1');
-        assert.equal(url.port, '55432');
-        const pg = createRequire(
-            new URL('../../../web_client/package.json', import.meta.url),
-        )('pg');
-        const db = new pg.Client({ connectionString: connection });
-        await db.connect();
+        const db = await openDisposableDatabase(connection);
         t.after(async () => {
             await db.query('ROLLBACK');
             await db.end();
         });
-        assert.equal(
-            (
-                await db.query(
-                    'select project from festapp_test_support.disposable_environment',
-                )
-            ).rows[0].project,
-            'festapp-db-tests-pg15',
-        );
         await db.query('BEGIN');
         await db.query(
             "select public.create_user_for_test('mcp-e1-node','mcp-e1-node@example.invalid')",
@@ -182,6 +167,7 @@ test(
             name: 'festapp_ticket_layouts_pending',
             arguments: { occasionId: oc },
         });
+        assert.equal(pending.structuredContent?.ok, true, JSON.stringify(pending));
         const intent = pending.structuredContent.data.intent;
         assert(intent);
         const replay = await client.callTool({

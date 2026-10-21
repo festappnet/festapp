@@ -8,8 +8,7 @@ DECLARE v_actor uuid:=auth.uid(); v_user uuid; v_begin jsonb; v_hash text;
   v_version bigint;
   v_result jsonb; v_profile jsonb; v_entity jsonb;
 BEGIN
-  IF v_actor IS NULL OR NOT (public.get_is_manager_on_occasion(p_occasion)
-    OR public.get_is_admin_on_occasion(p_occasion)) THEN
+  IF v_actor IS NULL OR NOT (public.can_manage_occasion_participants(p_occasion)) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   IF p_profile IS NULL OR jsonb_typeof(p_profile)<>'object'
     OR octet_length(p_profile::text)>262144

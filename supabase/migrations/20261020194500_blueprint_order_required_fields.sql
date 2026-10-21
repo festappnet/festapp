@@ -1,0 +1,254 @@
+CREATE OR REPLACE FUNCTION public.analyze_new_order_spots(
+  p_spot_ids bigint[]
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE
+  v_conflicts jsonb;
+  v_new_order_items jsonb;
+  v_occasion_id BIGINT;
+  v_total numeric; v_currency text; v_order_form jsonb;
+BEGIN
+  -- =======================================================================
+  -- 0. VALIDATION & SECURITY
+  -- =======================================================================
+
+  -- Handle empty input
+  IF p_spot_ids IS NULL OR array_length(p_spot_ids, 1) IS NULL THEN
+     RETURN jsonb_build_object('conflicts', '[]'::jsonb, 'new_order_items', '[]'::jsonb);
+  END IF;
+
+  -- Get Occasion ID from the first spot
+  SELECT occasion INTO v_occasion_id
+  FROM eshop.spots
+  WHERE id = p_spot_ids[1];
+
+  IF v_occasion_id IS NULL THEN
+     RAISE EXCEPTION 'Spot ID % not found.', p_spot_ids[1];
+  END IF;
+
+  -- Consistency Check: Ensure all selected spots belong to the SAME occasion
+  PERFORM 1
+  FROM eshop.spots
+  WHERE id = ANY(p_spot_ids)
+  AND occasion != v_occasion_id;
+
+  IF FOUND THEN
+     RAISE EXCEPTION 'All selected spots must belong to the same occasion.';
+  END IF;
+
+  -- Permission Check: User must have "Order View" rights on this occasion
+  IF public.get_is_editor_order_view_on_occasion(v_occasion_id) IS NOT TRUE THEN
+     RAISE EXCEPTION 'Permission denied. User does not have view rights for occasion %.', v_occasion_id;
+  END IF;
+
+  IF (SELECT count(*) FROM eshop.spots WHERE id=ANY(p_spot_ids) AND occasion=v_occasion_id)<>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_spot_ids) id)) THEN
+    RAISE EXCEPTION 'BLUEPRINT_SPOT_SCOPE_MISMATCH'; END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion_id]);
+  PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
+
+  -- =======================================================================
+  -- 1. IDENTIFY CONFLICTS
+  -- =======================================================================
+  WITH impacted_base AS (
+    SELECT
+      s.id as spot_id,
+      o.id as order_id,
+      o.data as order_data,
+      o.state as order_state,
+      t.id as ticket_id,
+      t.ticket_symbol
+    FROM eshop.spots s
+    JOIN eshop.order_product_ticket opt ON s.order_product_ticket = opt.id
+    JOIN eshop.tickets t ON opt.ticket = t.id
+    JOIN eshop.orders o ON opt.order = o.id
+    WHERE s.id = ANY(p_spot_ids)
+    -- Include any state that implies the spot is technically "occupied"
+  ),
+  impacted_enriched AS (
+    -- Safely extract the specific ticket from JSON
+    SELECT
+      ib.*,
+      (
+        SELECT item
+        FROM jsonb_array_elements(ib.order_data->'tickets') item
+        WHERE (item->>'id')::bigint = ib.ticket_id
+        LIMIT 1
+      ) as ticket_json
+    FROM impacted_base ib
+  ),
+  order_stats AS (
+    -- Calculate if whole order is cancelled
+    SELECT
+      order_id,
+      COUNT(DISTINCT ticket_id) as affected_ticket_count,
+      COALESCE(jsonb_array_length(order_data->'tickets'), 0) as total_ticket_count
+    FROM impacted_enriched
+    GROUP BY order_id, order_data
+  )
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'order_id', ie.order_id,
+      -- Extract individual fields as requested
+      'email', ie.order_data->>'email',
+      'name', ie.order_data->>'name',
+      'surname', ie.order_data->>'surname',
+      'note', ie.order_data->>'note',
+
+      'ticket_id', ie.ticket_id,
+      'ticket_symbol', ie.ticket_symbol,
+      'is_fully_cancelled', (os.affected_ticket_count >= os.total_ticket_count AND os.total_ticket_count > 0),
+      -- The products array from the JSON (Spot + Extras)
+      'products', ie.ticket_json->'products',
+      -- Sum the price (safely handle nulls)
+      'total_price', (
+         SELECT COALESCE(SUM((prod->>'price')::numeric), 0)
+         FROM jsonb_array_elements(ie.ticket_json->'products') prod
+      )
+    )
+  )
+  INTO v_conflicts
+  FROM impacted_enriched ie
+  JOIN order_stats os ON ie.order_id = os.order_id;
+
+  -- =======================================================================
+  -- 2. PREPARE NEW ORDER ITEMS
+  -- =======================================================================
+  SELECT jsonb_agg(jsonb_build_object(
+    'spot_id', s.id,
+    'spot_title', s.title,
+    'product_title', p.title,
+    'price', p.price,
+    'currency', p.currency_code
+  ))
+  INTO v_new_order_items
+  FROM eshop.spots s
+  LEFT JOIN eshop.products p ON s.product = p.id
+  WHERE s.id = ANY(p_spot_ids);
+
+  IF (SELECT count(DISTINCT item->>'currency') FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item)>1 THEN RAISE EXCEPTION 'BLUEPRINT_CURRENCY_MISMATCH'; END IF;
+  SELECT coalesce(sum((item->>'price')::numeric),0),min(item->>'currency') INTO v_total,v_currency FROM jsonb_array_elements(coalesce(v_new_order_items,'[]')) item;
+  SELECT jsonb_build_object('key',f.key,'phone_prefixes',public.get_effective_form_data(f.id)->'phone_prefixes',
+    'fields',coalesce((SELECT jsonb_agg(to_jsonb(ff) ORDER BY coalesce(ff."order",0),ff.id)
+      FROM public.form_fields ff WHERE ff.form=f.id AND ff.is_required=true
+      AND ff.is_hidden=false AND ff.type NOT IN ('ticket','spot','product_type')),'[]'::jsonb))
+    INTO v_order_form FROM public.forms f WHERE f.occasion=v_occasion_id AND f.is_open=true
+    ORDER BY f.type='ticket' DESC,f.id DESC LIMIT 1;
+  RETURN jsonb_build_object(
+    'conflicts', COALESCE(v_conflicts, '[]'::jsonb),
+    'new_order_items', COALESCE(v_new_order_items, '[]'::jsonb),
+    'total_price',v_total,'currency',v_currency,'order_form',v_order_form
+  );
+END;
+$$;
+CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change_internal_v1(
+  p_spot_ids BIGINT[],
+  p_input_data JSONB
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_analysis JSONB;
+  v_ticket_ids_to_cancel BIGINT[];
+  v_occasion_id BIGINT;
+  v_form_key UUID;
+  v_ticket_payloads JSONB := '[]'::JSONB;
+  v_order_details JSONB;
+  v_new_spot_rec RECORD;
+  v_email TEXT;
+BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.spots WHERE id=ANY(p_spot_ids)));
+  PERFORM public.check_blueprint_selection_units_internal(p_spot_ids);
+  -- Extract Email for validation
+  v_email := p_input_data->>'email';
+
+  IF v_email IS NULL OR v_email = '' THEN
+      RAISE EXCEPTION 'Email is required in input data.';
+  END IF;
+
+  -- 1. Analyze impacts
+  v_analysis := public.analyze_new_order_spots(p_spot_ids);
+
+  -- 2. Extract Ticket IDs for Storno
+  SELECT ARRAY_AGG((elem->>'ticket_id')::BIGINT)
+  INTO v_ticket_ids_to_cancel
+  FROM jsonb_array_elements(v_analysis->'conflicts') elem
+  WHERE elem->>'ticket_id' IS NOT NULL;
+
+  -- 3. Perform Storno (if any conflicts exist)
+  IF v_ticket_ids_to_cancel IS NOT NULL AND array_length(v_ticket_ids_to_cancel, 1) > 0 THEN
+      PERFORM public.storno_tickets_bulk_internal_v1(v_ticket_ids_to_cancel);
+  END IF;
+
+  -- 4. Clean up Secrets on selected spots
+  UPDATE eshop.spots
+  SET secret = NULL, secret_expiration_time = NULL
+  WHERE id = ANY(p_spot_ids);
+
+  -- 5. Prepare Data for New Order
+
+  -- Get occasion ID
+  SELECT occasion INTO v_occasion_id FROM eshop.spots WHERE id = p_spot_ids[1];
+
+  -- Security Check: User must be editor
+  IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
+      RAISE EXCEPTION 'Permission denied. User is not an editor for occasion %', v_occasion_id;
+  END IF;
+
+  -- Validation: All spots must be on same occasion
+  PERFORM 1 FROM eshop.spots
+  WHERE id = ANY(p_spot_ids) AND occasion != v_occasion_id;
+
+  IF FOUND THEN
+      RAISE EXCEPTION 'All selected spots must belong to the same occasion.';
+  END IF;
+
+  -- Find a suitable Form
+  v_form_key := (v_analysis->'order_form'->>'key')::uuid;
+  IF p_input_data->>'form_key' IS NOT NULL AND p_input_data->>'form_key' IS DISTINCT FROM v_form_key::text THEN
+    RAISE EXCEPTION 'The active order form changed. Reopen the order.';
+  END IF;
+
+  IF v_form_key IS NULL THEN
+      RAISE EXCEPTION 'No open form found for this occasion to create the new order.';
+  END IF;
+
+  -- Build "ticket" array for the payload
+  FOR v_new_spot_rec IN
+      SELECT s.id, s.product
+      FROM eshop.spots s
+      WHERE s.id = ANY(p_spot_ids)
+  LOOP
+      v_ticket_payloads := v_ticket_payloads || JSONB_BUILD_OBJECT(
+          'spot', v_new_spot_rec.id,
+          'fields', coalesce(p_input_data->'ticket_fields'->v_new_spot_rec.id::text,'[]'::jsonb)
+      );
+  END LOOP;
+
+  -- Construct payload for Edge Function
+  -- We start with basic fields, then MERGE (||) the p_input_data
+  -- This allows passing 'name', 'surname', 'note' in input_data automatically.
+  v_order_details := JSONB_BUILD_OBJECT(
+      'form', v_form_key,
+      'ticket', v_ticket_payloads,
+      'lang', 'cs'
+  ) || (p_input_data - 'ticket_fields' - 'form_key' - 'form' - 'ticket');
+
+  -- Return Success + Payload
+  RETURN JSONB_BUILD_OBJECT(
+      'success', true,
+      'message', 'Storno performed. Ready to create new order.',
+      'orderDetails', v_order_details
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN JSONB_BUILD_OBJECT('success', false, 'message', SQLERRM);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb) FROM PUBLIC,anon,authenticated,service_role;

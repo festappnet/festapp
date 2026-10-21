@@ -69,7 +69,7 @@ BEGIN
  IF NOT p_create AND p_slug IS NULL THEN RETURN current_slug; END IF;
  -- Exact legacy no-op before new syntax validation.
  IF NOT p_create AND p_slug=current_slug THEN RETURN current_slug; END IF;
- IF NOT automatic AND (p_slug IS NULL OR length(p_slug)>80 OR p_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$') THEN
+ IF NOT automatic AND (p_slug IS NULL OR length(p_slug)>80 OR p_slug !~ '^[a-z0-9]+([-_][a-z0-9]+)*$') THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid public link';
  END IF;
  FOR attempt IN 1..20 LOOP

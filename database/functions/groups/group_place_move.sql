@@ -14,11 +14,7 @@ BEGIN
     WHERE p.id=p_place_id AND p.occasion=p_occasion;
   IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='place not found'; END IF;
   IF v_actor IS NULL OR p_lat IS NULL OR p_lng IS NULL OR p_lat NOT BETWEEN -90 AND 90 OR p_lng NOT BETWEEN -180 AND 180
-    OR NOT (public.get_is_editor_on_occasion(p_occasion) OR EXISTS (
-      SELECT 1 FROM public.user_groups ug JOIN public.user_group_info g
-        ON g.id=ug."group" WHERE ug."user"=v_actor AND ug.is_admin
-        AND g.occasion=p_occasion AND g.place=p_place_id
-        AND v_place.type='group' AND v_place.is_hidden)) THEN
+    OR NOT public.can_move_map_place(p_occasion,p_place_id) THEN
     RAISE insufficient_privilege USING MESSAGE='place move permission required';
   END IF;
   SELECT NOT o.is_hidden INTO v_is_publishable FROM public.occasions o WHERE o.id=p_occasion;
@@ -31,11 +27,7 @@ BEGIN
   SELECT p.* INTO v_place FROM public.places p WHERE p.id=p_place_id AND p.occasion=p_occasion FOR UPDATE;
   IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='place not found'; END IF;
   IF v_actor IS NULL OR p_lat IS NULL OR p_lng IS NULL OR p_lat NOT BETWEEN -90 AND 90 OR p_lng NOT BETWEEN -180 AND 180
-    OR NOT (public.get_is_editor_on_occasion(p_occasion) OR EXISTS (
-      SELECT 1 FROM public.user_groups ug JOIN public.user_group_info g
-        ON g.id=ug."group" WHERE ug."user"=v_actor AND ug.is_admin
-        AND g.occasion=p_occasion AND g.place=p_place_id
-        AND v_place.type='group' AND v_place.is_hidden)) THEN
+    OR NOT public.can_move_map_place(p_occasion,p_place_id) THEN
     RAISE insufficient_privilege USING MESSAGE='place move permission required';
   END IF;
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;

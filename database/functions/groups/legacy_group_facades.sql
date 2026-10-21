@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.delete_occasion_user_ws(usr_to_delete uuid,occ
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE version bigint; result jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_occasion(occasion_id) OR public.get_is_admin_on_occasion(occasion_id)) THEN
+ IF auth.uid() IS NULL OR NOT public.can_manage_occasion_participants(occasion_id) THEN
   RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
  PERFORM 1 FROM public.user_info WHERE id=usr_to_delete FOR UPDATE;
  PERFORM public.lock_activity_aggregate_internal_v1(occasion_id);
@@ -38,10 +38,7 @@ BEGIN
  IF auth.uid() IS NULL THEN RETURN jsonb_build_object('code',401); END IF;
  SELECT occasion INTO oc FROM public.places WHERE id=p_place_id;
  IF NOT FOUND THEN RETURN jsonb_build_object('code',404); END IF;
- IF NOT (public.get_is_editor_on_occasion(oc) OR EXISTS(
-  SELECT 1 FROM public.user_groups m JOIN public.user_group_info g ON g.id=m."group"
-  JOIN public.places p ON p.id=g.place AND p.type='group' AND p.is_hidden
-  WHERE g.place=p_place_id AND g.occasion=oc AND m."user"=auth.uid() AND m.is_admin)) THEN
+ IF NOT public.can_move_map_place(oc,p_place_id) THEN
   RETURN jsonb_build_object('code',403); END IF;
  PERFORM public.lock_group_occasion_internal_v1(oc);
  SELECT coalesce(v.version,0) INTO version FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v

@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_navigation.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
 import 'package:fstapp/components/_shared/breadcrumb_row.dart';
@@ -132,7 +133,9 @@ class AppPanelHelper {
                 occasion: item);
           }
         },
-        onCreateNew: currentUnit == null || !RightsService.isUnitEditor()
+        onCreateNew: currentUnit == null ||
+                !RightsService.hasCapability(
+                    AuthorizationCapabilities.occasionsCreate)
             ? null
             : () async {
                 final newOccasion =
@@ -799,7 +802,8 @@ class AppPanelHelper {
                       context, AdminPage.ROUTE)));
             }
 
-            if (RightsService.isAdmin()) {
+            if (RightsService.hasCapability(
+                AuthorizationCapabilities.navigationOrganizationSettings)) {
               final orgId = RightsService.currentUnit()?.organization ??
                   RightsService.currentUser()?.units?.firstOrNull?.organization;
               if (orgId != null) {

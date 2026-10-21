@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -58,8 +59,9 @@ void main() {
   testWidgets('create news preserves the occasion in the form URL',
       (tester) async {
     final previousRights = RightsService.occasionLinkModel;
-    RightsService.occasionLinkModelNotifier.value =
-        OccasionLinkModel(occasionUser: OccasionUserModel()..isEditor = true);
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.newsWrite: true},
+        occasionUser: OccasionUserModel()..isEditor = true);
     addTearDown(
         () => RightsService.occasionLinkModelNotifier.value = previousRights);
     final router = _NewsNavigationRouter(NewsPage().createState());

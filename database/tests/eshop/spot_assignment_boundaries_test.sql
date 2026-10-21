@@ -43,7 +43,8 @@ BEGIN
  UPDATE eshop.spots SET secret=gen_random_uuid(),secret_expiration_time=now()+interval '1 hour' WHERE id=c;
  EXECUTE 'SET LOCAL ROLE authenticated';
  BEGIN PERFORM public.update_spot_assignments_client_sync_v1(jsonb_build_array(jsonb_build_object('new_spot_id',c,'resource_id',r)),gen_random_uuid());RAISE EXCEPTION 'held assignment accepted';EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;END;
- BEGIN PERFORM public.swap_spot_tickets_client_sync_v1(a,c,gen_random_uuid());RAISE EXCEPTION 'held swap accepted';EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;END;
+ BEGIN PERFORM public.swap_spot_tickets_client_sync_v1(a,c,gen_random_uuid());RAISE EXCEPTION 'held swap accepted';EXCEPTION WHEN raise_exception THEN
+  ASSERT SQLERRM='BLUEPRINT_SEAT_PROTECTED',SQLERRM;END;
  EXECUTE 'RESET ROLE';
  UPDATE eshop.spots SET secret=NULL,secret_expiration_time=NULL WHERE id=c;
  INSERT INTO eshop.tickets(occasion,state) VALUES(oc,'ordered') RETURNING id INTO ticket_id;

@@ -13,11 +13,8 @@ DECLARE
     v_user_id uuid;
 BEGIN
     -- Security Check: Caller must be an Admin of the bank account
-    IF NOT EXISTS (
-        SELECT 1 FROM eshop.bank_account_users 
-        WHERE bank_account = p_bank_account_id AND "user" = auth.uid() AND is_admin = true
-    ) THEN
-        RAISE EXCEPTION 'Permission denied: Only bank account admins can manage users.';
+    IF NOT public.can_manage_bank_account(p_bank_account_id) THEN
+        RAISE EXCEPTION 'Permission denied: Only bank account admins can manage users.' USING ERRCODE='42501';
     END IF;
 
     -- Find user by email (assuming email_readonly is populated and unique-ish for lookup)

@@ -183,13 +183,6 @@
       "signature": "record_account_deletion_sync_v1(uuid,bigint)"
     },
     {
-      "name": "advance_group_profile_heads_internal_v1",
-      "source": "database/functions/groups/adjacent_group_lifecycle.sql",
-      "removalGate": null,
-      "contractTest": "database/tests/groups/canonical_group_commands_test.sql",
-      "signature": "advance_group_profile_heads_internal_v1(bigint,uuid[])"
-    },
-    {
       "name": "import_profiles_client_sync_v1",
       "source": "database/functions/groups/adjacent_group_lifecycle.sql",
       "removalGate": null,

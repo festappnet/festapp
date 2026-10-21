@@ -1,5 +1,10 @@
 # Historical backend merge runbook
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
+
 This sequence belongs to the completed 2026 consolidation of former cloud sources.
 Its Wave 0 permissions and source-import steps are not current installation or
 upgrade instructions. Some standalone merge helpers were later removed; preserve

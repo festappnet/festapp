@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../verification/verification_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
@@ -141,7 +142,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
 
   void _initializeFormState() {
     _title = _unit.title;
-    _canEdit = RightsService.isUnitManager();
+    _canEdit = RightsService.hasCapability(
+        AuthorizationCapabilities.unitSettingsWrite);
     _replyToEmailController = TextEditingController(
       text: _unit.data?[Tb.units.data_reply_to] as String? ?? '',
     );
@@ -499,9 +501,11 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.verified_outlined),
                     title: Text(VerificationStrings.text('title')),
-                    subtitle: Text(VerificationStrings.text('settingsDescription')),
+                    subtitle:
+                        Text(VerificationStrings.text('settingsDescription')),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.router.push(const UnitLegalProfileRoute()),
+                    onTap: () =>
+                        context.router.push(const UnitLegalProfileRoute()),
                   ),
                 ),
               if (!_isLoading) ...[

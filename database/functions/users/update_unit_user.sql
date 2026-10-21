@@ -42,12 +42,7 @@ BEGIN
     END IF;
 
     -- 3. Authorization Check: Verify the calling user is a manager for the specified unit
-    IF NOT EXISTS (
-      SELECT 1 FROM public.unit_users
-      WHERE "user" = auth.uid()
-        AND unit = v_unit
-        AND is_manager = true
-    ) THEN
+    IF NOT public.can_manage_unit_users(v_unit) THEN
       RETURN jsonb_build_object('code', 403, 'message', 'Unauthorized: You must be a manager of this unit.');
     END IF;
 

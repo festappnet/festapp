@@ -1,3 +1,5 @@
+import '../../support/fixtures/rights_context_fixture.dart';
+import 'package:timezone/data/latest.dart' as timezone_data;
 import 'dart:convert';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/payment_info_model.dart';
@@ -26,6 +28,7 @@ class _Translations extends AssetLoader {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
+    timezone_data.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     final loader = FontLoader('Roboto');
     loader.addFont(Future.value(ByteData.sublistView(
@@ -34,6 +37,11 @@ void main() {
     final icons = FontLoader('MaterialIcons');
     icons.addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
+  });
+  setUp(() {
+    final rights = RightsContextFixture.bankAccounts(
+        manageableAccounts: {42}, canManageUnit: true);
+    addTearDown(rights.dispose);
   });
   for (final scale in [1.0, 2.0]) {
     testWidgets('order status fits both indicators at ${scale}x',

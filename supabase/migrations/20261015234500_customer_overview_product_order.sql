@@ -1,77 +1,12 @@
 -- Private pure projection. No matcher, paid transition or payment side effect.
-CREATE OR REPLACE FUNCTION public.customer_order_payment_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH facts AS (
- SELECT o.*,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
- p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
- b.account_number,b.account_number_human_readable,
- coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
- CASE WHEN o.state='preparing_payment' THEN 'preparing'
- WHEN o.state='storno' THEN 'cancelled'
- WHEN o.state='waitlisted' AND p.id IS NULL THEN 'not_required_yet'
- WHEN o.price=0 THEN 'free'
- WHEN p.id IS NULL OR p.currency_code IS DISTINCT FROM o.currency_code OR p.amount IS NULL OR p.amount<0 OR coalesce(p.paid,0)<0 OR coalesce(p.paid_externally,0)<>0
-  OR (o.state IN ('paid','sent') AND o.price>0 AND coalesce(p.paid,0)=0) THEN 'unknown'
- WHEN coalesce(p.paid,0)>=p.amount THEN 'fully_paid'
- WHEN coalesce(p.paid,0)=0 THEN 'unpaid'
- WHEN p.deposit_amount>0 AND p.paid>=p.deposit_amount THEN 'deposit_paid'
- ELSE 'partially_paid' END status
- FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info
- LEFT JOIN eshop.bank_accounts b ON b.id=p.bank_account WHERE o.id=p_order),
- due AS (SELECT *,greatest(amount-received,0) outstanding,
- CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
- CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
- 'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
- 'depositDeadline',deposit_deadline,'finalDeadline',deadline,
- 'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,
- 'dueAt',due_at,'overdue',coalesce(due_at<statement_timestamp() AND due_now>0,false),
- 'instructionsAvailable',status IN ('unpaid','partially_paid','deposit_paid') AND account_number IS NOT NULL
-  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END,
- 'reference',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN
-  CASE WHEN currency_code='EUR' THEN creditor_reference ELSE variable_symbol::text END END,
- 'qrPayment',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') AND due_now>0 AND account_number IS NOT NULL
-  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END
- THEN jsonb_build_object('amount',due_now,'currency_code',trim(currency_code),'account_number',account_number,
-  'account_number_human_readable',account_number_human_readable,'creditor_name',creditor_name,
-  'variable_symbol',variable_symbol,'creditor_reference',creditor_reference) END,
- 'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
- 'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
-  'date',t.date::date,'recordedAt',t.created_at,'amount',t.amount,'currency',trim(t.currency),
-  'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
-  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
- 'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
- FROM due;
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.customer_ticket_label_internal(p_ticket bigint,p_form bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT nullif(string_agg(a.value#>>'{}',' ' ORDER BY CASE f.type WHEN 'name' THEN 0 ELSE 1 END,f.id),'')
- FROM eshop.tickets t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t.data->'fields','[]')) field
- CROSS JOIN LATERAL jsonb_each(field) a JOIN public.form_fields f ON f.id::text=a.key
- WHERE t.id=p_ticket AND f.form=p_form AND f.is_ticket_field AND NOT f.is_hidden AND f.type IN ('name','surname');
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
 
 -- Customer-visible answers only; field definitions own scope and visibility.
-CREATE OR REPLACE FUNCTION public.customer_order_answers_internal(p_form bigint,p_data jsonb,p_ticket boolean)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(jsonb_build_object('title',f.title,'type',f.type,'value',answer.value) ORDER BY f."order",f.id),'[]')
- FROM public.form_fields f CROSS JOIN LATERAL (
-  SELECT coalesce(a->(f.id::text),a->f.type) value
-  FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_data->'fields')='array' THEN p_data->'fields' ELSE '[]' END) a
-  WHERE a ? f.id::text OR (a->>'_subFieldId'=f.id::text AND a ? f.type)
-   OR (NOT a ? '_subFieldId' AND a ? f.type
-    AND NOT EXISTS(SELECT 1 FROM jsonb_object_keys(a) k WHERE k ~ '^[0-9]+$')
-    AND 1=(SELECT count(*) FROM public.form_fields other WHERE other.form=p_form AND other.type=f.type AND other.is_ticket_field=p_ticket AND NOT other.is_hidden))
-  LIMIT 1
- ) answer
- WHERE f.form=p_form AND f.is_ticket_field=p_ticket AND NOT f.is_hidden
- AND f.type IN ('name','surname','email','phone','city','sex','birth_year','birth_date','address','nationality','id_document','text','note','select_one','select_many')
- AND (jsonb_typeof(answer.value) IN ('string','number','boolean') OR (jsonb_typeof(answer.value)='array'
-  AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(answer.value)='array' THEN answer.value ELSE '[]' END) v WHERE jsonb_typeof(v) NOT IN ('string','number','boolean'))));
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)

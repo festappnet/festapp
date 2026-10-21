@@ -1,3 +1,5 @@
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,10 +24,25 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_checkAccess);
     _checkAccess();
   }
 
-  Future<void> _checkAccess() async {
+  @override
+  void didUpdateWidget(covariant OrganizationAdminGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.targetOrganizationId != widget.targetOrganizationId) {
+      _checkAccess();
+    }
+  }
+
+  @override
+  void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_checkAccess);
+    super.dispose();
+  }
+
+  void _checkAccess() {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
@@ -48,14 +65,15 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
         throw Exception("Could not determine context organization.");
       }
 
-      final isAdmin = await Supabase.instance.client.rpc(
-          'check_is_admin_of_organization',
-          params: {'organization_id': orgId});
+      final isAdmin = AppConfig.organization == orgId &&
+          RightsService.hasCapability(
+              AuthorizationCapabilities.organizationSettingsWrite);
 
       if (isAdmin == true) {
         if (mounted) {
           setState(() {
             _hasAccess = true;
+            _errorMessage = null;
             _organizationId = orgId;
             _isLoading = false;
           });

@@ -27,7 +27,7 @@ DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order; SELECT * INTO occ FROM public.occasions WHERE id=o.occasion;
  IF o.id IS NULL OR o.form IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- IF p_actor IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=o.occasion AND "user"=p_actor AND is_editor_order) THEN
+ IF p_actor IS NOT NULL AND public.order_editor_membership_as_actor_internal(p_actor,o.occasion) THEN
   IF p_offer IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order AND form_id=o.form) THEN
    RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF; RETURN o.form;
  END IF;
@@ -119,7 +119,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,ex
 DECLARE o eshop.orders;
 BEGIN
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id;
- IF NOT public.get_is_editor_order_view_on_occasion(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
+ IF NOT public.can_read_orders(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
  RETURN jsonb_build_object('orderId',o.id,'sourceOrderId',o.source_waitlist_order_id,
  'occasionTitle',(SELECT title FROM public.occasions WHERE id=o.occasion),'waitlistSummary',public.get_waitlist_summary_internal(o.id),
  'capacity',public.get_form_capacity_snapshot_internal(o.form),

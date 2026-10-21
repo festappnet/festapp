@@ -4,7 +4,7 @@ DECLARE oc bigint; ver bigint; result jsonb;
 BEGIN
  SELECT occasion INTO oc FROM public.events WHERE id=p_event;
  IF oc IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
- IF public.get_is_editor_on_occasion(oc) IS NOT TRUE THEN RETURN jsonb_build_object('code',403); END IF;
+ IF public.can_write_speakers(oc) IS NOT TRUE THEN RETURN jsonb_build_object('code',403); END IF;
  PERFORM 1 FROM public.events WHERE id=p_event FOR UPDATE;
  SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
  ON v.aggregate_type='event' AND v.scope_type='occasion' AND v.scope_id=oc AND v.aggregate_id=p_event::text;

@@ -52,6 +52,53 @@ void main() {
     expect(find.byType(AppAlertDialog), findsNothing);
   });
 
+  testWidgets(
+      'Escape closes the active dialog even when focus returns to its caller',
+      (tester) async {
+    final caller = FocusNode();
+    addTearDown(caller.dispose);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: Builder(
+                builder: (context) => Focus(
+                    focusNode: caller,
+                    child: TextButton(
+                        onPressed: () => showDialog<void>(
+                            context: context,
+                            builder: (_) => AppAlertDialog(
+                                title: const Text('Seat details'))),
+                        child: const Text('Open')))))));
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    caller.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(AppAlertDialog), findsNothing);
+  });
+
+  testWidgets('Escape closes a dropdown before its containing dialog',
+      (tester) async {
+    await openDialog(
+        tester,
+        (_) => AppAlertDialog(
+            content: DropdownButton<String>(
+                value: 'a',
+                items: const [
+                  DropdownMenuItem(value: 'a', child: Text('Alpha')),
+                  DropdownMenuItem(value: 'b', child: Text('Beta'))
+                ],
+                onChanged: (_) {})));
+    await tester.tap(find.text('Alpha'));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(AppAlertDialog), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(AppAlertDialog), findsNothing);
+  });
+
   testWidgets('Escape and the header close preserve the same result',
       (tester) async {
     for (final escape in [true, false]) {

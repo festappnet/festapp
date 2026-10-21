@@ -25,7 +25,7 @@ BEGIN
     SELECT o.unit,o.title INTO v_unit,v_title FROM public.occasions o WHERE o.id=p_occasion FOR UPDATE;
     EXIT WHEN FOUND;
   END LOOP;
-  IF v_unit IS NULL OR NOT public.get_is_manager_on_unit(v_unit) THEN
+  IF v_unit IS NULL OR NOT public.can_delete_occasion_in_unit(v_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   IF EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion AND coalesce((data->>'client_sync_v1')::boolean,false)) THEN
     RAISE object_not_in_prerequisite_state USING MESSAGE='disable client_sync_v1 before deleting occasion'; END IF;

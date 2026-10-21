@@ -1,3 +1,4 @@
+import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,13 +39,7 @@ void main() {
           final event = parameters['p_event'] as Map<String, dynamic>;
           return http.Response(
               jsonEncode({
-                'mutation': {
-                  'commandId': '00000000-0000-4000-8000-000000000001',
-                  'receiptId': '00000000-0000-4000-8000-000000000001',
-                  'commitId': null,
-                  'replayed': false,
-                  'occurredAt': '2026-10-15T10:00:00Z'
-                },
+                ...commandResponseFixture(parameters['p_command_id'] as String),
                 'status': 'applied',
                 'code': 200,
                 'data': {'version': 8, 'event': event},

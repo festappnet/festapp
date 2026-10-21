@@ -115,6 +115,67 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     controller.dispose();
   });
+  for (final typed in [false, true]) {
+    testWidgets(
+        '${typed ? 'typed' : 'explicit'} chooser cancels on outside click without insertion',
+        (tester) async {
+      final provider = EmailAuthoringProvider(
+          EmailTemplateModel(code: 'TICKET_ORDER_CONFIRMATION'),
+          field: EmailTargetField.body);
+      final controller = RichHtmlEditorController(
+          initialHtml: '<p>Hello</p>',
+          owner: const HtmlMediaOwner.none(),
+          authoring: provider);
+      var outsideClicks = 0;
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: Column(children: [
+        Expanded(child: RichHtmlEditor(controller: controller)),
+        TextButton(
+            onPressed: () => outsideClicks++, child: const Text('Outside')),
+      ]))));
+      if (typed) {
+        final node = controller.editor.document.first as TextNode;
+        controller.editor.execute([
+          ChangeSelectionRequest(
+              DocumentSelection.collapsed(
+                  position: DocumentPosition(
+                      nodeId: node.id,
+                      nodePosition: const TextNodePosition(offset: 0))),
+              SelectionChangeType.placeCaret,
+              SelectionReason.userInteraction),
+          InsertTextRequest(
+              documentPosition: DocumentPosition(
+                  nodeId: node.id,
+                  nodePosition: const TextNodePosition(offset: 0)),
+              textToInsert: '@',
+              attributions: {}),
+        ]);
+        controller.focusNode.requestFocus();
+      } else {
+        await tester.tap(find.byTooltip(provider.insertLabel));
+      }
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(ListTile), findsWidgets);
+      final html = controller.html;
+      await tester.tap(find.text('Outside'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(ListTile), findsNothing);
+      expect(controller.composingTag, isNull);
+      expect(controller.html, html);
+      expect(controller.templateUsage, isEmpty);
+      expect(outsideClicks, 1);
+      // A later rebuild must not reopen a cancelled query.
+      controller.focusNode.requestFocus();
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(ListTile), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      controller.dispose();
+    });
+  }
   testWidgets(
       'explicit chooser retains caret across search focus and inserts with Enter',
       (tester) async {

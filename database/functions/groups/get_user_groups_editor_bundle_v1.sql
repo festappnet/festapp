@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_user_groups_editor_bundle_v1(p_occasion bi
 AS $function$
 DECLARE v_groups jsonb; v_places jsonb; v_game_definitions jsonb;
 BEGIN
-  IF (public.get_is_editor_view_on_occasion(p_occasion) OR public.get_is_editor_on_occasion(p_occasion)) IS NOT TRUE THEN
+  IF public.can_read_groups_editor(p_occasion) IS NOT TRUE THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor view required';
   END IF;
   SELECT COALESCE(jsonb_agg(public.get_user_group_command_data_v1(g.id)||

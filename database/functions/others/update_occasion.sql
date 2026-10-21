@@ -110,9 +110,6 @@ SET search_path = public, extensions
              RAISE EXCEPTION 'Occasion with ID % not found', occ_id;
          END IF;
 
-         IF NOT public.get_is_editor_on_unit(final_unit) THEN
-             RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
-         END IF;
          processed_features := public.merge_ticket_layout_features(old_features, processed_features, input_data->'ticket_layout_change');
          PERFORM public.validate_ticket_layout_references(occ_id, f->'layout') FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='ticket' AND f ? 'layout';
 
@@ -120,7 +117,7 @@ SET search_path = public, extensions
          final_unit := COALESCE((input_data->>'unit')::BIGINT, final_unit);
 
          -- Security check: ensure the current user has editor rights on the target unit.
-         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+         IF NOT public.can_edit_occasion(occ_id,final_unit) THEN
              RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
          END IF;
 
@@ -157,7 +154,7 @@ SET search_path = public, extensions
          END IF;
 
          -- Security check for the new occasion's unit.
-         IF NOT public.get_is_editor_on_unit(final_unit) THEN
+         IF NOT public.can_create_occasion(final_unit) THEN
              RAISE insufficient_privilege USING MESSAGE = 'unit editor required';
          END IF;
 
@@ -231,7 +228,11 @@ SET search_path = public, extensions
          -- Create a default form if one doesn't exist for the occasion
          IF NOT EXISTS (SELECT 1 FROM public.forms WHERE occasion = occ_id) THEN
              v_form_link := NULLIF(btrim(input_data->>'form_link'), '');
-             PERFORM create_form(occ_id, v_form_link, 'Registration');
+             IF input_data->>'id' IS NULL THEN
+               PERFORM public.create_initial_occasion_form_internal_v1(occ_id,v_form_link,'Registration');
+             ELSE
+               PERFORM public.create_form(occ_id,v_form_link,'Registration');
+             END IF;
          END IF;
 
          -- Check if reminders are enabled within the form feature
@@ -263,8 +264,9 @@ SET search_path = public, extensions
 
          -- If a form exists and it doesn't already have a blueprint, create one.
          IF FOUND AND v_form_blueprint IS NULL THEN
-             INSERT INTO eshop.blueprints(configuration, occasion, organization, created_at, updated_at)
-             VALUES ('{"dimensions": {"width": 28, "height": 52}}'::jsonb, occ_id, COALESCE(updated_occ.organization, 1), now, now)
+             INSERT INTO eshop.blueprints(occasion, organization, created_at, updated_at,layout)
+             VALUES (occ_id, COALESCE(updated_occ.organization, 1), now, now,
+              '{"schemaVersion":1,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1120,"height":2080,"fill":"#ffffffff"},"defaultTextStyle":{"fontId":"builtin:roboto-unpacked:24438383f80387edbbd3a199d7b257258db7003f5b291a7d3fb6fa89483ae57f","size":24,"color":"#222222FF"},"nodes":[]}'::jsonb)
              RETURNING id INTO new_blueprint_id;
 
              UPDATE public.forms

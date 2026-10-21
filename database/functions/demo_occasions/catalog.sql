@@ -8,10 +8,10 @@ BEGIN
  RETURN jsonb_build_object(
   'hasOwnWork', EXISTS(SELECT 1 FROM public.occasions o
     WHERE o.organization=p_organization AND NOT public.is_demo_occasion(o.id)
-     AND (public.get_is_manager_on_unit(o.unit) OR public.get_is_editor_on_unit(o.unit)
-      OR public.get_is_manager_on_occasion(o.id) OR public.get_is_editor_on_occasion(o.id)))
+     AND public.demo_own_work_rule(public.get_is_manager_on_unit(o.unit),public.get_is_editor_on_unit(o.unit),
+      public.get_is_manager_on_occasion(o.id),public.get_is_editor_on_occasion(o.id)))
    OR EXISTS(SELECT 1 FROM public.occasion_setup_drafts d WHERE d.organization=p_organization
-    AND (public.get_is_manager_on_unit(d.unit) OR public.get_is_editor_on_unit(d.unit))),
+    AND public.can_create_occasion(d.unit)),
   'items', COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'id',o.id,'link',o.link,'title',o.title,'demoKey',d.demo_key,
     'fixtureVersion',d.fixture_version,'description',d.description,

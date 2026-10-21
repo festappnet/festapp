@@ -26,3 +26,14 @@ Deno.test('R2 font transport refuses keys, missing secrets, denied and partial r
   const partial = createTicketFontR2Store(() => secret, (() => Promise.resolve(new Response(stream))) as typeof fetch);
   await assertRejects(() => partial.read(key));
 });
+
+Deno.test('R2 transport supports owned local service without relaxing secret or key checks', async () => {
+  let called = '';
+  const request = ((url: string) => { called = url; return Promise.resolve(new Response(null, {status:404})); }) as typeof fetch;
+  const store=createTicketFontR2Store(()=>secret,request,'http://host.lima.internal:59525/service/ticket-fonts/');
+  assertEquals(await store.read(key),null);
+  assertEquals(called,`http://host.lima.internal:59525/service/ticket-fonts/${key}`);
+  for(const endpoint of ['http://example.com/service/ticket-fonts/','https://example.com/arbitrary/','https://user:pass@example.com/service/ticket-fonts/']) {
+    let rejected=false;try{createTicketFontR2Store(()=>secret,request,endpoint);}catch{rejected=true;}assertEquals(rejected,true);
+  }
+});

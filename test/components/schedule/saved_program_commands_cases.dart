@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/schedule/saved_program_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -11,6 +13,8 @@ void main() {
         expect(name, 'set_saved_program_client_sync_v1');
         parameters = params;
         return {
+          'mutation': commandResponseFixture(
+              params['p_command_id'] as String)['mutation'],
           'status': 'unchanged',
           'code': 200,
           'data': {
@@ -33,8 +37,10 @@ void main() {
 
   test('accepts authoritative program and live cache replacements', () async {
     final commands = SupabaseSavedProgramCommands.withTransport(
-      ClientCommandTransport((_, __) async {
+      ClientCommandTransport((_, params) async {
         return {
+          'mutation': commandResponseFixture(
+              params['p_command_id'] as String)['mutation'],
           'status': 'applied',
           'code': 200,
           'data': {
@@ -65,6 +71,37 @@ void main() {
     expect(
       await commands.update([21], SavedProgramMode.join),
       [9, 21],
+    );
+  });
+  test('legacy cohort command uses only the atomic RPC', () async {
+    final calls = <String>[];
+    final commands = LegacySavedProgramCommands.withAdapters(
+      occasionId: 6,
+      invoke: (name, params) async {
+        calls.add(name);
+        expect(params, {
+          'p_occasion': 6,
+          'p_event_ids': [707],
+          'p_mode': 'join',
+        });
+        return [701, 707];
+      },
+    );
+
+    expect(await commands.update([707], SavedProgramMode.join), [701, 707]);
+    expect(calls, ['set_saved_program']);
+  });
+
+  test('legacy cohort exposes a missing RPC instead of direct DML', () async {
+    final commands = LegacySavedProgramCommands.withAdapters(
+      occasionId: 6,
+      invoke: (_, __) async => throw const PostgrestException(
+          message: 'function missing', code: 'PGRST202'),
+    );
+
+    await expectLater(
+      commands.update([707], SavedProgramMode.join),
+      throwsA(isA<PostgrestException>()),
     );
   });
 }

@@ -28,9 +28,7 @@ BEGIN
         RAISE insufficient_privilege USING MESSAGE='Demo access denied';
     END IF;
 
-    IF NOT (public.get_is_editor_view_on_occasion(occ_record.id)
-        OR public.get_is_manager_on_occasion(occ_record.id)
-        OR public.get_is_admin_on_occasion(occ_record.id)) THEN
+    IF NOT public.can_read_occasion_editor_data(occ_record.id) THEN
         RAISE insufficient_privilege USING MESSAGE='occasion editor view required';
     END IF;
 

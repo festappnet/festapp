@@ -1,3 +1,6 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import '../../support/fixtures/local_storage_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +22,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:super_editor/super_editor.dart';
 
 void main() {
+  registerLocalStorageFixture();
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => SharedPreferences.setMockInitialValues({}));
   var commandStatus = 'applied';
@@ -89,13 +93,8 @@ void main() {
               expect(parameters['p_occasion'], 1);
               expect(parameters['p_command_id'], isNotEmpty);
               response = {
-                'mutation': {
-                  'commandId': '00000000-0000-4000-8000-000000000001',
-                  'receiptId': '00000000-0000-4000-8000-000000000001',
-                  'commitId': null,
-                  'replayed': false,
-                  'occurredAt': '2026-10-15T10:00:00Z'
-                },
+                'mutation': commandResponseFixture(
+                    parameters['p_command_id'] as String)['mutation'],
                 'status': commandStatus,
                 'code': 200,
                 'data': {
@@ -119,6 +118,7 @@ void main() {
     requests.clear();
     expect(ClientSyncRuntime.isV1Selected, isFalse);
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.informationWrite: true},
         occasionUser: OccasionUserModel(isEditor: true),
         occasion: OccasionModel(
             id: 1, isOpen: true, isHidden: false, isPromoted: false));
@@ -150,6 +150,7 @@ void main() {
   });
 
   test('public readers do not request private editor metadata', () async {
+    RightsService.occasionLinkModelNotifier.value!.capabilities.clear();
     RightsService.occasionLinkModelNotifier.value!.occasionUser!.isEditor =
         false;
     final information = await DbInformation.getAllActiveInformation();
@@ -185,6 +186,7 @@ void main() {
     }
     final information = cached.singleWhere((info) => info.id == 12);
     expect(information.aggregateVersion, 7);
+    Future<void>? saving;
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
             body: EditableHtmlField(
@@ -192,7 +194,9 @@ void main() {
                 onChanged: (_) {},
                 onSave: (html) async {
                   information.description = html;
-                  await DbInformation.updateInformation(information);
+                  saving = tester.runAsync(
+                      () => DbInformation.updateInformation(information));
+                  await saving;
                 }))));
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pump();
@@ -209,6 +213,9 @@ void main() {
     ]);
     await tester.pump();
     await tester.tap(find.text('Common.save'));
+    await tester.pump();
+    expect(saving, isNotNull);
+    await saving;
     await tester.pumpAndSettle();
     expect(find.byType(RichHtmlEditor), findsNothing);
     expect(information.aggregateVersion, 8);

@@ -1,14 +1,7 @@
-CREATE OR REPLACE FUNCTION get_is_editor_on_occasion(oc bigint) RETURNS bool
-    LANGUAGE "sql" STABLE
-    SECURITY DEFINER
-SET search_path = public, extensions
-    AS $$
-  select NOT public.is_demo_occasion(oc) AND coalesce((
-  select
-    is_editor
-  from
-    occasion_users
-  where
-    "user" = auth.uid() and
-    occasion = oc), false)
+CREATE OR REPLACE FUNCTION public.get_is_editor_on_occasion(oc bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public, extensions AS $$
+ SELECT public.active_membership(
+   (SELECT m.is_editor FROM public.occasion_users m WHERE m."user"=auth.uid() AND m.occasion=oc),
+   public.is_demo_occasion(oc));
 $$;

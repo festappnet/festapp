@@ -166,8 +166,9 @@ def render(root=ROOT):
             if body is not None:
                 selected[signature] = body
     command_transaction_owners(selected)
-    inputs = [root / config['baseline']]
-    inputs += sorted(x for x in (root / 'supabase/migrations').glob('*.sql') if x.name[:14] > config['baselineVersion'])
+    baseline = json.loads((root / config['baselineManifest']).read_text())
+    inputs = [root / baseline['schema']['path']]
+    inputs += sorted(x for x in (root / 'supabase/migrations').glob('*.sql') if x.name[:14] > baseline['coveredThrough'])
     for path in inputs:
         for signature, body in definitions(path.read_text()):
             if isinstance(body, tuple):

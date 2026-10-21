@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'blueprint_layout_contract.dart';
 import 'package:fstapp/components/blueprint/blueprint_group.dart';
 import 'package:fstapp/components/blueprint/get_orders_helper.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -14,9 +16,13 @@ class BlueprintModel {
   static const String metaTableAreaType = "table";
   static const String metaSpotType = "spot";
 
+  BlueprintLayoutSnapshot? layoutSnapshot;
+  Map<String, dynamic> layoutResources;
+  Map<String, Map<String, dynamic>> areaAvailability;
   int? id;
   int aggregateVersion;
   DateTime? createdAt;
+  DateTime? reservationExpiresAt;
   Map<String, dynamic>? data;
   String? title;
   int? organization;
@@ -39,6 +45,31 @@ class BlueprintModel {
       [];
 
   factory BlueprintModel.fromJson(Map<String, dynamic> json) {
+    if (json['layout'] is! Map) {
+      throw StateError('BLUEPRINT_LAYOUT_MIGRATION_REQUIRED');
+    }
+    final result = BlueprintModel(
+      id: json['id'], occasion: json['occasion'], organization: json['organization'],
+      title: json['title'],
+      reservationExpiresAt: DateTime.tryParse(json['expiresAt']?.toString() ?? ''),
+      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at']),
+      data: json['data'],
+      layoutSnapshot: BlueprintLayoutSnapshot.fromJson(json),
+      layoutResources: Map<String, dynamic>.from(jsonDecode(jsonEncode(json['layoutResources'] ?? {})) as Map),
+      areaAvailability: {for(final raw in json['areaAvailability'] as List? ?? const [])
+        (raw as Map)['nodeId'] as String: Map<String, dynamic>.unmodifiable(raw)},
+      spots: GetOrdersHelper.parseSpots(json),
+      products: GetOrdersHelper.parseProducts(json),
+      tickets: GetOrdersHelper.parseTickets(json),
+      orders: GetOrdersHelper.parseOrders(json),
+      orderProductTickets: GetOrdersHelper.parseOrderProductTickets(json),
+    );
+    result.assignAllSpotsWithBlueprint();
+    return result;
+  }
+
+  /// Explicit input boundary for the offline legacy migration only.
+  factory BlueprintModel.fromLegacyJson(Map<String, dynamic> json) {
     final List<BlueprintGroupModel> groups = GetOrdersHelper.parseGroups(json);
     final List<BlueprintObjectModel>? rawObjects =
         GetOrdersHelper.parseObjects(json);
@@ -68,6 +99,19 @@ class BlueprintModel {
           ? BlueprintConfiguration.fromJson(
               json[TbEshop.blueprints.configuration])
           : null,
+      areaAvailability: {
+        for (final raw in json['areaAvailability'] as List? ?? const [])
+          (raw as Map)['nodeId'] as String:
+              Map<String, dynamic>.unmodifiable(raw)
+      },
+      layoutResources: json['layoutResources'] == null
+          ? const {}
+          : Map<String, dynamic>.from(
+              jsonDecode(jsonEncode(json['layoutResources'])) as Map),
+      layoutSnapshot: json['layout'] == null
+          ? null
+          : BlueprintLayoutSnapshot.fromJson(json),
+      spots: spots,
       objects: enrichedObjects ?? [],
       groups: groups,
       backgroundSvg: json[TbEshop.blueprints.background_svg],
@@ -78,22 +122,11 @@ class BlueprintModel {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        TbEshop.blueprints.id: id,
-        TbEshop.blueprints.created_at: createdAt?.toIso8601String(),
-        TbEshop.blueprints.data: data,
-        TbEshop.blueprints.title: title,
-        TbEshop.blueprints.occasion: occasion,
-        TbEshop.blueprints.organization: organization,
-        TbEshop.blueprints.configuration: configuration,
-        TbEshop.blueprints.objects: objects,
-        TbEshop.blueprints.groups: groups,
-        TbEshop.blueprints.background_svg: backgroundSvg,
-        TbEshop.products.table: products,
-        TbEshop.tickets.table: tickets,
-        TbEshop.orders.table: orders,
-        TbEshop.order_product_ticket.table: orderProductTickets,
-      };
+  Map<String, dynamic> toJson() {
+    final snapshot = layoutSnapshot;
+    if (snapshot == null) throw StateError('BLUEPRINT_LAYOUT_MIGRATION_REQUIRED');
+    return snapshot.toJson();
+  }
 
   /// Authoring never submits the read bundle's orders, tickets or occupancy.
   Map<String, dynamic> toSaveJson() => {
@@ -113,9 +146,13 @@ class BlueprintModel {
   String toBasicString() => title ?? id.toString();
 
   BlueprintModel({
+    this.layoutSnapshot,
+    this.layoutResources = const {},
+    this.areaAvailability = const {},
     this.id,
     this.aggregateVersion = 0,
     this.createdAt,
+    this.reservationExpiresAt,
     this.data,
     this.title,
     this.organization,
@@ -132,16 +169,9 @@ class BlueprintModel {
   });
 
   void assignAllSpotsWithBlueprint() {
-    for (var o in objects ?? []) {
+    for (var o in spots ?? []) {
       o.blueprint = this;
     }
   }
 
-  int getFirstAvailableGroupId() {
-    int id = 1;
-    while (groups?.any((group) => group.id == id) ?? false) {
-      id++;
-    }
-    return id;
-  }
 }

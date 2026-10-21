@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/map/icon_model.dart';
 import 'package:fstapp/components/map/path_group_model.dart';
@@ -29,7 +30,8 @@ class DbPlaces {
   }
 
   static Future<List<PlaceModel>> getAllPlaces() async {
-    if (ClientSyncRuntime.isV1Selected || RightsService.isEditor()) {
+    if (ClientSyncRuntime.isV1Selected ||
+        RightsService.hasCapability(AuthorizationCapabilities.mapPlacesWrite)) {
       return getAllPlacesForEditor();
     }
     var data = await _supabase
@@ -125,13 +127,7 @@ class DbPlaces {
 
   static Future<void> saveLocation(
       MapPlaceModel place, double lat, double lng) async {
-    // Fast UX guard mirroring the RPC's permission check (editor OR group admin
-    // of this place). The RPC save_place_location is the source of truth — a
-    // group admin who isn't an editor cannot move a place via a direct RLS
-    // UPDATE (it silently touches 0 rows), so the write must go through it.
-    if (!(RightsService.isEditor() ||
-        (RightsService.isGroupAdmin() &&
-            RightsService.currentUserGroup()!.place!.id == place.id))) {
+    if (!RightsService.canMovePlace(place.id)) {
       throw Exception("You cannot change this place.");
     }
     final result = await _commands.movePlace(
@@ -150,7 +146,7 @@ class DbPlaces {
   }
 
   static Future<List<PathGroupsModel>> getAllPathGroups() async {
-    if (!RightsService.isEditorView() && !RightsService.isEditor()) {
+    if (!RightsService.hasCapability(AuthorizationCapabilities.mapEditorRead)) {
       final rows = await _supabase
           .from(Tb.path_groups.table)
           .select()

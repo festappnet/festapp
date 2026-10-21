@@ -18,8 +18,7 @@ BEGIN
       AND r.actor_id=v_actor AND r.request_sha256=v_hash AND r.status IN ('completed','expired');
   END IF;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)
-      OR public.get_is_admin_on_occasion(v_occasion)) THEN
+    OR NOT public.can_delete_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required'; END IF;
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.order.delete',v_occasion,v_actor,v_hash);

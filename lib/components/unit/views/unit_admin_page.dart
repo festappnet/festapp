@@ -1,3 +1,5 @@
+import '../unit_occasion_dashboard.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
@@ -39,6 +41,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
       widget.access ?? const RightsUnitAdministrationAccess();
   UnitModel? _unit;
   List<OccasionModel>? _occasions;
+  UnitOccasionDashboard? _dashboard;
   bool _failed = false;
   int _generation = 0;
   bool _loading = false;
@@ -137,6 +140,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
       setState(() {
         _unit = unit;
         _occasions = occasions;
+        _dashboard = _access.dashboard;
         _failed = false;
       });
     } catch (_) {
@@ -171,6 +175,7 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
               child: UnitAdministrationScope(
                   unit: _unit!,
                   occasions: _occasions,
+                  dashboard: _dashboard,
                   onUpdated: () => _load(force: true),
                   // Initial nested routes are installed after the first frame.
                   child: AutoRouter(
@@ -187,18 +192,22 @@ class _UnitAdminPageState extends State<UnitAdminPage> {
 class UnitAdministrationScope extends InheritedWidget {
   final UnitModel unit;
   final List<OccasionModel>? occasions;
+  final UnitOccasionDashboard? dashboard;
   final VoidCallback onUpdated;
   const UnitAdministrationScope(
       {super.key,
       required this.unit,
       required this.occasions,
+      this.dashboard,
       required this.onUpdated,
       required super.child});
   static UnitAdministrationScope of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<UnitAdministrationScope>()!;
   @override
   bool updateShouldNotify(UnitAdministrationScope oldWidget) =>
-      oldWidget.unit != unit || oldWidget.occasions != occasions;
+      oldWidget.unit != unit ||
+      oldWidget.occasions != occasions ||
+      oldWidget.dashboard != dashboard;
 }
 
 class UnitAdministrationBody extends StatelessWidget {
@@ -349,7 +358,9 @@ class UnitOccasionsPage extends StatelessWidget {
             constraints:
                 const BoxConstraints(maxWidth: UnitAdminPage.contentMaxWidth),
             child: OccasionsScreen(
-                unit: scope.unit, initialOccasions: scope.occasions)));
+                unit: scope.unit,
+                initialOccasions: scope.occasions,
+                initialDashboard: scope.dashboard)));
   }
 }
 
@@ -441,7 +452,8 @@ class UnitAdministrationTabsPage extends StatelessWidget {
             route: const UnitQuotesRoute(),
             label: UnitStrings.quotes,
             icon: Icons.format_quote),
-      if (RightsService.isUnitEditor())
+      if (RightsService.hasCapability(
+          AuthorizationCapabilities.bankAccountsUnitManage))
         RoutedTabDefinition(
             slug: NavigationPaths.bankAccounts,
             route: const UnitBankAccountsNavigationRoute(),

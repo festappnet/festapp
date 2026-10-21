@@ -69,7 +69,9 @@ Deno.serve(async (req) => {
   const { data: intent, error: intentError } = await user.rpc("begin_bank_sync_operation", {
     p_id: input.operation_id, p_account_id: input.account_id, p_operation: input.operation, p_hash: fingerprint,
   });
-  if (intentError) return json({ error: "operation_conflict" }, 409);
+  if (intentError) return intentError.code === '42501'
+    ? json({ error: 'bank_account_admin_required' }, 403)
+    : json({ error: 'operation_conflict' }, 409);
   if (intent.state === "completed") return json(intent.result);
   input.operation_id = intent.id;
   try {

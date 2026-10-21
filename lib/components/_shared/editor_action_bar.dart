@@ -47,9 +47,13 @@ class EditorActionBar extends StatefulWidget {
       required this.hasChanges,
       required this.onSave,
       required this.onDiscard,
-      this.enabled = true});
+      this.enabled = true,
+      this.inline = false});
   final bool hasChanges;
   final bool enabled;
+
+  /// Compact toolbar presentation with the same save and discard safeguards.
+  final bool inline;
   final Future<void> Function() onSave;
   final Future<void> Function() onDiscard;
 
@@ -87,6 +91,24 @@ class _EditorActionBarState extends State<EditorActionBar> {
   @override
   Widget build(BuildContext context) {
     final active = widget.enabled && widget.hasChanges && !_busy;
+    if (widget.inline) {
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        IconButton(
+          tooltip: CommonStrings.discardChanges,
+          onPressed: active ? () => _run(discard: true) : null,
+          icon: const Icon(Icons.restore),
+        ),
+        FilledButton(
+          onPressed: active ? () => _run(discard: false) : null,
+          child: _performing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(CommonStrings.save),
+        ),
+      ]);
+    }
     final header = Theme.of(context).appBarTheme;
     final background = header.backgroundColor ?? ThemeConfig.appBarColor();
     final foreground = header.foregroundColor ??

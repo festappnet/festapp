@@ -1,5 +1,9 @@
 # Historical Wave 0 tooling
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
 These commands belong to the completed 2026 canonical-backend migration.
 Use them only for a separately scoped reconciliation or replay. They query
 former cloud sources and do not install the current server. The live backend

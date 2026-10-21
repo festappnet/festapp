@@ -41,3 +41,7 @@ repository.
   build unless the user explicitly requests that execution path.
 - Preserve canonical main/tenant ancestry, drift checks, build verification and
   coherent live-version probes when deploying locally.
+
+## JavaScript package manager
+
+Use pnpm 11.24.0 for every JavaScript package in this repository. Install with `pnpm install --frozen-lockfile` in its package directory; use `pnpm run`/`pnpm exec` for scripts and local tools. Keep `pnpm-lock.yaml` and `pnpm-workspace.yaml` authoritative. Dependencies share the same user content store as Mendelio; do not create npm lockfiles or copy `node_modules` between worktrees.

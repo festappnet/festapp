@@ -6,6 +6,20 @@ export interface FontAsset {id:string; family:string; weight:number; style:strin
 export interface TicketFont {id:string; bytes:Uint8Array; metrics:FontMetrics; family:string; weight:number}
 export class TicketFontError extends Error {constructor(public code:string){super(code);}}
 export const fontCatalog = catalog.fonts as FontAsset[];
+export interface FontFamilyManifest {id:string;hash:string;version:1;family:string;faces:Record<string,string>}
+export const fontFamilyCatalog=catalog.families as FontFamilyManifest[];
+/** Family declaration -> exact immutable face. Missing styles never synthesize. */
+export function resolveFontFamilyFace(familyId:string,weight:400|700,italic:boolean):FontAsset {
+  if((weight!==400&&weight!==700)||typeof italic!=='boolean')throw new TicketFontError('font_face_invalid');
+  const family=fontFamilyCatalog.find(f=>f.id===familyId);
+  if(!family)throw new TicketFontError('font_family_unknown');
+  const id=family.faces[`${weight}:${italic?'italic':'normal'}`];
+  if(!id)throw new TicketFontError('font_face_unavailable');
+  const face=fontCatalog.find(f=>f.id===id);
+  if(!face||face.weight!==weight||face.style!==(italic?'italic':'normal'))throw new TicketFontError('font_family_integrity');
+  return face;
+}
+
 export const futuraId=fontCatalog.find(f=>f.file==='font.ttf')!.id;
 export const legacyWideId=fontCatalog.find(f=>f.file==='roboto-slab.ttf')!.id;
 export const legacyNamedId=fontCatalog.find(f=>f.file==='roboto.ttf')!.id;

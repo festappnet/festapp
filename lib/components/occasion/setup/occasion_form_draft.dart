@@ -1,7 +1,12 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
+import '../../features/feature.dart';
+import '../../features/feature_constants.dart';
+import '../occasion_model.dart';
+import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -29,6 +34,23 @@ FormEditBundle draftFormBundle(Map<String, dynamic> data) {
   form.definition = form.definition.copyWith(occasionId: 0);
   form.definition = form.definition.copyWith(isOpen: false);
   form.availableBankAccounts = const [];
+  // A prototype owns its feature context; unrelated current occasions must
+  // never decide whether this draft exposes a quantity setting.
+  form.occasionModel = OccasionModel(
+      id: 0,
+      isOpen: false,
+      isHidden: true,
+      isPromoted: false,
+      features: [
+        SimpleFeature(
+            code: FeatureConstants.ticket,
+            isEnabled: form.relatedFields.any((f) =>
+                f.definition.type == 'ticket' &&
+                f.definition.isHidden != true)),
+        SimpleFeature(
+            code: FeatureConstants.blueprint,
+            isEnabled: form.usesSeatSelection),
+      ]);
   for (final field in form.relatedFields) {
     final type = field.definition.productType;
     if (type == null) continue;
@@ -62,5 +84,66 @@ FormEditorDraft defaultDraftForm(Map<String, dynamic> configuration) {
   final draft = FormEditorDraft.fromJson(
       Map<String, dynamic>.from(jsonDecode(jsonEncode(forms.first))));
   draft.definition = draft.definition.copyWith(link: '');
+  return localizeStarterProducts(draft);
+}
+
+FormEditorDraft localizeStarterProducts(FormEditorDraft draft) {
+  // Only the generated starter is renamed. Existing source products retain
+  // their organizer-owned titles, IDs, prices and order limits.
+  for (final field in draft.relatedFields) {
+    final type = field.definition.productType;
+    if (type?.type != 'spot' || type?.title != 'Spot') continue;
+    field.definition = field.definition.copyWith(
+      title: OccasionSaleStrings.text('admission'),
+      productType: type!
+          .copyWith(title: OccasionSaleStrings.text('admission'), products: [
+        for (final product in type.products ?? <ProductModel>[])
+          product.title == 'Variant 1'
+              ? product.copyWith(
+                  title: OccasionSaleStrings.text('standardTicket'))
+              : product,
+      ]),
+    );
+  }
   return draft;
+}
+
+/// Explicit blueprint intent uses the existing public form's seat field.
+void setDraftSeatSelection(Map<String, dynamic> data, bool enabled) {
+  final form = data['formDraft'];
+  if (form is! Map) return;
+  final fields = form['fields'] as List? ?? [];
+  final spot = fields
+      .whereType<Map>()
+      .where((f) => f['type'] == 'spot' && f['is_ticket_field'] == true)
+      .firstOrNull;
+  if (spot != null) {
+    spot['is_hidden'] = !enabled;
+  } else if (enabled &&
+      fields.whereType<Map>().any((f) => f['type'] == 'ticket')) {
+    fields.add({
+      'type': 'spot',
+      'is_ticket_field': true,
+      'is_hidden': false,
+      'is_required': true,
+      'title': OccasionSaleStrings.text('seatSelection'),
+      'order': fields.length
+    });
+  }
+}
+
+/// The displayed default does not become a form override on unrelated edits.
+int effectiveSetupDeadlineSeconds(Map<String, dynamic> data) {
+  final raw = (data['deadline'] as String? ?? '').trim();
+  final days = int.tryParse(raw);
+  final features = (((data['defaultConfiguration'] as Map?)?['occasion']
+              as Map?)?['features'] as List? ??
+          [])
+      .whereType<Map>();
+  final inherited = features
+      .where((f) => f['code'] == 'form')
+      .firstOrNull?['deadline_duration_seconds'] as num?;
+  return FormDefinition(
+          deadlineDurationSeconds: days == null ? null : days * 86400)
+      .effectiveDeadlineDurationSeconds(occasionDefault: inherited?.toInt());
 }

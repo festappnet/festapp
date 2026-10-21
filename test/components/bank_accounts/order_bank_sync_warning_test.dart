@@ -1,3 +1,5 @@
+import 'package:timezone/data/latest.dart' as timezone_data;
+import '../../support/fixtures/rights_context_fixture.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/link.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_sync_warning_button.dart';
@@ -26,6 +28,7 @@ class _Translations extends AssetLoader {
 
 void main() {
   setUpAll(() async {
+    timezone_data.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
@@ -231,6 +234,8 @@ void main() {
   testWidgets(
       'account admin has an interactive settings hyperlink in the tooltip',
       (tester) async {
+    final rights = RightsContextFixture.bankAccounts(manageableAccounts: {42});
+    addTearDown(rights.dispose);
     await tester.pumpWidget(EasyLocalization(
       supportedLocales: const [Locale('en')],
       path: 'unused',
@@ -313,6 +318,9 @@ void main() {
       testWidgets('opens only the requested administered account: $isAdmin',
           (tester) async {
         allowed = isAdmin;
+        final rights = RightsContextFixture.bankAccounts(
+            manageableAccounts: isAdmin ? {42} : {});
+        addTearDown(rights.dispose);
         await tester.pumpWidget(EasyLocalization(
           supportedLocales: const [Locale('en')],
           path: 'unused',

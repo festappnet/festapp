@@ -1,4 +1,5 @@
 import 'package:fstapp/services/app_logger.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'unit_bank_account_card.dart';
 import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart'
     show LinkDependencyException;
@@ -256,7 +257,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
               _unitAccounts.isEmpty ? 0 : _unitAccounts.last.priority + 1;
           await DbBankAccounts.current
               .linkBankAccountToUnit(widget.unitId, bankAccountId, priority);
-
+          await RightsService.refreshAfterAuthorizationChange();
           await _loadData();
         } catch (e) {
           if (mounted) _showError('$e');
@@ -300,6 +301,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     try {
       await DbBankAccounts.current
           .linkBankAccountToUnit(widget.unitId, account.id, null, hard: hard);
+      await RightsService.refreshAfterAuthorizationChange();
       await _loadData();
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);

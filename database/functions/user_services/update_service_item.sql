@@ -8,7 +8,7 @@ DECLARE
   updated_services JSONB;
 BEGIN
 
-  IF (SELECT get_is_manager_on_occasion(oc)) <> TRUE THEN
+  IF (SELECT can_write_service_items(oc)) <> TRUE THEN
     RETURN jsonb_build_object('code', 403);
   END IF;
 

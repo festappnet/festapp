@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION public.get_activity_editor_session_v1(p_occasion bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT CASE WHEN auth.uid() IS NULL OR NOT (public.get_is_editor_view_on_occasion(p_occasion) OR public.get_is_editor_on_occasion(p_occasion)) THEN jsonb_build_object('code',403) ELSE
+ SELECT CASE WHEN auth.uid() IS NULL OR NOT public.can_read_activity_editor(p_occasion) THEN jsonb_build_object('code',403) ELSE
  jsonb_build_object('code',200,'liveVersion',COALESCE((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='activities' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p_occasion::text),0),
  'latestPublishId',(SELECT id FROM public.activity_history WHERE occasion_id=p_occasion AND history_type='PUBLISH' ORDER BY id DESC LIMIT 1),
  'draftId',d.id,'draftParentHistoryId',d.parent_history_id,'draftData',CASE WHEN d.id IS NOT NULL THEN public.activity_graph_history_internal_v1(public.activity_history_graph_internal_v1(p_occasion,d.activities_data,false)) ELSE NULL END,

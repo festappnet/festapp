@@ -14,7 +14,7 @@ BEGIN
   FROM public.occasions
   WHERE id = oc;
 
-  PERFORM check_is_manager_on_unit(unit_id);
+  IF NOT public.can_delete_occasion_in_unit(unit_id) THEN RAISE EXCEPTION 'User is not manager.'; END IF;
 
 -- ***********************************************************
   -- 0. SAFETY CHECK: Strict Order Check
@@ -128,6 +128,11 @@ BEGIN
   DELETE FROM eshop.tickets
     WHERE occasion = oc;
 
+  -- Configuration bindings depend on seats/products as well as their plan.
+  DELETE FROM eshop.blueprint_seat_bindings WHERE blueprint IN (SELECT id FROM eshop.blueprints WHERE occasion=oc);
+  DELETE FROM eshop.blueprint_group_products WHERE blueprint IN (SELECT id FROM eshop.blueprints WHERE occasion=oc);
+  DELETE FROM eshop.blueprint_area_bindings WHERE blueprint IN (SELECT id FROM eshop.blueprints WHERE occasion=oc);
+
   DELETE FROM eshop.spots
     WHERE occasion = oc;
 
@@ -142,6 +147,7 @@ BEGIN
 
   DELETE FROM eshop.bank_account_requests
     WHERE occasion = oc;
+
 
   DELETE FROM eshop.blueprints
     WHERE occasion = oc;

@@ -448,12 +448,13 @@ async function routeRequest(request, env) {
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.
-    if (path === "/google-auth" || path === "/app/google-auth") {
-      const entry = path === "/google-auth" ? WEB_CLIENT_INDEX : FLUTTER_ENTRY;
+    if (path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect") {
+      const entry = path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
       const res = await serveAsset(env, request, entry);
       const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
       response.headers.set("referrer-policy", "no-referrer");
+      response.headers.set("x-robots-tag", "noindex, nofollow");
       return response;
     }
 

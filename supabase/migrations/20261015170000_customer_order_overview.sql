@@ -264,44 +264,8 @@ GRANT EXECUTE ON FUNCTION public.enqueue_order_overview_reissue_v1(bigint,uuid,u
 
 -- Source: database/functions/eshop_waitlist/offers.sql
 DROP FUNCTION IF EXISTS public.expire_waitlist_form_internal(bigint,timestamptz);
-CREATE OR REPLACE FUNCTION public.expire_waitlist_form_internal(p_form bigint,p_at timestamptz DEFAULT clock_timestamp(),p_limit integer DEFAULT NULL)
-RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE n integer;
-BEGIN
- IF public.is_demo_occasion((SELECT occasion FROM public.forms WHERE id=p_form)) THEN RETURN 0; END IF;
- PERFORM 1 FROM public.forms WHERE id=p_form FOR UPDATE;
- WITH expired AS (UPDATE eshop.waitlist_offer_slots s SET outcome='expired',updated_at=p_at
- FROM eshop.waitlist_offers w WHERE w.id=s.offer_id AND w.form_id=p_form AND w.expires_at<=p_at AND s.outcome='pending'
- AND s.id IN(SELECT x.id FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers y ON y.id=x.offer_id WHERE y.form_id=p_form AND y.expires_at<=p_at AND x.outcome='pending' ORDER BY x.id LIMIT p_limit)
- RETURNING s.ticket_id)
- UPDATE eshop.tickets SET waitlist_queue_at=p_at,updated_at=p_at WHERE id IN(SELECT ticket_id FROM expired) AND state='waitlisted';
- GET DIAGNOSTICS n=ROW_COUNT;
- IF n>0 THEN
-  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id=p_form;
-  UPDATE eshop.waitlist_capabilities SET revoked_at=p_at WHERE form_id=p_form AND kind='offer' AND expires_at<=p_at AND revoked_at IS NULL;
- END IF;
- RETURN n;
-END $$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_offer_proposal(p_form_id bigint)
-RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE f public.forms; c jsonb; proposals jsonb; available integer;
-BEGIN
- SELECT * INTO STRICT f FROM public.forms WHERE id=p_form_id;
- PERFORM public.check_is_editor_order_on_occasion(f.occasion);
- PERFORM 1 FROM public.forms WHERE id=f.id FOR UPDATE;
- PERFORM public.expire_waitlist_form_internal(f.id);
- c:=public.get_form_capacity_snapshot_internal(f.id); available:=(c->>'offerablePlaces')::integer;
- -- count is the suggested allocation; waitingCount is the authoritative recipient limit.
- -- Keep unallocated eligible recipients so editors can adjust the allocation safely.
- SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',order_id,'count',offered,'waitingCount',total) ORDER BY first_queue,order_id),'[]') INTO proposals
- FROM (SELECT order_id,min(waitlist_queue_at) first_queue,count(*) total,
-  count(*) FILTER(WHERE position<=available) offered FROM
-  (SELECT p.*,o.id order_id,row_number() OVER(ORDER BY p.waitlist_queue_at,p.created_at,p.id) position FROM eshop.tickets p
-   JOIN LATERAL(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p.id) x ON true
-   JOIN eshop.orders o ON o.id=x."order" WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(p.id)='waiting' ) ranked GROUP BY order_id) grouped;
- RETURN jsonb_build_object('code',200,'formId',f.id,'revision',c->'revision','capacity',c,'recipients',proposals,
- 'offerDurationSeconds',f.waitlist_offer_duration_seconds,'serverTime',clock_timestamp());
-END $$;
+
+
 CREATE OR REPLACE FUNCTION public.enqueue_waitlist_email_internal(p_order bigint,p_offer uuid,p_command uuid,p_delivery jsonb)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; occ public.occasions; result jsonb; expiry timestamptz; code text; kind text;
@@ -330,34 +294,12 @@ GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_proposal(bigint) TO authenti
 
 -- Source: database/functions/eshop_waitlist/email_render_context.sql
 -- Shared presentation metadata; no lifecycle or capability decisions.
-CREATE OR REPLACE FUNCTION public.get_waitlist_form_timezone_internal(p_form bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(occasion_zone.name,unit_zone.name,organization_zone.name,'Europe/Prague')
- FROM public.forms f JOIN public.occasions occ ON occ.id=f.occasion
- LEFT JOIN public.units u ON u.id=occ.unit
- LEFT JOIN public.organizations org ON org.id=occ.organization
- LEFT JOIN pg_timezone_names occasion_zone ON occasion_zone.name=nullif(occ.data->>'timezone','')
- LEFT JOIN pg_timezone_names unit_zone ON unit_zone.name=nullif(u.data->>'timezone','')
- LEFT JOIN pg_timezone_names organization_zone ON organization_zone.name=nullif(org.data->>'timezone','')
- WHERE f.id=p_form;
-$$;
+
 REVOKE ALL ON FUNCTION public.get_waitlist_form_timezone_internal(bigint) FROM PUBLIC,anon,authenticated;
 
 -- One presentation vocabulary for both gated delivery and authenticated preview.
 -- The existing effective-form resolver owns tone inheritance.
-CREATE OR REPLACE FUNCTION public.get_waitlist_email_tone_substitutions_internal(p_form bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT jsonb_build_object(
-  'waitlist_offer_button_single','Potvrdit přihlášení',
-  'waitlist_offer_button_multiple','Potvrdit vybrané osoby',
-  'waitlist_manage_button_label','Spravovat čekání',
-  'waitlist_confirmation_heading',CASE WHEN informal THEN 'Jsi mezi náhradníky' ELSE 'Jste mezi náhradníky' END,
-  'waitlist_confirmation_explanation',CASE WHEN informal THEN 'Zatím nic neplatíš. Jakmile se uvolní místo, pošleme ti nabídku. Čekání můžeš spravovat nebo ukončit přes tento odkaz:' ELSE 'Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:' END,
-  'waitlist_offer_heading',CASE WHEN informal THEN 'Máme pro tebe nabídku' ELSE 'Máme pro vás nabídku' END,
-  'waitlist_offer_instructions_single',CASE WHEN informal THEN 'Po otevření nabídky doplníš údaje a vybereš produkty podle aktuální dostupnosti. Přihlášení pak potvrdíš.' ELSE 'Po otevření nabídky doplníte údaje a vyberete produkty podle aktuální dostupnosti. Přihlášení pak potvrdíte.' END,
-  'waitlist_offer_instructions',CASE WHEN informal THEN 'Po otevření nabídky vybereš, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíš.' ELSE 'Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.' END)
- FROM (SELECT coalesce(public.get_effective_form_data(p_form)->>'communication_tone','formal')='informal' informal) tone;
-$$;
+
 REVOKE ALL ON FUNCTION public.get_waitlist_email_tone_substitutions_internal(bigint) FROM PUBLIC,anon,authenticated;
 
 -- Private queue renderer boundary. Personal capabilities remain encrypted in
@@ -419,55 +361,7 @@ GRANT EXECUTE ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uui
 
 
 -- Source: database/functions/eshop_waitlist/fakturoid_recovery.sql
-CREATE OR REPLACE FUNCTION public.abort_waitlist_acceptance_internal(p_order bigint,p_command uuid)
-RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE a eshop.waitlist_acceptance_attempts; s jsonb; p jsonb; expiry timestamptz;
- original_ticket eshop.tickets; restored_outcome text; original_id bigint;
-BEGIN
- SELECT * INTO a FROM eshop.waitlist_acceptance_attempts WHERE command_id=p_command AND target_order_id=p_order;
- IF a.command_id IS NULL THEN RETURN false; END IF;
- PERFORM public.lock_order_capacity_scope_internal(ARRAY[a.source_order_id,a.target_order_id]);
- SELECT * INTO STRICT a FROM eshop.waitlist_acceptance_attempts WHERE command_id=p_command FOR UPDATE;
- IF a.state='aborted' THEN RETURN true; END IF;
- IF a.state<>'preparing' THEN RAISE EXCEPTION 'Acceptance attempt already completed'; END IF;
- SELECT expires_at INTO expiry FROM eshop.waitlist_offers WHERE id=a.offer_id FOR UPDATE;
- PERFORM public.cancel_order_email_intents(p_order);
- PERFORM public.internal_storno_tickets_221(a.ticket_ids);
- DELETE FROM eshop.order_product_ticket WHERE "order"=a.target_order_id AND ticket=ANY(a.ticket_ids);
- IF a.conversion='in_place' THEN
-  UPDATE eshop.orders SET state='waitlisted',price=NULL,payment_info=NULL,data=a.previous_order_data->'data',updated_at=clock_timestamp() WHERE id=a.target_order_id;
- ELSE
-  UPDATE eshop.orders SET state='storno',price=0,payment_info=NULL,updated_at=clock_timestamp() WHERE id=a.target_order_id;
- END IF;
- -- Only the selected tickets are fenced by the preparing target. Never restore
- -- unselected/displaced answers or resurrect a concurrently withdrawn remainder.
- FOR p IN SELECT * FROM jsonb_array_elements(a.previous_tickets) LOOP
-  IF NOT (p->>'id')::bigint=ANY(a.ticket_ids) THEN CONTINUE; END IF;
-  UPDATE eshop.tickets SET state=p->>'state',ticket_symbol=p->>'ticket_symbol',data=p->'data',note=p->>'note',
-   note_hidden=p->>'note_hidden',waitlist_queue_at=(p->>'waitlist_queue_at')::timestamptz,updated_at=clock_timestamp() WHERE id=(p->>'id')::bigint;
- END LOOP;
- INSERT INTO eshop.order_product_ticket SELECT * FROM jsonb_populate_recordset(NULL::eshop.order_product_ticket,a.previous_links);
- UPDATE eshop.waitlist_offer_slots SET outcome='accepted' WHERE id=ANY(a.slot_ids);
- FOR s IN SELECT * FROM jsonb_array_elements(a.previous_slots) LOOP
-  original_id:=(s->>'ticket_id')::bigint;
-  SELECT * INTO STRICT original_ticket FROM eshop.tickets WHERE id=original_id FOR UPDATE;
-  restored_outcome:=CASE
-   WHEN original_ticket.state<>'waitlisted' OR NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=original_id AND x."order"=a.source_order_id)
-    OR EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots other WHERE other.ticket_id=original_id AND other.outcome='pending' AND NOT other.id=ANY(a.slot_ids)) THEN 'cancelled'
-   WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots other JOIN eshop.waitlist_offers ow ON ow.id=other.offer_id
-     WHERE other.ticket_id=original_id AND other.outcome IN ('declined','cancelled')
-     AND ow.created_at>(SELECT created_at FROM eshop.waitlist_offers WHERE id=a.offer_id)) THEN 'cancelled'
-   WHEN expiry<=clock_timestamp() THEN 'expired' ELSE 'pending' END;
-  UPDATE eshop.waitlist_offer_slots SET ticket_id=original_id,outcome=restored_outcome,resulting_order_id=NULL,updated_at=clock_timestamp() WHERE id=(s->>'id')::uuid;
-  IF restored_outcome='expired' AND original_ticket.state='waitlisted' THEN
-   UPDATE eshop.tickets SET waitlist_queue_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=original_id;
-  END IF;
- END LOOP;
- UPDATE eshop.waitlist_acceptance_attempts SET state='aborted',updated_at=clock_timestamp() WHERE command_id=p_command;
- UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id=(SELECT form FROM eshop.orders WHERE id=a.source_order_id);
- INSERT INTO eshop.orders_history("order",state,data) VALUES(a.source_order_id,'waitlisted',jsonb_build_object('action','acceptance_aborted','commandId',p_command,'targetOrderId',a.target_order_id));
- RETURN true;
-END $$;
+
 CREATE OR REPLACE FUNCTION public.expire_waitlist_offers(p_batch_size integer DEFAULT 100)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE f bigint; affected integer:=0; n integer; occ bigint; impacts jsonb;

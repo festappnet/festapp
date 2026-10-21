@@ -45,7 +45,7 @@ BEGIN
     RAISE EXCEPTION '%', jsonb_build_object('code', 404, 'message', 'Ticket not linked to any order')::text;
   END IF;
 
-  IF NOT public.get_is_editor_order_on_occasion(v_occasion_id) THEN
+  IF NOT public.can_write_orders(v_occasion_id) THEN
     RAISE EXCEPTION '%', jsonb_build_object('code', 403, 'message', 'Not authorized')::text;
   END IF;
 

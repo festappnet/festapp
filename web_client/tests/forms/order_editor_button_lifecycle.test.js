@@ -34,6 +34,7 @@ for (const role of ['occasion editor', 'unit editor', 'visitor']) {
       occasion: { link: 'event' },
       occasion_user: { is_editor_order_view: role === 'occasion editor' },
       unit_user: { is_editor_view: role === 'unit editor' },
+      capabilities: { 'orders.read': role !== 'visitor' },
     };
     t.mock.method(DbForms, 'getFormByLink', async () => model);
     t.mock.method(RightsService, 'updateAppData', async () => true);

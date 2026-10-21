@@ -60,6 +60,7 @@ try {
                     occasion: { link: 'fixture-event' },
                     occasion_user: { is_editor_order_view: scenario.startsWith('editor') },
                     unit_user: { is_editor_view: scenario.startsWith('unit-editor') },
+                    capabilities: { 'orders.read': editor, 'navigation.admin_web': editor },
                 };
                 else if (name === 'get_form_by_link') data = { code: 200, data: {
                     id: 1, link: 'account-access', title: 'Account access regression',

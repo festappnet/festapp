@@ -7,8 +7,7 @@ BEGIN
  p_users:=ARRAY(SELECT DISTINCT id FROM unnest(p_users) id ORDER BY id);
  IF actor IS NULL OR cardinality(p_users) NOT BETWEEN 1 AND 5000 THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid selected members'; END IF;
- IF NOT public.get_is_editor_on_occasion(p_occasion) AND NOT EXISTS(SELECT 1 FROM public.user_groups m
-  JOIN public.user_group_info g ON g.id=m."group" WHERE g.id=p_group AND g.occasion=p_occasion AND m."user"=actor AND m.is_admin) THEN
+ IF NOT public.can_add_group_members(p_occasion,p_group) THEN
   RAISE insufficient_privilege USING MESSAGE='group editor required'; END IF;
  hash:=encode(extensions.digest(convert_to(jsonb_build_object('occasion',p_occasion,'group',p_group,'users',p_users)::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'profile.group.members.add',p_occasion,actor,hash);
@@ -16,7 +15,7 @@ BEGIN
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;
  PERFORM 1 FROM public.user_group_info WHERE id=p_group AND occasion=p_occasion FOR UPDATE;
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='group unavailable'; END IF;
- IF NOT public.get_is_editor_on_occasion(p_occasion) AND NOT EXISTS(SELECT 1 FROM public.user_groups WHERE "group"=p_group AND "user"=actor AND is_admin) THEN
+ IF NOT public.can_add_group_members(p_occasion,p_group) THEN
   RAISE insufficient_privilege USING MESSAGE='group editor required'; END IF;
  SELECT jsonb_agg(jsonb_build_object('user_id',id,'is_admin',false)) INTO members FROM unnest(p_users) id;
  changed:=public.write_user_group_members_internal_v1(p_occasion,p_group,members,false);

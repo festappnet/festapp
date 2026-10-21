@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.update_unit(p_unit_id bigint,p_title text,p_da
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_version bigint; v_result jsonb;
 BEGIN
- IF auth.uid() IS NULL OR NOT public.get_is_manager_on_unit(p_unit_id) THEN
+ IF auth.uid() IS NULL OR NOT public.can_manage_unit_configuration(p_unit_id) THEN
   RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
  PERFORM 1 FROM public.units WHERE id=p_unit_id FOR UPDATE;
  SELECT coalesce(v.version,0) INTO v_version FROM (SELECT 1) seed

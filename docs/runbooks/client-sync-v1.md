@@ -51,7 +51,7 @@ head.
 
 `ClientSyncPublisher.runOnce()` is the sole publisher. Its adapters are the
 authenticated internal HTTP tick, the one-minute Cloudflare recovery tick and
-authorized `npm run once`. The five-second named Supabase cron first performs
+authorized `pnpm run once`. The five-second named Supabase cron first performs
 an indexed dirty-key `EXISTS` restricted to `SYNC_SCOPE_IDS`; an empty queue
 causes no HTTP request. The wake endpoint and bearer token live in Cloudflare
 secret/Vault, never repository vars or output.

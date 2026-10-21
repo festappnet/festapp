@@ -30,7 +30,7 @@ BEGIN
   IF v_actor IS NULL OR v_occasion IS NULL OR NOT (
     v_actor=p_participant_id OR EXISTS (SELECT 1 FROM public.user_companions c
       WHERE c.occasion=v_occasion AND c."user"=v_actor AND c.companion=p_participant_id AND COALESCE((public.get_companion_feature_policy_v1(v_occasion)->>'is_enabled')::boolean,false))
-    OR public.get_is_editor_on_occasion(v_occasion)) THEN
+    OR public.can_write_schedule(v_occasion)) THEN
     RAISE insufficient_privilege USING MESSAGE='participant attendance permission required';
   END IF;
   SELECT c."user" INTO v_companion_owner FROM public.user_companions c

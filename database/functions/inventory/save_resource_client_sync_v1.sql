@@ -12,7 +12,7 @@ BEGIN
   -- No booking rules and an empty rule document have the same domain meaning.
   IF p_resource->'booking_rules'='null'::jsonb THEN
     p_resource:=jsonb_set(p_resource,'{booking_rules}','{}'); END IF;
-  IF v_actor IS NULL OR NOT public.get_is_editor_order_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_orders(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion order editor required'; END IF;
   IF p_resource IS NULL OR jsonb_typeof(p_resource)<>'object'
     OR octet_length(p_resource::text)>131072

@@ -26,7 +26,7 @@ BEGIN
     IF public.is_demo_occasion(occ_id) AND NOT public.can_read_demo_occasion(occ_id) THEN
         RETURN jsonb_build_object('code',404,'message','Form does not exist.');
     END IF;
-    is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
+    is_editor_view := public.can_read_orders(occ_id);
 
 
     IF NOT p_allow_closed AND NOT is_editor_view AND NOT EXISTS (

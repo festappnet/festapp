@@ -7,8 +7,8 @@ import vm from 'node:vm';
 const root=await mkdtemp(path.join(tmpdir(),'festapp-home-shell-'));
 try {
   for(const [name,text] of [['flutter','flutter shell'],['webclient','web client shell'],['main.dart.js','main']]) await writeFile(path.join(root,name),text);
-  for(const forced of ['', 'forced-event']) {
-    const generated=spawnSync(process.execPath,['automation/generate_pwa_service_worker.mjs',root,'1.2.3+4',forced],{encoding:'utf8'});
+  for(const [forced,appSupported,expected] of [['','true','web client shell'],['forced-event','true','web client shell'],['forced-event','false','web client shell']]) {
+    const generated=spawnSync(process.execPath,['automation/generate_pwa_service_worker.mjs',root,'1.2.3+4',forced,appSupported],{encoding:'utf8'});
     assert.equal(generated.status,0,generated.stderr);
     const source=await readFile(path.join(root,'festapp_service_worker.js'),'utf8');
     const handlers={};
@@ -24,8 +24,8 @@ try {
     vm.runInContext(source,context);
     const request=new Request('https://app.test/');Object.defineProperty(request,'mode',{value:'navigate'});
     let response;handlers.fetch({request,clientId:'',resultingClientId:'new-tab',respondWith:p=>{response=p;},waitUntil:()=>{}});
-    assert.equal(await (await response).text(),forced?'flutter shell':'web client shell',
-      'Opening the domain must use its configured entry even with a stale Flutter root in cache');
+    assert.equal(await (await response).text(),expected,
+      'The public domain root belongs to the web client even with a forced occasion and stale Flutter cache');
   }
   console.log('PWA home entry tests passed');
 } finally {await rm(root,{recursive:true,force:true});}

@@ -7,6 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import { assert, assertEquals, assertRejects } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
 const root = new URL("../../", import.meta.url);
+const evidence = new URL((Deno.env.get("FESTAPP_GOOGLE_AUTH_EVIDENCE_DIR") ?? ".codex-artifacts/google-auth/run").replace(/\/?$/, "/"), root);
 const compose = await Deno.readTextFile(new URL("automation/hetzner-supabase/runtime/docker-compose.festapp.yml", root));
 const image = compose.match(/image: (supabase\/gotrue:[^\s]+)/)?.[1];
 if (!image?.includes("@sha256:")) throw new Error("Missing immutable runtime Auth image");
@@ -228,7 +229,8 @@ try {
   await redeemedProof.auth.signOut({scope:"local"});
   report.mfa={verifiedTotpAal2:true,internalRecoveryBlocked:true,freshPasswordAndEncryptedCrossRequestProof:true,wrongCodeRejected:true,correctRetrySameChallenge:true};
   report.status = "passed";
-  await Deno.writeTextFile(new URL("docs/plans/google-sign-in-reference-2026-10-01/sdk-session-proof.json", root), JSON.stringify(report, null, 2) + "\n");
+  await Deno.mkdir(evidence, {recursive:true});
+  await Deno.writeTextFile(new URL("sdk-session-proof.json", evidence), JSON.stringify(report, null, 2) + "\n");
   console.log("PASS isolated pinned GoTrue: 4 prefixed identities, SDK events, refresh/revoke/replay, deletion, no implicit signup");
 } finally {
   await docker(["rm", "-fv", auth, db], undefined, true);

@@ -2,12 +2,11 @@ import { emailRpc } from "../_shared/emailQueueClient.ts";
 import { enqueueAndAwaitEmail } from "../_shared/emailQueueClient.ts";
 import {
   getSupabaseUser,
-  isUserEditor,
-  isUserEditorOrder,
   createUserClient,
   supabaseAdmin,
   getEmailTemplateAndWrapper,
 } from "../_shared/supabaseUtil.ts";
+import { setupPreviewResponse } from "./setupPreview.ts";
 import { authoringContextResponse } from "./authoringContext.ts";
 import { loadAuthoringPaymentAccounts } from "./authoringPaymentAccounts.ts";
 
@@ -26,6 +25,30 @@ Deno.serve(async (req) => {
     }
 
     const reqData = await req.json();
+
+    if (reqData.action === 'setupPreview') {
+      if(req.method!=='POST')return Response.json({error:'Method not allowed'},{status:405,headers:corsHeaders});
+      return await setupPreviewResponse(reqData,req.headers.get('Authorization')||'',{
+        senderAddress:_DEFAULT_EMAIL||'',resolve:getEmailTemplateAndWrapper,
+        draft:async(auth,id,bytes)=>{
+          const client=createUserClient(auth);
+          const admitted=await client.rpc('admit_occasion_setup_blueprint_resources_v1',{p_draft:id,p_bytes:bytes});
+          if(admitted.error)return null;
+          const {data,error}=await client.rpc('get_occasion_setup_draft',{p_id:id});
+          return error?null:data;
+        },
+        catalog:async(auth,id)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_entity_email_templates',{p_entity_type:'unit',p_entity_id:id});return error?null:data;
+        },
+        sourceTemplates:async(auth,id)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_entity_email_templates',{p_entity_type:'occasion',p_entity_id:id});return error?null:data;
+        },
+        bank:async(auth,id,accountId)=>{
+          const {data,error}=await createUserClient(auth).rpc('get_occasion_setup_bank_accounts',{p_id:id});
+          return error?null:data?.accounts?.find((a:any)=>a.id===accountId)?.display??null;
+        },
+      },corsHeaders);
+    }
 
     if (reqData.action === "authoringContext") {
       if (req.method !== "POST") {
@@ -99,12 +122,10 @@ Deno.serve(async (req) => {
 
     // Verify that the user is an editor for the occasion specified in the template.
     const userId = user.user.id;
-    var isEditor = await isUserEditor(userId, template.occasion);
-    if (!isEditor) {
-      isEditor = await isUserEditorOrder(userId, template.occasion);
-    }
+    const { data: isEditor, error: permissionError } = await createUserClient(authHeader)
+      .rpc("can_send_custom_email", { p_occasion: template.occasion });
 
-    if (!isEditor) {
+    if (permissionError || isEditor !== true) {
       console.error(
         `User ${userId} is not an editor for occasion ${template.occasion}`,
       );
@@ -136,6 +157,10 @@ Deno.serve(async (req) => {
       substitutions: subs,
       template,
       from: `Festapp <${_DEFAULT_EMAIL}>`,
+    }, {
+      enqueuePrepared: (parameters) => emailRpc("enqueue_custom_email_for_actor_v1", {
+        ...parameters, p_actor: userId,
+      }),
     });
 
     return new Response(JSON.stringify({ email }), {

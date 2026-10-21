@@ -28,14 +28,14 @@ BEGIN
  payload:=jsonb_set(payload,'{formDraft,title}',to_jsonb('Registration'::text));
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,1);
  suggestion:=public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples',NULL);
- PERFORM assert_eq(suggestion->>'suggestion','zlutoucky-ples-2090','Title normalization and event year');
+ PERFORM assert_eq(suggestion->>'suggestion','zlutoucky_ples_2090','Title normalization and event year');
  EXECUTE 'RESET ROLE';
  SELECT count(*) INTO count_before FROM public.form_link_reservations;
  -- Deleted historical URLs remain unavailable.
- INSERT INTO public.form_link_reservations(slug,form) VALUES('zlutoucky-ples-2090',NULL);
+ INSERT INTO public.form_link_reservations(slug,form) VALUES('zlutoucky_ples_2090',NULL);
  EXECUTE 'SET LOCAL ROLE authenticated';
- suggestion:=public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples','zlutoucky-ples-2090');
- PERFORM assert_eq(suggestion->>'suggestion','zlutoucky-ples-2090-2','Taken title gets a readable suffix');
+ suggestion:=public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples','zlutoucky_ples_2090');
+ PERFORM assert_eq(suggestion->>'suggestion','zlutoucky_ples_2090_2','Taken title gets a readable suffix');
  PERFORM assert_false((suggestion->>'available')::boolean,'Tombstones are unavailable');
  PERFORM assert_true((public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples','volna-adresa')->>'available')::boolean,'Free manual URL check');
  PERFORM assert_false((public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples','Not valid')->>'available')::boolean,'Invalid manual URL');
@@ -44,11 +44,11 @@ BEGIN
  PERFORM assert_eq((SELECT count(*) FROM public.form_link_reservations),count_before+1,'Suggestions do not reserve URLs');
  PERFORM assert_false(has_function_privilege('anon','public.suggest_occasion_setup_form_link(uuid,text,text)','EXECUTE'),'Suggestions are authenticated');
  -- Simulate another writer taking the preview before finalization.
- INSERT INTO public.form_link_reservations(slug,form) VALUES('zlutoucky-ples-2090-2',NULL);
+ INSERT INTO public.form_link_reservations(slug,form) VALUES('zlutoucky_ples_2090_2',NULL);
  old_product:=(payload#>>'{formDraft,fields,2,product_type_data,products,0,id}')::bigint;
- payload:=jsonb_set(payload,'{formDraft,link}',to_jsonb('zlutoucky-ples-2090-2'::text))||jsonb_build_object(
+ payload:=jsonb_set(payload,'{formDraft,link}',to_jsonb('zlutoucky_ples_2090_2'::text))||jsonb_build_object(
    'formLinkAutomatic',true,'introImage',image_url,'isPromoted',true,'placeName','Kulturní dům',
-   'description','Slavnostní večer','bankAccountId',bank_id,'bankAccountConfirmed',true,
+   'listPubliclyOnPublish',false,'description','Slavnostní večer','bankAccountId',bank_id,
    'bankAccountFingerprint',bank_info->'accounts'->0->>'fingerprint','priceWavesEnabled',true,'priceWaves',jsonb_build_array(jsonb_build_object(
      'change_time',now()+interval '60 days','targets',jsonb_build_array(jsonb_build_object('product',old_product,'price',120)))));
  EXECUTE 'SET LOCAL ROLE authenticated';
@@ -58,21 +58,22 @@ BEGIN
  EXECUTE 'RESET ROLE';
  SELECT id INTO new_form FROM public.forms WHERE occasion=occasion_id ORDER BY id LIMIT 1;
  PERFORM assert_eq((SELECT bank_account FROM public.forms WHERE id=new_form),bank_id,'Confirmed account is pinned to form');
- PERFORM assert_eq((SELECT link FROM public.forms WHERE id=new_form),'zlutoucky-ples-2090-3','Commit rechecks automatic suggestion');
+ PERFORM assert_eq((SELECT link FROM public.forms WHERE id=new_form),'zlutoucky_ples_2090_3','Commit rechecks automatic suggestion');
  PERFORM assert_eq((SELECT data->>'image' FROM public.occasions WHERE id=occasion_id),image_url,'Intro image survives finalization');
  PERFORM assert_eq((SELECT data->>'place_name' FROM public.occasions WHERE id=occasion_id),'Kulturní dům','Venue survives finalization');
  PERFORM assert_true((SELECT is_promoted AND is_hidden AND NOT is_open FROM public.occasions WHERE id=occasion_id),'Promotion preference does not publish the event');
  SELECT subject_id INTO product_id FROM eshop.planned_changes WHERE occasion=occasion_id AND change_type='products.price';
  PERFORM assert_true(product_id IS NOT NULL AND product_id<>old_product,'Wave uses newly owned product ID');
  PERFORM assert_eq((SELECT new_value FROM eshop.planned_changes WHERE occasion=occasion_id AND change_type='products.price'),'120','Existing price queue owns the wave');
- -- A missing or changed confirmation cannot create a paid event.
+ PERFORM assert_eq((SELECT data->>'setup_listing_intent' FROM public.occasions WHERE id=occasion_id),'false','Listing intent retained without publishing');
+ -- A missing selection or stale verified account cannot create a paid event.
  draft:=gen_random_uuid();
  EXECUTE 'SET LOCAL ROLE authenticated';
  d:=public.create_occasion_setup_draft(draft,unit_id);
  payload:=d->'data'||jsonb_build_object('title','Unconfirmed bank','start',now(),'end',now()+interval '1 day','reviewConfirmed',true,'bankAccountConfirmed',false);
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,5);
  BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Missing bank confirmation accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- payload:=payload||jsonb_build_object('bankAccountId',bank_id,'bankAccountConfirmed',true,'bankAccountFingerprint','stale');
+ payload:=payload||jsonb_build_object('bankAccountId',bank_id,'bankAccountFingerprint','stale');
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,5);
  BEGIN PERFORM public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid()); RAISE EXCEPTION 'Changed bank details accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
  EXECUTE 'RESET ROLE';

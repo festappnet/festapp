@@ -19,8 +19,7 @@ BEGIN
       AND r.command_name='inventory.order.delete' AND r.status IN ('completed','expired')
       AND r.request_sha256=encode(extensions.digest(convert_to(
         jsonb_build_object('order',p_order)::text,'UTF8'),'sha256'),'hex')
-      AND (public.get_is_manager_on_unit(oc.unit) OR public.get_is_editor_on_unit(oc.unit)
-        OR public.get_is_admin_on_occasion(oc.id));
+      AND public.can_delete_orders(oc.id);
     IF FOUND THEN RETURN jsonb_build_object('response',v_response); END IF;
     IF EXISTS(SELECT 1 FROM public.client_mutation_receipts WHERE command_id=p_command_id) THEN
       RAISE insufficient_privilege USING MESSAGE='command id unavailable';
@@ -30,9 +29,7 @@ BEGIN
     INTO v_occasion,v_unit,v_state,v_vs
   FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion
     LEFT JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=p_order;
-  IF v_occasion IS NULL OR NOT (public.get_is_manager_on_unit(v_unit)
-      OR public.get_is_editor_on_unit(v_unit)
-      OR public.get_is_admin_on_occasion(v_occasion)) THEN
+  IF v_occasion IS NULL OR NOT public.can_delete_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required';
   END IF;
   PERFORM public.check_occasion_writable(v_occasion);

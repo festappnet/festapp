@@ -3,7 +3,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE d public.occasion_setup_drafts; u public.units; manager boolean; version bigint; snapshot record;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id;
- IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
+ IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  SELECT row_u,coalesce(v.version,0) AS aggregate_version INTO snapshot FROM public.units row_u
  LEFT JOIN public.client_aggregate_versions v ON v.aggregate_type='unit' AND v.scope_type='unit'

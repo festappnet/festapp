@@ -31,11 +31,13 @@ class FormFieldsGenerator extends StatefulWidget {
   final FormEditBundle bundle;
   final VoidCallback? onChanged;
   final bool editingEnabled;
+  final bool expandProducts;
   const FormFieldsGenerator(
       {super.key,
       required this.bundle,
       this.onChanged,
-      this.editingEnabled = true});
+      this.editingEnabled = true,
+      this.expandProducts = false});
 
   @override
   _FormFieldsGeneratorState createState() => _FormFieldsGeneratorState();
@@ -119,7 +121,10 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     FormFieldDraft field,
     List<FormFieldDraft> displayList,
   ) {
-    final isSelected = (selectedIndex == index);
+    final isProduct = field.definition.type == FormMetadata.fieldTypeTicket ||
+        field.definition.type == FormMetadata.fieldTypeProductType;
+    final isSelected =
+        selectedIndex == index || widget.expandProducts && isProduct;
     final effectiveOpacity =
         (field.definition.isHidden ?? false) ? kHiddenOpacity : 1.0;
 
@@ -150,9 +155,18 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
-            child: isSelected
-                ? _buildFieldItemSelected(field, displayList, index)
-                : _buildFieldItemNonSelected(field),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (widget.expandProducts && isProduct) ...[
+                Text(FormStrings.productsAndPrices,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+              ],
+              if (isSelected)
+                _buildFieldItemSelected(field, displayList, index)
+              else
+                _buildFieldItemNonSelected(field),
+            ]),
           ),
         ),
       ),
@@ -475,7 +489,8 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
 
                     // Ticket Specific Options
                     if (isTicket &&
-                        FeatureService.isFeatureEnabled(FeatureConstants.deposit)) {
+                        FeatureService.isFeatureEnabled(
+                            FeatureConstants.deposit)) {
                       bool showDeposit = field.definition
                               .data?[TicketHolder.metaShowDepositDescription] ??
                           true;

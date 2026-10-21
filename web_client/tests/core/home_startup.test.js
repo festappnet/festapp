@@ -33,17 +33,19 @@ test('catalogue stays hidden while cards load, then startup reveals cards', asyn
     window.failFestappWebClientStartup = reason => assert.fail(reason);
     const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
         .replace(/^import .*;\r?\n/gm, '')
-        .replace("document.addEventListener('DOMContentLoaded', Main.init);", 'Main.init();');
+        .replace(/\/\/ Start[\s\S]*$/, 'Main.init();');
     const noop = { init() {} };
     const startup = runInNewContext(source, {
         window, document, console, UnitPage,
+        isEmbed: () => false, applyEmbedContext() {},
+        resolveScannerRoute: () => null,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async () => {},
         handleOrganizerIntent: async () => false,
         LocalizationService: {}, SupabaseService: {}, RightsService: {},
         AppConfig: { organization: 3 },
         ThemeService: noop, ImageLoader: noop, FeedbackFab: noop,
-        RouterService: { handleInitialLoad: async () => false, initPopStateListener() {} },
+        RouterService: { normalizeUrl: value => new URL(value).pathname, handleInitialLoad: async () => false, initPopStateListener() {} },
     });
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(ready, false, 'loading cards does not prematurely mark application ready');
@@ -75,19 +77,21 @@ for (const fails of [false, true]) test(`organizer startup preserves static cont
     const dom = new JSDOM('<body data-page="organizers"><main><h1>Organizers</h1></main></body>');
     const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
         .replace(/^import .*;\r?\n/gm, '')
-        .replace("document.addEventListener('DOMContentLoaded', Main.init);", 'Main.init();');
+        .replace(/\/\/ Start[\s\S]*$/, 'Main.init();');
     let initializations = 0;
     let themes = 0;
     let ready = 0;
     dom.window.markFestappAppReady = () => ready++;
     await runInNewContext(source, {
         window: dom.window, document: dom.window.document, console: { error() {} },
+        isEmbed: () => false, applyEmbedContext() {},
+        resolveScannerRoute: () => null,
         GoogleAuthService: { takeCallback: () => null },
         initializeCoreServices: async options => { assert.equal(options.isAppSupported, false); initializations++; if (fails) throw Error('offline'); },
         LocalizationService: {}, SupabaseService: {}, RightsService: {}, AppConfig: { isAppSupported: true },
         ThemeService: { init() { themes++; } }, ImageLoader: { init() {} },
         handleOrganizerIntent: () => assert.fail('no creation intent on content page'),
-        RouterService: { handleInitialLoad() { assert.fail('no router fallback'); } },
+        RouterService: { normalizeUrl: value => new URL(value).pathname, handleInitialLoad() { assert.fail('no router fallback'); } },
         UnitPage: class { constructor() { assert.fail('no catalog'); } },
     });
     assert.equal(initializations, 1);
@@ -95,4 +99,31 @@ for (const fails of [false, true]) test(`organizer startup preserves static cont
     assert.equal(ready, fails ? 0 : 1);
     assert.equal(dom.window.document.querySelector('h1').textContent, 'Organizers');
     dom.window.close();
+});
+
+
+test('startup runs when the module arrives after DOMContentLoaded', async t => {
+    const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://vstupenky.online/' });
+    t.after(() => dom.window.close());
+    await new Promise(resolve => dom.window.addEventListener('load', resolve, { once: true }));
+    assert.equal(dom.window.document.readyState, 'complete');
+    let initialized = 0;
+    let ready = 0;
+    const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\r?\n/gm, '');
+    runInNewContext(source, {
+        window: { ...dom.window, markFestappAppReady() { ready++; }, failFestappWebClientStartup: assert.fail },
+        document: dom.window.document, console,
+        isEmbed: () => false, applyEmbedContext() {},
+        resolveScannerRoute: () => null,
+        GoogleAuthService: { takeCallback: () => null },
+        initializeCoreServices: async () => { initialized++; },
+        handleOrganizerIntent: async () => null,
+        AppConfig: {}, ThemeService: { init() {} }, ImageLoader: { init() {} },
+        RouterService: { normalizeUrl: value => value, handleInitialLoad: async () => true, initPopStateListener() {} },
+        LocalizationService: {}, SupabaseService: {}, RightsService: {},
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(initialized, 1, 'late module must initialize services without another DOMContentLoaded');
+    assert.equal(ready, 1);
 });

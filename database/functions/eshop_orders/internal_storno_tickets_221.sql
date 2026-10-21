@@ -7,6 +7,8 @@ AS $$
 DECLARE
     opt_ids BIGINT[];
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(ticket_ids_to_storno)));
+    PERFORM public.check_blueprint_selection_units_internal(ARRAY(SELECT s.id FROM eshop.spots s JOIN eshop.order_product_ticket opt ON opt.id=s.order_product_ticket WHERE opt.ticket=ANY(ticket_ids_to_storno)));
     IF ticket_ids_to_storno IS NULL OR array_length(ticket_ids_to_storno, 1) = 0 THEN
         RETURN; -- Nothing to do
     END IF;

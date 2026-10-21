@@ -20,11 +20,7 @@ BEGIN
     RETURN jsonb_build_object('code', 404, 'message', 'Event not found');
   END IF;
 
-  IF NOT (
-    public.get_is_editor_view_on_occasion(v_occasion)
-    OR public.get_is_editor_on_occasion(v_occasion)
-    OR public.get_is_admin_on_occasion(v_occasion)
-  ) THEN
+  IF NOT public.can_read_schedule_participants(v_occasion) THEN
     RETURN jsonb_build_object('code', 403, 'message', 'Insufficient permissions');
   END IF;
 

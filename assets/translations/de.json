@@ -1,4 +1,33 @@
 {
+  "FeatureBlueprint": {
+    "protectedCount": "Belegte Plätze: {count}.",
+    "cancelReservation": "Ausgewählte Reservierungen stornieren",
+    "assignSelectionProduct": "Gemeinsames Produkt und Preis",
+    "assignmentSaveNotice": "Die Produktzuordnung wird erst mit Speichern im Plan gespeichert.",
+    "insertGraphic": "Bild oder SVG einfügen",
+    "svgImportLimit": "Die SVG überschreitet die Größen- oder Komplexitätsgrenze.",
+    "svgExternalDependency": "Die SVG verweist auf eine externe Datei. Betten Sie die benötigte Grafik vor dem Import in die SVG ein.",
+    "svgInteractiveContent": "Skripte und interaktive SVG-Inhalte können nicht in statische Grafiken umgewandelt werden.",
+    "svgDocumentType": "DTD-Definitionen werden nicht unterstützt. Exportieren Sie die SVG ohne DTD.",
+    "svgInvalid": "Diese Datei ist keine gültige SVG.",
+    "svgEmbeddedBitmap": "Die SVG enthält ein Rasterbild. Fügen Sie es separat als Bild in den Plan ein.",
+    "svgComplexText": "Der SVG-Text verwendet eine nicht unterstützte Positionierung oder gemischte Stile. Wandeln Sie ihn vor dem Import in Pfade um.",
+    "svgUnsupportedEffect": "Dieser SVG-Effekt lässt sich noch nicht ohne Änderung der Darstellung umwandeln.",
+    "svgConversionFailed": "Die SVG konnte nicht umgewandelt werden. Ihr Plan bleibt unverändert.",
+    "blockSeat": "Platz sperren",
+    "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
+    "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
+    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu.",
+    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde.",
+    "standingRequiresProduct": "Weisen Sie für den Verkauf ein Ticketprodukt und dessen Bestandskapazität zu.",
+    "viewer": {
+      "addOne": "Eins hinzufügen",
+      "removeOne": "Eins entfernen",
+      "standingNotConfigured": "Kein Stehplatzticket zugewiesen.",
+      "standingUnavailable": "Stehplätze sind nicht mehr verfügbar.",
+      "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft."
+    }
+  },
   "OrganizationVerification": {
     "verifiedDescription": "Die rechtlichen Angaben Ihrer Organisation sind bestätigt und werden unter Ihren Formularen angezeigt.",
     "pendingDescription": "Ihr Antrag auf Prüfung der rechtlichen Angaben wartet auf die Freigabe durch einen Administrator.",
@@ -239,6 +268,13 @@
     "orderLabel": "Bestellung"
   },
   "FeatureFormSettings": {
+    "embedAction": "Auf eigener Website einbetten",
+    "embedTitle": "Bestellformular",
+    "embedFallback": "Bestellung in neuem Tab öffnen",
+    "embedHelp": "Fügen Sie den Code in das HTML Ihrer Website ein. Die automatische Höhe benötigt ein externes Skript. Falls Ihre Website es blockiert, verwenden Sie eine feste Höhe.",
+    "embedSaveFirst": "Speichern Sie das Formular vor dem Einbetten.",
+    "embedAutomatic": "Automatische Höhe (empfohlen)",
+    "embedFixed": "Feste Höhe ohne Skript",
     "labelShowBeforeStartMessage": "Informationen vor Anmeldestart anzeigen",
     "helperBeforeStartMessage": "Unter dem Countdown können Sie Informationen zur Veranstaltung, Bilder oder einen Saalplan veröffentlichen. Die Anmeldung öffnet erst zum festgelegten Zeitpunkt.",
     "labelBeforeStartMessage": "Informationen vor Anmeldestart",
@@ -251,6 +287,7 @@
     "remindersOff": "Aus",
     "remindersOn": "Ein",
     "occasionPaymentDefaultsHelp": "Standardwerte für alle Formulare dieser Veranstaltung. Einzelne Formulare können sie überschreiben.",
+    "productsAndPrices": "Produkte und Preise",
     "formPaymentDefaultsHelp": "Dieses Formular übernimmt Zahlungs- und Erinnerungseinstellungen aus der Formularfunktion der Veranstaltung. Eigene Werte gelten nur für dieses Formular.",
     "labelShowPaymentQr": "Zahlungs-QR nach Bestellung anzeigen",
     "helperShowPaymentQr": "Zeigt nach der Bestellung den Zahlungs-QR-Code und die Daten direkt auf dem Bestätigungsbildschirm an.",
@@ -330,6 +367,7 @@
     "foodCreateHint": "Um Essen zu erstellen, füllen Sie den Titel, den eindeutigen Code und die Referenz des Programms aus."
   },
   "Common": {
+    "contextLoadFailed": "Zugriff konnte nicht überprüft werden. Bitte erneut versuchen.",
     "add": "Hinzufügen",
     "addExisting": "Bestehendes hinzufügen",
     "addToGroup": "Zur Gruppe hinzufügen",
@@ -407,7 +445,10 @@
     "updateAppPrompt": "Aktualisieren Sie die App auf die neueste Version, um auf alle Funktionen zuzugreifen.",
     "updatedItem": "Aktualisiert: {item}.",
     "users": "Benutzer",
-    "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität."
+    "resourceLimited": "Das Nutzungslimit wurde erreicht. Versuchen Sie es später erneut. Kontaktieren Sie den Support für mehr Kapazität.",
+    "copyManually": "Manuell kopieren",
+    "clipboardUnavailable": "Der Zugriff auf die Zwischenablage ist fehlgeschlagen. Der Text ist ausgewählt - kopieren Sie ihn per Tastenkürzel oder Auswahlmenü.",
+    "saving": "Wird gespeichert…"
   },
   "Unit": {
     "copyTargetUnit": "Zielorganisation",
@@ -611,6 +652,9 @@
     "removePlace": "Ortszuweisung entfernen"
   },
   "Administration": {
+    "webAnalytics": "Website-Serververkehr",
+    "openCloudflareAnalytics": "Statistik in Cloudflare öffnen",
+    "organizationSettings": "Organisationseinstellungen",
     "copyLink": "Link kopieren",
     "downloadApp": "App herunterladen",
     "enableNotifications": "Benachrichtigungen aktivieren",
@@ -1028,6 +1072,8 @@
     "back": "Zurück zu Ihren Veranstaltungen"
   },
   "OrderOverview": {
+    "table": "Tisch",
+    "seat": "Sitzplatz",
     "unavailableTitle": "Bestellung nicht verfügbar",
     "unavailable": "Die Bestellung wurde möglicherweise gelöscht oder der Link ist nicht mehr gültig. Wenn Sie Hilfe benötigen, wenden Sie sich an den Veranstalter.",
     "title": "Bestellübersicht",
@@ -1179,8 +1225,8 @@
     "story": {
       "communicationIncomplete": "Die Kommunikationseinstellungen sind unvollständig. Bitte Antwortadresse und Vorlaufzeit der Erinnerung prüfen.",
       "communicationQuestion": "Wie soll die Kommunikation mit Teilnehmenden gestaltet werden?",
-      "bankAccountNotConfirmed": "Bankkonto nicht bestätigt",
-      "bankAccountRequired": "Für eine kostenpflichtige Veranstaltung muss ein Bankkonto ausgewählt und bestätigt werden.",
+      "bankAccountNotConfirmed": "Wählen Sie ein gültiges Konto für Zahlungseingänge.",
+      "bankAccountRequired": "Wählen Sie für eine kostenpflichtige Veranstaltung ein gültiges Bankkonto.",
       "configureScanningHint": "Optionale Einstellungen zum Scannen von Tickets. Sie ändern das Ticketdesign nicht und können später angepasst werden.",
       "configureScanning": "Einlass vor Ort konfigurieren",
       "scannerQuestion": "Wie soll der Einlass vor Ort funktionieren? (optional)",
@@ -1214,6 +1260,7 @@
       "endQuestion": "Wann endet die Veranstaltung?",
       "linkQuestion": "Welchen Link soll die Veranstaltung verwenden?",
       "contentQuestion": "Was gehört zur Veranstaltung?",
+      "saleTimingQuestion": "Wann soll der Verkauf beginnen?",
       "formQuestion": "Wie sollen Anmeldung und Ticketkauf aussehen?",
       "blueprintQuestion": "Soll der Ticketverkauf einen Sitzplan enthalten?",
       "paymentsQuestion": "Wie sollen Zahlungen funktionieren?",
@@ -1228,7 +1275,11 @@
       "endTime": "Endzeit der Veranstaltung",
       "endBeforeStart": "Die Veranstaltung muss zum oder nach dem Startzeitpunkt enden.",
       "incomplete": "Die Antwort ist noch unvollständig. Bitte die Pflichtangaben und Einstellungen überprüfen.",
-      "questionNumber": "Frage {current} von {total}"
+      "questionNumber": "Frage {current} von {total}",
+      "listingTitle": "Veranstaltung öffentlich auflisten",
+      "listingHint": "Wird erst angewendet, wenn Sie die erstellte Veranstaltung ausdrücklich veröffentlichen. Diese Option öffnet den Verkauf nicht.",
+      "publishEvent": "Veranstaltung mit diesen Einstellungen veröffentlichen",
+      "publishedEvent": "Die Veröffentlichung wurde gespeichert."
     },
     "draft": "Entwurf",
     "cancelDraft": "Entwurf verwerfen",
@@ -1242,7 +1293,18 @@
     "quickCreationDescription": "Geben Sie Titel, Datum und Uhrzeit ein. Weitere Einstellungen ergänzen Sie später.",
     "withoutWizard": "Ohne Assistenten",
     "createEvent": "Veranstaltung erstellen",
-    "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage."
+    "finalizeFailed": "Die Erstellung konnte nicht bestätigt werden. Wiederholen Sie dieselbe Anfrage.",
+    "copy": {
+      "source": "Vorlage",
+      "fromScratch": "Neu beginnen",
+      "referencesTitle": "Neues Formular verknüpfen",
+      "referencesBody": "Wählen Sie Ersatz für Produkte im Sitzplan und Ticket. Layout und Ticketinhalt bleiben erhalten. Zurück behält das aktuelle Formular.",
+      "seatProduct": "Plätze: {title}",
+      "ticketType": "Ticketfeld: {title}",
+      "duplicateTypes": "Zwei Ticketfelder dürfen in derselben Vorlage nicht dieselbe Produktgruppe verwenden. Wählen Sie unterschiedliche Gruppen.",
+      "invalidReferences": "Sitzplan oder Ticket verweist auf Produkte, die im ausgewählten Formular fehlen. Wählen Sie im Formular Ersatzprodukte.",
+      "repairReferences": "Produkte verknüpfen"
+    }
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",
@@ -1523,6 +1585,7 @@
     "client": "Connecting {client}",
     "scope": "The connected application can read your identity, accessible occasions and ticket artwork within the selected access. Allow occasion creation separately below.",
     "choose": "Choose occasions to allow:",
+    "selectAll": "Alle auswählen",
     "duration": "Access lasts 7 days. You can revoke it earlier in Festapp connection management.",
     "approve": "Allow and connect",
     "cancel": "Cancel",
@@ -1541,6 +1604,155 @@
     "wholeOrganizerHint": "Includes current and future occasions. Your current permissions always apply.",
     "organizer": "Organizer",
     "allowCreate": "Allow creating new occasions",
-    "allowCreateHint": "New occasions will be hidden, with sales closed."
+    "allowCreateHint": "New occasions will be hidden, with sales closed.",
+    "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
+  },
+  "EditorFileDrop": {
+    "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
+    "singleFile": "Legen Sie genau eine Datei ab, keinen Ordner.",
+    "unsupported": "Dieser Dateityp wird nicht unterstützt.",
+    "tooLarge": "Das Bild überschreitet das Limit von 20 MB."
+  },
+  "OccasionSales": {
+    "admission": "Eintritt",
+    "standardTicket": "Standardticket",
+    "customerPreview": "Kundenvorschau",
+    "previewSafe": "Testen Sie Felder und Preis. Diese Vorschau speichert nichts, öffnet keinen Verkauf, reserviert keine Plätze und sendet keine Bestellungen oder E-Mails.",
+    "previewTotal": "Gesamtpreis der ausgewählten Produkte: {amount}",
+    "previewEmail": "Beispiele für Bestätigungs-E-Mails",
+    "previewUnavailable": "Die E-Mail-Vorschau konnte nicht geladen werden. Ihre Einstellungen bleiben gespeichert; prüfen Sie vor Verkaufsbeginn die E-Mail-Vorlagen.",
+    "manualPaymentsHelp": "Ohne Bankverbindung müssen Zahlungen manuell bestätigt werden. Öffnen Sie Bestellungen in der Verwaltung, suchen Sie die Bestellung und bestätigen Sie den Zahlungseingang. Die Bestätigung löst den Versand bezahlter Tickets aus. Die Verbindung richten Sie unter Bankkonten verwalten ein.",
+    "senderUnavailable": "Systemabsender - die genaue Adresse ist derzeit nicht verfügbar",
+    "preparation": "In Vorbereitung",
+    "scheduled": "Verkauf geplant",
+    "selling": "Im Verkauf",
+    "waitlist": "Warteliste",
+    "soldOut": "Ausverkauft",
+    "paused": "Pausiert",
+    "ended": "Verkauf beendet",
+    "finished": "Veranstaltung beendet",
+    "shortStartsIn": "Beginnt in {duration}",
+    "startsIn": "Verkauf beginnt in {duration}",
+    "endsIn": "Verkauf endet in {duration}",
+    "startsSoon": "Verkauf beginnt in weniger als 1 Min.",
+    "endsSoon": "Verkauf endet in weniger als 1 Min.",
+    "startsOn": "Verkauf ab {date}",
+    "days": {
+      "one": "{count} Tag",
+      "few": "{count} Tage",
+      "many": "{count} Tage",
+      "other": "{count} Tage"
+    },
+    "hours": "{count} Std.",
+    "minutes": "{count} Min.",
+    "counts": "Offene Formulare: {active}/{total}. Verkauf: {selling}, Warteliste: {waitlists}.",
+    "startAt": "Verkaufsbeginn: {date}",
+    "endAt": "Verkaufsende: {date}",
+    "mode": {
+      "preparation": "In Vorbereitung lassen",
+      "scheduled": "Öffnung planen",
+      "immediate": "Direkt nach Erstellung öffnen"
+    },
+    "help": {
+      "preparation": "Das Formular bleibt geschlossen. Öffnen Sie den Verkauf später.",
+      "scheduled": "Der Verkauf öffnet automatisch zur gewählten Zeit.",
+      "immediate": "Bestellungen sind sofort möglich."
+    },
+    "saleStart": "Verkaufsbeginn",
+    "saleEnd": "Verkaufsende",
+    "time": "Uhrzeit",
+    "endDefault": "Standard: Veranstaltungsende. Sie können einen früheren Termin wählen.",
+    "useEventEnd": "Veranstaltungsende verwenden",
+    "countdown": "Verkaufs-Countdowns anzeigen",
+    "countdownHelp": "Optional. Ausschalten ändert die Verkaufszeiten nicht.",
+    "invalidTiming": "Prüfen Sie die Zeiten. Der Beginn muss in der Zukunft und vor dem Verkaufsende liegen; das Ende spätestens am Veranstaltungsende.",
+    "create": "Veranstaltung erstellen",
+    "createScheduled": "Erstellen und Verkauf planen",
+    "createOpen": "Erstellen und Verkauf öffnen",
+    "products": "Produkte und Preise",
+    "productsHelp": "Tickets sind Formularprodukte. Namen, Preise und Varianten bearbeiten Sie unten.",
+    "created": "Veranstaltung erstellt",
+    "completion": {
+      "preparation": "Das Verkaufsformular ist bereit. Der Verkauf ist noch geschlossen.",
+      "scheduled": "Der Verkauf öffnet automatisch zum geplanten Zeitpunkt.",
+      "immediate": "Das Verkaufsformular ist geöffnet und nimmt Bestellungen an."
+    },
+    "salesLink": "Link zum Verkaufsformular",
+    "openForm": "Formular anzeigen",
+    "backToList": "Zur Veranstaltungsübersicht",
+    "manage": "Veranstaltung verwalten",
+    "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Verkaufseinstellungen bestimmen die Verfügbarkeit des Formulars.",
+    "saveAndLeave": "Entwurf speichern und verlassen",
+    "previewSelectedEmails": "E-Mails für diese Auswahl anzeigen",
+    "previewEmailSelection": "E-Mails zeigen die gewählten Produkte, den Preis und die eingegebenen Kontaktdaten. Dies ist nur eine Vorschau; nichts wird gesendet.",
+    "retrySender": "Absenderadresse erneut laden",
+    "seatSelection": "Platzauswahl",
+    "previousQuestion": "Vorherige Frage",
+    "ticketing": {
+      "scheduled": "Vorverkauf geplant",
+      "selling": "Im Vorverkauf",
+      "soldOut": "Ausverkauft",
+      "startsIn": "Vorverkauf beginnt in {duration}",
+      "endsIn": "Vorverkauf endet in {duration}",
+      "startsSoon": "Vorverkauf beginnt in weniger als 1 Min.",
+      "endsSoon": "Vorverkauf endet in weniger als 1 Min.",
+      "startsOn": "Vorverkauf ab {date}",
+      "counts": "Offene Formulare: {active}/{total}. Vorverkauf: {selling}, Warteliste: {waitlists}.",
+      "startAt": "Vorverkaufsbeginn: {date}",
+      "endAt": "Vorverkaufsende: {date}",
+      "saleStart": "Vorverkaufsbeginn",
+      "saleEnd": "Vorverkaufsende",
+      "countdown": "Vorverkaufs-Countdowns anzeigen",
+      "countdownHelp": "Optional. Ausschalten ändert die Vorverkaufszeiten nicht.",
+      "invalidTiming": "Prüfen Sie die Zeiten. Der Beginn muss in der Zukunft und vor dem Vorverkaufsende liegen; das Ende spätestens am Veranstaltungsende.",
+      "createScheduled": "Erstellen und Vorverkauf planen",
+      "createOpen": "Erstellen und Vorverkauf öffnen",
+      "salesLink": "Link zum Vorverkaufsformular",
+      "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Vorverkaufseinstellungen bestimmen die Verfügbarkeit des Formulars.",
+      "help": {
+        "preparation": "Das Formular bleibt geschlossen. Öffnen Sie den Vorverkauf später.",
+        "scheduled": "Der Vorverkauf öffnet automatisch zur gewählten Zeit.",
+        "immediate": "Bestellungen sind sofort möglich."
+      },
+      "completion": {
+        "preparation": "Das Vorverkaufsformular ist bereit. Der Vorverkauf ist noch geschlossen.",
+        "scheduled": "Der Vorverkauf öffnet automatisch zum geplanten Zeitpunkt.",
+        "immediate": "Das Vorverkaufsformular ist geöffnet und nimmt Bestellungen an."
+      },
+      "question": "Wann soll der Vorverkauf starten?"
+    },
+    "registration": {
+      "scheduled": "Anmeldung geplant",
+      "selling": "Im Anmeldung",
+      "soldOut": "Ausverkauft",
+      "startsIn": "Anmeldung beginnt in {duration}",
+      "endsIn": "Anmeldung endet in {duration}",
+      "startsSoon": "Anmeldung beginnt in weniger als 1 Min.",
+      "endsSoon": "Anmeldung endet in weniger als 1 Min.",
+      "startsOn": "Anmeldung ab {date}",
+      "counts": "Offene Formulare: {active}/{total}. Anmeldung: {selling}, Warteliste: {waitlists}.",
+      "startAt": "Anmeldebeginn: {date}",
+      "endAt": "Anmeldeende: {date}",
+      "saleStart": "Anmeldebeginn",
+      "saleEnd": "Anmeldeende",
+      "countdown": "Anmelde-Countdowns anzeigen",
+      "countdownHelp": "Optional. Ausschalten ändert die Anmeldezeiten nicht.",
+      "invalidTiming": "Prüfen Sie die Zeiten. Der Beginn muss in der Zukunft und vor dem Anmeldeende liegen; das Ende spätestens am Veranstaltungsende.",
+      "createScheduled": "Erstellen und Anmeldung planen",
+      "createOpen": "Erstellen und Anmeldung öffnen",
+      "salesLink": "Link zum Anmeldeformular",
+      "privacy": "Die Veranstaltung bleibt im Katalog verborgen. Die Anmeldeeinstellungen bestimmen die Verfügbarkeit des Formulars.",
+      "help": {
+        "preparation": "Das Formular bleibt geschlossen. Öffnen Sie den Anmeldung später.",
+        "scheduled": "Der Anmeldung öffnet automatisch zur gewählten Zeit.",
+        "immediate": "Bestellungen sind sofort möglich."
+      },
+      "completion": {
+        "preparation": "Das Anmeldeformular ist bereit. Der Anmeldung ist noch geschlossen.",
+        "scheduled": "Der Anmeldung öffnet automatisch zum geplanten Zeitpunkt.",
+        "immediate": "Das Anmeldeformular ist geöffnet und nimmt Bestellungen an."
+      },
+      "question": "Wann soll die Anmeldung starten?"
+    }
   }
 }

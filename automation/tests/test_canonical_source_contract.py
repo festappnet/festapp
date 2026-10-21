@@ -38,11 +38,11 @@ SELECT E'it\\\'s; a value'; SELECT 'it''s; another';'''
     def make_release(self, root):
         files = {
             'automation/canonical-source-contract.json': json.dumps({
-                'baseline': 'supabase/baseline/20260101000000.sql',
-                'baselineVersion': '20260101000000',
+                'baselineManifest': 'supabase/baseline/manifest.json',
                 'operationsManifest': 'automation/manifest.json',
                 'retainedSignatures': ['public.original(bigint)', 'public.renamed(bigint)', 'public.removed(text)']}),
             'automation/manifest.json': json.dumps({'sources': ['selected.sql']}),
+            'supabase/baseline/manifest.json': json.dumps({'coveredThrough': '20260101000000', 'schema': {'path': 'supabase/baseline/20260101000000.sql'}}),
             'supabase/baseline/20260101000000.sql': '''
 CREATE FUNCTION public.original(p_id bigint) RETURNS text AS $$old$$ LANGUAGE sql;
 CREATE FUNCTION public.removed(p_id text) RETURNS text AS $$removed$$ LANGUAGE sql;''',

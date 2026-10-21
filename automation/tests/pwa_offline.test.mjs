@@ -205,6 +205,10 @@ try {
       }
       if (!networkAvailable) throw new Error('offline');
       networkCalls++;
+      if (url.includes('/settings/mcp-connect')) {
+        assert.equal(options?.cache, 'no-store');
+        return new Response('online consent');
+      }
       if (url.includes('/festapp-version.json')) {
         return new Response(JSON.stringify({ version: serverVersion }), {
           headers: { 'content-type': 'application/json' },
@@ -621,11 +625,11 @@ try {
     /activationCorsHeaders[\s\S]*?access-control-allow-origin[\s\S]*?access-control-allow-headers/,
     'activation responses must carry the public CORS contract',
   );
-  assert.match(sharedBuild, /cd web_client && npm ci/);
+  assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile/);
   assert.match(sharedBuild, /bash automation\/test_web_startup\.sh/);
-  assert.match(sharedBuild, /cd web_client && npm run build/);
-  assert.ok(sharedBuild.indexOf('cd web_client && npm ci') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
-    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && npm run build'),
+  assert.match(sharedBuild, /cd web_client && pnpm run build/);
+  assert.ok(sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
+    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && pnpm run build'),
     'install dependencies, verify startup, then build the public client');
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);
@@ -706,6 +710,14 @@ try {
   assert.match(networkReload, /registration\.update\(\)/);
   assert.doesNotMatch(networkReload, /unregister\(\)/);
   assert.doesNotMatch(networkReload, /caches\.delete|festapp-app-shell-/);
+  const consent = new Request('https://app.test/settings/mcp-connect?request=' + 'R'.repeat(43));
+  Object.defineProperty(consent, 'mode', { value: 'navigate' });
+  networkAvailable = false;
+  await assert.rejects(dispatchFetch(consent), /offline/,
+    'consent must not fall back to a cached Flutter document');
+  networkAvailable = true;
+  assert.equal(await (await dispatchFetch(consent)).text(), 'online consent');
+
   console.log('pwa_offline.test: ok');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

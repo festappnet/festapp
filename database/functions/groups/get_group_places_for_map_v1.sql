@@ -3,9 +3,7 @@
 CREATE OR REPLACE FUNCTION public.get_group_places_for_map_v1(p_occasion bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
- IF auth.uid() IS NULL OR NOT(EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=auth.uid())
-   OR public.get_is_editor_on_occasion(p_occasion) OR public.get_is_editor_view_on_occasion(p_occasion))
-   OR (public.is_demo_occasion(p_occasion) AND NOT public.get_is_editor_order_view_on_occasion(p_occasion)) THEN
+ IF NOT public.can_read_group_places(p_occasion) THEN
   RAISE insufficient_privilege USING MESSAGE='occasion member required'; END IF;
  RETURN coalesce((SELECT jsonb_agg(jsonb_build_object('id',g.id,'title',g.title,'place',g.place,'places',
   jsonb_build_object('id',p.id,'occasion',p.occasion,'unit',p.unit,'title',p.title,'description',p.description,

@@ -35,6 +35,7 @@ class CheckPage extends StatefulWidget {
 }
 
 class _CheckPageState extends State<CheckPage> {
+  int _rightsGeneration = 0;
   EventModel? _event;
   List<UserInfoModel>? _participants;
   List<UserInfoModel>? _filteredParticipants;
@@ -49,14 +50,29 @@ class _CheckPageState extends State<CheckPage> {
   void initState() {
     super.initState();
     _searchController.addListener(_filterParticipants);
+    RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
   }
 
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
+    _rightsGeneration++;
     _mobileScannerController.dispose();
     _searchController.removeListener(_filterParticipants);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _rightsChanged() {
+    _rightsGeneration++;
+    setState(() {
+      _event = null;
+      _participants = null;
+      _filteredParticipants = null;
+      _scannedUser = null;
+      _scanState = ScanState.nothing;
+    });
+    if (RightsService.canOpenScheduleEntryCheck()) loadData(widget.id);
   }
 
   @override
@@ -73,13 +89,17 @@ class _CheckPageState extends State<CheckPage> {
   }
 
   Future<void> loadData(int eventId) async {
-    if (!RightsService.isApprover()) {
+    if (!RightsService.canOpenScheduleEntryCheck()) {
       RouterService.popOrHome(context);
       return;
     }
-    _event = await DbEvents.getEvent(eventId);
+    final generation = _rightsGeneration;
+    final event = await DbEvents.getEvent(eventId);
+    if (!mounted || generation != _rightsGeneration) return;
     List<UserInfoModel> participants =
         await DbEvents.getParticipantsPerEvent(eventId);
+
+    if (!mounted || generation != _rightsGeneration) return;
 
     // Map participants to their companion parents
     for (int i = 0; i < participants.length; i++) {
@@ -94,7 +114,7 @@ class _CheckPageState extends State<CheckPage> {
         }
       }
     }
-    _event = _event!.copyWith(currentParticipants: participants.length);
+    _event = event.copyWith(currentParticipants: participants.length);
     _participants = participants;
     _filteredParticipants = _participants;
     setState(() {});
@@ -355,6 +375,8 @@ class _CheckPageState extends State<CheckPage> {
   }
 
   Future<void> setupNewId(String newUserId) async {
+    if (!RightsService.canOpenScheduleEntryCheck()) return;
+    final generation = _rightsGeneration;
     if (newUserId == _scannedUser?.id) {
       return;
     }
@@ -367,7 +389,9 @@ class _CheckPageState extends State<CheckPage> {
       return;
     }
 
-    _scannedUser ??= await DbUsers.getUserInfo(newUserId);
+    final scannedUser = await DbUsers.getUserInfo(newUserId);
+    if (!mounted || generation != _rightsGeneration) return;
+    _scannedUser = scannedUser;
     if (_scannedUser != null) {
       _scanState = ScanState.notSignedIn;
       VibrateService.vibrateNotOk();

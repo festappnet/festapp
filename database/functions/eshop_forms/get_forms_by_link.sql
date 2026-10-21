@@ -24,7 +24,7 @@ BEGIN
 
     -- Step 3: Verify if the user has editor rights for this occasion.
     -- If not, throw an 'insufficient_privilege' exception.
-    IF NOT (get_is_editor_view_on_occasion(v_occasion_id) OR get_is_editor_order_view_on_occasion(v_occasion_id)) THEN
+    IF NOT public.can_read_form_catalog(v_occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to view forms for this occasion.' USING ERRCODE = '42501'; -- insufficient_privilege
     END IF;
 

@@ -248,7 +248,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
             FormHelper.spotLabel(),
             ticket.seat!.seat.toString(),
           ));
-        } else if (ticket.seat == null && ticketHolder.hasSpot) {
+        } else if (ticket.blueprintAreaNodeId == null && ticketHolder.hasSpot) {
           // Add warning if no seat selected but spots are enabled/required
           ticketInfoRows.add(_buildInfoRow(
             context,

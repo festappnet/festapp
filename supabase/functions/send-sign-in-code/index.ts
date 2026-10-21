@@ -1,7 +1,9 @@
+import { AuthorizationCapabilities } from "../_shared/authorizationCapabilities.ts";
 import { authorizeRequest } from "../_shared/auth.ts";
-import { hasTeamAccess, sendTeamAccessNotice } from "./teamAccessNotice.ts";
+import { sendTeamAccessNotice } from "./teamAccessNotice.ts";
 import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
+  emailRpc,
   awaitEmailAccepted,
   enqueueAndAwaitEmail,
   prepareAccountEmail,
@@ -68,11 +70,7 @@ Deno.serve(async (req) => {
 
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
-      .from("occasion_users")
-      .select("data,is_editor,is_editor_view,is_manager")
-      .eq("user", userId)
-      .eq("occasion", occasionId)
-      .single();
+      .rpc("get_sign_in_recipient_context_v1", { p_user: userId, p_occasion: occasionId });
 
     if (!occasionUser.data) {
       console.error("User is not part of the occasion.");
@@ -156,7 +154,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (hasTeamAccess(occasionUser.data)) {
+    if (occasionUser.data.capabilities?.[AuthorizationCapabilities.emailsTeamAccessNotice] === true) {
+      let noticeActorId: string;
       await sendTeamAccessNotice({
         access: occasionUser.data,
         occasion: { id: occasionId, ...occasionData },
@@ -168,13 +167,19 @@ Deno.serve(async (req) => {
           ? reqData.requestId
           : String(Math.floor(Date.now() / 300000)),
       }, {
-        authorize: () =>
-          authorizeRequest({
+        authorize: async () => {
+          const identity = await authorizeRequest({
             authorizationHeader: req.headers.get("Authorization"),
             occasionId,
             permission: "manageUsers",
+          });
+          noticeActorId = identity.user.id;
+        },
+        deliver: input => enqueueAndAwaitEmail(input, {
+          enqueuePrepared: parameters => emailRpc("enqueue_participant_notice_for_actor_v1", {
+            ...parameters, p_actor: noticeActorId,
           }),
-        deliver: enqueueAndAwaitEmail,
+        }),
       });
       return new Response(
         JSON.stringify({ user: userId, code: 200, status: "sent" }),
@@ -248,6 +253,11 @@ Deno.serve(async (req) => {
       },
     );
   } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "42501") {
+      return new Response(JSON.stringify({error: "forbidden"}), {
+        status: 403, headers: {...corsHeaders, "Content-Type": "application/json"},
+      });
+    }
     console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({ error: "Unexpected error occurred" }),

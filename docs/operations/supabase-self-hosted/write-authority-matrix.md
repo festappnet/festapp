@@ -1,5 +1,9 @@
 # Write-authority matrix — full-freeze cutover
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
 Updated: 2026-09-02
 
 Production cutover uses `full-freeze`. Journal hybrid is not authorized and is

@@ -5,7 +5,7 @@ DECLARE oc bigint; ver bigint; r jsonb;
 BEGIN
  SELECT occasion INTO oc FROM public.speakers WHERE id=p_speaker_id;
  IF oc IS NULL THEN RETURN jsonb_build_object('code',404); END IF;
- IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(oc) THEN RETURN jsonb_build_object('code',403); END IF;
+ IF auth.uid() IS NULL OR NOT public.can_write_speakers(oc) THEN RETURN jsonb_build_object('code',403); END IF;
  PERFORM public.lock_speaker_event_dependencies_internal_v1(p_speaker_id);
  PERFORM 1 FROM public.speakers WHERE id=p_speaker_id AND occasion=oc FOR UPDATE;
  SELECT coalesce(v.version,0) INTO ver FROM (SELECT 1) seed

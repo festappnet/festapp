@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/email_templates/db_email_templates.dart';
+import '../occasion_sale_strings.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -7,6 +10,7 @@ import 'package:fstapp/data_services/rights_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'occasion_setup_story.dart';
+import 'occasion_form_draft.dart';
 import 'occasion_setup_details_strings.dart';
 
 void initializeCommunicationDraft(
@@ -94,6 +98,7 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
 
 class OccasionSetupCommunication extends StatefulWidget {
   final String draftId;
+  final int? unitId;
   final bool paymentTiming;
   final Map<String, dynamic> data;
   final ValueChanged<Map<String, dynamic>> onChanged;
@@ -102,6 +107,7 @@ class OccasionSetupCommunication extends StatefulWidget {
   const OccasionSetupCommunication({
     super.key,
     required this.draftId,
+    this.unitId,
     this.paymentTiming = false,
     required this.data,
     required this.onChanged,
@@ -119,6 +125,7 @@ class _OccasionSetupCommunicationState
   String? _error;
   bool _loading = true, _saving = false;
   int _fieldRevision = 0;
+  bool _senderLoading = false;
   String t(String key) => OccasionSetupDetailsStrings.text(key);
   @override
   void initState() {
@@ -143,12 +150,39 @@ class _OccasionSetupCommunicationState
         _error = null;
       });
       widget.onChanged({'communicationDefaults': result['defaults']});
+      if (!widget.paymentTiming &&
+          widget.loader == null &&
+          (result['defaults'] as Map?)?['replyTo'] == null) {
+        unawaited(_resolveSender());
+      }
     } catch (_) {
       if (mounted)
         setState(() {
           _loading = false;
           _error = t('communicationLoadFailed');
         });
+    }
+  }
+
+  Future<void> _resolveSender() async {
+    if (_senderLoading) return;
+    setState(() => _senderLoading = true);
+    try {
+      final unitId = widget.unitId;
+      if (unitId == null) return;
+      final scope =
+          await DbEmailTemplates.getEntityEmailTemplates(unitId: unitId);
+      final authoring = await DbEmailTemplates.getAuthoringContext(
+          scope, 'TICKET_ORDER_CONFIRMATION');
+      if (!mounted) return;
+      final effective = {...defaults, 'senderAddress': authoring.senderAddress};
+      setState(() => _response!['defaults'] = effective);
+      widget.onChanged({'communicationDefaults': effective});
+    } catch (_) {
+      // A missing preview service must not block saving an otherwise valid draft.
+      // The UI explicitly reports that the effective address is unavailable.
+    } finally {
+      if (mounted) setState(() => _senderLoading = false);
     }
   }
 
@@ -261,9 +295,16 @@ class _OccasionSetupCommunicationState
           const SizedBox(height: 20),
           _choice('replyToMode', t('replyToEmail'), {
             'inherit':
-                '${t('inheritOrganization')} (${defaults['replyTo'] ?? t('systemSender')})',
+                '${t('inheritOrganization')} (${defaults['replyTo'] ?? defaults['senderAddress'] ?? OccasionSaleStrings.text('senderUnavailable')})',
             'custom': t('customForEvent'),
           }),
+          if (defaults['replyTo'] == null &&
+              defaults['senderAddress'] == null &&
+              widget.data['replyToMode'] != 'custom')
+            TextButton.icon(
+                onPressed: _senderLoading ? null : _resolveSender,
+                icon: const Icon(Icons.refresh),
+                label: Text(OccasionSaleStrings.text('retrySender'))),
           if (!widget.paymentTiming && widget.data['replyToMode'] == 'custom')
             TextFormField(
               key: const ValueKey('communication-reply'),
@@ -293,7 +334,10 @@ class _OccasionSetupCommunicationState
           Text(t('paymentTimingHint')),
           const SizedBox(height: 20),
           TextFormField(
-            initialValue: widget.data['deadline'] as String? ?? '',
+            key: ValueKey('deadline-$_fieldRevision'),
+            initialValue:
+                '${effectiveSetupDeadlineSeconds(widget.data) / 86400}'
+                    .replaceFirst(RegExp(r'\.0$'), ''),
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: FormStrings.labelDeadlineDays,
@@ -302,6 +346,14 @@ class _OccasionSetupCommunicationState
             ),
             onChanged: (v) => widget.onChanged({'deadline': v}),
           ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+              onPressed: () {
+                widget.onChanged({'deadline': ''});
+                setState(() => _fieldRevision++);
+              },
+              icon: const Icon(Icons.restore),
+              label: Text(t('inheritOrganization'))),
           const SizedBox(height: 20),
           _choice('remindersMode', t('paymentReminders'), {
             'inherit':
@@ -363,7 +415,7 @@ class OccasionSetupCommunicationSummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${t('replyToEmail')}: ${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? t('systemSender')})'}',
+          '${t('replyToEmail')}: ${data['replyToMode'] == 'custom' ? data['replyToEmail'] : '$inherited (${defaults['replyTo'] ?? defaults['senderAddress'] ?? OccasionSaleStrings.text('senderUnavailable')})'}',
         ),
         Text(
           '${FormStrings.labelCommunicationTone}: ${data['communicationTone'] == 'inherit' ? '$inherited (${defaults['tone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal})' : data['communicationTone'] == 'informal' ? FormStrings.toneInformal : FormStrings.toneFormal}',

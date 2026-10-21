@@ -13,7 +13,7 @@ BEGIN
     END IF;
 
     -- Verify if the user is an editor on the occasion
-    IF NOT get_is_editor_order_on_occasion(occasion_id) THEN
+    IF NOT can_write_orders(occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to edit this occasion.';
     END IF;
 

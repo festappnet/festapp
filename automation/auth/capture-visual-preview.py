@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import json,pathlib,subprocess
+import json,os,pathlib,subprocess
 root=pathlib.Path(__file__).resolve().parents[2]
-out=root/'docs/plans/google-sign-in-reference-2026-10-01/implementation'
+out=(root/os.environ.get('FESTAPP_GOOGLE_AUTH_EVIDENCE_DIR','.codex-artifacts/google-auth/run')).expanduser().resolve()/'implementation'
+out.mkdir(parents=True,exist_ok=True)
 base=['agent-browser','--config','/tmp/festapp-google-browser-config.json','--session','festapp-google-ui-20261002']
 def run(*args):
  p=subprocess.run(base+list(args),capture_output=True,text=True)

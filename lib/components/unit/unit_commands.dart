@@ -1,4 +1,5 @@
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,6 +25,9 @@ class SupabaseUnitCommands implements UnitCommands {
     ));
     if (response.code != 200) {
       throw StateError('Unit user deletion was rejected');
+    }
+    if (userId == RightsService.currentUser()?.id) {
+      await RightsService.refreshAfterAuthorizationChange();
     }
   }
 

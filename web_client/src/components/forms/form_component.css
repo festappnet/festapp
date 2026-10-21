@@ -738,6 +738,7 @@ body.dark-mode .surcharge-info {
 .overview-products { list-style: none; padding: 0; margin: 8px 0; }
 .overview-products > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px; padding-block: 8px; }
 .overview-products > li > span { overflow-wrap: anywhere; }
+.overview-product-seating { display: block; margin-top: 4px; font-weight: 600; }
 .overview-product-price { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .overview-answers, .overview-changes { margin-block: 16px; }
 .overview-answers summary, .overview-changes summary { padding-block: 10px; }

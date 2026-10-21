@@ -89,13 +89,7 @@ class _MapDescriptionPopupState extends State<MapDescriptionPopup> {
             ],
             if (widget.cleaningStatus != null) _buildCleaningSection(context),
             Visibility(
-                visible: RightsService.isEditor() ||
-                    (RightsService.isGroupAdmin() &&
-                        RightsService.currentUserGroup()!.place!.id ==
-                            widget.place.id &&
-                        RightsService.currentUserGroup()!
-                            .place!
-                            .isPrivateGroupLocation),
+                visible: RightsService.canMovePlace(widget.place.id),
                 child: TextButton.icon(
                     icon: const Icon(Icons.edit),
                     onPressed:

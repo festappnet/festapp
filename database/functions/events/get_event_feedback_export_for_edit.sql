@@ -9,10 +9,7 @@ AS $function$
 DECLARE
     v_items JSONB;
 BEGIN
-    IF NOT (
-        public.get_is_editor_view_on_occasion(p_occasion)
-        OR public.get_is_admin_on_occasion(p_occasion)
-    ) THEN
+    IF NOT public.can_read_schedule_feedback(p_occasion) THEN
         RETURN jsonb_build_object(
             'code', 403,
             'message', 'Insufficient permissions'

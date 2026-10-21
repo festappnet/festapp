@@ -14,8 +14,17 @@ DECLARE
     v_is_reordering boolean;
 BEGIN
     PERFORM public.check_bank_account_writable(p_bank_account_id);
-    -- Strict Check: User must be a MANAGER of the unit to link/unlink bank accounts
-    PERFORM check_is_manager_on_unit(p_unit_id);
+    v_is_reordering := EXISTS (
+        SELECT 1 FROM eshop.unit_bank_accounts
+        WHERE unit = p_unit_id AND bank_account = p_bank_account_id
+    );
+    IF p_priority IS NULL OR v_is_reordering THEN
+        IF NOT public.can_manage_unit_bank_accounts(p_unit_id) THEN
+            RAISE insufficient_privilege USING MESSAGE='User is not manager.';
+        END IF;
+    ELSIF NOT public.can_link_bank_account_to_unit(p_bank_account_id,p_unit_id) THEN
+        RAISE EXCEPTION 'User is not an admin of this bank account or manager of the target unit.' USING ERRCODE='42501';
+    END IF;
 
     IF p_priority IS NULL THEN
         -- Unlink Logic
@@ -66,22 +75,6 @@ BEGIN
         WHERE unit = p_unit_id AND bank_account = p_bank_account_id;
     ELSE
         -- Link or Update Priority
-        v_is_reordering := EXISTS (
-            SELECT 1 FROM eshop.unit_bank_accounts
-            WHERE unit = p_unit_id AND bank_account = p_bank_account_id
-        );
-
-        -- Strict Check: User must also be an ADMIN of the bank account to LINK it (newly).
-        -- If just reordering, we skip this check (assuming they verified it when linking).
-        IF NOT v_is_reordering THEN
-            IF NOT EXISTS (
-                SELECT 1 FROM eshop.bank_account_users
-                WHERE bank_account = p_bank_account_id AND "user" = auth.uid() AND is_admin = true
-            ) THEN
-                RAISE EXCEPTION 'User is not an admin of this bank account.';
-            END IF;
-        END IF;
-
         IF v_is_reordering THEN
             UPDATE eshop.unit_bank_accounts
             SET priority = p_priority
@@ -90,11 +83,6 @@ BEGIN
             INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
             VALUES (p_unit_id, p_bank_account_id, p_priority);
 
-            -- Ensure Creator is Admin (if they are linking, they should be able to manage permissions)
-            IF NOT EXISTS (SELECT 1 FROM eshop.bank_account_users WHERE bank_account = p_bank_account_id AND "user" = auth.uid()) THEN
-                 INSERT INTO eshop.bank_account_users (bank_account, "user", is_admin, is_support)
-                 VALUES (p_bank_account_id, auth.uid(), true, true);
-            END IF;
         END IF;
     END IF;
 END;

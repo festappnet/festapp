@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.get_unit_information_for_edit_v1(p_unit bigint,p_type text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
- IF auth.uid() IS NULL OR NOT public.get_is_editor_view_on_unit(p_unit) THEN
+ IF auth.uid() IS NULL OR NOT public.can_read_unit_information(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='unit editor view required'; END IF;
  IF p_type='game' THEN RAISE invalid_parameter_value USING MESSAGE='unit games unsupported'; END IF;
  RETURN coalesce((SELECT jsonb_agg(to_jsonb(i)||jsonb_build_object('aggregate_version',coalesce(v.version,0)) ORDER BY i.id)
@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION public.save_unit_information_client_sync_v1(p_unit bi
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); ident bigint; ver bigint; before_row jsonb; after_row jsonb; begun jsonb; hash text;
 BEGIN
- IF actor IS NULL OR NOT public.get_is_editor_on_unit(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
+ IF actor IS NULL OR NOT public.can_write_unit_information(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
  PERFORM public.validate_information_content_internal_v1(p_information,true);
  ident:=(p_information->>'id')::bigint;
  hash:=encode(extensions.digest(convert_to(jsonb_build_object('unit',p_unit,'expectedVersion',p_expected_version,'information',p_information)::text,'UTF8'),'sha256'),'hex');
@@ -46,7 +46,7 @@ CREATE OR REPLACE FUNCTION public.delete_unit_information_client_sync_v1(p_unit 
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); ver bigint; old_row jsonb; begun jsonb; hash text;
 BEGIN
- IF actor IS NULL OR NOT public.get_is_editor_on_unit(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
+ IF actor IS NULL OR NOT public.can_write_unit_information(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
  hash:=encode(extensions.digest(convert_to(jsonb_build_object('unit',p_unit,'id',p_information_id,'expectedVersion',p_expected_version)::text,'UTF8'),'sha256'),'hex');
  begun:=public.begin_unit_client_mutation_v1(p_command_id,'unit.information.delete',p_unit,actor,hash);
  IF begun->>'disposition'='replay' THEN RETURN begun->'response'; END IF;

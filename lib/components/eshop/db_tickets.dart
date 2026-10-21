@@ -45,6 +45,9 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
+  static Future<void> releaseBlueprintHolds(List<int> spotIds) =>
+      _commands.releaseHolds(spotIds);
+
   /// One canonical mutation for the complete selection, including email outcomes.
   static Future<TicketCancellationOutcome> stornoTickets(
       List<int> ticketIds) async {
@@ -286,6 +289,10 @@ class DbTickets {
       return const PasswordResetResult();
     }
   }
+
+  /// Blueprint V2 always uses the receipted command authority.
+  static Future<void> swapBlueprintSpots(int firstSpotId, int secondSpotId) =>
+      _commands.swapSpots(firstSpotId, secondSpotId);
 
   static Future<void> swapSpotTickets(
     int spotId1,

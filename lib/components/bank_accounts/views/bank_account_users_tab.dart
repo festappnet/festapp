@@ -1,4 +1,5 @@
 import 'bank_account_dialog_scope.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
@@ -217,6 +218,10 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
     try {
       await DbBankAccounts.current
           .updateBankAccountUser(widget.accountId, email, isAdmin, isSupport);
+      if (email.toLowerCase() ==
+          RightsService.currentUser()?.email?.toLowerCase()) {
+        await RightsService.refreshAfterAuthorizationChange();
+      }
       await _loadUsers();
     } catch (e) {
       _showError("${BankAccountStrings.errorUpdatingUser}: $e");
@@ -234,6 +239,10 @@ class _BankAccountUsersTabState extends State<BankAccountUsersTab> {
       }
       await DbBankAccounts.current
           .removeBankAccountUser(widget.accountId, user.email!);
+      if (user.email!.toLowerCase() ==
+          RightsService.currentUser()?.email?.toLowerCase()) {
+        await RightsService.refreshAfterAuthorizationChange();
+      }
       await _loadUsers();
     } catch (e) {
       _showError("${BankAccountStrings.errorRemovingUser}: $e");

@@ -71,6 +71,16 @@ plain text fields also use the surrounding Form's change callback. HTML drafts
 that are still open are included via `HtmlSaveCoordinator.hasActiveDraft`.
 Keep model getters free of writes so rendering defaults does not create edits.
 
+## Single-application form
+
+When both the ticket and blueprint features are disabled, the editor hides the
+order-quantity setting and saves `max_tickets: 1`. Read-only inspection hides it
+too. Ticket-enabled or blueprint-enabled occasions retain the quantity editor.
+Feature checks use the form's owning occasion, including isolated setup drafts.
+Email authoring examples use a single application and its price in this mode;
+blueprint-enabled applications and ticket orders retain the multi-item sample.
+The build-time generator owns the canonical single-item email markup.
+
 ## Global ticket order limit
 
 `MAX_TICKETS_PER_ORDER=20` in `automation/project.conf` is the technical ceiling
@@ -171,3 +181,7 @@ persisted in the command/draft; SQL alone owns the localized copy title.
 
 Existing cross-tenant occasion duplicates keep frozen tenant-scoped ID bindings.
 New writes cannot claim those slugs; canonical links and titles are never bulk renamed.
+
+Veřejné vložení formuláře používá stejný checkout. URL, integrační varianty,
+bezpečný protokol a limity obnovy vlastní
+[embedded checkout contract](../../../docs/integrations/embedded-checkout.md).

@@ -1,6 +1,8 @@
 # Unified application cutover ledger — 2026-08-23
 
-This ledger freezes the fetched source ranges and classifies every divergent commit exactly once. The machine-readable per-commit path inventory is [unified-app-cutover-commit-inventory-2026-08-23.tsv](unified-app-cutover-commit-inventory-2026-08-23.tsv). Run `node automation/verify_cutover_ledger.mjs` to prove coverage and uniqueness.
+This ledger freezes the fetched source ranges and classifies every divergent commit exactly once. The machine-readable inventory and its fixed-SHA verifier were retired after
+verifying all 450 commits were classified exactly once. Both are recoverable
+from the [2026-10-21 cleanup record](../repository-tooling-cleanup-2026-10-21.md).
 
 ## Fixed points
 

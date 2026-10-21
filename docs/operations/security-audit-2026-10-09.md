@@ -131,7 +131,7 @@ Oprava: zavést kompatibilní CSP nejprve v režimu reportování, následně vy
 
 **Registry uvádí vysokou závažnost; praktický dopad na veřejné formuláře nebyl prokázán.**
 
-`npm audit --omit=dev --json` v `web_client` hlásí jednu zranitelnou tranzitivní závislost `brace-expansion` s několika DoS advisories. [Advisory pro nekontrolovanou rekurzi](https://github.com/advisories/GHSA-qhr7-859c-m2p7). `image-worker` a `sync-publisher` při stejném auditu nehlásily zranitelnosti. Lockfile obsahuje `brace-expansion` 5.0.9 přes `glob`/`minimatch`. Scoped kontrola importů našla `glob` v databázových testovacích skriptech, nikoli ve `web_client/src`. Nález proto zatím znamená závislost nástrojů, ne prokázaný vzdálený DoS veřejných formulářů. Aktualizace lockfile je vhodná, ale má nižší prioritu než potvrzené aplikační exploity.
+`npm audit --prod --json` v `web_client` hlásí jednu zranitelnou tranzitivní závislost `brace-expansion` s několika DoS advisories. [Advisory pro nekontrolovanou rekurzi](https://github.com/advisories/GHSA-qhr7-859c-m2p7). `image-worker` a `sync-publisher` při stejném auditu nehlásily zranitelnosti. Lockfile obsahuje `brace-expansion` 5.0.9 přes `glob`/`minimatch`. Scoped kontrola importů našla `glob` v databázových testovacích skriptech, nikoli ve `web_client/src`. Nález proto zatím znamená závislost nástrojů, ne prokázaný vzdálený DoS veřejných formulářů. Aktualizace lockfile je vhodná, ale má nižší prioritu než potvrzené aplikační exploity.
 
 ### 12 Starší migrátor může falešně potvrdit bezpečnostní migraci
 

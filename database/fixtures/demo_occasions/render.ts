@@ -1,11 +1,12 @@
 // Offline evidence uses the same renderer and bundled font bytes as ticket delivery.
-// deno run --allow-read --allow-write database/fixtures/demo_occasions/render.ts
+// deno run --allow-read --allow-write --allow-env database/fixtures/demo_occasions/render.ts
 import {generateTicketPdf} from '../../../supabase/functions/_shared/ticketGeneration.ts';
 import {normalizeTicketData} from '../../../supabase/functions/_shared/ticketRenderData.ts';
 import {validateLayout} from '../../../supabase/functions/_shared/ticketLayout.ts';
 import {fontMetrics} from '../../../supabase/functions/_shared/ticketFonts.ts';
 
-const output = new URL('../../../docs/plans/demo-occasions-evidence-2026-10-14/',import.meta.url);
+const root = new URL('../../../',import.meta.url);
+const output = new URL((Deno.env.get('FESTAPP_DEMO_EVIDENCE_DIR')??'.codex-artifacts/demo-occasions/run').replace(/\/?$/, '/'),root);
 await Deno.mkdir(output,{recursive:true});
 const font = await Deno.readFile(new URL('../../../supabase/functions/_shared/ticket-assets/font.ttf',import.meta.url));
 

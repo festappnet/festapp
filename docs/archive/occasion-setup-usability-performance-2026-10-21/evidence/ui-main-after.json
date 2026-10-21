@@ -1,0 +1,66 @@
+[
+  {
+    "ms": 196.70000004768372,
+    "stage": "openWizard"
+  },
+  {
+    "ms": 59.40000009536743,
+    "stage": "transition"
+  },
+  {
+    "ms": 656.4000000953674,
+    "stage": "saved"
+  },
+  {
+    "ms": 558.2000000476837,
+    "stage": "overview"
+  },
+  {
+    "ms": 125,
+    "stage": "openWizard"
+  },
+  {
+    "ms": 52,
+    "stage": "transition"
+  },
+  {
+    "ms": 656.3999999761581,
+    "stage": "saved"
+  },
+  {
+    "ms": 574.3000000715256,
+    "stage": "overview"
+  },
+  {
+    "ms": 137.5,
+    "stage": "openWizard"
+  },
+  {
+    "ms": 42.199999928474426,
+    "stage": "transition"
+  },
+  {
+    "ms": 665.5,
+    "stage": "saved"
+  },
+  {
+    "ms": 589.2999999523163,
+    "stage": "overview"
+  },
+  {
+    "ms": 154.10000002384186,
+    "stage": "openWizard"
+  },
+  {
+    "ms": 43.699999928474426,
+    "stage": "transition"
+  },
+  {
+    "ms": 685.1999999284744,
+    "stage": "saved"
+  },
+  {
+    "ms": 544.3999999761581,
+    "stage": "overview"
+  }
+]

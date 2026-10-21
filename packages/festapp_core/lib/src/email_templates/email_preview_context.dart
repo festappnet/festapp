@@ -27,11 +27,15 @@ class EmailPreviewContext {
   final String? occasionTitle, deadline;
   final EmailPreviewPaymentAccount? paymentAccount;
   final bool? ticketsEnabled;
+  final bool? blueprintEnabled;
+  bool get singleApplication =>
+      ticketsEnabled == false && blueprintEnabled != true;
   final List<EmailPreviewProduct> products;
   const EmailPreviewContext({
     this.occasionTitle,
     this.deadline,
     this.ticketsEnabled,
+    this.blueprintEnabled,
     this.paymentAccount,
     this.products = const [],
   });
@@ -41,6 +45,7 @@ class EmailPreviewContext {
         occasionTitle: occasionTitle,
         deadline: deadline,
         ticketsEnabled: ticketsEnabled,
+        blueprintEnabled: blueprintEnabled,
         products: products,
         paymentAccount: account ?? paymentAccount,
       );
@@ -58,8 +63,12 @@ class EmailPreviewContext {
         if (deadline != null) 'preview_deadline': deadline!,
       };
     final first = products.first;
-    final second = products.length > 1 ? products[1] : first;
-    final total = zero ? 0.0 : first.price + second.price;
+    final second = !singleApplication && products.length > 1
+        ? products[1]
+        : first;
+    final total = zero
+        ? 0.0
+        : first.price + (singleApplication ? 0 : second.price);
     // Explicitly fictional deposit/history examples, never payment computation.
     final deposit = (total * .375 * 100).roundToDouble() / 100;
     final previousSecond = zero
@@ -84,7 +93,9 @@ class EmailPreviewContext {
       'preview_deposit': money(deposit),
       'preview_remaining': money(total - deposit),
       'preview_previous_price': money(previousSecond),
-      'preview_reference_total': money(zero ? 0 : first.price + previousSecond),
+      'preview_reference_total': money(
+        zero ? 0 : (singleApplication ? 0 : first.price) + previousSecond,
+      ),
       'preview_zero': money(0),
       'preview_zero_explanation': '0 ${first.currency}',
       'preview_currency': first.currency,

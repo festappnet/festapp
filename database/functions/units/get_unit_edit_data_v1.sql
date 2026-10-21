@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_unit_edit_data_v1(p_unit bigint)
 AS $function$
 DECLARE v_result jsonb; v_version bigint;
 BEGIN
-  IF auth.uid() IS NULL OR NOT public.get_is_manager_on_unit(p_unit) THEN
+  IF auth.uid() IS NULL OR NOT public.can_manage_unit_configuration(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   v_result:=public.get_unit_edit_data(p_unit);
   SELECT COALESCE(v.version,0) INTO v_version

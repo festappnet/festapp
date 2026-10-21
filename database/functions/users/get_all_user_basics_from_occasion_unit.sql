@@ -20,7 +20,7 @@ BEGIN
   END IF;
 
   -- Step 2: Check if the caller is a manager of the unit
-  IF (SELECT get_is_manager_on_unit(p_unit_id)) <> TRUE THEN
+  IF public.can_manage_unit_users(p_unit_id) IS NOT TRUE THEN
     RAISE EXCEPTION 'Access denied' USING ERRCODE = '42501'; -- insufficient_privilege
   END IF;
 
@@ -33,7 +33,7 @@ BEGIN
     SELECT occasion AS occasion_id
     FROM public.occasion_users
     WHERE "user" = auth.uid()
-      AND (is_manager = true OR is_editor = true OR is_approver = true)
+      AND public.participant_contacts_read_rule(is_editor,is_manager,is_approver)
   ),
   raw_user_roles AS (
     -- Roles from occasion_users in relevant occasions

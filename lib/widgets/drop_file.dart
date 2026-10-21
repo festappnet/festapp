@@ -30,6 +30,12 @@ class DropFile extends StatefulWidget {
 
   /// Height of the drop area.
   final double height;
+  final bool dropEnabled;
+  final bool singleFileOnly;
+  final VoidCallback? onInvalidDrop;
+
+  /// Optional picker used by hosts that need custom file loading on every platform.
+  final Future<XFile?> Function()? pickFile;
 
   const DropFile({
     super.key,
@@ -38,6 +44,10 @@ class DropFile extends StatefulWidget {
     this.hint,
     this.allowedExtensions,
     this.height = 250,
+    this.dropEnabled = true,
+    this.singleFileOnly = false,
+    this.onInvalidDrop,
+    this.pickFile,
   });
 
   @override
@@ -81,6 +91,16 @@ class _DropFileState extends State<DropFile> {
   }
 
   Future<void> _pickFile() async {
+    if (widget.pickFile != null) {
+      final picked = await widget.pickFile!();
+      if (!mounted || picked == null) return;
+      setState(() {
+        file = picked;
+        _fileCount = 1;
+      });
+      widget.onFilePathChanged(picked);
+      return;
+    }
     if (!PlatformHelper.isWeb) return;
 
     FilePickerResult? result = await FilePicker.pickFiles(
@@ -115,14 +135,22 @@ class _DropFileState extends State<DropFile> {
 
   @override
   Widget build(BuildContext context) {
-    bool isClickable = PlatformHelper.isWeb;
+    bool isClickable = widget.pickFile != null || PlatformHelper.isWeb;
     bool isCompact = widget.height < 160;
     double iconSize = isCompact ? 32 : 50;
     double iconSpacing = isCompact ? 6 : 12;
 
     return DropTarget(
+      enable: widget.dropEnabled,
       onDragDone: (detail) async {
-        if (detail.files.isEmpty) return;
+        if (!widget.dropEnabled || detail.files.isEmpty) return;
+        if (widget.singleFileOnly &&
+            (detail.files.length != 1 ||
+                detail.files.single is DropItemDirectory ||
+                !_isAllowed(detail.files.single))) {
+          widget.onInvalidDrop?.call();
+          return;
+        }
 
         // Flatten directories into individual files
         final allFiles = _flattenDropItems(detail.files);

@@ -11,7 +11,7 @@ BEGIN
   -- 1. Permission Check
   -----------------------------------------------------
   -- Check if the user is a manager, editor, or approver for the occasion
-  IF (SELECT get_is_manager_on_occasion(oc) OR get_is_editor_on_occasion(oc) OR get_is_approver_on_occasion(oc)) <> TRUE THEN
+  IF (SELECT public.can_read_participant_contacts(oc)) <> TRUE THEN
       RETURN jsonb_build_object('code', 403);
   END IF;
 

@@ -22,7 +22,7 @@ BEGIN
     );
   END IF;
 
-  IF NOT get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+  IF NOT can_read_orders(v_occasion_id) THEN
     RETURN jsonb_build_object(
       'code',    403,
       'message', 'Not authorized'

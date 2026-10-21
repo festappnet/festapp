@@ -3,6 +3,8 @@ import { SupabaseService } from './supabase_service.js';
 import { AuthService } from './auth_service.js';
 
 export function safeAuthReturnPath(value) {
+    // Only this exact first-party consent continuation may carry a query.
+    if (typeof value === 'string' && /^\/settings\/mcp-connect\?request=[A-Za-z0-9_-]{43}$/.test(value)) return value;
     return typeof value === 'string' && /^\/(?!\/)[A-Za-z0-9/_-]*$/.test(value) && !value.includes('..') ? value : '/';
 }
 const key = 'festapp-google-attempt-v1';
@@ -35,7 +37,7 @@ export class GoogleAuthService {
         const destination = new URL(data.url);
         const backend = new URL(SupabaseService._backend.supabaseUrl);
         if (destination.origin !== backend.origin || destination.pathname !== '/functions/v1/google-auth-start') throw new Error('invalid_provider_proof');
-        sessionStorage.setItem(key, JSON.stringify({ attempt: data.attempt, verifier, expires: Date.now() + 600000, returnPath: safeAuthReturnPath(window.location.pathname) }));
+        sessionStorage.setItem(key, JSON.stringify({ attempt: data.attempt, verifier, expires: Date.now() + 600000, returnPath: safeAuthReturnPath(window.location.pathname === '/settings/mcp-connect' ? window.location.pathname + window.location.search : window.location.pathname) }));
         window.location.assign(destination.href);
     }
     static takeCallback() {

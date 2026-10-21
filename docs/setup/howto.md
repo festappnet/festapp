@@ -16,7 +16,7 @@ also read [tenant_overlays.md](../architecture/tenant_overlays.md).
 fvm install
 fvm flutter pub get
 (cd packages/festapp_core && fvm dart pub get)
-npm ci --prefix web_client
+pnpm --dir web_client install --frozen-lockfile
 ```
 
 ## Configuration
@@ -106,9 +106,9 @@ steps and the checker command are in
 
 ```bash
 fvm flutter run -d chrome
-npm run dev --prefix web_client
+pnpm --dir web_client run dev
 ./automation/test_client.sh
-npm test --prefix web_client
+pnpm --dir web_client test
 ```
 
 The broad runner has skips and warning-only lanes documented in Contributing.

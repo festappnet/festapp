@@ -217,7 +217,7 @@ BEGIN
     END IF;
 
     -- 4. Authorization check.
-    IF (SELECT get_is_editor_order_view_on_occasion(v_occasion_id)) <> TRUE THEN
+    IF (SELECT can_read_orders(v_occasion_id)) <> TRUE THEN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to access this occasion');
     END IF;
 
@@ -505,7 +505,7 @@ BEGIN
     END IF;
 
     -- Permission check to ensure the user can view data for this occasion.
-    IF NOT get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+    IF NOT can_read_orders(v_occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to view this occasion.';
     END IF;
 
@@ -747,7 +747,7 @@ BEGIN
     WHERE id = blueprint_id;
 
     -- Authorization check
-    IF (SELECT get_is_editor_order_view_on_occasion(occasion_id)) <> TRUE THEN
+    IF (SELECT can_read_orders(occasion_id)) <> TRUE THEN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
     END IF;
 
@@ -1255,7 +1255,7 @@ BEGIN
     END IF;
 
     -- Authorization check
-    IF (SELECT get_is_editor_order_view_on_occasion(occasion_id)) <> TRUE THEN
+    IF (SELECT can_read_orders(occasion_id)) <> TRUE THEN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to access this occasion');
     END IF;
 

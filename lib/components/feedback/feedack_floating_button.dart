@@ -1,6 +1,6 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/launch_url_service.dart';
@@ -306,8 +306,8 @@ class _CopyableRow extends StatelessWidget {
     this.maxLines = 1,
   });
 
-  void _copy(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: value));
+  Future<void> _copy(BuildContext context) async {
+    if (!await CopyButton.copy(context, value) || !context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(FeedbackStrings.copied),

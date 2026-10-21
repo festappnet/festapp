@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/reservation_capability_store.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -7,14 +8,33 @@ import 'field_holder.dart';
 import 'id_document_field_holder.dart';
 import 'birth_date_field_holder.dart';
 import 'package:festapp_core/forms.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/_shared/person_fields_strings.dart';
 
 import 'ticket_holder.dart';
 
 class FormHolderController {
   final bool demoSimulation;
-  final String? secret;
+  String? secret;
+  DateTime? reservationExpiresAt;
+  bool reservationPending = false;
+  ReservationCapabilityStore? capabilityStore;
+  ReservationCapability? capability;
+  Future<void> rememberReservation() async {
+    if (demoSimulation || secret == null) return;
+    capability = await capabilityStore?.remember(secret!, reservationExpiresAt);
+  }
+
+  Future<void> updateReservationSession(String nextSecret, DateTime? expiresAt) async {
+    secret = nextSecret;
+    reservationExpiresAt = expiresAt;
+    if (expiresAt == null) {
+      await capabilityStore?.clear(capability);
+      capability = null;
+    } else {
+      await rememberReservation();
+    }
+  }
+
   final int? blueprintId;
   final GlobalKey<FormBuilderState> globalKey;
   final String? formKey;
@@ -90,6 +110,17 @@ class FormHolder {
         (f) => f.fieldType == FormMetadata.fieldTypeTicket) as TicketHolder?;
     if (ticket != null) {
       ticket.fields.addAll(ticketChildFields.map((f) => createFieldHolder(f)));
+      ticket.offeredProductFields = List.unmodifiable(formModel.isWaitlist
+          ? <OptionsFieldProductHolder>[]
+          : formModel.relatedFields
+              .where((field) =>
+                  field.isTicketField == true &&
+                  field.type == FormMetadata.fieldTypeProductType &&
+                  field.isHidden != true &&
+                  field.productType != null)
+              .map(createFieldHolder)
+              .whereType<OptionsFieldProductHolder>());
+
       if (formModel.registrationMode == 'regular' &&
           formModel.capacity?.remainingPublic != null) {
         ticket.maxTickets =

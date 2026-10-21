@@ -7,26 +7,7 @@ DECLARE
     unit_data jsonb;
 BEGIN
     -- Check if the current user is authorized (editor or manager) for the provided unit
-    IF NOT EXISTS (
-        SELECT 1
-        FROM unit_users
-        WHERE "user" = auth.uid()
-          AND unit = unit_id
-          AND (is_editor = true OR is_manager = true OR is_editor_view = true)
-    ) AND NOT EXISTS (
-        SELECT 1
-        FROM occasions o
-        JOIN occasion_users ou ON ou.occasion = o.id
-        WHERE o.unit = unit_id
-          AND ou."user" = auth.uid()
-          AND (
-              ou.is_manager IS TRUE 
-              OR ou.is_editor IS TRUE 
-              OR ou.is_editor_view IS TRUE 
-              OR ou.is_editor_order IS TRUE 
-              OR ou.is_editor_order_view IS TRUE
-          )
-    ) THEN
+    IF NOT public.can_read_unit_occasion_catalog(unit_id) THEN
         RETURN jsonb_build_object('code', 403);
     END IF;
 

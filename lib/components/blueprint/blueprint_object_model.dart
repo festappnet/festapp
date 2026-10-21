@@ -161,8 +161,12 @@ class BlueprintObjectModel {
         if (orderNote.isNotEmpty) {
           orderNote = "\n$orderNote";
         }
-        var orderString =
-            order != null ? "\n${order.toCustomerData()}$orderNote" : "";
+        final privateOrderNote = order?.toCustomerNoteHidden() ?? "";
+        final privateOrderNoteString =
+            privateOrderNote.isEmpty ? "" : "\n($privateOrderNote)";
+        var orderString = order != null
+            ? "\n${order.toCustomerData()}$orderNote$privateOrderNoteString"
+            : "";
 
         // Add ticket note if available
         var ticketNoteString = ticket.note != null && ticket.note!.isNotEmpty

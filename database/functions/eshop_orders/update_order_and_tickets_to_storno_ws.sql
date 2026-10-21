@@ -7,6 +7,7 @@ AS $$
 DECLARE
     occasion_id bigint;
 BEGIN
+    PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=order_id)]);
     -- Retrieve the occasion associated with the order
     SELECT occasion INTO occasion_id FROM eshop.orders WHERE id = order_id;
 
@@ -16,7 +17,7 @@ BEGIN
     END IF;
 
     -- Verify if the user is an editor on the occasion
-    IF (SELECT get_is_editor_order_on_occasion(occasion_id)) <> TRUE THEN
+    IF (SELECT can_write_orders(occasion_id)) <> TRUE THEN
         RAISE EXCEPTION 'User is not editor.';
     END IF;
 

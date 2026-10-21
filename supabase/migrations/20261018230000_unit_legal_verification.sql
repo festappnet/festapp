@@ -391,11 +391,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
-RETURNS json LANGUAGE sql SECURITY DEFINER
-SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal(public.resolve_form_link_internal(form_link),false);
-$$;
+
 
 -- Source: database/functions/eshop_forms/get_form_for_edit.sql
 -- Fix get_form_for_edit: Remove bigint = uuid comparison and add can_delete
@@ -609,84 +605,14 @@ $$;
 
 -- Source: database/functions/eshop_waitlist/order_overview.sql
 -- Private pure projection. No matcher, paid transition or payment side effect.
-CREATE OR REPLACE FUNCTION public.customer_order_payment_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH facts AS (
- SELECT o.*,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
- p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
- b.account_number,b.account_number_human_readable,
- coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
- CASE WHEN o.state='preparing_payment' THEN 'preparing'
- WHEN o.state='storno' THEN 'cancelled'
- WHEN o.state='waitlisted' AND p.id IS NULL THEN 'not_required_yet'
- WHEN o.price=0 THEN 'free'
- WHEN p.id IS NULL OR p.currency_code IS DISTINCT FROM o.currency_code OR p.amount IS NULL OR p.amount<0 OR coalesce(p.paid,0)<0 OR coalesce(p.paid_externally,0)<>0
-  OR (o.state IN ('paid','sent') AND o.price>0 AND coalesce(p.paid,0)=0) THEN 'unknown'
- WHEN coalesce(p.paid,0)>=p.amount THEN 'fully_paid'
- WHEN coalesce(p.paid,0)=0 THEN 'unpaid'
- WHEN p.deposit_amount>0 AND p.paid>=p.deposit_amount THEN 'deposit_paid'
- ELSE 'partially_paid' END status
- FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info
- LEFT JOIN eshop.bank_accounts b ON b.id=p.bank_account WHERE o.id=p_order),
- due AS (SELECT *,greatest(amount-received,0) outstanding,
- CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
- CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
- 'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
- 'depositDeadline',deposit_deadline,'finalDeadline',deadline,
- 'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,
- 'dueAt',due_at,'overdue',coalesce(due_at<statement_timestamp() AND due_now>0,false),
- 'instructionsAvailable',status IN ('unpaid','partially_paid','deposit_paid') AND account_number IS NOT NULL
-  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END,
- 'reference',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN
-  CASE WHEN currency_code='EUR' THEN creditor_reference ELSE variable_symbol::text END END,
- 'qrPayment',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') AND due_now>0 AND account_number IS NOT NULL
-  AND CASE WHEN currency_code='EUR' THEN creditor_reference IS NOT NULL ELSE variable_symbol IS NOT NULL END
- THEN jsonb_build_object('amount',due_now,'currency_code',trim(currency_code),'account_number',account_number,
-  'account_number_human_readable',account_number_human_readable,'creditor_name',creditor_name,
-  'variable_symbol',variable_symbol,'creditor_reference',creditor_reference) END,
- 'referenceKind',CASE WHEN currency_code='EUR' THEN 'RF' ELSE 'VS' END,
- 'transactions',(SELECT coalesce(jsonb_agg(jsonb_build_object(
-  'date',t.date::date,'recordedAt',t.created_at,'amount',t.amount,'currency',trim(t.currency),
-  'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
-  ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
- 'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
- FROM due;
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.customer_ticket_label_internal(p_ticket bigint,p_form bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT nullif(string_agg(a.value#>>'{}',' ' ORDER BY CASE f.type WHEN 'name' THEN 0 ELSE 1 END,f.id),'')
- FROM eshop.tickets t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t.data->'fields','[]')) field
- CROSS JOIN LATERAL jsonb_each(field) a JOIN public.form_fields f ON f.id::text=a.key
- WHERE t.id=p_ticket AND f.form=p_form AND f.is_ticket_field AND NOT f.is_hidden AND f.type IN ('name','surname');
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
 
 -- Customer-visible answers only; field definitions own scope and visibility.
-CREATE OR REPLACE FUNCTION public.customer_order_answers_internal(p_form bigint,p_data jsonb,p_ticket boolean)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(jsonb_build_object('title',f.title,'type',f.type,'value',CASE WHEN f.type='id_document' AND jsonb_typeof(answer.value)='object'
-  THEN jsonb_strip_nulls(jsonb_build_object('id_document_number',answer.value->'id_document_number',
-   'id_document_expiry_date',answer.value->'id_document_expiry_date')) ELSE answer.value END) ORDER BY f."order",f.id),'[]')
- FROM public.form_fields f CROSS JOIN LATERAL (
-  SELECT coalesce(a->(f.id::text),a->f.type) value
-  FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_data->'fields')='array' THEN p_data->'fields' ELSE '[]' END) a
-  WHERE a ? f.id::text OR (a->>'_subFieldId'=f.id::text AND a ? f.type)
-   OR (NOT a ? '_subFieldId' AND a ? f.type
-    AND NOT EXISTS(SELECT 1 FROM jsonb_object_keys(a) k WHERE k ~ '^[0-9]+$')
-    AND 1=(SELECT count(*) FROM public.form_fields other WHERE other.form=p_form AND other.type=f.type AND other.is_ticket_field=p_ticket AND NOT other.is_hidden))
-  LIMIT 1
- ) answer
- WHERE f.form=p_form AND f.is_ticket_field=p_ticket AND NOT f.is_hidden
- AND f.type IN ('name','surname','email','phone','city','sex','birth_year','birth_date','address','nationality','id_document','text','note','select_one','select_many')
- AND ((f.type='id_document' AND jsonb_typeof(answer.value)='object'
-  AND jsonb_typeof(answer.value->'id_document_number')='string'
-  AND (answer.value->'id_document_expiry_date' IS NULL OR jsonb_typeof(answer.value->'id_document_expiry_date') IN ('string','null')))
-  OR jsonb_typeof(answer.value) IN ('string','number','boolean') OR (jsonb_typeof(answer.value)='array'
-  AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(answer.value)='array' THEN answer.value ELSE '[]' END) v WHERE jsonb_typeof(v) NOT IN ('string','number','boolean'))));
-$$;
+
 REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
@@ -793,72 +719,17 @@ GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO ano
 
 -- Source: database/functions/eshop_waitlist/capabilities.sql
 -- Only visible name/surname definitions in this form can label a ticket.
-CREATE OR REPLACE FUNCTION public.get_waitlist_ticket_display_name_internal(p_form bigint,p_answers jsonb,p_contact jsonb DEFAULT '{}')
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(nullif((SELECT string_agg(btrim(answer.value#>>'{}'),' ' ORDER BY CASE definition.type WHEN 'name' THEN 0 ELSE 1 END,definition."order" NULLS LAST,definition.id)
- FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_answers->'fields')='array' THEN p_answers->'fields' ELSE '[]' END) field
- CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(field)='object' THEN field ELSE '{}' END) answer
- JOIN public.form_fields definition ON definition.id::text=answer.key
- WHERE definition.form=p_form AND definition.is_ticket_field AND NOT definition.is_hidden
- AND definition.type IN ('name','surname') AND jsonb_typeof(answer.value)='string' AND btrim(answer.value#>>'{}')<>''),''),
- nullif(btrim(concat_ws(' ',nullif(btrim(p_contact->>'name'),''),nullif(btrim(p_contact->>'surname'),''))),''));
-$$;
+
 REVOKE ALL ON FUNCTION public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(p_ticket bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT CASE WHEN t.state='storno' THEN CASE WHEN t.ticket_symbol IS NULL THEN 'withdrawn' ELSE 'cancelled' END
- WHEN t.state IS DISTINCT FROM 'waitlisted' THEN 'admitted'
- WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id AND s.outcome='pending' AND w.expires_at>clock_timestamp()) THEN 'offered'
- ELSE coalesce((SELECT CASE s.outcome WHEN 'expired' THEN 'offer_expired' WHEN 'declined' THEN 'offer_declined' WHEN 'cancelled' THEN 'offer_cancelled' WHEN 'pending' THEN 'offer_expired' ELSE 'waiting' END
- FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id ORDER BY w.created_at DESC,s.updated_at DESC,s.id DESC LIMIT 1),'waiting') END
- FROM eshop.tickets t WHERE t.id=p_ticket;
-$$;
+
 REVOKE ALL ON FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(bigint) FROM PUBLIC,anon,authenticated;
-CREATE OR REPLACE FUNCTION public.check_waitlist_scope_internal(p_order bigint,p_offer uuid,p_token text,p_actor uuid,p_operation text)
-RETURNS bigint LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
-BEGIN
- SELECT * INTO o FROM eshop.orders WHERE id=p_order; SELECT * INTO occ FROM public.occasions WHERE id=o.occasion;
- IF o.id IS NULL OR o.form IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- IF p_actor IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=o.occasion AND "user"=p_actor AND is_editor_order) THEN
-  IF p_offer IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order AND form_id=o.form) THEN
-   RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF; RETURN o.form;
- END IF;
- IF p_operation IN ('send','cancel','proposal') OR p_token IS NULL OR length(p_token)<>64 THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- SELECT * INTO c FROM eshop.waitlist_capabilities WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
- AND organization_id=occ.organization AND form_id=o.form AND order_id=o.id AND (revoked_at IS NULL OR p_operation='read')
- AND ((p_operation='withdraw' AND kind='manage' AND o.state='waitlisted') OR
- (p_operation IN ('read','accept','decline') AND kind='offer' AND offer_id=p_offer));
- IF c.token_hash IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- -- Expired offer links may read their own terminal state; writers recheck time under locks.
- IF p_operation<>'read' AND c.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'OFFER_EXPIRED'; END IF;
- RETURN o.form;
-END $$;
+
 -- Action/activity policy is shared by compact ordinary orders and full waitlist summaries.
-CREATE OR REPLACE FUNCTION public.get_order_action_summary_internal(
- p_state text, p_has_waiting boolean DEFAULT false, p_pending_places bigint DEFAULT 0
-) RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT jsonb_build_object('isActive',CASE WHEN p_state='waitlisted' THEN
-  coalesce(p_has_waiting,false) OR coalesce(p_pending_places,0)>0 ELSE p_state IS DISTINCT FROM 'storno' END,
- 'allowedActions',CASE WHEN p_state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
- WHEN p_state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
- WHEN p_state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
- ELSE jsonb_build_array('view','note','edit','cancel','send') END);
-$$;
+
 REVOKE ALL ON FUNCTION public.get_order_action_summary_internal(text,boolean,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH effective AS (SELECT public.get_effective_waitlist_ticket_lifecycle_internal(person.id) lifecycle
- FROM public.get_order_tickets_internal(p_order) person), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
- s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
- JOIN public.get_order_tickets_internal(p_order) person ON person.id=x.ticket_id WHERE true AND x.outcome='pending' AND w.expires_at>clock_timestamp())
- SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
- 'pendingPlaces',s.n,'earliestExpiry',s.expiry) || public.get_order_action_summary_internal(
- o.state,coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false),s.n)
- FROM eshop.orders o CROSS JOIN s WHERE o.id=p_order;
-$$;
+
 CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE oid bigint; fid bigint; bundle jsonb; w eshop.waitlist_offers;
@@ -908,21 +779,7 @@ REVOKE ALL ON FUNCTION public.check_waitlist_scope_internal(bigint,uuid,text,uui
 REVOKE ALL ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) TO anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.get_waitlist_order_detail(p_order_id bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders;
-BEGIN
- SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id;
- IF NOT public.get_is_editor_order_view_on_occasion(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
- RETURN jsonb_build_object('orderId',o.id,'sourceOrderId',o.source_waitlist_order_id,
- 'occasionTitle',(SELECT title FROM public.occasions WHERE id=o.occasion),'waitlistSummary',public.get_waitlist_summary_internal(o.id),
- 'capacity',public.get_form_capacity_snapshot_internal(o.form),
- 'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'displayName',public.get_waitlist_ticket_display_name_internal(o.form,p.data,CASE WHEN (SELECT count(*) FROM public.get_order_tickets_internal(o.id))=1 THEN o.data ELSE '{}'::jsonb END),'createdAt',p.created_at,'waitlistQueueAt',p.waitlist_queue_at,'answers',public.extract_ticket_answers_internal(o.form,p.data),
-  'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(p.id)) ORDER BY created_at,id),'[]') FROM public.get_order_tickets_internal(o.id) p),
- 'offers',(SELECT coalesce(jsonb_agg(to_jsonb(w)||jsonb_build_object('slots',(SELECT coalesce(jsonb_agg((to_jsonb(s)-'ticket_id')||jsonb_build_object('ticketId',s.ticket_id)),'[]') FROM eshop.waitlist_offer_slots s WHERE offer_id=w.id)) ORDER BY created_at),'[]')
- FROM eshop.waitlist_offers w WHERE order_id=o.id),
- 'linkedOrders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'orderSymbol',order_symbol,'state',state)),'[]') FROM eshop.orders WHERE source_waitlist_order_id=o.id));
-END $$;
+
 REVOKE ALL ON FUNCTION public.get_waitlist_order_detail(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_waitlist_order_detail(bigint) TO authenticated;
 

@@ -50,6 +50,23 @@ class StorageHelper {
     await store.record(key).delete(db);
   }
 
+  /// Updates a capability only while its exact stored generation still matches.
+  static Future<bool> compareAndSetString(
+      String key, String? expected, String? next,
+      {Database? database}) async {
+    final db = database ?? await openDatabase();
+    final record = StoreRef.main().record(key);
+    return db.transaction((transaction) async {
+      if (await record.get(transaction) != expected) return false;
+      if (next == null) {
+        await record.delete(transaction);
+      } else {
+        await record.put(transaction, next);
+      }
+      return true;
+    });
+  }
+
   /// Applies a group of string writes as one Sembast transaction.
   ///
   /// A null value deletes the key. This is the primitive used by the client

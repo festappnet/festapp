@@ -10,7 +10,7 @@ BEGIN
   SELECT o.id INTO v_target FROM public.occasions o
     WHERE o.id=public.resolve_occasion_link_internal(p_target_occasion_link);
   IF v_actor IS NULL OR v_target IS NULL
-    OR NOT public.get_is_editor_on_occasion(v_target) THEN
+    OR NOT public.can_copy_form_target(v_target) THEN
     RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'sourceFormId',p_source_form_id,'targetOccasion',v_target)::text,'UTF8'),
@@ -18,7 +18,7 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.form.duplicate',v_target,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
-  IF v_source_occasion IS NULL OR NOT(public.get_is_editor_view_on_occasion(v_source_occasion) OR public.get_is_editor_view_on_unit(v_source_unit)) THEN RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
+  IF v_source_occasion IS NULL OR NOT public.can_copy_form_source(v_source_occasion) THEN RAISE insufficient_privilege USING MESSAGE='form copy permission required'; END IF;
   v_form:=public.duplicate_form_to_occasion_internal_v1(
     p_source_form_id,p_target_occasion_link);
   RETURN public.complete_private_inventory_mutation_v1(p_command_id,v_target,

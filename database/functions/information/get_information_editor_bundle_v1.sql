@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_information_editor_bundle_v1(p_occasion bi
 AS $function$
 DECLARE v_information jsonb;
 BEGIN
-  IF NOT public.get_is_editor_view_on_occasion(p_occasion) THEN
+  IF NOT public.can_read_information_editor_bundle(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor view required';
   END IF;
   SELECT COALESCE(jsonb_agg(public.get_information_command_data_v1(i.id)||

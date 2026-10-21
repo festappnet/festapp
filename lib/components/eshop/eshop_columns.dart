@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import '../forms/waitlist_commands.dart';
 import '../forms/order_overview_strings.dart';
@@ -1043,7 +1044,7 @@ class EshopColumns {
                                     .row
                                     .cells[EshopColumnIds.ORDER_ID]
                                     ?.value as int?;
-                                bool isBankAdmin = false;
+                                bool canManageBankTransactions = false;
 
                                 if (orderId != null) {
                                   var transactionObject =
@@ -1053,16 +1054,12 @@ class EshopColumns {
                                       transactionObject.paymentInfo != null) {
                                     var paymentInfo =
                                         transactionObject.paymentInfo!;
-                                    List<int>? accountIds =
-                                        RightsService.bankAccountAdmin();
-
-                                    if (accountIds != null &&
-                                        paymentInfo.bankAccount != null) {
-                                      if (accountIds
-                                          .contains(paymentInfo.bankAccount)) {
-                                        isBankAdmin = true;
-                                      }
-                                    }
+                                    canManageBankTransactions =
+                                        RightsService.hasBankCapability(
+                                      paymentInfo.bankAccount,
+                                      AuthorizationCapabilities
+                                          .bankTransactionsManage,
+                                    );
                                   }
                                 }
 
@@ -1083,7 +1080,8 @@ class EshopColumns {
                                       currency: currency,
                                       variableSymbol: variableSymbol,
                                       paymentInfoId: paymentInfoId,
-                                      isBankAdmin: isBankAdmin,
+                                      canManageBankTransactions:
+                                          canManageBankTransactions,
                                     );
                                   },
                                 );

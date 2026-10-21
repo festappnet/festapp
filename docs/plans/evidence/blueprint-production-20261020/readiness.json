@@ -1,0 +1,63 @@
+{
+  "preparedAt": "2026-10-20T21:19:59.948661+00:00",
+  "tenant": "festapptickets",
+  "domain": "https://vstupenky.online",
+  "integratedMainSha": "ce77a1e40057841bff9abe9f28ba0a4f0c4510dd",
+  "packageSourceSha": "555e3c6e24b603b72030839be717d5f8c75deb37",
+  "packageNpmSha256": "2179ed4858ec326cee95da175cac383a0e0fae20c4afd92036130fd49780dbc6",
+  "conversion": {
+    "plans": 22,
+    "stableSpots": 4084,
+    "organization": 3,
+    "reviewedGeometryAndCatalogMatchCurrentSource": true,
+    "otherTenantDataExcluded": true,
+    "canonicalPreparedText": true,
+    "textResourcesRegisteredOnlyForExactDependencies": true
+  },
+  "verification": {
+    "packageCore": 263,
+    "packageWrapper": {
+      "initialPass": 287,
+      "initialFailure": 15,
+      "existingSkip": 1,
+      "targetedAfterUiContractAlignment": 57,
+      "runtimeChangesForOldUiTestExpectations": false,
+      "obsoleteV1StyleTestsReplacedByCanonicalOwners": true
+    },
+    "packageArchiveConsumerAndExample": true,
+    "hostJavaScript": {
+      "pass": 527,
+      "fail": 0,
+      "existingSkip": 25
+    },
+    "hostFlutter": {
+      "firstBatchPass": 631,
+      "initialFailure": 31,
+      "blueprintRecheckPass": 9,
+      "sharedDefault2Pass": 420,
+      "ticketCommandsPass": 4,
+      "remainingUnrelatedDefault3StaleTransportMocks": 26
+    },
+    "deno": {
+      "firstBatchPass": 44,
+      "firstBatchFailure": 6,
+      "regularFaceFixtureRecheckPass": 9
+    },
+    "sourceAndHostingPolicyPass": 18,
+    "sqlOwnersPass": 8,
+    "realPostgresRaces": 19,
+    "freshForwardPreservesSoldHeldAndReplay": true,
+    "generatedProductionCutoverQualification": true,
+    "publishedMigrationDrift": false,
+    "pwaRendererCacheTestsPass": 7,
+    "candidateCacheBytes": {
+      "core": 23175043,
+      "known": 52733107,
+      "coreLimit": 26214400,
+      "knownLimit": 62914560
+    },
+    "reviewedProductionDocsSqlAndTextDependencies": 22
+  },
+  "releaseIntegrationFix": "Standing capacity passes only canonical pool DTO fields to existing inventory owner. Implicit blueprint offers retain current main hold locks, expiry and receipt recovery. Explicit optional cancellation email stays separate from cancellation command.",
+  "productionWritesPerformed": false
+}

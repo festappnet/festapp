@@ -33,6 +33,7 @@ DECLARE w eshop.waitlist_offers; o eshop.orders; fid bigint; target bigint; ids 
 BEGIN
  SELECT * INTO STRICT w FROM eshop.waitlist_offers WHERE id=(p_payload->>'offerId')::uuid;
  fid:=public.check_waitlist_scope_internal(w.order_id,w.id,p_payload->>'token',p_actor,'accept');
+ PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=w.order_id)]);
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[w.order_id]);
  SELECT * INTO STRICT w FROM eshop.waitlist_offers WHERE id=w.id FOR UPDATE;
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=w.order_id;

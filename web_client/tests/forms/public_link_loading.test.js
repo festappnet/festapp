@@ -61,3 +61,21 @@ test('standalone order route loads only its capability, without a form slug', as
  assert.equal(page.currentLink,'current');
  assert.ok(page.host.classList.contains('order-overview'));
 });
+
+test('embed ignores editor preview and rights while preserving capabilities and reload context', async () => {
+    window.history.replaceState(null, '', '/form/old?embed=1&preview=true#personal');
+    let rights = 0;
+    RightsService.updateAppData = async () => { rights++; };
+    RightsService.canSeeReservations = () => true;
+    DbForms.getFormByLink = async () => new FormModel({ id: 1, link: 'current', fields: [] });
+    const page = host();
+    // JSDOM top-level means no bridge transport, just the same public form lifecycle.
+    page.renderForm = (_, preview) => { assert.equal(preview, false); page.host.textContent = 'Public'; };
+    await page.init('old');
+    assert.equal(rights, 0);
+    assert.equal(window.location.search, '?embed=1&preview=true');
+    RouterService.pushOverlayState('order-preview');
+    assert.equal(window.location.search, '?embed=1&preview=true');
+    assert.equal(window.location.hash, '#order-preview');
+    page.clear();
+});

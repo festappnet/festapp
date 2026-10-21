@@ -4,7 +4,7 @@ DECLARE actor uuid:=auth.uid(); oc bigint; title text; begin_result jsonb; hash 
 BEGIN
  SELECT occasion INTO oc FROM public.client_mutation_receipts WHERE command_id=p_command_id AND actor_id=actor AND command_name='inventory.product.delete';
  IF NOT FOUND THEN SELECT t.occasion INTO oc FROM eshop.products t WHERE id=p_product_id; END IF;
- IF actor IS NULL OR oc IS NULL OR public.get_is_editor_order_on_occasion(oc) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='product editor required'; END IF;
+ IF actor IS NULL OR oc IS NULL OR public.can_write_orders(oc) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='product editor required'; END IF;
  hash:=encode(extensions.digest(convert_to((jsonb_build_object('productId',p_product_id)||CASE WHEN p_expected_version IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('expectedVersion',p_expected_version) END)::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'inventory.product.delete',oc,actor,hash);
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;

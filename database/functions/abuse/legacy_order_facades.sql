@@ -14,4 +14,4 @@ RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS
 $$;
 REVOKE ALL ON FUNCTION public.update_order_and_tickets_to_storno(bigint),public.update_order_and_tickets_to_storno_ws(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.update_order_and_tickets_to_storno(bigint),public.update_order_and_tickets_to_storno_ws(bigint) TO authenticated;
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]),public.update_order_and_tickets_to_storno_ws_internal_v1(bigint),public.delete_order_internal_v1(bigint) FROM service_role;
+REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean),public.update_order_and_tickets_to_storno_ws_internal_v1(bigint),public.delete_order_internal_v1(bigint) FROM service_role;

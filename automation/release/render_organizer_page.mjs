@@ -36,7 +36,7 @@ const content = fs.readFileSync(path.join(root, 'automation/release/organizers/p
 });
 const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
 const title = 'Prodej vstupenek a registrace na akce | ' + tokens.APP_NAME;
-const description = 'Informace pro pořadatele: založení akce, správa objednávek, vstupenky a odbavení. Jak začít se službou vstupenky.online a kde zjistit cenu.';
+const description = 'Pořádáte ples, kulturní akci, tábor nebo kurz? Založte akci na vstupenky.online a spravujte přihlášky, objednávky, vstupenky i odbavení.';
 const builtIndexArg = process.argv.indexOf('--built-index');
 let themeLinks = '';
 let bootstrap = '';

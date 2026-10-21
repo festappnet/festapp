@@ -67,38 +67,65 @@ class _CleaningPageState extends State<CleaningPage> {
   bool _exportingHistory = false;
   bool _deepLinkHandled = false;
   Timer? _pollTimer;
+  int _rightsGeneration = 0;
 
   /// Set when the page renders from the offline cache (live fetch failed);
   /// carries the cache age for the banner. Null = live data.
   DateTime? _cacheFetchedAt;
 
-  bool get _isCrew => RightsService.isCleaningCrew();
+  bool get _isCrew => RightsService.canOpenCleaningCrewWorkspace();
   int get _occasionId => RightsService.currentOccasionId()!;
 
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
+    _restartPolling();
     _loadData();
-    // Live data matters for the crew; poll quietly while the page is open.
+  }
+
+  void _restartPolling() {
+    _pollTimer?.cancel();
     if (_isCrew && !ClientSyncRuntime.isV1Selected) {
       _pollTimer =
           Timer.periodic(_pollInterval, (_) => _loadData(silent: true));
     }
   }
 
+  void _rightsChanged() {
+    _rightsGeneration++;
+    _restartPolling();
+    setState(() {
+      _places = [];
+      _reports = [];
+      _showHistory = false;
+      _notificationsMuted = false;
+      _cacheFetchedAt = null;
+      _loading = false;
+    });
+    if (RightsService.currentOccasionId() != null) _loadData();
+  }
+
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
+    _rightsGeneration++;
     _pollTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _loadData({bool silent = false}) async {
+    final generation = _rightsGeneration;
+    final occasionId = RightsService.currentOccasionId();
+    if (occasionId == null) return;
+    final isCrew = _isCrew;
+    bool current() => mounted && generation == _rightsGeneration;
     if (!shouldLoadLiveCleaningData(
       isClientSyncV1: ClientSyncRuntime.isV1Selected,
-      isCleaningCrew: _isCrew,
+      isCleaningCrew: isCrew,
     )) {
       final cached = await OfflineDataService.getCleaningStatus();
-      if (!mounted) return;
+      if (!current()) return;
       setState(() {
         _places = cached?.places ?? [];
         _reports = [];
@@ -111,13 +138,15 @@ class _CleaningPageState extends State<CleaningPage> {
       return;
     }
     Future<CleaningData> fetch() async {
-      final status = await DbCleaning.getStatus(_occasionId);
+      final status = await DbCleaning.getStatus(occasionId);
       // Refresh-on-read: keep the offline copy of the public statuses fresh.
+      if (!current()) throw StateError("Cleaning context changed");
       await OfflineDataService.saveCleaningStatus(
           status.places, DateTime.now());
+      if (!current()) throw StateError("Cleaning context changed");
       // The crew fetches resolved reports too so the History tab needs no reload.
-      final reports = _isCrew
-          ? await DbCleaning.getReports(_occasionId, includeResolved: true)
+      final reports = isCrew
+          ? await DbCleaning.getReports(occasionId, includeResolved: true)
           : <CleaningReport>[];
       return CleaningData(
           status.places, reports, status.isBlocked, status.notificationsMuted);
@@ -139,7 +168,7 @@ class _CleaningPageState extends State<CleaningPage> {
         // statuses with their age instead. Crew controls need live data and
         // are hidden in this mode. With no cache, keep today's error UI.
         final cached = await OfflineDataService.getCleaningStatus();
-        if (!mounted) return;
+        if (!current()) return;
         if (cached != null) {
           setState(() {
             _places = cached.places;
@@ -150,10 +179,11 @@ class _CleaningPageState extends State<CleaningPage> {
           _maybeHandleDeepLink();
           return;
         }
+        if (!mounted) return;
         await ExceptionHandler.handle(context, error: e);
       }
     }
-    if (!mounted) return;
+    if (!current()) return;
     setState(() {
       if (data != null) {
         _places = data.places;
@@ -223,13 +253,14 @@ class _CleaningPageState extends State<CleaningPage> {
 
   /// Toggles the current user's cleaning-notification opt-out (self-service).
   Future<void> _setNotificationsMuted(bool muted) async {
+    final generation = _rightsGeneration;
     // Optimistic: reflect the switch immediately, revert on failure.
     setState(() => _notificationsMuted = muted);
     try {
       await DbCleaning.setNotificationsMuted(
           occasionId: _occasionId, muted: muted);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _rightsGeneration) return;
       setState(() => _notificationsMuted = !muted);
       ToastHelper.Show(context, CleaningStrings.reportError,
           severity: ToastSeverity.NotOk);
@@ -238,6 +269,9 @@ class _CleaningPageState extends State<CleaningPage> {
 
   /// Crew blocks a repeat offender straight from their report (confirm first).
   Future<void> _blockReporter(CleaningReport report) async {
+    final generation = _rightsGeneration;
+    final occasionId = RightsService.currentOccasionId();
+    if (!_isCrew || occasionId == null) return;
     final userId = report.createdBy;
     if (userId == null) return;
     final name = report.createdByName ?? CleaningStrings.anonymous;
@@ -260,12 +294,13 @@ class _CleaningPageState extends State<CleaningPage> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !mounted || generation != _rightsGeneration)
+      return;
     await ExceptionHandler.guardVoid(
       context,
       futureFunction: () async {
         await DbCleaning.setReporterBlocked(
-          occasionId: _occasionId,
+          occasionId: occasionId,
           userId: userId,
           blocked: true,
         );
@@ -278,6 +313,7 @@ class _CleaningPageState extends State<CleaningPage> {
 
   /// Builds a plain-text export of the whole report history and saves it.
   Future<void> _exportHistory(List<CleaningReport> history) async {
+    if (!_isCrew) return;
     setState(() => _exportingHistory = true);
     try {
       final occasionTitle =

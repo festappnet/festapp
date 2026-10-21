@@ -28,6 +28,54 @@ void main() {
                 as Map<String, dynamic>);
   });
 
+  for (final blueprintEnabled in [false, true]) {
+    testWidgetsWithEnvironment(() => _environment,
+        'order limit follows blueprint when tickets are disabled: $blueprintEnabled',
+        (tester) async {
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          occasion: OccasionModel(
+              isOpen: true,
+              isHidden: false,
+              isPromoted: false,
+              features: [
+            SimpleFeature(
+                code: FeatureConstants.blueprint, isEnabled: blueprintEnabled),
+          ]));
+      addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
+      final ticket = FormFieldDraft(
+          type: FormMetadata.fieldTypeTicket,
+          data: {FormMetadata.maxTickets: 7});
+      final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+            body: SingleChildScrollView(
+                child: Builder(
+                    builder: (context) => TicketEditorWidgets.buildTicketEditor(
+                        context, form, ticket, [], () {}))),
+          )));
+      final limit = find.widgetWithText(
+          TextFormField, FormStrings.labelMaxTicketsPerOrder);
+      expect(limit, blueprintEnabled ? findsOneWidget : findsNothing);
+      if (blueprintEnabled) await tester.enterText(limit, '4');
+      expect(ticket.definition.data?[FormMetadata.maxTickets],
+          blueprintEnabled ? 4 : 1);
+      await _environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+            body: Builder(
+                builder: (context) =>
+                    TicketEditorWidgets.buildTicketEditorReadOnly(
+                        context, form, ticket)),
+          )));
+      expect(find.text(FormStrings.labelMaxTicketsPerOrder),
+          blueprintEnabled ? findsOneWidget : findsNothing);
+      expect(find.text('4'), blueprintEnabled ? findsOneWidget : findsNothing);
+    });
+  }
+
   for (final depositEnabled in [false, true]) {
     testWidgetsWithEnvironment(() => _environment,
         'deposit description menu requires enabled deposit feature: $depositEnabled',

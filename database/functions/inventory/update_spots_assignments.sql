@@ -10,7 +10,7 @@ BEGIN
   ARRAY(SELECT DISTINCT (c->>'resource_id')::bigint FROM jsonb_array_elements(p_changes) c) INTO spot_ids,resource_ids;
  PERFORM public.lock_spot_assignment_scope_internal_v1(spot_ids,resource_ids);
  SELECT min(occasion) INTO oc FROM public.resources WHERE id=ANY(resource_ids);
- IF oc IS NULL OR public.get_is_editor_order_on_occasion(oc) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='inventory editor required'; END IF;
+ IF oc IS NULL OR public.can_write_orders(oc) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='inventory editor required'; END IF;
  IF EXISTS(SELECT 1 FROM public.resources WHERE id=ANY(resource_ids) AND occasion<>oc)
  OR (SELECT count(*) FROM public.resources WHERE id=ANY(resource_ids))<>cardinality(resource_ids)
  OR (SELECT count(*) FROM eshop.spots WHERE id=ANY(spot_ids) AND occasion=oc)<>cardinality(spot_ids) THEN

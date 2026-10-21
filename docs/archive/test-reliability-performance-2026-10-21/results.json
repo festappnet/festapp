@@ -1,0 +1,3491 @@
+{
+  "baseline": {
+    "summary": {
+      "architectureSuccess": false,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 9.423319000052288,
+        "testSeconds": 6.143,
+        "cases": 185,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 36
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 19.379853416001424,
+        "testSeconds": 13.125,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 179.37621954199858,
+        "testSeconds": 177.036,
+        "cases": 1629,
+        "skipped": 0,
+        "failed": 33,
+        "suites": 68
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": false,
+      "success": false,
+      "seconds": 198.83125175000168
+    },
+    "measurement": {
+      "sourceSha256": "e271d899cc23033f6492cfa5030cb6fa421de1b0c7f08a0c3fb8a5bb459c1327",
+      "mainSha": "1c8b5a219cd9d766ad91060ca6ccb4ebf55bc5ca",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        5.6494140625,
+        4.3466796875,
+        4.1435546875
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 1,
+      "observedSeconds": 199.3305550420191,
+      "peakSummedRssBytes": 2507997184,
+      "loadEnd": [
+        4.7666015625,
+        4.365234375,
+        4.17822265625
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 13387,
+        "bodyMs": 755,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 1567,
+        "bodyMs": 474,
+        "frameworkMs": 12,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 1001,
+        "bodyMs": 1424,
+        "frameworkMs": 9,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 1135,
+        "bodyMs": 503,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 1130,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 1044,
+        "bodyMs": 1290,
+        "frameworkMs": 34,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 1285,
+        "bodyMs": 1311,
+        "frameworkMs": 9,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 1096,
+        "bodyMs": 1277,
+        "frameworkMs": 13,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 940,
+        "bodyMs": 141,
+        "frameworkMs": 34,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 886,
+        "bodyMs": 262,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 362,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 731,
+        "bodyMs": 501,
+        "frameworkMs": 11,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 874,
+        "bodyMs": 675,
+        "frameworkMs": 12,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 906,
+        "bodyMs": 1004,
+        "frameworkMs": 25,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 807,
+        "bodyMs": 1312,
+        "frameworkMs": 58,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 1302,
+        "bodyMs": 1005,
+        "frameworkMs": 32,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 1167,
+        "bodyMs": 698,
+        "frameworkMs": 33,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 756,
+        "bodyMs": 352,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 777,
+        "bodyMs": 650,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 806,
+        "bodyMs": 26,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 731,
+        "bodyMs": 618,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 774,
+        "bodyMs": 451,
+        "frameworkMs": 41,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 908,
+        "bodyMs": 388,
+        "frameworkMs": 24,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 828,
+        "bodyMs": 39,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 720,
+        "bodyMs": 256,
+        "frameworkMs": 11,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 1676,
+        "bodyMs": 717,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 4492,
+        "bodyMs": 1355,
+        "frameworkMs": 29,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 993,
+        "bodyMs": 759,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 814,
+        "bodyMs": 797,
+        "frameworkMs": 26,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 713,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 850,
+        "bodyMs": 699,
+        "frameworkMs": 34,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 718,
+        "bodyMs": 17,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 826,
+        "bodyMs": 415,
+        "frameworkMs": 8,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 797,
+        "bodyMs": 1242,
+        "frameworkMs": 22,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 731,
+        "bodyMs": 892,
+        "frameworkMs": 17,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 702,
+        "bodyMs": 19,
+        "frameworkMs": 25,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 758,
+        "bodyMs": 585,
+        "frameworkMs": 22,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 645,
+        "bodyMs": 25,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 721,
+        "bodyMs": 1092,
+        "frameworkMs": 42,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 765,
+        "bodyMs": 590,
+        "frameworkMs": 25,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 1692,
+        "bodyMs": 1166,
+        "frameworkMs": 30,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 1012,
+        "bodyMs": 594,
+        "frameworkMs": 12,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 962,
+        "bodyMs": 645,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 851,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 905,
+        "bodyMs": 589,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 885,
+        "bodyMs": 611,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 347,
+        "bodyMs": 292,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 764,
+        "bodyMs": 956,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 396,
+        "bodyMs": 53,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 951,
+        "bodyMs": 544,
+        "frameworkMs": 23,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 2433,
+        "bodyMs": 12336,
+        "frameworkMs": 23,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 1403,
+        "bodyMs": 1611,
+        "frameworkMs": 28,
+        "cases": 31
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 1172,
+        "bodyMs": 3236,
+        "frameworkMs": 41,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2953,
+        "bodyMs": 7844,
+        "frameworkMs": 26,
+        "cases": 361
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 1162,
+        "bodyMs": 724,
+        "frameworkMs": 54,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1765,
+        "bodyMs": 27663,
+        "frameworkMs": 157,
+        "cases": 308
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1843,
+        "bodyMs": 8109,
+        "frameworkMs": 19,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 882,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 812,
+        "bodyMs": 325,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 924,
+        "bodyMs": 30,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 795,
+        "bodyMs": 7,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 836,
+        "bodyMs": 34,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 804,
+        "bodyMs": 14,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 667,
+        "bodyMs": 124,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 852,
+        "bodyMs": 92,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 822,
+        "bodyMs": 52,
+        "frameworkMs": 41,
+        "cases": 3
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 678,
+        "bodyMs": 17,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 793,
+        "bodyMs": 23,
+        "frameworkMs": 24,
+        "cases": 3
+      }
+    },
+    "failingCases": [
+      "bank_adapter_fixture token_error_view email connection availability for bank 0800",
+      "default_locale_4 unit_presentation_widget unit_commands unit save carries the unit-scoped aggregate version",
+      "default_locale_4 unit_presentation_widget unit_commands unit user deletion uses its dedicated command RPC",
+      "default_locale_4 map_unit map_commands place deletion always uses the canonical map command",
+      "default_locale_4 map_unit map_commands place save always uses the canonical map command",
+      "default_locale_4 map_unit map_commands place save is statically bound and carries aggregate version",
+      "default_locale_4 map_unit map_commands path and place-type commands serialize closed DTOs",
+      "default_locale_4 map_unit map_commands icon creation is bound to the immutable icon command",
+      "default_locale_5 order_projection_widget eshop_unit order_commands order delete uses its dedicated command RPC",
+      "default_locale_5 order_projection_widget eshop_unit order_commands order cancellation uses its dedicated command RPC",
+      "default_locale_5 order_projection_widget inventory_unit inventory_resource_commands resource save carries its optimistic version",
+      "default_locale_5 order_projection_widget inventory_unit inventory_resource_commands resource delete uses the loaded version",
+      "default_locale_5 order_projection_widget inventory_unit inventory_resource_commands pool delete uses the loaded bundle version",
+      "default_locale_5 order_projection_widget inventory_unit spot_commands spot assignments use their dedicated command RPC",
+      "default_locale_5 program_contract schedule_unit exclusive_group_commands exclusive group save is one versioned aggregate command",
+      "default_locale_5 program_contract schedule_unit saved_program_commands saved program command returns the complete authoritative set",
+      "default_locale_5 program_contract schedule_unit saved_program_commands accepts authoritative program and live cache replacements",
+      "default_locale_5 admin_contract cleaning_unit cleaning_commands report command is statically bound and carries its aggregate key",
+      "default_locale_5 admin_contract cleaning_unit cleaning_commands preference command has a dedicated RPC",
+      "default_locale_5 admin_contract news_unit news_commands news update carries the optimistic aggregate version",
+      "default_locale_5 admin_contract news_unit news_commands unversioned edit binds a version only to matching snapshot: Original",
+      "default_locale_5 admin_contract news_unit news_commands unversioned edit binds a version only to matching snapshot: Changed elsewhere",
+      "default_locale_5 admin_contract news_unit news_commands snapshot version binding stops after another concurrent change",
+      "default_locale_5 admin_contract news_unit news_commands news plus notification stays one typed publication command",
+      "information_save_legacy_reader information Save succeeds through canonical RPC with legacy readers",
+      "information_save_legacy_reader conflicts cannot overwrite another editors information",
+      "information_save_legacy_reader inline Information Save persists edited HTML and leaves editing",
+      "event_commands event save uses canonical RPC with legacy readers and preserves version and relations",
+      "blueprint_layout_ui blueprint host history shortcuts survive semantic inspector activation",
+      "default_locale_1 feedback_widget event_feedback_commands anonymous feedback command carries stable client identity",
+      "default_locale_1 feedback_widget event_feedback_commands admin delete targets one feedback row through the sync command",
+      "default_locale_1 user_fields_widget users_unit companion_commands companion create uses the typed command and applies its result",
+      "default_locale_1 user_fields_widget users_unit companion_commands admin assignment uses explicit owner and companion parameters"
+    ]
+  },
+  "canonical-baseline": {
+    "summary": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 6.657949624932371,
+        "testSeconds": 5.81,
+        "cases": 182,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 35
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 13.566147207980976,
+        "testSeconds": 12.637,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 191.1721444579307,
+        "testSeconds": 190.234,
+        "cases": 1621,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 71
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 204.84835087496322
+    },
+    "measurement": {
+      "sourceSha256": "2b656793fd1ee0828daa917b2a310662d408d275b1cbf6de60cbaa17a0b664e0",
+      "mainSha": "35e421e27a26f1d4e4dc45016767669e760e4f48",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        5.650390625,
+        4.46826171875,
+        4.1943359375
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 0,
+      "observedSeconds": 204.9287167500006,
+      "peakSummedRssBytes": 1352007680,
+      "loadEnd": [
+        4.5439453125,
+        4.94677734375,
+        4.50439453125
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/organization/authorization_projection_test.dart": {
+        "loadingMs": 3403,
+        "bodyMs": 380,
+        "frameworkMs": 41,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 1556,
+        "bodyMs": 848,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 1128,
+        "bodyMs": 726,
+        "frameworkMs": 25,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 917,
+        "bodyMs": 995,
+        "frameworkMs": 9,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 1115,
+        "bodyMs": 638,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 1511,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 1054,
+        "bodyMs": 1815,
+        "frameworkMs": 26,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 1164,
+        "bodyMs": 1622,
+        "frameworkMs": 10,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 917,
+        "bodyMs": 1554,
+        "frameworkMs": 13,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 895,
+        "bodyMs": 174,
+        "frameworkMs": 45,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 891,
+        "bodyMs": 280,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 295,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 845,
+        "bodyMs": 392,
+        "frameworkMs": 10,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 974,
+        "bodyMs": 791,
+        "frameworkMs": 45,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 1213,
+        "bodyMs": 1370,
+        "frameworkMs": 57,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 1159,
+        "bodyMs": 841,
+        "frameworkMs": 25,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 767,
+        "bodyMs": 1164,
+        "frameworkMs": 31,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 779,
+        "bodyMs": 823,
+        "frameworkMs": 33,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 920,
+        "bodyMs": 443,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 824,
+        "bodyMs": 741,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/shared/editor_file_drop_region_test.dart": {
+        "loadingMs": 702,
+        "bodyMs": 352,
+        "frameworkMs": 22,
+        "cases": 2
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 689,
+        "bodyMs": 30,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 757,
+        "bodyMs": 653,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 821,
+        "bodyMs": 649,
+        "frameworkMs": 67,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 908,
+        "bodyMs": 728,
+        "frameworkMs": 68,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 1292,
+        "bodyMs": 82,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 1449,
+        "bodyMs": 463,
+        "frameworkMs": 25,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 1161,
+        "bodyMs": 1144,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 927,
+        "bodyMs": 2151,
+        "frameworkMs": 28,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 875,
+        "bodyMs": 961,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 792,
+        "bodyMs": 1979,
+        "frameworkMs": 49,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 750,
+        "bodyMs": 14,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 969,
+        "bodyMs": 1170,
+        "frameworkMs": 53,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 936,
+        "bodyMs": 24,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 1157,
+        "bodyMs": 694,
+        "frameworkMs": 12,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 843,
+        "bodyMs": 2116,
+        "frameworkMs": 33,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 1189,
+        "bodyMs": 1713,
+        "frameworkMs": 33,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 986,
+        "bodyMs": 25,
+        "frameworkMs": 31,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 740,
+        "bodyMs": 709,
+        "frameworkMs": 23,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 959,
+        "bodyMs": 68,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 979,
+        "bodyMs": 1683,
+        "frameworkMs": 68,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 932,
+        "bodyMs": 691,
+        "frameworkMs": 27,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 803,
+        "bodyMs": 864,
+        "frameworkMs": 29,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 973,
+        "bodyMs": 934,
+        "frameworkMs": 16,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 904,
+        "bodyMs": 861,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 765,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 751,
+        "bodyMs": 650,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 725,
+        "bodyMs": 697,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 424,
+        "bodyMs": 471,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 999,
+        "bodyMs": 2858,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 512,
+        "bodyMs": 76,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
+        "loadingMs": 1013,
+        "bodyMs": 1535,
+        "frameworkMs": 29,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 917,
+        "bodyMs": 655,
+        "frameworkMs": 33,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 2626,
+        "bodyMs": 15635,
+        "frameworkMs": 28,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 1032,
+        "bodyMs": 1375,
+        "frameworkMs": 41,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 865,
+        "bodyMs": 3413,
+        "frameworkMs": 37,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2052,
+        "bodyMs": 8082,
+        "frameworkMs": 28,
+        "cases": 361
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 1132,
+        "bodyMs": 989,
+        "frameworkMs": 67,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1606,
+        "bodyMs": 29496,
+        "frameworkMs": 175,
+        "cases": 282
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1552,
+        "bodyMs": 6718,
+        "frameworkMs": 16,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 769,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 815,
+        "bodyMs": 398,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 850,
+        "bodyMs": 39,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 755,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 893,
+        "bodyMs": 38,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 1096,
+        "bodyMs": 43,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 2384,
+        "bodyMs": 202,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 1019,
+        "bodyMs": 107,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 813,
+        "bodyMs": 375,
+        "frameworkMs": 43,
+        "cases": 15
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 702,
+        "bodyMs": 23,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 1405,
+        "bodyMs": 36,
+        "frameworkMs": 34,
+        "cases": 3
+      }
+    },
+    "failingCases": []
+  },
+  "passing-baseline": {
+    "summary": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 8.47902279207483,
+        "testSeconds": 7.653,
+        "cases": 185,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 36
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 15.595854458049871,
+        "testSeconds": 14.349,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 163.9428810001118,
+        "testSeconds": 162.823,
+        "cases": 1604,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 68
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 179.62162712495774
+    },
+    "measurement": {
+      "sourceSha256": "690c76e07dd2adeb7161f0ad4cc9f8e6b2ff1ab95ef495300a03203c4ca0294c",
+      "mainSha": "1c8b5a219cd9d766ad91060ca6ccb4ebf55bc5ca",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        3.98193359375,
+        3.93896484375,
+        3.83642578125
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 0,
+      "observedSeconds": 179.72507037501782,
+      "peakSummedRssBytes": 1542668288,
+      "loadEnd": [
+        4.8125,
+        4.4130859375,
+        4.0615234375
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 6671,
+        "bodyMs": 1007,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 1289,
+        "bodyMs": 857,
+        "frameworkMs": 19,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 1601,
+        "bodyMs": 3779,
+        "frameworkMs": 76,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 2941,
+        "bodyMs": 1184,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 1146,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 1086,
+        "bodyMs": 1336,
+        "frameworkMs": 26,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 865,
+        "bodyMs": 1612,
+        "frameworkMs": 11,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 809,
+        "bodyMs": 1479,
+        "frameworkMs": 15,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 722,
+        "bodyMs": 146,
+        "frameworkMs": 29,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 748,
+        "bodyMs": 353,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 369,
+        "bodyMs": 21,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 1079,
+        "bodyMs": 525,
+        "frameworkMs": 15,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 795,
+        "bodyMs": 672,
+        "frameworkMs": 16,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 739,
+        "bodyMs": 1017,
+        "frameworkMs": 29,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 888,
+        "bodyMs": 1035,
+        "frameworkMs": 22,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 935,
+        "bodyMs": 1327,
+        "frameworkMs": 34,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 850,
+        "bodyMs": 818,
+        "frameworkMs": 43,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 727,
+        "bodyMs": 379,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 711,
+        "bodyMs": 711,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 748,
+        "bodyMs": 29,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 829,
+        "bodyMs": 793,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 802,
+        "bodyMs": 497,
+        "frameworkMs": 42,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 758,
+        "bodyMs": 542,
+        "frameworkMs": 26,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 776,
+        "bodyMs": 39,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 710,
+        "bodyMs": 291,
+        "frameworkMs": 13,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 751,
+        "bodyMs": 634,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 759,
+        "bodyMs": 1696,
+        "frameworkMs": 24,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 838,
+        "bodyMs": 836,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 722,
+        "bodyMs": 821,
+        "frameworkMs": 29,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 646,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 699,
+        "bodyMs": 752,
+        "frameworkMs": 29,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 657,
+        "bodyMs": 15,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 928,
+        "bodyMs": 504,
+        "frameworkMs": 10,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 776,
+        "bodyMs": 1583,
+        "frameworkMs": 23,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 740,
+        "bodyMs": 1210,
+        "frameworkMs": 16,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 1226,
+        "bodyMs": 39,
+        "frameworkMs": 63,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 1610,
+        "bodyMs": 898,
+        "frameworkMs": 53,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 792,
+        "bodyMs": 34,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 856,
+        "bodyMs": 1950,
+        "frameworkMs": 51,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 1309,
+        "bodyMs": 761,
+        "frameworkMs": 31,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 865,
+        "bodyMs": 681,
+        "frameworkMs": 28,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 897,
+        "bodyMs": 2155,
+        "frameworkMs": 18,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 981,
+        "bodyMs": 567,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 771,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 811,
+        "bodyMs": 843,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 783,
+        "bodyMs": 677,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 370,
+        "bodyMs": 334,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 656,
+        "bodyMs": 1490,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 396,
+        "bodyMs": 56,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 794,
+        "bodyMs": 510,
+        "frameworkMs": 23,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 2546,
+        "bodyMs": 12525,
+        "frameworkMs": 25,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 878,
+        "bodyMs": 1239,
+        "frameworkMs": 24,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 1006,
+        "bodyMs": 3354,
+        "frameworkMs": 59,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2014,
+        "bodyMs": 7247,
+        "frameworkMs": 19,
+        "cases": 363
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 782,
+        "bodyMs": 692,
+        "frameworkMs": 52,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1400,
+        "bodyMs": 20779,
+        "frameworkMs": 142,
+        "cases": 280
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1257,
+        "bodyMs": 5956,
+        "frameworkMs": 15,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 696,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 659,
+        "bodyMs": 329,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 649,
+        "bodyMs": 27,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 659,
+        "bodyMs": 7,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 1027,
+        "bodyMs": 36,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 767,
+        "bodyMs": 14,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 989,
+        "bodyMs": 128,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 805,
+        "bodyMs": 83,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 678,
+        "bodyMs": 47,
+        "frameworkMs": 39,
+        "cases": 3
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 690,
+        "bodyMs": 17,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 710,
+        "bodyMs": 22,
+        "frameworkMs": 24,
+        "cases": 3
+      }
+    },
+    "failingCases": []
+  },
+  "current-passing-baseline": {
+    "summary": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 4.756689333007671,
+        "testSeconds": 4.138,
+        "cases": 182,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 35
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 13.038292958051898,
+        "testSeconds": 12.454,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 162.51335991697852,
+        "testSeconds": 161.716,
+        "cases": 1621,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 71
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": true,
+      "seconds": 175.63402662496082
+    },
+    "measurement": {
+      "sourceSha256": "717a9e5ada0dddcac1254f7bdc152fbb69e5f4144defab2dc2f2a421a88c5617",
+      "mainSha": "62238d5e9897936d1f23a348410158d57b03772b",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        4.447265625,
+        4.369140625,
+        4.21875
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 0,
+      "observedSeconds": 175.75559483398683,
+      "peakSummedRssBytes": 1796194304,
+      "loadEnd": [
+        4.96728515625,
+        4.52490234375,
+        4.3017578125
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/organization/authorization_projection_test.dart": {
+        "loadingMs": 2909,
+        "bodyMs": 289,
+        "frameworkMs": 35,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 783,
+        "bodyMs": 788,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 926,
+        "bodyMs": 489,
+        "frameworkMs": 11,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 697,
+        "bodyMs": 878,
+        "frameworkMs": 9,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 1563,
+        "bodyMs": 519,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 643,
+        "bodyMs": 8,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 941,
+        "bodyMs": 1114,
+        "frameworkMs": 26,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 790,
+        "bodyMs": 1368,
+        "frameworkMs": 11,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 771,
+        "bodyMs": 1387,
+        "frameworkMs": 17,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 656,
+        "bodyMs": 128,
+        "frameworkMs": 27,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 667,
+        "bodyMs": 255,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 276,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 699,
+        "bodyMs": 365,
+        "frameworkMs": 11,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 745,
+        "bodyMs": 585,
+        "frameworkMs": 28,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 707,
+        "bodyMs": 1069,
+        "frameworkMs": 41,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 733,
+        "bodyMs": 772,
+        "frameworkMs": 20,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 686,
+        "bodyMs": 1021,
+        "frameworkMs": 28,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 736,
+        "bodyMs": 649,
+        "frameworkMs": 31,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 658,
+        "bodyMs": 396,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 786,
+        "bodyMs": 659,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/shared/editor_file_drop_region_test.dart": {
+        "loadingMs": 1100,
+        "bodyMs": 367,
+        "frameworkMs": 22,
+        "cases": 2
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 901,
+        "bodyMs": 34,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 940,
+        "bodyMs": 579,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 470,
+        "bodyMs": 450,
+        "frameworkMs": 37,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 923,
+        "bodyMs": 387,
+        "frameworkMs": 22,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 664,
+        "bodyMs": 36,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 815,
+        "bodyMs": 248,
+        "frameworkMs": 10,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 654,
+        "bodyMs": 596,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 777,
+        "bodyMs": 1326,
+        "frameworkMs": 24,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 707,
+        "bodyMs": 674,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 702,
+        "bodyMs": 795,
+        "frameworkMs": 28,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 623,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 727,
+        "bodyMs": 741,
+        "frameworkMs": 29,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 672,
+        "bodyMs": 15,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 966,
+        "bodyMs": 435,
+        "frameworkMs": 8,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 739,
+        "bodyMs": 1259,
+        "frameworkMs": 20,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 803,
+        "bodyMs": 1036,
+        "frameworkMs": 23,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 692,
+        "bodyMs": 21,
+        "frameworkMs": 24,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 733,
+        "bodyMs": 507,
+        "frameworkMs": 21,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 743,
+        "bodyMs": 32,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 795,
+        "bodyMs": 1180,
+        "frameworkMs": 41,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 852,
+        "bodyMs": 791,
+        "frameworkMs": 26,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 1134,
+        "bodyMs": 757,
+        "frameworkMs": 29,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 808,
+        "bodyMs": 675,
+        "frameworkMs": 14,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 1601,
+        "bodyMs": 1130,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 1115,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 892,
+        "bodyMs": 864,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 910,
+        "bodyMs": 709,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 421,
+        "bodyMs": 401,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 1035,
+        "bodyMs": 1575,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 435,
+        "bodyMs": 51,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
+        "loadingMs": 716,
+        "bodyMs": 1589,
+        "frameworkMs": 26,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 963,
+        "bodyMs": 873,
+        "frameworkMs": 30,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 3620,
+        "bodyMs": 18324,
+        "frameworkMs": 33,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 1142,
+        "bodyMs": 1693,
+        "frameworkMs": 55,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 1030,
+        "bodyMs": 3310,
+        "frameworkMs": 43,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2290,
+        "bodyMs": 7916,
+        "frameworkMs": 21,
+        "cases": 361
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 873,
+        "bodyMs": 677,
+        "frameworkMs": 45,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1506,
+        "bodyMs": 23687,
+        "frameworkMs": 166,
+        "cases": 282
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1401,
+        "bodyMs": 5766,
+        "frameworkMs": 13,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 777,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 662,
+        "bodyMs": 337,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 725,
+        "bodyMs": 27,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 668,
+        "bodyMs": 6,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 663,
+        "bodyMs": 33,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 664,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 709,
+        "bodyMs": 170,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 730,
+        "bodyMs": 97,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 727,
+        "bodyMs": 395,
+        "frameworkMs": 40,
+        "cases": 15
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 676,
+        "bodyMs": 18,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 676,
+        "bodyMs": 34,
+        "frameworkMs": 24,
+        "cases": 3
+      }
+    },
+    "failingCases": []
+  },
+  "current-main-baseline": {
+    "summary": {
+      "architectureSuccess": false,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 4.234865125035867,
+        "testSeconds": 3.628,
+        "cases": 182,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 35
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 13.435595749993809,
+        "testSeconds": 12.821,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 170.8722725409316,
+        "testSeconds": 169.578,
+        "cases": 1619,
+        "skipped": 0,
+        "failed": 55,
+        "suites": 71
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": false,
+      "success": false,
+      "seconds": 184.39147400006186
+    },
+    "measurement": {
+      "sourceSha256": "3469abd2a6b890235cd963bb39feeae1389385c230156ff2abe5351d5b3480f9",
+      "mainSha": "62238d5e9897936d1f23a348410158d57b03772b",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        3.25244140625,
+        3.8740234375,
+        3.8916015625
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 1,
+      "observedSeconds": 184.46736854093615,
+      "peakSummedRssBytes": 1996537856,
+      "loadEnd": [
+        4.8251953125,
+        4.384765625,
+        4.10302734375
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/organization/authorization_projection_test.dart": {
+        "loadingMs": 4803,
+        "bodyMs": 473,
+        "frameworkMs": 35,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 1200,
+        "bodyMs": 912,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 1129,
+        "bodyMs": 640,
+        "frameworkMs": 14,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 894,
+        "bodyMs": 1190,
+        "frameworkMs": 11,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 848,
+        "bodyMs": 592,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 753,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 937,
+        "bodyMs": 1541,
+        "frameworkMs": 27,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 906,
+        "bodyMs": 1695,
+        "frameworkMs": 11,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 3491,
+        "bodyMs": 1873,
+        "frameworkMs": 20,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 902,
+        "bodyMs": 178,
+        "frameworkMs": 52,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 969,
+        "bodyMs": 319,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 366,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 885,
+        "bodyMs": 425,
+        "frameworkMs": 13,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 731,
+        "bodyMs": 629,
+        "frameworkMs": 30,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 891,
+        "bodyMs": 981,
+        "frameworkMs": 40,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 763,
+        "bodyMs": 819,
+        "frameworkMs": 20,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 668,
+        "bodyMs": 992,
+        "frameworkMs": 26,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 982,
+        "bodyMs": 693,
+        "frameworkMs": 35,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 878,
+        "bodyMs": 394,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 723,
+        "bodyMs": 739,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/shared/editor_file_drop_region_test.dart": {
+        "loadingMs": 686,
+        "bodyMs": 355,
+        "frameworkMs": 20,
+        "cases": 2
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 685,
+        "bodyMs": 27,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 789,
+        "bodyMs": 636,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 699,
+        "bodyMs": 521,
+        "frameworkMs": 42,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 650,
+        "bodyMs": 402,
+        "frameworkMs": 23,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 747,
+        "bodyMs": 40,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 904,
+        "bodyMs": 249,
+        "frameworkMs": 11,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 911,
+        "bodyMs": 592,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 669,
+        "bodyMs": 1501,
+        "frameworkMs": 23,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 755,
+        "bodyMs": 896,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 791,
+        "bodyMs": 948,
+        "frameworkMs": 31,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 1261,
+        "bodyMs": 14,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 1022,
+        "bodyMs": 1069,
+        "frameworkMs": 43,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 872,
+        "bodyMs": 14,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 3253,
+        "bodyMs": 427,
+        "frameworkMs": 9,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 690,
+        "bodyMs": 1263,
+        "frameworkMs": 20,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 739,
+        "bodyMs": 1008,
+        "frameworkMs": 14,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 682,
+        "bodyMs": 20,
+        "frameworkMs": 24,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 723,
+        "bodyMs": 529,
+        "frameworkMs": 28,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 668,
+        "bodyMs": 29,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 645,
+        "bodyMs": 1166,
+        "frameworkMs": 42,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 652,
+        "bodyMs": 553,
+        "frameworkMs": 20,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 651,
+        "bodyMs": 584,
+        "frameworkMs": 23,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 669,
+        "bodyMs": 510,
+        "frameworkMs": 10,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 636,
+        "bodyMs": 543,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 646,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 746,
+        "bodyMs": 663,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 762,
+        "bodyMs": 757,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 378,
+        "bodyMs": 347,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 735,
+        "bodyMs": 1505,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 378,
+        "bodyMs": 46,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
+        "loadingMs": 758,
+        "bodyMs": 1216,
+        "frameworkMs": 21,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 754,
+        "bodyMs": 753,
+        "frameworkMs": 38,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 2533,
+        "bodyMs": 12747,
+        "frameworkMs": 29,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 1126,
+        "bodyMs": 1640,
+        "frameworkMs": 43,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 846,
+        "bodyMs": 3375,
+        "frameworkMs": 36,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 1973,
+        "bodyMs": 12017,
+        "frameworkMs": 56,
+        "cases": 361
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 1864,
+        "bodyMs": 475,
+        "frameworkMs": 123,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 2342,
+        "bodyMs": 23963,
+        "frameworkMs": 221,
+        "cases": 282
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1364,
+        "bodyMs": 7329,
+        "frameworkMs": 21,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 901,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 711,
+        "bodyMs": 318,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 667,
+        "bodyMs": 29,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 641,
+        "bodyMs": 7,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 682,
+        "bodyMs": 34,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 673,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 762,
+        "bodyMs": 139,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 746,
+        "bodyMs": 100,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 732,
+        "bodyMs": 90,
+        "frameworkMs": 41,
+        "cases": 13
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 677,
+        "bodyMs": 24,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 789,
+        "bodyMs": 21,
+        "frameworkMs": 23,
+        "cases": 3
+      }
+    },
+    "failingCases": [
+      "unit role labels never substitute for creation capabilities and revocation hides controls",
+      "offers work without selection and checked waiting uses the real send path",
+      "mixed waiting forms show only selected forms and chosen form sends only its checked recipients",
+      "unselected active waiting registrations open offer preparation",
+      "offer action keeps unsaved row drafts protected",
+      "fully paid sent order opens actual cash dialog and submits an additional payment",
+      "cover-only removal is an unsaved draft; discard restores its original without writes",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bank metadata updates authoring examples independent of load order true",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bank metadata updates authoring examples independent of load order false",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog custom TICKET_ORDER_CONFIRMATION body omits overview until author inserts it",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog custom TICKET_ORDER_STORNO body omits overview until author inserts it",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog wrapper overview action suppresses automatic editor completion",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog card completion stays before signature, including legacy inline=false",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog card completion stays before signature, including legacy inline=true",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog Escape closes mention menu before pristine parent",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog Escape from fullscreen returns inline without losing body draft",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog Escape from focused editor 1 preserves dirty=false guard",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog Escape from focused editor 1 preserves dirty=true guard",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bare rich blocks have no phantom line before signature 1000.0 38",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bare rich blocks have no phantom line before signature 1000.0 112",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bare rich blocks have no phantom line before signature 375.0 38",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog bare rich blocks have no phantom line before signature 375.0 112",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog title suggestion accepts once, undoes, and withdraws after leaving range",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog one parent save owns subject and body across fullscreen",
+      "default_locale_3 forms_contract_widget email_templates email_template_dialog email HTML expands into the same editor as field descriptions",
+      "default_locale_3 forms_contract_widget email_templates email_template_save one save submits subject and body; failed save retains both for retry",
+      "default_locale_3 forms_contract_widget email_templates email_template_save authoritative sender and wrapper retry preserves the draft",
+      "news_page_render create news preserves the occasion in the form URL",
+      "information_save_legacy_reader editor reads content and version together while preserving public songs",
+      "information_save_legacy_reader inline Information Save persists edited HTML and leaves editing",
+      "czech_catalog_3 object_route_dirty_dialog dirty bank dialog can cancel barrier dismissal",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override null on unrelated save and can restore inheritance",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override false on unrelated save and can restore inheritance",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override true on unrelated save and can restore inheritance",
+      "czech_catalog_2 forms_editor_widget form_editor_actions bank guidance handles missing currencies and access (true, true)",
+      "czech_catalog_2 forms_editor_widget form_editor_actions bank guidance handles missing currencies and access (true, false)",
+      "czech_catalog_2 forms_editor_widget form_editor_actions cancel in an embedded form must not remove the administration route",
+      "czech_catalog_2 forms_editor_widget form_editor_actions design discard restores data without closing the tab",
+      "czech_catalog_2 forms_editor_widget form_editor_actions settings discard restores data without closing the tab",
+      "czech_catalog_2 public_link_settings failed rename retains saved address and discard restores it",
+      "blueprint_layout_ui mobile blueprint keeps canvas dominant and all actions reachable 390.0",
+      "blueprint_layout_ui mobile blueprint keeps canvas dominant and all actions reachable 320.0",
+      "blueprint_layout_ui reservation workspace groups selected seats, highlights parent tables and confirms cancellation",
+      "blueprint_layout_ui view transition finishes composing input and guards complete response",
+      "blueprint_layout_ui view transition finishes composing input and guards changed response",
+      "blueprint_layout_ui view transition finishes composing input and guards failed response",
+      "blueprint_layout_ui view transition finishes composing input and guards disposed response",
+      "blueprint_layout_ui setup and existing occasion share plan editor typography graphics and history",
+      "blueprint_layout_ui blueprint inspector renames the single canonical native table",
+      "blueprint_layout_ui blueprint host history shortcuts survive semantic inspector activation",
+      "blueprint_layout_ui blueprint V2 operational Escape and mode switch preserve geometry draft",
+      "blueprint_layout_ui canvas table selection reveals its sidebar row and seats keep their own detail",
+      "blueprint_layout_ui empty blueprint chooses a template and stays in explicit editing after creation",
+      "default_locale_1 feedback_widget event_feedback_admin_content admin feedback grid shows the program-style delete action",
+      "default_locale_1 feedback_widget event_feedback_admin_content admin delete is deferred until changes are saved"
+    ]
+  },
+  "consolidation-normal-failed": {
+    "summary": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 6.960595667012967,
+        "testSeconds": 6.074,
+        "cases": 182,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 35
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 14.140583875006996,
+        "testSeconds": 13.033,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 188.74399799993262,
+        "testSeconds": 187.857,
+        "cases": 1614,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 69
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": false,
+      "seconds": 203.0656093339203
+    },
+    "measurement": {
+      "sourceSha256": "20e1b733ff1d6e9237a56c19f4f6ec76432acb2fcc61a491a5dc92637becefce",
+      "mainSha": "35e421e27a26f1d4e4dc45016767669e760e4f48",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        3.9384765625,
+        4.55517578125,
+        4.3974609375
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 1,
+      "observedSeconds": 203.1409622079227,
+      "peakSummedRssBytes": 1867481088,
+      "loadEnd": [
+        5.677734375,
+        5.2939453125,
+        4.75830078125
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/organization/authorization_projection_test.dart": {
+        "loadingMs": 4339,
+        "bodyMs": 367,
+        "frameworkMs": 40,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 992,
+        "bodyMs": 884,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 848,
+        "bodyMs": 1076,
+        "frameworkMs": 10,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 850,
+        "bodyMs": 666,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 834,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 909,
+        "bodyMs": 1317,
+        "frameworkMs": 26,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 821,
+        "bodyMs": 1581,
+        "frameworkMs": 11,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 1437,
+        "bodyMs": 2980,
+        "frameworkMs": 15,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 979,
+        "bodyMs": 214,
+        "frameworkMs": 49,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 1008,
+        "bodyMs": 393,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 361,
+        "bodyMs": 13,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 870,
+        "bodyMs": 397,
+        "frameworkMs": 11,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 720,
+        "bodyMs": 797,
+        "frameworkMs": 28,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 1253,
+        "bodyMs": 1837,
+        "frameworkMs": 63,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 1031,
+        "bodyMs": 965,
+        "frameworkMs": 31,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 910,
+        "bodyMs": 1564,
+        "frameworkMs": 34,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 1015,
+        "bodyMs": 1018,
+        "frameworkMs": 53,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 859,
+        "bodyMs": 445,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 824,
+        "bodyMs": 804,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/shared/editor_file_drop_region_test.dart": {
+        "loadingMs": 843,
+        "bodyMs": 687,
+        "frameworkMs": 31,
+        "cases": 2
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 1209,
+        "bodyMs": 52,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 924,
+        "bodyMs": 799,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 749,
+        "bodyMs": 614,
+        "frameworkMs": 44,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 857,
+        "bodyMs": 853,
+        "frameworkMs": 35,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 1331,
+        "bodyMs": 58,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 914,
+        "bodyMs": 330,
+        "frameworkMs": 15,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 1149,
+        "bodyMs": 1216,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 1323,
+        "bodyMs": 1436,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 1201,
+        "bodyMs": 1306,
+        "frameworkMs": 51,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 814,
+        "bodyMs": 12,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 861,
+        "bodyMs": 829,
+        "frameworkMs": 32,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 924,
+        "bodyMs": 23,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 1101,
+        "bodyMs": 1222,
+        "frameworkMs": 16,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 1970,
+        "bodyMs": 2097,
+        "frameworkMs": 44,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 861,
+        "bodyMs": 1245,
+        "frameworkMs": 19,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 1152,
+        "bodyMs": 34,
+        "frameworkMs": 39,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 909,
+        "bodyMs": 699,
+        "frameworkMs": 30,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 902,
+        "bodyMs": 33,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 1709,
+        "bodyMs": 1814,
+        "frameworkMs": 98,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 975,
+        "bodyMs": 707,
+        "frameworkMs": 35,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 835,
+        "bodyMs": 803,
+        "frameworkMs": 44,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 832,
+        "bodyMs": 684,
+        "frameworkMs": 14,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 815,
+        "bodyMs": 753,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 780,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 766,
+        "bodyMs": 685,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 732,
+        "bodyMs": 681,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 374,
+        "bodyMs": 373,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 699,
+        "bodyMs": 1657,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 398,
+        "bodyMs": 54,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_file_drop_test.dart": {
+        "loadingMs": 767,
+        "bodyMs": 1375,
+        "frameworkMs": 26,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 769,
+        "bodyMs": 714,
+        "frameworkMs": 37,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 3574,
+        "bodyMs": 14891,
+        "frameworkMs": 40,
+        "cases": 427
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 1059,
+        "bodyMs": 1696,
+        "frameworkMs": 50,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 1532,
+        "bodyMs": 4169,
+        "frameworkMs": 53,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2563,
+        "bodyMs": 10066,
+        "frameworkMs": 35,
+        "cases": 361
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 1237,
+        "bodyMs": 785,
+        "frameworkMs": 56,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1955,
+        "bodyMs": 29624,
+        "frameworkMs": 200,
+        "cases": 282
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1432,
+        "bodyMs": 6143,
+        "frameworkMs": 19,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 870,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 826,
+        "bodyMs": 375,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 743,
+        "bodyMs": 35,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 820,
+        "bodyMs": 10,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 920,
+        "bodyMs": 39,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 941,
+        "bodyMs": 18,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 1018,
+        "bodyMs": 193,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 824,
+        "bodyMs": 112,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 882,
+        "bodyMs": 600,
+        "frameworkMs": 55,
+        "cases": 15
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 961,
+        "bodyMs": 33,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 1329,
+        "bodyMs": 60,
+        "frameworkMs": 51,
+        "cases": 3
+      }
+    },
+    "failingCases": [
+      "waitlist_toolbar (setUpAll)",
+      "waitlist_toolbar (tearDownAll)"
+    ]
+  },
+  "repaired-baseline": {
+    "summary": {
+      "architectureSuccess": true,
+      "core": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 7.192949542077258,
+        "testSeconds": 6.434,
+        "cases": 185,
+        "skipped": 0,
+        "failed": 0,
+        "suites": 36
+      },
+      "adapters": {
+        "exitCode": 0,
+        "success": true,
+        "seconds": 15.735379832913168,
+        "testSeconds": 14.706,
+        "cases": 87,
+        "skipped": 1,
+        "failed": 0,
+        "suites": 25
+      },
+      "flutter": {
+        "exitCode": 1,
+        "success": false,
+        "seconds": 163.50912220904138,
+        "testSeconds": 161.349,
+        "cases": 1604,
+        "skipped": 0,
+        "failed": 1,
+        "suites": 68
+      },
+      "mode": "all",
+      "concurrency": 1,
+      "schedule": "Dart+VM then Flutter",
+      "inventorySuccess": true,
+      "success": false,
+      "seconds": 179.36080199992284
+    },
+    "measurement": {
+      "sourceSha256": "7089da54fb214e6730fcd1901ff5807dfb1458ef79bcbf8c1344b40e47254a84",
+      "mainSha": "1c8b5a219cd9d766ad91060ca6ccb4ebf55bc5ca",
+      "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "loadStart": [
+        3.55078125,
+        3.42724609375,
+        3.64208984375
+      ],
+      "concurrency": 1,
+      "sdk": "{\n  \"frameworkVersion\": \"3.47.2\",\n  \"channel\": \"stable\",\n  \"repositoryUrl\": \"https://github.com/flutter/flutter.git\",\n  \"frameworkRevision\": \"d3b14c876900e553bc736ca19295fc09e3853e8e\",\n  \"frameworkCommitDate\": \"2026-08-26 16:07:51 -0700\",\n  \"engineRevision\": \"a804b261645ef8c13eb3d5c44a5c2fb0340c5539\",\n  \"engineCommitDate\": \"2026-08-26 18:46:13.000Z\",\n  \"engineContentHash\": \"1cf1c4773fb941c4c74a7f8bb144a8837596c0f4\",\n  \"engineBuildDate\": \"2026-08-26 21:23:07.677\",\n  \"dartSdkVersion\": \"3.13.2\",\n  \"devToolsVersion\": \"2.60.0\",\n  \"flutterVersion\": \"3.47.2\",\n  \"flutterRoot\": \"/Users/miakh/fvm/versions/3.47.2\"\n}\n",
+      "exitCode": 1,
+      "observedSeconds": 179.4745223330101,
+      "peakSummedRssBytes": 1411907584,
+      "loadEnd": [
+        3.69921875,
+        3.88134765625,
+        3.81298828125
+      ],
+      "inputsUnchanged": true
+    },
+    "flutterRoots": {
+      "test/components/unit/app_landing_screen_test.dart": {
+        "loadingMs": 6354,
+        "bodyMs": 1432,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/unit/app_landing_card_test.dart": {
+        "loadingMs": 1512,
+        "bodyMs": 1137,
+        "frameworkMs": 26,
+        "cases": 5
+      },
+      "test/components/forms/verification_review_test.dart": {
+        "loadingMs": 1391,
+        "bodyMs": 1470,
+        "frameworkMs": 16,
+        "cases": 7
+      },
+      "test/components/forms/form_read_only_inspection_test.dart": {
+        "loadingMs": 1103,
+        "bodyMs": 652,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/admin_offer_form_link_test.dart": {
+        "loadingMs": 834,
+        "bodyMs": 27,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/forms/form_capacity_settings_test.dart": {
+        "loadingMs": 1506,
+        "bodyMs": 2421,
+        "frameworkMs": 52,
+        "cases": 18
+      },
+      "test/components/forms/organization_identity_test.dart": {
+        "loadingMs": 1100,
+        "bodyMs": 2614,
+        "frameworkMs": 18,
+        "cases": 14
+      },
+      "test/components/forms/waitlist_offers_dialog_test.dart": {
+        "loadingMs": 1243,
+        "bodyMs": 2147,
+        "frameworkMs": 26,
+        "cases": 14
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "loadingMs": 765,
+        "bodyMs": 148,
+        "frameworkMs": 31,
+        "cases": 10
+      },
+      "test/components/images/recovering_image_test.dart": {
+        "loadingMs": 670,
+        "bodyMs": 295,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/bank_sync_contacts_test.dart": {
+        "loadingMs": 292,
+        "bodyMs": 11,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/bank_accounts/connection_refresh_test.dart": {
+        "loadingMs": 856,
+        "bodyMs": 445,
+        "frameworkMs": 12,
+        "cases": 1
+      },
+      "test/components/bank_accounts/bank_account_card_test.dart": {
+        "loadingMs": 741,
+        "bodyMs": 757,
+        "frameworkMs": 11,
+        "cases": 4
+      },
+      "test/components/bank_accounts/order_bank_sync_warning_test.dart": {
+        "loadingMs": 763,
+        "bodyMs": 1116,
+        "frameworkMs": 30,
+        "cases": 26
+      },
+      "test/components/navigation/inventory_navigation_behavior_test.dart": {
+        "loadingMs": 885,
+        "bodyMs": 918,
+        "frameworkMs": 29,
+        "cases": 4
+      },
+      "test/components/navigation/unit_occasion_draft_navigation_test.dart": {
+        "loadingMs": 784,
+        "bodyMs": 1380,
+        "frameworkMs": 33,
+        "cases": 3
+      },
+      "test/components/navigation/admin_breadcrumb_navigation_test.dart": {
+        "loadingMs": 1336,
+        "bodyMs": 867,
+        "frameworkMs": 57,
+        "cases": 1
+      },
+      "test/components/html/html_image_preview_test.dart": {
+        "loadingMs": 777,
+        "bodyMs": 405,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/mcp/mcp_connection_test.dart": {
+        "loadingMs": 704,
+        "bodyMs": 766,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/components/groups/group_save_reconciliation_test.dart": {
+        "loadingMs": 877,
+        "bodyMs": 39,
+        "frameworkMs": 0,
+        "cases": 5
+      },
+      "test/components/users/occasion_team_invitation_test.dart": {
+        "loadingMs": 963,
+        "bodyMs": 738,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/users/login_startup_session_test.dart": {
+        "loadingMs": 782,
+        "bodyMs": 630,
+        "frameworkMs": 72,
+        "cases": 3
+      },
+      "test/components/occasion_settings/advanced_link_visibility_test.dart": {
+        "loadingMs": 753,
+        "bodyMs": 451,
+        "frameworkMs": 27,
+        "cases": 1
+      },
+      "test/components/activities/activity_commands_test.dart": {
+        "loadingMs": 791,
+        "bodyMs": 42,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/order_state_width_test.dart": {
+        "loadingMs": 990,
+        "bodyMs": 352,
+        "frameworkMs": 20,
+        "cases": 1
+      },
+      "test/components/eshop/history_delete_test.dart": {
+        "loadingMs": 769,
+        "bodyMs": 758,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/waitlist_toolbar_test.dart": {
+        "loadingMs": 1446,
+        "bodyMs": 2328,
+        "frameworkMs": 34,
+        "cases": 7
+      },
+      "test/components/eshop/order_delete_availability_test.dart": {
+        "loadingMs": 1478,
+        "bodyMs": 1009,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/eshop/additional_payment_test.dart": {
+        "loadingMs": 892,
+        "bodyMs": 1013,
+        "frameworkMs": 33,
+        "cases": 6
+      },
+      "test/components/eshop/report_number_format_test.dart": {
+        "loadingMs": 992,
+        "bodyMs": 19,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/eshop/empty_orders_test.dart": {
+        "loadingMs": 918,
+        "bodyMs": 798,
+        "frameworkMs": 35,
+        "cases": 2
+      },
+      "test/components/eshop/tickets_tab_data_test.dart": {
+        "loadingMs": 708,
+        "bodyMs": 19,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/eshop/waitlist_history_test.dart": {
+        "loadingMs": 826,
+        "bodyMs": 467,
+        "frameworkMs": 9,
+        "cases": 6
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "loadingMs": 712,
+        "bodyMs": 1501,
+        "frameworkMs": 22,
+        "cases": 13
+      },
+      "test/components/eshop/waitlist_order_detail_test.dart": {
+        "loadingMs": 760,
+        "bodyMs": 1303,
+        "frameworkMs": 20,
+        "cases": 13
+      },
+      "test/components/eshop/ticket_delivery_request_test.dart": {
+        "loadingMs": 788,
+        "bodyMs": 26,
+        "frameworkMs": 30,
+        "cases": 1
+      },
+      "test/components/occasion/occasion_setup_draft_card_test.dart": {
+        "loadingMs": 804,
+        "bodyMs": 662,
+        "frameworkMs": 28,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "loadingMs": 686,
+        "bodyMs": 28,
+        "frameworkMs": 0,
+        "cases": 22
+      },
+      "test/components/occasion/occasion_cover_draft_test.dart": {
+        "loadingMs": 695,
+        "bodyMs": 1708,
+        "frameworkMs": 47,
+        "cases": 1
+      },
+      "test/components/occasion/demo_occasions_section_test.dart": {
+        "loadingMs": 854,
+        "bodyMs": 751,
+        "frameworkMs": 30,
+        "cases": 2
+      },
+      "test/components/occasion/demo_occasion_banner_test.dart": {
+        "loadingMs": 711,
+        "bodyMs": 674,
+        "frameworkMs": 27,
+        "cases": 8
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "loadingMs": 678,
+        "bodyMs": 546,
+        "frameworkMs": 10,
+        "cases": 6
+      },
+      "test/components/occasion/occasion_setup_invitations_test.dart": {
+        "loadingMs": 664,
+        "bodyMs": 556,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/components/occasion/demo_occasion_navigation_test.dart": {
+        "loadingMs": 675,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/components/occasion/occasion_setup_communication_test.dart": {
+        "loadingMs": 798,
+        "bodyMs": 634,
+        "frameworkMs": 0,
+        "cases": 11
+      },
+      "test/components/occasion/occasion_setup_details_test.dart": {
+        "loadingMs": 699,
+        "bodyMs": 742,
+        "frameworkMs": 0,
+        "cases": 7
+      },
+      "test/components/blueprint/blueprint_mobile_pan_test.dart": {
+        "loadingMs": 366,
+        "bodyMs": 380,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_editor_feedback_test.dart": {
+        "loadingMs": 769,
+        "bodyMs": 1549,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/components/blueprint/blueprint_table_seating_test.dart": {
+        "loadingMs": 741,
+        "bodyMs": 48,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/components/blueprint/blueprint_legend_test.dart": {
+        "loadingMs": 829,
+        "bodyMs": 548,
+        "frameworkMs": 27,
+        "cases": 6
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "loadingMs": 2473,
+        "bodyMs": 11792,
+        "frameworkMs": 24,
+        "cases": 422
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "loadingMs": 930,
+        "bodyMs": 1483,
+        "frameworkMs": 28,
+        "cases": 32
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "loadingMs": 916,
+        "bodyMs": 2804,
+        "frameworkMs": 41,
+        "cases": 20
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "loadingMs": 2039,
+        "bodyMs": 6427,
+        "frameworkMs": 20,
+        "cases": 363
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "loadingMs": 912,
+        "bodyMs": 1055,
+        "frameworkMs": 59,
+        "cases": 6
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "loadingMs": 1965,
+        "bodyMs": 22750,
+        "frameworkMs": 151,
+        "cases": 280
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "loadingMs": 1226,
+        "bodyMs": 5397,
+        "frameworkMs": 20,
+        "cases": 153
+      },
+      "test/past_occasion_years_test.dart": {
+        "loadingMs": 703,
+        "bodyMs": 9,
+        "frameworkMs": 0,
+        "cases": 2
+      },
+      "test/startup/startup_language_test.dart": {
+        "loadingMs": 710,
+        "bodyMs": 304,
+        "frameworkMs": 0,
+        "cases": 10
+      },
+      "test/startup/public_occasion_scope_test.dart": {
+        "loadingMs": 655,
+        "bodyMs": 32,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/platform_request_headers_test.dart": {
+        "loadingMs": 689,
+        "bodyMs": 7,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/services/bounded_database_opener_test.dart": {
+        "loadingMs": 655,
+        "bodyMs": 33,
+        "frameworkMs": 0,
+        "cases": 3
+      },
+      "test/services/last_administration_context_test.dart": {
+        "loadingMs": 675,
+        "bodyMs": 15,
+        "frameworkMs": 0,
+        "cases": 6
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "loadingMs": 678,
+        "bodyMs": 122,
+        "frameworkMs": 0,
+        "cases": 9
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "loadingMs": 704,
+        "bodyMs": 83,
+        "frameworkMs": 0,
+        "cases": 1
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "loadingMs": 748,
+        "bodyMs": 48,
+        "frameworkMs": 38,
+        "cases": 3
+      },
+      "test/data_services/client_sync/client_command_activation_test.dart": {
+        "loadingMs": 710,
+        "bodyMs": 18,
+        "frameworkMs": 0,
+        "cases": 4
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "loadingMs": 887,
+        "bodyMs": 32,
+        "frameworkMs": 34,
+        "cases": 3
+      }
+    },
+    "failingCases": [
+      "editor error floats at bottom center and can be dismissed without moving content"
+    ]
+  },
+  "finalState": {
+    "status": "experiment-not-retained",
+    "baseSha": "35e421e27a26f1d4e4dc45016767669e760e4f48",
+    "finalSourceSha256": "2b656793fd1ee0828daa917b2a310662d408d275b1cbf6de60cbaa17a0b664e0",
+    "matchesPassingCanonicalBaseline": true,
+    "reusedPassingReceipt": "measurements/canonical-baseline/summary.json",
+    "reason": "Two removed root loads cost 2055ms, about 1% of total; consolidation adds shared timezone lifecycle coupling. No stable whole-suite benefit justifies retaining it. All final source inputs exactly match the already passing complete canonical baseline; do not rerun that gate for unchanged inputs.",
+    "normalExperimentSuccess": true,
+    "reverseExperimentSuccess": true,
+    "retainedRootMoves": 0,
+    "stableSpeedupClaimed": false,
+    "performanceTargetMet": false,
+    "patchSha256": "d79051c3299fdb6f83a7b234cdf57594c7ebf92da28c5ddcd4646b56791f1cb9"
+  },
+  "scope": {
+    "finalSourceCommit": "35e421e27a26f1d4e4dc45016767669e760e4f48",
+    "branch": "task/test-reliability-performance-20261021",
+    "productionOperationsByThisTask": false,
+    "commitsOrPushesByThisTask": false,
+    "liveFontOrAuthJourneyCertified": false,
+    "performanceTargetMet": false,
+    "stableSpeedupClaimed": false
+  }
+}

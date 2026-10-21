@@ -1,7 +1,7 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/app_management/app_management_strings.dart';
@@ -298,9 +298,10 @@ class _InstallPageState extends State<InstallPage> {
                             ),
                             const SizedBox(width: 8.0),
                             TextButton.icon(
-                              onPressed: () {
-                                Clipboard.setData(
-                                    ClipboardData(text: _urlController.text));
+                              onPressed: () async {
+                                if (!await CopyButton.copy(
+                                        context, _urlController.text) ||
+                                    !context.mounted) return;
                                 ToastHelper.Show(
                                     context, CommonStrings.copiedToClipboard);
                               },

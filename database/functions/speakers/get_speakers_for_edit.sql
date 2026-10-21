@@ -9,7 +9,7 @@ DECLARE
     v_topics   JSONB;
 BEGIN
     -- Admin read: all speakers and topics, including hidden.
-    IF NOT public.get_is_editor_view_on_occasion(p_occasion) THEN
+    IF NOT public.can_read_speakers_editor(p_occasion) THEN
         RETURN jsonb_build_object('code', 403);
     END IF;
 

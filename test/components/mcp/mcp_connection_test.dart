@@ -1,3 +1,4 @@
+import 'dart:async';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +90,7 @@ void main() {
     FilledButton approve() => tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'McpConnection.approve'));
     expect(approve().onPressed, isNull);
-    await tester.tap(find.byType(CheckboxListTile));
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Test event'));
     await tester.pump();
     expect(approve().onPressed, isNotNull);
     expect(calls, 1);
@@ -108,6 +109,95 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('McpConnection.error'), findsOneWidget);
     expect(find.text('McpConnection.approve'), findsNothing);
+  });
+  testWidgets(
+    'select all follows partial selection and does not approve access',
+    (tester) async {
+      final approval = Completer<Map<String, dynamic>>();
+      var approvals = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: McpConnectionPage(
+            request: List.filled(43, 'r').join(),
+            isLoggedIn: () => true,
+            accountEmail: AppConfig.getUserPrefix('fixture@invalid'),
+            requester: (_, operation, selected) async {
+              if (operation == 'details')
+                return {
+                  'client': 'Codex',
+                  'occasions': [
+                    {'id': 7, 'title': 'First event'},
+                    {'id': 8, 'title': 'Second event'},
+                  ],
+                };
+              approvals++;
+              expect(operation, 'approve');
+              expect(selected, {'type':'occasions','occasionIds':[7,8]});
+              return approval.future;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final all = find.byKey(const ValueKey('mcp-select-all'));
+      bool? allValue() => tester.widget<CheckboxListTile>(all).value;
+      FilledButton approve() => tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'McpConnection.approve'),
+      );
+      expect(allValue(), false);
+      expect(approve().onPressed, isNull);
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'First event'));
+      await tester.pump();
+      expect(allValue(), isNull);
+      await tester.tap(all);
+      await tester.pump();
+      expect(allValue(), true);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, 'Second event'),
+            )
+            .value,
+        true,
+      );
+      expect(approvals, 0);
+      await tester.tap(all);
+      await tester.pump();
+      expect(allValue(), false);
+      expect(approve().onPressed, isNull);
+      await tester.tap(all);
+      await tester.pump();
+      await tester.ensureVisible(find.text('McpConnection.approve'));
+      await tester.tap(find.text('McpConnection.approve'));
+      await tester.pump();
+      expect(approvals, 1);
+      expect(tester.widget<CheckboxListTile>(all).onChanged, isNull);
+      approval.completeError(StateError('fixture rejection'));
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets('empty eligible list has no select-all control', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: McpConnectionPage(
+          request: List.filled(43, 'r').join(),
+          isLoggedIn: () => true,
+          accountEmail: AppConfig.getUserPrefix('fixture@invalid'),
+          requester: (_, __, ___) async => {'client': 'Codex', 'occasions': []},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('mcp-select-all')), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'McpConnection.approve'),
+          )
+          .onPressed,
+      isNull,
+    );
   });
   testWidgets(
       'native completion stays on the tenant and waits for verified exchange',
@@ -144,7 +234,7 @@ void main() {
       },
     )));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CheckboxListTile));
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Test event'));
     await tester.pump();
     await tester.ensureVisible(find.text('McpConnection.approve'));
     await tester.tap(find.text('McpConnection.approve'));
@@ -208,15 +298,14 @@ void main() {
         tester.widget<CheckboxListTile>(find.byType(CheckboxListTile));
     expect(checkbox.value, false);
     await tester.ensureVisible(find.byType(CheckboxListTile));
-    await tester.tap(find.byType(CheckboxListTile));
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'McpConnection.allowCreate'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('McpConnection.approve'));
     await tester.tap(find.text('McpConnection.approve'));
     await tester.pumpAndSettle();
     expect(approved, {'type': 'unit', 'unitId': 3, 'canCreateOccasions': true});
     expect(callback.closed, true);
-  });
-  testWidgets(
+  });  testWidgets(
       'occasions are grouped by unit and sorted without broadening selection',
       (tester) async {
     Map<String, dynamic>? approved;

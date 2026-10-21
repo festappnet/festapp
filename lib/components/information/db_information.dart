@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/information/information_model.dart';
@@ -89,7 +90,8 @@ class DbInformation {
 
     var infoList = List<InformationModel>.from(
         data.map((x) => InformationModel.fromJson(x)));
-    if (RightsService.isEditor()) {
+    if (RightsService.hasCapability(
+        AuthorizationCapabilities.informationWrite)) {
       // The inline writer must freeze content and its version from one read.
       // Keep other information types in the shared public/offline catalog.
       final editable = await getAllInformationForDataGrid();

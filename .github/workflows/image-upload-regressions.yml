@@ -27,6 +27,9 @@ on:
       - 'lib/components/schedule/**'
       - 'lib/components/speakers/**'
       - 'lib/components/email_templates/**'
+      - 'test/components/images/**'
+      - 'test/components/html/**'
+      - 'test/components/ticket_layout/**'
       - '.github/workflows/image-upload-regressions.yml'
 permissions:
   contents: read
@@ -35,14 +38,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: workers/image-worker/package-lock.json
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: workers/image-worker
-      - run: npm run typecheck && npm run test:unit
+      - run: pnpm run typecheck && pnpm run test:unit
         working-directory: workers/image-worker
   client-contract:
     runs-on: ubuntu-latest
@@ -65,7 +71,7 @@ jobs:
       - run: fvm flutter pub get
       - run: fvm dart test test_dart/adapters/image_control_client_test.dart
       - run: >-
-          fvm flutter test --no-pub --concurrency=2
+          fvm flutter test --no-pub --concurrency=1
           test/components/images/image_upload_contract_test.dart
           test/components/html/html_media_service_cases.dart
           test/components/ticket_layout/ticket_layout_cases.dart
@@ -73,5 +79,5 @@ jobs:
           test/components/ticket_layout/ticket_canvas_selection_cases.dart
           test/widgets/app_text_selection_cases.dart
       - run: >-
-          fvm flutter test --no-pub --platform chrome
-          test/components/html/html_image_preview_test.dart
+          fvm flutter test --no-pub --concurrency=1 --platform chrome
+          test/components/html/html_image_preview_cases.dart

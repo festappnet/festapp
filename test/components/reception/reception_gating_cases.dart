@@ -30,7 +30,7 @@ void main() {
       occasion: _occasion(false),
       occasionUser: OccasionUserModel(isReceptionist: true),
     );
-    expect(RightsService.isReceptionist(), isTrue);
+    expect(RightsService.currentOccasionUser()?.isReceptionist == true, isTrue);
     expect(RightsService.canUseReception(), isFalse);
   });
 
@@ -38,14 +38,20 @@ void main() {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       occasion: _occasion(true),
       occasionUser: OccasionUserModel(isReceptionist: true),
+      capabilities: const {'reception.use': true},
     );
     expect(RightsService.canUseReception(), isTrue);
 
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
       occasion: _occasion(true),
       occasionUser: OccasionUserModel(isManager: true),
+      capabilities: const {
+        'reception.use': true,
+        'reception.participants.manage': true
+      },
     );
-    expect(RightsService.isReceptionist(), isFalse);
+    expect(
+        RightsService.currentOccasionUser()?.isReceptionist == true, isFalse);
     expect(RightsService.canUseReception(), isTrue);
     expect(RightsService.canManageReceptionParticipants(), isTrue);
   });
@@ -63,6 +69,7 @@ void main() {
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel.fromJson({
       'code': 200,
       'client_sync_v1': true,
+      'capabilities': {'reception.use': true},
       'occasion': {
         'id': 643,
         'link': 'csmostrava2026',
@@ -78,7 +85,7 @@ void main() {
       },
     });
 
-    expect(RightsService.isReceptionist(), isTrue);
+    expect(RightsService.currentOccasionUser()?.isReceptionist == true, isTrue);
     expect(RightsService.canUseReception(), isTrue);
   });
 }

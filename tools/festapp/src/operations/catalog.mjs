@@ -221,9 +221,10 @@ export class Operations {
         }
     }
     async inspect(client, id) {
+        const scope = this.owner.delegatedContext?.();
         const { data, error } = await client.rpc(
-            'get_ticket_layout_for_authoring_v1',
-            { p_occasion: id },
+            scope ? 'get_delegated_ticket_layout_for_authoring_v1' : 'get_ticket_layout_for_authoring_v1',
+            { p_occasion: id, ...(scope ? { p_organization: scope.organizationId, p_unit: scope.unitId } : {}) },
         );
         upstream(error);
         const parsed = projection.safeParse(data);
@@ -268,7 +269,6 @@ export class Operations {
             const args = parsed.data;
             await this.owner.authorizeOperation?.(id, args);
             return await this.owner.authorized(async (client, context) => {
-                await this.owner.authorizeContext?.(id, args, client);
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
                 let data;
@@ -280,7 +280,7 @@ export class Operations {
                         writesEnabled: this.writeReady || this.owner.allowedOperations?.includes('occasions.create') === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
-                else if (id === 'occasions.create') data = await createOccasion(client, this.owner.profile, args);
+                else if (id === 'occasions.create') data = await createOccasion(client, this.owner.profile, args, { delegated: Boolean(this.owner.delegatedContext) });
                 else if (id === 'ticket_layouts.save') {
                     await this.inspect(client, args.occasionId); // Permission only; never replace the original version.
                     data = await this.layoutSave.save(client, context, args);

@@ -63,15 +63,14 @@ cp "$PROJECT_ROOT/web/index.html"                  "$TMP_ROOT/web/index.html"
 # Minimal pubspec + package.json so the earlier steps of the script do not warn-fail.
 printf 'name: festapp\nversion: 0.0.0+1\n' > "$TMP_ROOT/pubspec.yaml"
 printf '{\n  "name": "web_client",\n  "version": "0.0.0"\n}\n' > "$TMP_ROOT/web_client/package.json"
-printf '{\n  "name": "web_client",\n  "version": "0.0.0",\n  "lockfileVersion": 3,\n  "packages": {"": {"name": "web_client", "version": "0.0.0"}}\n}\n' \
-  > "$TMP_ROOT/web_client/package-lock.json"
+printf "lockfileVersion: '9.0'\nimporters: {}\n" > "$TMP_ROOT/web_client/pnpm-lock.yaml"
 
 ( cd "$TMP_ROOT" && node automation/configure_version.js 1.2.3+456 > configure.log 2>&1 ) || {
     echo "  FAIL: configure_version.js exited non-zero. Log:"; cat "$TMP_ROOT/configure.log"; fail=1;
 }
 assert_contains "$TMP_ROOT/web/index.html" 'window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";'
 assert_contains "$TMP_ROOT/web_client/package.json" '"version": "1.2.3"'
-assert_contains "$TMP_ROOT/web_client/package-lock.json" '"version": "1.2.3"'
+assert_contains "$TMP_ROOT/web_client/pnpm-lock.yaml" "lockfileVersion: '9.0'"
 
 # A fresh HTML document may still be controlled by the previous app-shell
 # worker. The runtime updater must compare both versions even when the network
@@ -92,6 +91,8 @@ echo
 echo "--- emit_version_manifest.sh writes festapp-version.json + stamped main ---"
 
 BUILD_DIR="$TMP_ROOT/build/web"
+mkdir -p "$BUILD_DIR/assets"
+cp -R "$PROJECT_ROOT/assets/translations" "$BUILD_DIR/assets/"
 mkdir -p "$BUILD_DIR/web-assets"
 write_client_sync_fixture() {
     node --input-type=module - "$1" "$2" "$BUILD_DIR/client-sync-config.json" <<'NODE'
@@ -246,8 +247,33 @@ fi
 # A completed transition bundle must bind the entire canonical profile. Merely
 # changing the source organization after compilation must invalidate both JS
 # artifacts through the profile fingerprint.
+# Environment overrides must retain the selected tenant's production default.
+BAD_APP_ROOT="$TMP_ROOT/bad-app-default"
+mkdir -p "$BAD_APP_ROOT/automation" "$BAD_APP_ROOT/lib"
+cp "$PROJECT_ROOT/automation/project.conf" "$BAD_APP_ROOT/automation/project.conf"
+cp "$PROJECT_ROOT/lib/app_config.dart" "$BAD_APP_ROOT/lib/app_config.dart"
+python3 - "$BAD_APP_ROOT" <<'BAD_DEFAULT'
+from pathlib import Path
+import re, sys
+root = Path(sys.argv[1])
+expected = re.search(r'^IS_APP_SUPPORTED=(true|false)$', (root / 'automation/project.conf').read_text(), re.M)[1]
+wrong = 'false' if expected == 'true' else 'true'
+p = root / 'lib/app_config.dart'
+p.write_text(re.sub(r"(FESTAPP_APP_SUPPORTED', defaultValue: )(true|false)", lambda m: m[1] + wrong, p.read_text()))
+BAD_DEFAULT
+if node "$PROJECT_ROOT/automation/verify_web_build.mjs" "$BUILD_DIR" "1.2.3+456" \
+    "$BAD_APP_ROOT/automation/project.conf" cloudflare > "$TMP_ROOT/bad-app-default.log" 2>&1; then
+    echo "  FAIL: build gate accepted the wrong app-supported default"; fail=1
+elif grep -Fq 'generated Flutter isAppSupported differs from project.conf' "$TMP_ROOT/bad-app-default.log"; then
+    echo "  ok: build gate rejects the wrong app-supported default"
+else
+    echo "  FAIL: app-supported default was rejected for the wrong reason"; fail=1
+fi
+
 ACTIVATION_ROOT="$TMP_ROOT/activation"
 mkdir -p "$ACTIVATION_ROOT/automation" "$ACTIVATION_ROOT/lib"
+mkdir -p "$ACTIVATION_ROOT/assets"
+cp -R "$PROJECT_ROOT/assets/translations" "$ACTIVATION_ROOT/assets/"
 cp "$PROJECT_ROOT/automation/project.conf" "$ACTIVATION_ROOT/automation/project.conf"
 cp "$PROJECT_ROOT/lib/app_config.dart" "$ACTIVATION_ROOT/lib/app_config.dart"
 CANONICAL_KEY="$(sed -n 's/^BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY=//p' \

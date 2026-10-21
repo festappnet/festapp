@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:festapp_core/sync.dart';
 
 import 'dart:async';
@@ -140,10 +141,20 @@ class ClientCommandTransport {
             frozen,
             result,
             resolvedCommandId,
-            binding!,
+            binding,
           );
         }
+        if (result is Map &&
+            result['status'] == 'rejected' &&
+            result['code'] == 403) {
+          await RightsService.refreshAfterAuthorizationDenial();
+        }
         return result;
+      } on PostgrestException catch (error) {
+        if (error.code == '42501') {
+          await RightsService.refreshAfterAuthorizationDenial(error: error);
+        }
+        rethrow;
       } on TimeoutException {
         if (attempt == maxAttempts) rethrow;
       } on http.ClientException {

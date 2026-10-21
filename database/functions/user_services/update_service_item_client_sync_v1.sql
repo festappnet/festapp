@@ -10,7 +10,7 @@ BEGIN
   IF v_actor IS NULL OR p_type NOT IN ('food','accommodation')
     OR nullif(btrim(p_code),'') IS NULL OR length(p_code)>100
     OR length(COALESCE(p_title,''))>500
-    OR NOT public.get_is_manager_on_occasion(p_occasion) THEN
+    OR NOT public.can_write_service_items(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion manager required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',p_occasion,'type',p_type,'code',p_code,'title',p_title,

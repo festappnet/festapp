@@ -85,7 +85,7 @@ CREATE OR REPLACE FUNCTION public.get_unit_abuse_policy_v1(p_unit bigint) RETURN
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_org bigint;
 BEGIN
- IF auth.uid() IS NULL OR NOT (public.get_is_manager_on_unit(p_unit) OR public.get_is_editor_on_unit(p_unit)) THEN
+ IF auth.uid() IS NULL OR NOT public.can_read_unit_abuse_policy(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='unit editor required'; END IF;
  SELECT organization INTO v_org FROM public.units WHERE id=p_unit;
  RETURN jsonb_build_object('creation',public.abuse_effective_rules_v1('occasion.creation',p_unit,v_org),

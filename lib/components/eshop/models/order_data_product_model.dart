@@ -5,6 +5,7 @@ class OrderDataProductModel {
   final String? title;
   final String? typeTitle;
   final String? spotTitle;
+  final String? spotGroupTitle;
   final String? currencyCode;
 
   OrderDataProductModel({
@@ -14,6 +15,7 @@ class OrderDataProductModel {
     this.title,
     this.typeTitle,
     this.spotTitle,
+    this.spotGroupTitle,
     this.currencyCode,
   });
 
@@ -27,6 +29,7 @@ class OrderDataProductModel {
       title: json['title'],
       typeTitle: json['type_title'],
       spotTitle: json['spot_title'],
+      spotGroupTitle: json['spot_group_title'],
       currencyCode: json['currency_code'],
     );
   }

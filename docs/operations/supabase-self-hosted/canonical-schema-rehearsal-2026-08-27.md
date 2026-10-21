@@ -1,5 +1,9 @@
 # Canonical schema rehearsal — 2026-08-27
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
 The repository-owned canonical schema is now built on the isolated Hetzner
 rehearsal host. This run did not copy production rows, identities or Storage
 objects and did not change DNS or either cloud source.

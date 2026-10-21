@@ -1,8 +1,9 @@
 FROM node:24.20.0-bookworm-slim@sha256:ba849c60be29959425b8734d57b8b4b7d56f98edd9504c9af091d5281095a71e
 ENV NODE_ENV=production
 WORKDIR /app
-COPY tools/festapp/package.json tools/festapp/package-lock.json ./tools/festapp/
-RUN npm ci --prefix tools/festapp --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
+COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-workspace.yaml ./tools/festapp/
+RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
+RUN pnpm --dir tools/festapp install --frozen-lockfile --prod --ignore-scripts
 COPY tools/festapp/src ./tools/festapp/src
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
 USER node

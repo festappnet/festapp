@@ -6,10 +6,7 @@ DECLARE o public.occasions; privileged boolean;
 BEGIN
  SELECT * INTO o FROM public.occasions WHERE id=p_occasion;
  IF NOT FOUND THEN RAISE insufficient_privilege USING MESSAGE='occasion unavailable'; END IF;
- privileged := auth.uid() IS NOT NULL AND (
-   public.get_is_editor_view_on_occasion(o.id)
-   OR public.get_is_manager_on_occasion(o.id)
-   OR public.get_is_admin_on_occasion(o.id));
+ privileged := public.can_read_occasion_editor_data(o.id);
  IF public.is_demo_occasion(o.id) AND NOT public.can_read_demo_occasion(o.id) THEN
    RAISE insufficient_privilege USING MESSAGE='occasion unavailable';
  END IF;

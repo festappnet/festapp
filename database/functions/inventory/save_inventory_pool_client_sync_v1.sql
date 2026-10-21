@@ -12,7 +12,7 @@ DECLARE
   v_product_ids bigint[]; v_product_id bigint;
   v_actor_private_revision bigint; v_actor_private_payload jsonb;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_order_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_orders(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion order editor required';
   END IF;
   IF p_bundle IS NULL OR jsonb_typeof(p_bundle)<>'object'

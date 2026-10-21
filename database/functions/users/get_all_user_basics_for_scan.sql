@@ -12,9 +12,7 @@ BEGIN
   -- 1. Validate Code & Get Occasion AND Organization ID
   -----------------------------------------------------
   SELECT o.id, o.organization INTO oid, org_id
-  FROM public.occasions o
-  JOIN public.occasions_hidden oh ON o.occasion_hidden = oh.id
-  WHERE oh.secret = scan_code
+  FROM public.get_scanner_occasion_for_scan_code_internal(scan_code) o
   LIMIT 1;
 
   -- Security Check: If ID is null, the code is invalid

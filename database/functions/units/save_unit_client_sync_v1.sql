@@ -7,7 +7,7 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_version bigint;
   v_before jsonb; v_after jsonb; v_commit public.client_commits%ROWTYPE;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_manager_on_unit(p_unit) THEN
+  IF v_actor IS NULL OR NOT public.can_manage_unit_configuration(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   IF p_unit_data IS NULL OR jsonb_typeof(p_unit_data)<>'object'
     OR EXISTS (SELECT 1 FROM jsonb_object_keys(p_unit_data) key

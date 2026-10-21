@@ -1,14 +1,12 @@
+import { AuthorizationCapabilities } from "../_shared/authorizationCapabilities.ts";
 import type { DeliverEmailInput } from "../_shared/emailDelivery.ts";
 
 export type TeamAccess = {
+  capabilities?: Readonly<Record<string, unknown>>;
   is_editor?: boolean;
   is_editor_view?: boolean;
   is_manager?: boolean;
 };
-export function hasTeamAccess(access: TeamAccess): boolean {
-  return access.is_editor === true || access.is_editor_view === true ||
-    access.is_manager === true;
-}
 function escape(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(
     ">",
@@ -36,7 +34,7 @@ export async function sendTeamAccessNotice(input: {
   authorize(): Promise<unknown>;
   deliver(input: DeliverEmailInput & { dedupeKey: string }): Promise<unknown>;
 }): Promise<void> {
-  if (!hasTeamAccess(input.access)) throw new Error("not_a_team_member");
+  if (input.access.capabilities?.[AuthorizationCapabilities.emailsTeamAccessNotice] !== true) throw new Error("not_a_team_member");
   await deps.authorize();
   const base = new URL(input.defaultUrl);
   if (

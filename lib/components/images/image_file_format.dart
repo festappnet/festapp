@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 /// Formats accepted by the image upload contract, recognized from bytes.
 enum ImageFileFormat {
+  svg('image/svg+xml', 'svg'),
   png('image/png', 'png'),
   jpeg('image/jpeg', 'jpg'),
   gif('image/gif', 'gif'),
@@ -11,7 +13,7 @@ enum ImageFileFormat {
   final String mime;
   final String extension;
 
-  static ImageFileFormat detect(Uint8List bytes) {
+  static ImageFileFormat detect(Uint8List bytes, {bool allowSvg = false}) {
     bool matches(int offset, List<int> signature) =>
         bytes.length >= offset + signature.length &&
         signature.indexed
@@ -23,6 +25,8 @@ enum ImageFileFormat {
         matches(0, [0x47, 0x49, 0x46, 0x38, 0x39, 0x61])) return gif;
     if (matches(0, [0x52, 0x49, 0x46, 0x46]) &&
         matches(8, [0x57, 0x45, 0x42, 0x50])) return webp;
+    if (allowSvg && RegExp(r'<svg(?:\s|>)', caseSensitive: false).hasMatch(
+        utf8.decode(bytes.take(2048).toList(), allowMalformed: true))) return svg;
     throw FormatException('Unsupported or unrecognized image bytes');
   }
 }

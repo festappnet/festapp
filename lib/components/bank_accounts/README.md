@@ -7,9 +7,11 @@ Accounts (`eshop.bank_accounts`) link to units via many-to-many (`eshop.unit_ban
 ## Dual Security Model
 
 - **Unit Context** (Unit Manager): Link/unlink accounts, reorder priority. Check: `check_is_manager_on_unit(unit_id)`.
-- **Account Context** (Bank Account Admin): Edit IBAN, tokens, manage access. Check: `eshop.bank_account_users` table.
+- **Account Context**: Edit IBAN, tokens, transactions and access only when the caller is both Bank Account Admin and Unit Manager of a unit actually linked to the account. `can_manage_bank_account` owns this conjunction; the direct connection route and BankSync RPCs use the same policy. Account membership alone does not grant management.
 
-Creating a new account auto-grants Bank Account Admin rights to the creator.
+Creating a new account in a unit requires Unit Manager and auto-grants Bank Account Admin to the creator. Linking an existing account requires Unit Manager of the target unit plus Bank Account Admin. Reordering/unlinking an existing unit link requires Unit Manager; these operations do not change account details or credentials.
+
+Here the UI term "správce organizace" denotes `unit_users.is_manager`. Tenant-wide `organization_users.is_admin` is a separate role and does not substitute for either bank requirement. Shared physical accounts can serve multiple units: a managed unit must be actually linked, never inferred from a supplied ID. Revoking its manager role removes account-management capabilities on the next context load and is checked live by every account mutation.
 
 ## Gotchas
 

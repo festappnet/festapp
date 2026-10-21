@@ -1,7 +1,7 @@
 # Google sign-in broker
 
 Implementation: `docs/plans/google-sign-in-plan-2026-10-01.md`.
-Local validation and console evidence: `docs/plans/google-sign-in-reference-2026-10-01/`.
+Local validation and console evidence: [historical evidence and recovery](../../archive/repository-artifact-followup-2026-10-21.md#google-sign-in).
 
 ## Scope and evidence
 
@@ -146,9 +146,9 @@ users or returning to a historical backend.
 - `node automation/auth/build-visual-preview.mjs` creates a self-contained actual
   web LoginModal fixture. `python3 automation/auth/capture-visual-preview.py`
   captures it in an isolated headless agent-browser session.
-- `FESTAPP_EXPORT_GOOGLE_VISUALS=1 fvm flutter test test/components/users/google_login_panel_test.dart`
+- `FESTAPP_EXPORT_GOOGLE_VISUALS=1 fvm flutter test --concurrency=1 test/sessions/shared_locale_matrix_test.dart --name google_login_panel`
   exports actual Flutter panel PNGs. These are component renders, not device-link
-  or live-backend tests. Browse implementation/index.html directly from disk.
+  or live-backend tests. Outputs use ignored `.codex-artifacts/google-auth/run/implementation/`; override the run root with `FESTAPP_GOOGLE_AUTH_EVIDENCE_DIR`. Browse its generated web-preview.html directly from disk.
 
 MFA protocol reference: [Supabase MFA](https://supabase.com/docs/guides/auth/auth-mfa)
 and [TOTP challenge](https://supabase.com/docs/guides/auth/auth-mfa/totp).

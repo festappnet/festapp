@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
@@ -112,8 +113,8 @@ class TicketCodeHelper {
                         ],
                       ),
                       if (occasionId != null &&
-                          (RightsService.isEditorOrder() ||
-                              RightsService.isEditor())) ...[
+                          (RightsService.hasCapability(AuthorizationCapabilities
+                              .scannerSettingsWrite))) ...[
                         const SizedBox(height: 20),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.tune),

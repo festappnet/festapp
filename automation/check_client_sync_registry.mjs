@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import { readHistoricalSql } from './lib/historical_sql.mjs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -8,11 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {checkCanonicalInventory} from './client-sync/check_canonical_inventory.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const migrationPath = path.join(
-  root,
-  'supabase/migrations/20260802234000_client_sync_v1_expansion.sql',
-);
-const migration = fs.readFileSync(migrationPath, 'utf8');
+const migration = readHistoricalSql('supabase/migrations/20260802234000_client_sync_v1_expansion.sql');
 
 const registryStart = migration.indexOf(
   'INSERT INTO public.client_sync_component_sources',
@@ -79,6 +76,12 @@ const expectedMaterializerCalls = 4;
 const dartFiles = walk(path.join(root, 'lib')).filter((file) =>
   file.endsWith('.dart'),
 );
+// These existing facade owners coordinate domain results with media or editor
+// follow-up. Register exact RPC/owner pairs rather than allowing an entire file.
+const facadeOwners = new Map([
+  ['save_product_wave_target_client_sync_v1', 'lib/components/eshop/db_eshop.dart'],
+  ['duplicate_occasion_client_sync_v1', 'lib/components/occasion/db_occasions.dart'],
+]);
 const misplacedCommandStrings = [];
 for (const file of dartFiles) {
   const source = fs.readFileSync(file, 'utf8');
@@ -88,7 +91,11 @@ for (const file of dartFiles) {
     !relative.endsWith('_commands.dart') &&
     relative !== 'lib/data_services/client_sync/client_sync_remote.dart'
   ) {
-    misplacedCommandStrings.push(relative);
+    const commands = [...source.matchAll(/['"]([a-z0-9_]+_client_sync_v1)['"]/g)]
+      .map(match => match[1]).filter(name => !name.startsWith('get_'));
+    if (commands.some(name => facadeOwners.get(name) !== relative)) {
+      misplacedCommandStrings.push(relative);
+    }
   }
 }
 

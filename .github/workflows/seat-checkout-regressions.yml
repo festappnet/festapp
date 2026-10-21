@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'database/functions/eshop/**'
+      - 'database/functions/blueprint/**'
+      - 'database/tests/blueprint/legacy_ticket_offer_test.sql'
       - 'database/functions/eshop_orders/**'
       - 'database/functions/eshop_waitlist/**'
       - 'database/functions/eshop_forms/**'
@@ -17,9 +19,14 @@ on:
       - 'lib/components/eshop/views/orders_content.dart'
       - 'test/components/eshop/ticket_delivery_request_test.dart'
       - 'supabase/migrations/**'
+      - 'supabase/baseline/**'
+      - 'automation/baseline.py'
+      - 'automation/historical-sql-manifest.json'
       - 'automation/bootstrap_local_db.sh'
       - 'automation/local_db/**'
-      - 'web_client/package*.json'
+      - 'web_client/package.json'
+      - 'web_client/pnpm-lock.yaml'
+      - 'web_client/pnpm-workspace.yaml'
       - 'web_client/src/**'
       - 'web_client/scripts/test_seat_checkout_browser.mjs'
       - 'web_client/scripts/test_form_access_browser.mjs'
@@ -40,19 +47,34 @@ jobs:
       SEAT_CHECKOUT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: web_client/package-lock.json
+          cache: pnpm
+          cache-dependency-path: web_client/pnpm-lock.yaml
       - uses: supabase/setup-cli@v1
         with:
           version: 2.111.0
       - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
-      - run: npm ci --no-audit --no-fund
+      - run: pnpm install --frozen-lockfile
         working-directory: web_client
-      - run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
+      - name: Install isolated Chromium test runner
+        run: |
+          # pnpm 11 places global executables in PNPM_HOME/bin.
+          export PATH="$PNPM_HOME/bin:$PATH"
+          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
+          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
+          agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
+      - name: Authorization read-phase upgrade contracts
+        env:
+          FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: node --test automation/tests/authorization_read_phase.test.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: '2.9.0'
@@ -61,9 +83,9 @@ jobs:
           GOOGLE_AUTH_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts
       - name: Database contract and anonymous checkout
-        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test
+        run: node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test paid_then_manual_ticket_delivery_test manual_paid_state_only_test legacy_ticket_offer_test blueprint/resource_admission_test
       - name: Click a seat and complete checkout in a real browser
-        run: npm --prefix web_client run test:seat-checkout-browser
+        run: pnpm --dir web_client run test:seat-checkout-browser
 
   ticket-preview-and-delivery:
     runs-on: ubuntu-latest
@@ -76,7 +98,7 @@ jobs:
         with:
           deno-version: '2.9.0'
       - name: Ticket preview colors and first-delivery intent
-        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
+        run: deno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts
       - id: sdk
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
@@ -91,4 +113,4 @@ jobs:
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - run: fvm flutter pub get
       - name: First delivery and resend client requests
-        run: fvm flutter test --no-pub test/components/eshop/ticket_delivery_request_test.dart
+        run: fvm flutter test --no-pub --concurrency=1 test/components/eshop/ticket_delivery_request_test.dart test/components/blueprint/blueprint_toolbar_test.dart test/data_services/rights_explicit_occasion_test.dart

@@ -1,5 +1,5 @@
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -119,10 +119,11 @@ class PaymentQrCard extends StatelessWidget {
       );
       final picData = await painter.toImageData(512);
       if (picData == null) return;
-      String filenamePart(String? value) => Utilities.removeDiacritics(value ?? '')
-          .toLowerCase()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-          .replaceAll(RegExp(r'^-+|-+$'), '');
+      String filenamePart(String? value) =>
+          Utilities.removeDiacritics(value ?? '')
+              .toLowerCase()
+              .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+              .replaceAll(RegExp(r'^-+|-+$'), '');
       final filename = [
         filenamePart(occasionTitle),
         'objednavka',
@@ -172,8 +173,8 @@ class _CopyRow extends StatelessWidget {
           ),
           InkWell(
             onTap: () async {
-              await Clipboard.setData(ClipboardData(text: value));
-              if (context.mounted) {
+              final copied = await CopyButton.copy(context, value);
+              if (copied && context.mounted) {
                 ToastHelper.Show(context, PublicOrderStrings.copied);
               }
             },

@@ -22,9 +22,10 @@ details on critical services.
    - Manages navigation context
 
 2. **Permissions**:
-   - User rights checking (`isAdmin()`, `canEditOccasion()`, `canUpdateOrders()`, etc.)
-   - RBAC (Role-Based Access Control)
-   - Integration with PostgreSQL RLS
+   - Functional `can*` methods consume the SQL `capabilities` projection.
+   - Role `is*` fields describe identity and role-specific UX, including the
+     intentionally narrower cleaning-notification audience.
+   - SQL RPCs and RLS enforce current authorization independently of UI state.
 
 3. **State Management**:
 
@@ -57,6 +58,37 @@ Check the active unit/occasion before displaying context-sensitive data.
 `RightsService` controls UI availability; SQL/RLS and Edge authorization enforce
 tenant isolation. A visible/hidden button or populated client context is not
 server-side permission proof.
+
+The SQL owner is `database/functions/user_permissions/`: typed resource
+predicates load live memberships; private immutable expression rules also serve
+the context projection. `get_app_config_v218` returns capabilities alongside
+its existing payload, including through existing versioned adapters. Dart/JS
+identifiers are generated from that SQL projection. No action adds a permission
+preflight RPC. Context and identity changes invalidate the projection and discard
+outstanding stale results; the Dart notifier publishes a new context value.
+
+Creating an occasion accepts a unit editor **or** unit manager, as explicitly
+requested on 2026-10-20. The command, receipt claim, setup drafts and initial form
+construction use that same rule. Bank management requires both account admin and manager of an actually linked
+non-demo unit; new links require the target-unit manager plus account admin.
+SQL and per-bank context capabilities use the same private rule. Role changes
+and SQL/Edge authorization denials reload the normal context once, without
+retrying the denied mutation.
+
+A unit manager can assign unit roles, including
+its own editor role; a tenant administrator in `organization_users` is a separate
+scope. Other domain roles are not implicitly expanded by this change.
+
+Remote MCP keeps OAuth scope and stored consent as additional restrictions.
+Delegated authoring reads verify and lock the actual occasion/unit binding in
+the data request; delegated creation verifies its unit/tenant before command
+execution or replay. Discovery reports concrete `ticket_layouts.read` capability;
+it does not authorize another domain's operation. Existing consent storage and
+create opt-in remain unchanged.
+
+The full cross-domain cutover still has inventory/deletion/performance gates.
+See [implementation evidence and remaining work](../plans/canonical-authorization-RESULT-2026-10-20.md)
+before treating the repository preparation as a completed or deployed migration.
 
 ---
 

@@ -13,6 +13,49 @@ class ProductPriceWave {
         time: DateTime.parse(json['change_time']).toUtc(),
       );
 
+  /// Minute-precision proposal in the existing scheduler's local wall time.
+  static DateTime? suggestTime({
+    required DateTime now,
+    required DateTime? end,
+    Iterable<DateTime> terms = const [],
+  }) {
+    if (end == null) return null;
+    final local = now.toLocal();
+    final nextMonth = DateTime(local.year, local.month + 1, 1);
+    final lastDay = DateTime(nextMonth.year, nextMonth.month + 1, 0).day;
+    final month = DateTime(
+      nextMonth.year,
+      nextMonth.month,
+      local.day > lastDay ? lastDay : local.day,
+      local.hour,
+      local.minute,
+    );
+    var lower = now;
+    for (final term in terms) {
+      if (term.isAfter(lower)) lower = term;
+    }
+    final wallLower = lower.toLocal();
+    final first = DateTime(
+      wallLower.year,
+      wallLower.month,
+      wallLower.day,
+      wallLower.hour,
+      wallLower.minute,
+    ).add(const Duration(minutes: 1));
+    final last = end.toLocal().subtract(const Duration(microseconds: 1));
+    final upper = DateTime(
+      last.year,
+      last.month,
+      last.day,
+      last.hour,
+      last.minute,
+    );
+    if (first.isAfter(upper)) return null;
+    if (month.isBefore(first)) return first.toUtc();
+    if (month.isAfter(upper)) return upper.toUtc();
+    return month.toUtc();
+  }
+
   /// Existing queued changes also remain visible as shared terms.
   static List<ProductPriceWave> columns(
     List<ProductPriceWave> waves,

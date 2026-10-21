@@ -1,3 +1,12 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/components/unit/views/occasions_screen.dart';
+import 'package:fstapp/components/occasion/demo/demo_catalog.dart';
+import 'package:fstapp/components/occasion/demo/demo_occasions_section.dart';
+import 'package:fstapp/components/unit/unit_occasion_dashboard.dart';
 import '../../support/fixtures/localization_log_fixture.dart';
 import 'dart:async';
 import 'package:auto_route/auto_route.dart';
@@ -12,6 +21,8 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
 
 class UnitAccess extends ChangeNotifier implements UnitAdministrationAccess {
+  @override
+  UnitOccasionDashboard? get dashboard => null;
   final requests = <int>[];
   @override
   UnitModel? currentUnit;
@@ -49,6 +60,62 @@ void main() {
   setUp(() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
+  });
+  Map<String, dynamic> emptyDashboard(int unit) => {
+        'unit_id': unit,
+        'occasions': [],
+        'drafts': [],
+        'app_landing': {'enabled': false, 'can_manage': false},
+        'demo_catalog': {'items': [], 'hasOwnWork': false},
+      };
+  test('whole dashboard refresh performs exactly one RPC', () async {
+    final requests = <http.Request>[];
+    final transport = MockClient((request) async {
+      requests.add(request);
+      expect(request.url.path, '/rest/v1/rpc/get_unit_edit_data');
+      expect(jsonDecode(request.body), {'p_unit_id': 7});
+      return http.Response(jsonEncode(emptyDashboard(7)), 200,
+          request: request, headers: {'content-type': 'application/json'});
+    });
+    final client = SupabaseClient('https://fixture.invalid', 'public-test-key',
+        httpClient: transport);
+    addTearDown(client.dispose);
+    addTearDown(transport.close);
+    final result = await DbUnits.getOccasionDashboard(7, client: client);
+    expect(result.unitId, 7);
+    expect(result.occasions, isEmpty);
+    expect(result.drafts, isEmpty);
+    expect(result.landing!.enabled, isFalse);
+    expect(result.demos.items, isEmpty);
+    expect(requests, hasLength(1));
+  });
+  testWidgets(
+      'context dashboard renders without an initialized SDK or follow-up reads',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        home: OccasionsScreen(
+            unit: UnitModel(id: 7),
+            initialDashboard:
+                UnitOccasionDashboard.fromJson(emptyDashboard(7)))));
+    await tester.pumpAndSettle();
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(find.text('Common.retry'), findsNothing);
+  });
+  testWidgets('provided demo catalogue performs no independent load',
+      (tester) async {
+    var loads = 0;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: DemoOccasionsSection(
+                initialCatalog: const DemoCatalog(hasOwnWork: false, items: []),
+                load: () async {
+                  loads++;
+                  return const DemoCatalog(hasOwnWork: false, items: []);
+                }))));
+    await tester.pumpAndSettle();
+    expect(loads, 0);
+    expect(tester.takeException(), isNull);
   });
   testWidgets('unit switch uses navigation chrome while destination is pending',
       (tester) async {

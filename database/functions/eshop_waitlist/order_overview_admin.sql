@@ -4,7 +4,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,ex
 DECLARE o eshop.orders;
 BEGIN
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id;
- IF public.get_is_editor_order_view_on_occasion(o.occasion) IS NOT TRUE THEN
+ IF public.can_read_orders(o.occasion) IS NOT TRUE THEN
   RAISE insufficient_privilege USING MESSAGE='Order viewer required';
  END IF;
  RETURN jsonb_build_object('orderId',o.id,'recipient',o.data->>'email');

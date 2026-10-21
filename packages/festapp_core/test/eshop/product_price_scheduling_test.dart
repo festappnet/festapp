@@ -24,6 +24,25 @@ ProductModel product(List<ProductPriceChange> changes) => ProductModel(
   priceChanges: changes,
 );
 void main() {
+  test('new wave proposes a calendar month bounded by terms and event end', () {
+    final now = DateTime(2027, 1, 31, 18, 17);
+    DateTime? suggest(DateTime? end, [List<DateTime> terms = const []]) =>
+        ProductPriceWave.suggestTime(
+          now: now,
+          end: end,
+          terms: terms,
+        )?.toLocal();
+    expect(suggest(DateTime(2027, 4, 1)), DateTime(2027, 2, 28, 18, 17));
+    expect(suggest(DateTime(2027, 2, 3, 20)), DateTime(2027, 2, 3, 19, 59));
+    expect(
+      suggest(DateTime(2027, 4, 1), [DateTime(2027, 3, 1, 12)]),
+      DateTime(2027, 3, 1, 12, 1),
+    );
+    expect(suggest(null), isNull);
+    expect(suggest(DateTime(2027, 1, 31, 18, 18)), isNull);
+    expect(suggest(DateTime(2027, 4, 1), [DateTime(2027, 4, 1)]), isNull);
+  });
+
   setUpAll(tzdata.initializeTimeZones);
   test(
     'DST gap rejected, overlap offers both instants and preserves occasion timezone',

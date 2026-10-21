@@ -16,17 +16,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def client_concurrency():
-    # Three workers exceeded the measured budget during shared-session compilation.
-    # Keep one portable cap; explicit experiments can override it at invocation.
-    value = os.environ.get("FESTAPP_CLIENT_CONCURRENCY")
-    if value is None:
-        return min(2, max(1, (os.cpu_count() or 2) // 2))
+    value = os.environ.get("FESTAPP_CLIENT_CONCURRENCY", "1")
     try:
         workers = int(value)
     except ValueError:
         raise SystemExit("FESTAPP_CLIENT_CONCURRENCY must be a positive integer.")
     if workers < 1:
         raise SystemExit("FESTAPP_CLIENT_CONCURRENCY must be a positive integer.")
+    if workers != 1:
+        raise SystemExit("FESTAPP_CLIENT_CONCURRENCY must be 1 under the workstation policy.")
     return workers
 
 

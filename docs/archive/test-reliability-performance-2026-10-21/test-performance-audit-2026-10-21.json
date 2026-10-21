@@ -1,0 +1,214 @@
+{
+  "date": "2026-10-21",
+  "scope": "One sequential local client run and one web run; no implementation changes, DB, Deno, worker or production runs.",
+  "method": {
+    "clientConcurrency": 1,
+    "repeats": 1,
+    "cache": "Existing cache retained; first invocation, not a controlled cold or warm benchmark.",
+    "memory": "Sum of owned-process RSS sampled every 0.5 seconds; shared pages can count repeatedly.",
+    "environment": "Inherited database/Supabase/fixture variables removed; .env.local not sourced; web_client/.env.local absent.",
+    "rawArtifacts": "/var/folders/k4/bf8sn81n6395dn845t2gvjbm0000gn/T/festapp-test-audit-2026-10-21-mc_d5tpn"
+  },
+  "measurement": {
+    "client": {
+      "command": [
+        "./automation/test_client.sh"
+      ],
+      "seconds": 71.957,
+      "exitCode": 1,
+      "peakSummedRssBytes": 2202370048
+    },
+    "web": {
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "seconds": 5.221,
+      "exitCode": 0,
+      "peakSummedRssBytes": 1493827584
+    },
+    "sourceSha256": "91a12b75029f8fdafe7f058e5bcabf14cf1480fe44bd82eba3c60b6c4a0327ac",
+    "clientInputsUnchanged": true,
+    "concurrency": 1,
+    "loadAverageEnd": [
+      5.69384765625,
+      4.7294921875,
+      4.30224609375
+    ]
+  },
+  "clientSummary": {
+    "architectureSuccess": false,
+    "core": {
+      "exitCode": 0,
+      "success": true,
+      "seconds": 5.764476916054264,
+      "testSeconds": 5.062,
+      "cases": 158,
+      "skipped": 0,
+      "failed": 0,
+      "suites": 33
+    },
+    "adapters": {
+      "exitCode": 0,
+      "success": true,
+      "seconds": 5.980982291977853,
+      "testSeconds": 2.609,
+      "cases": 79,
+      "skipped": 1,
+      "failed": 0,
+      "suites": 24
+    },
+    "flutter": {
+      "exitCode": 1,
+      "success": false,
+      "seconds": 65.78810579096898,
+      "testSeconds": 64.495,
+      "cases": 1133,
+      "skipped": 0,
+      "failed": 15,
+      "suites": 18
+    },
+    "mode": "all",
+    "concurrency": 1,
+    "schedule": "Dart+VM then Flutter",
+    "inventorySuccess": false,
+    "success": false,
+    "seconds": 71.83273825002834
+  },
+  "webSummary": {
+    "seconds": 5.221,
+    "cases": 404,
+    "passed": 382,
+    "skipped": 22,
+    "failed": 0
+  },
+  "flutterProfile": {
+    "suites": {
+      "test/components/forms/organization_identity_test.dart": {
+        "load": 9.717,
+        "body": 0.66,
+        "cases": 7,
+        "failed": 0
+      },
+      "test/components/images/image_upload_contract_test.dart": {
+        "load": 0.865,
+        "body": 0.16100000000000003,
+        "cases": 12,
+        "failed": 0
+      },
+      "test/components/shared/editor_file_drop_region_test.dart": {
+        "load": 0.932,
+        "body": 0.396,
+        "cases": 4,
+        "failed": 0
+      },
+      "test/components/eshop/price_wave_availability_test.dart": {
+        "load": 1.161,
+        "body": 1.3399999999999996,
+        "cases": 15,
+        "failed": 0
+      },
+      "test/components/occasion/occasion_setup_story_test.dart": {
+        "load": 1.295,
+        "body": 0.016,
+        "cases": 9,
+        "failed": 0
+      },
+      "test/components/occasion/occasion_setup_story_shell_test.dart": {
+        "load": 1.153,
+        "body": 0.529,
+        "cases": 7,
+        "failed": 0
+      },
+      "test/components/blueprint/blueprint_mobile_scroll_view_test.dart": {
+        "load": 0.343,
+        "body": 0.318,
+        "cases": 1,
+        "failed": 0
+      },
+      "test/sessions/shared_default_2_test.dart": {
+        "load": 1.78,
+        "body": 6.174000000000001,
+        "cases": 336,
+        "failed": 1
+      },
+      "test/sessions/shared_sdk_widgets_test.dart": {
+        "load": 1.006,
+        "body": 1.134,
+        "cases": 42,
+        "failed": 2
+      },
+      "test/sessions/shared_locale_matrix_test.dart": {
+        "load": 1.054,
+        "body": 2.696,
+        "cases": 26,
+        "failed": 0
+      },
+      "test/sessions/shared_default_3_test.dart": {
+        "load": 1.877,
+        "body": 5.770000000000004,
+        "cases": 363,
+        "failed": 0
+      },
+      "test/sessions/shared_legacy_commands_test.dart": {
+        "load": 0.743,
+        "body": 0.7150000000000001,
+        "cases": 10,
+        "failed": 0
+      },
+      "test/sessions/shared_czech_test.dart": {
+        "load": 1.529,
+        "body": 10.165000000000004,
+        "cases": 224,
+        "failed": 10
+      },
+      "test/sessions/shared_default_1_test.dart": {
+        "load": 1.495,
+        "body": 5.242000000000006,
+        "cases": 153,
+        "failed": 0
+      },
+      "test/data_services/client_command_identity_test.dart": {
+        "load": 0.775,
+        "body": 0.075,
+        "cases": 1,
+        "failed": 0
+      },
+      "test/data_services/external_login_context_test.dart": {
+        "load": 0.832,
+        "body": 0.093,
+        "cases": 1,
+        "failed": 0
+      },
+      "test/data_services/rights_explicit_occasion_test.dart": {
+        "load": 1.064,
+        "body": 0.088,
+        "cases": 5,
+        "failed": 0
+      },
+      "test/data_services/sign_in_code_login_test.dart": {
+        "load": 0.862,
+        "body": 0.055999999999999994,
+        "cases": 5,
+        "failed": 2
+      }
+    },
+    "failedTests": [
+      "default_locale_3 forms_contract_widget html_unit html_media_service pixel cap rejects oversized PNG metadata before decoding",
+      "html_media_upload_contract HTML png save retains the original-format upload contract",
+      "html_media_upload_contract HTML gif save retains the original-format upload contract",
+      "czech_catalog_3 product_price_scheduling visibility-only wave sends no price and retains typed state on error",
+      "czech_catalog_3 product_price_scheduling wave timeline starts with current state and needs no horizontal scrolling",
+      "czech_catalog_2 forms_editor_widget form_blueprint_capacity stored blueprint with feature enabled=false",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override null on unrelated save and can restore inheritance",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override false on unrelated save and can restore inheritance",
+      "czech_catalog_2 forms_editor_widget form_payment_defaults preserves reminder override true on unrelated save and can restore inheritance",
+      "czech_catalog_2 form_design_font_loading failed catalog download preserves design and retries before choosing a font",
+      "czech_catalog_1 ticket_layout mobile palettes align left and scroll on one row",
+      "czech_catalog_1 ticket_layout palette paints its colors in Material 2 and 3, light and dark",
+      "czech_catalog_1 ticket_layout text and QR share the color picker and HEX entry",
+      "code exchange receives mailbox, password fallback keeps tenant identity",
+      "accepted code refreshes returned session instead of password login"
+    ]
+  }
+}

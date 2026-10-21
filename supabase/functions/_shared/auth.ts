@@ -2,7 +2,7 @@ import {
   canManageOccasionUsers,
   createUserClient,
   getSupabaseUser,
-  isUserEditorOrder,
+  canWriteOrders,
   supabaseAdmin,
 } from "./supabaseUtil.ts";
 
@@ -57,17 +57,16 @@ export async function authorizeRequest({
       throw new AuthError("Unauthorized", 401);
     }
 
-    const userId = userResponse.user.id;
     // Note: Passing BigInt(occasionId) assuming occasionId comes in as number but DB expects BigInt context
     if (permission === "readOrder") {
       const {data: readable,error} = await createUserClient(authorizationHeader)
-        .rpc("get_is_editor_order_view_on_occasion", {oc: occasionId.toString()});
+        .rpc("can_read_orders", {p_occasion: occasionId.toString()});
       if (error || readable !== true) throw new AuthError("Forbidden",403);
       return {user: userResponse.user};
     }
     const userIsEditor = permission === "manageUsers"
       ? await canManageOccasionUsers(authorizationHeader, BigInt(occasionId))
-      : await isUserEditorOrder(userId, BigInt(occasionId));
+      : await canWriteOrders(authorizationHeader, BigInt(occasionId));
 
     if (!userIsEditor) {
       throw new AuthError("Forbidden: Not an editor", 403);

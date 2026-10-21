@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION public.check_scan_attempt_budget_v1(p_occasion bigint
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE policies jsonb; policy jsonb; family text; scopes jsonb;
 BEGIN
- IF auth.uid() IS NOT NULL AND p_occasion IS NOT NULL AND public.get_is_editor_order_view_on_occasion(p_occasion) THEN RETURN true; END IF;
+ IF auth.uid() IS NOT NULL AND p_occasion IS NOT NULL AND public.can_read_orders(p_occasion) THEN RETURN true; END IF;
  policies:=public.abuse_policy_bundle_v1(ARRAY['scan.invalid.global','scan.invalid.source'],NULL,NULL);
  scopes:=jsonb_build_object('global','all','recipient',public.abuse_request_source_v1());
  FOREACH family IN ARRAY ARRAY['scan.invalid.global','scan.invalid.source'] LOOP

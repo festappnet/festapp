@@ -38,52 +38,15 @@ export async function getSupabaseUser(authorizationHeader: string) {
   return user;
 }
 
-/**
- * Checks if the user is an editor for the given occasion.
- * @param userId - The UUID of the user.
- * @param occasionId - The ID of the occasion.
- * @returns A Promise that resolves to a boolean indicating editor status.
- */
-export async function isUserEditor(
-  userId: string,
+/** The authenticated caller's current SQL order-write operation. */
+export async function canWriteOrders(
+  authorizationHeader: string,
   occasionId: bigint,
 ): Promise<boolean> {
-  const { data, error } = await supabaseAdmin
-    .from("occasion_users")
-    .select("is_editor")
-    .eq("user", userId)
-    .eq("occasion", occasionId)
-    .single();
-
-  if (error || !data) {
-    console.error("Error fetching user role:", error);
-    return false;
-  }
-  return data.is_editor;
-}
-
-/**
- * Checks if the user is an editor order for the given occasion.
- * @param userId - The UUID of the user.
- * @param occasionId - The ID of the occasion.
- * @returns A Promise that resolves to a boolean indicating editor status.
- */
-export async function isUserEditorOrder(
-  userId: string,
-  occasionId: bigint,
-): Promise<boolean> {
-  const { data, error } = await supabaseAdmin
-    .from("occasion_users")
-    .select("is_editor_order")
-    .eq("user", userId)
-    .eq("occasion", occasionId)
-    .single();
-
-  if (error || !data) {
-    console.error("Error fetching user role:", error);
-    return false;
-  }
-  return data.is_editor_order;
+  const { data, error } = await createUserClient(authorizationHeader).rpc(
+    "can_write_orders", { p_occasion: occasionId.toString() },
+  );
+  return error == null && data === true;
 }
 
 /** Checks the same manager/admin/unit-editor roles used by the Users admin UI. */

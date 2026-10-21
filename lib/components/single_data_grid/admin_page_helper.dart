@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 import 'package:flutter/material.dart';
@@ -128,8 +129,11 @@ class AdministrationTabs {
                 volunteers,
               emailTemplates,
               users,
-              if (RightsService.isManager() || RightsService.isAdmin()) changes,
-              if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
+              if (RightsService.hasCapability(
+                  AuthorizationCapabilities.participantsWrite))
+                changes,
+              if (RightsService.hasCapability(
+                  AuthorizationCapabilities.navigationOccasionSettings))
                 settings
             ]
           : const [];
@@ -145,7 +149,8 @@ class AdministrationTabs {
         report,
         emailTemplates,
         users,
-        if (RightsService.isUnitEditor() || RightsService.isDemoReadOnly)
+        if (RightsService.hasCapability(
+            AuthorizationCapabilities.navigationOccasionSettings))
           settings
       ];
 }

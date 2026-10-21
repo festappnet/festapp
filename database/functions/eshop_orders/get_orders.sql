@@ -54,7 +54,7 @@ BEGIN
     END IF;
 
     -- 4. Authorization check.
-    IF (SELECT get_is_editor_order_view_on_occasion(v_occasion_id)) <> TRUE THEN
+    IF (SELECT can_read_orders(v_occasion_id)) <> TRUE THEN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to access this occasion');
     END IF;
 
@@ -162,7 +162,7 @@ BEGIN
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
             'data', CASE
-                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data
+                WHEN (p_options->>'include_full_order_data')::BOOLEAN = TRUE THEN o.data || jsonb_build_object('tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))
                 ELSE jsonb_build_object('name', o.data->>'name', 'surname', o.data->>'surname', 'email', o.data->>'email')
             END,
             'payment_info', o.payment_info, 'note_hidden', o.note_hidden

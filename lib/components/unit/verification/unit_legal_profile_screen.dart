@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
@@ -44,7 +45,8 @@ class UnitLegalProfilePage extends StatelessWidget {
                 child: UnitLegalProfileSection(
                   key: ValueKey(scope.unit.id),
                   unitId: scope.unit.id!,
-                  canEdit: RightsService.isUnitManager(),
+                  canEdit: RightsService.hasCapability(
+                      AuthorizationCapabilities.unitLegalProfileWrite),
                   onBack: () => _pop(context),
                 ),
               ),

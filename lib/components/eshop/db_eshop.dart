@@ -114,7 +114,9 @@ class DbEshop {
       List<int> spotIds, Map<String, dynamic> inputData) async {
     final edgeResponse = await DbOrders.replaceTicketOrder(spotIds, inputData);
 
-    if (edgeResponse.status != 200) {
+    if (edgeResponse.status != 200 ||
+        edgeResponse.data is! Map ||
+        edgeResponse.data['code'] != 200) {
       throw Exception("Order creation failed: ${edgeResponse.data}");
     }
   }

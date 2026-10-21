@@ -7,8 +7,8 @@ import '../images/image_url_helper.dart';
 import '../images/recovering_image.dart';
 
 /// Typography of the canonical email wrapper, independent of the app font.
-const emailContentTextStyle = TextStyle(
-    inherit: false, fontFamily: 'sans-serif', fontSize: 16);
+const emailContentTextStyle =
+    TextStyle(inherit: false, fontFamily: 'sans-serif', fontSize: 16);
 
 /// Email fragments own their edge margins. The default factory trims these for
 /// app text; doing so joins independently rendered email components together.
@@ -21,8 +21,10 @@ class _EmailWidgetFactory extends WidgetFactory {
 /// Removing action attributes also removes tap semantics and keyboard targets.
 class EmailPreviewHtml extends StatelessWidget {
   const EmailPreviewHtml(
-      {required this.html, this.imageBytesResolver,
-      this.allowedRemoteImageSources = const {}, super.key});
+      {required this.html,
+      this.imageBytesResolver,
+      this.allowedRemoteImageSources = const {},
+      super.key});
   final String html;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
@@ -83,8 +85,7 @@ class EmailPreviewHtml extends StatelessWidget {
               child: HtmlWidget(
             document.outerHtml,
             factoryBuilder: _EmailWidgetFactory.new,
-            textStyle:
-                emailContentTextStyle.copyWith(color: colors.onSurface),
+            textStyle: emailContentTextStyle.copyWith(color: colors.onSurface),
             onTapUrl: (_) async => true,
             customStylesBuilder: (element) => element.localName == 'a' &&
                     (element.attributes['style'] ?? '').isEmpty
@@ -93,10 +94,14 @@ class EmailPreviewHtml extends StatelessWidget {
             customWidgetBuilder: (element) {
               // The HTML renderer drops empty blocks before its sizing pass.
               // Production email renderers deliberately use these as spacers.
-              if (element.localName == 'div' && element.children.isEmpty && element.text.trim().isEmpty) {
-                final match = RegExp(r'(?:^|;)\s*height\s*:\s*([0-9]+(?:\.[0-9]+)?)px(?:\s*;|\s*$)')
+              if (element.localName == 'div' &&
+                  element.children.isEmpty &&
+                  element.text.trim().isEmpty) {
+                final match = RegExp(
+                        r'(?:^|;)\s*height\s*:\s*([0-9]+(?:\.[0-9]+)?)px(?:\s*;|\s*$)')
                     .firstMatch(element.attributes['style'] ?? '');
-                if (match != null) return SizedBox(height: double.parse(match.group(1)!));
+                if (match != null)
+                  return SizedBox(height: double.parse(match.group(1)!));
               }
               if (element.localName != 'img') return null;
               final source = element.attributes['src'] ?? '';
@@ -109,10 +114,12 @@ class EmailPreviewHtml extends StatelessWidget {
                               Icon(Icons.image_outlined, color: Colors.grey))));
               final bytes = imageBytesResolver?.call(source);
               if (bytes != null) {
-                return Image.memory(bytes, fit: BoxFit.contain,
+                return Image.memory(bytes,
+                    fit: BoxFit.contain,
                     semanticLabel: element.attributes['alt']);
               }
-              if (source.isNotEmpty && allowedRemoteImageSources.contains(source)) {
+              if (source.isNotEmpty &&
+                  allowedRemoteImageSources.contains(source)) {
                 return Semantics(
                   label: element.attributes['alt'] ?? '',
                   image: true,
@@ -140,11 +147,13 @@ class EmailReceivedMessage extends StatelessWidget {
     required this.html,
     this.imageBytesResolver,
     this.senderAddress,
+    this.recipientLabel,
     this.allowedRemoteImageSources = const {},
     super.key,
   });
   final String subject;
   final String? senderAddress;
+  final String? recipientLabel;
   final String html;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
@@ -197,7 +206,7 @@ class EmailReceivedMessage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${EmailTemplatesStrings.previewTo}: Jana Nováková <jana.novakova@example.com>',
+                    '${EmailTemplatesStrings.previewTo}: ${recipientLabel ?? 'Jana Nováková <jana.novakova@example.com>'}',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

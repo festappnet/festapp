@@ -6,7 +6,7 @@ Technické potíže popište na `info@festapp.net`. Uveďte stránku, na které 
 
 ## Kontakt na pořadatele
 
-Dotazy k programu, účasti na táboře či kurzu, přihlášce, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
+Dotazy k programu, účasti na plese, táboře či kurzu, přihlášce, objednávce, platbě, vstupence nebo pravidlům konkrétní akce vyřizuje její pořadatel; kontakt je uveden u akce nebo objednávky.
 
 ## Právní informace
 

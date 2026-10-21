@@ -36,3 +36,10 @@ test('Google session uses the existing finalizer exactly once, then clears its p
  try{const result=await Service._accept({status:'authenticated',userId:'original'});assert.equal(count,1);assert.equal(result.returnPath,'/event');assert.equal(Service._pending,null);}
  finally{AuthService.completeExternalLogin=original;Service.cancel();}
 });
+
+test('consent return keeps only the exact first-party request query', async () => {
+ const {safeAuthReturnPath}=await import('../../src/services/google_auth_service.js');
+ const valid='/settings/mcp-connect?request='+'R'.repeat(43);
+ assert.equal(safeAuthReturnPath(valid),valid);
+ for(const bad of [valid+'&next=https://evil.example',valid+'&request=x','//evil.example','/settings/mcp-connect?request=x','/form/test?token=private']) assert.equal(safeAuthReturnPath(bad),'/');
+});

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cross-site embedded checkout fixture</title>
+<style>body{font:16px system-ui;margin:16px}iframe{display:block;width:100%;border:1px solid #aaa}main{max-width:900px;margin:auto}</style>
+<main><h1>Synthetic organizer site</h1><p>This fixture must be opened at http://localhost:59801. Its checkout uses http://127.0.0.1:59801, a different site.</p><div id="frames"></div></main>
+<script type="module">
+if(location.hostname!=='localhost')throw Error('Host must be localhost for cross-site coverage');
+const params=new URLSearchParams(location.search);
+const fixed=params.get('mode')==='fixed'||params.has('reject');
+for(let i=0;i<(params.has('two')?2:1);i++){
+ const frame=document.createElement('iframe');frame.title='Synthetic order '+(i+1);frame.height='800';
+ frame.src='http://127.0.0.1:59801/form/'+(params.get('form')||'embedded-synthetic')+'?embed=1';
+ if(!fixed)frame.dataset.festappEmbed='';
+ if(params.has('reject'))frame.addEventListener('load',()=>frame.contentWindow.postMessage({namespace:'festapp-embed',protocol:99,type:'init',instance:'rejected',viewportHeight:844},'http://127.0.0.1:59801'));
+ document.querySelector('#frames').append(frame);
+ const link=document.createElement('a');link.textContent='Open order in a new tab';link.href=frame.src.split('?')[0];link.target='_blank';link.rel='noopener noreferrer';document.querySelector('#frames').append(link);
+}
+if(!fixed){const script=document.createElement('script');script.src='http://127.0.0.1:59801/embed.js';script.defer=true;document.head.append(script);}
+</script></html>

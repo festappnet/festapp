@@ -21,7 +21,7 @@ DECLARE
   v_parent_ids bigint[];
   v_role_ids bigint[];
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_schedule(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required';
   END IF;
   SELECT NOT o.is_hidden INTO v_is_publishable

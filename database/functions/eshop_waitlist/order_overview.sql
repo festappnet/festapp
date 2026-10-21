@@ -164,10 +164,10 @@ BEGIN
   'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
   'items',CASE WHEN o.state='preparing_payment' THEN '[]'::jsonb ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object(
-   'ticketId',t->'id','id',p->'id','title',p->>'title','price',p->'price','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
+   'ticketId',t->'id','id',p->'id','title',p->>'title','spotTitle',p->>'spot_title','spotGroupTitle',p->>'spot_group_title','price',p->'price','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
     (SELECT min(coalesce(ff."order",0)) FROM public.form_fields ff WHERE ff.form=f.id AND ff.product_type=product.product_type) NULLS LAST,
     coalesce(product."order",0),product.id),'[]')
-   FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p
+   FROM jsonb_array_elements(public.order_tickets_with_seating_internal(o.id,o.data->'tickets')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p
    JOIN eshop.products product ON product.id=(p->>'id')::bigint
    WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x."order"=o.id AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint)) END,
   'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,f.id),'rawState',t.state,

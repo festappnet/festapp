@@ -24,7 +24,7 @@ BEGIN
     END IF;
 
     -- Permission check
-    IF NOT get_is_editor_order_view_on_occasion(v_occasion_id) THEN
+    IF NOT can_read_orders(v_occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to view this occasion.';
     END IF;
 

@@ -40,7 +40,10 @@ BEGIN
         SELECT occasion INTO v_occasion FROM public.forms WHERE id=v_change.subject_id;
         IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_SUBJECT'; END IF;
         IF v_occasion IS NULL OR v_change.occasion IS DISTINCT FROM v_occasion THEN RAISE EXCEPTION 'INVALID_OCCASION'; END IF;
-        UPDATE public.forms SET is_open=v_change.new_value::boolean WHERE id=v_change.subject_id AND is_open IS DISTINCT FROM v_change.new_value::boolean;
+        UPDATE public.forms SET is_open=v_change.new_value::boolean,
+          data=CASE WHEN v_change.new_value::boolean THEN jsonb_set(coalesce(data,'{}'::jsonb),'{schedule}',
+            coalesce(data->'schedule','{}'::jsonb)||'{"sale_preparation":false}'::jsonb) ELSE data END
+          WHERE id=v_change.subject_id AND is_open IS DISTINCT FROM v_change.new_value::boolean;
         GET DIAGNOSTICS v_changed=ROW_COUNT;
       ELSE RAISE EXCEPTION 'UNKNOWN_CHANGE_TYPE'; END IF;
       IF v_changed>0 THEN

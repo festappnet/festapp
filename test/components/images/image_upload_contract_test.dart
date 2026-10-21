@@ -16,10 +16,27 @@ void main() {
   final uploads = <http.Request>[];
   final client = MockClient((request) async {
     uploads.add(request);
+    const url = 'https://img.festapp.net/images/12/photo.jpg';
+    final blueprint = latin1
+        .decode(request.bodyBytes)
+        .contains('\r\nblueprint-background\r\n');
+    final hash = 'a' * 64;
     return http.Response(
-      '{"url":"https://img.festapp.net/images/12/photo.jpg"}',
-      200,
-    );
+        jsonEncode({
+          'url': url,
+          if (blueprint)
+            'asset': {
+              'assetRef': 'image:$hash',
+              'hash': hash,
+              'url': url,
+              'width': 2,
+              'height': 2,
+              'mimeType': 'image/jpeg',
+              'byteLength': 100,
+              'state': 'ready',
+            },
+        }),
+        200);
   });
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -57,21 +74,21 @@ void main() {
   setUp(uploads.clear);
 
   Future<String> save(Uint8List bytes) => http.runWithClient(() async {
-    final draft = HtmlMediaDraft();
-    try {
-      const owner = HtmlMediaOwner.occasion(12);
-      final source = await draft.addBytes(bytes, owner);
-      expect(draft.previewBytes(source), bytes);
-      expect(uploads, isEmpty);
-      return await draft.prepareHtml(
-        '<p>Program</p><img src="$source">',
-        '',
-        owner,
-      );
-    } finally {
-      draft.dispose();
-    }
-  }, () => client);
+        final draft = HtmlMediaDraft();
+        try {
+          const owner = HtmlMediaOwner.occasion(12);
+          final source = await draft.addBytes(bytes, owner);
+          expect(draft.previewBytes(source), bytes);
+          expect(uploads, isEmpty);
+          return await draft.prepareHtml(
+            '<p>Program</p><img src="$source">',
+            '',
+            owner,
+          );
+        } finally {
+          draft.dispose();
+        }
+      }, () => client);
 
   test(
     'HTML photo save leaves JPEG compression to the server defaults',

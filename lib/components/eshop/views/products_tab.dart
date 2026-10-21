@@ -267,6 +267,7 @@ class _ProductsTabState extends State<ProductsTab>
             .map((product) => ProductGridRecord(
                   product: product,
                   commands: DbEshop.commands,
+                  guard: ExceptionHandler.guardVoid,
                   productTypeTitle: bundle.productTypes
                       .where((type) => type.id == product.productTypeId)
                       .firstOrNull
@@ -289,8 +290,8 @@ class _ProductsTabState extends State<ProductsTab>
         _trackPlans(newBundle.products);
         return records(newBundle);
       },
-      fromPlutoJson: (json) =>
-          ProductGridRecord.fromPlutoJson(json, commands: DbEshop.commands),
+      fromPlutoJson: (json) => ProductGridRecord.fromPlutoJson(json,
+          commands: DbEshop.commands, guard: ExceptionHandler.guardVoid),
       firstColumnType: DataGridFirstColumn.delete,
       idColumn: TbEshop.products.id,
       columnHelp: {

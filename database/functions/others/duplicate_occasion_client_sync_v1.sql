@@ -23,7 +23,7 @@ BEGIN
   IF v_actor IS NULL OR v_source_unit IS NULL OR v_unit IS NULL
      OR NOT public.can_copy_occasion_source(p_occasion)
      OR public.is_demo_unit(v_unit)
-     OR NOT public.get_is_manager_on_unit(v_unit)
+     OR NOT public.can_copy_occasion_target(v_unit)
      OR NOT EXISTS (SELECT 1 FROM public.units WHERE id=v_unit AND organization=v_org) THEN
     RAISE insufficient_privilege USING MESSAGE = 'unit manager required';
   END IF;
@@ -120,7 +120,7 @@ BEGIN
   END IF;
   RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'id', u.id, 'title', u.title, 'organization', u.organization) ORDER BY u.title,u.id)
-    FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id) AND NOT public.is_demo_unit(u.id)), '[]'::jsonb);
+    FROM public.units u WHERE u.organization=v_org AND public.can_copy_occasion_target(u.id) AND NOT public.is_demo_unit(u.id)), '[]'::jsonb);
 END; $$;
 REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;

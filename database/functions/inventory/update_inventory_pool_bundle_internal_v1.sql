@@ -23,7 +23,7 @@ BEGIN
     END IF;
 
     -- Permission check
-    IF NOT get_is_editor_order_on_occasion(v_occasion_id) THEN
+    IF NOT can_write_orders(v_occasion_id) THEN
         RAISE EXCEPTION '%', jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion.')::text;
     END IF;
 

@@ -10,7 +10,7 @@ DECLARE
   v_places bigint; v_paths bigint; v_types bigint; v_refs jsonb;
 BEGIN
   PERFORM 1 FROM public.units WHERE id=p_unit;
-  IF v_actor IS NULL OR p_unit IS NULL OR NOT public.get_is_editor_on_unit(p_unit) THEN
+  IF v_actor IS NULL OR p_unit IS NULL OR NOT public.can_write_unit_icons(p_unit) THEN
     RAISE insufficient_privilege USING MESSAGE='unit editor required';
   END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object('unit',p_unit,

@@ -7,9 +7,10 @@ AS $function$
 DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
   v_before_users uuid[]; v_unchanged boolean:=false;
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM eshop.orders WHERE id=p_order)]);
   SELECT o.occasion INTO v_occasion FROM eshop.orders o WHERE o.id=p_order;
   IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_editor_order_on_occasion(v_occasion) THEN
+    OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'order',p_order)::text,'UTF8'),'sha256'),'hex');

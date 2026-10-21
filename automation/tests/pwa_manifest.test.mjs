@@ -7,6 +7,33 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { collectPwaShellManifest } from '../lib/pwa_shell_manifest.mjs';
 
+for (const skwasm of [false, true]) {
+  test(`cache engines follow the deployed Flutter build selection (skwasm=${skwasm})`, async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'festapp-renderer-cache-'));
+    try {
+      await mkdir(path.join(root, 'canvaskit', 'chromium'), {recursive: true});
+      await mkdir(path.join(root, 'canvaskit', 'webparagraph'), {recursive: true});
+      const engines = ['canvaskit.js', 'canvaskit.wasm', 'chromium/canvaskit.wasm',
+        'webparagraph/canvaskit.wasm', 'skwasm.js', 'skwasm.wasm',
+        'skwasm_heavy.js', 'skwasm_heavy.wasm', 'wimp.js', 'wimp.wasm'];
+      for (const name of ['flutter', 'webclient', 'main.dart.js']) await writeFile(path.join(root, name), name);
+      for (const name of engines) await writeFile(path.join(root, 'canvaskit', name), name);
+      const builds = [{compileTarget: 'dart2js', renderer: 'canvaskit'}];
+      if (skwasm) builds.push({compileTarget: 'dart2wasm', renderer: 'skwasm'});
+      await writeFile(path.join(root, 'flutter_bootstrap.js'), `_flutter.buildConfig = ${JSON.stringify({builds})};\n`);
+      const manifest = await collectPwaShellManifest(root);
+      for (const name of engines) {
+        const expected = skwasm || name.includes('canvaskit');
+        assert.equal(manifest.knownResources.includes(`/canvaskit/${name}`), expected, name);
+        assert.equal(await readFile(path.join(root, 'canvaskit', name), 'utf8'), name,
+          'all shipped renderer files remain available online');
+      }
+    } finally {
+      await rm(root, {recursive: true, force: true});
+    }
+  });
+}
+
 test('all deferred font modules are installed for first use offline', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-font-modules-'));
   try {

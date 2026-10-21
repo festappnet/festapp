@@ -11,7 +11,11 @@ export function renderOverviewProducts(host, items, currency, money) {
     const list = node(host, 'ul', '', 'overview-products');
     for (const item of items) {
         const row = node(list, 'li', '');
-        node(row, 'span', item.title || '');
+        const label = node(row, 'span', item.title || '');
+        const seating = [[tr('table'), item.spotGroupTitle], [tr('seat'), item.spotTitle]]
+            .filter(([, value]) => value != null && String(value).trim() !== '')
+            .map(([title, value]) => `${title}: ${value}`).join(' · ');
+        if (seating) node(label, 'span', seating, 'overview-product-seating');
         node(row, 'strong', money(item.price, item.currency || currency), 'overview-product-price');
     }
 }

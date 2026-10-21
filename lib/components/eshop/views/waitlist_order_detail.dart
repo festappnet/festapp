@@ -92,7 +92,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   }
 
   Future<void> _withdraw() async {
-    if (!RightsService.isEditorOrder() ||
+    if (!RightsService.canUpdateOrders() ||
         _selected.isEmpty ||
         _busy ||
         _error != null) {
@@ -141,7 +141,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
       !_busy &&
       _error == null &&
       _hasWaitingTickets &&
-      RightsService.isEditorOrder() &&
+      RightsService.canUpdateOrders() &&
       widget.order.isWaitlisted &&
       (widget.order.allowedActions == null || widget.order.allows('offer')) &&
       widget.order.form?.definition.waitlistEnabled == true &&
@@ -214,7 +214,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
   Future<void> _openOffer(dynamic offer) async {
     if (_busy ||
         _error != null ||
-        !RightsService.isEditorOrder() ||
+        !RightsService.canUpdateOrders() ||
         !_offerIsPending(offer)) {
       return;
     }
@@ -308,7 +308,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
                   '${_slotLabel(slot)} · ${WaitlistStrings.text(slot['outcome'] == 'pending' && !active ? 'expired' : slot['outcome'])}',
                 ),
               ),
-          if (active && RightsService.isEditorOrder()) ...[
+          if (active && RightsService.canUpdateOrders()) ...[
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed:
@@ -340,7 +340,7 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
     final offers = _detail?['offers'] as List? ?? [];
     final activeOffers = offers.where(_offerIsPending).toList();
     final history = offers.where((offer) => !_offerIsPending(offer)).toList();
-    final editor = RightsService.isEditorOrder();
+    final editor = RightsService.canUpdateOrders();
     final canManage =
         editor && widget.order.isWaitlisted && _hasEligibleTickets;
     final multiple = tickets.where(_isSelectable).length > 1;

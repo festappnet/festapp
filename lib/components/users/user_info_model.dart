@@ -240,10 +240,6 @@ class UserInfoModel extends IHasId {
 
   bool isSignedIn = false;
 
-  List<UnitModel> getUnitsWithEditorAccess() {
-    return units?.where((u) => u.unitUser?.isEditorView == true).toList() ?? [];
-  }
-
   static String sexToLocale(String? sx) {
     if (sx == "female") {
       return PersonFieldsStrings.female;

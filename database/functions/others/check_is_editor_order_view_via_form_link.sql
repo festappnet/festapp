@@ -18,7 +18,7 @@ BEGIN
     END IF;
 
     -- Verify editor permissions using existing helper function
-    IF NOT public.get_is_editor_order_view_on_occasion(occasion_id) THEN
+    IF NOT public.can_read_orders(occasion_id) THEN
         RAISE EXCEPTION 'User is not authorized to edit this occasion.';
     END IF;
 END;

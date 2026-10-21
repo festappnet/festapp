@@ -6,17 +6,28 @@ import 'package:fstapp/components/eshop/models/tb_eshop.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/pluto_abstract.dart';
-import 'package:fstapp/services/exception_handler.dart';
 import 'package:trina_grid/trina_grid.dart';
+
+typedef ProductGridGuard = Future<bool> Function(
+  BuildContext context, {
+  required Future<void> Function() futureFunction,
+  String? defaultErrorMessage,
+  bool rethrowError,
+  bool showAsDialog,
+});
 
 /// Application grid adapter. Editable values live in Trina cells; this record
 /// retains the loaded snapshot and the explicit command scope, without a second
 /// mutable copy of domain fields.
 class ProductGridRecord extends ITrinaRowModel {
   ProductGridRecord(
-      {required this.product, required this.commands, this.productTypeTitle});
+      {required this.product,
+      required this.commands,
+      required this.guard,
+      this.productTypeTitle});
   ProductModel product;
   final EshopCommands commands;
+  final ProductGridGuard guard;
   final String? productTypeTitle;
   @override
   int? get id => product.id;
@@ -26,6 +37,7 @@ class ProductGridRecord extends ITrinaRowModel {
   static ProductGridRecord fromPlutoJson(
     Map<String, dynamic> json, {
     required EshopCommands commands,
+    required ProductGridGuard guard,
     String? productTypeTitle,
   }) {
     final record =
@@ -122,6 +134,7 @@ class ProductGridRecord extends ITrinaRowModel {
 
     return ProductGridRecord(
         commands: commands,
+        guard: guard,
         productTypeTitle: productTypeTitle ?? record?.productTypeTitle,
         product: ProductModel(
           aggregateVersion: model?.aggregateVersion ?? 0,
@@ -200,7 +213,7 @@ class ProductGridRecord extends ITrinaRowModel {
 
   @override
   Future<void> updateMethod(BuildContext context) =>
-      ExceptionHandler.guardVoid(context, futureFunction: () async {
+      guard(context, futureFunction: () async {
         final saved = await commands.saveProduct({
           ...product.toJson(),
           if (product.id != null)
@@ -221,8 +234,9 @@ class ProductGridRecord extends ITrinaRowModel {
   @override
   Future<void> deleteMethod(BuildContext context) async {
     if (id == null) return;
-    await ExceptionHandler.guardVoid(context,
-        futureFunction: () => commands.deleteProduct(id!, expectedVersion: product.aggregateVersion),
+    await guard(context,
+        futureFunction: () => commands.deleteProduct(id!,
+            expectedVersion: product.aggregateVersion),
         defaultErrorMessage: OrdersStrings.failedToDeleteProduct,
         rethrowError: true);
   }

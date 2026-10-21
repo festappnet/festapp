@@ -11,10 +11,7 @@ DECLARE v_actor uuid:=auth.uid(); v_begin jsonb; v_hash text; v_unit bigint;
 BEGIN
  PERFORM public.assert_canonical_mutation_write_release_internal_v1(p_occasion);
   SELECT o.unit INTO v_unit FROM public.occasions o WHERE o.id=p_occasion;
-  IF v_actor IS NULL OR NOT (public.get_is_editor_on_occasion(p_occasion)
-    OR public.get_is_manager_on_occasion(p_occasion)
-    OR public.get_is_admin_on_occasion(p_occasion)
-    OR public.get_is_editor_on_unit(v_unit)) THEN
+  IF v_actor IS NULL OR NOT public.can_import_group_assignments(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='group import permission required'; END IF;
   IF p_assignments IS NULL OR jsonb_typeof(p_assignments)<>'array'
     OR jsonb_array_length(p_assignments)>10000
@@ -25,7 +22,7 @@ BEGIN
   v_begin:=public.begin_client_mutation_v1(p_command_id,'profile.groups.import',
     p_occasion,v_actor,v_hash);
   PERFORM public.lock_group_occasion_internal_v1(p_occasion);
-  IF NOT (public.get_is_editor_on_occasion(p_occasion) OR public.get_is_manager_on_occasion(p_occasion) OR public.get_is_admin_on_occasion(p_occasion) OR public.get_is_editor_on_unit(v_unit)) THEN RAISE insufficient_privilege USING MESSAGE='group import permission required'; END IF;
+  IF NOT public.can_import_group_assignments(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='group import permission required'; END IF;
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   PERFORM pg_catalog.pg_advisory_xact_lock(p_occasion);
   PERFORM 1 FROM public.user_group_info g WHERE g.occasion=p_occasion

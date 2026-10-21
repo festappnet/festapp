@@ -37,11 +37,7 @@ BEGIN
         RAISE EXCEPTION 'OCCASION_NOT_FOUND';
     END IF;
 
-    IF NOT (
-        public.get_is_manager_on_occasion(p_occasion_id)
-        OR public.get_is_admin_on_occasion(p_occasion_id)
-        OR public.get_is_editor_on_unit(v_unit_id)
-    ) THEN
+    IF NOT public.get_can_manage_occasion_users(p_occasion_id) THEN
         RAISE EXCEPTION 'NOT_AUTHORIZED';
     END IF;
 

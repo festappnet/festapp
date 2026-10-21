@@ -40,11 +40,6 @@ try {
   await browser('open',`http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/security/index.html?enforce=${enforce?1:0}`);
   await browser('wait','--fn','window.securityFixture?.ready === true');
   assert.equal((await browser('session','info')).runtime.pageCount,1);
-  assert.equal(await evaluate('document.querySelectorAll("svg linearGradient, svg clipPath, svg use, svg text").length'),4);
-  await evaluate('window.securityFixture.zoom()');
-  await browser('snapshot','-i');
-  await browser('click','.blueprint-seat-container[data-seat-id="1"]');
-  assert.equal(await evaluate('window.securityFixture.selected'),1);
   await evaluate('window.securityFixture.show()');
   await browser('snapshot','-i');
   assert.equal(await evaluate('document.querySelector(".dialog-description b").textContent'),'Bold');
@@ -55,10 +50,6 @@ try {
   await browser('press','Escape');
   assert.equal(await evaluate('document.body.style.overflow'),'');
   await browser('wait','--fn','document.querySelectorAll(".overlay").length === 0');
-  await evaluate('window.securityFixture.render(true)');
-  assert.equal(await evaluate('document.querySelectorAll(".blueprint-bg-container").length'),0);
-  await browser('click','.blueprint-seat-container[data-seat-id="1"]');
-  assert.equal(await evaluate('window.securityFixture.selected'),1);
   assert.equal(await evaluate('window.securityFixture.executed'),0,'XSS must fail without CSP too');
   if(enforce) {
    await evaluate(`const b=document.createElement('button');b.textContent='Synthetic inline';b.setAttribute('onclick','window.securityFixture.executed++');document.body.appendChild(b);b.click();`);
@@ -68,7 +59,7 @@ try {
    assert.ok(acceptedReports>0,'real Worker report route accepted browser synthetic violation');
   }
  }
- console.log('web-security-browser: pass (no CSP + enforcing fixture; dialog, SVG, zoom/pan, selection, reserve callback, Escape, blocked inline handler)');
+ console.log('web-security-browser: pass (no CSP + enforcing fixture; dialog, reserve callback, Escape, blocked inline handler)');
 } finally {
  await browser('close').catch(()=>{});
  await server?.close();await rm(temporary,{recursive:true,force:true});

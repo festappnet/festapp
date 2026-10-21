@@ -34,16 +34,16 @@ BEGIN
     FROM public.images AS image
     WHERE image.link = ANY(p_links)
       AND NOT (
-        (image.unit IS NOT NULL AND public.get_is_editor_on_unit(image.unit))
+        (image.unit IS NOT NULL AND public.can_upload_unit_media(image.unit))
         OR
-        (image.occasion IS NOT NULL AND (
-          public.get_is_editor_on_occasion(image.occasion)
-          OR public.get_is_editor_order_on_occasion(image.occasion)
-        ))
+        (image.occasion IS NOT NULL AND public.can_upload_occasion_media(image.occasion))
       )
   ) THEN
     RAISE EXCEPTION 'Permission denied for image deletion.' USING ERRCODE = '42501';
   END IF;
+
+  IF EXISTS(SELECT 1 FROM public.blueprint_image_assets a WHERE a.url=ANY(p_links)) THEN
+    RAISE insufficient_privilege USING MESSAGE='BLUEPRINT_IMAGE_IMMUTABLE'; END IF;
 
   RETURN QUERY
   SELECT DISTINCT image.link

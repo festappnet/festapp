@@ -9,7 +9,7 @@ DECLARE
   v_entity jsonb; v_begin jsonb; v_hash text; v_commit jsonb; v_public jsonb;
   v_response jsonb; v_is_publishable boolean; v_is_hidden boolean;
 BEGIN
-  IF v_actor IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN
+  IF v_actor IS NULL OR NOT public.can_write_information(p_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required';
   END IF;
   SELECT NOT o.is_hidden INTO v_is_publishable FROM public.occasions o

@@ -1,7 +1,9 @@
+import {resolve} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {build} from '../../web_client/node_modules/esbuild/lib/main.js';
 const root=new URL('../../',import.meta.url);
-const out=new URL('docs/plans/google-sign-in-reference-2026-10-01/implementation/',root);mkdirSync(out,{recursive:true});
+const out=pathToFileURL(resolve(fileURLToPath(root),process.env.FESTAPP_GOOGLE_AUTH_EVIDENCE_DIR??'.codex-artifacts/google-auth/run','implementation')+'/');mkdirSync(out,{recursive:true});
 const source=`import {LoginModal} from './web_client/src/components/users/login_modal.js';
 import {GoogleAuthService} from './web_client/src/services/google_auth_service.js';
 import {LocalizationService} from './web_client/src/services/localization_service.js';

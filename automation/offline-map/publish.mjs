@@ -109,12 +109,12 @@ async function main() {
     });
 
     await pooled(entries, async entry => {
-      await run('npx', ['--yes', 'wrangler@latest', 'r2', 'object', 'put',
+      await run('pnpm', ['dlx', 'wrangler@latest', 'r2', 'object', 'put',
         `${BUCKET}/${entry.key}`, '--remote', '--file', entry.file,
         '--content-type', entry.content_type, '--cache-control', CACHE_CONTROL]);
     });
     // The manifest is the publication marker and is intentionally uploaded last.
-    await run('npx', ['--yes', 'wrangler@latest', 'r2', 'object', 'put',
+    await run('pnpm', ['dlx', 'wrangler@latest', 'r2', 'object', 'put',
       `${BUCKET}/${manifestEntry.key}`, '--remote', '--file', manifestEntry.file,
       '--content-type', manifestEntry.content_type, '--cache-control', CACHE_CONTROL]);
   }

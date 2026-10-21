@@ -27,7 +27,7 @@ BEGIN
            (target_unit,org,'UNIT_COPY_INHERITED','Target inherited','Target inherited');
   INSERT INTO public.information(occasion,unit,title) VALUES (source,source_unit,'Info');
   INSERT INTO public.places(occasion,unit,title) VALUES (source,source_unit,'Place');
-  INSERT INTO eshop.blueprints(occasion,organization,title) VALUES (source,org,'Plan');
+  INSERT INTO eshop.blueprints(occasion,organization,title,layout) VALUES (source,org,'Plan','{"schemaVersion":2,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":400,"height":200,"fill":"#FFFFFFFF"},"styles":{},"seatingDefaults":{},"textPolicy":{"language":"und","direction":"auto"},"nodes":[]}'::jsonb);
   INSERT INTO eshop.bank_accounts(title) VALUES ('Source only') RETURNING id INTO bank;
   INSERT INTO eshop.bank_accounts(title) VALUES ('Shared') RETURNING id INTO shared_bank;
   INSERT INTO eshop.unit_bank_accounts(unit,bank_account)
