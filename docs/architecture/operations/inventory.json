@@ -17,7 +17,7 @@
       "Migration/baseline lookup is a fallback for missing authored definitions, not runtime precedence proof. Tests and operator automation are excluded. SQL declarations include internal helpers and overloads, not just callable APIs."
     ]
   },
-  "scannedFiles": 1120,
+  "scannedFiles": 1159,
   "rpc": [
     {
       "name": "abort_fakturoid_ticket_order_v1",
@@ -114,7 +114,7 @@
       "references": [
         {
           "file": "workers/image-worker/src/upload.ts",
-          "line": 255,
+          "line": 279,
           "via": "http-path-reference"
         }
       ],
@@ -122,7 +122,7 @@
         {
           "schema": "public",
           "file": "database/functions/others/add_image_record.sql",
-          "line": 1,
+          "line": 25,
           "arguments": "p_link text, p_occasion_id bigint, p_unit_id bigint"
         }
       ]
@@ -230,7 +230,7 @@
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 21,
+          "line": 37,
           "arguments": "p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
         }
       ]
@@ -240,7 +240,7 @@
       "references": [
         {
           "file": "workers/image-worker/src/upload.ts",
-          "line": 193,
+          "line": 213,
           "via": "http-path-reference"
         }
       ],
@@ -248,8 +248,14 @@
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 41,
+          "line": 69,
           "arguments": "p_bytes bigint,p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 77,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint,p_profile text"
         }
       ]
     },
@@ -258,7 +264,7 @@
       "references": [
         {
           "file": "workers/image-worker/src/upload.ts",
-          "line": 163,
+          "line": 174,
           "via": "http-path-reference"
         }
       ],
@@ -266,8 +272,14 @@
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 3,
+          "line": 15,
           "arguments": "p_bytes bigint,p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 23,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint,p_profile text"
         }
       ]
     },
@@ -290,11 +302,29 @@
       ]
     },
     {
-      "name": "admit_ticket_preview_limits_v1",
+      "name": "admit_occasion_setup_blueprint_resources_v1",
       "references": [
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
           "line": 10,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 2,
+          "arguments": "p_draft uuid,p_bytes bigint"
+        }
+      ]
+    },
+    {
+      "name": "admit_ticket_preview_limits_v1",
+      "references": [
+        {
+          "file": "supabase/functions/preview-ticket-layout/index.ts",
+          "line": 16,
           "via": "rpc"
         }
       ],
@@ -425,7 +455,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 355,
+          "line": 357,
           "via": "rpc"
         }
       ],
@@ -443,7 +473,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 337,
+          "line": 339,
           "via": "rpc"
         }
       ],
@@ -503,6 +533,16 @@
         {
           "file": "lib/components/organization/organization_admin_guard.dart",
           "line": 51,
+          "via": "rpc"
+        },
+        {
+          "file": "lib/widgets/header/user_header_widget.dart",
+          "line": 199,
+          "via": "rpc"
+        },
+        {
+          "file": "web_client/src/components/users/user_header.js",
+          "line": 325,
           "via": "rpc"
         }
       ],
@@ -603,8 +643,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260803140000_scoped_publisher_claims.sql",
-        "line": 72
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 2622
       }
     },
     {
@@ -618,8 +658,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260803140000_scoped_publisher_claims.sql",
-        "line": 53
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 2644
       }
     },
     {
@@ -669,8 +709,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260806100000_client_sync_production_hardening.sql",
-        "line": 239
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 2765
       }
     },
     {
@@ -850,7 +890,7 @@
       "references": [
         {
           "file": "lib/components/forms/supabase_form_commands.dart",
-          "line": 20,
+          "line": 23,
           "via": "_invoke"
         }
       ],
@@ -922,7 +962,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 278,
+          "line": 280,
           "via": "rpc"
         }
       ],
@@ -1023,8 +1063,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260806100000_client_sync_production_hardening.sql",
-        "line": 340
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 5807
       }
     },
     {
@@ -1181,7 +1221,7 @@
       "references": [
         {
           "file": "lib/components/forms/supabase_form_commands.dart",
-          "line": 42,
+          "line": 45,
           "via": "_invoke"
         }
       ],
@@ -1241,7 +1281,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 143,
+          "line": 145,
           "via": "rpc"
         }
       ],
@@ -1295,7 +1335,7 @@
       "references": [
         {
           "file": "lib/components/occasion/setup/occasion_setup_draft.dart",
-          "line": 104,
+          "line": 110,
           "via": "rpc"
         }
       ],
@@ -1359,7 +1399,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 335,
+          "line": 357,
           "via": "rpc"
         }
       ],
@@ -1605,8 +1645,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 3703
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 8639
       }
     },
     {
@@ -1650,7 +1690,7 @@
       "references": [
         {
           "file": "lib/components/forms/supabase_form_commands.dart",
-          "line": 31,
+          "line": 34,
           "via": "_invoke"
         }
       ],
@@ -2018,7 +2058,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 227,
+          "line": 234,
           "via": "rpc"
         }
       ],
@@ -2072,7 +2112,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 311,
+          "line": 318,
           "via": "rpc"
         }
       ],
@@ -2162,7 +2202,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 34,
+          "line": 51,
           "via": "rpc"
         }
       ],
@@ -2376,7 +2416,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 167,
+          "line": 184,
           "via": "rpc"
         },
         {
@@ -2399,8 +2439,13 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 187,
+          "line": 204,
           "via": "rpc"
+        },
+        {
+          "file": "workers/image-worker/scripts/blueprint_local_images.mjs",
+          "line": 5,
+          "via": "http-path-reference"
         }
       ],
       "definitions": [
@@ -2409,6 +2454,24 @@
           "file": "database/functions/eshop/get_blueprint_for_edit.sql",
           "line": 1,
           "arguments": "occasion_link TEXT"
+        }
+      ]
+    },
+    {
+      "name": "get_blueprint_image_upload_access",
+      "references": [
+        {
+          "file": "workers/image-worker/src/blueprint-assets.ts",
+          "line": 10,
+          "via": "http-path-reference"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 22,
+          "arguments": "p_occasion bigint,p_project text,p_unit bigint DEFAULT NULL"
         }
       ]
     },
@@ -2506,8 +2569,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260806100000_client_sync_production_hardening.sql",
-        "line": 282
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 16202
       }
     },
     {
@@ -2521,8 +2584,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 4817
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 16263
       }
     },
     {
@@ -2821,8 +2884,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260803153000_restore_event_relations_and_news_views.sql",
-        "line": 4
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 16956
       }
     },
     {
@@ -3030,7 +3093,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 94,
+          "line": 111,
           "via": "rpc"
         },
         {
@@ -3053,7 +3116,7 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 105,
+          "line": 122,
           "via": "rpc"
         }
       ],
@@ -3071,12 +3134,12 @@
       "references": [
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 49,
+          "line": 66,
           "via": "rpc"
         },
         {
           "file": "lib/components/forms/db_forms.dart",
-          "line": 59,
+          "line": 76,
           "via": "rpc"
         }
       ],
@@ -3385,7 +3448,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 301,
+          "line": 308,
           "via": "rpc"
         }
       ],
@@ -3489,6 +3552,24 @@
       ]
     },
     {
+      "name": "get_occasion_setup_blueprint_resources",
+      "references": [
+        {
+          "file": "lib/components/occasion/setup/occasion_setup_draft.dart",
+          "line": 104,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 17,
+          "arguments": "p_draft uuid"
+        }
+      ]
+    },
+    {
       "name": "get_occasion_setup_communication",
       "references": [
         {
@@ -3529,7 +3610,7 @@
       "references": [
         {
           "file": "lib/components/occasion/setup/occasion_setup_page.dart",
-          "line": 206,
+          "line": 205,
           "via": "rpc"
         }
       ],
@@ -3619,7 +3700,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 290,
+          "line": 312,
           "via": "rpc"
         },
         {
@@ -3693,12 +3774,12 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 372,
+          "line": 394,
           "via": "rpc"
         },
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 154,
+          "line": 157,
           "via": "rpc"
         }
       ],
@@ -3734,7 +3815,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 162,
+          "line": 184,
           "via": "rpc"
         }
       ],
@@ -3758,7 +3839,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 174,
+          "line": 196,
           "via": "rpc"
         }
       ],
@@ -3836,8 +3917,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 1086
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 21476
       }
     },
     {
@@ -3868,7 +3949,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 201,
+          "line": 203,
           "via": "rpc"
         }
       ],
@@ -3886,7 +3967,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 171,
+          "line": 173,
           "via": "rpc"
         }
       ],
@@ -3904,7 +3985,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 158,
+          "line": 160,
           "via": "rpc"
         }
       ],
@@ -3928,8 +4009,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260807153000_add_occasion_media_to_client_sync.sql",
-        "line": 11
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 22268
       }
     },
     {
@@ -4045,7 +4126,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 383,
+          "line": 385,
           "via": "rpc"
         }
       ],
@@ -4063,7 +4144,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 257,
+          "line": 260,
           "via": "rpc"
         }
       ],
@@ -4772,7 +4853,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 439,
+          "line": 466,
           "via": "rpc"
         }
       ],
@@ -4831,7 +4912,7 @@
         },
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 14,
+          "line": 20,
           "via": "rpc"
         }
       ],
@@ -4975,7 +5056,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 329,
+          "line": 331,
           "via": "rpc"
         }
       ],
@@ -4999,8 +5080,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 4753
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 27416
       }
     },
     {
@@ -5054,6 +5135,24 @@
           "file": "database/functions/scanning/snapshots.sql",
           "line": 1,
           "arguments": "p_session uuid,p_token text"
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_swap",
+      "references": [
+        {
+          "file": "lib/components/forms/db_forms.dart",
+          "line": 33,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/preview_blueprint_swap.sql",
+          "line": 3,
+          "arguments": "p_spot_1 bigint,p_spot_2 bigint"
         }
       ]
     },
@@ -5244,8 +5343,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 4629
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 28466
       }
     },
     {
@@ -5277,9 +5376,63 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260806100000_client_sync_production_hardening.sql",
-        "line": 70
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 28539
       }
+    },
+    {
+      "name": "register_blueprint_image_asset",
+      "references": [
+        {
+          "file": "workers/image-worker/src/blueprint-assets.ts",
+          "line": 32,
+          "via": "http-path-reference"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 32,
+          "arguments": "p_occasion bigint,p_project text,p_asset jsonb,p_issued_at bigint,p_proof text,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "register_blueprint_text_resources",
+      "references": [
+        {
+          "file": "supabase/functions/preview-ticket-layout/index.ts",
+          "line": 25,
+          "via": "rpc"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/text_resources.sql",
+          "line": 18,
+          "arguments": "p_occasion bigint,p_setup_draft uuid,p_resources jsonb"
+        }
+      ]
+    },
+    {
+      "name": "release_blueprint_holds_client_sync_v1",
+      "references": [
+        {
+          "file": "lib/components/eshop/ticket_commands.dart",
+          "line": 62,
+          "via": "invoke"
+        }
+      ],
+      "definitions": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/release_blueprint_holds_client_sync_v1.sql",
+          "line": 2,
+          "arguments": "p_spots bigint[], p_command_id uuid"
+        }
+      ]
     },
     {
       "name": "release_client_projection_claims_v1",
@@ -5292,8 +5445,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260806100000_client_sync_production_hardening.sql",
-        "line": 6
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 28581
       }
     },
     {
@@ -5325,8 +5478,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260807153000_add_occasion_media_to_client_sync.sql",
-        "line": 87
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 28641
       }
     },
     {
@@ -5334,7 +5487,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 126,
+          "line": 128,
           "via": "rpc"
         }
       ],
@@ -5383,7 +5536,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql",
-          "line": 41,
+          "line": 42,
           "arguments": "p_spot_ids bigint[],p_input_data jsonb,p_command_id uuid"
         }
       ]
@@ -5483,7 +5636,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 272,
+          "line": 275,
           "via": "rpc"
         }
       ],
@@ -5566,6 +5719,11 @@
         {
           "file": "supabase/functions/cancel-reception-registration/cancel.ts",
           "line": 27,
+          "via": "rpc"
+        },
+        {
+          "file": "supabase/functions/mcp-session-exchange/handler.ts",
+          "line": 55,
           "via": "rpc"
         }
       ],
@@ -5863,7 +6021,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 344,
+          "line": 346,
           "via": "rpc"
         }
       ],
@@ -5881,7 +6039,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 316,
+          "line": 318,
           "via": "rpc"
         }
       ],
@@ -5899,7 +6057,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 293,
+          "line": 295,
           "via": "invoke"
         }
       ],
@@ -6084,7 +6242,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 170,
+          "line": 173,
           "via": "rpc"
         }
       ],
@@ -6120,7 +6278,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 120,
+          "line": 140,
           "via": "rpc"
         },
         {
@@ -6133,7 +6291,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop/select_spot.sql",
-          "line": 1,
+          "line": 111,
           "arguments": "form_key uuid,secret_id uuid,spot_id bigint,selecting boolean"
         }
       ]
@@ -6310,7 +6468,7 @@
       "references": [
         {
           "file": "lib/components/eshop/ticket_commands.dart",
-          "line": 47,
+          "line": 49,
           "via": "invoke"
         }
       ],
@@ -6400,14 +6558,14 @@
       "references": [
         {
           "file": "lib/components/eshop/ticket_commands.dart",
-          "line": 61,
+          "line": 75,
           "via": "invoke"
         }
       ],
       "definitions": [
         {
           "schema": "public",
-          "file": "database/functions/eshop/swap_spot_tickets_client_sync_v1.sql",
+          "file": "database/functions/blueprint/swap_spot_tickets_client_sync_v1.sql",
           "line": 1,
           "arguments": "p_spot_1 bigint, p_spot_2 bigint, p_command_id uuid"
         }
@@ -6567,24 +6725,6 @@
       ]
     },
     {
-      "name": "update_blueprint_client_sync_v1",
-      "references": [
-        {
-          "file": "lib/components/forms/supabase_form_commands.dart",
-          "line": 53,
-          "via": "_invoke"
-        }
-      ],
-      "definitions": [
-        {
-          "schema": "public",
-          "file": "database/functions/eshop/update_blueprint_client_sync_v1.sql",
-          "line": 1,
-          "arguments": "p_blueprint jsonb, p_command_id uuid"
-        }
-      ]
-    },
-    {
       "name": "update_email_template",
       "references": [
         {
@@ -6630,7 +6770,7 @@
       "references": [
         {
           "file": "lib/components/forms/supabase_form_commands.dart",
-          "line": 47,
+          "line": 50,
           "via": "_invoke"
         }
       ],
@@ -6648,7 +6788,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 358,
+          "line": 380,
           "via": "rpc"
         }
       ],
@@ -6666,7 +6806,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 345,
+          "line": 367,
           "via": "rpc"
         }
       ],
@@ -6684,7 +6824,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 326,
+          "line": 348,
           "via": "rpc"
         }
       ],
@@ -6756,7 +6896,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 236,
+          "line": 239,
           "via": "rpc"
         }
       ],
@@ -6810,7 +6950,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 141,
+          "line": 144,
           "via": "rpc"
         }
       ],
@@ -6834,8 +6974,8 @@
       ],
       "definitions": [],
       "migrationReference": {
-        "file": "supabase/migrations/20260802234000_client_sync_v1_expansion.sql",
-        "line": 5668
+        "file": "supabase/baseline/20260906140000_schema.sql",
+        "line": 39379
       }
     },
     {
@@ -6843,7 +6983,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_eshop.dart",
-          "line": 190,
+          "line": 192,
           "via": "rpc"
         }
       ],
@@ -6861,7 +7001,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 226,
+          "line": 229,
           "via": "rpc"
         }
       ],
@@ -6879,7 +7019,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 248,
+          "line": 251,
           "via": "rpc"
         }
       ],
@@ -6897,7 +7037,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 217,
+          "line": 220,
           "via": "rpc"
         }
       ],
@@ -7090,7 +7230,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 304,
+          "line": 326,
           "via": "invoke"
         }
       ],
@@ -7110,7 +7250,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 122,
+          "line": 125,
           "via": "invoke"
         },
         {
@@ -7251,7 +7391,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 405,
+          "line": 432,
           "via": "invoke"
         }
       ],
@@ -7311,6 +7451,31 @@
       "policyStatus": "in-runtime-policy"
     },
     {
+      "name": "mcp-session-exchange",
+      "references": [
+        {
+          "file": "lib/components/mcp/mcp_connection_service.dart",
+          "line": 8,
+          "via": "invoke"
+        },
+        {
+          "file": "web_client/src/components/mcp/mcp_connection_page.js",
+          "line": 44,
+          "via": "invoke"
+        }
+      ],
+      "runtimePolicy": {
+        "trigger": "client-http",
+        "effects": [
+          "database-rpc",
+          "auth-session-create"
+        ],
+        "mutates_authority": true
+      },
+      "source": "supabase/functions/mcp-session-exchange/index.ts",
+      "policyStatus": "in-runtime-policy"
+    },
+    {
       "name": "notify",
       "references": [],
       "runtimePolicy": {
@@ -7329,7 +7494,7 @@
       "references": [
         {
           "file": "lib/components/ticket_layout/ticket_layout_service.dart",
-          "line": 384,
+          "line": 409,
           "via": "invoke"
         }
       ],
@@ -7470,6 +7635,11 @@
           "file": "lib/components/eshop/db_eshop.dart",
           "line": 36,
           "via": "invoke"
+        },
+        {
+          "file": "lib/components/eshop/db_orders.dart",
+          "line": 425,
+          "via": "invoke"
         }
       ],
       "runtimePolicy": {
@@ -7489,7 +7659,7 @@
       "references": [
         {
           "file": "lib/components/occasion/setup/occasion_setup_page.dart",
-          "line": 512,
+          "line": 508,
           "via": "invoke"
         }
       ],
@@ -7555,7 +7725,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_orders.dart",
-          "line": 81,
+          "line": 101,
           "via": "invoke"
         },
         {
@@ -7589,7 +7759,7 @@
       "references": [
         {
           "file": "lib/components/eshop/db_tickets.dart",
-          "line": 106,
+          "line": 109,
           "via": "invoke"
         }
       ],
@@ -7738,7 +7908,7 @@
       "references": [
         {
           "file": "lib/components/images/db_images.dart",
-          "line": 81,
+          "line": 89,
           "via": "from-Tb"
         }
       ]
@@ -7823,7 +7993,7 @@
         },
         {
           "file": "supabase/functions/preview-ticket-layout/index.ts",
-          "line": 14,
+          "line": 20,
           "via": "from"
         },
         {
@@ -8003,7 +8173,7 @@
     },
     {
       "file": "lib/components/forms/supabase_form_commands.dart",
-      "line": 63,
+      "line": 85,
       "kind": "rpc",
       "expression": "functionName",
       "via": "invoke"
@@ -8136,14 +8306,14 @@
     },
     {
       "file": "web_client/src/services/google_auth_service.js",
-      "line": 15,
+      "line": 17,
       "kind": "edge",
       "expression": "nonliteral-string",
       "via": "invoke"
     },
     {
       "file": "web_client/src/services/router_service.js",
-      "line": 401,
+      "line": 416,
       "kind": "rpc",
       "expression": ".",
       "via": "rpc"
@@ -8414,8 +8584,19 @@
         {
           "schema": "public",
           "file": "database/functions/others/add_image_record.sql",
-          "line": 1,
+          "line": 25,
           "arguments": "p_link text, p_occasion_id bigint, p_unit_id bigint"
+        }
+      ]
+    },
+    {
+      "name": "add_image_record_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/others/add_image_record.sql",
+          "line": 3,
+          "arguments": "p_link text,p_occasion_id bigint,p_unit_id bigint"
         }
       ]
     },
@@ -8535,13 +8716,13 @@
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 21,
+          "line": 37,
           "arguments": "p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
         }
       ]
     },
     {
-      "name": "admit_image_record_v1",
+      "name": "admit_image_record_budget_internal",
       "locations": [
         {
           "schema": "public",
@@ -8552,13 +8733,52 @@
       ]
     },
     {
+      "name": "admit_image_record_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/image_records.sql",
+          "line": 25,
+          "arguments": "p_link text,p_occasion bigint,p_unit bigint"
+        }
+      ]
+    },
+    {
+      "name": "admit_image_storage_budget_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 57,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint"
+        }
+      ]
+    },
+    {
       "name": "admit_image_storage_v1",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 41,
+          "line": 69,
           "arguments": "p_bytes bigint,p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 77,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint,p_profile text"
+        }
+      ]
+    },
+    {
+      "name": "admit_image_upload_budget_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 3,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint"
         }
       ]
     },
@@ -8568,8 +8788,14 @@
         {
           "schema": "public",
           "file": "database/functions/abuse/media.sql",
-          "line": 3,
+          "line": 15,
           "arguments": "p_bytes bigint,p_occasion_id bigint DEFAULT NULL,p_unit_id bigint DEFAULT NULL"
+        },
+        {
+          "schema": "public",
+          "file": "database/functions/abuse/media.sql",
+          "line": 23,
+          "arguments": "p_bytes bigint,p_occasion_id bigint,p_unit_id bigint,p_profile text"
         }
       ]
     },
@@ -8638,6 +8864,17 @@
           "file": "database/functions/abuse/budgets.sql",
           "line": 127,
           "arguments": "p_actor uuid,p_unit bigint,p_org bigint,p_bytes bigint,p_new boolean,p_work boolean"
+        }
+      ]
+    },
+    {
+      "name": "admit_occasion_setup_blueprint_resources_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 2,
+          "arguments": "p_draft uuid,p_bytes bigint"
         }
       ]
     },
@@ -8961,8 +9198,25 @@
       ]
     },
     {
+      "name": "begin_client_mutation_reviewed_impl_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/reviewed_migration_receipt.sql",
+          "line": 2,
+          "arguments": "p_command_id uuid, p_command_name text, p_occasion bigint, p_actor_id uuid, p_request_sha256 text, p_reviewed_demo boolean"
+        }
+      ]
+    },
+    {
       "name": "begin_client_mutation_v1",
       "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/reviewed_migration_receipt.sql",
+          "line": 45,
+          "arguments": "p_command_id uuid,p_command_name text,p_occasion bigint,p_actor_id uuid,p_request_sha256 text"
+        },
         {
           "schema": "public",
           "file": "database/functions/demo_occasions/client_mutation_guards.sql",
@@ -8990,6 +9244,314 @@
           "file": "database/functions/units/begin_unit_client_mutation_v1.sql",
           "line": 1,
           "arguments": "p_command_id uuid, p_command_name text, p_unit bigint, p_actor_id uuid, p_request_sha256 text"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_area_availability_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/availability.sql",
+          "line": 54,
+          "arguments": "p_blueprint bigint,p_form bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_binding_projection_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/projections.sql",
+          "line": 3,
+          "arguments": "p_blueprint bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_canonical_asset_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 9,
+          "arguments": "p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_canonical_surface_projection_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 66,
+          "arguments": "p_node jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_canonical_text_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 71,
+          "arguments": "p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL,p_presets boolean DEFAULT false"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_contract_metadata_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_metadata.sql",
+          "line": 2,
+          "arguments": ""
+        }
+      ]
+    },
+    {
+      "name": "blueprint_declared_font_families_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 55,
+          "arguments": "p_layout jsonb,p_presets boolean DEFAULT false"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_form_product_catalog_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/availability.sql",
+          "line": 41,
+          "arguments": "p_form bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_form_products_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/availability.sql",
+          "line": 26,
+          "arguments": "p_form bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_grid_cell_filled_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 58,
+          "arguments": "p_surface jsonb,p_x numeric,p_y numeric"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_grid_contains_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 44,
+          "arguments": "p_ring jsonb,p_x numeric,p_y numeric"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_hold_admission_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/select_spot.sql",
+          "line": 16,
+          "arguments": "p_form bigint,p_spots bigint[],p_secret uuid"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_layout_asset_refs_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 1,
+          "arguments": "p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_layout_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 24,
+          "arguments": "p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_layout_text_requests_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 14,
+          "arguments": "p_layout jsonb,p_presets boolean DEFAULT false"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_legacy_migration_source_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql",
+          "line": 2,
+          "arguments": "p_blueprint bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_product_availability_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/availability.sql",
+          "line": 3,
+          "arguments": "p_product bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_public_binding_projection_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/projections.sql",
+          "line": 11,
+          "arguments": "p_blueprint bigint,p_secret uuid"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_public_document_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 70,
+          "arguments": "p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_resolved_label_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 2,
+          "arguments": "p_doc jsonb,p_node jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_selection_unit_spots_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/guards.sql",
+          "line": 27,
+          "arguments": "p_spot bigint"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_text_resource_ids_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 96,
+          "arguments": "p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_assembly_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 175,
+          "arguments": "p_spec jsonb,p_node_kind text"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_gradient_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 127,
+          "arguments": "p_gradient jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_leaves_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 2,
+          "arguments": "p_value jsonb,p_rules jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_path_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 110,
+          "arguments": "p_path jsonb"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_style_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 23,
+          "arguments": "p_style jsonb,p_kind text"
+        }
+      ]
+    },
+    {
+      "name": "blueprint_validate_vector_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 146,
+          "arguments": "p_graphic jsonb"
         }
       ]
     },
@@ -9166,6 +9728,50 @@
           "file": "database/functions/demo_occasions/access.sql",
           "line": 23,
           "arguments": "p_bank_account bigint"
+        }
+      ]
+    },
+    {
+      "name": "check_blueprint_bitmap_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 17,
+          "arguments": "p_layout jsonb,p_occasion bigint"
+        }
+      ]
+    },
+    {
+      "name": "check_blueprint_image_resource_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 78,
+          "arguments": "p_layout jsonb,p_occasion bigint"
+        }
+      ]
+    },
+    {
+      "name": "check_blueprint_selection_units_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/guards.sql",
+          "line": 11,
+          "arguments": "p_spots bigint[]"
+        }
+      ]
+    },
+    {
+      "name": "check_blueprint_text_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_text_dependencies.sql",
+          "line": 84,
+          "arguments": "p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL"
         }
       ]
     },
@@ -9654,6 +10260,61 @@
       ]
     },
     {
+      "name": "copy_blueprint_canonical_bitmap_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 49,
+          "arguments": "p_source bigint,p_unit bigint,p_target bigint,p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "copy_blueprint_image_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 103,
+          "arguments": "p_source_occasion bigint,p_target_occasion bigint,p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "copy_blueprint_text_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_resource_projection.sql",
+          "line": 32,
+          "arguments": "p_source_occasion bigint,p_source_draft uuid,p_target bigint,p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "copy_blueprint_unit_image_resources_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 123,
+          "arguments": "p_source_unit bigint,p_target_occasion bigint,p_layout jsonb"
+        }
+      ]
+    },
+    {
+      "name": "copy_empty_inventory_spot_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/inventory/copy_resource_configuration.sql",
+          "line": 24,
+          "arguments": "p_source bigint,p_occasion bigint,p_product bigint,p_blueprint bigint,p_context bigint,p_resource bigint,p_slot bigint"
+        }
+      ]
+    },
+    {
       "name": "copy_form_with_fields",
       "locations": [
         {
@@ -9665,6 +10326,17 @@
       ]
     },
     {
+      "name": "copy_inventory_resource_configuration_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/inventory/copy_resource_configuration.sql",
+          "line": 3,
+          "arguments": "p_source bigint,p_pool bigint,p_place bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
       "name": "copy_occasion_title_internal",
       "locations": [
         {
@@ -9672,6 +10344,17 @@
           "file": "database/functions/public_links/copy_title.sql",
           "line": 1,
           "arguments": "p_title text,p_locale text"
+        }
+      ]
+    },
+    {
+      "name": "copy_setup_area_inventory_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 44,
+          "arguments": "p_areas jsonb,p_products jsonb,p_source bigint,p_target bigint"
         }
       ]
     },
@@ -10884,13 +11567,13 @@
         {
           "schema": "public",
           "file": "database/functions/others/duplicate_occasion.sql",
-          "line": 414,
+          "line": 415,
           "arguments": "oc bigint"
         },
         {
           "schema": "public",
           "file": "database/functions/others/duplicate_occasion.sql",
-          "line": 423,
+          "line": 424,
           "arguments": "oc bigint,p_target_unit bigint"
         }
       ]
@@ -11044,7 +11727,7 @@
         {
           "schema": "public",
           "file": "database/functions/emails/email_domain.sql",
-          "line": 177,
+          "line": 182,
           "arguments": "p_user uuid,p_password text,p_occasion bigint,p_sealed jsonb,p_content_hash text,p_dedupe text,p_expires timestamptz"
         }
       ]
@@ -11143,7 +11826,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_waitlist/tickets.sql",
-          "line": 100,
+          "line": 103,
           "arguments": "p_form bigint,p_ticket jsonb"
         }
       ]
@@ -11888,6 +12571,17 @@
           "file": "database/functions/eshop/get_blueprint_for_edit.sql",
           "line": 1,
           "arguments": "occasion_link TEXT"
+        }
+      ]
+    },
+    {
+      "name": "get_blueprint_image_upload_access",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 22,
+          "arguments": "p_occasion bigint,p_project text,p_unit bigint DEFAULT NULL"
         }
       ]
     },
@@ -13020,6 +13714,17 @@
       ]
     },
     {
+      "name": "get_occasion_setup_blueprint_resources",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 17,
+          "arguments": "p_draft uuid"
+        }
+      ]
+    },
+    {
       "name": "get_occasion_setup_communication",
       "locations": [
         {
@@ -13104,6 +13809,17 @@
           "file": "database/functions/users/get_occasion_users_for_edit.sql",
           "line": 54,
           "arguments": "p_occasion_id bigint"
+        }
+      ]
+    },
+    {
+      "name": "get_operator_access_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/others/get_operator_access_v1.sql",
+          "line": 3,
+          "arguments": "p_organization bigint, p_unit bigint DEFAULT NULL, p_occasion bigint DEFAULT NULL"
         }
       ]
     },
@@ -13245,7 +13961,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_waitlist/tickets.sql",
-          "line": 112,
+          "line": 115,
           "arguments": "p_order bigint"
         }
       ]
@@ -14489,6 +15205,28 @@
       ]
     },
     {
+      "name": "lock_blueprint_hold_scope_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/select_spot.sql",
+          "line": 2,
+          "arguments": "p_spots bigint[]"
+        }
+      ]
+    },
+    {
+      "name": "lock_blueprint_scope_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/guards.sql",
+          "line": 3,
+          "arguments": "p_occasions bigint[]"
+        }
+      ]
+    },
+    {
       "name": "lock_event_deletion_scope_internal_v1",
       "locations": [
         {
@@ -14698,6 +15436,28 @@
       ]
     },
     {
+      "name": "materialize_setup_area_inventory_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 92,
+          "arguments": "p_area jsonb,p_product bigint,p_target bigint"
+        }
+      ]
+    },
+    {
+      "name": "materialize_setup_blueprint_layout_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/occasion_setup/blueprint_layout.sql",
+          "line": 111,
+          "arguments": "p_draft jsonb,p_product_map jsonb,p_source bigint,p_target bigint,p_unit bigint"
+        }
+      ]
+    },
+    {
       "name": "merge_ticket_appearance_internal_v1",
       "locations": [
         {
@@ -14716,6 +15476,17 @@
           "file": "database/functions/others/ticket_layout.sql",
           "line": 174,
           "arguments": "p_old jsonb,p_next jsonb,p_change jsonb DEFAULT NULL,p_create boolean DEFAULT false"
+        }
+      ]
+    },
+    {
+      "name": "migrate_blueprint_layout_reviewed_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql",
+          "line": 8,
+          "arguments": "p_source text,p_source_sha text,p_blueprint jsonb,p_command_id uuid"
         }
       ]
     },
@@ -14791,7 +15562,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_waitlist/tickets.sql",
-          "line": 42,
+          "line": 45,
           "arguments": "p_form bigint,p_tickets jsonb"
         }
       ]
@@ -14852,6 +15623,28 @@
       ]
     },
     {
+      "name": "order_spot_metadata_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/order_seating.sql",
+          "line": 2,
+          "arguments": "p_spot bigint"
+        }
+      ]
+    },
+    {
+      "name": "order_tickets_with_seating_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/order_seating.sql",
+          "line": 18,
+          "arguments": "p_order bigint,p_tickets jsonb"
+        }
+      ]
+    },
+    {
       "name": "password_verification_attempt_v1",
       "locations": [
         {
@@ -14892,6 +15685,17 @@
           "file": "database/functions/scanning/snapshots.sql",
           "line": 1,
           "arguments": "p_session uuid,p_token text"
+        }
+      ]
+    },
+    {
+      "name": "preview_blueprint_swap",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/preview_blueprint_swap.sql",
+          "line": 3,
+          "arguments": "p_spot_1 bigint,p_spot_2 bigint"
         }
       ]
     },
@@ -15182,6 +15986,39 @@
       ]
     },
     {
+      "name": "register_blueprint_image_asset",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/image_assets.sql",
+          "line": 32,
+          "arguments": "p_occasion bigint,p_project text,p_asset jsonb,p_issued_at bigint,p_proof text,p_unit bigint DEFAULT NULL"
+        }
+      ]
+    },
+    {
+      "name": "register_blueprint_text_resources",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/text_resources.sql",
+          "line": 18,
+          "arguments": "p_occasion bigint,p_setup_draft uuid,p_resources jsonb"
+        }
+      ]
+    },
+    {
+      "name": "release_blueprint_holds_client_sync_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/release_blueprint_holds_client_sync_v1.sql",
+          "line": 2,
+          "arguments": "p_spots bigint[], p_command_id uuid"
+        }
+      ]
+    },
+    {
       "name": "release_existing_user_session_lease_v1",
       "locations": [
         {
@@ -15189,6 +16026,17 @@
           "file": "database/functions/users/existing_user_session.sql",
           "line": 65,
           "arguments": "p_user uuid,p_owner uuid"
+        }
+      ]
+    },
+    {
+      "name": "remap_blueprint_layout_ids_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/copy_layout_ids.sql",
+          "line": 3,
+          "arguments": "p_value jsonb,p_ids jsonb,p_key text DEFAULT NULL"
         }
       ]
     },
@@ -15253,7 +16101,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql",
-          "line": 41,
+          "line": 42,
           "arguments": "p_spot_ids bigint[],p_input_data jsonb,p_command_id uuid"
         }
       ]
@@ -15635,6 +16483,28 @@
           "file": "database/functions/eshop_bank_sync/bank_sync_manage.sql",
           "line": 73,
           "arguments": "p_operation_id uuid,p_instance_id text,p_remote_id text,p_pairing_code text,p_mode text"
+        }
+      ]
+    },
+    {
+      "name": "save_blueprint_layout_impl_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/save.sql",
+          "line": 1,
+          "arguments": "p_blueprint jsonb,p_reviewed_demo boolean"
+        }
+      ]
+    },
+    {
+      "name": "save_blueprint_layout_internal_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/save.sql",
+          "line": 150,
+          "arguments": "p_blueprint jsonb"
         }
       ]
     },
@@ -16128,7 +16998,18 @@
         {
           "schema": "public",
           "file": "database/functions/eshop/select_spot.sql",
-          "line": 1,
+          "line": 111,
+          "arguments": "form_key uuid,secret_id uuid,spot_id bigint,selecting boolean"
+        }
+      ]
+    },
+    {
+      "name": "select_spot_single_internal_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/select_spot.sql",
+          "line": 62,
           "arguments": "form_key uuid,secret_id uuid,spot_id bigint,selecting boolean"
         }
       ]
@@ -16426,7 +17307,7 @@
           "schema": "public",
           "file": "database/functions/eshop_orders/storno_tickets_bulk.sql",
           "line": 1,
-          "arguments": "p_ticket_ids BIGINT[]"
+          "arguments": "p_ticket_ids BIGINT[], p_send_email BOOLEAN DEFAULT TRUE"
         }
       ]
     },
@@ -16497,12 +17378,23 @@
       ]
     },
     {
+      "name": "swap_spot_pair_internal_v1",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/eshop/swap_spot_tickets.sql",
+          "line": 184,
+          "arguments": "spot_id_1 BIGINT, spot_id_2 BIGINT"
+        }
+      ]
+    },
+    {
       "name": "swap_spot_tickets",
       "locations": [
         {
           "schema": "public",
           "file": "database/functions/eshop/swap_spot_tickets.sql",
-          "line": 292,
+          "line": 322,
           "arguments": "spot_id_1 bigint,spot_id_2 bigint"
         }
       ]
@@ -16512,7 +17404,7 @@
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/eshop/swap_spot_tickets_client_sync_v1.sql",
+          "file": "database/functions/blueprint/swap_spot_tickets_client_sync_v1.sql",
           "line": 1,
           "arguments": "p_spot_1 bigint, p_spot_2 bigint, p_command_id uuid"
         }
@@ -16524,8 +17416,8 @@
         {
           "schema": "public",
           "file": "database/functions/eshop/swap_spot_tickets.sql",
-          "line": 182,
-          "arguments": "spot_id_1 BIGINT, spot_id_2 BIGINT"
+          "line": 294,
+          "arguments": "spot_id_1 bigint,spot_id_2 bigint"
         }
       ]
     },
@@ -16662,35 +17554,13 @@
       ]
     },
     {
-      "name": "update_blueprint",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/eshop/update_blueprint.sql",
-          "line": 93,
-          "arguments": "input_data jsonb"
-        }
-      ]
-    },
-    {
       "name": "update_blueprint_client_sync_v1",
       "locations": [
         {
           "schema": "public",
-          "file": "database/functions/eshop/update_blueprint_client_sync_v1.sql",
+          "file": "database/functions/blueprint/update_blueprint_client_sync_v1.sql",
           "line": 1,
-          "arguments": "p_blueprint jsonb, p_command_id uuid"
-        }
-      ]
-    },
-    {
-      "name": "update_blueprint_internal_v1",
-      "locations": [
-        {
-          "schema": "public",
-          "file": "database/functions/eshop/update_blueprint.sql",
-          "line": 2,
-          "arguments": "input_data jsonb"
+          "arguments": "p_blueprint jsonb,p_command_id uuid"
         }
       ]
     },
@@ -16876,7 +17746,7 @@
         {
           "schema": "public",
           "file": "database/functions/eshop_orders/update_order_and_tickets_to_storno.sql",
-          "line": 74,
+          "line": 75,
           "arguments": "order_id bigint"
         }
       ]
@@ -17252,6 +18122,50 @@
           "file": "database/functions/users/update_user.sql",
           "line": 1,
           "arguments": "input_data jsonb"
+        }
+      ]
+    },
+    {
+      "name": "validate_blueprint_canonical_declarations_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/canonical_validation.sql",
+          "line": 195,
+          "arguments": "p_doc jsonb"
+        }
+      ]
+    },
+    {
+      "name": "validate_blueprint_geometry_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/geometry_validation.sql",
+          "line": 31,
+          "arguments": "p_doc jsonb"
+        }
+      ]
+    },
+    {
+      "name": "validate_blueprint_layout_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/validation.sql",
+          "line": 2,
+          "arguments": "p_doc jsonb"
+        }
+      ]
+    },
+    {
+      "name": "validate_blueprint_polygon_internal",
+      "locations": [
+        {
+          "schema": "public",
+          "file": "database/functions/blueprint/geometry_validation.sql",
+          "line": 1,
+          "arguments": "p_points jsonb,p_closed boolean"
         }
       ]
     },

@@ -13,10 +13,12 @@
     },
     {
       "path": "lib/components/icons/db_place_types.dart",
+      "canonical_only": true,
       "command_modules": ["lib/components/map/map_commands.dart"]
     },
     {
       "path": "lib/components/information/db_information.dart",
+      "canonical_only": true,
       "command_modules": ["lib/components/information/information_commands.dart"]
     },
     {
@@ -42,6 +44,7 @@
     },
     {
       "path": "lib/components/users/db_users.dart",
+      "canonical_only": true,
       "command_modules": [
         "lib/components/unit/unit_commands.dart",
         "lib/components/users/profile_commands.dart"

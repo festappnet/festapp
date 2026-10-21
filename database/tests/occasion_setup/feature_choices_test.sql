@@ -1,7 +1,7 @@
 UPDATE public.abuse_policy_rules SET base_limit=hard_cap WHERE budget_key IN ('occasion.creation','occasion.draft');
 DO $$
 DECLARE actor uuid; org bigint; unit_id bigint; draft uuid; d jsonb; payload jsonb; response jsonb;
- event_id bigint; form_id bigint; old_product bigint; plan_id bigint; n integer; before_count bigint;
+ event_id bigint; form_id bigint; old_product bigint; node_id uuid := gen_random_uuid(); layout jsonb; plan_id bigint; n integer; before_count bigint;
 BEGIN
  PERFORM create_user_for_test('setup_feature_manager','setup_features@test.local');
  actor:=get_user_id('setup_feature_manager');
@@ -35,8 +35,10 @@ BEGIN
     payload:=jsonb_set(payload,'{formDraft,fields,1,is_hidden}','true');
    END IF;
   ELSIF n=6 THEN
+   layout:='{"schemaVersion":2,"symbolSetVersion":1,"canvas":{"x":0,"y":0,"width":1000,"height":1000,"fill":"#ffffffff"},"styles":{},"seatingDefaults":{},"textPolicy":{"language":"und","direction":"auto"},"nodes":[],"selectionUnits":[],"attachments":[],"sections":[],"presets":[]}'::jsonb;
+   layout:=jsonb_set(layout,'{nodes}',jsonb_build_array(jsonb_build_object('id',node_id,'kind','seat','width',40,'height',40,'transform',jsonb_build_object('x',60,'y',60,'rotation',0))));
    payload:=payload||jsonb_build_object('blueprintMode','Nový','blueprintTitle','Chosen plan',
-    'blueprintObjects',jsonb_build_array(jsonb_build_object('type','spot','title','A1','x',1,'y',1,'product',old_product)));
+    'blueprintLayoutDraft',jsonb_build_object('layout',layout,'seatBindings',jsonb_build_array(jsonb_build_object('nodeId',node_id,'productId',old_product,'title','A1','blocked',false)),'groupProducts','[]'::jsonb,'areaBindings','[]'::jsonb));
   END IF;
   d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,5);
   response:=public.finalize_occasion_setup_draft(draft,(d->>'revision')::bigint,gen_random_uuid());

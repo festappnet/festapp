@@ -64,6 +64,8 @@ test('inventory preserves authored duplicates, migration-only evidence and polic
     write('lib/tests/ignored.dart', "client.rpc('test_only');");
     write('database/functions/one.sql', 'CREATE OR REPLACE FUNCTION public.authored(p_id bigint) RETURNS jsonb LANGUAGE sql AS $$ SELECT NULL $$;');
     write('database/functions/two.sql', 'CREATE OR REPLACE FUNCTION public.authored(p_id bigint) RETURNS jsonb LANGUAGE sql AS $$ SELECT NULL $$;');
+    write('supabase/baseline/manifest.json', JSON.stringify({ schema: { path: 'supabase/baseline/schema.sql' } }));
+    write('supabase/baseline/schema.sql', '-- fixture baseline');
     write('supabase/migrations/20260101.sql', 'CREATE FUNCTION public.migration_only() RETURNS void LANGUAGE sql AS $$ SELECT NULL $$;');
     write('supabase/functions/source-only/index.ts', 'export const marker = true;');
     const inventory = buildInventory(fixture);
