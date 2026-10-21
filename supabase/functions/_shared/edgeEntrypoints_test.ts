@@ -114,6 +114,7 @@ Deno.test("fetch-transactions rejects a missing occasion before privileged reads
   const response = await handler(
     new Request("https://edge-test.invalid", {
       method: "POST",
+      headers: { Authorization: "Bearer edge-test-identity" },
       body: "{}",
     }),
   );
