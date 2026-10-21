@@ -6,95 +6,98 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {
-  testWidgets(
-    'tall plan pans freely within half-visible bounds without recentering',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1000, 600));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: LayoutSceneSurface(
-              document: VenueLayoutDocument.empty().copyWith(
-                canvas: {
-                  'x': 100.0,
-                  'y': 200.0,
-                  'width': 400.0,
-                  'height': 1600.0,
-                },
-              ),
-              compactZoomControls: true,
-              pan: true,
+  testWidgets('tall plan can pan until its edges reach the viewport midpoint', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LayoutSceneSurface(
+            document: VenueLayoutDocument.empty().copyWith(
+              canvas: {
+                'x': 100.0,
+                'y': 200.0,
+                'width': 400.0,
+                'height': 1600.0,
+              },
             ),
+            compactZoomControls: true,
+            pan: true,
           ),
         ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final surface = find.byType(LayoutSceneSurface);
+    LayoutScenePainter painter() => tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .map((w) => w.painter)
+        .whereType<LayoutScenePainter>()
+        .single;
+    void expectCentered() {
+      final p = painter();
+      final point = MatrixUtils.transformPoint(
+        p.camera!.value,
+        p.offset + const Offset(300, 1000) * p.scale,
       );
-      await tester.pumpAndSettle();
-      final surface = find.byType(LayoutSceneSurface);
-      LayoutScenePainter painter() => tester
-          .widgetList<CustomPaint>(find.byType(CustomPaint))
-          .map((w) => w.painter)
-          .whereType<LayoutScenePainter>()
-          .single;
-      void expectCentered() {
-        final p = painter();
-        final point = MatrixUtils.transformPoint(
-          p.camera!.value,
-          p.offset + const Offset(300, 1000) * p.scale,
-        );
-        expect(point.dx, closeTo(500, .001));
-      }
+      expect(point.dx, closeTo(500, .001));
+    }
 
-      expectCentered();
-      await tester.sendEventToBinding(
-        const PointerScrollEvent(
-          position: Offset(150, 250),
-          scrollDelta: Offset(0, -180),
-        ),
+    expectCentered();
+    await tester.sendEventToBinding(
+      const PointerScrollEvent(
+        position: Offset(150, 250),
+        scrollDelta: Offset(0, -180),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final beforePan = painter().camera!.value.clone();
+    await tester.drag(surface, const Offset(-300, 80));
+    await tester.pumpAndSettle();
+    expect(
+      painter().camera!.value.entry(0, 3),
+      isNot(closeTo(beforePan.entry(0, 3), .001)),
+    );
+    await tester.sendEventToBinding(
+      const PointerScrollEvent(
+        position: Offset(800, 450),
+        scrollDelta: Offset(0, 1000),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final movement in [
+      const Offset(-5000, -5000),
+      const Offset(10000, 10000),
+    ]) {
+      await tester.drag(surface, movement);
+      await tester.pumpAndSettle();
+      final p = painter();
+      final start = MatrixUtils.transformPoint(
+        p.camera!.value,
+        p.offset + const Offset(100, 200) * p.scale,
       );
-      await tester.pumpAndSettle();
-      final beforePan = painter().camera!.value.clone();
-      await tester.drag(surface, const Offset(-300, 80));
-      await tester.pumpAndSettle();
+      final end = MatrixUtils.transformPoint(
+        p.camera!.value,
+        p.offset + const Offset(500, 1800) * p.scale,
+      );
+      expect(start.dx, lessThanOrEqualTo(500.01));
+      expect(end.dx, greaterThanOrEqualTo(499.99));
+      expect(start.dy, lessThanOrEqualTo(300.01));
+      expect(end.dy, greaterThanOrEqualTo(299.99));
+      final visibleWidth = math.min(1000, end.dx) - math.max(0, start.dx);
+      final visibleHeight = math.min(600, end.dy) - math.max(0, start.dy);
       expect(
-        painter().camera!.value.entry(0, 3),
-        isNot(closeTo(beforePan.entry(0, 3), .001)),
+        visibleWidth,
+        greaterThanOrEqualTo(math.min((end.dx - start.dx) / 2, 500) - .01),
       );
-      await tester.sendEventToBinding(
-        const PointerScrollEvent(
-          position: Offset(800, 450),
-          scrollDelta: Offset(0, 1000),
-        ),
+      expect(
+        visibleHeight,
+        greaterThanOrEqualTo(math.min((end.dy - start.dy) / 2, 300) - .01),
       );
-      await tester.pumpAndSettle();
-      for (final movement in [
-        const Offset(-5000, -5000),
-        const Offset(10000, 10000),
-      ]) {
-        await tester.drag(surface, movement);
-        await tester.pumpAndSettle();
-        final p = painter();
-        final start = MatrixUtils.transformPoint(
-          p.camera!.value,
-          p.offset + const Offset(100, 200) * p.scale,
-        );
-        final end = MatrixUtils.transformPoint(
-          p.camera!.value,
-          p.offset + const Offset(500, 1800) * p.scale,
-        );
-        final visibleWidth = math.min(1000, end.dx) - math.max(0, start.dx);
-        final visibleHeight = math.min(600, end.dy) - math.max(0, start.dy);
-        expect(
-          visibleWidth,
-          greaterThanOrEqualTo(math.min((end.dx - start.dx) / 2, 500) - .01),
-        );
-        expect(
-          visibleHeight,
-          greaterThanOrEqualTo(math.min((end.dy - start.dy) / 2, 300) - .01),
-        );
-      }
-    },
-  );
+    }
+  });
 
   testWidgets('changing mode viewport preserves zoom and world center', (
     tester,
