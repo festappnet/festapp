@@ -58,7 +58,13 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
       - run: pnpm install --frozen-lockfile
         working-directory: web_client
-      - run: pnpm add --global agent-browser@0.33.1 && agent-browser install --with-deps
+      - name: Install isolated Chromium test runner
+        run: |
+          # pnpm 11 places global executables in PNPM_HOME/bin.
+          export PATH="$PNPM_HOME/bin:$PATH"
+          echo "$PNPM_HOME/bin" >> "$GITHUB_PATH"
+          pnpm add --global --allow-build=agent-browser agent-browser@0.33.1
+          agent-browser install --with-deps
       - run: bash automation/bootstrap_local_db.sh
       - uses: denoland/setup-deno@v2
         with:
