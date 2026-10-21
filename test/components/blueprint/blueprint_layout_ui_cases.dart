@@ -94,6 +94,8 @@ void main() {
     backend = await RootSupabaseFixture.open((request) =>
         pickerResponse?.call(request) ??
         (throw StateError('Unexpected UI fixture request')));
+    // Resolve asset I/O before widget fake-async zones can cache a pending read.
+    await TicketFontCatalog.loadFamilies();
   });
   tearDownAll(() => backend.dispose());
   setUpAll(() {
@@ -502,9 +504,17 @@ void main() {
     addTearDown(controller.dispose);
     final provider = await tester.runAsync(() =>
         BlueprintTextResources.forSetupDraft('font-default-test',
+            // Preview loads real local faces even when no shaping is needed.
             service: TicketLayoutService(
-                transport: (body) async => throw StateError(
-                    'No shaping or font bytes expected in this metadata owner'))));
+                transport: blueprintNativeFontReplyFixture)));
+    // Complete engine registration outside fake async before preview widgets
+    // can share a pending face with later tests through the font cache.
+    await tester.runAsync(() async {
+      for (final familyId in [futura, roboto]) {
+        final faces = registry[familyId]!['faces'] as Map;
+        await provider!.loadFace(faces['400:normal'] as String);
+      }
+    });
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
