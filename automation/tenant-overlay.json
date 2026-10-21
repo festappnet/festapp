@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "f11b6ddc641abdbf57f730cd56e0eba944ff99ad",
+  "release": {
+    "version": "0.20.304+797",
+    "note": "Blueprint table label centering"
+  }
+}
