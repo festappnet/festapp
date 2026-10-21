@@ -2289,4 +2289,59 @@ void main() {
     expect(find.text(BlueprintStrings.toastNoTemplateProduct), findsOneWidget);
     expect(find.byType(EditProductDialog), findsNothing);
   });
+  testWidgetsWithEnvironment(() => environment,
+      'unbound standing shows its configured capacity instead of sold out stock',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final originalRights = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {
+          AuthorizationCapabilities.occasionsWrite: true,
+          AuthorizationCapabilities.ordersWrite: true
+        },
+        isAdmin: true,
+        occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: true));
+    addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = originalRights);
+    const id = '10000000-0000-4000-8000-000000000020';
+    final source = BlueprintModel(
+        layoutSnapshot: BlueprintLayoutSnapshot(
+            blueprintId: 1,
+            occasionId: 1,
+            title: 'Hall',
+            revision: 1,
+            document: VenueLayoutDocument(nodes: [
+              LayoutNode(
+                  id: id,
+                  kind: 'capacityArea',
+                  label: 'Standing',
+                  x: 800,
+                  y: 400,
+                  width: 480,
+                  height: 240,
+                  properties: {'capacity': 100})
+            ])));
+    source.layoutResources =
+        blueprintPreparedResourcesFixture(source.layoutSnapshot!.document);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutHost(
+                source: source,
+                reload: () async => source,
+                loadTextResources: () => BlueprintTextResources.load(1,
+                    service: TicketLayoutService(
+                        transport: blueprintNativeFontReplyFixture)))));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('commercial-area-$id')));
+    await tester.pump();
+    expect(find.text('${BlueprintStrings.standingCapacity}: 100'), findsOneWidget);
+    expect(find.text(BlueprintStrings.standingRequiresProduct), findsOneWidget);
+    expect(find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
+  });
+
 }
