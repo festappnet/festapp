@@ -163,7 +163,9 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
             child: SuperEditorPopover(
                 popoverFocusNode: _popoverFocus,
                 editorFocusNode: controller.focusNode,
-                child: Material(
+                child: TapRegion(
+                    onTapOutside: (_) => _closeMentions(),
+                    child: Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(8),
                     clipBehavior: Clip.antiAlias,
@@ -303,7 +305,7 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
                                                   ]);
                                             }))),
                           ]),
-                        ))))));
+                        )))))));
   }
 
   ExecutionInstruction _authoringKeys(
