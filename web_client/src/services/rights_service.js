@@ -40,6 +40,10 @@ export class RightsService {
     }
 
     static async updateAppData({ link = null, unitId = null, formLink = null, force = false } = {}) {
+        // A caller awaiting fresh rights (login/router) already owns this fetch.
+        // Do not let a queued auth refresh invalidate its eventual response.
+        clearTimeout(this._authRefreshTimer);
+        this._authRefreshTimer = null;
         this._lastRequestOptions = { link, unitId, formLink, force };
         // Simple caching logic: if we have context and not forcing, maybe skip?
         // But for now, let's just fetch to be safe and ensure fresh rights.

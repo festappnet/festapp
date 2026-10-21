@@ -117,3 +117,22 @@ test('switching users clears old rights immediately and discards the previous re
     assert.equal(header.querySelector('.avatar-circle').textContent, 'A');
     assert.equal(header.querySelector('.btn-admin'), null);
 });
+
+test('explicit post-login refresh supersedes the queued auth refresh without cancelling the awaited result', async t => {
+    let completeLogin;
+    let calls = 0;
+    const { header, auth } = fixture(t, async () => {
+        calls++;
+        if (calls === 1) return { data: guest, error: null };
+        if (calls === 2) return new Promise(resolve => { completeLogin = resolve; });
+        return { data: signedIn, error: null };
+    });
+    await RightsService.updateAppData();
+    auth('SIGNED_IN', 'user-1');
+    const afterLogin = RightsService.updateAppData();
+    await nextTask();
+    assert.equal(calls, 2, 'the login owner already started the replacement request');
+    completeLogin({ data: signedIn, error: null });
+    assert.equal(await afterLogin, true, 'the awaited login response stays current');
+    assert.ok(header.querySelector('.btn-admin'));
+});
