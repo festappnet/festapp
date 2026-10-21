@@ -1,6 +1,0 @@
-{
-  "signature": "delete_form_ws_obsolete_v1(bigint)",
-  "reason": "Retired physical form writer, replaced by the supported receipted form command and delete_form_ws adapter. No runtime client or catalog function caller.",
-  "functionCallCandidates": [],
-  "clientCallCandidates": []
-}

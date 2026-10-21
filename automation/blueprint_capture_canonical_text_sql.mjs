@@ -128,7 +128,7 @@ try{
  assert.equal(Object.keys(setup.resources.textLayouts).length,expected.length);
  assert.ok(setup.resources.assets[assetRef],'materialization transfers bitmap object manifests');
  for(const file of ['database/tests/blueprint/layout_integration_test.sql','database/tests/blueprint/copy_setup_test.sql','database/tests/blueprint/canonical_text_resources_test.sql'])await client.query(readFileSync(new URL(file,root),'utf8'));
- writeFileSync(new URL('test/fixtures/blueprint/canonical-text-sql-roundtrip.json',root),JSON.stringify({admin,public:publicView,copy,setup},null,2)+'\n');
+ writeFileSync(new URL('test/fixtures/blueprint/canonical-text-sql-roundtrip.json',root),JSON.stringify({admin,public:publicView,copy,setup})+'\n');
  console.log('Canonical SQL save/read/copy/setup: exact Dart descriptors, private projections, scope isolation, stale preparation rejection and bitmap manifest transfer pass; rolled back.');
 }finally{await client.query('ROLLBACK');await client.end();}
 function sort(v){return Array.isArray(v)?v.map(sort):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([k,x])=>[k,sort(x)])):v;}

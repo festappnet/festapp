@@ -1,9 +1,10 @@
+import {evidenceDirectory} from './evidence.mjs';
 import { createHash } from 'node:crypto';
 // Alternating paired measurements with identical transaction-local fixtures.
 import { readFile, writeFile } from 'node:fs/promises';
 import { connect,fixture,measure,executionContract } from './benchmark.mjs';
 const root=new URL('../../',import.meta.url);
-const folder=new URL('docs/plans/evidence/canonical-authorization-20261020/',root);
+const folder=await evidenceDirectory('baseline.sql');
 const before=await readFile(new URL('baseline.sql',folder),'utf8');
 const migrationFile=await readFile(new URL('supabase/migrations/20261021100000_canonical_authorization.sql',root),'utf8');
 const after=migrationFile.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'');

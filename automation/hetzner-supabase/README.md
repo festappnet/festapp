@@ -49,3 +49,16 @@ The [October 7 cleanup receipt](../../docs/operations/work-items/completed/preac
 records removal of the preactivation Worker and unused standalone migration tools.
 Former cloud sources remain frozen retention/reconciliation targets; routine writes
 and migrations belong only to the canonical backend.
+
+## Retired migration importers
+
+The completed-migration `rehearsal/` tree and its two cloud-Storage payload
+transport commands were removed in the [tooling cleanup](../../docs/archive/repository-tooling-cleanup-2026-10-21.md).
+Recover them from the pinned historical revision only for an explicitly scoped
+historical replay. Runtime, source/reference registries and backup/restore tools
+remain in their current locations with their safety contracts.
+
+The completed cloud merge/export/freeze command chain was also retired; see
+[current merge-directory ownership](merge/README.md) and its linked recovery record.
+Installed source/reference registries, Function security policy, coverage gates
+and local adapter/writer audits remain supported.

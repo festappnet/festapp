@@ -4,55 +4,10 @@
 -- Canonical source: database/functions/blueprint/canonical_text_dependencies.sql
 
 -- Field definitions and shaping policy come from the core-generated metadata.
-CREATE OR REPLACE FUNCTION public.blueprint_resolved_label_internal(p_doc jsonb,p_node jsonb)
-RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- SELECT (public.blueprint_contract_metadata_internal()->'labelDefaults')
-  ||jsonb_build_object('align',CASE WHEN p_node->>'kind'='text' THEN 'left' ELSE 'center' END)
-  ||(p_doc->'textPolicy')||coalesce(p_doc#>'{styles,label}','{}')
-  ||coalesce(p_doc->'styles'->'kinds'->(p_node->>'kind')->'label','{}')
-  ||coalesce((SELECT parent#>'{childStyles,seat,label}' FROM jsonb_array_elements(p_doc->'nodes') parent
-    WHERE p_node->>'kind'='seat' AND parent->>'kind'='table' AND parent->>'id'=p_node->>'parentId'),'{}')
-  ||coalesce(p_node#>'{style,label}','{}')
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_resolved_label_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_layout_text_requests_internal(p_layout jsonb,p_presets boolean DEFAULT false)
-RETURNS TABLE(node_key text,font_family_id text,font_face_id text,role text,descriptor jsonb)
-LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH RECURSIVE documents(doc,prefix) AS (
-  SELECT p_layout,''::text UNION ALL
-  SELECT preset->'document',prefix||(preset->>'id')||'/' FROM documents
-   CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'presets','[]')) preset WHERE p_presets
- ), roles AS (
-  SELECT doc,prefix||(node->>'id') AS node_key,node,
-   public.blueprint_resolved_label_internal(doc,node) AS label,
-   CASE WHEN node->>'kind'='text' THEN 'text' ELSE 'label' END AS role,
-   CASE WHEN node->>'kind'='text' THEN coalesce(node->>'text','') ELSE coalesce(node->>'label','') END AS source
-  FROM documents CROSS JOIN LATERAL jsonb_array_elements(doc->'nodes') node
-  WHERE node->>'kind' NOT IN ('group','seat','vector','image')
-   AND (node->>'kind'<>'furniture' OR node->>'furniture' IS DISTINCT FROM 'couch')
-   AND (node->>'kind'<>'table' OR node->>'furniture' IS DISTINCT FROM 'bar')
-  UNION ALL
-  SELECT doc,prefix||(node->>'id')||':number',node,
-   (public.blueprint_contract_metadata_internal()->'labelDefaults')||(doc->'textPolicy')||coalesce(doc#>'{styles,label}','{}'),
-   'number','' FROM documents CROSS JOIN LATERAL jsonb_array_elements(doc->'nodes') node
-  WHERE node->>'kind'='capacityArea' OR (node->>'kind'='furniture' AND node->>'furniture' IS DISTINCT FROM 'couch' AND EXISTS(
-   SELECT 1 FROM jsonb_array_elements(coalesce(doc->'selectionUnits','[]')) unit WHERE jsonb_array_length(unit->'nodeIds')>1
-    AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(unit->'nodeIds') member
-     WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(doc->'nodes') child WHERE child->>'id'=member AND child->>'parentId'=node->>'id'))))
- ), requests AS (
-  SELECT roles.*,f.manifest->'faces'->>((label->>'weight')||':'||CASE WHEN label->>'italic'='true' THEN 'italic' ELSE 'normal' END) AS face_id
-   FROM roles LEFT JOIN public.ticket_font_families f ON f.id=label->>'fontFamilyId'
- )
- SELECT node_key,label->>'fontFamilyId',face_id,role,
-  CASE WHEN role='number' THEN jsonb_build_object('layoutResourceProtocol',2,'policy',public.blueprint_contract_metadata_internal()->'textPolicy','role','number','fontFaceId',face_id)
-  ELSE jsonb_build_object('layoutResourceProtocol',2,'policy',public.blueprint_contract_metadata_internal()->'textPolicy',
-   'request',jsonb_build_object('text',source,'role',role,'fontFamilyId',label->>'fontFamilyId','fontFaceId',face_id,
-    'size',label->'size','language',label->'language','direction',label->'direction','lineHeight',label->'lineHeight','align',label->'align',
-    'box',jsonb_build_object('x',-(node->>'width')::numeric/2,'y',-(node->>'height')::numeric/2,'width',node->'width','height',node->'height'),
-    'fit',CASE WHEN role='text' THEN 'wrap' ELSE 'shrink' END)) END
- FROM requests WHERE role='number' OR source<>''
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_layout_text_requests_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Explicit declarations, including unused kind styles, are catalog metadata.
@@ -86,83 +41,22 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.blueprint_canonical_text_resources_internal(jsonb,bigint,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.check_blueprint_text_resources_internal(p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-BEGIN
- IF EXISTS(SELECT 1 FROM public.blueprint_layout_text_requests_internal(p_layout,true) q
-  WHERE q.font_face_id IS NULL OR NOT EXISTS(SELECT 1 FROM public.blueprint_text_resources r
-   WHERE r.scope_key=CASE WHEN p_occasion IS NOT NULL THEN 'occasion:'||p_occasion::text ELSE 'setup:'||p_setup_draft::text END
-    AND r.payload->'descriptor' @> q.descriptor AND r.payload->'descriptor'=q.descriptor)) THEN
-  RAISE check_violation USING MESSAGE='BLUEPRINT_TEXT_RESOURCE_NOT_READY';
- END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.check_blueprint_text_resources_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_text_resource_ids_internal(p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL)
-RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT coalesce(array_agg(DISTINCT r.resource_id ORDER BY r.resource_id),'{}'::text[])
- FROM public.blueprint_text_resources r JOIN public.blueprint_layout_text_requests_internal(p_layout,true) q
-  ON r.payload->'descriptor' @> q.descriptor AND r.payload->'descriptor'=q.descriptor
- WHERE r.scope_key=CASE WHEN p_occasion IS NOT NULL THEN 'occasion:'||p_occasion::text ELSE 'setup:'||p_setup_draft::text END
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_text_resource_ids_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Canonical source: database/functions/blueprint/canonical_validation.sql
 
 -- Canonical declaration validation consumes the generated core metadata.
-CREATE OR REPLACE FUNCTION public.blueprint_validate_leaves_internal(p_value jsonb,p_rules jsonb)
-RETURNS void LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE entry record; rule jsonb; value jsonb;
-BEGIN
- IF jsonb_typeof(p_value) IS DISTINCT FROM 'object' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION'; END IF;
- FOR entry IN SELECT * FROM jsonb_each(p_value) LOOP
-  rule:=p_rules->entry.key;value:=entry.value;
-  IF rule IS NULL OR value='null'::jsonb THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
-  IF rule ? 'enum' AND NOT(rule->'enum' @> jsonb_build_array(value)) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
-  IF rule ? 'type' AND jsonb_typeof(value) IS DISTINCT FROM rule->>'type' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
-  IF rule->>'type'='number' THEN
-   IF (rule ? 'minimum' AND value::numeric<(rule->>'minimum')::numeric) OR (rule ? 'maximum' AND value::numeric>(rule->>'maximum')::numeric) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
-  ELSIF rule->>'type'='string' THEN
-   IF (rule ? 'minLength' AND length(value#>>'{}')<(rule->>'minLength')::int) OR (rule ? 'pattern' AND (value#>>'{}') !~ (rule->>'pattern')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
-   IF entry.key='fontFamilyId' AND NOT EXISTS(SELECT 1 FROM public.ticket_font_families WHERE id=value#>>'{}') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_FONT_FAMILY_UNAVAILABLE';END IF;
-  END IF;
- END LOOP;
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_validate_leaves_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_validate_style_internal(p_style jsonb,p_kind text)
-RETURNS void LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE meta jsonb:=public.blueprint_contract_metadata_internal(); pattern jsonb; value jsonb;
-BEGIN
- IF jsonb_typeof(p_style) IS DISTINCT FROM 'object' OR (p_kind='group' AND p_style<>'{}') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_STYLE';END IF;
- IF EXISTS(SELECT 1 FROM jsonb_object_keys(p_style) key WHERE NOT(meta->'styleSchemas'->p_kind->'properties' ? key)) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_UNKNOWN_STYLE';END IF;
- PERFORM public.blueprint_validate_leaves_internal(p_style-ARRAY['label','strokePattern'],meta->'visual');
- IF p_style ? 'label' THEN PERFORM public.blueprint_validate_leaves_internal(p_style->'label',meta->'label');END IF;
- IF p_style ? 'strokePattern' THEN
-  pattern:=p_style->'strokePattern';
-  IF jsonb_typeof(pattern) IS DISTINCT FROM 'object' OR coalesce(pattern->>'type','') NOT IN ('solid','dashed','dotted','custom') OR EXISTS(SELECT 1 FROM jsonb_object_keys(pattern) key WHERE key<>'type' AND (pattern->>'type'<>'custom' OR key<>'lengths')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_STROKE_PATTERN';END IF;
-  IF pattern->>'type'='custom' THEN
-   IF jsonb_typeof(pattern->'lengths') IS DISTINCT FROM 'array' OR jsonb_array_length(pattern->'lengths') NOT BETWEEN 1 AND 32 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_STROKE_PATTERN';END IF;
-   FOR value IN SELECT * FROM jsonb_array_elements(pattern->'lengths') LOOP
-    IF jsonb_typeof(value)<>'number' OR value::numeric<=0 OR value::numeric>1000000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_STROKE_PATTERN';END IF;
-   END LOOP;
-  END IF;
- END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_validate_style_internal(jsonb,text) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_grid_contains_internal(p_ring jsonb,p_x numeric,p_y numeric)
-RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE a jsonb;b jsonb; crossings int:=0;i int;size int:=jsonb_array_length(p_ring);
-BEGIN
- FOR i IN 0..size-1 LOOP
-  a:=p_ring->i;b:=p_ring->((i+1)%size);
-  IF p_x BETWEEN least((a->>0)::numeric,(b->>0)::numeric) AND greatest((a->>0)::numeric,(b->>0)::numeric)
-   AND p_y BETWEEN least((a->>1)::numeric,(b->>1)::numeric) AND greatest((a->>1)::numeric,(b->>1)::numeric) THEN RETURN false;END IF;
-  IF ((a->>1)::numeric>p_y)<>((b->>1)::numeric>p_y) AND p_x<(a->>0)::numeric THEN crossings:=crossings+1;END IF;
- END LOOP;
- RETURN crossings%2=1;
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_grid_contains_internal(jsonb,numeric,numeric) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.blueprint_canonical_surface_projection_internal(p_node jsonb)
@@ -209,69 +103,13 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.blueprint_canonical_surface_projection_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_validate_path_internal(p_path jsonb)
-RETURNS int LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE command jsonb;arity int; coordinate jsonb;
-BEGIN
- IF jsonb_typeof(p_path) IS DISTINCT FROM 'array' OR jsonb_array_length(p_path)>200000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PATH';END IF;
- FOR command IN SELECT * FROM jsonb_array_elements(p_path) LOOP
-  IF jsonb_typeof(command)<>'array' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PATH';END IF;
-  arity:=(public.blueprint_contract_metadata_internal()->'pathArities'->>(command->>0))::int;
-  IF arity IS NULL OR jsonb_array_length(command)<>arity+1 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PATH';END IF;
-  FOR coordinate IN SELECT value FROM jsonb_array_elements(command) WITH ORDINALITY WHERE ordinality>1 LOOP
-   IF jsonb_typeof(coordinate)<>'number' OR abs(coordinate::numeric)>1000000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PATH';END IF;
-  END LOOP;
- END LOOP;
- RETURN jsonb_array_length(p_path);
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_validate_path_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_validate_gradient_internal(p_gradient jsonb)
-RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE key text; v jsonb; prev numeric:=-1; expected int;
-BEGIN
- IF jsonb_typeof(p_gradient) IS DISTINCT FROM 'object' OR coalesce(p_gradient->>'type','') NOT IN ('linear','radial') OR coalesce(p_gradient->>'spread','') NOT IN ('pad','repeat','reflect') OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_gradient) k WHERE k NOT IN ('type','colors','stops','spread') AND (p_gradient->>'type'='linear' AND k NOT IN ('from','to') OR p_gradient->>'type'='radial' AND k NOT IN ('center','radius','focal','matrix'))) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;
- IF jsonb_typeof(p_gradient->'colors') IS DISTINCT FROM 'array' OR jsonb_typeof(p_gradient->'stops') IS DISTINCT FROM 'array' OR jsonb_array_length(p_gradient->'colors') NOT BETWEEN 2 AND 1024 OR jsonb_array_length(p_gradient->'colors')<>jsonb_array_length(p_gradient->'stops') OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(p_gradient->'colors') c WHERE c !~ '^#[0-9a-fA-F]{8}$') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;
- FOR v IN SELECT * FROM jsonb_array_elements(p_gradient->'stops') LOOP
-  IF jsonb_typeof(v)<>'number' OR v::numeric<prev OR v::numeric NOT BETWEEN 0 AND 1 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;prev:=v::numeric;
- END LOOP;
- FOREACH key IN ARRAY CASE WHEN p_gradient->>'type'='linear' THEN ARRAY['from','to'] ELSE ARRAY['center','matrix','focal'] END LOOP
-  IF key='focal' AND (NOT p_gradient ? key OR p_gradient->key='null') THEN CONTINUE;END IF;
-  expected:=CASE WHEN key='matrix' THEN 6 ELSE 2 END;
-  IF jsonb_typeof(p_gradient->key) IS DISTINCT FROM 'array' OR jsonb_array_length(p_gradient->key)<>expected THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;
-  FOR v IN SELECT * FROM jsonb_array_elements(p_gradient->key) LOOP IF jsonb_typeof(v)<>'number' OR abs(v::numeric)>1000000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;END LOOP;
- END LOOP;
- IF p_gradient->>'type'='radial' AND (jsonb_typeof(p_gradient->'radius') IS DISTINCT FROM 'number' OR (p_gradient->>'radius')::numeric<=0 OR (p_gradient->>'radius')::numeric>1000000000) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_GRADIENT';END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_validate_gradient_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_validate_vector_internal(p_graphic jsonb)
-RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE command jsonb;depth int:=0;segments int:=0;key text; value jsonb;allowed text[];
-BEGIN
- IF jsonb_typeof(p_graphic) IS DISTINCT FROM 'object' OR p_graphic->>'type' IS DISTINCT FROM 'vector' OR p_graphic->>'version' IS DISTINCT FROM '1' OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_graphic) k WHERE k NOT IN ('type','version','width','height','commands')) OR jsonb_typeof(p_graphic->'commands') IS DISTINCT FROM 'array' OR jsonb_array_length(p_graphic->'commands')>10000 OR octet_length(p_graphic::text)>8388608 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR';END IF;
- FOREACH key IN ARRAY ARRAY['width','height'] LOOP value:=p_graphic->key;IF jsonb_typeof(value) IS DISTINCT FROM 'number' OR value::numeric<=0 OR value::numeric>1000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR';END IF;END LOOP;
- FOR command IN SELECT * FROM jsonb_array_elements(p_graphic->'commands') LOOP
-  IF jsonb_typeof(command)<>'object' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_COMMAND';END IF;
-  allowed:=CASE command->>'op' WHEN 'path' THEN ARRAY['op','path','fillRule','fill','stroke','strokeWidth','strokeCap','strokeJoin','miterLimit','fillGradient','strokeGradient'] WHEN 'clip' THEN ARRAY['op','path','fillRule'] WHEN 'layer' THEN ARRAY['op','opacity'] WHEN 'restore' THEN ARRAY['op'] ELSE NULL END;
-  IF allowed IS NULL OR EXISTS(SELECT 1 FROM jsonb_object_keys(command) k WHERE NOT(k=ANY(allowed))) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_COMMAND';END IF;
-  IF command->>'op'='restore' THEN depth:=depth-1;
-  ELSIF command->>'op'='layer' THEN
-   value:=command->'opacity';IF jsonb_typeof(value) IS DISTINCT FROM 'number' OR value::numeric NOT BETWEEN 0 AND 1 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_OPACITY';END IF;depth:=depth+1;
-  ELSE
-   segments:=segments+public.blueprint_validate_path_internal(command->'path');
-   IF coalesce(command->>'fillRule','') NOT IN ('nonzero','evenodd') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_FILL';END IF;
-   IF command->>'op'='clip' THEN depth:=depth+1;
-   ELSE
-    FOREACH key IN ARRAY ARRAY['fill','stroke'] LOOP IF command ? key AND command->key<>'null' AND coalesce(command->>key,'') !~ '^#[0-9a-fA-F]{8}$' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PAINT';END IF;END LOOP;
-    IF jsonb_typeof(command->'strokeWidth') IS DISTINCT FROM 'number' OR (command->>'strokeWidth')::numeric NOT BETWEEN 0 AND 1000000000 OR coalesce(command->>'strokeCap','') NOT IN ('butt','round','square') OR coalesce(command->>'strokeJoin','') NOT IN ('miter','round','bevel') OR jsonb_typeof(command->'miterLimit') IS DISTINCT FROM 'number' OR (command->>'miterLimit')::numeric NOT BETWEEN 1 AND 1000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VECTOR_PAINT';END IF;
-    FOREACH key IN ARRAY ARRAY['fillGradient','strokeGradient'] LOOP IF command ? key AND command->key<>'null' THEN PERFORM public.blueprint_validate_gradient_internal(command->key);END IF;END LOOP;
-   END IF;
-  END IF;
-  IF depth NOT BETWEEN 0 AND 32 OR segments>200000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_VECTOR_LIMIT';END IF;
- END LOOP;
- IF depth<>0 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_UNBALANCED_VECTOR';END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.blueprint_validate_vector_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.blueprint_canonical_geometry_projection_internal(p_doc jsonb)
@@ -351,50 +189,19 @@ REVOKE ALL ON FUNCTION public.blueprint_canonical_geometry_projection_internal(j
 
 -- Canonical source: database/functions/blueprint/canonical_resource_projection.sql
 
-CREATE OR REPLACE FUNCTION public.blueprint_layout_asset_refs_internal(p_layout jsonb)
-RETURNS TABLE(asset_ref text,hash text) LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- WITH RECURSIVE documents(doc) AS (SELECT p_layout UNION ALL SELECT preset->'document' FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'presets','[]')) preset)
- SELECT doc#>>'{background,assetRef}',doc#>>'{background,hash}' FROM documents WHERE doc#>>'{background,assetRef}' IS NOT NULL
- UNION SELECT node#>>'{graphic,assetRef}',node#>>'{graphic,hash}' FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node WHERE node->>'kind'='image'
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_layout_asset_refs_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_canonical_asset_resources_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
-RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_object_agg(a.asset_ref,jsonb_build_object('hash',a.hash,'url',a.url,'width',a.width,'height',a.height,'mimeType',a.mime_type,'byteLength',a.byte_length)),'{}')
- FROM public.blueprint_image_assets a WHERE (a.occasion=p_occasion OR a.unit=p_unit) AND a.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion UNION ALL SELECT organization FROM public.units WHERE id=p_unit)
-  AND a.state='ready' AND EXISTS(SELECT 1 FROM public.blueprint_layout_asset_refs_internal(p_layout) r WHERE r.asset_ref=a.asset_ref AND r.hash=a.hash)
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_canonical_asset_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.check_blueprint_bitmap_resources_internal(p_layout jsonb,p_occasion bigint)
-RETURNS void LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-BEGIN
- IF EXISTS(SELECT 1 FROM public.blueprint_layout_asset_refs_internal(p_layout) r WHERE NOT EXISTS(SELECT 1 FROM public.blueprint_image_assets a WHERE a.occasion=p_occasion AND a.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion) AND a.asset_ref=r.asset_ref AND a.hash=r.hash AND a.state='ready')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_IMAGE_RESOURCE_NOT_READY';END IF;
-END $$;
+
 REVOKE ALL ON FUNCTION public.check_blueprint_bitmap_resources_internal(jsonb,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
-RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN p_layout->>'schemaVersion'='2' THEN
-  public.blueprint_canonical_text_resources_internal(p_layout,p_occasion,NULL,true)||jsonb_build_object('assets',public.blueprint_canonical_asset_resources_internal(p_layout,p_occasion,p_unit))
- ELSE public.blueprint_layout_resources_legacy_internal(p_layout,p_occasion,p_unit) END
-$$;
+
 REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.copy_blueprint_text_resources_internal(p_source_occasion bigint,p_source_draft uuid,p_target bigint,p_layout jsonb)
-RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
-DECLARE entry record;old jsonb;scope text:='occasion:'||p_target::text;
-BEGIN
- IF (p_source_occasion IS NULL)=(p_source_draft IS NULL) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_TEXT_COPY_SCOPE';END IF;
- FOR entry IN SELECT DISTINCT r.resource_id,r.resource_kind,r.payload FROM public.blueprint_text_resources r JOIN public.blueprint_layout_text_requests_internal(p_layout,true) q
-  ON r.payload->'descriptor' @> q.descriptor AND r.payload->'descriptor'=q.descriptor
-  WHERE r.scope_key=CASE WHEN p_source_occasion IS NOT NULL THEN 'occasion:'||p_source_occasion::text ELSE 'setup:'||p_source_draft::text END LOOP
-  SELECT payload INTO old FROM public.blueprint_text_resources WHERE scope_key=scope AND resource_id=entry.resource_id;
-  IF FOUND AND old IS DISTINCT FROM entry.payload THEN RAISE check_violation USING MESSAGE='BLUEPRINT_TEXT_RESOURCE_IMMUTABLE';END IF;
-  INSERT INTO public.blueprint_text_resources(scope_key,occasion,resource_id,resource_kind,payload) VALUES(scope,p_target,entry.resource_id,entry.resource_kind,entry.payload) ON CONFLICT DO NOTHING;
- END LOOP;
-END $$;
+
 REVOKE ALL ON FUNCTION public.copy_blueprint_text_resources_internal(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Internal caller supplies a source occasion and/or the authorized setup unit.
@@ -565,10 +372,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
-CREATE OR REPLACE FUNCTION public.save_blueprint_layout_internal_v1(p_blueprint jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT public.save_blueprint_layout_impl_internal(p_blueprint,false);
-$$;
+
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Canonical source: database/functions/others/duplicate_occasion.sql
@@ -989,36 +793,18 @@ REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
   FROM PUBLIC, anon, authenticated;
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
   FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
+
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Canonical source: database/functions/occasion_setup/blueprint_layout.sql
 
 -- Unit-scoped preparation uses the existing ticket preview admission policy.
-CREATE OR REPLACE FUNCTION public.admit_occasion_setup_blueprint_resources_v1(p_draft uuid,p_bytes bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE d public.occasion_setup_drafts;
-BEGIN
- SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_draft;
- IF d.id IS NULL OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
-  RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
- IF d.data ? 'finalizedOccasion' OR p_bytes IS NULL OR p_bytes<=0 THEN RAISE invalid_parameter_value USING MESSAGE='Invalid draft preview'; END IF;
- PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('ticket.preview',d.unit,d.organization),
-  jsonb_build_object('actor',auth.uid(),'unit',d.unit,'organization',d.organization),jsonb_build_object('ticket.preview.payload.bytes',p_bytes));
- RETURN public.bound_document_data_v1('{}');
-END $$;
+
 REVOKE ALL ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) TO authenticated;
 
@@ -1052,71 +838,10 @@ GRANT EXECUTE ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) TO
 
 -- Copy shared inventory configuration through its existing command owners.
 -- Only empty target inventory is created; source holds/bookings never enter it.
-CREATE OR REPLACE FUNCTION public.copy_setup_area_inventory_internal(p_areas jsonb,p_products jsonb,p_source bigint,p_target bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE area jsonb; pool public.inventory_pools; resource_row public.resources; bundle jsonb; mapped jsonb:='{}';
- old_ids bigint[]; new_ids bigint[]; new_pool bigint; index integer; old_product bigint; new_product bigint; links jsonb; copied jsonb; resource_map jsonb; slot_map jsonb; source_spot record;
-BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_target);
- IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_areas) a WHERE a->>'inventoryContextId' IS NOT NULL) THEN
-  IF p_source IS NULL OR NOT public.can_copy_occasion_source(p_source) THEN RAISE insufficient_privilege USING MESSAGE='Copy source denied'; END IF;
- END IF;
- FOR area IN SELECT value FROM jsonb_array_elements(p_areas) WHERE value->>'inventoryContextId' IS NOT NULL LOOP
-  IF NOT EXISTS(SELECT 1 FROM eshop.product_inventory_contexts pic JOIN public.inventory_contexts ic ON ic.id=pic.inventory_context
-   JOIN public.inventory_pools ip ON ip.id=ic.inventory_pool JOIN eshop.products product ON product.id=pic.product
-   WHERE pic.product=(area->>'productId')::bigint AND ic.id=(area->>'inventoryContextId')::bigint AND ip.occasion=p_source AND product.occasion=p_source) THEN
-   RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_FOREIGN_CONTEXT'; END IF;
- END LOOP;
- FOR pool IN SELECT DISTINCT ip.* FROM public.inventory_pools ip JOIN public.inventory_contexts ic ON ic.inventory_pool=ip.id
-  JOIN eshop.product_inventory_contexts pic ON pic.inventory_context=ic.id WHERE ip.occasion=p_source AND pic.product IN
-   (SELECT (a->>'productId')::bigint FROM jsonb_array_elements(p_areas) a WHERE a->>'inventoryContextId' IS NOT NULL) ORDER BY ip.id LOOP
-  bundle:=public.update_inventory_pool_bundle(jsonb_build_object('pool',(to_jsonb(pool)-'id'-'created_at'-'updated_at')||jsonb_build_object('occasion',p_target),
-   'contexts',(SELECT jsonb_agg(to_jsonb(ic)-'id'-'inventory_pool' ORDER BY ic.id) FROM public.inventory_contexts ic WHERE ic.inventory_pool=pool.id)));
-  new_pool:=(bundle#>>'{pool,id}')::bigint;
-  SELECT array_agg(id ORDER BY id) INTO old_ids FROM public.inventory_contexts WHERE inventory_pool=pool.id;
-  SELECT array_agg(id ORDER BY id) INTO new_ids FROM public.inventory_contexts WHERE inventory_pool=new_pool;
-  FOR index IN 1..coalesce(array_length(old_ids,1),0) LOOP mapped:=mapped||jsonb_build_object(old_ids[index]::text,new_ids[index]); END LOOP;
-  resource_map:='{}';slot_map:='{}';
-  FOR resource_row IN SELECT * FROM public.resources WHERE inventory_pool=pool.id ORDER BY id LOOP
-   copied:=public.copy_inventory_resource_configuration_internal(resource_row.id,new_pool,NULL);
-   resource_map:=resource_map||jsonb_build_object(resource_row.id::text,copied->'resourceId');
-   slot_map:=slot_map||(copied->'slotMap');
-  END LOOP;
-  FOR source_spot IN SELECT * FROM eshop.spots WHERE inventory_context=ANY(old_ids) ORDER BY id LOOP
-   PERFORM public.copy_empty_inventory_spot_internal(source_spot.id,p_target,NULL,NULL,
-     (mapped->>source_spot.inventory_context::text)::bigint,
-     (resource_map->>source_spot.resource::text)::bigint,
-     (slot_map->>source_spot.resource_slot::text)::bigint);
-  END LOOP;
- END LOOP;
- FOR old_product IN SELECT DISTINCT (a->>'productId')::bigint FROM jsonb_array_elements(p_areas) a WHERE a->>'inventoryContextId' IS NOT NULL LOOP
-  new_product:=(p_products->>old_product::text)::bigint;
-  IF new_product IS NULL THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_PRODUCT_NOT_IN_FORM'; END IF;
-  SELECT coalesce(jsonb_agg(jsonb_build_object('inventory_context_id',(mapped->>inventory_context::text)::bigint,'quantity',quantity)),'[]') INTO links
-   FROM eshop.product_inventory_contexts WHERE product=old_product;
-  PERFORM public.update_product_inventory_contexts_internal_v1(new_product,links);
- END LOOP;
- RETURN mapped;
-END $$;
+
 REVOKE ALL ON FUNCTION public.copy_setup_area_inventory_internal(jsonb,jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.materialize_setup_area_inventory_internal(p_area jsonb,p_product bigint,p_target bigint)
-RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE bundle jsonb; pool_id bigint; context_id bigint; capacity_value bigint; linked jsonb;
-BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_target);
- IF NOT EXISTS(SELECT 1 FROM eshop.products WHERE id=p_product AND occasion=p_target) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_PRODUCT_NOT_IN_FORM'; END IF;
- capacity_value:=(p_area->>'capacity')::bigint;
- IF capacity_value IS NULL OR capacity_value<0 OR capacity_value>2147483647 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SETUP_AREA_CAPACITY_REQUIRED'; END IF;
- bundle:=public.update_inventory_pool_bundle(jsonb_build_object('pool',jsonb_build_object('occasion',p_target,'title','Standing','type','generic','sellable_capacity',capacity_value,'data','{}'::jsonb),
-  'contexts',jsonb_build_array(jsonb_build_object('title','Standing','order',0,'data','{}'::jsonb))));
- pool_id:=(bundle#>>'{pool,id}')::bigint;
- SELECT id INTO context_id FROM public.inventory_contexts WHERE inventory_pool=pool_id ORDER BY id LIMIT 1;
- PERFORM public.update_resource(jsonb_build_object('inventory_pool',pool_id,'title','Standing','capacity',capacity_value,'booking_rules','{}'::jsonb));
- SELECT coalesce(jsonb_agg(jsonb_build_object('inventory_context_id',inventory_context,'quantity',quantity)),'[]') INTO linked FROM eshop.product_inventory_contexts WHERE product=p_product;
- PERFORM public.update_product_inventory_contexts_internal_v1(p_product,linked||jsonb_build_array(jsonb_build_object('inventory_context_id',context_id,'quantity',1)));
- RETURN context_id;
-END $$;
+
 REVOKE ALL ON FUNCTION public.materialize_setup_area_inventory_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.materialize_setup_blueprint_layout_internal(p_draft jsonb,p_product_map jsonb,p_source bigint,p_target bigint,p_unit bigint)

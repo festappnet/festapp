@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:venue_layout_core/venue_layout_core.dart';
 
-void main() {
+void main(List<String> args) {
   final corpus = jsonDecode(File(
           'test/fixtures/blueprint/canonical-text-sql-roundtrip.json')
       .readAsStringSync()) as Map<String, dynamic>;
@@ -23,7 +23,9 @@ void main() {
       'selectionUnits': raw['selectionUnits'],
     };
   }
-  File('test/fixtures/blueprint/canonical-text-sql-scenes.json')
-      .writeAsStringSync('${const JsonEncoder.withIndent('  ').convert(output)}\n');
+  File(args.isEmpty
+          ? 'test/fixtures/blueprint/canonical-text-sql-scenes.json'
+          : args.single)
+      .writeAsStringSync('${jsonEncode(output)}\n');
   stdout.writeln('Exported ${output.length} canonical Dart reference scenes');
 }

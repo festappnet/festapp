@@ -1,3 +1,4 @@
+import {evidenceDirectory} from './evidence.mjs';
 // First domain request on a fresh PostgreSQL backend, sequential and four-way.
 // Only the marker-verified local DB; OS/shared buffers deliberately stay warm.
 import {readFile,writeFile} from 'node:fs/promises';
@@ -5,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import assert from 'node:assert/strict';
 import {connect,fixture,executionContract} from './benchmark.mjs';
-const root=new URL('../../',import.meta.url),folder=new URL('docs/plans/evidence/canonical-authorization-20261020/',root);
+const root=new URL('../../',import.meta.url),folder=await evidenceDirectory('baseline.sql');
 const baseline=await readFile(new URL('baseline.sql',folder),'utf8');
 const migration=await readFile(new URL('supabase/migrations/20261021100000_canonical_authorization.sql',root),'utf8');
 const after=migration.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'');

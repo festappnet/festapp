@@ -1,5 +1,10 @@
 # Dokončení canonical zápisů skupin a aktivit
 
+> Historical command paths below may belong to the retired migration toolchain.
+> For original source/replay, use the [cleanup recovery record](../archive/repository-tooling-cleanup-2026-10-21.md).
+> Current runtime and backup/recovery tooling remains supported.
+
+
 Datum: 2026-10-07  
 Stav: autoritativní implementační plán; provozní contraction podmíněn gates  
 Verification implementace: **standard** (auth, concurrency, veřejné RPC a migrace)  

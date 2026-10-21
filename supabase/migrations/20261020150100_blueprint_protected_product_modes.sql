@@ -134,8 +134,5 @@ END $$;
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
-CREATE OR REPLACE FUNCTION public.save_blueprint_layout_internal_v1(p_blueprint jsonb)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT public.save_blueprint_layout_impl_internal(p_blueprint,false);
-$$;
+
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
