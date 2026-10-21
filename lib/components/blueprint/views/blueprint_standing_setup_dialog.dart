@@ -56,9 +56,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
 
   Future<void> _load() async {
     try {
-      final loaded = await DbEshop.getProductsAndTypesForOccasion(
-        widget.occasionLink,
-      );
+      final loaded = await loadCatalog();
       if (mounted)
         setState(() {
           catalog = loaded;
@@ -71,6 +69,25 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
           busy = false;
         });
     }
+  }
+
+  Future<ProductsEditBundle> loadCatalog() async {
+    final loaded = await DbEshop.getProductsAndTypesForOccasion(
+      widget.occasionLink,
+    );
+    final types = {for (final type in loaded.productTypes) type.id: type};
+    // The occasion-scoped catalog RPC returns product_type IDs, with type
+    // metadata in a separate list. It does not project occasion/type on products.
+    for (var i = 0; i < loaded.products.length; i++) {
+      final p = loaded.products[i];
+      final type = types[p.productTypeId];
+      loaded.products[i] = p.copyWith(
+        occasion: p.occasion ?? widget.controller.snapshot.occasionId,
+        productTypeString: p.productTypeString ?? type?.type,
+        productTypeTitleString: p.productTypeTitleString ?? type?.title,
+      );
+    }
+    return loaded;
   }
 
   List<InventoryContextModel> contexts(ProductModel p) => [
@@ -112,7 +129,8 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
     final type = catalog!.productTypes.firstWhereOrNull(
       (t) =>
           t.type == ProductModel.spotType &&
-          t.occasion == widget.controller.snapshot.occasionId,
+          (t.occasion == null ||
+              t.occasion == widget.controller.snapshot.occasionId),
     );
     if (type == null) {
       setState(() => error = BlueprintStrings.standingNoAdmissionType);
@@ -156,6 +174,32 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
     }
   }
 
+  Future<void> editProduct(ProductModel selected) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) =>
+          EditProductDialog(product: selected.copyWith(), isCreating: false),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      final saved = await DbEshop.saveProductBasics(selected.copyWith(
+          title: result['title'] as String, price: result['price'] as double));
+      widget.controller.upsertCatalogProduct(saved);
+      if (!mounted) return;
+      final index = catalog!.products.indexWhere((p) => p.id == saved.id);
+      catalog!.products[index] = saved;
+      if (product?.id == saved.id) product = saved;
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> assign() async {
     final p = product;
     final count = int.tryParse(capacity.text);
@@ -176,9 +220,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
         contextId = linked.includedInventories.single.inventoryContextId;
         // Linking inventory increments the product aggregate. Use the returned
         // catalog projection for later product edits, rather than a stale version.
-        final refreshed = await DbEshop.getProductsAndTypesForOccasion(
-          widget.occasionLink,
-        );
+        final refreshed = await loadCatalog();
         linked = refreshed.products.firstWhere((item) => item.id == p.id);
       }
       widget.controller.bindStandingArea(
@@ -220,27 +262,11 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
                   ),
                 if (catalog != null) ...[
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: product?.id,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: BlueprintStrings.selectProduct,
-                    ),
-                    items: [
-                      for (final p in catalog!.products.where(eligible))
-                        DropdownMenuItem(
-                          value: p.id,
-                          child: Text(
-                            p.title ?? '',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: busy
-                        ? null
-                        : (id) => choose(
-                              catalog!.products.firstWhere((p) => p.id == id),
-                            ),
+                  BlueprintProductOptions(
+                    products: catalog!.products.where(eligible).toList(),
+                    currentProductId: product?.id,
+                    onSelected: busy ? null : choose,
+                    onEdit: busy ? null : editProduct,
                   ),
                   TextButton.icon(
                     onPressed: busy ? null : createProduct,

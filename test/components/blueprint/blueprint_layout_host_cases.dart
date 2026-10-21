@@ -201,6 +201,7 @@ void main() {
       expect(request!['areaBindingChanges'][0]['capacity'], 25);
       expect(c.isDirty, isFalse);
       final reloaded = BlueprintLayoutController(
+        saver: c.saver,
         source: BlueprintModel(
           layoutSnapshot: BlueprintLayoutSnapshot.fromJson(c.snapshot.toJson()),
           products: [linked],

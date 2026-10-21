@@ -14,6 +14,89 @@ import '../blueprint_seat_state.dart';
 
 import '../../_shared/common_strings.dart';
 
+/// The same product summary and edit affordance for tables and standing areas.
+class BlueprintProductDetail extends StatelessWidget {
+  const BlueprintProductDetail(
+      {super.key,
+      required this.title,
+      required this.productText,
+      required this.status,
+      required this.statusIcon,
+      required this.statusColor,
+      this.onTap});
+  final String title, productText, status;
+  final IconData statusIcon;
+  final Color statusColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: Text(title,
+          style: theme.textTheme.labelLarge
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+      subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const SizedBox(height: 4),
+        Text(productText,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(statusIcon, size: 16, color: statusColor),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(status,
+                  style:
+                      theme.textTheme.bodySmall?.copyWith(color: statusColor))),
+        ]),
+      ]),
+      trailing:
+          onTap == null ? null : const Icon(Icons.edit_outlined, size: 18),
+      onTap: onTap,
+    );
+  }
+}
+
+/// Shared catalog rows for table and standing product assignment.
+class BlueprintProductOptions extends StatelessWidget {
+  const BlueprintProductOptions(
+      {super.key,
+      required this.products,
+      required this.onSelected,
+      this.onEdit,
+      this.currentProductId});
+  final List<ProductModel> products;
+  final ValueChanged<ProductModel>? onSelected, onEdit;
+  final int? currentProductId;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...products]
+      ..sort((a, b) => Utilities.naturalCompare(a.title ?? '', b.title ?? ''));
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      if (sorted.isEmpty) Text(BlueprintStrings.noSpotProducts),
+      for (final product in sorted)
+        ListTile(
+            selected: product.id == currentProductId,
+            title: Text(product.title ?? ''),
+            subtitle: Text(product.price == null
+                ? BlueprintStrings.noProductAssigned
+                : Utilities.formatPrice(context, product.price!,
+                    currencyCode: product.currencyCode)),
+            trailing: onEdit == null
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: BlueprintStrings.editProduct,
+                    onPressed: () => onEdit!(product)),
+            onTap: onSelected == null ? null : () => onSelected!(product)),
+    ]);
+  }
+}
+
 /// Dialog to select an existing spot product, or manage (edit/create) them.
 class SelectProductDialog extends StatefulWidget {
   final BlueprintModel? blueprint;
@@ -158,26 +241,14 @@ class _SelectProductDialogState extends State<SelectProductDialog> {
                               style: TextStyle(
                                   color:
                                       Theme.of(context).colorScheme.error)))),
-                if (_spotProducts.isEmpty)
-                  Text(BlueprintStrings.noSpotProducts),
-                for (final product in _spotProducts)
-                  ListTile(
-                      selected: product.id == widget.currentProductId,
-                      title: Text(product.title ?? ''),
-                      subtitle: Text(product.price == null
-                          ? BlueprintStrings.noProductAssigned
-                          : Utilities.formatPrice(context, product.price!,
-                              currencyCode: product.currencyCode)),
-                      trailing: widget.canEditCatalog
-                          ? IconButton(
-                              icon: const Icon(Icons.edit_outlined),
-                              tooltip: BlueprintStrings.editProduct,
-                              onPressed:
-                                  _busy ? null : () => _editProduct(product))
-                          : null,
-                      onTap: _busy
-                          ? null
-                          : () => Navigator.of(context).pop(product)),
+                BlueprintProductOptions(
+                    products: _spotProducts,
+                    currentProductId: widget.currentProductId,
+                    onEdit:
+                        widget.canEditCatalog && !_busy ? _editProduct : null,
+                    onSelected: _busy
+                        ? null
+                        : (product) => Navigator.of(context).pop(product)),
               ],
             ))),
         actions: [
