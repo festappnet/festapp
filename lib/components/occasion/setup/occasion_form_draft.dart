@@ -1,5 +1,8 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
+import '../../features/feature.dart';
+import '../../features/feature_constants.dart';
+import '../occasion_model.dart';
 import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';
@@ -30,6 +33,23 @@ FormEditBundle draftFormBundle(Map<String, dynamic> data) {
   form.definition = form.definition.copyWith(occasionId: 0);
   form.definition = form.definition.copyWith(isOpen: false);
   form.availableBankAccounts = const [];
+  // A prototype owns its feature context; unrelated current occasions must
+  // never decide whether this draft exposes a quantity setting.
+  form.occasionModel = OccasionModel(
+      id: 0,
+      isOpen: false,
+      isHidden: true,
+      isPromoted: false,
+      features: [
+        SimpleFeature(
+            code: FeatureConstants.ticket,
+            isEnabled: form.relatedFields.any((f) =>
+                f.definition.type == 'ticket' &&
+                f.definition.isHidden != true)),
+        SimpleFeature(
+            code: FeatureConstants.blueprint,
+            isEnabled: form.usesSeatSelection),
+      ]);
   for (final field in form.relatedFields) {
     final type = field.definition.productType;
     if (type == null) continue;

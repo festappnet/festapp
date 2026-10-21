@@ -18,24 +18,91 @@ ProductsEditBundle bundle(List<ProductModel> products) => ProductsEditBundle(
       forms: [],
     );
 void main() {
-  test('configured bank example follows sample currency in scalar and canonical rich values', () {
-    final examples = EmailPreviewExamples.fromJson(jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
-      context: const EmailPreviewContext(products: [EmailPreviewProduct(title: 'Kurz', typeTitle: 'Účast', price: 200, currency: 'EUR')]));
+  for (final blueprintEnabled in [false, true]) {
+    test(
+        'application examples respect blueprint multiplicity $blueprintEnabled with and without a catalog',
+        () {
+      final data = jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync()) as Map<String, dynamic>;
+      for (final products in [
+        <EmailPreviewProduct>[],
+        const [
+          EmailPreviewProduct(title: 'Účast', typeTitle: 'Kurz', price: 1000)
+        ]
+      ]) {
+        final examples = EmailPreviewExamples.fromJson(data,
+            context: EmailPreviewContext(
+                ticketsEnabled: false,
+                blueprintEnabled: blueprintEnabled,
+                products: products));
+        for (final code in [
+          'TICKET_ORDER_CONFIRMATION',
+          'TICKET_ORDER_UPDATE',
+          'TICKET_ORDER_PAYMENT_DONE',
+          'TICKET_ORDER_REMINDER',
+          'TICKET_ORDER_STORNO'
+        ]) {
+          for (final scenario in examples.scenariosFor(code)) {
+            if (scenario.values.containsKey('fullOrder')) {
+              expect(scenario.values['fullOrder'], contains('X3425W8H2U'));
+              expect(scenario.values['fullOrder']!.contains('X3427M4R9K'),
+                  blueprintEnabled);
+            }
+            if (!blueprintEnabled) {
+              expect(scenario.values['changeOverview'] ?? '',
+                  isNot(contains('X3427M4R9K')));
+            }
+            if (!blueprintEnabled &&
+                products.isNotEmpty &&
+                code == 'TICKET_ORDER_CONFIRMATION' &&
+                scenario.scenario == 'unpaid') {
+              expect(scenario.values['amount'], contains('1\u00a0000'));
+              expect(
+                  scenario.values['fullOrder'], isNot(contains('2\u00a0000')));
+            }
+          }
+        }
+      }
+    });
+  }
+  test(
+      'configured bank example follows sample currency in scalar and canonical rich values',
+      () {
+    final examples = EmailPreviewExamples.fromJson(
+        jsonDecode(File('assets/email_templates/preview_examples.json')
+            .readAsStringSync()),
+        context: const EmailPreviewContext(products: [
+          EmailPreviewProduct(
+              title: 'Kurz', typeTitle: 'Účast', price: 200, currency: 'EUR')
+        ]));
     const accounts = [
-      EmailPreviewPaymentAccount(accountNumber: '123456789/2010', iban: 'CZ65 2010 0000 0012 3456 7890', currencies: ['CZK']),
-      EmailPreviewPaymentAccount(accountNumber: 'EUR account', iban: 'SK12 3456 0000 0012 3456 7890', currencies: ['EUR']),
+      EmailPreviewPaymentAccount(
+          accountNumber: '123456789/2010',
+          iban: 'CZ65 2010 0000 0012 3456 7890',
+          currencies: ['CZK']),
+      EmailPreviewPaymentAccount(
+          accountNumber: 'EUR account',
+          iban: 'SK12 3456 0000 0012 3456 7890',
+          currencies: ['EUR']),
     ];
-    for (final scenario in examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: accounts)) {
+    for (final scenario in examples.scenariosFor('TICKET_ORDER_CONFIRMATION',
+        paymentAccounts: accounts)) {
       expect(scenario.values['accountNumber'], 'EUR account');
       expect(scenario.values['iban'], accounts[1].iban);
-      if (scenario.scenario == 'unpaid') expect(scenario.values['balanceReasoning'], contains(accounts[1].iban));
+      if (scenario.scenario == 'unpaid')
+        expect(scenario.values['balanceReasoning'], contains(accounts[1].iban));
     }
-    for (final scenario in examples.scenariosFor('TICKET_ORDER_REMINDER', paymentAccounts: accounts)) {
+    for (final scenario in examples.scenariosFor('TICKET_ORDER_REMINDER',
+        paymentAccounts: accounts)) {
       expect(scenario.values['paymentDetails'], contains(accounts[1].iban));
-      expect(scenario.values['paymentDetails'], isNot(contains('0000000000/0000')));
+      expect(scenario.values['paymentDetails'],
+          isNot(contains('0000000000/0000')));
     }
-    final noMatch = examples.scenariosFor('TICKET_ORDER_CONFIRMATION', paymentAccounts: [accounts.first]).first;
-    expect(noMatch.values['accountNumber'], isNot(accounts.first.accountNumber));
+    final noMatch = examples.scenariosFor('TICKET_ORDER_CONFIRMATION',
+        paymentAccounts: [accounts.first]).first;
+    expect(
+        noMatch.values['accountNumber'], isNot(accounts.first.accountNumber));
     expect(noMatch.values['fullOrder'], contains('Kurz'));
   });
   test('remote banner preview uses only canonical images from resolved wrapper',
@@ -68,6 +135,7 @@ void main() {
         isPromoted: false,
         id: 42,
         title: 'Podzimní koncert',
+        features: [TicketFeature(code: 'ticket', isEnabled: true)],
         link: 'concert');
     var requests = 0;
     final result =
@@ -112,21 +180,40 @@ void main() {
     expect(scenario.values['fullOrder'], isNot(contains('Jiná měna')));
   });
   for (final enabled in [true, false]) {
-    test('occasion sampler preserves ticket feature $enabled even without catalog access', () async {
-      final occasion = OccasionModel(isOpen: true, isHidden: false, isPromoted: false,
-        id: 42, title: 'Kurz', link: 'course',
-        features: [TicketFeature(code: 'ticket', isEnabled: enabled)]);
+    test(
+        'occasion sampler preserves ticket feature $enabled even without catalog access',
+        () async {
+      final occasion = OccasionModel(
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+          id: 42,
+          title: 'Kurz',
+          link: 'course',
+          features: [TicketFeature(code: 'ticket', isEnabled: enabled)]);
       for (final denied in [false, true]) {
-        final result = await loadEmailPreviewContext(occasion, loadProducts: (_) async {
+        final result =
+            await loadEmailPreviewContext(occasion, loadProducts: (_) async {
           if (denied) throw StateError('denied');
-          return bundle([ProductModel(id: 1, title: 'Účastnický poplatek', price: 1000, currencyCode: 'CZK')]);
+          return bundle([
+            ProductModel(
+                id: 1,
+                title: 'Účastnický poplatek',
+                price: 1000,
+                currencyCode: 'CZK')
+          ]);
         });
         expect(result.context.ticketsEnabled, enabled);
         final examples = EmailPreviewExamples.fromJson(
-          jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()) as Map<String, dynamic>,
-          context: result.context);
-        final scenario = examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
-        expect(scenario.values['fullOrder'], contains(enabled ? 'Vstupenka X3425W8H2U' : 'Přihláška X3425W8H2U'));
+            jsonDecode(File('assets/email_templates/preview_examples.json')
+                .readAsStringSync()) as Map<String, dynamic>,
+            context: result.context);
+        final scenario =
+            examples.scenariosFor('TICKET_ORDER_CONFIRMATION').first;
+        expect(
+            scenario.values['fullOrder'],
+            contains(
+                enabled ? 'Vstupenka X3425W8H2U' : 'Přihláška X3425W8H2U'));
       }
     });
   }

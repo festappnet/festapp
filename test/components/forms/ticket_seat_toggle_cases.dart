@@ -30,7 +30,7 @@ void main() {
 
   for (final blueprintEnabled in [false, true]) {
     testWidgetsWithEnvironment(() => _environment,
-        'order limit is editable without ticket feature; blueprint: $blueprintEnabled',
+        'order limit follows blueprint when tickets are disabled: $blueprintEnabled',
         (tester) async {
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
           occasion: OccasionModel(
@@ -42,7 +42,9 @@ void main() {
                 code: FeatureConstants.blueprint, isEnabled: blueprintEnabled),
           ]));
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
-      final ticket = FormFieldDraft(type: FormMetadata.fieldTypeTicket);
+      final ticket = FormFieldDraft(
+          type: FormMetadata.fieldTypeTicket,
+          data: {FormMetadata.maxTickets: 7});
       final form = FormEditorDraft(occasionId: 59, relatedFields: [ticket]);
       await _environment.pumpWidget(
           tester,
@@ -55,9 +57,10 @@ void main() {
           )));
       final limit = find.widgetWithText(
           TextFormField, FormStrings.labelMaxTicketsPerOrder);
-      expect(limit, findsOneWidget);
-      await tester.enterText(limit, '4');
-      expect(ticket.definition.data?[FormMetadata.maxTickets], 4);
+      expect(limit, blueprintEnabled ? findsOneWidget : findsNothing);
+      if (blueprintEnabled) await tester.enterText(limit, '4');
+      expect(ticket.definition.data?[FormMetadata.maxTickets],
+          blueprintEnabled ? 4 : 1);
       await _environment.pumpWidget(
           tester,
           MaterialApp(
@@ -67,8 +70,9 @@ void main() {
                     TicketEditorWidgets.buildTicketEditorReadOnly(
                         context, form, ticket)),
           )));
-      expect(find.text(FormStrings.labelMaxTicketsPerOrder), findsOneWidget);
-      expect(find.text('4'), findsOneWidget);
+      expect(find.text(FormStrings.labelMaxTicketsPerOrder),
+          blueprintEnabled ? findsOneWidget : findsNothing);
+      expect(find.text('4'), blueprintEnabled ? findsOneWidget : findsNothing);
     });
   }
 
