@@ -9,6 +9,9 @@ export class RightsService {
     static _requestGeneration = 0;
     static _identityClient = null;
     static _identitySubscription = null;
+    static _identityUserId = undefined;
+    static _authRefreshTimer = null;
+    static _lastRequestOptions = {};
 
     static clearCapabilities() {
         this._requestGeneration++;
@@ -37,6 +40,11 @@ export class RightsService {
     }
 
     static async updateAppData({ link = null, unitId = null, formLink = null, force = false } = {}) {
+        // A caller awaiting fresh rights (login/router) already owns this fetch.
+        // Do not let a queued auth refresh invalidate its eventual response.
+        clearTimeout(this._authRefreshTimer);
+        this._authRefreshTimer = null;
+        this._lastRequestOptions = { link, unitId, formLink, force };
         // Simple caching logic: if we have context and not forcing, maybe skip?
         // But for now, let's just fetch to be safe and ensure fresh rights.
         
@@ -62,9 +70,33 @@ export class RightsService {
 
             if (this._identityClient !== client) {
                 this._identitySubscription?.unsubscribe();
+                clearTimeout(this._authRefreshTimer);
+                this._authRefreshTimer = null;
+                this._identityUserId = undefined;
                 this._identityClient = client;
-                this._identitySubscription = client.auth?.onAuthStateChange?.((event) => {
-                    if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') this.clearCapabilities();
+                this._identitySubscription = client.auth?.onAuthStateChange?.((event, session) => {
+                    if (this._identityClient !== client) return;
+                    const userId = session?.user?.id ?? null;
+                    if (event === 'INITIAL_SESSION') {
+                        this._identityUserId = userId;
+                        return;
+                    }
+                    if (event !== 'SIGNED_OUT' && event !== 'SIGNED_IN') return;
+                    const sameUser = userId !== null &&
+                        (userId === this._identityUserId || userId === this.currentUser?.id);
+                    this._identityUserId = userId;
+                    // Supabase also emits SIGNED_IN when restoring/refocusing
+                    // the same session. Keep its resolved or in-flight context.
+                    if (event === 'SIGNED_IN' && sameUser) return;
+                    this.clearCapabilities();
+                    clearTimeout(this._authRefreshTimer);
+                    // Auth callbacks hold the SDK session lock. Fetch outside
+                    // that callback, in the latest route's scope, after clearing
+                    // private rights and invalidating the old response.
+                    this._authRefreshTimer = setTimeout(() => {
+                        this._authRefreshTimer = null;
+                        if (this._identityClient === client) void this.updateAppData(this._lastRequestOptions);
+                    }, 0);
                 })?.data?.subscription;
             }
             const { data, error } = await client.rpc('get_app_config_v218', {
