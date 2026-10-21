@@ -26,6 +26,7 @@ class OccasionSaleBadge extends StatefulWidget {
 
   static bool isVisible(OccasionSaleStatus? status, DateTime now) =>
       status != null &&
+      status.state != OccasionSaleState.finished &&
       !(status.state == OccasionSaleState.selling &&
           status.active == status.total &&
           status.waitlists == 0 &&
@@ -62,21 +63,22 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
     final count = status.active > 0 && status.total > 1
         ? '${status.active}/${status.total}'
         : null;
-    final duration = status.countdown &&
-            remaining != null &&
-            (status.starts || closingCountdown)
+    final duration = remaining != null && (status.starts || closingCountdown)
         ? OccasionSaleStrings.duration(remaining, context.locale)
         : null;
     final compactLabel = switch (status.state) {
-      OccasionSaleState.scheduled => status.countdown && duration != null
-          ? OccasionSaleStrings.text('shortStartsIn', {'duration': duration})
+      OccasionSaleState.scheduled => duration != null
+          ? remaining!.inSeconds < 60
+              ? OccasionSaleStrings.text('startsSoon')
+              : OccasionSaleStrings.text(
+                  'shortStartsIn', {'duration': duration})
           : label,
       OccasionSaleState.selling => count ?? duration,
       OccasionSaleState.waitlist => '${OccasionSaleStrings.text('waitlist')}'
           '${count == null ? '' : ' $count'}',
       _ => OccasionSaleStrings.text(status.state.name),
     };
-    final foreground = Theme.of(context).colorScheme.onSurfaceVariant;
+    final foreground = Theme.of(context).colorScheme.onSurface;
     final detail = [
       OccasionSaleStrings.text(status.state.name),
       if (status.total > 1)
@@ -108,8 +110,8 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
           foregroundColor: foreground,
           backgroundColor: Colors.transparent,
           minimumSize: const Size(44, 44),
-          alignment: AlignmentDirectional.topEnd,
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          alignment: AlignmentDirectional.centerEnd,
+          padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Semantics(

@@ -3700,6 +3700,6 @@
     "retrySender": "Znovu načíst adresu odesílatele",
     "seatSelection": "Výběr míst",
     "previousQuestion": "Předchozí otázka",
-    "shortStartsIn": "Za {duration}"
+    "shortStartsIn": "Začíná za {duration}"
   }
 }

@@ -1,3 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:fstapp/components/unit/views/occasion_sale_badge.dart';
 import 'package:fstapp/components/unit/views/occasion_created_highlight.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_completed.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_result.dart';
@@ -546,12 +550,12 @@ void main() {
     final labelRect = tester.getRect(find.text('Pozastaveno'));
     expect(labelRect.right, greaterThan(card.right - 24));
     expect(icon.right, lessThan(labelRect.left));
-    expect(
-        labelRect.bottom,
-        lessThanOrEqualTo(tester
-            .getRect(find.byKey(const ValueKey('occasion-card-date')))
-            .top));
-    expect(icon.top, lessThan(card.top + 24));
+    final dateRect =
+        tester.getRect(find.byKey(const ValueKey('occasion-card-date')));
+    expect((labelRect.center.dy - dateRect.center.dy).abs(), lessThan(2));
+    expect(labelRect.top, greaterThanOrEqualTo(card.top + 12));
+    expect(dateRect.right, lessThanOrEqualTo(icon.left));
+    expect(icon.top, greaterThanOrEqualTo(card.top + 12));
     final button = tester.widget<TextButton>(find.byType(TextButton));
     expect(button.style!.backgroundColor!.resolve({}), Colors.transparent);
     for (var i = 0;
@@ -672,6 +676,10 @@ void main() {
         expect(tooltip.message, contains('Prodej končí:'));
         expect(tooltip.message, isNot(contains('Prodej začíná:')));
       }
+      if (state == OccasionSaleState.finished) {
+        expect(find.byType(OccasionSaleBadge), findsNothing);
+        expect(find.text('Proběhlo'), findsNothing);
+      }
       if (state == OccasionSaleState.soldOut) {
         expect(find.text('Vyprodáno'), findsOneWidget);
       }
@@ -711,13 +719,14 @@ void main() {
                             height: 110 + (scale - 1) * 64,
                             child: OccasionEditCard(
                                 occasion: occasion, onTap: () {}))))));
-        final label = countdown
-            ? find.text('Za 3 dny')
-            : find.textContaining('Prodej od');
+        final label = find.text('Začíná za 3 dny');
         expect(label, findsOneWidget);
         final date = find.byKey(const ValueKey('occasion-card-date'));
-        expect(tester.getRect(label).bottom,
-            lessThanOrEqualTo(tester.getRect(date).top));
+        expect(
+            (tester.getRect(label).center.dy - tester.getRect(date).center.dy)
+                .abs(),
+            lessThan(2));
+        expect(tester.getRect(label).overlaps(tester.getRect(date)), isFalse);
         expect(
             tester
                 .widget<Text>(find.text('Naplánovaná událost'))
@@ -728,11 +737,117 @@ void main() {
             of: find.byType(TextButton), matching: find.byType(Tooltip)));
         expect(tooltip.message, contains('Prodej začíná:'));
         expect(tooltip.message, isNot(contains('Prodej končí:')));
-        if (!countdown) expect(find.text('Za 3 dny'), findsNothing);
+        expect(find.textContaining('Prodej od'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }
+  }
+
+  for (final brightness in Brightness.values) {
+    testWidgetsWithEnvironment(
+        () => environment, 'real font header stays inset in $brightness',
+        (tester) async {
+      await tester.runAsync(() async {
+        final loader = FontLoader('CardPreviewFutura');
+        loader.addFont(Future.value(ByteData.sublistView(
+            await File('fonts/Futura PT Medium.ttf').readAsBytes())));
+        await loader.load();
+        if (const bool.fromEnvironment('OCCASION_CARD_PREVIEW')) {
+          final icons = FontLoader('MaterialIcons');
+          icons.addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
+          await icons.load();
+        }
+      });
+      await tester.binding.setSurfaceSize(const Size(1024, 160));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final boundary = GlobalKey();
+      final now = DateTime.now().toUtc();
+      await environment.pumpWidget(
+          tester,
+          Builder(
+              builder: (context) => MaterialApp(
+                    locale: context.locale,
+                    supportedLocales: context.supportedLocales,
+                    localizationsDelegates: context.localizationDelegates,
+                    theme: ThemeData(
+                        brightness: brightness,
+                        fontFamily: 'CardPreviewFutura'),
+                    home: Scaffold(
+                        body: RepaintBoundary(
+                            key: boundary,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(children: [
+                                for (final mode in [
+                                  'paused',
+                                  'scheduled',
+                                  'past'
+                                ])
+                                  SizedBox(
+                                      width: 320,
+                                      height: 110,
+                                      child: OccasionEditCard(
+                                          occasion: OccasionModel(
+                                              id: 1,
+                                              title: 'Setkání pořadatelů',
+                                              startTime: mode == 'past'
+                                                  ? now.subtract(
+                                                      const Duration(days: 4))
+                                                  : DateTime(2030, 11, 20),
+                                              endTime: mode == 'past'
+                                                  ? now.subtract(
+                                                      const Duration(days: 1))
+                                                  : DateTime(2030, 11, 23),
+                                              isOpen: true,
+                                              isHidden: false,
+                                              isPromoted: false,
+                                              stats: StatsModel(),
+                                              saleForms: mode == 'paused'
+                                                  ? [form(open: false)]
+                                                  : mode == 'scheduled'
+                                                      ? [
+                                                          form(
+                                                              start: now.add(
+                                                                  const Duration(
+                                                                      days: 2,
+                                                                      hours:
+                                                                          12)))
+                                                        ]
+                                                      : null),
+                                          onTap: () {})),
+                              ]),
+                            ))),
+                  )));
+      await tester.pumpAndSettle();
+      expect(find.text('Začíná za 2 dny'), findsOneWidget);
+      expect(find.text('Proběhlo'), findsNothing);
+      expect(find.byType(OccasionSaleBadge), findsNWidgets(2));
+      for (final label in ['Pozastaveno', 'Začíná za 2 dny']) {
+        expect(
+            (tester.renderObject(find.text(label)) as RenderParagraph)
+                .didExceedMaxLines,
+            isFalse);
+        final rect = tester.getRect(find.text(label));
+        final card = tester.getRect(
+            find.ancestor(of: find.text(label), matching: find.byType(Card)));
+        expect(rect.top, greaterThanOrEqualTo(card.top + 12));
+        expect(rect.right, lessThanOrEqualTo(card.right - 8));
+      }
+      expect(tester.takeException(), isNull);
+      if (const bool.fromEnvironment('OCCASION_CARD_PREVIEW')) {
+        await tester.runAsync(() async {
+          final image = await (boundary.currentContext!.findRenderObject()
+                  as RenderRepaintBoundary)
+              .toImage(pixelRatio: 2);
+          final data = await image.toByteData(format: ui.ImageByteFormat.png);
+          await File('/tmp/occasion-card-header-${brightness.name}.png')
+              .writeAsBytes(data!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 
   testWidgetsWithEnvironment(() => environment,

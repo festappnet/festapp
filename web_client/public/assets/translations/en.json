@@ -3699,6 +3699,6 @@
     "retrySender": "Reload sender address",
     "seatSelection": "Seat selection",
     "previousQuestion": "Previous question",
-    "shortStartsIn": "In {duration}"
+    "shortStartsIn": "Starts in {duration}"
   }
 }
