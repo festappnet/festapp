@@ -1,6 +1,5 @@
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/database_tables/tb.dart';
-import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,52 +9,44 @@ import 'package:fstapp/components/occasion/occasion_sale_strings.dart';
 
 class OccasionSaleBadge extends StatefulWidget {
   final OccasionModel occasion;
-  const OccasionSaleBadge({super.key, required this.occasion});
+  final OccasionSaleStatus status;
+  final DateTime now;
+  const OccasionSaleBadge(
+      {super.key,
+      required this.occasion,
+      required this.status,
+      required this.now});
+
+  static bool isClosingCountdown(OccasionSaleStatus status, DateTime now) =>
+      status.state == OccasionSaleState.selling &&
+      status.countdown &&
+      status.total == 1 &&
+      status.deadline != null &&
+      status.deadline!.difference(now).inDays < 3;
+
+  static bool isVisible(OccasionSaleStatus? status, DateTime now) =>
+      status != null &&
+      !(status.state == OccasionSaleState.selling &&
+          status.active == status.total &&
+          status.waitlists == 0 &&
+          !isClosingCountdown(status, now));
   @override
   State<OccasionSaleBadge> createState() => _OccasionSaleBadgeState();
 }
 
 class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
-  Timer? _timer;
   final _tooltipKey = GlobalKey<TooltipState>();
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now().toUtc();
-    final status = OccasionSaleStatus.resolve(widget.occasion.saleForms,
-        now: now, occasionEnd: widget.occasion.saleOccasionEndUtc);
-    if (status == null) return const SizedBox.shrink();
+    final now = widget.now;
+    final status = widget.status;
     final timezone =
         widget.occasion.data?[Tb.occasions.data_timezone] as String?;
     final label = OccasionSaleStrings.label(status, now, context.locale,
         timezone: timezone);
     final remaining = status.deadline?.difference(now);
-    final closingCountdown = status.state == OccasionSaleState.selling &&
-        status.countdown &&
-        status.total == 1 &&
-        remaining != null &&
-        remaining.inDays < 3;
-    // Ordinary open forms and already-grouped past events need no extra signal.
-    if (status.state == OccasionSaleState.finished ||
-        status.state == OccasionSaleState.selling &&
-            status.active == status.total &&
-            status.waitlists == 0 &&
-            !closingCountdown) {
-      return const SizedBox.shrink();
-    }
+    final closingCountdown = OccasionSaleBadge.isClosingCountdown(status, now);
     final icon = switch (status.state) {
       OccasionSaleState.scheduled => Icons.schedule_outlined,
       OccasionSaleState.selling => closingCountdown
@@ -64,7 +55,7 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
               ? Icons.group_add_outlined
               : Icons.lock_open_outlined,
       OccasionSaleState.waitlist => Icons.group_add_outlined,
-      OccasionSaleState.paused => Icons.pause,
+      OccasionSaleState.paused => Icons.lock_outline,
       OccasionSaleState.soldOut => Icons.block,
       _ => Icons.lock_outline,
     };
@@ -76,7 +67,15 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
             (status.starts || closingCountdown)
         ? OccasionSaleStrings.duration(remaining, context.locale)
         : null;
-    final compactLabel = count ?? duration;
+    final compactLabel = switch (status.state) {
+      OccasionSaleState.scheduled => status.countdown && duration != null
+          ? OccasionSaleStrings.text('shortStartsIn', {'duration': duration})
+          : label,
+      OccasionSaleState.selling => count ?? duration,
+      OccasionSaleState.waitlist => '${OccasionSaleStrings.text('waitlist')}'
+          '${count == null ? '' : ' $count'}',
+      _ => OccasionSaleStrings.text(status.state.name),
+    };
     final foreground = Theme.of(context).colorScheme.onSurfaceVariant;
     final detail = [
       OccasionSaleStrings.text(status.state.name),
@@ -109,6 +108,7 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
           foregroundColor: foreground,
           backgroundColor: Colors.transparent,
           minimumSize: const Size(44, 44),
+          alignment: AlignmentDirectional.topEnd,
           padding: const EdgeInsets.symmetric(horizontal: 6),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
@@ -119,10 +119,12 @@ class _OccasionSaleBadgeState extends State<OccasionSaleBadge> {
               Icon(icon, size: 16),
               if (compactLabel != null) ...[
                 const SizedBox(width: 4),
-                Text(compactLabel,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: foreground, fontWeight: FontWeight.w500)),
+                Flexible(
+                    child: Text(compactLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: foreground, fontWeight: FontWeight.w500))),
               ],
             ]),
           ),

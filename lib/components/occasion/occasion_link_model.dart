@@ -7,6 +7,7 @@ import 'package:fstapp/components/groups/user_group_info_model.dart';
 
 class OccasionLinkModel {
   int? code;
+  final Map<String, dynamic>? unitDashboard;
   OccasionModel? occasion;
   UnitModel? unit;
   UserInfoModel? userInfo;
@@ -47,6 +48,9 @@ class OccasionLinkModel {
     }
     return OccasionLinkModel(
       code: json["code"],
+      unitDashboard: json["unit_dashboard"] == null
+          ? null
+          : Map<String, dynamic>.unmodifiable(json["unit_dashboard"]),
       capabilities: Map<String, bool>.unmodifiable({
         for (final entry in (json['capabilities'] as Map? ?? {}).entries)
           if (entry.key is String) entry.key as String: entry.value == true,
@@ -77,6 +81,7 @@ class OccasionLinkModel {
 
   OccasionLinkModel({
     this.code,
+    this.unitDashboard,
     this.userInfo,
     this.occasionUser,
     this.unitUser,
@@ -97,6 +102,7 @@ class OccasionLinkModel {
   }) =>
       OccasionLinkModel(
         code: code,
+        unitDashboard: unitDashboard,
         userInfo: userInfo,
         occasionUser: occasionUser,
         unitUser: unitUser,

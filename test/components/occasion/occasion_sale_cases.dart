@@ -518,7 +518,7 @@ void main() {
   });
 
   testWidgetsWithEnvironment(() => environment,
-      'paused card shows a neutral corner icon with a tap tooltip',
+      'paused card shows its label and lock with keyboard and tap details',
       (tester) async {
     var opened = 0;
     final occasion = OccasionModel(
@@ -540,23 +540,30 @@ void main() {
                     height: 110,
                     child: OccasionEditCard(
                         occasion: occasion, onTap: () => opened++)))));
-    expect(find.byIcon(Icons.pause), findsOneWidget);
-    final icon = tester.getRect(find.byIcon(Icons.pause));
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+    final icon = tester.getRect(find.byIcon(Icons.lock_outline));
     final card = tester.getRect(find.byType(OccasionEditCard));
-    expect(icon.right, greaterThan(card.right - 24));
+    final labelRect = tester.getRect(find.text('Pozastaveno'));
+    expect(labelRect.right, greaterThan(card.right - 24));
+    expect(icon.right, lessThan(labelRect.left));
+    expect(
+        labelRect.bottom,
+        lessThanOrEqualTo(tester
+            .getRect(find.byKey(const ValueKey('occasion-card-date')))
+            .top));
     expect(icon.top, lessThan(card.top + 24));
     final button = tester.widget<TextButton>(find.byType(TextButton));
     expect(button.style!.backgroundColor!.resolve({}), Colors.transparent);
     for (var i = 0;
-        i < 4 && find.textContaining('Pozastaveno').evaluate().isEmpty;
+        i < 4 && find.textContaining('Pozastaveno\n').evaluate().isEmpty;
         i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pumpAndSettle();
     }
-    expect(find.textContaining('Pozastaveno'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.pause));
+    expect(find.textContaining('Pozastaveno\n'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.lock_outline));
     await tester.pump();
-    expect(find.textContaining('Pozastaveno'), findsOneWidget);
+    expect(find.textContaining('Pozastaveno\n'), findsOneWidget);
     expect(opened, 0);
     expect(tester.takeException(), isNull);
   });
@@ -601,4 +608,168 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+  for (final state in [...OccasionSaleState.values, null]) {
+    testWidgetsWithEnvironment(
+        () => environment, 'card mutes only inactive sales: $state',
+        (tester) async {
+      final instant = DateTime.now().toUtc();
+      final forms = switch (state) {
+        OccasionSaleState.preparation => [form(open: false, preparation: true)],
+        OccasionSaleState.scheduled => [
+            form(start: instant.add(const Duration(days: 4)))
+          ],
+        OccasionSaleState.paused => [form(open: false)],
+        OccasionSaleState.soldOut => [form(available: false)],
+        OccasionSaleState.waitlist => [
+            form(
+                mode: 'waitlist',
+                countdown: true,
+                end: instant.add(const Duration(days: 1))),
+            form(open: false)
+          ],
+        OccasionSaleState.ended => [
+            form(end: instant.subtract(const Duration(days: 1)))
+          ],
+        null => null,
+        _ => [form()],
+      };
+      var opened = 0;
+      final occasion = OccasionModel(
+          id: 1,
+          title: 'Stav události',
+          startTime: DateTime(2030, 1, 10),
+          endTime: DateTime(2030, 1, 11),
+          isOpen: true,
+          isHidden: false,
+          isPromoted: false,
+          stats: StatsModel(),
+          saleForms: forms,
+          saleOccasionEndUtc: state == OccasionSaleState.finished
+              ? instant.subtract(const Duration(days: 1))
+              : null);
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              home: Scaffold(
+                  body: SizedBox(
+                      width: 312,
+                      height: 110,
+                      child: OccasionEditCard(
+                          occasion: occasion, onTap: () => opened++)))));
+      final inactive = state != null &&
+          state != OccasionSaleState.selling &&
+          state != OccasionSaleState.waitlist;
+      expect(
+          tester
+              .widget<Opacity>(
+                  find.byKey(const ValueKey('occasion-sale-content')))
+              .opacity,
+          inactive ? lessThan(1.0) : equals(1.0));
+      if (state == OccasionSaleState.waitlist) {
+        expect(find.text('Náhradníci 1/2'), findsOneWidget);
+        final tooltip = tester.widget<Tooltip>(find.ancestor(
+            of: find.byType(TextButton), matching: find.byType(Tooltip)));
+        expect(tooltip.message, contains('Prodej končí:'));
+        expect(tooltip.message, isNot(contains('Prodej začíná:')));
+      }
+      if (state == OccasionSaleState.soldOut) {
+        expect(find.text('Vyprodáno'), findsOneWidget);
+      }
+      await tester.tap(find.text('Stav události'));
+      expect(opened, 1, reason: 'Muted cards must remain navigable');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  for (final countdown in [false, true]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgetsWithEnvironment(() => environment,
+          'scheduled label preserves date at scale $scale, countdown $countdown',
+          (tester) async {
+        final start =
+            DateTime.now().toUtc().add(const Duration(days: 3, hours: 12));
+        final occasion = OccasionModel(
+            id: 1,
+            title: 'Naplánovaná událost',
+            startTime: DateTime(2030, 12, 28),
+            endTime: DateTime(2031, 1, 3),
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+            stats: StatsModel(),
+            saleForms: [form(start: start, countdown: countdown)]);
+        await environment.pumpWidget(
+            tester,
+            MaterialApp(
+                home: Scaffold(
+                    body: MediaQuery(
+                        data: MediaQueryData(
+                            textScaler: TextScaler.linear(scale)),
+                        child: SizedBox(
+                            width: 288,
+                            height: 110 + (scale - 1) * 64,
+                            child: OccasionEditCard(
+                                occasion: occasion, onTap: () {}))))));
+        final label = countdown
+            ? find.text('Za 3 dny')
+            : find.textContaining('Prodej od');
+        expect(label, findsOneWidget);
+        final date = find.byKey(const ValueKey('occasion-card-date'));
+        expect(tester.getRect(label).bottom,
+            lessThanOrEqualTo(tester.getRect(date).top));
+        expect(
+            tester
+                .widget<Text>(find.text('Naplánovaná událost'))
+                .style!
+                .fontSize,
+            16);
+        final tooltip = tester.widget<Tooltip>(find.ancestor(
+            of: find.byType(TextButton), matching: find.byType(Tooltip)));
+        expect(tooltip.message, contains('Prodej začíná:'));
+        expect(tooltip.message, isNot(contains('Prodej končí:')));
+        if (!countdown) expect(find.text('Za 3 dny'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
+
+  testWidgetsWithEnvironment(() => environment,
+      'one card tick updates both resolved status and inactive treatment',
+      (tester) async {
+    final occasion = OccasionModel(
+        id: 1,
+        title: 'Průběžný stav',
+        isOpen: true,
+        isHidden: false,
+        isPromoted: false,
+        saleForms: [form(open: false)]);
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SizedBox(
+                    width: 312,
+                    height: 110,
+                    child:
+                        OccasionEditCard(occasion: occasion, onTap: () {})))));
+    expect(find.text('Pozastaveno'), findsOneWidget);
+    // Change the projected window without rebuilding the widget. The card's
+    // clock must resolve it again, together with its presentation.
+    occasion.saleForms = [
+      form(start: DateTime.now().toUtc().subtract(const Duration(seconds: 1)))
+    ];
+    await tester.pump(const Duration(seconds: 30));
+    expect(find.byType(TextButton), findsNothing);
+    expect(
+        tester
+            .widget<Opacity>(
+                find.byKey(const ValueKey('occasion-sale-content')))
+            .opacity,
+        1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 30));
+    expect(tester.takeException(), isNull);
+  });
 }

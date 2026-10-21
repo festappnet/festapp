@@ -3699,6 +3699,7 @@
     "previewEmailSelection": "E-maily zobrazí právě vybrané produkty, cenu a vyplněné kontaktní údaje. Jde pouze o náhled; nic se neodešle.",
     "retrySender": "Znovu načíst adresu odesílatele",
     "seatSelection": "Výběr míst",
-    "previousQuestion": "Předchozí otázka"
+    "previousQuestion": "Předchozí otázka",
+    "shortStartsIn": "Za {duration}"
   }
 }

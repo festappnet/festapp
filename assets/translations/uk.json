@@ -1799,6 +1799,7 @@
     "paused": "Призупинено",
     "ended": "Продаж завершено",
     "finished": "Подія завершена",
+    "shortStartsIn": "Через {duration}",
     "startsIn": "Продаж почнеться через {duration}",
     "endsIn": "Продаж закінчиться через {duration}",
     "startsSoon": "Продаж почнеться протягом хвилини",
