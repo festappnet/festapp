@@ -75,7 +75,7 @@ the flag does not establish that provenance or rebuild stale assets.
 2. `cloudflare_build.sh` calls `build_web_bundle.sh`: image-service preflight,
    pinned Flutter selection, configuration generation and client-cutover preflight.
 3. The shared builder compiles Flutter, optimizes fonts, stamps versions, builds
-   the JS client with `npm ci`, merges assets and renders legal/organizer pages.
+   the JS client with `pnpm install --frozen-lockfile`, merges assets and renders legal/organizer pages.
 4. It generates the PWA app-shell worker and enforces its cache budget.
    The wrapper removes conflicting redirects/headers, emits `_worker.js` and
    verifies the completed bundle.
@@ -134,7 +134,7 @@ the `festapp-public` R2 bucket is tracked in
 origin:
 
 ```sh
-npx --yes wrangler@4.131.0 r2 bucket cors set festapp-public \
+pnpm dlx wrangler@4.131.0 r2 bucket cors set festapp-public \
   --file automation/cloudflare/festapp-public-cors.json --force
 ```
 

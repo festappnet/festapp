@@ -51,7 +51,7 @@ auth and all embedded form hosts with the final production bundle. The current
 policy does not restrict `frame-ancestors`, because external form embedding is a
 supported use case; it also leaves iframe PDF preview available.
 
-Local validation: `npm run typecheck` and `npm run test:unit` in this directory.
+Local validation: `pnpm run typecheck` and `pnpm run test:unit` in this directory.
 The remote integration suite creates a real backend user and must not be used
 as a local validation shortcut. Deployment remains the control-plane checkpoint
 workflow in `deploy.sh`, without changing public routing or unrelated tenants.

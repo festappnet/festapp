@@ -15,17 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: workers/image-worker/package-lock.json
+          cache: pnpm
+          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
       - name: Install image test dependencies
         working-directory: workers/image-worker
-        run: npm ci --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
       - name: Verify every active origin, project and authorization contract
         working-directory: workers/image-worker
-        run: npm run typecheck && npm run test:unit
+        run: pnpm run typecheck && pnpm run test:unit
       - name: Verify production deployment probe regressions
         run: node --test automation/tests/image_service_preflight.test.mjs
       - name: Verify storage inventory, immutable copy and archive contracts

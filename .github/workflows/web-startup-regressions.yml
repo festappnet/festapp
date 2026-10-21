@@ -15,16 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: web_client/package-lock.json
+          cache: pnpm
+          cache-dependency-path: web_client/pnpm-lock.yaml
       - name: Install isolated Chromium test runner
-        run: npm install -g agent-browser@0.33.1 && agent-browser install --with-deps
+        run: pnpm add --global agent-browser@0.33.1 && agent-browser install --with-deps
       - name: Install web test dependencies
         working-directory: web_client
-        run: npm ci --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
       - name: Verify restricted WebViews and production module identity
         run: bash automation/test_web_startup.sh
       - name: Verify deployment gates

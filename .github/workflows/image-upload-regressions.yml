@@ -38,14 +38,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: workers/image-worker/package-lock.json
-      - run: npm ci
+          cache: pnpm
+          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
         working-directory: workers/image-worker
-      - run: npm run typecheck && npm run test:unit
+      - run: pnpm run typecheck && pnpm run test:unit
         working-directory: workers/image-worker
   client-contract:
     runs-on: ubuntu-latest

@@ -26,8 +26,8 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
 
 Public form startup has a real Chromium gate in `automation/test_web_startup.sh`
 and every web release build. Install its pinned runner with
-`npm install -g agent-browser@0.33.1 && agent-browser install`.
-`npm --prefix web_client run test:form-access-browser` exercises the real HTML,
+`pnpm add --global agent-browser@0.33.1 && agent-browser install`.
+`pnpm --dir web_client run test:form-access-browser` exercises the real HTML,
 Main startup, unbranded form routing, catalogue login/Google handoff and editor/visitor access
 for open and closed forms. Backend transport and the final provider/admin
 handoffs are simulated; element visibility is checked in the browser.
@@ -46,8 +46,8 @@ tools/credentials can skip lanes. Web failures/timeouts and image integration
 failures currently print warnings and may leave the wrapper exit status zero.
 Client, SQL, Deno and selected automation failures propagate. Review each lane;
 "Done" alone is not a full pass. For a reliable JS or image integration result,
-run `npm test --prefix web_client` or
-`npm run test:integration --prefix workers/image-worker` directly with their
+run `pnpm --dir web_client test` or
+`pnpm --dir workers/image-worker run test:integration` directly with their
 required isolated fixtures.
 
 Scopes are `web`, `db`, `flutter`, `integration` and `automation`. Both `db` and
@@ -310,9 +310,9 @@ Flutter app but shares the same Supabase backend.
 
 ```bash
 cd web_client
-npm install
-npm run dev    # Vite dev server
-npm test       # Node.js native test runner
+pnpm install
+pnpm run dev    # Vite dev server
+pnpm test       # Node.js native test runner
 ```
 
 ### Component Pattern

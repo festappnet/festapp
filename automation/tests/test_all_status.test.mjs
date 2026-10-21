@@ -14,7 +14,7 @@ for (const [web, flutter, expected] of [[0, 0, 0], [17, 0, 1], [0, 23, 1]]) {
     for (const name of ['automation', 'web_client', 'bin']) mkdirSync(join(root, name));
     copyFileSync(new URL('../test_all.sh', import.meta.url), join(root, 'automation/test_all.sh'));
     writeFileSync(join(root, 'automation/test_client.sh'), '#!/bin/sh\nexec fvm flutter test\n', { mode: 0o755 });
-    for (const [name, code] of [['npm', web], ['fvm', flutter], ['pg_isready', 1]]) {
+    for (const [name, code] of [['pnpm', web], ['fvm', flutter], ['pg_isready', 1]]) {
       writeFileSync(join(root, 'bin', name), `#!/bin/sh\necho 'fixture ${name} executed'\nexit ${code}\n`, { mode: 0o755 });
     }
     const run = spawnSync('bash', [join(root, 'automation/test_all.sh'), 'web', 'flutter'], {

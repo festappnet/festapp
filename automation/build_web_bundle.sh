@@ -81,11 +81,11 @@ else
     mv build/web/index.html build/web/flutter.html
 fi
 
-(cd web_client && npm ci)
+(cd web_client && pnpm install --frozen-lockfile)
 # Both direct deployment and GitHub Deploy use this shared build path.
 # Fail before publishing if restricted WebViews or built module identity regress.
 bash automation/test_web_startup.sh
-(cd web_client && npm run build)
+(cd web_client && pnpm run build)
 cp -R web_client/dist/. build/web/
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page

@@ -7,7 +7,7 @@
 # Tests that require missing env vars are skipped gracefully.
 #
 # Test types:
-# - Web client (JavaScript): npm test
+# - Web client (JavaScript): pnpm test
 # - Database (SQL): node web_client/scripts/run_db_tests.js
 # - Deno edge functions: deno test
 # - Flutter: fvm flutter test
@@ -147,9 +147,9 @@ if [ "$RUN_WEB" = true ]; then
     echo ">>> Web Client Tests..."
     if [ -d "$WEB_CLIENT_DIR" ]; then
         cd "$WEB_CLIENT_DIR"
-        # Run npm test with 60s timeout (increased for stability)
+        # Run pnpm test with 60s timeout (increased for stability)
         set +e
-        run_with_timeout 60 "npm test"
+        run_with_timeout 60 "pnpm test"
         res=$?
         set -e
 
@@ -244,10 +244,10 @@ if [ "$RUN_INTEGRATION" = true ]; then
         cd "$WORKER_TEST_DIR"
         set +e
         if [ ! -x node_modules/.bin/vitest ]; then
-            echo "ERROR: image-worker test dependencies are missing; run npm ci --prefix workers/image-worker."
+            echo "ERROR: image-worker test dependencies are missing; run pnpm --dir workers/image-worker install --frozen-lockfile."
             exit 1
         fi
-        npm run test:integration 2>&1
+        pnpm run test:integration 2>&1
         res=$?
         set -e
         cd "$PROJECT_ROOT"

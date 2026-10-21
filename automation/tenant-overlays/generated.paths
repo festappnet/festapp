@@ -28,7 +28,6 @@ web/support/index.html
 web/site.webmanifest
 web_client/index.html
 web_client/package.json
-web_client/package-lock.json
 web_client/public/CNAME
 web_client/public/auth_bridge.html
 web_client/public/backend-activation.json

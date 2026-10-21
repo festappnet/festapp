@@ -76,7 +76,7 @@ Install Git, Node.js/npm and FVM. Use the Flutter version specified by
 fvm install
 fvm flutter pub get
 (cd packages/festapp_core && fvm dart pub get)
-npm ci --prefix web_client
+pnpm --dir web_client install --frozen-lockfile
 ```
 
 Complete the [configuration and backend setup](docs/setup/howto.md) before
@@ -85,11 +85,11 @@ running against event data. Then choose a frontend:
 ```bash
 fvm flutter run -d chrome
 # Or, in another terminal:
-npm run dev --prefix web_client
+pnpm --dir web_client run dev
 ```
 
 For client checks, run `./automation/test_client.sh`. JavaScript checks use
-`npm test --prefix web_client`; SQL tests require the isolated local database.
+`pnpm --dir web_client test`; SQL tests require the isolated local database.
 The wider `test_all.sh` wrapper has environment-dependent skips and warning-only
 lanes, so its exit status alone is not an all-suite pass. The exact commands and
 limits are in [Contributing](CONTRIBUTING.md#1-testing-workflow).
@@ -100,3 +100,7 @@ Festapp began with volunteers building an app for
 [Absolventský Velehrad](https://absolventskyvelehrad.cz) in 2023.
 [CHANGELOG.md](CHANGELOG.md) records development history. Updates are also
 shared in the [Czech WhatsApp channel](https://whatsapp.com/channel/0029Vb64lj91CYoUWARKf80R).
+
+## JavaScript dependencies
+
+Use pnpm 11.24.0, matching the Mendelio workspace. Run `pnpm install --frozen-lockfile` in the directory containing the relevant `package.json`, then `pnpm run <script>`. Each package keeps its own `pnpm-lock.yaml`; pnpm shares package content through the user store across repositories and worktrees. Keep the local virtual store enabled for compatibility with direct Node scripts and container builds. Do not use npm installs or commit npm lockfiles. Approved native build scripts are declared in each `pnpm-workspace.yaml`.

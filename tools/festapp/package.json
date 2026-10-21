@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.13",
+    "pnpm": "11.24.0"
   },
   "bin": {
     "festapp": "src/cli/main.mjs"
@@ -21,5 +22,6 @@
     "oidc-provider": "9.12.2",
     "pdfjs-dist": "6.4.299",
     "zod": "4.6.7"
-  }
+  },
+  "packageManager": "pnpm@11.24.0"
 }

@@ -213,7 +213,7 @@ Cloudflare R2 private bucket
 ```bash
 cd automation/image-migration
 cp .env.example .env    # Fill in credentials
-npm install
+pnpm install
 ```
 
 ## Usage
@@ -232,7 +232,7 @@ node migrate-files.js --concurrency 5
 ```
 
 **Prerequisites:**
-- `wrangler` authenticated (`npx wrangler login`)
+- `wrangler` authenticated (`pnpm exec wrangler login`)
 - R2 bucket `festapp-images` exists
 - `DATABASE_URL` set in `.env`
 
@@ -246,9 +246,9 @@ node migrate-files.js --concurrency 5
 ### Private bucket isolation (P1 only)
 
 ```bash
-npm run private:inventory
-npm run private:copy
-npm run private:verify
+pnpm run private:inventory
+pnpm run private:copy
+pnpm run private:verify
 # Separate authorized source-deletion checkpoint only:
 node private-bucket-cutover.js --delete --confirm-source-delete
 ```

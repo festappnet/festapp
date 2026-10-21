@@ -22,7 +22,7 @@ bundle="$work_root/bundle"
 node "$root/automation/build_netlify_retirement.mjs" "$tenant_id" "$bundle" >/dev/null
 (
   cd "$bundle"
-  npx --yes netlify-cli deploy --site "$site_id" --dir . --prod --no-build \
+  pnpm dlx netlify-cli deploy --site "$site_id" --dir . --prod --no-build \
     --message "Retire $legacy_origin in favor of $canonical_origin"
 )
 

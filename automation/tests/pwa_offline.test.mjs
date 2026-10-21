@@ -625,11 +625,11 @@ try {
     /activationCorsHeaders[\s\S]*?access-control-allow-origin[\s\S]*?access-control-allow-headers/,
     'activation responses must carry the public CORS contract',
   );
-  assert.match(sharedBuild, /cd web_client && npm ci/);
+  assert.match(sharedBuild, /cd web_client && pnpm install --frozen-lockfile/);
   assert.match(sharedBuild, /bash automation\/test_web_startup\.sh/);
-  assert.match(sharedBuild, /cd web_client && npm run build/);
-  assert.ok(sharedBuild.indexOf('cd web_client && npm ci') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
-    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && npm run build'),
+  assert.match(sharedBuild, /cd web_client && pnpm run build/);
+  assert.ok(sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('bash automation/test_web_startup.sh')
+    && sharedBuild.indexOf('bash automation/test_web_startup.sh') < sharedBuild.indexOf('cd web_client && pnpm run build'),
     'install dependencies, verify startup, then build the public client');
   assert.match(sharedBuild, /apply_config\.sh/);
   assert.match(sharedBuild, /emit_version_manifest\.sh/);

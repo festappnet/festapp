@@ -16,9 +16,9 @@ ref. Values are the corresponding legacy anon keys. Deploying requires an
 authenticated Wrangler session:
 
 ```sh
-npm install
-printf '%s' "$SUPABASE_LEGACY_ANON_KEYS" | npx wrangler secret put SUPABASE_LEGACY_ANON_KEYS
-npm run deploy
+pnpm install
+printf '%s' "$SUPABASE_LEGACY_ANON_KEYS" | pnpm exec wrangler secret put SUPABASE_LEGACY_ANON_KEYS
+pnpm run deploy
 ```
 
 The Cron Trigger runs at 04:17 UTC. Failures are recorded in Cloudflare Workers

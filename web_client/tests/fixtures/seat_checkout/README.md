@@ -7,7 +7,7 @@ Run against the disposable local database bootstrapped by
 DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
   node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test
 SEAT_CHECKOUT_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
-  npm --prefix web_client run test:seat-checkout-browser
+  pnpm --dir web_client run test:seat-checkout-browser
 ```
 
 The browser test requires locally installed `agent-browser` 0.33.1 and Chrome
