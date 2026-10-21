@@ -108,8 +108,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
       p.productTypeString == ProductModel.spotType &&
       p.isHidden != true &&
       p.price != null &&
-      (contexts(p).isNotEmpty ||
-          (p.includedInventories.isEmpty && (p.orderedCount ?? 0) == 0));
+      (contexts(p).isNotEmpty || p.includedInventories.isEmpty);
 
   void choose(ProductModel p) {
     final options = contexts(p);

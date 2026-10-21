@@ -40,7 +40,6 @@ class BlueprintStandingInventory {
         product.occasion == null ||
         product.productTypeString != ProductModel.spotType ||
         product.includedInventories.isNotEmpty ||
-        (product.orderedCount ?? 0) > 0 ||
         capacity < 0 ||
         capacity > 1000000) {
       throw StateError('invalid_standing_inventory');
@@ -73,6 +72,8 @@ class BlueprintStandingInventory {
     );
     if (_resource!.id == null) await _saveResource(_resource!);
     final contextId = _pool!.contexts!.single.id!;
+    // The canonical command validates capacity and reallocates existing order
+    // items atomically; an existing sale does not make the product ineligible.
     await _linkProduct(product, contextId);
     return _linked = product.copyWith(
       includedInventories: [

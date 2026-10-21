@@ -192,8 +192,9 @@ The setup resolves admission types and occasion ownership before filtering,
 creating products or refreshing them after inventory preparation.
 The setup reuses its existing quantity-one inventory context (unique within the
 blueprint), or prepares a pool, context, resource supply and product-context link
-through the inventory/catalog commands. Existing sold products without inventory
-are excluded from this shortcut. Product and inventory preparation is immediate;
+through the inventory/catalog commands. Products with existing orders remain
+available; the canonical inventory-link command checks capacity and reallocates
+existing items atomically. Product and inventory preparation is immediate;
 the initial binding and sale-limit intent are undoable until the plan is saved.
 The sale limit is a ceiling, not additional physical supply: increase resource
 capacity in Inventory when more supply is needed. Shared pool limits affect all
