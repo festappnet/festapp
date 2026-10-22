@@ -37,9 +37,9 @@ void main() {
         final questions = OccasionSetupStory.questions(app, data: data);
         expect(questions.take(3).map((q) => q.key),
             ['name', 'dates', 'appearance']);
-        expect(
-            questions.any((q) => q.key == 'kind' || q.key == 'ticket'), false);
+        expect(questions.any((q) => q.key == 'kind'), false);
         expect(questions.any((q) => q.key == 'blueprint'), true);
+        expect(questions.any((q) => q.key == 'ticket'), true);
         expect(OccasionSetupStory.hasTickets(data), tickets);
         for (var i = 0; i < questions.length; i++) {
           expect(
@@ -151,4 +151,30 @@ void main() {
         'Russo One');
     expect(updated['fontId'], contains('russo-one'));
   });
+  test(
+      'ticket choice toggles only admission visibility, preserving products and seating',
+      () {
+    final data = draft(tickets: false);
+    data['blueprintMode'] = 'copy';
+    OccasionSetupStory.setTicketsEnabled(data, true);
+    expect(OccasionSetupStory.hasTickets(data), true);
+    final fields = (data['formDraft'] as Map)['fields'] as List;
+    final ticket =
+        fields.whereType<Map>().singleWhere((f) => f['type'] == 'ticket');
+    ticket['title'] = 'My ticket';
+    OccasionSetupStory.setTicketsEnabled(data, false);
+    expect(OccasionSetupStory.hasTickets(data), false);
+    expect(data['blueprintMode'], 'copy');
+    OccasionSetupStory.setTicketsEnabled(data, true);
+    expect(
+        fields.whereType<Map>().where((f) => f['type'] == 'ticket').length, 1);
+    expect(ticket['title'], 'My ticket');
+  });
+  test('light ticket palettes use dark text without moving geometry', () {
+    final data = draft();
+    OccasionSetupAppearance.apply(data,{...OccasionSetupAppearance.presets.first,'primary':'FFFFFF','secondary':'EEEEEE'});
+    final template = (data['ticketDraft'] as Map)['layout']['templates']['wide'];
+    expect((template['elements'] as List).where((e)=>e['binding']!='qr').every((e)=>e['style']['color']=='000000'),true);
+  });
+
 }

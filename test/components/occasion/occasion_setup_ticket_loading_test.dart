@@ -1,0 +1,18 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
+class _Service extends TicketLayoutService {
+ int calls = 0;
+ @override Future<TicketLayoutResources> resolve(int occasionId, String type, Map<String,dynamic>? layout, String? background, {bool borrowResourcesOnly=false,bool readOnly=false}) async { calls++; throw StateError('Must not load a second preview'); }
+}
+void main() {
+ testWidgets('editor-only ticket action performs no eager preview request', (tester) async {
+  final service = _Service();
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:TicketSettings(feature:TicketFeature.fromJson({'code':'ticket','is_enabled':true}),occasionId:0,service:service,readOnly:true,showScanningSettings:false,showPreview:false))));
+  await tester.pump();
+  expect(service.calls,0);
+  expect(tester.takeException(),isNull);
+ });
+}

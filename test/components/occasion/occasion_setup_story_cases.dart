@@ -159,10 +159,10 @@ void main() {
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
     expect(keys(formData(price: 0)), contains('appearance'));
-    expect(keys(formData(tickets: false)), isNot(contains('ticket')));
+    expect(keys(formData(tickets: false)), contains('ticket'));
     expect(keys(formData(tickets: false)), contains('pricing'));
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
-    expect(keys(formData(hiddenField: true)), isNot(contains('ticket')));
+    expect(keys(formData(hiddenField: true)), contains('ticket'));
     expect(
       keys(formData(enabled: false)),
       isNot(
