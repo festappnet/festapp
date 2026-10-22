@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/eshop.dart';
-import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/html/html_helper.dart';
@@ -553,6 +552,14 @@ class _ProductTypeEditorState extends State<ProductTypeEditor> {
                       ...ptField.definition.productType!.products!,
                       ProductModel(
                         title: FormStrings.newProduct,
+                        currencyCode:
+                            form.getSupportedCurrencies().firstOrNull ??
+                                group.products!
+                                    .map((p) => p.currencyCode)
+                                    .whereType<String>()
+                                    .where((c) => c.isNotEmpty)
+                                    .firstOrNull ??
+                                'CZK',
                         price: 0.0,
                         isHidden: false,
                         order: (group.products!.isNotEmpty

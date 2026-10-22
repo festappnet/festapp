@@ -83,6 +83,11 @@ class TicketElement {
   });
   factory TicketElement.fromJson(Map j) {
     final b = j['box'] as Map, s = j['style'] as Map;
+    // Match the editor's binary-exact resize precision. Decimal millimeter
+    // presets otherwise turn square QR boxes into unequal right-left deltas.
+    double coordinate(num value) => j['binding'] == 'qr'
+        ? (value.toDouble() * 1024).round() / 1024
+        : value.toDouble();
     return TicketElement(
       fontId: s['fontId'],
       productTypeId: j['productTypeId'],
@@ -91,10 +96,10 @@ class TicketElement {
       id: j['id'],
       binding: j['binding'],
       box: Rect.fromLTWH(
-        (b['x'] as num).toDouble(),
-        (b['y'] as num).toDouble(),
-        (b['width'] as num).toDouble(),
-        (b['height'] as num).toDouble(),
+        coordinate(b['x'] as num),
+        coordinate(b['y'] as num),
+        coordinate(b['width'] as num),
+        coordinate(b['height'] as num),
       ),
       visible: j['visible'],
       locked: j['locked'],

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 
 import '../../fonts/ticket_font_ids.dart';
+import '../../ticket_layout/models/ticket_layout.dart';
 
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
@@ -158,6 +159,9 @@ class OccasionSetupAppearance {
       final style = e['style'] as Map;
       style.remove('fontId');
       style['color'] = e['binding'] == 'qr' ? '000000' : foreground;
+      if (e['binding'] == 'qr') {
+        e['box'] = TicketElement.fromJson(e).toJson()['box'];
+      }
     }
     return t;
   }
