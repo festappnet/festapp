@@ -171,42 +171,46 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(children: [
-                            if (occasion.startTime != null &&
-                                occasion.endTime != null)
-                              Expanded(
-                                  child: Text(
-                                TimeHelper.getMinimalisticDateRange(context,
-                                    occasion.startTime!, occasion.endTime!),
-                                key: const ValueKey('occasion-card-date'),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )),
-                            if (showSaleBadge) ...[
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: OccasionSaleBadge(
-                                    occasion: occasion,
-                                    status: saleStatus!,
-                                    now: now),
-                              ),
-                            ],
-                            if (widget.badge != null) ...[
-                              const SizedBox(width: 8),
-                              Badge(
-                                  backgroundColor: theme.colorScheme.primary,
-                                  textColor: theme.colorScheme.onPrimary,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  textStyle: theme.textTheme.labelSmall
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                  label: Text(widget.badge!)),
-                            ],
-                          ]),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                if (occasion.startTime != null &&
+                                    occasion.endTime != null)
+                                  Expanded(
+                                      child: Text(
+                                    TimeHelper.getMinimalisticDateRange(context,
+                                        occasion.startTime!, occasion.endTime!),
+                                    key: const ValueKey('occasion-card-date'),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )),
+                                if (showSaleBadge) ...[
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: OccasionSaleBadge(
+                                        occasion: occasion,
+                                        status: saleStatus!,
+                                        now: now),
+                                  ),
+                                ],
+                                if (widget.badge != null) ...[
+                                  const SizedBox(width: 8),
+                                  Badge(
+                                      backgroundColor:
+                                          theme.colorScheme.primary,
+                                      textColor: theme.colorScheme.onPrimary,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      textStyle: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      label: Text(widget.badge!)),
+                                ],
+                              ]),
                           SizedBox(height: showSaleBadge ? 2 : 4),
                           Tooltip(
                             message: occasion.title ?? '',
