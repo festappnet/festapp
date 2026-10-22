@@ -229,6 +229,62 @@ test('lost hold response recovers authoritative payload without retrying hold', 
     await form.awaitPendingReservations();
 });
 
+test('checkout recovers after an offline release without replaying the write or losing answers', async t => {
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    const own = data(); own.spots.forEach(spot => spot.state = 'selected_by_me');
+    own.expiresAt = '2099-01-01T00:00:00Z';
+    adapter.reconcile(own);
+    const ticket = form.state.tickets[0];
+    ticket.fields.push({_subFieldId:'note',text:'preserved'});
+    let online = false, reads = 0, writes = 0;
+    adapter.setReservationReader(async () => {
+        reads++;
+        if (!online) throw new Error('offline');
+        return own;
+    });
+    t.mock.method(DbForms, 'selectSpot', async () => {writes++; throw new Error('network lost');});
+    await adapter.requestSelection(new Set(['a','b']), false);
+    await assert.rejects(form.awaitPendingReservations(), /reservation_state_unknown/);
+    online = true;
+    await form.awaitPendingReservations();
+    assert.equal(reads, 3);
+    assert.equal(writes, 1);
+    assert.equal(form.state.tickets[0], ticket);
+    assert.equal(ticket.fields[0].text, 'preserved');
+    assert.deepEqual(form.payload.ticket.map(ticket => ticket.spot), [11,12]);
+});
+
+test('recovery refuses checkout when the server no longer holds the reviewed seats', async t => {
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    const own = data(); own.spots.forEach(spot => spot.state = 'selected_by_me');
+    adapter.reconcile(own);
+    form.state.fields.set('email', 'test@example.invalid');
+    t.mock.method(DbForms, 'selectSpot', async () => {throw new Error('network lost');});
+    await adapter.requestSelection(new Set(['a','b']), false);
+    adapter.setReservationReader(async () => data());
+    await assert.rejects(form.awaitPendingReservations(), /reservation_changed/);
+    assert.equal(form.payload.ticket.length, 0);
+    assert.equal(form.state.fields.get('email'), 'test@example.invalid');
+});
+
+test('a recovery callback cannot authorize checkout without reconciling server state', async t => {
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    t.mock.method(DbForms, 'selectSpot', async () => {throw new Error('network lost');});
+    await adapter.requestSelection(new Set(['a','b']), true);
+    form.recoverReservations = async () => {};
+    await assert.rejects(form.awaitPendingReservations(), /reservation_state_unknown/);
+});
+
+test('an authoritative read cannot extend an expired hold or authorize checkout', async () => {
+    const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
+    const own = data(); own.spots.forEach(spot => spot.state = 'selected_by_me');
+    own.expiresAt = '2000-01-01T00:00:00Z';
+    adapter.reconcile(own);
+    adapter.setReservationReader(async () => own);
+    await assert.rejects(form.awaitPendingReservations(), /reservation_expired/);
+    assert.equal(form.reservationExpiresAt, own.expiresAt);
+});
+
 test('unknown state blocks checkout; rejected release restores confirmed ticket fields', async t => {
     const form = session(), adapter = new BlueprintLayoutAdapter(data(), {session: form});
     t.mock.method(DbForms, 'selectSpot', async () => {throw new Error('network lost');});

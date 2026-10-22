@@ -8,6 +8,10 @@ DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=di
   node web_client/scripts/run_db_tests.js required_ticket_spot_transport_test required_seat_checkout_test
 SEAT_CHECKOUT_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
   pnpm --dir web_client run test:seat-checkout-browser
+
+# Also exercise loss of connectivity during a seat release, followed by recovery:
+SEAT_CHECKOUT_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:55432/postgres?sslmode=disable' \
+  pnpm --dir web_client run test:seat-checkout-browser --offline-recovery
 ```
 
 The browser test requires locally installed `agent-browser` 0.33.1 and Chrome
