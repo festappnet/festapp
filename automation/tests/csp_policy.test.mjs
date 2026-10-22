@@ -37,6 +37,7 @@ test('source header copies use the same canonical owner and retain hosting rules
  const template = await readFile(new URL('../lib/web_headers.template',import.meta.url),'utf8');
  assert.match(template, /\/embed\.js\n  Cache-Control: public, max-age=300, must-revalidate/);
  const expected = template.replace('/*\n',`/*\n  Content-Security-Policy: ${BASE_POLICY}\n`);
+ for (const route of ['/stripe/connect/callback','/app/stripe/connect/callback','/stripe/pay','/stripe/return','/app/stripe/pay','/app/stripe/return']) assert.ok(expected.includes(`${route}\n  Cache-Control: no-store\n  Referrer-Policy: no-referrer`), `${route} must survive configuration generation`);
  for (const file of ['../../web/_headers','../../web_client/public/_headers']) assert.equal(await readFile(new URL(file,import.meta.url),'utf8'),expected);
 });
 
