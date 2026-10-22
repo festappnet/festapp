@@ -20,7 +20,8 @@ BEGIN
   d:=public.create_occasion_setup_draft(draft,unit_id);
   payload:=d->'data'||jsonb_build_object('title','Feature choice '||n,'start','2090-08-01T18:00:00Z',
    'end','2090-08-02T02:00:00Z','reviewConfirmed',true,'formEnabled',n<>5,
-   'blueprintMode','Bez plánku','blueprintObjects','[]'::jsonb);
+   'blueprintMode','Bez plánku','blueprintObjects','[]'::jsonb,
+   'eventKind','regular','eventKindNeedsConfirmation',true);
   payload:=jsonb_set(payload,'{formDraft,fields,2,product_type_data,products,0,price}','0');
   old_product:=(payload#>>'{formDraft,fields,2,product_type_data,products,0,id}')::bigint;
   IF n=1 THEN

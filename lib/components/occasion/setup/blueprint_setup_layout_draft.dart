@@ -344,7 +344,7 @@ class SetupBlueprintConfiguration {
         .where((f) => f['type'] == 'spot')
         .firstOrNull;
     fields.removeWhere((f) => f is Map && f['type'] == 'spot');
-    if (active && (data['eventKind'] == null || data['eventKind'] == 'ball'))
+    if (active)
       // A raw Map spread otherwise infers Map<dynamic, dynamic>, which the
       // form parser cannot read until an unrelated JSON save roundtrip.
       fields.add(<String, dynamic>{

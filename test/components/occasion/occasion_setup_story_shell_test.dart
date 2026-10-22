@@ -12,6 +12,7 @@ void main() {
     final font = FontLoader('Futura')
       ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
     await font.load();
+    await (FontLoader('MaterialIcons')..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
   });
   for (final variant in [
     (name: 'mobile', size: const Size(375, 812), scale: 1.0, dark: false),
@@ -58,6 +59,9 @@ void main() {
                   'Je vše připravené?',
                 ],
                 currentIndex: 1,
+                onQuestionSelected: (_) {},
+                completedKeys: const {'0', '3'},
+                visitedKeys: const {'4'},
                 eventTitle: 'Koncept · Podzimní slavnost',
                 status: 'Uloženo',
                 readiness: 'Dokončené nastavení: 20 %',
@@ -150,7 +154,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('story-target-start')));
     expect(selected, ['start']);
     // Request the Material button's actual focus node, then activate by Space.
-    final labelContext = tester.element(find.text('1 Source'));
+    final labelContext =
+        tester.element(find.descendant(of: find.byKey(const ValueKey('story-target-source')), matching: find.byType(Icon)).first);
     Focus.of(labelContext).requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
@@ -191,8 +196,9 @@ void main() {
       child: const Text('Question content'),
     ))));
     await tester.pumpAndSettle();
-    for (final label in ['Source', '1 Name', '4 Appearance', 'Verification']) {
-      expect(find.text(label), findsOneWidget);
+    expect(find.text('1 Name'), findsOneWidget);
+    for (final label in ['Source', '4 Appearance', 'Verification']) {
+      expect(find.text(label), findsNothing);
     }
     expect(find.text('1 Source'), findsNothing);
     expect(find.text('4 Verification'), findsNothing);
@@ -207,4 +213,64 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
   });
+  for (final width in [320.0, 375.0, 812.0, 1440.0]) {
+    testWidgets(
+        '18 story targets fit width $width with only current label expanded',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final selected = <String>[];
+      for (final active in [0, 8, 17]) {
+        await tester.pumpWidget(MaterialApp(
+            home: Scaffold(
+                body: OccasionSetupStoryShell(
+          questionTitles: List.generate(18, (i) => 'Full question $i'),
+          questionLabels: List.generate(18, (i) => 'Step $i'),
+          questionKeys: List.generate(18, (i) => 'key-$i'),
+          currentIndex: active,
+          completedKeys: const {'key-1'},
+          visitedKeys: const {'key-4'},
+          onQuestionSelected: selected.add,
+          eventTitle: 'Draft',
+          status: 'Saved',
+          readiness: 'In progress',
+          questionCount: 'Question ${active + 1} of 18',
+          segmentStates: const ['Completed', 'Current', 'Upcoming'],
+          leaveLabel: 'Leave',
+          backLabel: 'Back',
+          onLeave: () {},
+          onBack: () {},
+          child: const Text('Question content'),
+        ))));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final track =
+            tester.getRect(find.byKey(const ValueKey('story-progress-track')));
+        expect(track.left, greaterThanOrEqualTo(0));
+        expect(track.right, lessThanOrEqualTo(width));
+        expect(find.text('${active + 1} Step $active'), findsOneWidget);
+        for (var i = 0; i < 18; i++) {
+          if (i != active) expect(find.text('${i + 1} Step $i'), findsNothing);
+          final marker = find.byKey(ValueKey('story-marker-key-$i'));
+          if (marker.evaluate().isNotEmpty) {
+            final rect = tester.getRect(marker);
+            expect(rect.left, greaterThanOrEqualTo(track.left));
+            expect(rect.right, lessThanOrEqualTo(track.right + .001));
+          }
+        }
+        expect(
+            find.byWidgetPredicate((w) =>
+                w is SingleChildScrollView &&
+                w.scrollDirection == Axis.horizontal),
+            findsNothing);
+      }
+      await tester.tap(find.byTooltip('Všechny otázky'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 Step 0 · Upcoming'));
+      await tester.pumpAndSettle();
+      expect(selected.last, 'key-0');
+    });
+  }
 }

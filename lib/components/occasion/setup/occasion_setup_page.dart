@@ -483,8 +483,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['completed'] = <int>[];
     if (sourceId == null) {
       _ensureDefaultForm(draft);
-      draft['eventKind'] = 'regular';
-      draft['eventKindNeedsConfirmation'] = false;
       OccasionSetupAppearance.apply(
         draft,
         Map<String, dynamic>.from(OccasionSetupAppearance.presets.first),
@@ -525,12 +523,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         .firstOrNull;
     if (selected is Map) _applyBlueprint(draft, selected);
     _ensureDefaultForm(draft);
-    draft['eventKind'] = selected is Map
-        ? 'ball'
-        : ticket != null && ticket['is_enabled'] != false
-            ? 'concert'
-            : 'regular';
-    draft['eventKindNeedsConfirmation'] = false;
     draft.remove('appearance');
     draft['appearance'] = {
       ...OccasionSetupAppearance.read(draft),
@@ -892,9 +884,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _blueprintReady(Map<String, dynamic> d) =>
-      !OccasionSetupStory.seats(d) ||
-      SetupBlueprintConfiguration(d).active &&
-          SetupBlueprintConfiguration(d).ready;
+      !SetupBlueprintConfiguration(d).active ||
+      SetupBlueprintConfiguration(d).ready;
 
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
@@ -930,9 +921,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
-    if (q.key == 'kind')
-      return OccasionSetupStory.kinds.contains(d['eventKind']) &&
-          d['eventKindNeedsConfirmation'] != true;
     if (q.key == 'appearance')
       return d['appearance'] is Map &&
           OccasionSetupAppearance.valid(d['appearance'] as Map);
@@ -1526,7 +1514,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
       }
     }
-    if (OccasionSetupStory.seats(d) && SetupBlueprintConfiguration(d).active) {
+    if (SetupBlueprintConfiguration(d).active) {
       if (d['formEnabled'] != true || d['formDraft'] == null) {
         issues.add(
           MapEntry(
@@ -1572,7 +1560,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
     }
     for (final q in _questions.where(
-      (q) => q.key == 'kind' || q.key == 'appearance',
+      (q) => q.key == 'appearance',
     )) {
       if (!_questionReady(d, q))
         issues.add(MapEntry(q.step, 'Dokonči ${_shortLabel(q.key)}.'));
@@ -2037,7 +2025,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Widget _body(Map<String, dynamic> d) {
     final questionKey = _questions[_questionIndex(d)].key;
-    if (questionKey == 'kind') return _kindSettings(d);
     if (questionKey == 'appearance') return _appearanceSettings(d);
     if (_questions[_questionIndex(d)].key == 'ticket')
       return _ticketSettings(d);
@@ -2439,7 +2426,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         'source': 'Kopie',
         'name': 'Název',
         'dates': 'Termín',
-        'kind': 'Typ',
         'appearance': 'Vzhled',
         'link': 'Odkaz',
         'content': 'Obsah',
@@ -2457,63 +2443,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         'review': 'Kontrola',
       }[key] ??
       key;
-  String _kindLabel(Map<String, dynamic> d) => const {
-        'regular': 'Běžná akce · přihlášení přes formulář',
-        'concert': 'Koncert · vstupenky bez výběru míst',
-        'ball': 'Ples · vstupenky a rezervace míst',
-      }[OccasionSetupStory.kind(d)]!;
-
-  Widget _kindSettings(Map<String, dynamic> d) => Column(
-        children: [
-          for (final kind in OccasionSetupStory.kinds)
-            RadioListTile<String>(
-              value: kind,
-              groupValue: d['eventKindNeedsConfirmation'] == true
-                  ? null
-                  : d['eventKind'] as String?,
-              title: Text(
-                const {
-                  'regular': 'Běžná akce',
-                  'concert': 'Koncert',
-                  'ball': 'Ples',
-                }[kind]!,
-              ),
-              subtitle: Text(
-                const {
-                  'regular': 'Přihlášení účastníků přes formulář.',
-                  'concert': 'Vstupenky bez výběru konkrétního místa.',
-                  'ball': 'Vstupenky s rezervací konkrétních míst v sále.',
-                }[kind]!,
-              ),
-              onChanged: (value) {
-                _change((x) {
-                  x['eventKind'] = value;
-                  x['formEnabled'] = true;
-                  if (value != 'regular' && x['ticketDraft'] is! Map) {
-                    if (OccasionSetupAppearance.read(x)['preserveSource'] == true) {
-                      x['ticketDraft'] = {'code': 'ticket', 'is_enabled': true};
-                    } else {
-                      OccasionSetupAppearance.apply(x, OccasionSetupAppearance.read(x));
-                    }
-                  }
-                  x['eventKindNeedsConfirmation'] = false;
-                  x['pathNotice'] = true;
-                  _inlineFormBundle = null;
-                  _formEpoch++;
-                  _inlineFormBundle = null;
-                }, changesConfiguration: true);
-              },
-            ),
-          if (d['pathNotice'] == true)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'Tok odpovídá vybranému typu. Neaktivní nastavení zůstává v konceptu a při vytvoření se nepoužije.',
-              ),
-            ),
-        ],
-      );
-
   Widget _appearanceSettings(Map<String, dynamic> d) {
     final a = OccasionSetupAppearance.read(d);
     Color color(dynamic hex) => Color(int.parse('ff$hex', radix: 16));
@@ -2600,7 +2529,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           [
             'name',
             'dates',
-            'kind',
             'appearance',
             'link',
             'source',
@@ -2619,7 +2547,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       },
       visitedKeys:
           (d['visitedQuestions'] as List? ?? []).cast<String>().toSet(),
-      contextLabel: _kindLabel(d),
       readiness: OccasionSetupStrings.readiness(_readiness(d)),
       introductionAction:
           (_sources.isNotEmpty || _loadingSources || _sourceError != null)
@@ -2637,18 +2564,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               : null,
       questionTitles: [
         for (final item in _questions)
-          item.key == 'kind'
-              ? 'Jaký typ akce připravuješ?'
-              : item.key == 'appearance'
-                  ? 'Jak má akce vypadat?'
-                  : item.key == 'team'
-                      ? OccasionTeamInvitationStrings.text('question')
-                      : item.key == 'saleTiming'
-                          ? OccasionSetupSales.text(d, 'question')
-                          : item.key == 'promotion' && !AppConfig.isAppSupported
-                              ? OccasionSetupStrings.story('listingTitle')
-                              : OccasionSetupStrings.story(
-                                  '${item.key}Question'),
+          item.key == 'appearance'
+              ? 'Jak má akce vypadat?'
+              : item.key == 'team'
+                  ? OccasionTeamInvitationStrings.text('question')
+                  : item.key == 'saleTiming'
+                      ? OccasionSetupSales.text(d, 'question')
+                      : item.key == 'promotion' && !AppConfig.isAppSupported
+                          ? OccasionSetupStrings.story('listingTitle')
+                          : OccasionSetupStrings.story('${item.key}Question'),
       ],
       currentIndex: index,
       eventTitle:

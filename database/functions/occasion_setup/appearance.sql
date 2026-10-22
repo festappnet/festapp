@@ -1,23 +1,9 @@
 -- Deterministic projection on the existing finalizer's authorized draft.
-CREATE OR REPLACE FUNCTION public.normalize_occasion_setup_type_internal(p_data jsonb)
+CREATE OR REPLACE FUNCTION public.normalize_occasion_setup_appearance_internal(p_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE payload jsonb:=p_data; event_kind text; appearance jsonb; shared_font text;
+DECLARE payload jsonb:=p_data-'eventKind'-'eventKindNeedsConfirmation'; appearance jsonb; shared_font text; has_tickets boolean;
 BEGIN
- event_kind:=payload->>'eventKind';
- IF event_kind IS NOT NULL AND (event_kind NOT IN ('regular','concert','ball') OR coalesce((payload->>'eventKindNeedsConfirmation')::boolean,false)) THEN
-  RAISE invalid_parameter_value USING MESSAGE='Confirm event kind'; END IF;
- IF event_kind IS NOT NULL THEN
-  payload:=jsonb_set(payload,'{formEnabled}','true');
-  IF event_kind<>'ball' THEN payload:=payload || '{"blueprintMode":"none"}'; END IF;
-  IF event_kind='regular' THEN payload:=payload-'ticketDraft'; END IF;
-  IF event_kind<>'ball' AND jsonb_typeof(payload#>'{formDraft,fields}')='array' THEN
-   payload:=jsonb_set(payload,'{formDraft,fields}',coalesce((SELECT jsonb_agg(field) FROM jsonb_array_elements(payload#>'{formDraft,fields}') field WHERE field->>'type' IS DISTINCT FROM 'spot' AND (event_kind<>'regular' OR field->>'type' IS DISTINCT FROM 'ticket')),'[]'::jsonb));
-  END IF;
- END IF;
- IF event_kind IS NOT NULL AND (jsonb_typeof(payload->'formDraft') IS DISTINCT FROM 'object' OR jsonb_typeof(payload->'appearance') IS DISTINCT FROM 'object') THEN
-  RAISE invalid_parameter_value USING MESSAGE='Active form and appearance required'; END IF;
- IF event_kind IN ('concert','ball') AND jsonb_typeof(payload->'ticketDraft') IS DISTINCT FROM 'object' THEN
-  RAISE invalid_parameter_value USING MESSAGE='Active ticket configuration required'; END IF;
+ has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false));
  appearance:=payload->'appearance';
  IF appearance IS NOT NULL THEN
   IF jsonb_typeof(appearance)<>'object' OR coalesce(appearance->>'primary','') !~ '^[A-Fa-f0-9]{6}$' OR coalesce(appearance->>'secondary','') !~ '^[A-Fa-f0-9]{6}$'
@@ -33,7 +19,7 @@ BEGIN
     OR payload#>>'{formDraft,data,design,font_family}' IS DISTINCT FROM appearance->>'fontFamily'
     OR payload#>>'{formDraft,data,design,background_mode}' IS DISTINCT FROM (CASE WHEN (appearance->>'gradient')::boolean THEN 'gradient' ELSE 'solid' END)
     THEN RAISE invalid_parameter_value USING MESSAGE='Shared form style mismatch'; END IF;
-   IF event_kind IN ('concert','ball') AND (payload#>'{ticketDraft,layout,templates}' IS NULL OR EXISTS(
+   IF has_tickets AND (payload#>'{ticketDraft,layout,templates}' IS NULL OR EXISTS(
     SELECT 1 FROM jsonb_each(payload#>'{ticketDraft,layout,templates}') t
     WHERE t.value->>'fontId' IS DISTINCT FROM shared_font OR t.value->>'canvasColor' IS DISTINCT FROM appearance->>'primary'
      OR (CASE WHEN (appearance->>'gradient')::boolean THEN t.value->'canvasGradient' IS DISTINCT FROM jsonb_build_array(appearance->>'primary',appearance->>'secondary') ELSE t.value ? 'canvasGradient' END)))
@@ -46,7 +32,7 @@ BEGIN
  END IF;
 
 
- IF event_kind IS NOT NULL THEN payload:=jsonb_set(payload,'{formDraft,title}',payload->'title'); END IF;
+ IF jsonb_typeof(payload->'formDraft')='object' THEN payload:=jsonb_set(payload,'{formDraft,title}',coalesce(payload->'title','""'::jsonb)); END IF;
  RETURN payload;
 END $$;
-REVOKE ALL ON FUNCTION public.normalize_occasion_setup_type_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.normalize_occasion_setup_appearance_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;

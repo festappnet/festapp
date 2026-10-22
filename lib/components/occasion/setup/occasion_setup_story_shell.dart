@@ -70,7 +70,6 @@ class OccasionSetupStoryShell extends StatefulWidget {
 
 class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
   final _headingFocus = FocusNode();
-  final _currentTarget = GlobalKey();
 
   String _keyAt(int index) => widget.questionKeys?[index] ?? '$index';
   String _labelAt(int index) =>
@@ -91,16 +90,6 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final target = _currentTarget.currentContext;
-      if (target != null) Scrollable.ensureVisible(target, alignment: 0.5);
-    });
-  }
-
-  @override
   void didUpdateWidget(covariant OccasionSetupStoryShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     final oldKey = oldWidget.questionKeys?[oldWidget.currentIndex] ??
@@ -109,8 +98,6 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _headingFocus.requestFocus();
-        final target = _currentTarget.currentContext;
-        if (target != null) Scrollable.ensureVisible(target, alignment: 0.5);
       });
     }
   }
@@ -122,95 +109,179 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
   }
 
   Widget _navigation(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final compact = MediaQuery.textScalerOf(context).scale(16) > 24;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(
-              child: Text(
-                  [
-                    if (widget.questionSections != null)
-                      widget.questionSections![widget.currentIndex],
-                    _labelAt(widget.currentIndex),
-                  ].join(' · '),
-                  style: Theme.of(context).textTheme.labelLarge)),
-          PopupMenuButton<String>(
-            tooltip: widget.allQuestionsLabel,
-            onSelected: widget.onQuestionSelected,
-            itemBuilder: (context) => [
-              for (var index = 0;
-                  index < widget.questionTitles.length;
-                  index++) ...[
-                if (widget.questionSections != null &&
-                    (index == 0 ||
-                        widget.questionSections![index] !=
-                            widget.questionSections![index - 1]))
-                  PopupMenuItem<String>(
-                      enabled: false,
-                      child: Text(widget.questionSections![index],
-                          style: Theme.of(context).textTheme.labelLarge)),
-                PopupMenuItem<String>(
-                  value: _keyAt(index),
-                  child:
-                      Text('${_numberedLabelAt(index)} · ${_stateAt(index)}'),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(
+                child: Text(
+                  widget.questionSections?[widget.currentIndex] ??
+                      widget.questionCount,
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(color: colors.onSurfaceVariant),
                 ),
-              ],
-            ],
-            icon: const Icon(Icons.list_alt),
-          ),
-        ]),
-        if (!compact)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: [
-              for (var index = 0; index < widget.questionTitles.length; index++)
-                Padding(
-                  key: index == widget.currentIndex ? _currentTarget : null,
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: Semantics(
-                    label: widget.questionTitles[index],
-                    value: _stateAt(index),
-                    selected: index == widget.currentIndex,
-                    child: OutlinedButton(
-                      key: ValueKey('story-target-${_keyAt(index)}'),
-                      onPressed: widget.onQuestionSelected == null
-                          ? null
-                          : () => widget.onQuestionSelected!(_keyAt(index)),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                        backgroundColor: index == widget.currentIndex
-                            ? colors.primaryContainer
-                            : null,
-                        side: BorderSide(
-                            color: index == widget.currentIndex
-                                ? colors.primary
-                                : colors.outline,
-                            width: index == widget.currentIndex ? 2 : 1),
+              ),
+              PopupMenuButton<String>(
+                tooltip: widget.allQuestionsLabel,
+                onSelected: widget.onQuestionSelected,
+                itemBuilder: (context) => [
+                  for (var index = 0;
+                      index < widget.questionTitles.length;
+                      index++) ...[
+                    if (widget.questionSections != null &&
+                        (index == 0 ||
+                            widget.questionSections![index] !=
+                                widget.questionSections![index - 1]))
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        child: Text(widget.questionSections![index],
+                            style: theme.textTheme.labelLarge),
                       ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (widget.completedKeys.contains(_keyAt(index))) ...[
-                          const Icon(Icons.check, size: 18),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(_numberedLabelAt(index)),
-                        if (widget.visitedKeys.contains(_keyAt(index)) &&
-                            !widget.completedKeys.contains(_keyAt(index)) &&
-                            index != widget.currentIndex) ...[
-                          const SizedBox(width: 4),
-                          Tooltip(
-                              message: widget.visitedLabel,
-                              child: const Icon(Icons.edit_outlined, size: 16)),
-                        ],
-                      ]),
+                    PopupMenuItem<String>(
+                      value: _keyAt(index),
+                      child: Text(
+                          '${_numberedLabelAt(index)} · ${_stateAt(index)}'),
                     ),
-                  ),
+                  ],
+                ],
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Otázky'),
+                    SizedBox(width: 8),
+                    Icon(Icons.list_alt),
+                  ]),
                 ),
+              ),
             ]),
-          ),
-        if (widget.introductionAction != null) widget.introductionAction!,
-      ]),
+            LayoutBuilder(builder: (context, constraints) {
+              final count = widget.questionTitles.length;
+              final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+              final activeWidth =
+                  (constraints.maxWidth * .48).clamp(0.0, 220.0);
+              final interactive = count == 1 ||
+                  (constraints.maxWidth - activeWidth) / (count - 1) >= 48;
+              return Row(
+                key: const ValueKey('story-progress-track'),
+                children: [
+                  for (var index = 0; index < count; index++)
+                    if (index == widget.currentIndex)
+                      SizedBox(
+                        width: count == 1 || largeText
+                            ? constraints.maxWidth
+                            : activeWidth,
+                        child: Semantics(
+                          label: widget.questionTitles[index],
+                          value: _stateAt(index),
+                          selected: true,
+                          child: DecoratedBox(
+                            key: ValueKey('story-target-${_keyAt(index)}'),
+                            decoration: BoxDecoration(
+                              color: colors.primaryContainer,
+                              border:
+                                  Border.all(color: colors.primary, width: 1.5),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              child: Text(
+                                _numberedLabelAt(index),
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                    color: colors.onPrimaryContainer),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (!largeText)
+                      Expanded(
+                        child: interactive
+                            ? Semantics(
+                                label: widget.questionTitles[index],
+                                value: _stateAt(index),
+                                selected: false,
+                                child: Tooltip(
+                                  message:
+                                      '${_numberedLabelAt(index)} · ${_stateAt(index)}',
+                                  child: OutlinedButton(
+                                    key: ValueKey(
+                                        'story-target-${_keyAt(index)}'),
+                                    onPressed: widget.onQuestionSelected == null
+                                        ? null
+                                        : () => widget
+                                            .onQuestionSelected!(_keyAt(index)),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(44, 48),
+                                      padding: EdgeInsets.zero,
+                                      shape: const CircleBorder(),
+                                      side: BorderSide(
+                                          color: colors.outlineVariant),
+                                    ),
+                                    child: widget.completedKeys
+                                            .contains(_keyAt(index))
+                                        ? const Icon(Icons.check, size: 18)
+                                        : widget.visitedKeys
+                                                .contains(_keyAt(index))
+                                            ? const Icon(Icons.edit_outlined,
+                                                size: 18)
+                                            : Text(widget.questionNumbers ==
+                                                    null
+                                                ? '${index + 1}'
+                                                : widget.questionNumbers![index]
+                                                        ?.toString() ??
+                                                    '·'),
+                                  ),
+                                ),
+                              )
+                            // On narrow screens the full-size menu provides every
+                            // destination; the condensed track is visual progress.
+                            : ExcludeSemantics(
+                                child: SizedBox(
+                                  key:
+                                      ValueKey('story-marker-${_keyAt(index)}'),
+                                  height: 48,
+                                  child: Center(
+                                    child: Container(
+                                      width: 6,
+                                      height: widget.visitedKeys
+                                                  .contains(_keyAt(index)) &&
+                                              !widget.completedKeys
+                                                  .contains(_keyAt(index))
+                                          ? 12
+                                          : 6,
+                                      decoration: BoxDecoration(
+                                        color: widget.completedKeys
+                                                .contains(_keyAt(index))
+                                            ? colors.primary
+                                            : null,
+                                        border:
+                                            Border.all(color: colors.outline),
+                                        borderRadius: BorderRadius.circular(
+                                            widget.completedKeys
+                                                    .contains(_keyAt(index))
+                                                ? 1
+                                                : 6),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                ],
+              );
+            }),
+            if (widget.introductionAction != null) widget.introductionAction!,
+          ]),
+        ),
+      ),
     );
   }
 
