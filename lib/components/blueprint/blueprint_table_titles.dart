@@ -125,7 +125,8 @@ VenueLayoutDocument normalizeBlueprintTableTitles(
     for (final node in normalizedDocument.nodes)
       if (!references.containsKey(node.id)) merged[node.id] ?? node.toJson()
   ];
-  return VenueLayoutDocument.fromJson(Map<String, dynamic>.from(remap(wire)));
+  return _inheritSharedTableLabels(
+      VenueLayoutDocument.fromJson(Map<String, dynamic>.from(remap(wire))));
 }
 
 // A few imported SVGs painted the same complete caption twice, so the old
@@ -199,4 +200,41 @@ VenueLayoutDocument _attachUnambiguousImportedTables(
   return document.copyWith(
       nodes: [for (final n in document.nodes) updates[n.id] ?? n],
       attachments: attachments);
+}
+
+/// Imported captions used to pin identical typography on every table, leaving
+/// later insertions on the unrelated document text defaults. Promote only the
+/// leaves shared by every table; intentional differences stay on their nodes.
+VenueLayoutDocument _inheritSharedTableLabels(VenueLayoutDocument document) {
+  final tables = document.nodes.where((node) => node.kind == 'table').toList();
+  if (tables.isEmpty) return document;
+  final labels = [
+    for (final table in tables) resolveNodeAppearance(document, table).label
+  ];
+  final shared = <String, dynamic>{
+    for (final entry in labels.first.entries)
+      if (labels.every((label) => label[entry.key] == entry.value))
+        entry.key: entry.value
+  };
+  for (final entry in shared.entries) {
+    document = setKindStyleLeaf(document, 'table', ['label', entry.key],
+        value: entry.value);
+  }
+  return document.copyWith(nodes: [
+    for (final node in document.nodes)
+      if (node.kind == 'table')
+        node.copyWith(style: {
+          for (final entry in node.style.entries)
+            if (entry.key != 'label') entry.key: entry.value,
+          if ((node.style['label'] as Map? ?? {})
+              .keys
+              .any((key) => !shared.containsKey(key)))
+            'label': {
+              for (final entry in (node.style['label'] as Map).entries)
+                if (!shared.containsKey(entry.key)) entry.key: entry.value
+            }
+        })
+      else
+        node
+  ]);
 }
