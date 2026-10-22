@@ -5,7 +5,7 @@ import { fontCatalog } from './ticketFonts.ts';
 // Immutable sources are resolved from the Function bundle, never a remote image.
 const root = 'https://img.festapp.net/ticket-presets/v1/';
 export const galleryBackgrounds: Record<string, string | null> = {
-  silk_light: `${root}style-silk-v1.png`, silk_dark: `${root}style-silk-dark-v1.png`,
+  silk_light: `${root}style-silk-v2.png`, silk_dark: `${root}style-silk-dark-v2.png`,
   concert_stub: `${root}concert-stub-v3.png`, ball_silk: `${root}silk-ivory-v1.jpg`,
   festival_poster: `${root}festival-poster-v3.png`, club_panorama: `${root}club-panorama-v3.png`,
   theatre_program: `${root}theatre-program-v3.png`, gallery_square: `${root}gallery-square-v3.png`,
