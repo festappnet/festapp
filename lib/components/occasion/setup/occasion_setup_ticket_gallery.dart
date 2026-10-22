@@ -5,7 +5,6 @@ import '../../ticket_layout/models/ticket_layout.dart';
 import '../../ticket_layout/views/ticket_layout_canvas.dart';
 import '../../ticket_layout/ticket_layout_strings.dart';
 import '../../ticket_layout/ticket_preview_assets.dart';
-import '../../ticket_layout/ticket_template_order.dart';
 import 'occasion_setup_appearance.dart';
 
 class OccasionSetupTicketChoice {
@@ -38,8 +37,10 @@ class OccasionSetupTicketGallery extends StatefulWidget {
 
 class _OccasionSetupTicketGalleryState
     extends State<OccasionSetupTicketGallery> {
+  int _page = 0;
   String _filter = 'all';
   Set<String> _activeKeys = {};
+  static const _pageSize = 6;
   final _prepared = <String, Future<void>>{};
   TicketLayoutResources? _resources;
   TicketLayoutResources? _styledResources;
@@ -100,6 +101,26 @@ class _OccasionSetupTicketGalleryState
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
           final resources = snapshot.data!;
+          const priority = [
+            'concert_stub',
+            'ball_silk',
+            'festival_poster',
+            'club_panorama',
+            'theatre_program',
+            'gallery_square',
+            'gala_invitation',
+            'boarding_pass',
+            'cinema_strip',
+            'sports_arena',
+            'festival_badge',
+            'workshop_card',
+            'silk_light',
+            'silk_dark',
+            'portrait',
+            'classic',
+            'compact',
+            'event'
+          ];
           final entries = resources.presets.entries
               .where((entry) =>
                   _filter == 'all' ||
@@ -110,8 +131,12 @@ class _OccasionSetupTicketGalleryState
                       ['ball_silk', 'silk_light', 'silk_dark']
                           .contains(entry.key)))
               .toList()
-            ..sort((a, b) => compareTicketTemplateKeys(a.key, b.key));
-          _activeKeys = {'current', ...entries.map((e) => e.key)};
+            ..sort((a, b) =>
+                priority.indexOf(a.key).compareTo(priority.indexOf(b.key)));
+          final pages = (entries.length / _pageSize).ceil();
+          final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
+          final shown = entries.skip(page * _pageSize).take(_pageSize).toList();
+          _activeKeys = {'current', ...shown.map((e) => e.key)};
           for (final key in _controllers.keys.toList()) {
             if (!_activeKeys.contains(key)) {
               _controllers.remove(key)?.dispose();
@@ -146,12 +171,11 @@ class _OccasionSetupTicketGalleryState
                           selected: _filter == option.key,
                           onSelected: (_) => setState(() {
                                 _filter = option.key;
+                                _page = 0;
                               })),
                   ]),
                   const SizedBox(height: 12),
                   Wrap(spacing: 12, runSpacing: 12, children: [
-                    for (final entry in entries)
-                      _card(context, resources, entry, width),
                     if (widget.currentTemplate != null &&
                         (widget.selectedId == null ||
                             !resources.presets.containsKey(widget.selectedId)))
@@ -162,7 +186,28 @@ class _OccasionSetupTicketGalleryState
                               TicketTemplate.fromJson(widget.currentTemplate!)),
                           width,
                           current: true),
+                    for (final entry in shown)
+                      _card(context, resources, entry, width),
                   ]),
+                  if (pages > 1)
+                    Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Row(children: [
+                          TextButton(
+                              onPressed: page > 0
+                                  ? () => setState(() => _page = page - 1)
+                                  : null,
+                              child: const Text('Předchozí')),
+                          Expanded(
+                              child: Text(
+                                  '${page * _pageSize + 1}-${(page * _pageSize + shown.length)} z ${entries.length}',
+                                  textAlign: TextAlign.center)),
+                          TextButton(
+                              onPressed: page + 1 < pages
+                                  ? () => setState(() => _page = page + 1)
+                                  : null,
+                              child: const Text('Další')),
+                        ])),
                 ]);
           });
         },
