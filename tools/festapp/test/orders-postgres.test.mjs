@@ -19,7 +19,7 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
   await db.query(await readFile(new URL('../../../supabase/migrations/'+migration,import.meta.url),'utf8'));
  }
  await db.query('SET LOCAL ROLE postgres');
- await db.query(await readFile(new URL('../../../supabase/migrations/20261022210000_operator_order_management.sql',import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../../supabase/migrations/20261022233000_operator_order_management.sql',import.meta.url),'utf8'));
  await db.query('RESET ROLE');
  const f=await fixture(db,1);
  const form=Number((await db.query("insert into forms(occasion,title,link,key,data) values($1,'Order MCP form',gen_random_uuid()::text,gen_random_uuid(),'{}') returning id",[f.occasion])).rows[0].id);
