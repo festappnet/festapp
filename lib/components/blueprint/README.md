@@ -196,9 +196,10 @@ through the inventory/catalog commands. Products with existing orders remain
 available; the canonical inventory-link command checks capacity and reallocates
 existing items atomically. Product and inventory preparation is immediate;
 the initial binding and sale-limit intent are undoable until the plan is saved.
-The sale limit is a ceiling, not additional physical supply: increase resource
-capacity in Inventory when more supply is needed. Shared pool limits affect all
-its products and contexts. Form offers and checkout continue to derive admission
+One standing count sets the sellable capacity. Saving the plan also provisions
+any missing resource supply through the existing inventory command, in the same
+transaction. Existing resources and allocations remain intact; decreasing below
+committed capacity is rejected. Shared pool limits affect its products and contexts. Form offers and checkout continue to derive admission
 from saved bindings through the existing blueprint form-product projection.
 
 Preparation retains successful pool/resource steps while the dialog retries,

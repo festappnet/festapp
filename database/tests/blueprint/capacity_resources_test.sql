@@ -1,7 +1,7 @@
 -- test-setup: database/tests/blueprint/fixtures.sql
 
 DO $$
-DECLARE f jsonb; req jsonb; r jsonb; pool bigint; context_id bigint; resource_id bigint; area uuid:=gen_random_uuid(); availability jsonb; opt bigint; oid bigint; tid bigint;
+DECLARE f jsonb; req jsonb; r jsonb; pool bigint; context_id bigint; resource_id bigint; area uuid:=gen_random_uuid(); availability jsonb; opt bigint; oid bigint; tid bigint; grow_command uuid:=gen_random_uuid(); resource_count integer;
 BEGIN
  f:=public.blueprint_test_fixture_internal(); req:=f->'request'; PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
  INSERT INTO public.inventory_pools(occasion,title,type,sellable_capacity) VALUES((f->>'occasion')::bigint,'Standing','generic',5) RETURNING id INTO pool;
@@ -16,13 +16,33 @@ BEGIN
  availability:=public.blueprint_area_availability_internal((f->>'blueprint')::bigint,(f->>'form')::bigint);
  PERFORM public.assert_eq((availability#>>'{0,capacity}')::int,4,'capacity from pool cap and supply');
  PERFORM public.assert_eq((availability#>>'{0,available}')::int,4,'standing available initial');
+ -- One standing count must provision enough real inventory, without a second
+ -- trip to the inventory editor. Increasing and decreasing are one plan save.
+ req:=jsonb_set(req,'{expected_layout_revision}','1');
+ req:=jsonb_set(req,'{seatChanges}','[]');
+ req:=jsonb_set(req,'{areaBindingChanges,0,capacity}','12');
+ r:=public.update_blueprint_client_sync_v1(req,grow_command);
+ PERFORM public.assert_eq(r->>'status','applied','standing increase save');
+ SELECT count(*)::integer INTO resource_count FROM public.resources WHERE inventory_pool=pool;
+ PERFORM public.assert_true(public.update_blueprint_client_sync_v1(req,grow_command)=r,'standing growth replay receipt');
+ PERFORM public.assert_eq((SELECT count(*)::integer FROM public.resources WHERE inventory_pool=pool),resource_count,'replay does not add supply');
+ availability:=public.blueprint_area_availability_internal((f->>'blueprint')::bigint,(f->>'form')::bigint);
+ PERFORM public.assert_eq((availability#>>'{0,capacity}')::int,12,'one standing count provisions physical supply');
+ PERFORM public.assert_eq((availability#>>'{0,available}')::int,12,'increased count immediately sellable');
+ req:=jsonb_set(req,'{expected_layout_revision}','2');
+ req:=jsonb_set(req,'{areaBindingChanges,0,capacity}','4');
+ r:=public.update_blueprint_client_sync_v1(req,gen_random_uuid());
+ PERFORM public.assert_eq(r->>'status','applied','standing decrease save');
+ availability:=public.blueprint_area_availability_internal((f->>'blueprint')::bigint,(f->>'form')::bigint);
+ PERFORM public.assert_eq((availability#>>'{0,capacity}')::int,4,'decrease sets exact standing count');
+
  oid:=public.allocate_ticket_order_identity_internal((f->>'form')::bigint);
  INSERT INTO eshop.tickets(occasion,state) VALUES((f->>'occasion')::bigint,'ordered') RETURNING id INTO tid;
  INSERT INTO eshop.order_product_ticket("order",ticket,product) VALUES(oid,tid,(f->>'product')::bigint) RETURNING id INTO opt;
  UPDATE eshop.spots SET order_product_ticket=opt WHERE id IN(SELECT id FROM eshop.spots WHERE inventory_context=context_id ORDER BY id LIMIT 2);
  availability:=public.blueprint_area_availability_internal((f->>'blueprint')::bigint,(f->>'form')::bigint);
  PERFORM public.assert_eq((availability#>>'{0,available}')::int,2,'standing counts existing allocations');
- req:=jsonb_set(req,'{expected_layout_revision}','1'); req:=jsonb_set(req,'{seatChanges}','[]');req:=jsonb_set(req,'{areaBindingChanges,0,capacity}','1');
+ req:=jsonb_set(req,'{expected_layout_revision}','3'); req:=jsonb_set(req,'{seatChanges}','[]');req:=jsonb_set(req,'{areaBindingChanges,0,capacity}','1');
  r:=public.update_blueprint_client_sync_v1(req,gen_random_uuid());
  PERFORM public.assert_eq(r#>>'{data,reason}','INVENTORY_CAPACITY_BELOW_COMMITTED','capacity decrease protected');
  PERFORM public.assert_eq((SELECT sellable_capacity::int FROM public.inventory_pools WHERE id=pool),4,'capacity rollback');

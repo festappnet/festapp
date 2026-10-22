@@ -5,6 +5,7 @@ import { FormStrings } from '../forms/form_strings.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { BlueprintStrings } from './blueprint_strings.js';
 import { DbForms } from '../forms/db_forms.js';
+import { BlueprintCapacityControls } from './blueprint_capacity_controls.js';
 import { BlueprintLayoutAdapter } from './blueprint_layout_adapter.js';
 
 if (typeof document !== 'undefined') {
@@ -92,6 +93,7 @@ export class BlueprintSelector {
             closed = true;
             assetAbort.abort();
             this.selectedSeats = this.adapter?.selectedSeats ?? initialSeats;
+            this.capacityControls?.dispose(); this.capacityControls = null;
             this.adapter?.dispose(); this.renderer?.dispose();
             this.adapter = null; this.renderer = null; this.close = null;
             container.remove();
@@ -163,6 +165,7 @@ export class BlueprintSelector {
                 options.onCameraChanged = state => {
                     this.zoomInButton.disabled = !state.canZoomIn;
                     this.zoomOutButton.disabled = !state.canZoomOut;
+                    this.capacityControls?.position();
                 };
                 options.resources = await loadLayoutAssets(options.resources, { signal: assetAbort.signal });
                 if (closed) return;
@@ -181,14 +184,19 @@ export class BlueprintSelector {
                 };
                 options.accessibilityLabel = BlueprintStrings.layoutTitle;
                 this.renderer = mount(content, options);
+                this.capacityControls = new BlueprintCapacityControls(content, options);
                 this.adapter.onCapacityChanged = capacityPresentation => {
-                    if (!closed) this.renderer.update({ capacityPresentation });
+                    if (!closed) {
+                        this.renderer.update({ capacityPresentation });
+                        this.capacityControls.update(capacityPresentation);
+                    }
                 };
                 this.adapter.onPresentationChanged = seatPresentation => {
                     if (!closed) { this.renderer.update({ seatPresentation }); }
                 };
             } catch (error) {
                 if (closed) return;
+                this.capacityControls?.dispose(); this.capacityControls = null;
                 this.adapter?.dispose(); this.renderer?.dispose();
                 this.adapter = null; this.renderer = null;
                 const label = document.createElement('p'); label.className = 'blueprint-error';

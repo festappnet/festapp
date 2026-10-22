@@ -86,11 +86,10 @@ class _CapacityState extends State<BlueprintStandingCapacityControl> {
             enabled: widget.enabled,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-                labelText: BlueprintStrings.standingSalesLimit,
+                labelText: BlueprintStrings.standingCapacity,
                 errorText: error,
-                helperText:
-                    '${BlueprintStrings.capacitySaveHint} ${BlueprintStrings.standingSupplyHint}',
-                helperMaxLines: 5,
+                helperText: BlueprintStrings.capacitySaveHint,
+                helperMaxLines: 2,
                 border: const OutlineInputBorder()),
             onEditingComplete: commit,
             onSubmitted: (_) => commit(),
