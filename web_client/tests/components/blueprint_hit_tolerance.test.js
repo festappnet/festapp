@@ -36,7 +36,7 @@ function fixture(t, nodes, scale = 1, options = {}) {
             else delete globalThis[key];
         });
     });
-    const click = (x, y) => viewer.click({clientX: x, clientY: y});
+    const click = (x, y) => viewer.click({target: viewer.svg, clientX: x, clientY: y});
     return {viewer, calls, click, screen: (x, y) => [20 + x * scale, 30 + y * scale]};
 }
 
