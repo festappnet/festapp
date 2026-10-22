@@ -267,8 +267,8 @@ class _FormPageState extends State<FormPage> {
             maxTickets: formHolder!.getTicket()?.maxTickets,
             selectedAreaQuantity: (id) => formSession!.areaQuantity(id),
             onQuantityRequested: (binding, quantity, available, product) async {
-              formSession!
-                  .setAreaQuantity(binding, quantity, available: available, product: product);
+              formSession!.setAreaQuantity(binding, quantity,
+                  available: available, product: product);
             },
             onPendingChanged: (pending) {
               formHolder!.controller!.reservationPending = pending;
@@ -1002,6 +1002,26 @@ class _FormPageState extends State<FormPage> {
       );
     }
 
+    final sharedDesign = form?.definition.data?['design'] as Map?;
+    if (['solid', 'gradient'].contains(sharedDesign?['background_mode']) &&
+        form?.definition.primaryColor != null) {
+      final primary = Color(form!.definition.primaryColor!);
+      bodyContent = DecoratedBox(
+          decoration: BoxDecoration(
+              color: primary,
+              gradient: sharedDesign?['background_mode'] == 'gradient' &&
+                      form!.definition.secondaryColor != null
+                  ? LinearGradient(colors: [
+                      primary,
+                      Color(form!.definition.secondaryColor!)
+                    ])
+                  : null),
+          child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: ColoredBox(
+                  color: theme.scaffoldBackgroundColor, child: bodyContent)));
+    }
+
     return Theme(
       data: theme,
       child: Scaffold(
@@ -1426,6 +1446,8 @@ class _FormPageState extends State<FormPage> {
       if (form!.definition.fontFamily?.isNotEmpty == true) {
         try {
           _fonts = await FormFontCatalog.load();
+          if (form!.definition.data?['design']?['background_mode'] != null)
+            await _fonts!.ensureFamily(form!.definition.fontFamily!);
         } catch (error) {
           AppLogger.error('Form font catalog loading failed: $error');
           if (mounted) {

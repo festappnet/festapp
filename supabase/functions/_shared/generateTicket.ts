@@ -3,7 +3,7 @@ import { fitText, textInsets } from './ticketText.ts';
 import type { RenderData } from './ticketRenderData.ts';
 import type { Resources } from './ticketGeneration.ts';
 import QRCode from "npm:qrcode";
-import { PDFDocument, type PDFPage, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
+import { PDFDocument, PDFName, PDFOperator, PDFOperatorNames, type PDFPage, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
 // Import all exports from fontkit (do not try to import a default)
 import * as fontkit from "npm:fontkit";
 
@@ -41,6 +41,16 @@ export async function drawLayoutTicket(data:RenderData,r:Resources,t:Template,_t
   };
   const area=pdfBox(t,{x:0,y:0,width:t.ticketArea.width,height:t.ticketArea.height});
   if(t.canvasColor!=='transparent'&&(t.canvasOpacity??1)>0)page.drawRectangle({...area,color:t.canvasColor?color(t.canvasColor):rgb(.9,.9,.9),opacity:t.canvasOpacity??1});
+  if(t.canvasGradient) {
+    const [a,b]=t.canvasGradient.map(hex=>[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255));
+    const shading=doc.context.register(doc.context.obj({ShadingType:2,ColorSpace:'DeviceRGB',
+      Coords:[area.x,area.y,area.x+area.width,area.y],
+      Function:{FunctionType:2,Domain:[0,1],C0:a,C1:b,N:1},Extend:[true,true]}));
+    page.node.Resources()!.set(PDFName.of('Shading'),doc.context.obj({SharedGradient:shading}));
+    const opacity=page.node.newExtGState('GradientOpacity',doc.context.register(doc.context.obj({Type:'ExtGState',ca:t.canvasOpacity??1})));
+    page.pushOperators(pushGraphicsState(),PDFOperator.of(PDFOperatorNames.SetGraphicsStateParams,[opacity]),rectangle(area.x,area.y,area.width,area.height),clip(),endPath(),
+      PDFOperator.of(PDFOperatorNames.ShadingFill,[PDFName.of('SharedGradient')]),popGraphicsState());
+  }
   if(r.background) {
     const prepared=r.preparedBackground;
     const img=prepared?null:r.background[0]===137?await doc.embedPng(r.background):await doc.embedJpg(r.background);

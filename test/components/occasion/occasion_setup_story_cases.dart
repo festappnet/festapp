@@ -14,8 +14,8 @@ void main() {
           expect(
             basics,
             appSupported
-                ? ['name', 'dates', 'presentation', 'link', 'promotion']
-                : ['name', 'dates', 'promotion'],
+                ? ['name', 'dates', 'kind', 'presentation', 'link', 'promotion']
+                : ['name', 'dates', 'kind', 'promotion'],
           );
         },
       );
@@ -100,7 +100,7 @@ void main() {
           expect(pages.last.key, 'review');
           expect(
             pages.where((q) => !q.optional).map((q) => q.step).toSet(),
-            appSupported ? {0, 1, 2, 3, 4, 5} : {0, 1, 2, 3, 4, 5, 6},
+            appSupported ? {1, 2, 3, 4, 5} : {1, 2, 3, 4, 5, 6},
           );
         },
       );
@@ -154,11 +154,11 @@ void main() {
         ).map((q) => q.key).toList();
     expect(
       keys(formData()),
-      containsAll(['form', 'pricing', 'payments', 'ticket']),
+      containsAll(['form', 'pricing', 'payments', 'appearance']),
     );
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
-    expect(keys(formData(price: 0)), contains('ticket'));
+    expect(keys(formData(price: 0)), contains('appearance'));
     expect(keys(formData(tickets: false)), isNot(contains('ticket')));
     expect(keys(formData(tickets: false)), contains('pricing'));
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
@@ -182,19 +182,17 @@ void main() {
     () {
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), false),
-        {0, 1, 5},
+        {1, 2, 5},
       );
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), true),
-        {0, 1, 2, 5},
+        {1, 2, 5},
       );
       expect(OccasionSetupStory.applicableSteps(formData(price: 0), false), {
-        0,
         1,
         2,
         3,
         5,
-        6,
       });
       final paid = formData();
       final pages = OccasionSetupStory.questions(false, data: paid);
@@ -212,14 +210,14 @@ void main() {
     },
   );
 
-  test('disabled payments resume forward instead of restarting the wizard', () {
+  test('inactive saved payments resume at the kind decision', () {
     final data = {
       ...formData(price: 0),
       'step': 4,
       'storyQuestion': 'payments',
     };
     final pages = OccasionSetupStory.questions(false, data: data);
-    expect(pages[OccasionSetupStory.index(data, false)].key, 'communication');
+    expect(pages[OccasionSetupStory.index(data, false)].key, 'kind');
   });
 
   test(
@@ -339,7 +337,7 @@ void main() {
         final communication = pages.indexWhere((q) => q.key == 'communication');
         expect(pages[communication].step, 3);
         expect(pages[communication - 1].key, 'paymentTiming');
-        expect(pages[communication + 1].key, 'blueprint');
+        expect(pages[communication + 1].key, 'team');
         final form = pages.indexWhere((q) => q.key == 'form');
         final pricing = pages.indexWhere((q) => q.key == 'pricing');
         expect(OccasionSetupStory.completesRequiredStep(pages, form), isFalse);
@@ -369,7 +367,7 @@ void main() {
   );
 
   test(
-    'completed required steps reach 100% without organization verification',
+    'completed active questions reach 100% after explicit review',
     () {
       final draft = OccasionSetupDraft.fromJson({
         'id': 'draft',
@@ -378,7 +376,9 @@ void main() {
         'current_step': 5,
         'data': {
           'title': 'Ples',
-          'completed': OccasionSetupDraft.supportedSteps,
+          'completedQuestions': OccasionSetupStory.questions(true, data: {'title': 'Ples'}).where((q) => !q.optional).map((q) => q.key).toList(),
+          'reviewed': true,
+          'reviewConfirmed': true,
         },
       });
       expect(draft.progress, 100);

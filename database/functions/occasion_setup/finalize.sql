@@ -21,11 +21,12 @@ BEGIN
  IF started->>'disposition'='replay' THEN RETURN started->'response'; END IF;
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
- payload := d.data;
+ payload := public.normalize_occasion_setup_type_internal(d.data);
  blueprint_mode:=CASE payload->>'blueprintMode'
   WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
   ELSE payload->>'blueprintMode' END;
  IF blueprint_mode IS NULL THEN blueprint_mode:=CASE WHEN jsonb_typeof(payload->'blueprintLayoutDraft')='object' THEN 'copy' ELSE 'none' END; END IF;
+ IF payload->>'eventKind'='ball' AND blueprint_mode='none' THEN RAISE invalid_parameter_value USING MESSAGE='Ball requires a hall'; END IF;
  IF blueprint_mode NOT IN ('none','new','copy') THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid blueprint mode'; END IF;
  -- The form owns its sale window. Absent intent keeps historical drafts closed.
@@ -100,7 +101,7 @@ BEGIN
    RAISE serialization_failure USING MESSAGE='Bank account details changed; select again'; END IF;
  END IF;
  -- Active form choices own enabled features, not whether an editor was visited.
- has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(
+ has_tickets:=coalesce(payload->>'eventKind','concert')<>'regular' AND coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(
   SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f
   WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false));
  IF has_tickets THEN

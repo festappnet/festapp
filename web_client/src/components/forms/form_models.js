@@ -282,6 +282,8 @@ export class FormModel {
         return this._parseColor(this._designData[FormModel.metaSecondaryColor]);
     }
 
+    get backgroundMode() { return this._designData.background_mode; }
+
     get fontFamily() {
         return this._designData[FormModel.metaFontFamily];
     }
