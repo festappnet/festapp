@@ -1715,7 +1715,9 @@
     "wholeOrganizerSelected": "Gesamter Veranstalter",
     "groupSelection": "Ausgewählte Veranstaltungen: {selected} von {count}",
     "inheritedSelectionHint": "Über den Veranstalter eingeschlossen. Heben Sie dessen Auswahl auf, um einzelne Veranstaltungen auszuwählen.",
-    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung."
+    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung.",
+    "manageConnections": "Verbundene Apps (MCP)",
+    "manageConnectionsHint": "Zugriff verwalten und Apps trennen"
   },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
