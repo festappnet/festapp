@@ -102,6 +102,29 @@ BEGIN
       RAISE EXCEPTION 'Bank admin must receive authorized connection details';
     END IF;
     
+    -- Historical imports can leave several memberships for the same user.
+    -- Effective roles are existential and each linked account appears once.
+    INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin,is_support)
+      VALUES(v_acc_fio,v_user_manager,false,true),(v_acc_fio,v_user_manager,true,false);
+    IF public.get_is_admin_on_bank_account(v_acc_fio) IS DISTINCT FROM true OR
+       public.can_read_bank_account_users(v_acc_fio) IS DISTINCT FROM true THEN
+      RAISE EXCEPTION 'Duplicate memberships must preserve effective bank roles';
+    END IF;
+    SELECT count(*) INTO v_count FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_count <> 1 THEN RAISE EXCEPTION 'Duplicate memberships repeated the account: %',v_count; END IF;
+    SELECT * INTO STRICT v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    IF v_fio_rec.is_admin IS DISTINCT FROM true OR
+       v_fio_rec.bank_sync->>'receiving_address' IS DISTINCT FROM 'abcdef0123@banksync.festapp.net' THEN
+      RAISE EXCEPTION 'Duplicate memberships lost authorized connection details';
+    END IF;
+    UPDATE eshop.bank_account_users SET is_admin=false WHERE bank_account=v_acc_fio AND "user"=v_user_manager;
+    IF public.get_is_admin_on_bank_account(v_acc_fio) IS DISTINCT FROM false OR
+       public.can_manage_bank_account(v_acc_fio) IS DISTINCT FROM false OR
+       public.can_read_bank_account_users(v_acc_fio) IS DISTINCT FROM true THEN
+      RAISE EXCEPTION 'Duplicate support memberships must not grant bank administration';
+    END IF;
+    UPDATE eshop.bank_account_users SET is_admin=true WHERE bank_account=v_acc_fio AND "user"=v_user_manager;
+
     -- Keep these calls separate: an optional organization RPC failure must not be
     -- mistaken for a bank permission failure (SQLSTATE/context identifies owner).
     v_context := public.get_current_organization_data();
@@ -111,7 +134,7 @@ BEGIN
     BEGIN
       PERFORM public.get_bank_accounts_for_unit_management(v_foreign_unit);
       RAISE EXCEPTION 'Editor in another organization must not get manager bank access';
-    EXCEPTION WHEN raise_exception THEN
+    EXCEPTION WHEN insufficient_privilege THEN
       IF SQLERRM <> 'User is not manager.' THEN RAISE; END IF;
     END;
     RAISE NOTICE 'Success Case Passed.';
@@ -141,7 +164,7 @@ BEGIN
     BEGIN
         PERFORM public.get_bank_accounts_for_unit_management(v_unit_id);
         RAISE EXCEPTION 'Should have failed with permission error.';
-    EXCEPTION WHEN raise_exception THEN
+    EXCEPTION WHEN insufficient_privilege THEN
         IF SQLERRM <> 'User is not manager.' THEN RAISE; END IF;
     END;
 

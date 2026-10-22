@@ -9,8 +9,8 @@ GRANT EXECUTE ON FUNCTION public.bank_account_write_rule(boolean,boolean,boolean
 
 CREATE OR REPLACE FUNCTION public.get_is_admin_on_bank_account(p_bank_account bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT coalesce((SELECT m.is_admin FROM eshop.bank_account_users m
- WHERE m.bank_account=p_bank_account AND m."user"=auth.uid()),false);
+ SELECT EXISTS(SELECT 1 FROM eshop.bank_account_users m
+ WHERE m.bank_account=p_bank_account AND m."user"=auth.uid() AND m.is_admin);
 $$;
 REVOKE ALL ON FUNCTION public.get_is_admin_on_bank_account(bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_is_admin_on_bank_account(bigint) TO authenticated,service_role;
@@ -46,8 +46,8 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,exte
  SELECT (p_unit IS NULL OR EXISTS(SELECT 1 FROM eshop.unit_bank_accounts link
    WHERE link.bank_account=p_bank_account AND link.unit=p_unit))
  AND public.bank_account_users_read_rule(
-  (SELECT m.is_admin FROM eshop.bank_account_users m WHERE m.bank_account=p_bank_account AND m."user"=auth.uid()),
-  (SELECT m.is_support FROM eshop.bank_account_users m WHERE m.bank_account=p_bank_account AND m."user"=auth.uid()),
+  EXISTS(SELECT 1 FROM eshop.bank_account_users m WHERE m.bank_account=p_bank_account AND m."user"=auth.uid() AND m.is_admin),
+  EXISTS(SELECT 1 FROM eshop.bank_account_users m WHERE m.bank_account=p_bank_account AND m."user"=auth.uid() AND m.is_support),
   p_unit IS NOT NULL AND public.get_is_manager_on_unit(p_unit));
 $$;
 REVOKE ALL ON FUNCTION public.can_read_bank_account_users(bigint,bigint) FROM PUBLIC,anon;
