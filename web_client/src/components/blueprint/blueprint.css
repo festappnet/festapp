@@ -244,7 +244,7 @@ body.blueprint-active #floating-price-widget {
 }
 .blueprint-capacity-control .blueprint-capacity-count { min-width: 80px; }
 .blueprint-capacity-control.is-editing .blueprint-capacity-count { min-width: 0; border: 1px solid var(--input-border, #9ca3af); }
-.blueprint-capacity-control .blueprint-capacity-confirm { grid-column: 1 / -1; background: var(--primary-color, #4465a6); color: #fff; font-size: 14px; font-weight: 600; }
+.blueprint-capacity-control .blueprint-capacity-confirm { grid-column: 1 / -1; background: var(--primary-color, #4465a6); color: #fff; font-size: 14px; font-weight: 600; text-transform: uppercase; }
 .blueprint-capacity-control button:focus-visible { outline: 3px solid var(--primary-color, #4465a6); outline-offset: 2px; }
 .blueprint-capacity-control button:disabled { opacity: .45; cursor: default; }
 .blueprint-capacity-control[hidden], .blueprint-capacity-control [hidden] { display: none; }

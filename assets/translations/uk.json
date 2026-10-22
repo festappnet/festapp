@@ -995,7 +995,7 @@
       "standingSaleClosed": "Продаж стоячих місць недоступний.",
       "standing": "Стоячі місця",
       "availableCount": "Доступно: {count}",
-      "confirmQuantity": "Підтвердити кількість",
+      "confirmQuantity": "Підтвердити",
       "pending": "Обробка",
       "quantityRejected": "Не вдалося підтвердити кількість",
       "chooseQuantity": "Вибрати кількість"

@@ -1388,7 +1388,7 @@
       "place": "Místo",
       "standing": "Stání",
       "availableCount": "Volných: {count}",
-      "confirmQuantity": "Potvrdit počet",
+      "confirmQuantity": "Potvrdit",
       "selectedQuantity": "Vybraný počet: {count}",
       "quantityRejected": "Počet nebyl přijat",
       "placeUnavailable": "Místo není dostupné",

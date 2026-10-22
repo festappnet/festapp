@@ -30,7 +30,7 @@
       "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft.",
       "standing": "Stehplätze",
       "availableCount": "Verfügbar: {count}",
-      "confirmQuantity": "Anzahl bestätigen",
+      "confirmQuantity": "Bestätigen",
       "pending": "Wird verarbeitet",
       "quantityRejected": "Die Anzahl konnte nicht bestätigt werden",
       "chooseQuantity": "Anzahl wählen"
