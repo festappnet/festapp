@@ -1387,7 +1387,7 @@
       "place": "Place",
       "standing": "Standing",
       "availableCount": "{count} available",
-      "confirmQuantity": "Confirm quantity",
+      "confirmQuantity": "Confirm",
       "selectedQuantity": "Selected quantity {count}",
       "quantityRejected": "Quantity rejected",
       "placeUnavailable": "Place unavailable",

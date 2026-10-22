@@ -1215,7 +1215,7 @@
       "standingSaleClosed": "Predaj miest na státie nie je dostupný.",
       "standing": "Státie",
       "availableCount": "Voľných: {count}",
-      "confirmQuantity": "Potvrdiť počet",
+      "confirmQuantity": "Potvrdiť",
       "pending": "Spracováva sa",
       "quantityRejected": "Počet sa nepodarilo potvrdiť",
       "chooseQuantity": "Vybrať počet"

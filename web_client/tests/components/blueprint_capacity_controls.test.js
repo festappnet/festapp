@@ -18,7 +18,7 @@ test('inline quantity preserves explicit confirmation, pending lock, rejection a
     const controls = new BlueprintCapacityControls(document.querySelector('main'),{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:2,available:3,selectable:true}},onQuantityRequested:(node,count)=>{requested={node,count};return new Promise(r=>resolve=r);}});
     const entry=controls.entries.get(id);
     assert.equal(entry.count.textContent,'2 místa');
-    entry.count.click(); entry.plus.click();
+    controls.edit(entry); entry.plus.click();
     assert.equal(requested,undefined,'Draft does not change checkout');
     assert.equal(entry.plus.disabled,true,'Availability is the upper bound');
     const operation=controls.confirm(entry);
@@ -32,7 +32,7 @@ test('inline quantity preserves explicit confirmation, pending lock, rejection a
     const accepted=controls.confirm(entry); resolve({accepted:true}); await accepted;
     assert.equal(entry.count.textContent,'2 místa'); assert.equal(entry.editing,false);
     controls.update({[id]:{quantity:2,available:0,selectable:false,tooltip:'Sold out'}});
-    entry.count.click(); entry.minus.click();
+    controls.edit(entry); entry.minus.click();
     assert.equal(entry.draft,0,'Existing selection can be released even after sale closes');
     assert.equal(entry.confirm.disabled,false); assert.equal(entry.plus.disabled,true);
     controls.dispose(); assert.equal(document.querySelector('.blueprint-capacity-layer'),null);
@@ -68,19 +68,58 @@ test('wheel over a quantity control reaches the map at the original cursor posit
 });
 
 
-test('empty selection offers an action, starts with a draft of one and restores the action after release', async () => {
+test('standing controls stay hidden until area activation and after confirmation or release', async () => {
     const controls = new BlueprintCapacityControls(document.querySelector('main'),{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:0,available:3,selectable:true}},onQuantityRequested:async()=>({accepted:true})});
     const entry = controls.entries.get(id);
-    assert.equal(entry.count.textContent,'Vybrat počet');
+    assert.equal(entry.group.hidden,true);
     assert.doesNotMatch(entry.count.getAttribute('aria-label'),/0/);
-    entry.count.click();
+    controls.edit(entry);
     assert.equal(entry.count.textContent,'1');
     assert.equal(entry.state.quantity,0,'Opening the editor must not select or buy a ticket');
     await controls.confirm(entry);
     assert.equal(entry.count.textContent,'1 místo');
-    entry.count.click(); entry.minus.click();
+    controls.edit(entry); entry.minus.click();
     await controls.confirm(entry);
-    assert.equal(entry.count.textContent,'Vybrat počet');
+    assert.equal(entry.group.hidden,true);
     assert.equal(entry.group.classList.contains('has-selection'),false);
     controls.dispose();
+});
+
+
+test('outside activation dismisses the popover, discards the draft and preserves the outside click', () => {
+    const content = document.querySelector('main');
+    const area = document.createElement('button'); area.dataset.nodeId=id; content.append(area);
+    const outside = document.createElement('button'); document.body.append(outside);
+    let requested = false, clicked = false;
+    outside.onclick = () => {clicked = true;};
+    const controls = new BlueprintCapacityControls(content,{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:2,available:5,selectable:true}},onQuantityRequested:()=>{requested=true;}});
+    const entry = controls.entries.get(id);
+    assert.equal(entry.group.hidden,true);
+    area.click();
+    assert.equal(entry.group.hidden,false); controls.step(entry,1);
+    entry.plus.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true}));
+    assert.equal(entry.editing,true,'Inside interaction keeps the dialog open');
+    outside.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true}));
+    assert.equal(entry.group.hidden,true); outside.click();
+    assert.equal(clicked,true); assert.equal(requested,false); assert.equal(entry.state.quantity,2);
+    area.click();
+    assert.equal(entry.draft,2,'Reopening resets an unconfirmed draft');
+    entry.count.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+    assert.equal(entry.group.hidden,true); assert.equal(document.activeElement,area);
+    area.click(); outside.click();
+    assert.equal(entry.group.hidden,true,'Keyboard/outside click without pointerdown also dismisses');
+    controls.dispose(); area.remove(); outside.remove();
+});
+
+test('dismiss during confirmation stays closed and does not steal outside focus', async () => {
+    const outside = document.createElement('button'); document.body.append(outside);
+    let resolve;
+    const controls = new BlueprintCapacityControls(document.querySelector('main'),{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:0,available:3,selectable:true}},onQuantityRequested:()=>new Promise(r=>resolve=r)});
+    const entry=controls.entries.get(id); controls.edit(entry);
+    const operation=controls.confirm(entry);
+    outside.click(); outside.focus();
+    assert.equal(entry.group.hidden,true);
+    resolve({accepted:true}); await operation;
+    assert.equal(entry.group.hidden,true); assert.equal(document.activeElement,outside);
+    controls.dispose(); outside.remove();
 });

@@ -1190,7 +1190,7 @@
       "standingSaleClosed": "Sprzedaż miejsc stojących jest niedostępna.",
       "standing": "Miejsca stojące",
       "availableCount": "Dostępnych: {count}",
-      "confirmQuantity": "Potwierdź liczbę",
+      "confirmQuantity": "Potwierdź",
       "pending": "Przetwarzanie",
       "quantityRejected": "Nie udało się potwierdzić liczby",
       "chooseQuantity": "Wybierz liczbę"
