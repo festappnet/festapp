@@ -19,6 +19,6 @@ It does not touch orders, payments, ticket identities or operational mail.
 The standard demo seeder calls the same maintenance function, so replay uses
 exactly these assets and layouts. Maintenance is idempotent.
 
-`deno run --allow-read --allow-write database/fixtures/demo_occasions/render.ts`
+`deno run --allow-read --allow-write --allow-env database/fixtures/demo_occasions/render.ts`
 uses the actual shared PDF renderer and checks demo and copied variants for text
-warnings. Generated PDF evidence is in `docs/plans/demo-occasions-evidence-2026-10-14`.
+warnings. Generated PDF evidence is in ignored `.codex-artifacts/demo-occasions/run/` (or `FESTAPP_DEMO_EVIDENCE_DIR`). Historical outputs are recoverable from the [archive record](../../../../docs/archive/repository-artifact-followup-2026-10-21.md#demo-occasions).

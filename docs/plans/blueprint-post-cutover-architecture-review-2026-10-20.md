@@ -1,7 +1,7 @@
 # Post-cutover architecture review and execution
 
 The original local cutover acceptance completed first, at the timestamp in
-`evidence/blueprint-typography-20261020/full-app-journey.json`, revision7.
+[historical evidence and recovery](../archive/repository-artifact-followup-2026-10-21.md#blueprint), revision7.
 No production rollout is part of this review.
 
 The canonical ownership is sound: document2 keeps editable source and typed
@@ -210,6 +210,6 @@ Dart souborů: exit 0, žádné errors/warnings, 33 style infos; finální analy
 upravených UI/upload testů: exit 0, dvě style infos.
 
 Přesné běhy a zdrojové SHA256:
-[lifecycle receipt](evidence/blueprint-typography-20261020/lifecycle-followup-20261020.json).
+[lifecycle receipt](../archive/repository-artifact-followup-2026-10-21.md#blueprint).
 Syntetický composing vstup není úplný důkaz platformního IME. Bez buildu,
 browseru, produkčních změn, deploye, commitu a pushe. Původní dirty diff zachován.

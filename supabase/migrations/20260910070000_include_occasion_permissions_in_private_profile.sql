@@ -53,10 +53,8 @@ SET search_path = public, extensions AS $$
         AND g.occasion=p_occasion),'[]'::jsonb));
 $$;
 
-REVOKE ALL ON FUNCTION public.get_private_profile_payload_v1(bigint,uuid)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_private_profile_payload_v1(bigint,uuid)
-  TO service_role;
+
+
 
 UPDATE public.client_sync_component_sources
 SET tracked_columns = ARRAY(

@@ -50,10 +50,8 @@ BEGIN
       'safeLabel',left(p_blueprint->>'title',240),'changedFields',jsonb_build_array(
         'layout','bindings'))),v_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION get_blueprint(
     my_secret UUID,
@@ -663,30 +661,9 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_occasion bigint; v_version bigint; v_response jsonb;
-BEGIN
-  v_occasion:=NULLIF(input_data->>'id','')::bigint;
-  IF v_occasion IS NULL THEN
-    PERFORM public.create_occasion_client_sync_v1(
-      extensions.gen_random_uuid(),input_data);
-    RETURN;
-  END IF;
-  SELECT COALESCE(v.version,0) INTO v_version
-    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
-      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
-  v_response:=public.save_occasion_client_sync_v1(v_occasion,
-    extensions.gen_random_uuid(),v_version,input_data);
-  IF v_response->>'status'='conflict' THEN
-    RAISE serialization_failure USING MESSAGE='Occasion changed; reload before saving';
-  ELSIF v_response->>'status' IS DISTINCT FROM 'applied' THEN
-    RAISE invalid_parameter_value USING MESSAGE='Occasion save rejected';
-  END IF;
-END; $$;
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
 RETURNS bigint
@@ -1096,24 +1073,15 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
+
+
 
 -- Configuration only: no responses, orders, customers or reservation secrets.
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_sources(p_unit bigint)
@@ -1161,8 +1129,8 @@ BEGIN
       FROM public.information i WHERE i.occasion=o.id),'[]'::jsonb)
     ) ORDER BY o.start_time DESC,o.id DESC) FROM public.occasions o WHERE o.unit=p_unit),'[]'::jsonb);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_sources(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_sources(bigint) TO authenticated;
+
+
 
 -- Materialize the private configuration exactly once. Provisional draft IDs and
 -- source product IDs are never accepted as IDs in the new aggregate.
@@ -1424,8 +1392,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 DROP FUNCTION IF EXISTS public.update_blueprint(jsonb);
 DROP FUNCTION IF EXISTS public.update_blueprint_internal_v1(jsonb);

@@ -1,24 +1,8 @@
 -- Scoped font save/read closure. Sources: database/functions/blueprint/{resources,validation}.sql
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
-CREATE OR REPLACE FUNCTION public.register_blueprint_layout_font(p_font_id text,p_outline jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE asset public.ticket_font_assets; merged jsonb;
-BEGIN
- IF auth.role() IS DISTINCT FROM 'service_role' THEN RAISE insufficient_privilege USING MESSAGE='font service required'; END IF;
- SELECT * INTO asset FROM public.ticket_font_assets WHERE id=p_font_id FOR UPDATE;
- IF NOT FOUND OR p_outline->>'id' IS DISTINCT FROM p_font_id OR p_outline->>'hash' IS DISTINCT FROM asset.metadata->>'sha256'
-  OR p_outline->>'family' IS DISTINCT FROM asset.metadata->>'family' OR jsonb_typeof(p_outline->'glyphs') IS DISTINCT FROM 'object'
-  OR coalesce((p_outline->>'unitsPerEm')::numeric,0)<=0 OR p_outline->>'ascent' IS NULL OR p_outline->>'descent' IS NULL
-  OR octet_length(p_outline::text)>8388608 OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_outline) k WHERE k NOT IN ('id','hash','family','unitsPerEm','ascent','descent','glyphs')) THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_INVALID_FONT_OUTLINE'; END IF;
- IF asset.layout_outline IS NOT NULL AND asset.layout_outline-'glyphs' IS DISTINCT FROM p_outline-'glyphs' THEN
-  RAISE invalid_parameter_value USING MESSAGE='BLUEPRINT_FONT_METRICS_CHANGED'; END IF;
- merged:=jsonb_set(p_outline,'{glyphs}',coalesce(asset.layout_outline->'glyphs','{}')||(p_outline->'glyphs'));
- UPDATE public.ticket_font_assets SET layout_outline=merged WHERE id=p_font_id;
- RETURN merged;
-END $$;
-REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
+
+
+
 -- Schema-1 dependency boundary. Match effectiveNodeProperties: a kind
 -- declaration wins over an unmasked node value; explicit overrides win last.
 -- Presets have their own document defaults and namespace.
@@ -45,7 +29,7 @@ LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
    WHEN node->>'kind'='text' THEN coalesce(node->>'text','') ELSE coalesce(node->>'label','') END
  FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_font_dependencies_internal(jsonb) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('protocol',1,'fonts',coalesce((SELECT jsonb_object_agg(a.id,a.layout_outline)
@@ -55,35 +39,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  FROM public.blueprint_image_assets a WHERE (a.occasion=p_occasion OR a.unit=p_unit) AND a.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion UNION ALL SELECT organization FROM public.units WHERE id=p_unit)
  AND a.state='ready' AND a.asset_ref=p_layout#>>'{background,assetRef}' AND a.hash=p_layout#>>'{background,hash}'),'{}'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.validate_blueprint_polygon_internal(p_points jsonb,p_closed boolean)
-RETURNS void LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE i int;j int;size int; a jsonb;b jsonb;c jsonb;d jsonb;ab_c numeric;ab_d numeric;cd_a numeric;cd_b numeric; area numeric:=0;
-BEGIN
- IF jsonb_typeof(p_points) IS DISTINCT FROM 'array' OR jsonb_array_length(p_points) NOT BETWEEN (CASE WHEN p_closed THEN 3 ELSE 2 END) AND 512 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VERTICES'; END IF;
- size:=jsonb_array_length(p_points);
- FOR a IN SELECT * FROM jsonb_array_elements(p_points) LOOP
-  IF jsonb_typeof(a)<>'array' OR jsonb_array_length(a)<>2 OR jsonb_typeof(a->0)<>'number' OR jsonb_typeof(a->1)<>'number' OR abs((a->>0)::numeric)>1000000000 OR abs((a->>1)::numeric)>1000000000 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_VERTICES'; END IF;
- END LOOP;
- IF NOT p_closed THEN RETURN; END IF;
- FOR i IN 0..size-1 LOOP
-  a:=p_points->i;b:=p_points->((i+1)%size);
-  area:=area+(a->>0)::numeric*(b->>1)::numeric-(b->>0)::numeric*(a->>1)::numeric;
-  FOR j IN i+1..size-1 LOOP
-   IF j=i+1 OR (i=0 AND j=size-1) THEN CONTINUE; END IF;
-   c:=p_points->j;d:=p_points->((j+1)%size);
-   ab_c:=((b->>0)::numeric-(a->>0)::numeric)*((c->>1)::numeric-(a->>1)::numeric)-((b->>1)::numeric-(a->>1)::numeric)*((c->>0)::numeric-(a->>0)::numeric);
-   ab_d:=((b->>0)::numeric-(a->>0)::numeric)*((d->>1)::numeric-(a->>1)::numeric)-((b->>1)::numeric-(a->>1)::numeric)*((d->>0)::numeric-(a->>0)::numeric);
-   cd_a:=((d->>0)::numeric-(c->>0)::numeric)*((a->>1)::numeric-(c->>1)::numeric)-((d->>1)::numeric-(c->>1)::numeric)*((a->>0)::numeric-(c->>0)::numeric);
-   cd_b:=((d->>0)::numeric-(c->>0)::numeric)*((b->>1)::numeric-(c->>1)::numeric)-((d->>1)::numeric-(c->>1)::numeric)*((b->>0)::numeric-(c->>0)::numeric);
-   IF ab_c*ab_d<=0 AND cd_a*cd_b<=0 AND greatest(least((a->>0)::numeric,(b->>0)::numeric),least((c->>0)::numeric,(d->>0)::numeric))<=least(greatest((a->>0)::numeric,(b->>0)::numeric),greatest((c->>0)::numeric,(d->>0)::numeric))
-    AND greatest(least((a->>1)::numeric,(b->>1)::numeric),least((c->>1)::numeric,(d->>1)::numeric))<=least(greatest((a->>1)::numeric,(b->>1)::numeric),greatest((c->>1)::numeric,(d->>1)::numeric)) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_SELF_INTERSECTION'; END IF;
-  END LOOP;
- END LOOP;
- IF abs(area)<0.000000001 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_DEGENERATE_POLYGON'; END IF;
-END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
+
+
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
 -- public layout protocol; commercial identities never belong in the document.
@@ -262,4 +221,3 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_layout_internal(jsonb) FROM PUBLIC,anon,authenticated;

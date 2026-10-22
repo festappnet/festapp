@@ -20,7 +20,7 @@ BEGIN
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_page(bigint,bigint,integer,bigint,text,text,bigint,uuid,timestamptz,boolean) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_page(bigint,bigint,integer,bigint,text,text,bigint,uuid,timestamptz,boolean) TO authenticated,service_role;
+
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;

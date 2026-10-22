@@ -21,7 +21,7 @@
   ],
   [
     "bash",
-    "automation/tests/hetzner_supabase_rehearsal_schema.test.sh"
+    "automation/tests/hetzner_supabase_runtime_recovery.test.sh"
   ],
   [
     "bash",
@@ -163,7 +163,6 @@
     "automation/tests/data_security_migrations.test.mjs",
     "automation/hetzner-supabase/monitoring/metrics.test.mjs",
     "automation/tests/hetzner_supabase_inventory.test.mjs",
-    "automation/tests/hetzner_supabase_cutover_mode_gate.test.mjs",
     "automation/tests/hetzner_supabase_operational_readiness.test.mjs",
     "automation/tests/hetzner_supabase_production_promotion.test.mjs",
     "automation/tests/supabase_client_config.test.mjs",
@@ -183,5 +182,10 @@
     "automation/tests",
     "-p",
     "test_all_contract_test.py"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/repository_artifacts.test.mjs"
   ]
 ]

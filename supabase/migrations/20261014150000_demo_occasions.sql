@@ -65,7 +65,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,exte
   ON o.id=d.occasion WHERE o.unit=p_unit);
 $$;
 REVOKE ALL ON FUNCTION public.can_copy_occasion_source(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.can_copy_occasion_source(bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.demo_unit_can_read(p_unit bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -1321,7 +1321,7 @@ BEGIN
    WHERE d.organization=p_organization AND d.is_listed),'[]'::jsonb));
 END $$;
 REVOKE ALL ON FUNCTION public.get_demo_occasions(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_demo_occasions(bigint) TO authenticated;
+
 
 
 -- Source: database/functions/user_permissions/get_is_editor_on_occasion.sql
@@ -1802,13 +1802,7 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.update_occasion_internal_v1(input_data);
-END;
-$$;
+
 
 
 -- Source: database/functions/others/delete_occasion.sql
@@ -2383,17 +2377,11 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
+
+
 
 
 -- Source: database/functions/others/duplicate_occasion_client_sync_v1.sql
@@ -2459,40 +2447,22 @@ BEGIN
     'sync', jsonb_build_object('replacements', '[]'::jsonb)),
     v_commit.commit_id);
 END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
-  TO authenticated;
+
+
 
 
 -- Keep existing client signatures routed through the same canonical command.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(
-  p_occasion bigint, p_command_id uuid
-) RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_client_sync_v1(p_occasion, p_command_id, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint, p_target_unit bigint)
-RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE v_response jsonb;
-BEGIN
-  v_response := public.duplicate_occasion_client_sync_v1(oc, gen_random_uuid(), p_target_unit);
-  RETURN (v_response #>> '{data,occasionId}')::bigint;
-END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint,bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint) TO authenticated;
+
+
+
+
+
+
+
+
+
 
 -- Return only authorized destinations. The navigation unit list does not carry
 -- membership flags and may include units visible only through an occasion.
@@ -2510,8 +2480,8 @@ BEGIN
     'id', u.id, 'title', u.title, 'organization', u.organization) ORDER BY u.title,u.id)
     FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id) AND NOT public.is_demo_unit(u.id)), '[]'::jsonb);
 END; $$;
-REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;
+
+
 
 
 -- Source: database/functions/others/get_app_config.sql
@@ -3037,13 +3007,9 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
-RETURNS json LANGUAGE sql SECURITY DEFINER
-SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal((SELECT id FROM public.forms WHERE link=form_link),false);
-$$;
+
+
 
 
 -- Source: database/functions/eshop/get_blueprint.sql
@@ -3296,7 +3262,7 @@ BEGIN
   RETURN CASE WHEN left(SQLERRM,1)='{' THEN SQLERRM::jsonb ELSE jsonb_build_object('code',1013,'message',SQLERRM) END;
  END;
 END $$;
-REVOKE ALL ON FUNCTION public.create_ticket_order_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/eshop/finalize_ticket_order.sql
@@ -3915,7 +3881,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/eshop_orders/check_order_is_mutable.sql
@@ -3938,39 +3904,12 @@ BEGIN
   END IF;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.check_ticket_is_mutable(p_ticket bigint)
-RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE v_order bigint; v_state text;
-BEGIN
-  FOR v_order IN SELECT DISTINCT opt."order" FROM eshop.order_product_ticket opt
-    WHERE opt.ticket=p_ticket ORDER BY opt."order" LOOP
-    PERFORM public.check_order_is_mutable(v_order);
-  END LOOP;
-  SELECT state INTO v_state FROM eshop.tickets WHERE id=p_ticket FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'TICKET_NOT_FOUND' USING ERRCODE='P0002'; END IF;
-  IF v_state='waitlisted' THEN RAISE EXCEPTION 'TICKET_ACTION_NOT_ALLOWED' USING ERRCODE='55000'; END IF;
-  IF v_state='storno' THEN
-    RAISE EXCEPTION 'TICKET_CANCELLED: Cancelled tickets are read-only' USING ERRCODE='55000';
-  END IF;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.check_payment_info_is_mutable(p_payment bigint)
-RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE v_order bigint;
-BEGIN
-  FOR v_order IN SELECT id FROM eshop.orders WHERE payment_info=p_payment ORDER BY id LOOP
-    PERFORM public.check_order_is_mutable(v_order);
-  END LOOP;
-END $$;
 
-REVOKE ALL ON FUNCTION public.check_order_is_mutable(bigint),
-  public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.check_order_is_mutable(bigint),
-  public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
-  TO service_role;
+
+
+
+
 
 
 -- Source: database/functions/eshop_transactions/apply_transaction_pairing.sql
@@ -4071,8 +4010,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.apply_transaction_pairing(bigint,bigint,text,text,jsonb)
-  FROM PUBLIC, anon, authenticated, service_role;
+
 
 
 -- Source: database/functions/eshop_bank_accounts/update_bank_account.sql
@@ -4304,75 +4242,19 @@ BEGIN
  END IF;
  RETURN n;
 END $$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_offer_proposal(p_form_id bigint)
-RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE f public.forms; c jsonb; proposals jsonb; available integer;
-BEGIN
- SELECT * INTO STRICT f FROM public.forms WHERE id=p_form_id;
- PERFORM public.check_is_editor_order_on_occasion(f.occasion);
- PERFORM 1 FROM public.forms WHERE id=f.id FOR UPDATE;
- PERFORM public.expire_waitlist_form_internal(f.id);
- c:=public.get_form_capacity_snapshot_internal(f.id); available:=(c->>'offerablePlaces')::integer;
- -- count is the suggested allocation; waitingCount is the authoritative recipient limit.
- -- Keep unallocated eligible recipients so editors can adjust the allocation safely.
- SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',order_id,'count',offered,'waitingCount',total) ORDER BY first_queue,order_id),'[]') INTO proposals
- FROM (SELECT order_id,min(waitlist_queue_at) first_queue,count(*) total,
-  count(*) FILTER(WHERE position<=available) offered FROM
-  (SELECT p.*,o.id order_id,row_number() OVER(ORDER BY p.waitlist_queue_at,p.created_at,p.id) position FROM eshop.tickets p
-   JOIN LATERAL(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p.id) x ON true
-   JOIN eshop.orders o ON o.id=x."order" WHERE o.form=f.id AND o.state='waitlisted' AND public.get_effective_waitlist_ticket_lifecycle_internal(p.id)='waiting' ) ranked GROUP BY order_id) grouped;
- RETURN jsonb_build_object('code',200,'formId',f.id,'revision',c->'revision','capacity',c,'recipients',proposals,
- 'offerDurationSeconds',f.waitlist_offer_duration_seconds,'serverTime',clock_timestamp());
-END $$;
-CREATE OR REPLACE FUNCTION public.enqueue_waitlist_email_internal(p_order bigint,p_offer uuid,p_command uuid,p_delivery jsonb)
-RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; occ public.occasions; result jsonb; expiry timestamptz; code text; kind text;
-BEGIN
- SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order; SELECT * INTO STRICT occ FROM public.occasions WHERE id=o.occasion;
- code:=CASE WHEN p_offer IS NULL THEN 'waitlist_confirmation' ELSE 'waitlist_offer' END;
- kind:=code;
- IF p_delivery->>'recipient' IS DISTINCT FROM o.data->>'email' OR p_delivery->>'templateCode' IS DISTINCT FROM code
- OR p_delivery->'sealed' IS NULL OR p_delivery->>'tokenHash' !~ '^[0-9a-f]{64}$'
- OR p_delivery->>'contentHash' !~ '^[0-9a-f]{64}$' THEN RAISE EXCEPTION 'Invalid waitlist delivery binding'; END IF;
- SELECT expires_at INTO expiry FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order;
- INSERT INTO eshop.waitlist_capabilities(token_hash,organization_id,form_id,order_id,offer_id,kind,expires_at)
- VALUES(p_delivery->>'tokenHash',occ.organization,o.form,o.id,p_offer,CASE WHEN p_offer IS NULL THEN 'manage' ELSE 'offer' END,expiry);
- result:=public.enqueue_email(kind,jsonb_build_object('organization',occ.organization,'occasion',occ.id,'unit',occ.unit),o.data->>'email',
- jsonb_build_object('order_id',o.id,'offer_id',p_offer,'command_id',p_command,'content_hash',p_delivery->>'contentHash','waitlistEnvelope',p_delivery->'sealed'),
- p_command::text||':'||o.id::text,code,now(),expiry,o.id,NULL);
- RETURN result;
-END $$;
-REVOKE ALL ON FUNCTION public.expire_waitlist_form_internal(bigint,timestamptz,integer),public.enqueue_waitlist_email_internal(bigint,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_proposal(bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_proposal(bigint) TO authenticated;
+
+
+
+
+
 
 
 -- Source: database/functions/eshop_waitlist/commands.sql
 -- Edge is the trusted preparation boundary for random capabilities and sealed email.
 -- It verifies the bearer user; SQL still checks the explicit actor's occasion rights.
-CREATE OR REPLACE FUNCTION public.sanitize_waitlist_history_internal(p_value jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE result jsonb;
-BEGIN
- IF jsonb_typeof(p_value)='object' THEN
-  SELECT coalesce(jsonb_object_agg(key,public.sanitize_waitlist_history_internal(value)),'{}') INTO result
-  FROM jsonb_each(p_value) WHERE lower(key) NOT IN
-   ('token','secret','password','offertoken','managetoken','capability','waitlistenvelope','sealed','tokenhash');
-  RETURN result;
- ELSIF jsonb_typeof(p_value)='array' THEN
-  SELECT coalesce(jsonb_agg(public.sanitize_waitlist_history_internal(value) ORDER BY ordinal),'[]') INTO result
-  FROM jsonb_array_elements(p_value) WITH ORDINALITY item(value,ordinal);
-  RETURN result;
- END IF;
- RETURN p_value;
-END $$;
-CREATE OR REPLACE FUNCTION public.snapshot_waitlist_tickets_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(public.sanitize_waitlist_history_internal(to_jsonb(p)||jsonb_build_object('answers',p.data,'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(p.id))) ORDER BY created_at,id),'[]')
- FROM public.get_order_tickets_internal(p_order) p;
-$$;
-REVOKE ALL ON FUNCTION public.sanitize_waitlist_history_internal(jsonb),public.snapshot_waitlist_tickets_internal(bigint)
- FROM PUBLIC,anon,authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.execute_waitlist_command_client_sync_v1(
  p_operation text,p_payload jsonb,p_command_id uuid,p_client_id uuid,p_actor uuid DEFAULT NULL,p_deliveries jsonb DEFAULT '[]')
@@ -4506,28 +4388,12 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb) TO service_role;
+
+
 
 
 -- Source: database/functions/emails/email_queue.sql
-CREATE OR REPLACE FUNCTION public.wake_email_worker() RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path=public,extensions AS $$
-DECLARE v_url text;
-BEGIN
- IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
- IF current_setting('festapp.email_wake',true)='scheduled' THEN RETURN; END IF;
- SELECT worker_url INTO v_url FROM public.email_capacity WHERE NOT paused;
- IF v_url IS NULL OR NOT (EXISTS(SELECT 1 FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now())
-  OR EXISTS(SELECT 1 FROM public.email_capacity WHERE quota_at IS NULL OR quota_at<now()-interval '5 minutes')) THEN RETURN; END IF;
- PERFORM set_config('festapp.email_wake','scheduled',true);
- BEGIN
-  PERFORM net.http_post(url:=v_url,body:=jsonb_build_object('requestSecret',public.generate_request_secret(120)),timeout_milliseconds:=5000);
- EXCEPTION WHEN OTHERS THEN
-  -- Do not invert producer order/message locks against gateway capacity/order locks.
-  UPDATE public.email_capacity SET wake_error='wake_failed' WHERE ctid IN (SELECT ctid FROM public.email_capacity FOR UPDATE SKIP LOCKED);
- END;
-END $$;
+
 
 -- Internal service boundary. Domain functions are the only caller for public commands.
 CREATE OR REPLACE FUNCTION public.enqueue_email(p_kind text,p_context jsonb,p_recipient text,p_data jsonb,p_dedupe text,
@@ -4611,241 +4477,39 @@ BEGIN
  RETURN true;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.recover_email_leases() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- -- Sending expiry is ambiguous, preparation expiry is safe to recover.
- UPDATE public.email_attempts a SET state='unknown',finished_at=now(),error_code='lease_expired'
- FROM public.email_messages m WHERE m.message_id=a.message_id AND m.workflow_state='sending' AND m.lease_until<now() AND a.state='sending';
- UPDATE public.email_messages SET workflow_state='unknown',last_error='lease_expired' WHERE workflow_state='sending' AND lease_until<now();
- UPDATE public.email_attempts a SET state='cancelled',finished_at=now() FROM public.email_messages m
- WHERE a.message_id=m.message_id AND a.lease_token=m.lease_token AND a.state='preparing' AND m.lease_until<now();
- UPDATE public.email_messages SET workflow_state='pending',lease_token=NULL,lease_until=NULL WHERE workflow_state='preparing' AND lease_until<now();
 
-END $$;
-REVOKE ALL ON FUNCTION public.recover_email_leases() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.recover_email_leases() TO service_role;
 
-CREATE OR REPLACE FUNCTION public.claim_email() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_row public.email_messages; v_cap public.email_capacity; v_attempt uuid; v_token uuid:=extensions.gen_random_uuid();
-BEGIN
- PERFORM public.require_service_role();
- SELECT * INTO v_cap FROM public.email_capacity FOR UPDATE;
- PERFORM public.recover_email_leases();
- UPDATE public.email_capacity SET heartbeat_at=now() WHERE singleton;
- IF v_cap.paused OR v_cap.quota_at IS NULL OR v_cap.quota_at<now()-interval '15 minutes' OR v_cap.circuit_until>now()
-  OR (SELECT count(*) FROM public.email_messages WHERE workflow_state='preparing' AND lease_until>now())>=v_cap.max_preparing THEN RETURN NULL; END IF;
- SELECT * INTO v_row FROM public.email_messages m
- WHERE workflow_state IN ('pending','retry_wait') AND target_time<=now()
- AND (m.prepared IS NOT NULL OR m.message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation')
-  OR (SELECT count(*) FROM public.email_messages heavy WHERE heavy.workflow_state='preparing' AND heavy.lease_until>now() AND heavy.prepared IS NULL
-   AND heavy.message_kind NOT IN ('registration','sign_in','reset_password','google_mailbox','gotrue','order_confirmation'))<greatest(1,v_cap.max_preparing-1))
- AND NOT EXISTS(SELECT 1 FROM public.email_messages prior WHERE prior.order_id=m.order_id AND prior.message_kind='order_confirmation'
-  AND m.message_kind<>'order_confirmation' AND prior.workflow_state NOT IN ('accepted','cancelled','expired'))
- ORDER BY priority-greatest(0,floor(extract(epoch FROM now()-created_at)/300))::integer,
- (SELECT max(a.created_at) FROM public.email_attempts a JOIN public.email_messages served ON served.message_id=a.message_id WHERE served.organization=m.organization) NULLS FIRST,target_time,id FOR UPDATE SKIP LOCKED LIMIT 1;
- IF v_row.id IS NULL THEN RETURN NULL; END IF;
- IF NOT public.email_intent_valid(v_row) THEN
-  UPDATE public.email_messages SET workflow_state=CASE WHEN expires_at<=now() THEN 'expired' ELSE 'cancelled' END,last_error='intent_invalid' WHERE id=v_row.id;
-  RETURN jsonb_build_object('skipped',true);
- END IF;
- UPDATE public.email_messages SET workflow_state='preparing',lease_token=v_token,lease_until=now()+interval '90 seconds' WHERE id=v_row.id RETURNING * INTO v_row;
- INSERT INTO public.email_attempts(message_id,lease_token,state) VALUES(v_row.message_id,v_token,'preparing') RETURNING attempt_id INTO v_attempt;
- RETURN to_jsonb(v_row)||jsonb_build_object('attempt_id',v_attempt);
-END $$;
+
+
+
 
 -- Keep the global preparation permit while rendering still runs; expired workers cannot renew.
-CREATE OR REPLACE FUNCTION public.renew_email_preparation(p_message uuid,p_token uuid) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- UPDATE public.email_messages SET lease_until=now()+interval '90 seconds'
- WHERE message_id=p_message AND lease_token=p_token AND workflow_state='preparing' AND lease_until>now();
- IF NOT FOUND THEN RAISE EXCEPTION 'stale_email_preparation'; END IF;
-END $$;
-REVOKE ALL ON FUNCTION public.renew_email_preparation(uuid,uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.renew_email_preparation(uuid,uuid) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.prepare_email(p_message uuid,p_token uuid,p_prepared jsonb,p_post_action jsonb DEFAULT '{}') RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- UPDATE public.email_messages SET prepared=coalesce(prepared,p_prepared),
- prepared_hash=coalesce(prepared_hash,encode(extensions.digest(p_prepared::text,'sha256'),'hex')),prepared_at=coalesce(prepared_at,now()),
- tracking_policy=CASE WHEN prepared IS NULL AND message_kind LIKE 'order_%' AND p_post_action->>'tracking_policy'='engagement' THEN 'engagement' ELSE tracking_policy END,
- post_action=CASE WHEN prepared IS NULL THEN post_action||p_post_action ELSE post_action END
- WHERE message_id=p_message AND lease_token=p_token AND lease_until>now() AND workflow_state='preparing'
- AND (prepared IS NULL OR prepared=p_prepared);
- IF NOT FOUND THEN RAISE EXCEPTION 'stale_email_preparation'; END IF;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.begin_email_send(p_attempt uuid,p_token uuid) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_attempt public.email_attempts; v_row public.email_messages; v_cap public.email_capacity; v_rate numeric; v_daily numeric; v_used numeric;
-BEGIN
- PERFORM public.require_service_role();
- SELECT * INTO v_cap FROM public.email_capacity FOR UPDATE;
- SELECT * INTO v_attempt FROM public.email_attempts WHERE attempt_id=p_attempt;
- SELECT * INTO v_row FROM public.email_messages WHERE message_id=v_attempt.message_id;
- IF v_row.order_id IS NOT NULL THEN PERFORM 1 FROM eshop.orders WHERE id=v_row.order_id FOR UPDATE; END IF;
- SELECT * INTO v_attempt FROM public.email_attempts WHERE attempt_id=p_attempt FOR UPDATE;
- SELECT * INTO v_row FROM public.email_messages WHERE message_id=v_attempt.message_id FOR UPDATE;
- IF v_attempt.lease_token IS DISTINCT FROM p_token OR v_row.lease_token IS DISTINCT FROM p_token THEN RAISE EXCEPTION 'stale_email_attempt'; END IF;
- IF v_attempt.state<>'preparing' THEN RETURN jsonb_build_object('disposition','replay','state',v_attempt.state); END IF;
- IF v_row.workflow_state<>'preparing' OR v_row.lease_until<=now() OR v_row.prepared IS NULL THEN RAISE EXCEPTION 'stale_email_attempt'; END IF;
- IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
-  UPDATE public.email_messages SET workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
-  UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
-  RETURN jsonb_build_object('disposition','cancelled');
- END IF;
- -- A partial acceptance can change a queued offer after its rendered snapshot
- -- was cached. Re-render within this same queue before granting a send permit.
- IF v_row.message_kind='waitlist_offer' AND
-  (v_row.post_action->>'waitlist_pending_count')::bigint IS DISTINCT FROM
-  (SELECT count(*) FROM eshop.waitlist_offer_slots
-   WHERE offer_id=(v_row.data->>'offer_id')::uuid AND outcome='pending') THEN
-  UPDATE public.email_messages SET workflow_state='pending',target_time=now(),
-   prepared=NULL,prepared_hash=NULL,prepared_at=NULL,
-   post_action=post_action-'waitlist_pending_count',lease_token=NULL,lease_until=NULL,
-   last_error='offer_snapshot_changed' WHERE id=v_row.id;
-  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),
-   error_code='offer_snapshot_changed' WHERE attempt_id=p_attempt;
-  RETURN jsonb_build_object('disposition','deferred');
- END IF;
- v_rate:=CASE WHEN v_cap.shared_account THEN least(v_cap.max_rate*0.8,v_cap.allocated_rate) ELSE v_cap.max_rate*0.8 END*v_cap.rate_factor;
- v_daily:=CASE WHEN v_cap.shared_account THEN least(v_cap.daily_quota,v_cap.allocated_daily) ELSE v_cap.daily_quota END*0.9;
- -- Count all local starts since snapshot plus provider's rolling usage; conservative during drift.
- SELECT count(*) INTO v_used FROM public.email_attempts WHERE began_at>now()-interval '24 hours' AND (began_at>v_cap.quota_at OR state IN ('sending','unknown')) AND state IN ('sending','accepted','unknown');
- IF v_cap.paused OR v_cap.quota_at IS NULL OR v_cap.quota_at<now()-interval '15 minutes' OR v_rate IS NULL OR v_rate<=0 OR v_daily IS NULL
- OR (v_cap.shared_account AND (v_cap.allocated_rate IS NULL OR v_cap.allocated_daily IS NULL)) OR v_cap.provider_sent_24h+v_used>=v_daily
- OR v_cap.next_send_at>now() OR v_cap.circuit_until>now()
- OR (v_cap.provider_outage_streak>0 AND v_cap.probe_until>now())
- OR (SELECT count(*) FROM public.email_messages WHERE workflow_state='sending' AND lease_until>now())>=v_cap.max_sending THEN
-  UPDATE public.email_messages SET workflow_state='pending',target_time=greatest(now()+interval '1 second',coalesce(v_cap.next_send_at,now()),coalesce(v_cap.circuit_until,now()),coalesce(v_cap.probe_until,now())),lease_token=NULL,lease_until=NULL,last_error='capacity_deferred' WHERE id=v_row.id;
-  UPDATE public.email_attempts SET state='cancelled',finished_at=now(),error_code='capacity_deferred' WHERE attempt_id=p_attempt;
-  RETURN jsonb_build_object('disposition','deferred');
- END IF;
- UPDATE public.email_capacity SET next_send_at=clock_timestamp()+make_interval(secs=>(1/v_rate)::double precision),
- probe_until=CASE WHEN provider_outage_streak>0 THEN now()+interval '90 seconds' ELSE NULL END,
- probe_attempt=CASE WHEN provider_outage_streak>0 THEN p_attempt ELSE NULL END WHERE singleton;
- UPDATE public.email_attempts SET state='sending',began_at=now() WHERE attempt_id=p_attempt;
- UPDATE public.email_messages SET workflow_state='sending',attempt_count=attempt_count+1 WHERE id=v_row.id;
- RETURN jsonb_build_object('disposition','send','message',to_jsonb(v_row));
-END $$;
 
-CREATE OR REPLACE FUNCTION public.finish_email_attempt(p_attempt uuid,p_token uuid,p_outcome text,p_provider_id text DEFAULT NULL,p_error text DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_a public.email_attempts; v_m public.email_messages; v_delay integer;
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- SELECT * INTO v_a FROM public.email_attempts WHERE attempt_id=p_attempt FOR UPDATE;
- SELECT * INTO v_m FROM public.email_messages WHERE message_id=v_a.message_id FOR UPDATE;
- IF v_a.lease_token IS DISTINCT FROM p_token OR v_m.lease_token IS DISTINCT FROM p_token THEN RAISE EXCEPTION 'stale_email_completion'; END IF;
- IF v_a.state='accepted' THEN RETURN; END IF;
- IF p_outcome NOT IN ('accepted','retry','dead','unknown','preparation_failed') THEN RAISE EXCEPTION 'invalid_email_outcome'; END IF;
- IF p_outcome='accepted' AND (p_provider_id IS NULL OR v_a.state NOT IN ('sending','unknown')) THEN RAISE EXCEPTION 'invalid_email_acceptance'; END IF;
- IF p_outcome IN ('retry','dead','unknown') AND v_a.state<>'sending' THEN RAISE EXCEPTION 'invalid_email_failure'; END IF;
- IF p_outcome='preparation_failed' AND v_a.state<>'preparing' THEN RAISE EXCEPTION 'invalid_email_preparation_failure'; END IF;
- IF p_outcome='accepted' THEN
-  UPDATE public.email_capacity SET provider_outage_streak=0,probe_until=NULL,probe_attempt=NULL,circuit_until=NULL WHERE probe_attempt=p_attempt;
-  UPDATE public.email_attempts SET state='accepted',provider_message_id=p_provider_id,finished_at=now() WHERE attempt_id=p_attempt;
-  UPDATE public.email_messages SET workflow_state='accepted',provider_message_id=p_provider_id,accepted_at=coalesce(accepted_at,now()),last_error=NULL WHERE id=v_m.id;
- ELSE
-  v_delay:=(ARRAY[15,60,300,1800,7200])[least(greatest(v_m.attempt_count,1),5)];
-  UPDATE public.email_attempts SET state=CASE WHEN p_outcome='unknown' THEN 'unknown' ELSE 'not_accepted' END,error_code=p_error,finished_at=now() WHERE attempt_id=p_attempt;
-  UPDATE public.email_messages SET workflow_state=CASE WHEN p_outcome='unknown' THEN 'unknown' WHEN p_outcome='dead' OR attempt_count+CASE WHEN p_outcome='preparation_failed' THEN 1 ELSE 0 END>=8 THEN 'dead' ELSE 'retry_wait' END,
-   attempt_count=attempt_count+CASE WHEN p_outcome='preparation_failed' THEN 1 ELSE 0 END,
-   target_time=now()+make_interval(secs=>v_delay*(0.8+random()*0.4)),last_error=left(p_error,100),lease_until=NULL WHERE id=v_m.id;
-  IF p_outcome='unknown' THEN UPDATE public.email_capacity SET provider_outage_streak=least(provider_outage_streak+1,10),
-   probe_until=NULL,probe_attempt=NULL,circuit_until=now()+make_interval(secs=>least(300,30*power(2,least(provider_outage_streak,4)))::double precision) WHERE singleton; END IF;
-  IF p_error='throttled' THEN UPDATE public.email_capacity SET rate_factor=greatest(rate_factor/2,0.01),probe_until=NULL,probe_attempt=NULL,circuit_until=now()+interval '15 seconds' WHERE singleton; END IF;
- END IF;
- PERFORM public.reconcile_email_events();
-END $$;
 
-CREATE OR REPLACE FUNCTION public.reconcile_email_events() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_event record;
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- WITH matched AS (UPDATE public.email_delivery_events e SET message_id=m.message_id FROM public.email_messages m
- WHERE e.message_id IS NULL AND lower(e.recipient)=lower(m.recipient)
- AND (m.provider_message_id=e.provider_message_id OR EXISTS(SELECT 1 FROM public.email_attempts a WHERE a.message_id=m.message_id AND a.attempt_id=e.attempt_id AND a.state IN ('sending','unknown','accepted'))) RETURNING e.message_id)
- UPDATE public.email_messages m SET feedback_pending=true WHERE m.message_id IN (SELECT message_id FROM matched);
- FOR v_event IN SELECT message_id,min(provider_time) FILTER(WHERE event_type='delivery') delivery,
- min(provider_time) FILTER(WHERE event_type='bounce') bounce,min(provider_time) FILTER(WHERE event_type='complaint') complaint,
- min(provider_time) FILTER(WHERE event_type='open') opened,min(provider_time) FILTER(WHERE event_type='click') clicked,
- min(provider_time) FILTER(WHERE event_type IN ('send','delivery','open','click','bounce','complaint','delay')) accepted,
- min(provider_message_id) provider_id,max(event_type) FILTER(WHERE event_type IN ('reject','rendering_failure','delay')) failure
- FROM public.email_delivery_events WHERE message_id IN (SELECT message_id FROM public.email_messages WHERE workflow_state IN ('sending','unknown') OR feedback_pending) GROUP BY message_id LOOP
-  UPDATE public.email_messages SET delivered_at=least(delivered_at,v_event.delivery),bounced_at=least(bounced_at,v_event.bounce),complained_at=least(complained_at,v_event.complaint),
-   opened_at=CASE WHEN tracking_policy<>'disabled' THEN least(opened_at,v_event.opened) ELSE NULL END,
-   clicked_at=CASE WHEN tracking_policy='engagement' THEN least(clicked_at,v_event.clicked) ELSE NULL END,provider_failure=v_event.failure,
-   accepted_at=coalesce(accepted_at,v_event.accepted),provider_message_id=coalesce(provider_message_id,v_event.provider_id),
-   workflow_state=CASE WHEN v_event.accepted IS NOT NULL AND workflow_state IN ('sending','unknown') THEN 'accepted' ELSE workflow_state END,feedback_pending=false
-  WHERE message_id=v_event.message_id;
-  UPDATE public.email_attempts SET state='accepted',provider_message_id=v_event.provider_id,finished_at=coalesce(finished_at,now())
-  WHERE message_id=v_event.message_id AND state IN ('sending','unknown') AND v_event.accepted IS NOT NULL;
- INSERT INTO public.email_suppressions(recipient,reason)
- SELECT lower(recipient),CASE WHEN bool_or(event_type='complaint') THEN 'complaint' ELSE 'hard_bounce' END
- FROM public.email_delivery_events WHERE message_id=v_event.message_id AND (event_type='complaint' OR (event_type='bounce' AND hard_bounce))
- GROUP BY lower(recipient)
- ON CONFLICT(recipient) DO UPDATE SET reason=CASE WHEN email_suppressions.reason='complaint' THEN 'complaint' ELSE excluded.reason END;
- END LOOP;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.record_email_events(p_events jsonb) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- IF jsonb_typeof(p_events)<>'array' OR jsonb_array_length(p_events)>100 THEN RAISE EXCEPTION 'invalid_event_batch'; END IF;
- INSERT INTO public.email_delivery_events(event_key,provider_message_id,attempt_id,recipient,event_type,provider_time,hard_bounce,invalid_recipient)
- SELECT e->>'key',e->>'provider_id',(e->>'attempt_id')::uuid,e->>'recipient',e->>'type',(e->>'time')::timestamptz,coalesce((e->>'hard_bounce')::boolean,false),coalesce((e->>'invalid_recipient')::boolean,false)
- FROM jsonb_array_elements(p_events) e ON CONFLICT(event_key) DO NOTHING;
- PERFORM public.reconcile_email_events();
-END $$;
-REVOKE ALL ON FUNCTION public.record_email_events(jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_email_events(jsonb) TO service_role;
-CREATE OR REPLACE FUNCTION public.record_email_event(p_event jsonb) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- PERFORM public.record_email_events(jsonb_build_array(p_event));
-END $$;
 
-CREATE OR REPLACE FUNCTION public.enqueue_prepared_email(p_kind text,p_context jsonb,p_recipient text,p_sealed jsonb,p_dedupe text,p_content_hash text,p_code text,p_expires timestamptz DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_result jsonb; v_m public.email_messages;
-BEGIN
- PERFORM public.require_service_role();
- -- Use stable digest as canonical data; nonce/ciphertext is not part of dedupe equality.
- v_result:=public.enqueue_email(p_kind,p_context,p_recipient,jsonb_build_object('content_hash',p_content_hash),p_dedupe,p_code,now(),p_expires);
- UPDATE public.email_messages SET prepared=coalesce(prepared,p_sealed),prepared_hash=coalesce(prepared_hash,encode(extensions.digest(p_sealed::text,'sha256'),'hex')),prepared_at=coalesce(prepared_at,now())
- WHERE message_id=(v_result->>'message_id')::uuid AND workflow_state IN ('pending','blocked','preparing','retry_wait');
- RETURN v_result;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.get_internal_email_state(p_message uuid) RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- RETURN (SELECT workflow_state FROM public.email_messages WHERE message_id=p_message);
-END $$;
 
-CREATE OR REPLACE FUNCTION public.refresh_email_quota(p_account text,p_region text,p_rate numeric,p_daily numeric,p_used numeric) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE c public.email_capacity;
-BEGIN
- PERFORM public.require_service_role();
- SELECT * INTO c FROM public.email_capacity FOR UPDATE;
- IF c.account_id IS DISTINCT FROM p_account OR c.region IS DISTINCT FROM p_region OR p_rate IS NULL OR p_daily IS NULL OR p_used IS NULL OR p_rate<=0 OR p_daily<=0 OR p_used<0 THEN RAISE EXCEPTION 'email_quota_identity_mismatch'; END IF;
- UPDATE public.email_capacity SET max_rate=p_rate,daily_quota=p_daily,provider_sent_24h=p_used,quota_at=now(),wake_error=NULL,rate_factor=least(1,rate_factor+0.05) WHERE singleton;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.invalidate_email_quota(p_reason text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN PERFORM public.require_service_role();UPDATE public.email_capacity SET quota_at=NULL,wake_error=left(p_reason,100) WHERE singleton;END $$;
-REVOKE ALL ON FUNCTION public.invalidate_email_quota(text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.invalidate_email_quota(text) TO service_role;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- Explicit internal ACLs, including the invoker-only domain helpers.
 DO $$ DECLARE p record; BEGIN
@@ -4856,59 +4520,20 @@ DO $$ DECLARE p record; BEGIN
   EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role',p.signature);
  END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.get_next_email_due() RETURNS timestamptz LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN PERFORM public.require_service_role();RETURN (SELECT min(target_time) FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait'));END $$;
-REVOKE ALL ON FUNCTION public.get_next_email_due() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_next_email_due() TO service_role;
 
-CREATE OR REPLACE FUNCTION public.reserve_email_quota_refresh() RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- UPDATE public.email_capacity SET quota_refresh_until=now()+interval '30 seconds' WHERE (quota_at IS NULL OR quota_at<now()-interval '5 minutes') AND (quota_refresh_until IS NULL OR quota_refresh_until<now());
- RETURN FOUND;
-END $$;
-REVOKE ALL ON FUNCTION public.reserve_email_quota_refresh() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reserve_email_quota_refresh() TO service_role;
-CREATE OR REPLACE FUNCTION public.recover_email_delivery() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- PERFORM public.recover_email_leases();
- UPDATE public.email_messages SET workflow_state='expired',lease_token=NULL,lease_until=NULL
- WHERE expires_at<now() AND workflow_state IN ('pending','retry_wait','blocked','preparing');
- -- Erase sensitive body after terminal state/expiry; retain correlation and dedupe tombstones.
- UPDATE public.email_messages SET prepared=NULL,data=data-'ciphertext'
- WHERE message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue','deletion_confirm','deletion_complete')
- AND (workflow_state IN ('accepted','dead','cancelled','suppressed','expired') OR expires_at<now()) AND prepared IS NOT NULL;
- UPDATE public.email_messages SET prepared=NULL,data=jsonb_build_object('command_id',data->'command_id')
- WHERE created_at<now()-interval '30 days' AND workflow_state IN ('accepted','dead','cancelled','suppressed','expired') AND prepared IS NOT NULL;
- DELETE FROM public.email_confirmation_receipts WHERE expires_at<now();
- DELETE FROM public.email_delivery_events WHERE received_at<now()-interval '90 days';
- PERFORM public.apply_email_post_actions();
- PERFORM public.reconcile_email_events();
- PERFORM public.wake_email_worker();
-END $$;
-REVOKE ALL ON FUNCTION public.recover_email_delivery() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.recover_email_delivery() TO service_role;
 
-CREATE OR REPLACE FUNCTION public.reconcile_unknown_email(p_message uuid,p_decision text,p_evidence text,p_provider_id text DEFAULT NULL) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE m public.email_messages;
-BEGIN
- PERFORM public.require_service_role();
- PERFORM 1 FROM public.email_capacity FOR UPDATE;
- IF p_evidence IS NULL OR length(p_evidence)<10 OR p_decision NOT IN ('accepted','known_not_accepted','cancelled') THEN RAISE EXCEPTION 'reconciliation_evidence_required'; END IF;
- SELECT * INTO m FROM public.email_messages WHERE message_id=p_message FOR UPDATE;
- IF m.workflow_state<>'unknown' THEN RAISE EXCEPTION 'email_not_unknown'; END IF;
- IF p_decision='accepted' AND p_provider_id IS NULL THEN RAISE EXCEPTION 'provider_receipt_required'; END IF;
- UPDATE public.email_messages SET workflow_state=CASE p_decision WHEN 'accepted' THEN 'accepted' WHEN 'known_not_accepted' THEN 'pending' ELSE 'cancelled' END,
- accepted_at=CASE WHEN p_decision='accepted' THEN now() ELSE accepted_at END,provider_message_id=coalesce(p_provider_id,provider_message_id),
- target_time=now(),lease_token=NULL,lease_until=NULL,post_action=post_action||jsonb_build_object('reconciliation',jsonb_build_object('decision',p_decision,'evidence',left(p_evidence,256),'at',now()))
- WHERE message_id=p_message;
- PERFORM public.wake_email_worker();
-END $$;
-REVOKE ALL ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) TO service_role;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- Source: database/functions/demo_occasions/client_mutation_guards.sql
@@ -5802,9 +5427,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.match_bank_transaction(bigint)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.match_bank_transaction(bigint) TO service_role;
+
+
 
 
 -- Source: database/functions/eshop_transactions/get_transactions_for_order_all_available.sql
@@ -5904,7 +5528,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/emails/queue_payment_reminders.sql
@@ -6069,83 +5693,29 @@ BEGIN
     END;
   END LOOP;
 END; $$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes_client_sync_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes_client_sync_v1() TO service_role;
-CREATE OR REPLACE FUNCTION public.apply_planned_changes()
-RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.apply_planned_changes_client_sync_v1();
-$$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes() TO service_role;
+
+
+
+
+
 
 
 -- Source: database/functions/eshop_bank_sync/bank_sync_manage.sql
-CREATE OR REPLACE FUNCTION public.get_bank_sync_connection(p_bank_account_id bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_result jsonb;
-BEGIN
-  PERFORM public.check_is_admin_for_bank_account(p_bank_account_id);
-  SELECT jsonb_build_object('id',c.id,'remote_bank_account_id',c.remote_bank_account_id,'state',c.state,'mode',c.mode,
-    'receiving_address',CASE WHEN c.pairing_code IS NOT NULL THEN c.pairing_code||'@banksync.festapp.net' END,
-    'bank_pull_at',c.bank_pull_at,'receiver_commit_at',c.receiver_commit_at,'last_error',c.last_error,
-    'token_expiry_at',c.token_expiry_at) INTO v_result FROM eshop.bank_sync_connections c
-    WHERE c.bank_account_id=p_bank_account_id OR c.id IN
-      (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id);
-  RETURN v_result;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_bank_sync_connection(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connection(bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.begin_bank_sync_operation(p_id uuid,p_account_id bigint,p_operation text,p_hash text)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_operation eshop.bank_sync_operations%ROWTYPE;
-BEGIN
-  PERFORM public.check_is_admin_for_bank_account(p_account_id);
-  INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state)
-    VALUES(p_id,p_account_id,auth.uid(),p_operation,p_hash,'pending') ON CONFLICT DO NOTHING;
-  SELECT * INTO STRICT v_operation FROM eshop.bank_sync_operations WHERE id=p_id OR (bank_account_id=p_account_id AND actor=auth.uid() AND operation=p_operation
-      AND payload_sha256=p_hash AND state IN ('pending','running','uncertain')) ORDER BY (id=p_id) DESC LIMIT 1 FOR UPDATE;
-  IF v_operation.actor IS DISTINCT FROM auth.uid() OR v_operation.bank_account_id<>p_account_id
-    OR v_operation.operation<>p_operation OR v_operation.payload_sha256<>p_hash THEN
-    RAISE EXCEPTION 'BANK_SYNC_OPERATION_CONFLICT';
-  END IF;
-  RETURN jsonb_build_object('id',v_operation.id,'state',v_operation.state,'result',v_operation.result);
-END;
-$$;
-REVOKE ALL ON FUNCTION public.begin_bank_sync_operation(uuid,bigint,text,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.begin_bank_sync_operation(uuid,bigint,text,text) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.claim_bank_sync_operation(p_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_op eshop.bank_sync_operations%ROWTYPE; v_account eshop.bank_accounts%ROWTYPE; v_conn eshop.bank_sync_connections%ROWTYPE;
-BEGIN
-  PERFORM public.require_service_role();
-  UPDATE eshop.bank_sync_operations SET state='running',lease_token=gen_random_uuid(),updated_at=now() WHERE id=p_id
-    AND (state IN ('pending','uncertain','failed') OR (state='running' AND updated_at<now()-interval '5 minutes'))
-    RETURNING * INTO v_op;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_BUSY'; END IF;
-  SELECT * INTO STRICT v_account FROM eshop.bank_accounts WHERE id=v_op.bank_account_id;
-  SELECT * INTO v_conn FROM eshop.bank_sync_connections WHERE bank_account_id=v_op.bank_account_id;
-  RETURN jsonb_build_object('lease_token',v_op.lease_token,'account_number',v_account.account_number,'provider',COALESCE(v_conn.provider,CASE WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}2010' OR v_account.account_number ~ '/2010$' THEN 'FIO' WHEN upper(regexp_replace(v_account.account_number,'\s','','g')) ~ '^CZ[0-9]{2}3030' OR v_account.account_number ~ '/3030$' THEN 'AIRBANK' ELSE v_account.type END),'title',v_account.title,
-    'connection_id',v_conn.id,'remote_id',v_conn.remote_bank_account_id,'pairing_code',v_conn.pairing_code,
-    'state',v_conn.state,'mode',v_conn.mode,'barrier',v_conn.legacy_blocked_at,'manifest_sha256',v_conn.manifest_sha256,'request',v_op.request,'token_cipher',v_op.token_cipher);
-END;
-$$;
-REVOKE ALL ON FUNCTION public.claim_bank_sync_operation(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.claim_bank_sync_operation(uuid) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.complete_bank_sync_operation(p_id uuid,p_state text,p_result jsonb,p_lease_token uuid)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  IF p_state NOT IN ('uncertain','completed','failed') THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_STATE_INVALID'; END IF;
-  UPDATE eshop.bank_sync_operations SET state=p_state,result=p_result,token_cipher=CASE WHEN p_state='completed' THEN NULL ELSE token_cipher END,updated_at=now() WHERE id=p_id AND state='running' AND lease_token=p_lease_token;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_NOT_CLAIMED'; END IF;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.complete_bank_sync_operation(uuid,text,jsonb,uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.complete_bank_sync_operation(uuid,text,jsonb,uuid) TO service_role;
+
+
+
+
+
+
+
+
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.save_bank_sync_connection(p_operation_id uuid,p_instance_id text,p_remote_id text,p_pairing_code text,p_mode text)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -6169,112 +5739,38 @@ BEGIN
   RETURN v_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) TO service_role;
+
+
 
 DROP FUNCTION IF EXISTS public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text);
-CREATE OR REPLACE FUNCTION public.update_bank_sync_connection_metadata(p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text,p_mode text DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  UPDATE eshop.bank_sync_connections SET pairing_history=CASE WHEN p_pairing_code IS NOT NULL AND pairing_code IS DISTINCT FROM p_pairing_code
-      THEN pairing_history||jsonb_build_array(jsonb_build_object('code',pairing_code,'retired_at',now())) ELSE pairing_history END,
-    pairing_code=COALESCE(p_pairing_code,pairing_code),
-    token_expiry_at=CASE WHEN p_mode='api' THEN p_expiry ELSE COALESCE(p_expiry,token_expiry_at) END,
-    mode=COALESCE(p_mode,mode),state=p_state WHERE id=p_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_CONNECTION_NOT_FOUND'; END IF;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_bank_sync_connections_for_unit(p_unit_id bigint)
-RETURNS TABLE(connection_id bigint,remote_bank_account_id text)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  RETURN QUERY SELECT DISTINCT c.id,c.remote_bank_account_id FROM eshop.bank_sync_connections c
-    JOIN eshop.unit_bank_accounts uba ON uba.bank_account=c.bank_account_id OR uba.bank_account IN
-      (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
-    WHERE uba.unit=p_unit_id AND c.state IN ('connected','degraded') AND c.mode='api' AND c.legacy_blocked_at IS NOT NULL;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.record_bank_sync_pull(p_id bigint,p_success_at timestamptz,p_error text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  UPDATE eshop.bank_sync_connections SET bank_pull_at=COALESCE(p_success_at,bank_pull_at),last_error=left(p_error,256),
-    state=CASE WHEN state IN ('connected','degraded') THEN
-      CASE WHEN p_error IS NOT NULL THEN 'degraded' WHEN p_success_at IS NOT NULL THEN 'connected' ELSE state END
-      ELSE state END WHERE id=p_id;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_bank_sync_observations(p_bank_account_id bigint,p_limit integer DEFAULT 50)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_result jsonb;
-BEGIN
-  PERFORM public.check_is_admin_for_bank_account(p_bank_account_id);
-  SELECT COALESCE(jsonb_agg(row_to_json(q)),'[]'::jsonb) INTO v_result FROM (
-    SELECT i.delivery_id,i.received_at,i.outcome,i.payload->'data' AS bank_data
-      FROM eshop.bank_sync_inbox i JOIN eshop.bank_sync_connections c ON c.id=i.connection_id
-      WHERE (c.bank_account_id=p_bank_account_id OR c.id IN
-        (SELECT connection_id FROM eshop.bank_sync_account_aliases WHERE bank_account_id=p_bank_account_id))
-        AND i.outcome LIKE 'quarantined_%' AND i.resolution IS NULL ORDER BY i.received_at DESC,i.delivery_id LIMIT LEAST(GREATEST(p_limit,1),100)
-  ) q;
-  RETURN v_result;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_bank_sync_observations(bigint,integer) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_observations(bigint,integer) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.stage_bank_sync_operation(p_id uuid,p_hash text,p_request jsonb,p_token_cipher jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  IF p_request ? 'token' OR p_request->>'operation_id' IS DISTINCT FROM p_id::text THEN
-    RAISE EXCEPTION 'BANK_SYNC_REQUEST_INVALID';
-  END IF;
-  UPDATE eshop.bank_sync_operations SET request=COALESCE(request,p_request||jsonb_build_object('expected_pairing',
-      (SELECT c.pairing_code FROM eshop.bank_sync_connections c WHERE c.bank_account_id=bank_sync_operations.bank_account_id))),
-      token_cipher=COALESCE(token_cipher,p_token_cipher)
-    WHERE id=p_id AND payload_sha256=p_hash AND state IN ('pending','uncertain');
-  IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_OPERATION_NOT_STAGEABLE'; END IF;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.stage_bank_sync_operation(uuid,text,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.stage_bank_sync_operation(uuid,text,jsonb,jsonb) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_recoverable_bank_sync_operations()
-RETURNS TABLE(id uuid,request jsonb,token_cipher jsonb,payload_sha256 text)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  RETURN QUERY SELECT o.id,o.request,o.token_cipher,o.payload_sha256 FROM eshop.bank_sync_operations o
-    WHERE o.request IS NOT NULL AND o.state IN ('pending','uncertain','running')
-      AND o.updated_at<now()-interval '5 minutes' ORDER BY o.updated_at,o.id LIMIT 10;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_recoverable_bank_sync_operations() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_recoverable_bank_sync_operations() TO service_role;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- Only the authenticated management handler calls this after checking bank-admin rights.
-CREATE OR REPLACE FUNCTION public.get_pending_bank_sync_details(p_bank_account_id bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
-  PERFORM public.require_service_role();
-  RETURN (SELECT jsonb_build_object('id',id,'request',request,'payload_sha256',payload_sha256)
-    FROM eshop.bank_sync_operations WHERE bank_account_id=p_bank_account_id AND operation='update_details'
-    AND state IN ('pending','running','uncertain') ORDER BY created_at LIMIT 1);
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_pending_bank_sync_details(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_pending_bank_sync_details(bigint) TO service_role;
+
+
+
 
 
 -- Source: database/functions/eshop/get_ticket_details_for_generating.sql

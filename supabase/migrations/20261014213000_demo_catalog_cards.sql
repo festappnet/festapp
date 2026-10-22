@@ -34,5 +34,3 @@ BEGIN
    FROM public.demo_occasions d JOIN public.occasions o ON o.id=d.occasion
    WHERE d.organization=p_organization AND d.is_listed),'[]'::jsonb));
 END $$;
-REVOKE ALL ON FUNCTION public.get_demo_occasions(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_demo_occasions(bigint) TO authenticated;

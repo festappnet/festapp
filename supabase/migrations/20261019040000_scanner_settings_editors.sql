@@ -16,50 +16,8 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.scanner_require_settings_editor_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.scanner_default_settings_internal(p_occasion bigint)
-RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT jsonb_build_object('schema_version',1,'products',jsonb_build_object('mode','all','ids','[]'::jsonb,'order','[]'::jsonb),
- 'fields','[]'::jsonb,
- 'manual_search',jsonb_build_object('tickets',coalesce((feature->>'can_scan_manually')::boolean,false),'users',EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion)),
- 'sensitive',jsonb_build_object('price',true,'hidden_note',coalesce((feature->>'show_hidden_note')::boolean,false)),
- 'admission',jsonb_build_object('allow_unpaid_online',true,'allow_unpaid_offline',false),
- 'offline',jsonb_build_object('enabled',true,'max_hours',12))
- FROM public.occasions o LEFT JOIN LATERAL (SELECT e feature FROM jsonb_array_elements(o.features) e WHERE e->>'code'='ticket' LIMIT 1) x ON true WHERE o.id=p_occasion;
-$$;
-CREATE OR REPLACE FUNCTION public.scanner_validate_settings_internal(p_occasion bigint,p_config jsonb)
-RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
-DECLARE f jsonb; n bigint;
-BEGIN
- IF p_config IS NULL OR octet_length(p_config::text)>32768 OR p_config->>'schema_version' IS DISTINCT FROM '1'
- OR coalesce(p_config#>>'{products,mode}','') NOT IN ('all','none','selected')
- OR jsonb_typeof(p_config#>'{products,ids}') IS DISTINCT FROM 'array'
- OR jsonb_typeof(p_config#>'{products,order}') IS DISTINCT FROM 'array'
- OR jsonb_typeof(p_config->'fields') IS DISTINCT FROM 'array'
- OR jsonb_array_length(p_config->'fields')>40
- OR coalesce((p_config#>>'{offline,max_hours}')::numeric,0) NOT BETWEEN 0 AND 12
- OR coalesce((p_config#>>'{admission,allow_unpaid_offline}')::boolean,true)
 
- THEN RAISE invalid_parameter_value USING MESSAGE='invalid_scanner_settings'; END IF;
- IF (SELECT count(*)<>count(DISTINCT value) FROM jsonb_array_elements(p_config#>'{products,ids}'))
- OR (SELECT count(*)<>count(DISTINCT value) FROM jsonb_array_elements(p_config#>'{products,order}')) THEN RAISE invalid_parameter_value USING MESSAGE='duplicate_product'; END IF;
- FOR n IN SELECT value::text::bigint FROM jsonb_array_elements(p_config#>'{products,ids}') LOOP
-  IF NOT EXISTS(SELECT 1 FROM eshop.products WHERE id=n AND occasion=p_occasion) THEN RAISE invalid_parameter_value USING MESSAGE='foreign_product'; END IF;
- END LOOP;
- FOR n IN SELECT value::text::bigint FROM jsonb_array_elements(p_config#>'{products,order}') LOOP
-  IF NOT EXISTS(SELECT 1 FROM eshop.products WHERE id=n AND occasion=p_occasion) THEN RAISE invalid_parameter_value USING MESSAGE='foreign_product'; END IF;
- END LOOP;
- IF (SELECT count(*)<>count(DISTINCT e->>'key') FROM jsonb_array_elements(p_config->'fields') e) THEN RAISE invalid_parameter_value USING MESSAGE='duplicate_field'; END IF;
- FOR f IN SELECT * FROM jsonb_array_elements(p_config->'fields') LOOP
-  IF f->>'source'='builtin' THEN
-   IF f->>'key' NOT IN ('holder_name','spot','groups','note') THEN RAISE invalid_parameter_value USING MESSAGE='invalid_builtin'; END IF;
-  ELSIF f->>'source' IN ('order_field','ticket_field') THEN
-   IF f->>'key' IS DISTINCT FROM (CASE f->>'source' WHEN 'order_field' THEN 'order' ELSE 'ticket' END)||':'||(f->>'form_id')||':'||(f->>'field_id')
-   OR NOT EXISTS(SELECT 1 FROM public.form_fields ff JOIN public.forms fm ON fm.id=ff.form
-    WHERE ff.id=(f->>'field_id')::bigint AND ff.form=(f->>'form_id')::bigint AND fm.occasion=p_occasion
-    AND ff.is_ticket_field=(f->>'source'='ticket_field')) THEN RAISE invalid_parameter_value USING MESSAGE='foreign_field'; END IF;
-  ELSE RAISE invalid_parameter_value USING MESSAGE='invalid_field_source'; END IF;
- END LOOP;
-END $$;
+
 CREATE OR REPLACE FUNCTION public.get_scanner_settings(p_occasion bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE s public.scanner_settings;
@@ -133,80 +91,23 @@ BEGIN
  'capabilities',jsonb_build_object('search_tickets',(cfg.config#>>'{manual_search,tickets}')::boolean,'search_users',(cfg.config#>>'{manual_search,users}')::boolean,
  'settings',public.scanner_can_manage_settings_internal(oc.id),'event_history',auth.uid() IS NOT NULL AND public.get_is_editor_order_on_occasion(oc.id),'offline',(cfg.config#>>'{offline,enabled}')::boolean)));
 END $$;
-CREATE OR REPLACE FUNCTION public.revoke_scanner_session(p_session uuid,p_token text DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.scanner_sessions;
-BEGIN
- SELECT * INTO s FROM public.scanner_sessions WHERE id=p_session;
- IF p_token IS NOT NULL THEN s:=public.scanner_session_internal(p_session,p_token,true);
- ELSE PERFORM public.check_is_editor_order_on_occasion(s.occasion_id); END IF;
- UPDATE public.scanner_sessions SET revoked_at=now() WHERE id=p_session;
- RETURN jsonb_build_object('code',200,'server_time',now());
-END $$;
+
 
 -- Source: database/functions/scanning/support.sql
 -- Reuse the existing organization app-support feature and target restrictions.
-CREATE OR REPLACE FUNCTION public.scanner_can_reset_password_internal(p_occasion bigint,p_ticket bigint)
-RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE target uuid;
-BEGIN
- IF NOT EXISTS(SELECT 1 FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
-   WHERE o.id=p_occasion AND org.data->>'IS_APP_SUPPORTED'='true') THEN RETURN false; END IF;
- SELECT ou."user" INTO target FROM public.occasion_users ou JOIN eshop.tickets t ON t.id=ou.ticket
- WHERE ou.occasion=p_occasion AND t.occasion=p_occasion AND t.id=p_ticket LIMIT 1;
- IF target IS NULL THEN RETURN false; END IF;
- PERFORM public.check_is_scan_password_reset_target_allowed(target);
- RETURN true;
-EXCEPTION WHEN insufficient_privilege THEN RETURN false;
-END $$;
-REVOKE ALL ON FUNCTION public.scanner_can_reset_password_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 -- Existing scan reset authority, target restrictions and abuse limits are reused.
-CREATE OR REPLACE FUNCTION public.reset_scanner_password(p_session uuid,p_token text,p_ticket bigint,p_password text)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.scanner_sessions; secret text;
-BEGIN
- s:=public.scanner_session_internal(p_session,p_token);
- IF NOT EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket AND occasion=s.occasion_id) THEN RAISE insufficient_privilege; END IF;
- IF NOT public.scanner_can_reset_password_internal(s.occasion_id,p_ticket) THEN RAISE insufficient_privilege USING MESSAGE='password_reset_not_available'; END IF;
- SELECT oh.secret INTO secret FROM public.occasions o JOIN public.occasions_hidden oh ON oh.id=o.occasion_hidden WHERE o.id=s.occasion_id;
- RETURN public.reset_password_via_scan(p_ticket,p_password,secret);
-END $$;
-REVOKE ALL ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) TO anon,authenticated;
-CREATE OR REPLACE FUNCTION public.get_scanner_event_history(p_occasion bigint,p_before timestamptz DEFAULT now())
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE result jsonb;
-BEGIN
- PERFORM public.check_is_editor_order_on_occasion(p_occasion);
- SELECT coalesce(jsonb_agg(item),'[]'::jsonb) INTO result FROM (
- SELECT jsonb_build_object('receipt',op.receipt,'captured_at',op.payload->'captured_at','offline',op.payload->>'snapshot_id' IS NOT NULL,'resolved',r.operation_id IS NOT NULL) item
- FROM public.scanner_operations op LEFT JOIN public.scanner_conflict_resolutions r ON r.operation_id=op.operation_id
- WHERE op.occasion_id=p_occasion AND op.committed_at<p_before ORDER BY op.committed_at DESC LIMIT 50) rows;
- RETURN jsonb_build_object('code',200,'data',result,'server_time',now());
-END $$;
-REVOKE ALL ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) TO authenticated;
-CREATE OR REPLACE FUNCTION public.search_scanner_users(p_session uuid,p_token text,p_query text,p_after uuid DEFAULT '00000000-0000-0000-0000-000000000000')
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE s public.scanner_sessions; cfg jsonb; result jsonb;
-BEGIN
- s:=public.scanner_session_internal(p_session,p_token);
- SELECT config INTO cfg FROM public.scanner_settings WHERE occasion_id=s.occasion_id;
- IF NOT coalesce((cfg#>>'{manual_search,users}')::boolean,false) THEN RAISE insufficient_privilege USING MESSAGE='manual_search_disabled'; END IF;
- IF length(p_query) NOT BETWEEN 2 AND 100 THEN RETURN jsonb_build_object('code',400,'reason','invalid_query'); END IF;
- IF NOT public.admit_scan_access_v1(s.occasion_id,true) THEN RETURN jsonb_build_object('code',429,'reason','abuse_limit_exceeded'); END IF;
- SELECT coalesce(jsonb_agg(item ORDER BY id),'[]'::jsonb) INTO result FROM (
- SELECT u.id,jsonb_build_object('user_id',u.id,'holder_name',concat_ws(' ',u.name,u.surname),'symbol',u.id) item
- FROM public.occasion_users ou JOIN public.user_info u ON u.id=ou."user"
- JOIN public.occasions o ON o.id=ou.occasion
- LEFT JOIN public.organization_users orgu ON orgu."user"=u.id AND orgu.organization=o.organization
- WHERE ou.occasion=s.occasion_id AND u.id>p_after AND orgu.is_hidden IS NOT TRUE
- AND strpos(lower(concat_ws(' ',u.name,u.surname)),lower(p_query))>0 ORDER BY u.id LIMIT 30) rows;
- RETURN jsonb_build_object('code',200,'data',result,'server_time',now());
-END $$;
-REVOKE ALL ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) TO anon,authenticated;
+
+
+
+
+
+
+
+
+
 CREATE OR REPLACE FUNCTION public.preview_scanner_ticket(p_occasion bigint,p_config jsonb,p_symbol text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
@@ -216,5 +117,3 @@ BEGIN
  SELECT dto INTO result FROM public.scanner_ticket_projection_internal(p_occasion,p_config,(SELECT id FROM eshop.tickets WHERE occasion=p_occasion AND ticket_symbol=p_symbol LIMIT 1)) WHERE dto->>'symbol'=p_symbol;
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'reason',CASE WHEN result IS NULL THEN 'not_found' END,'data',result,'server_time',now());
 END $$;
-REVOKE ALL ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) TO authenticated;

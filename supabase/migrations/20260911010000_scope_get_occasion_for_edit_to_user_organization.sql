@@ -49,6 +49,3 @@ BEGIN
   RETURN v_result;
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.get_occasion_for_edit_v1(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_for_edit_v1(text) TO authenticated;

@@ -1,5 +1,6 @@
 // Real SQL workload measurements. Only the task-owned, email-fenced local DB.
 import { createRequire } from 'node:module';
+import { evidenceDirectory } from './evidence.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import { randomUUID } from 'node:crypto';
@@ -92,6 +93,6 @@ if(process.argv[1]?.endsWith('/benchmark.mjs')) {
         results.workloads[n]={fixture:{occasions:n,places:50,unitMemberships:1,occasionMemberships:n},results:await measure(db,f)};
         await db.query('ROLLBACK');
     }} finally {await db.end();}
-    await writeFile(process.argv[2],JSON.stringify(results,null,2)+'\n');
+    await writeFile(new URL(process.argv[2] ?? 'benchmark.json', await evidenceDirectory()),JSON.stringify(results,null,2)+'\n');
     console.log('Measured 6 SQL workloads at 8 and 1000 occasions.');
 }

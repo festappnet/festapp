@@ -1,11 +1,7 @@
 -- Wizard feedback: safe bank connection state and event-title slug race fallback.
 BEGIN;
-CREATE OR REPLACE FUNCTION public.occasion_setup_bank_fingerprint_internal(p_bank bigint)
-RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT encode(extensions.digest(convert_to(jsonb_build_object('id',b.id,'account',b.account_number,
-  'currencies',b.supported_currencies)::text,'UTF8'),'sha256'),'hex') FROM eshop.bank_accounts b WHERE b.id=p_bank;
-$$;
-REVOKE ALL ON FUNCTION public.occasion_setup_bank_fingerprint_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 -- Draft editors see payment instructions, never credentials or account-admin
 -- operations. Creating/linking accounts continues through the existing unit UI.
@@ -27,8 +23,8 @@ BEGIN
   FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
   WHERE u.unit=d.unit AND b.type<>'CASH'),'[]'::jsonb));
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_bank_accounts(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_bank_accounts(uuid) TO authenticated;
+
+
 
 -- Materialize the private configuration exactly once. Provisional draft IDs and
 -- source product IDs are never accepted as IDs in the new aggregate.
@@ -279,7 +275,7 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 COMMIT;

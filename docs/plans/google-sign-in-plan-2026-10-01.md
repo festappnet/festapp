@@ -35,8 +35,8 @@ Aktuální `CONTRIBUTING.md` obsahuje historické pokyny ke cloudovým zdrojům.
 
 Dne 2026-10-01 bylo otevřeno veřejné nepřihlášené UI obou webů. Neproběhl Google login ani ověření backendu Mendelia. Lokální `mendelionet-sdk` obsahuje Voice API/CLI, nikoli prokázanou implementaci webového Google loginu. Mendelio je proto ověřená UX reference, nikoli převzatá autentizační architektura.
 
-- [Mendelio login](google-sign-in-reference-2026-10-01/mendelio-login.png): modal, přepnutí login/registrace, Google a Apple nad formulářem, oddělovač, konzistentní pole a loading. Snímek má omezenou výšku viewportu a není důkazem celého obsahu ani mobilního layoutu.
-- [Současný vstupenky.online login](google-sign-in-reference-2026-10-01/vstupenky-login.png): kompaktní centrovaná karta, modré akce, tlumené pozadí s blur, jednoduchá typografie a hierarchie. Referenční snímek je tmavý režim.
+- [Mendelio login](../archive/repository-artifact-followup-2026-10-21.md#google-sign-in): modal, přepnutí login/registrace, Google a Apple nad formulářem, oddělovač, konzistentní pole a loading. Snímek má omezenou výšku viewportu a není důkazem celého obsahu ani mobilního layoutu.
+- [Současný vstupenky.online login](../archive/repository-artifact-followup-2026-10-21.md#google-sign-in): kompaktní centrovaná karta, modré akce, tlumené pozadí s blur, jednoduchá typografie a hierarchie. Referenční snímek je tmavý režim.
 - Kód designu: `web_client/src/theme_config.css`, `services/theme_service.js`, `components/shared/modal_styles.js`, `components/ui/modal.js`. Flutter protějšky: `lib/theme_config.dart`, `lib/styles/styles_config.dart`.
 
 ### Cílové UI
@@ -280,7 +280,7 @@ Při prvním plánování testy neběžely. Při tomto zpřesnění proběhl ní
 
 Skutečný Docker GoTrue `supabase/gotrue:v2.189.0` a samostatný PostgreSQL `15.8.1.085`, pouze syntetické adresy `example.com`. Auth naslouchal na `127.0.0.1:55989`, DB nebyla publikována. Použil se nezměněný aktuální `create_user_in_organization_with_data_pure.sql` a minimální tabulka `user_info`, bez kopírování produkčních dat. Google provider nebyl zapnut a žádný email se neodeslal. Dočasné kontejnery, volumes a síť byly po důkazu odstraněny; existující lokální DB na 55432 se neměnila.
 
-Výstupy bez tokenů: [prefix proof](google-sign-in-reference-2026-10-01/supabase-prefix-proof.json), [existing-user proof](google-sign-in-reference-2026-10-01/supabase-existing-user-proof.json).
+Výstupy bez tokenů: [prefix proof](../archive/repository-artifact-followup-2026-10-21.md#google-sign-in), [existing-user proof](../archive/repository-artifact-followup-2026-10-21.md#google-sign-in).
 
 | Ověření | Skutečný výsledek |
 |---|---|

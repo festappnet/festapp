@@ -262,8 +262,8 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.delete_user_group_client_sync_v1(p_occasion bigint, p_group_id bigint, p_command_id uuid, p_expected_version bigint)
  RETURNS jsonb
@@ -327,8 +327,8 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.replace_group_assignments_client_sync_v1(p_occasion bigint, p_command_id uuid, p_assignments jsonb)
  RETURNS jsonb
@@ -405,42 +405,13 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.replace_group_assignments_client_sync_v1(bigint,uuid,jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.replace_group_assignments_client_sync_v1(bigint,uuid,jsonb) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.lock_activity_aggregate_internal_v1(p_occasion bigint)
-RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v bigint;
-BEGIN
- PERFORM public.lock_group_occasion_internal_v1(p_occasion);
- INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version) VALUES('activities','occasion',p_occasion,p_occasion::text,0) ON CONFLICT DO NOTHING;
- SELECT version INTO v FROM public.client_aggregate_versions WHERE aggregate_type='activities' AND scope_type='occasion' AND scope_id=p_occasion AND aggregate_id=p_occasion::text FOR UPDATE;
- RETURN v;
-END $$;
-CREATE OR REPLACE FUNCTION public.lock_activity_editor_internal_v1(p_occasion bigint)
-RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v bigint;
-BEGIN
- v:=public.lock_activity_aggregate_internal_v1(p_occasion);
- IF auth.uid() IS NULL OR NOT public.get_is_editor_on_occasion(p_occasion) THEN RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
- RETURN v;
-END $$;
-REVOKE ALL ON FUNCTION public.lock_activity_aggregate_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
-CREATE OR REPLACE FUNCTION public.retain_activity_history_internal_v1(p_occasion bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE protected bigint[]; depth int;
-BEGIN
- WITH RECURSIVE roots AS (
- SELECT id,parent_history_id FROM public.activity_history WHERE occasion_id=p_occasion AND history_type='AUTOSAVE'
- UNION SELECT id,parent_history_id FROM (SELECT id,parent_history_id FROM public.activity_history WHERE occasion_id=p_occasion AND history_type='PUBLISH' ORDER BY id DESC LIMIT 1) latest
- ), chain AS (
- SELECT id,parent_history_id,ARRAY[id] path,1 depth FROM roots
- UNION ALL SELECT h.id,h.parent_history_id,c.path||h.id,c.depth+1 FROM chain c JOIN public.activity_history h ON h.id=c.parent_history_id AND h.occasion_id=p_occasion WHERE NOT h.id=ANY(c.path) AND c.depth<10000
- ) SELECT array_agg(DISTINCT id),max(chain.depth) INTO protected,depth FROM chain;
- -- Fail closed on unbounded history: do not silently cut a protected chain.
- IF depth>=10000 THEN RETURN; END IF;
- DELETE FROM public.activity_history WHERE occasion_id=p_occasion AND created_at<now()-interval '30 days' AND NOT id=ANY(COALESCE(protected,'{}'::bigint[]));
-END $$;
+
+
+
+
+
+
 CREATE OR REPLACE FUNCTION public.save_activity_draft_client_sync_v1(p_occasion bigint,p_command_id uuid,p_expected_version bigint,p_history_data jsonb,p_parent_history_id bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); b jsonb; v bigint; latest bigint; draft public.activity_history%rowtype; graph jsonb; history jsonb; result jsonb; hid bigint;
@@ -507,9 +478,9 @@ BEGIN
  PERFORM public.retain_activity_history_internal_v1(p_occasion);
  RETURN public.complete_client_mutation_applied_v1(p_command_id,p_occasion,'activities.publish','activities',jsonb_build_array(jsonb_build_object('entityType','activities','entityId',p_occasion,'operation','publish','changedFields',jsonb_build_array('graph','history'))),'{}',impacts,'[]',jsonb_build_object('version',v,'historyId',hid,'latestPublishId',hid,'draftId',NULL,'activities',graph),'{}','[]','user',NULL,replacements);
 END $$;
-REVOKE ALL ON FUNCTION public.lock_activity_editor_internal_v1(bigint),public.retain_activity_history_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint),public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint),public.publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint),public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint),public.publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint) TO authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.move_place_client_sync_v1(p_occasion bigint, p_place_id bigint, p_command_id uuid, p_expected_version bigint, p_lat double precision, p_lng double precision)
  RETURNS jsonb
@@ -599,8 +570,8 @@ BEGIN
       jsonb_build_object('aggregate_version',v_version)),'{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision) TO authenticated;
+
+
 
 -- Existing map owner remains the only DML implementation.
 CREATE OR REPLACE FUNCTION public.save_place_client_sync_v1(

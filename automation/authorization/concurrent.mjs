@@ -1,10 +1,11 @@
+import {evidenceDirectory} from './evidence.mjs';
 // Paired four-client SQL load on committed synthetic fixtures in our own DB.
 import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 import {connect,fixture,workloads,executionContract,verifyWorkload} from './benchmark.mjs';
 const root=new URL('../../',import.meta.url);
-const folder=new URL('docs/plans/evidence/canonical-authorization-20261020/',root);
+const folder=await evidenceDirectory('baseline.sql');
 const baseline=await readFile(new URL('baseline.sql',folder),'utf8');
 const migration=await readFile(new URL('supabase/migrations/20261021100000_canonical_authorization.sql',root),'utf8');
 const after=migration.replace(/^BEGIN;$/m,'').replace(/^COMMIT;$/m,'');

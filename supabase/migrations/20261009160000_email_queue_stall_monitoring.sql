@@ -19,5 +19,3 @@ BEGIN
   IF EXISTS(SELECT 1 FROM public.first_login_notification_settings WHERE enabled AND activated_at<now()-interval '3 minutes' AND (last_poll_at IS NULL OR last_poll_at<now()-interval '3 minutes')) THEN v_alerts:=array_append(v_alerts,'first_login_poll_stale'); END IF;
   RETURN jsonb_build_object('ok',cardinality(v_alerts)=0,'alerts',to_jsonb(v_alerts));
 END $$;
-REVOKE ALL ON FUNCTION public.get_festapp_monitoring_health_v1(text) FROM PUBLIC,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_festapp_monitoring_health_v1(text) TO anon;

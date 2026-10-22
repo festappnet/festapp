@@ -29,7 +29,7 @@ BEGIN
     PERFORM update_order_and_tickets_to_storno_221(order_id);
 END;
 $$;
-REVOKE ALL ON FUNCTION public.update_order_and_tickets_to_storno_ws_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[])
 RETURNS VOID
@@ -187,7 +187,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
   p_tickets bigint[],p_command_id uuid
@@ -231,10 +231,8 @@ BEGIN
     v_before_users,jsonb_build_object('ticketIds',to_jsonb(p_tickets),
       'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated));
 END; $$;
-REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION get_latest_order_history(order_id bigint)
 RETURNS jsonb

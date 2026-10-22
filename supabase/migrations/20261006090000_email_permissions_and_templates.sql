@@ -89,8 +89,8 @@ BEGIN
  CASE WHEN EXISTS(SELECT 1 FROM public.email_messages m WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=m.message_id)) THEN 'feedback_overdue' END
  ],NULL)));
 END $$;
-REVOKE ALL ON FUNCTION public.get_email_delivery_health() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_health() TO service_role;
+
+
 
 NOTIFY pgrst, 'reload schema';
 

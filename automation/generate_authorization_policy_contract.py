@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'automation'))
 from generate_canonical_source_contract import statements
 TARGET=ROOT/'database/functions/user_permissions/operation_policies.sql'
-BASE=ROOT/'docs/plans/evidence/canonical-authorization-20261020/catalog-before.json'
+BASE=ROOT/'database/fixtures/authorization/pre-cutover-policies.json'
 COMMON={'get_is_editor_order_on_occasion':'can_write_orders',
         'get_is_editor_order_view_on_occasion':'can_read_orders'}
 DOMAINS={

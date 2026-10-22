@@ -114,4 +114,3 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_pending_bank_sync_details(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_pending_bank_sync_details(bigint) TO service_role;

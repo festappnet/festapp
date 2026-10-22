@@ -66,7 +66,7 @@ RETURNS bigint[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ON member.blueprint=selected.blueprint AND member.selection_unit=selected.selection_unit
  WHERE selected.spot=p_spot AND selected.selection_unit IS NOT NULL
 $$;
-REVOKE ALL ON FUNCTION public.lock_blueprint_scope_internal(bigint[]),public.check_blueprint_selection_units_internal(bigint[]),public.blueprint_selection_unit_spots_internal(bigint) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/resources.sql
@@ -88,8 +88,8 @@ BEGIN
  UPDATE public.ticket_font_assets SET layout_outline=merged WHERE id=p_font_id;
  RETURN merged;
 END $$;
-REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
+
+
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_internal(p_layout jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('protocol',1,'fonts',coalesce(jsonb_object_agg(a.id,a.layout_outline),'{}'),'assets','{}'::jsonb)
@@ -97,7 +97,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   SELECT p_layout#>>'{defaultTextStyle,fontId}' UNION SELECT n#>>'{properties,fontId}' FROM jsonb_array_elements(coalesce(p_layout->'nodes','[]')) n
   UNION SELECT n->>'fontId' FROM jsonb_array_elements(coalesce(p_layout->'nodes','[]')) n)
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/availability.sql
@@ -133,7 +133,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   ELSE public.blueprint_product_availability_internal(b.product) END ORDER BY b.node_id),'[]')
  FROM eshop.blueprint_area_bindings b WHERE b.blueprint=p_blueprint
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_product_availability_internal(bigint),public.blueprint_area_availability_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/projections.sql
@@ -155,7 +155,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WHEN s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp() THEN CASE WHEN s.secret=p_secret THEN 'selected_by_me' ELSE 'selected' END
  ELSE 'available' END) ORDER BY b.node_id) FROM eshop.blueprint_seat_bindings b JOIN eshop.spots s ON s.id=b.spot WHERE b.blueprint=p_blueprint),'[]'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_binding_projection_internal(bigint),public.blueprint_public_binding_projection_internal(bigint,uuid) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/validation.sql
@@ -185,7 +185,7 @@ BEGIN
  END LOOP;
  IF abs(area)<0.000000001 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_DEGENERATE_POLYGON'; END IF;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
 -- public layout protocol; commercial identities never belong in the document.
@@ -340,7 +340,7 @@ BEGIN
  END LOOP;
  IF NOT EXISTS(SELECT 1 FROM public.ticket_font_assets WHERE id=p_doc#>>'{defaultTextStyle,fontId}' AND layout_outline IS NOT NULL) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_FONT_RESOURCE_NOT_READY'; END IF;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_layout_internal(jsonb) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/save.sql
@@ -466,7 +466,7 @@ BEGIN
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/blueprint/update_blueprint_client_sync_v1.sql
@@ -529,10 +529,8 @@ BEGIN
       'safeLabel',left(p_blueprint->>'title',240),'changedFields',jsonb_build_array(
         'spots','configuration'))),v_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.update_blueprint(input_data jsonb)
 RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
@@ -540,8 +538,8 @@ BEGIN
   RETURN public.update_blueprint_client_sync_v1(
     input_data,extensions.gen_random_uuid())->'data';
 END; $$;
-REVOKE ALL ON FUNCTION public.update_blueprint(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_blueprint(jsonb) TO authenticated;
+
+
 
 
 
@@ -592,7 +590,7 @@ BEGIN
  UPDATE eshop.spots SET secret=secret_id,secret_expiration_time=statement_timestamp()+make_interval(secs=>duration_seconds),updated_at=now() WHERE id=spot_id RETURNING * INTO s;
  RETURN jsonb_build_object('code',200,'message','Spot selected','expiresAt',s.secret_expiration_time);
 END $$;
-REVOKE ALL ON FUNCTION public.select_spot_single_internal_v1(uuid,uuid,bigint,boolean) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.select_spot(form_key uuid,secret_id uuid,spot_id bigint,selecting boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE ids bigint[]; member_id bigint; r jsonb; occ bigint; bp bigint;
@@ -615,8 +613,8 @@ BEGIN
  END;
  RETURN r||jsonb_build_object('spotIds',to_jsonb(ids));
 END $$;
-REVOKE ALL ON FUNCTION public.select_spot(uuid,uuid,bigint,boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.select_spot(uuid,uuid,bigint,boolean) TO anon,authenticated;
+
+
 
 
 -- Source: database/functions/eshop/finalize_ticket_order.sql
@@ -1246,7 +1244,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/eshop/swap_spot_tickets.sql
@@ -1531,8 +1529,7 @@ BEGIN
 
 END;
 $$;
-REVOKE ALL ON FUNCTION public.swap_spot_pair_internal_v1(bigint,bigint)
-  FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 bigint,spot_id_2 bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -1560,7 +1557,7 @@ BEGIN
   RAISE EXCEPTION 'BLUEPRINT_SEAT_PROTECTED'; END IF;
  FOR i IN 1..cardinality(ids1) LOOP PERFORM public.swap_spot_pair_internal_v1(ids1[i],ids2[i]); END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 bigint,spot_id_2 bigint)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -1569,8 +1566,8 @@ BEGIN
   PERFORM public.swap_spot_tickets_client_sync_v1(
     spot_id_1,spot_id_2,extensions.gen_random_uuid());
 END; $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.swap_spot_tickets(bigint,bigint) TO authenticated;
+
+
 
 
 -- Source: database/functions/blueprint/swap_spot_tickets_client_sync_v1.sql
@@ -1607,10 +1604,8 @@ BEGIN
         'order_product_ticket','product'))),v_users,jsonb_build_object(
           'spotIds',jsonb_build_array(p_spot_1,p_spot_2)));
 END; $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets_client_sync_v1(
-  bigint,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.swap_spot_tickets_client_sync_v1(
-  bigint,bigint,uuid) TO authenticated;
+
+
 
 
 
@@ -1643,7 +1638,7 @@ BEGIN
  END;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.preview_blueprint_swap(bigint,bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.preview_blueprint_swap(bigint,bigint) TO authenticated;
 
 
@@ -1898,7 +1893,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 
 -- Source: database/functions/eshop_orders/internal_storno_tickets_221.sql
@@ -2127,7 +2122,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[]) FROM PUBLIC, anon, authenticated;
+
 
 
 -- Source: database/functions/eshop_orders/update_order_and_tickets_to_storno.sql
@@ -2221,7 +2216,7 @@ BEGIN
     PERFORM update_order_and_tickets_to_storno_221(order_id);
 END;
 $$;
-REVOKE ALL ON FUNCTION public.update_order_and_tickets_to_storno_ws_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/eshop_orders/storno_order_client_sync_v1.sql
@@ -2256,8 +2251,8 @@ BEGIN
     v_before_users,jsonb_build_object('orderId',p_order));
 END; $function$;
 
-REVOKE ALL ON FUNCTION public.storno_order_client_sync_v1(bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.storno_order_client_sync_v1(bigint,uuid) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_orders/storno_tickets_client_sync_v1.sql
@@ -2307,10 +2302,8 @@ BEGIN
     v_before_users,jsonb_build_object('ticketIds',to_jsonb(p_tickets),
       'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated));
 END; $$;
-REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_orders/replace_blueprint_order_client_sync_v1.sql
@@ -2350,10 +2343,8 @@ BEGIN
       'changedFields',jsonb_build_array('cancellations','allocations'))),
     v_before_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
-  bigint[],jsonb,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
-  bigint[],jsonb,uuid) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.replace_blueprint_order_client_sync_v1(
   p_spot_ids bigint[],p_input_data jsonb,p_command_id uuid
@@ -2403,10 +2394,8 @@ BEGIN
         'cancellations','tickets','products','allocations','membership'))),
     v_before_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.replace_blueprint_order_client_sync_v1(
-  bigint[],jsonb,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.replace_blueprint_order_client_sync_v1(
-  bigint[],jsonb,uuid) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop/get_blueprint.sql
@@ -3030,30 +3019,9 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_occasion bigint; v_version bigint; v_response jsonb;
-BEGIN
-  v_occasion:=NULLIF(input_data->>'id','')::bigint;
-  IF v_occasion IS NULL THEN
-    PERFORM public.create_occasion_client_sync_v1(
-      extensions.gen_random_uuid(),input_data);
-    RETURN;
-  END IF;
-  SELECT COALESCE(v.version,0) INTO v_version
-    FROM (SELECT 1) seed LEFT JOIN public.client_aggregate_versions v
-      ON v.aggregate_type='occasion' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=v_occasion::text;
-  v_response:=public.save_occasion_client_sync_v1(v_occasion,
-    extensions.gen_random_uuid(),v_version,input_data);
-  IF v_response->>'status'='conflict' THEN
-    RAISE serialization_failure USING MESSAGE='Occasion changed; reload before saving';
-  ELSIF v_response->>'status' IS DISTINCT FROM 'applied' THEN
-    RAISE invalid_parameter_value USING MESSAGE='Occasion save rejected';
-  END IF;
-END; $$;
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;
+
+
+
 
 
 -- Source: database/functions/blueprint/copy_layout_ids.sql
@@ -3522,22 +3490,6 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
-
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
-

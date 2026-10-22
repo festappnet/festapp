@@ -95,7 +95,7 @@ MCP dovoluje operaci pouze při průniku ověřené identity, aktuální SQL cap
 
 ### 0. Úplná mapa a měřitelný výchozí stav
 
-**Změny:** Na aktuálním main vytvořit evidence `docs/plans/evidence/canonical-authorization-20261020/`. Vypsat RPC dostupné anon/authenticated/service_role včetně overloadů a SECURITY DEFINER funkcí; RLS/table grants; Edge/Worker entry points a skutečné Dart/JS/MCP callery. Přes source katalog a lokální `pg_proc`, `pg_policy`, grants dohledat také dynamické registrace a interní routy. Zdokumentovat každý endpoint: actor, tenant/resource vazba, operace, současné allow/deny pravidlo, caller a owning test. Rozdělit domény na pilot a konečný seznam zbývajících domén. Přímé tabulkové přístupy přes PostgREST/Realtime/Storage zahrnout, kde ovlivňují stejná data.
+**Změny:** Na aktuálním main vytvořit evidence lokální evidence v ignorovaném `$FESTAPP_AUTHORIZATION_EVIDENCE_DIR` (viz [historický záznam a obnova](../archive/canonical-authorization-evidence-2026-10-20.md)). Vypsat RPC dostupné anon/authenticated/service_role včetně overloadů a SECURITY DEFINER funkcí; RLS/table grants; Edge/Worker entry points a skutečné Dart/JS/MCP callery. Přes source katalog a lokální `pg_proc`, `pg_policy`, grants dohledat také dynamické registrace a interní routy. Zdokumentovat každý endpoint: actor, tenant/resource vazba, operace, současné allow/deny pravidlo, caller a owning test. Rozdělit domény na pilot a konečný seznam zbývajících domén. Přímé tabulkové přístupy přes PostgREST/Realtime/Storage zahrnout, kde ovlivňují stejná data.
 
 **Migrace/selhání:** Zatím beze změny schématu a chování. Nedostupná produkční evidence není důvod spouštět produkční dotazy nebo tvrdit změřený výkon.
 

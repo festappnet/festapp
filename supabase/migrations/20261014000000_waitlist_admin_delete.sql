@@ -194,76 +194,15 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.delete_order_client_sync_v1(
-  p_order bigint,p_command_id uuid
-) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_unit bigint;
-  v_begin jsonb; v_hash text; v_removed_users uuid[]; v_remaining_users uuid[];
-  v_public text[]:='{}'; v_dirty jsonb:='[]'::jsonb;
-BEGIN
-  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'order',p_order)::text,'UTF8'),'sha256'),'hex');
-  SELECT o.occasion,oc.unit INTO v_occasion,v_unit FROM eshop.orders o
-    JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
-  -- Successful deletion removes the order. Exact retries retain their verified
-  -- scope in the existing receipt, and still require current scoped rights.
-  IF v_occasion IS NULL THEN
-    SELECT r.occasion,oc.unit INTO v_occasion,v_unit FROM public.client_mutation_receipts r
-    JOIN public.occasions oc ON oc.id=r.occasion
-    WHERE r.command_id=p_command_id AND r.command_name='inventory.order.delete'
-      AND r.actor_id=v_actor AND r.request_sha256=v_hash AND r.status IN ('completed','expired');
-  END IF;
-  IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT (public.get_is_manager_on_unit(v_unit) OR public.get_is_editor_on_unit(v_unit)
-      OR public.get_is_admin_on_occasion(v_occasion)) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager, editor or organization admin required'; END IF;
-  v_begin:=public.begin_client_mutation_v1(p_command_id,
-    'inventory.order.delete',v_occasion,v_actor,v_hash);
-  IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
-  -- Match the email worker's outer send fence before form/order locks.
-  PERFORM 1 FROM public.email_capacity FOR UPDATE;
-  PERFORM 1 FROM public.forms WHERE id=(SELECT form FROM eshop.orders WHERE id=p_order) FOR UPDATE;
-  SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_removed_users
-  FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
-    ON ou.ticket=opt.ticket AND ou.occasion=v_occasion
-  WHERE opt."order"=p_order;
-  PERFORM public.delete_order_internal_v1(p_order);
-  DELETE FROM public.client_sync_private_scopes s WHERE s.occasion=v_occasion
-    AND s.user_id=ANY(v_removed_users);
-  DELETE FROM public.client_aggregate_versions v
-    WHERE v.aggregate_type='occasion_user' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=ANY(
-        ARRAY(SELECT id::text FROM unnest(v_removed_users) id));
-  SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_remaining_users
-    FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  IF cardinality(v_removed_users)>0 THEN
-    v_public:=ARRAY['live_public'];
-    SELECT COALESCE(jsonb_agg(jsonb_build_object('component','live_public',
-      'entityId',e.id)),'[]'::jsonb) INTO v_dirty
-      FROM public.events e WHERE e.occasion=v_occasion;
-  END IF;
-  RETURN public.complete_private_profile_mutation_v1(p_command_id,v_occasion,
-    'inventory.order.delete',jsonb_build_array(jsonb_build_object(
-      'entityType','order','entityId',p_order,'operation','delete',
-      'safeLabel','Order','changedFields',jsonb_build_array(
-        'tickets','membership','allocations'))),v_remaining_users,v_public,v_dirty,
-    jsonb_build_object('orderId',p_order,'removedUsers',cardinality(v_removed_users)));
-END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.delete_order_221(order_id bigint)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.delete_order_client_sync_v1(
-    order_id,extensions.gen_random_uuid());
-END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_221(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_221(bigint) TO authenticated;
+
+
+
+
+
+
+
 
 
 -- Source: database/functions/eshop_orders/delete_order_client_sync_v1.sql
@@ -322,10 +261,8 @@ BEGIN
         'tickets','membership','allocations'))),v_remaining_users,v_public,v_dirty,
     jsonb_build_object('orderId',p_order,'removedUsers',cardinality(v_removed_users)));
 END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_forms/get_form_by_link.sql
@@ -472,13 +409,9 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
-RETURNS json LANGUAGE sql SECURITY DEFINER
-SET search_path=public,extensions AS $$
- SELECT public.get_form_bundle_internal((SELECT id FROM public.forms WHERE link=form_link),false);
-$$;
+
+
 
 
 -- Source: database/functions/eshop_waitlist/capabilities.sql
@@ -495,51 +428,10 @@ RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensi
 $$;
 REVOKE ALL ON FUNCTION public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(p_ticket bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT CASE WHEN t.state='storno' THEN CASE WHEN t.ticket_symbol IS NULL THEN 'withdrawn' ELSE 'cancelled' END
- WHEN t.state IS DISTINCT FROM 'waitlisted' THEN 'admitted'
- WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id AND s.outcome='pending' AND w.expires_at>clock_timestamp()) THEN 'offered'
- ELSE coalesce((SELECT CASE s.outcome WHEN 'expired' THEN 'offer_expired' WHEN 'declined' THEN 'offer_declined' WHEN 'cancelled' THEN 'offer_cancelled' WHEN 'pending' THEN 'offer_expired' ELSE 'waiting' END
- FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id ORDER BY w.created_at DESC,s.updated_at DESC,s.id DESC LIMIT 1),'waiting') END
- FROM eshop.tickets t WHERE t.id=p_ticket;
-$$;
-REVOKE ALL ON FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(bigint) FROM PUBLIC,anon,authenticated;
-CREATE OR REPLACE FUNCTION public.check_waitlist_scope_internal(p_order bigint,p_offer uuid,p_token text,p_actor uuid,p_operation text)
-RETURNS bigint LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
-BEGIN
- SELECT * INTO o FROM eshop.orders WHERE id=p_order; SELECT * INTO occ FROM public.occasions WHERE id=o.occasion;
- IF o.id IS NULL OR o.form IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- IF p_actor IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=o.occasion AND "user"=p_actor AND is_editor_order) THEN
-  IF p_offer IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order AND form_id=o.form) THEN
-   RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF; RETURN o.form;
- END IF;
- IF p_operation IN ('send','cancel','proposal') OR p_token IS NULL OR length(p_token)<>64 THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- SELECT * INTO c FROM eshop.waitlist_capabilities WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
- AND organization_id=occ.organization AND form_id=o.form AND order_id=o.id AND (revoked_at IS NULL OR p_operation='read')
- AND ((p_operation='withdraw' AND kind='manage' AND o.state='waitlisted') OR
- (p_operation IN ('read','accept','decline') AND kind='offer' AND offer_id=p_offer));
- IF c.token_hash IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- -- Expired offer links may read their own terminal state; writers recheck time under locks.
- IF p_operation<>'read' AND c.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'OFFER_EXPIRED'; END IF;
- RETURN o.form;
-END $$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH effective AS (SELECT public.get_effective_waitlist_ticket_lifecycle_internal(person.id) lifecycle
- FROM public.get_order_tickets_internal(p_order) person), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
- s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
- JOIN public.get_order_tickets_internal(p_order) person ON person.id=x.ticket_id WHERE true AND x.outcome='pending' AND w.expires_at>clock_timestamp())
- SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
- 'pendingPlaces',s.n,'earliestExpiry',s.expiry,'isActive',CASE WHEN o.state='waitlisted' THEN
-  coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false) OR s.n>0 ELSE o.state IS DISTINCT FROM 'storno' END,
- 'allowedActions',CASE WHEN o.state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
- WHEN o.state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
- WHEN o.state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
- ELSE jsonb_build_array('view','note','edit','cancel','send') END)
- FROM eshop.orders o CROSS JOIN s WHERE o.id=p_order;
-$$;
+
+
+
+
 CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE oid bigint; fid bigint; bundle jsonb; w eshop.waitlist_offers;
@@ -571,9 +463,9 @@ BEGIN
    FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id),'waitlistSummary',public.get_waitlist_summary_internal(oid));
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.check_waitlist_scope_internal(bigint,uuid,text,uuid,text),public.get_waitlist_summary_internal(bigint) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) TO anon,authenticated,service_role;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.get_waitlist_order_detail(p_order_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -590,5 +482,3 @@ BEGIN
  FROM eshop.waitlist_offers w WHERE order_id=o.id),
  'linkedOrders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'orderSymbol',order_symbol,'state',state)),'[]') FROM eshop.orders WHERE source_waitlist_order_id=o.id));
 END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_order_detail(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_order_detail(bigint) TO authenticated;

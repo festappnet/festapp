@@ -72,7 +72,7 @@ BEGIN
   RETURN to_jsonb(v_change);
 END; $$;
 REVOKE ALL ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.cancel_product_price_change(p_product_id bigint,p_change_id bigint,p_expected_revision bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
@@ -91,7 +91,7 @@ BEGIN
   DELETE FROM eshop.planned_changes WHERE id=p_change_id;
 END; $$;
 REVOKE ALL ON FUNCTION public.cancel_product_price_change(bigint,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.cancel_product_price_change(bigint,bigint,bigint) TO authenticated;
+
 
 
 
@@ -197,14 +197,14 @@ BEGIN
     END;
   END LOOP;
 END; $$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes_client_sync_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes_client_sync_v1() TO service_role;
+
+
 CREATE OR REPLACE FUNCTION public.apply_planned_changes()
 RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
   SELECT public.apply_planned_changes_client_sync_v1();
 $$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes() TO service_role;
+
+
 
 
 CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
@@ -345,7 +345,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;
+
 
 
 
@@ -1213,7 +1213,3 @@ BEGIN
     RETURN result;
 END;
 $$;
-
-
-
-REVOKE ALL ON FUNCTION public.update_product_internal_v1(jsonb), public.delete_product_internal_v1(bigint), public.update_form_internal_v1(jsonb) FROM PUBLIC,anon,authenticated;

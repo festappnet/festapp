@@ -1,5 +1,9 @@
 # Festapp: jeden self-hosted Supabase na Hetzneru a okamžitá konsolidace projektů
 
+> The completed cloud merge commands referenced here were retired; recover the
+> [pinned historical source](../archive/cloud-merge-tooling-cleanup-2026-10-21.md) for deliberate historical replay.
+> These commands are not current installation or release prerequisites.
+
 **Stav:** připraveno k realizaci po schválení rozhodovacích bran
 **Datum:** 2026-08-27
 **Režim ověření:** standard — jde o autentizaci, produkční data, migraci DB a produkční provoz

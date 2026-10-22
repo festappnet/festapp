@@ -40,8 +40,7 @@ BEGIN
     DO NOTHING;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)
-  FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.get_fakturoid_ticket_order_state_v1(p_order_id bigint)
 RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -58,8 +57,7 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
   FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
-  TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.complete_fakturoid_ticket_order_v1(
   p_order_id bigint, p_command_id uuid, p_variable_symbol bigint
@@ -127,8 +125,7 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
   FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
-  TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.abort_fakturoid_ticket_order_v1(
   p_order_id bigint, p_command_id uuid
@@ -176,5 +173,3 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
   FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
-  TO service_role;

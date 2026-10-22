@@ -13,8 +13,8 @@ BEGIN
   RETURN v_result;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_bank_sync_connection(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connection(bigint) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.record_bank_sync_pull(p_id bigint,p_success_at timestamptz,p_error text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -26,6 +26,3 @@ BEGIN
       ELSE state END WHERE id=p_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) TO service_role;
-

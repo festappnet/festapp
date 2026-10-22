@@ -62,7 +62,3 @@ BEGIN
   RETURN public.get_unit_app_landing(p_unit);
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_unit_app_landing(bigint) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.set_unit_app_landing(bigint, bigint, bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_unit_app_landing(bigint) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.set_unit_app_landing(bigint, bigint, bigint) TO authenticated;

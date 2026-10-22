@@ -48,7 +48,7 @@ AS $function$
   FROM public.user_group_info g WHERE g.id=p_group;
 $function$
 ;
-REVOKE ALL ON FUNCTION public.get_user_group_command_data_v1(bigint) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.get_user_group_editor_bundle_v1(p_occasion bigint,p_group_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, extensions AS $$
 BEGIN
@@ -57,7 +57,7 @@ BEGIN
  RETURN (SELECT public.get_user_group_command_data_v1(id) FROM public.user_group_info WHERE id=p_group_id AND occasion=p_occasion);
 END $$;
 REVOKE ALL ON FUNCTION public.get_user_group_editor_bundle_v1(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_user_group_editor_bundle_v1(bigint,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.get_user_group_info_with_users(p_group_id bigint)
  RETURNS jsonb
@@ -401,8 +401,8 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.delete_user_group_client_sync_v1(p_occasion bigint, p_group_id bigint, p_command_id uuid, p_expected_version bigint)
  RETURNS jsonb
@@ -465,8 +465,8 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_user_group_client_sync_v1(bigint,bigint,uuid,bigint) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.move_place_client_sync_v1(p_occasion bigint, p_place_id bigint, p_command_id uuid, p_expected_version bigint, p_lat double precision, p_lng double precision)
  RETURNS jsonb
@@ -555,8 +555,8 @@ BEGIN
       jsonb_build_object('aggregate_version',v_version)),'{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.move_place_client_sync_v1(bigint,bigint,uuid,bigint,double precision,double precision) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.mutate_map_entity_internal_v1(p_kind text, p_action text, p_occasion bigint, p_command_id uuid, p_expected_version bigint, p_entity_id bigint, p_payload jsonb)
  RETURNS jsonb
@@ -826,7 +826,7 @@ BEGIN
     jsonb_build_object('version',COALESCE(v_version,0),v_entity_key,v_entity),'{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.mutate_map_entity_internal_v1(text,text,bigint,uuid,bigint,bigint,jsonb) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.replace_group_assignments_client_sync_v1(p_occasion bigint, p_command_id uuid, p_assignments jsonb)
  RETURNS jsonb
@@ -902,8 +902,8 @@ BEGIN
     '{}','[]','user',NULL,v_actor_replacements);
 END; $function$
 ;
-REVOKE ALL ON FUNCTION public.replace_group_assignments_client_sync_v1(bigint,uuid,jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.replace_group_assignments_client_sync_v1(bigint,uuid,jsonb) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.advance_group_profile_heads_internal_v1(p_occasion bigint,p_users uuid[])
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -1692,4 +1692,3 @@ BEGIN
   RETURN v_commit.commit_id;
 END; $function$
 ;
-

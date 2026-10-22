@@ -100,5 +100,3 @@ BEGIN
 
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC, anon, authenticated;

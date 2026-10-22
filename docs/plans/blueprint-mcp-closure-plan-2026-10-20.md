@@ -1,5 +1,10 @@
 # Dokončení Blueprint integrity a webového MCP propojení
 
+> Historical command paths below may belong to the retired migration toolchain.
+> For original source/replay, use the [cleanup recovery record](../archive/repository-tooling-cleanup-2026-10-21.md).
+> Current runtime and backup/recovery tooling remains supported.
+
+
 Datum: 2026-10-20. Stav: lokálně dokončeno; [výsledek, uzavřený ledger a evidence](blueprint-mcp-closure-RESULT-2026-10-20.md). Ověřování: `standard`; publikace a produkční release neprovedeny, pouze s oddělenou autorizací. Níže zůstává původní prováděcí specifikace a historie ověřování.
 
 Tento plán je autoritativní pro zbylé opravy, sjednocení kódu a závěrečnou kvalifikaci. Nenahrazuje platná rozhodnutí původního Blueprint plánu ani neopakuje jeho již dokončenou implementaci. Dosavadní stav „lokálně funguje“ nesmí být zaměněn za „začleněno do main“ nebo „nasazeno“.
@@ -12,7 +17,7 @@ V rozsahu jsou testy, jejich fixture a nutné runtime opravy, bezpečné sjednoc
 
 ## Nové ověření relevance
 
-Provedeno read-only porovnání zdrojů a uchovaných výsledků, včetně `git fetch origin main`. Aktuálně načtený `origin/main` je `ac416ae9771d50e517736b0987201ca486f8e348`. Neproběhl nový Flutter test, spuštění backendu ani živý produkční probe. [Audit s hashi](evidence/blueprint-mcp-closure-20261020/relevance-audit.json) rozlišuje původní pracovní strom, oba kandidáty, vedlejší V2 pracovní strom a fetched main.
+Provedeno read-only porovnání zdrojů a uchovaných výsledků, včetně `git fetch origin main`. Aktuálně načtený `origin/main` je `ac416ae9771d50e517736b0987201ca486f8e348`. Neproběhl nový Flutter test, spuštění backendu ani živý produkční probe. [Audit s hashi](../archive/repository-artifact-followup-2026-10-21.md#blueprint) rozlišuje původní pracovní strom, oba kandidáty, vedlejší V2 pracovní strom a fetched main.
 
 | Položka | Doložený stav | Rozhodnutí |
 | --- | --- | --- |
