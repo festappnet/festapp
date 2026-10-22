@@ -355,7 +355,7 @@ BEGIN
                     v_spot_description TEXT := NULL;
                 BEGIN
                     -- Safe extraction of spot details
-                    IF spot_id IS NOT NULL AND spot_product IS NOT NULL THEN
+                    IF spot_id IS NOT NULL AND spot_product.id IS NOT NULL THEN
                          -- Only access fields if we have a spot_id (implies spot_product is fully set from spot lookup)
                          -- AND product_id matches.
                          IF product_id = spot_product.id THEN

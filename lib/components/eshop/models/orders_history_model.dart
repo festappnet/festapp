@@ -57,6 +57,13 @@ class OrderHistoryModel extends ITrinaRowModel {
   // A consistent placeholder for when a price value is not available.
   static const String _noPricePlaceholder = '---';
 
+  // Missing labels in old snapshots are unknown metadata, not seat changes.
+  static bool _hasSeatChange(
+          OrderDataProductModel from, OrderDataProductModel to) =>
+      (from.spotTitle?.isNotEmpty ?? false) &&
+      (to.spotTitle?.isNotEmpty ?? false) &&
+      from.spotTitle != to.spotTitle;
+
   OrderHistoryModel({
     this.id,
     this.createdAt,
@@ -168,7 +175,7 @@ class OrderHistoryModel extends ITrinaRowModel {
       final matchIndex = referenceProdsMutable.indexWhere((refP) =>
           refP.product.id == currentP.product.id &&
           refP.product.price == currentP.product.price &&
-          refP.product.spotTitle == currentP.product.spotTitle);
+          !_hasSeatChange(refP.product, currentP.product));
       if (matchIndex > -1) {
         currentProdsMutable.removeAt(i);
         referenceProdsMutable.removeAt(matchIndex);
@@ -269,7 +276,7 @@ class OrderHistoryModel extends ITrinaRowModel {
           ? Utilities.formatPrice(context, toP.price!,
               currencyCode: toP.currencyCode)
           : _noPricePlaceholder;
-      if (fromP.spotTitle != toP.spotTitle) {
+      if (_hasSeatChange(fromP, toP)) {
         changeStrings
             .add("~ ${toP.title}: ${fromP.spotTitle} → ${toP.spotTitle}");
       } else {
@@ -336,7 +343,7 @@ class OrderHistoryModel extends ITrinaRowModel {
           ? Utilities.formatPrice(context, toP.price!,
               currencyCode: toP.currencyCode)
           : _noPricePlaceholder;
-      if (fromP.spotTitle != toP.spotTitle) {
+      if (_hasSeatChange(fromP, toP)) {
         changeSpans.add(TextSpan(
             text: "~ ${toP.title}: ${fromP.spotTitle} → ${toP.spotTitle}",
             style: TextStyle(
@@ -504,7 +511,7 @@ class OrderHistoryModel extends ITrinaRowModel {
   /// Builds a row for a product whose price or spot has changed. Handles null prices.
   Widget _buildChangeRow(BuildContext context, String title,
       OrderDataProductModel from, OrderDataProductModel to) {
-    if (from.spotTitle != to.spotTitle) {
+    if (_hasSeatChange(from, to)) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 8.0),
         child: Row(children: [

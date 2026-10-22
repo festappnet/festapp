@@ -72,6 +72,10 @@ BEGIN
  result:=public.create_ticket_order_client_sync_v1(payload,command,client_id);
  IF result#>>'{data,code}' IS DISTINCT FROM '200' THEN RAISE EXCEPTION 'Selected seat checkout failed: %',result; END IF;
  oid:=(result#>>'{data,order,id}')::bigint;
+ -- Nullable product fields must not suppress the original seat-name snapshot.
+ IF (SELECT data#>>'{tickets,0,products,0,spot_title}' FROM eshop.orders_history
+     WHERE "order"=oid ORDER BY id LIMIT 1) IS DISTINCT FROM 'A1' THEN
+  RAISE EXCEPTION 'Initial order history lost the selected seat title'; END IF;
  IF NOT EXISTS(SELECT 1 FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
   JOIN eshop.tickets t ON t.id=x.ticket WHERE s.id=seat AND x."order"=oid AND x.product=prod AND t.state='ordered'
   AND t.ticket_symbol IS NOT NULL) THEN RAISE EXCEPTION 'Selected seat not bound to ordered ticket'; END IF;
