@@ -7,13 +7,16 @@ settings:
 overrides:
   rollup: ^4.62.4
 
+patchedDependencies:
+  '@festapp/venue-layout@0.3.5': 919433aeecf73eb8620f0a5aedb629afbabdaa21011fa3bda3f6dadeaaa44ebd
+
 importers:
 
   .:
     dependencies:
       '@festapp/venue-layout':
         specifier: file:vendor/festapp-venue-layout-0.3.5-cf8a064e84d9.tgz
-        version: file:vendor/festapp-venue-layout-0.3.5-cf8a064e84d9.tgz
+        version: file:vendor/festapp-venue-layout-0.3.5-cf8a064e84d9.tgz(patch_hash=919433aeecf73eb8620f0a5aedb629afbabdaa21011fa3bda3f6dadeaaa44ebd)
       '@supabase/supabase-js':
         specifier: ^2.117.3
         version: 2.117.3
@@ -1043,7 +1046,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-cf8a064e84d9.tgz': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-cf8a064e84d9.tgz(patch_hash=919433aeecf73eb8620f0a5aedb629afbabdaa21011fa3bda3f6dadeaaa44ebd)': {}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

@@ -29,6 +29,13 @@ checkout updates owned by the existing adapter and form session. Selectable
 standing areas suppress the duplicate product tooltip; unavailable areas retain
 their explanation.
 
+The pnpm patch `patches/venue-layout-hit-slop.patch` extends seat taps by eight
+CSS pixels, independent of zoom. Direct kernel hits retain priority. Near misses
+probe screen pixels in distance order against the unchanged kernel, preserving
+rotations, groups, unavailable-seat barriers and atomic selection units. Standing
+areas retain exact hit testing. The patch belongs to the shared renderer boundary;
+the host does not duplicate geometry or reservation logic.
+
 The expanded standing control names the area and shows unit price, availability,
 a numeric stepper and a labeled confirmation action. Wheel gestures over the
 control are relayed to the viewer SVG at their original cursor coordinates.
