@@ -26,8 +26,8 @@ class OccasionSetupAppearance {
   };
   static String? ticketBackground(String key, Map appearance) {
     const root = 'https://img.festapp.net/ticket-presets/v1/';
-    if (key == 'silk_light') return '${root}style-silk-v1.png';
-    if (key == 'silk_dark') return '${root}style-silk-dark-v1.png';
+    if (key == 'silk_light') return '${root}style-silk-v2.png';
+    if (key == 'silk_dark') return '${root}style-silk-dark-v2.png';
     if (themedArtwork.contains(key) &&
         presets.any((p) => p['id'] == appearance['id'])) {
       return '${root}theme-${appearance['id']}-${key.replaceAll('_', '-')}-v1.png';

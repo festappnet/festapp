@@ -62,6 +62,19 @@ void main() {
       }
     }
   });
+  test('every styled background exists in the bundled asset manifest', () {
+    for (final appearance in OccasionSetupAppearance.presets) {
+      for (final key in templates.keys) {
+        final background =
+            OccasionSetupAppearance.ticketBackground(key, appearance) ??
+                manifest['backgrounds'][key];
+        if (background != null) {
+          expect((manifest['artwork'] as Map).containsKey(background), isTrue,
+              reason: '$key/${appearance['id']}: $background');
+        }
+      }
+    }
+  });
   test(
       'repeated style changes use the chosen original and preserve its composition',
       () {
@@ -214,6 +227,16 @@ void main() {
 
     await settle();
     expect(find.text('Všechny (15)'), findsOneWidget);
+    for (final key in templates.keys) {
+      expect(
+          find.byKey(ValueKey('setup-ticket-template-$key')), findsOneWidget);
+    }
+    expect(find.text('Další'), findsNothing);
+    expect(find.text('Předchozí'), findsNothing);
+    for (final key in ['silk_light', 'silk_dark']) {
+      expect(ready.artworks[key]!.image, isNotNull,
+          reason: '$key must contain actual silk artwork');
+    }
     final concert =
         find.byKey(const ValueKey('setup-ticket-template-concert_stub'));
     await tester.ensureVisible(concert);
