@@ -15,7 +15,7 @@ const env = {ASSETS:{fetch:async req => {
 }}};
 const request = path => new Request('https://fixture.invalid' + path);
 test('all actual HTML router branches including bridge, callback, fallback and static responses carry their document policy', async () => {
- for (const [path, profile] of [['/','organizers'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/settings/mcp-connect','webclient'],['/auth_bridge.html','auth_bridge'],['/events','webclient'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
+ for (const [path, profile] of [['/','organizers'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/settings/mcp-connect','webclient'],['/settings/connections','webclient'],['/auth_bridge.html','auth_bridge'],['/events','webclient'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
   const res = await worker.fetch(request(path), env);
   assert.equal(res.headers.get('content-security-policy'), "base-uri 'self'; object-src 'none'", path);
   assert.equal(res.headers.get('content-security-policy-report-only'), profiles[profile].policy, path);

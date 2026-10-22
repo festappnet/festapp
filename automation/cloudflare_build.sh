@@ -451,9 +451,9 @@ async function routeRequest(request, env) {
     if (path.startsWith("/form/")) return handlePublicPage(request, env, path, 'form');
     if (/^\/[^/]+\/event\/?$/.test(path) && IS_APP_SUPPORTED) return handlePublicPage(request, env, path, 'event');
 
-    // OAuth handoffs must reach the correct adapter and never enter HTML caches.
+    // OAuth handoffs and account management must reach the correct adapter and never enter HTML caches.
     const stripePrivateRoute = /^\/(?:app\/)?stripe\/(?:connect\/callback|pay|return)$/.test(path);
-    if (stripePrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect") {
+    if (stripePrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect" || path === "/settings/connections") {
       const entry = stripePrivateRoute || path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
       // The browser retains callback parameters; the static asset fetch needs none.
       const assetUrl = new URL(request.url);

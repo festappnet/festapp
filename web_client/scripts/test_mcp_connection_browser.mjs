@@ -89,5 +89,25 @@ try {
     await browser('wait','--fn','window.consentFixture.read().state === "connected"');
     assert.equal(await evaluate('consentFixture.read().operations[1].access.selection.units.length'),2);
     assert.deepEqual(await evaluate('consentFixture.read().operations[1].access.permissions'),['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send']);
-    console.log('mcp-consent-browser: pass (tree consent, multiple organizers, mobile/dark, synthetic auth/broker)');
+    await browser('open',fixtureUrl.replace('/mcp/index.html','/connections/index.html'));
+    await browser('wait','--fn','window.connectionsFixture?.ready === true');
+    await browser('set','viewport','320','900');
+    await browser('eval',"document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
+    await browser('snapshot','-i');
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'account connections fit mobile');
+    assert.equal(await evaluate('document.body.textContent.includes("Způsoby přihlášení") && document.body.textContent.includes("Připojené aplikace")'),true);
+    await browser('click','[data-revoke="first-grant"]');
+    await browser('snapshot','-i');
+    assert.equal(await evaluate('document.activeElement.hasAttribute("data-confirm-revoke")'),true);
+    assert.equal(await evaluate('connectionsFixture.read().operations.length'),1,'opening confirmation does not revoke');
+    await browser('screenshot','/private/tmp/festapp-account-connections-mobile.png','--full');
+    await browser('set','viewport','1280','1000');
+    await browser('screenshot','/private/tmp/festapp-account-connections-desktop.png','--full');
+    await browser('press','Enter');
+    await browser('wait','--fn','window.connectionsFixture.read().connections.length === 0');
+    await browser('snapshot','-i');
+    assert.deepEqual(await evaluate('connectionsFixture.read().operations[1]'),{operation:'connections.revoke',connectionId:'first-grant'});
+    await browser('click','[data-google-action]');
+    assert.deepEqual(await evaluate('connectionsFixture.read().googleCalls'),['unlink']);
+    console.log('mcp-account-browser: pass (consent and account management; mobile/dark, keyboard, synthetic auth/broker)');
 } finally { await browser('close').catch(()=>{}); await server?.close(); await rm(temporary,{recursive:true,force:true}); }

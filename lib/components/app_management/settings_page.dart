@@ -1,5 +1,5 @@
 import 'package:fstapp/data_services/auth_service.dart';
-import 'package:fstapp/components/mcp/mcp_connections_link.dart';
+import 'package:fstapp/components/users/widgets/account_connections_link.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -103,7 +103,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (AuthService.isLoggedIn()) ...[
-                    const McpConnectionsLink(),
+                    const AccountConnectionsLink(),
                     const SizedBox(height: 24),
                   ],
                   if (AppConfig.availableLanguages().length > 1) ...[

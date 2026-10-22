@@ -1,4 +1,5 @@
 import express from 'express';
+import { tenantConnections } from './management.mjs';
 import { tenantBridge } from './tenant-bridge.mjs';
 import { Provider, errors } from 'oidc-provider';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -143,6 +144,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         audit({ event: 'consent', connection: digest(grantId), client: d.params.client_id });
         return provider.interactionFinished(req, res, { login: { accountId: f.userId }, consent: { grantId } }, { mergeWithLastSubmission: false });
     };
+    tenantConnections(app, { config, storage, brokerSecret, owner: loginOwner, audit });
     const tenantRedirect = tenantBridge(app, { config, storage, brokerSecret,
         owner: loginOwner, available: availableAccess, canRequestCreate, complete: completeConsent, details, provider });
     const renderConnect = async (req, res, error = '') => {
@@ -205,12 +207,14 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return f;
     };
     app.get('/connections', (req, res) => {
+        if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res);
         return res.type('html').send(f.userId ? connectionsPage(f.csrf,
             storage.values('Delegation').filter(g => g.userId === f.userId && !g.revoked && g.expiresAt > Date.now()), config.clients)
             : loginForm({ csrf: f.csrf, action: '/connections/login' }));
     });
     app.post('/connections/login', form, async (req, res) => {
+        if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f); limit(`manage:${f.id}`, 5);
         const owner = loginOwner(f.id);
         try {
@@ -225,6 +229,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         } finally { await owner.logout(); }
     });
     app.post('/connections/revoke', form, (req, res) => {
+        if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f);
         const g = typeof req.body.grant === 'string' && storage.get('Delegation', req.body.grant);
         check(f.userId && g?.userId === f.userId, 'FORBIDDEN');
@@ -233,6 +238,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         return res.redirect(303, '/connections');
     });
     app.post('/connections/logout', form, (req, res) => {
+        if (config.tenantOrigin) return res.redirect(303, `${config.tenantOrigin}/settings/connections`);
         const f = manage(req, res); csrfCheck(req, f);
         storage.remove('Management', f.id); res.clearCookie(cookieName, { path: '/connections' });
         return res.redirect(303, '/connections');

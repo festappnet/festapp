@@ -1,4 +1,5 @@
-import { MCP_CONNECTIONS_URL } from './mcp_links.js';
+import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
+import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -306,8 +307,8 @@ export class McpConnectionPage {
             if (this.state === 'error') button('retry', () => this.init());
         }
         if (this.user) {
-            const management = add('a', this.text('manageConnections'));
-            management.href = MCP_CONNECTIONS_URL;
+            const management = add('a', CommonStrings.accountConnections);
+            management.href = `${ACCOUNT_CONNECTIONS_PATH}#apps`;
             management.target = '_blank';
             management.rel = 'noopener noreferrer';
         }

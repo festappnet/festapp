@@ -285,7 +285,9 @@
     "reinviteConfirm": "Niektorí používatelia už boli pozvaní. Chceš ich pozvať znova a poslať nový prihlasovací kód?",
     "inviteInfo": "Používatelia dostanú prihlasovací kód e-mailom.",
     "welcomeIn": "Vitajte v {name}!",
-    "resetPasswordProceedConfirm": "Obdržíte e-mail s odkazom na resetovanie hesla. Chcete pokračovať?"
+    "resetPasswordProceedConfirm": "Obdržíte e-mail s odkazom na resetovanie hesla. Chcete pokračovať?",
+    "accountConnections": "Prepojenia účtu",
+    "accountConnectionsHint": "Spôsoby prihlásenia a prístup aplikácií"
   },
   "OccasionServices": {
     "accommodation": "Ubytovanie",
@@ -1408,8 +1410,29 @@
     "wholeOrganizerSelected": "Celý organizátor",
     "groupSelection": "Vybrané akcie: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuté výberom organizátora. Pre výber jednotlivých akcií zrušte výber organizátora.",
-    "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu.",
-    "manageConnections": "Pripojené aplikácie (MCP)",
-    "manageConnectionsHint": "Správa prístupu a odpojenie aplikácií"
+    "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu."
+  },
+  "AccountConnections": {
+    "intro": "Spravujte prihlasovanie k svojmu účtu a aplikácie, ktorým ste udelili prístup.",
+    "signInMethods": "Spôsoby prihlásenia",
+    "googleHint": "Google slúži na prihlásenie do Festapp. Jeho odpojenie mení spôsob prihlasovania, nie oprávnenia pripojených aplikácií.",
+    "googleLinked": "Prihlásenie cez Google je prepojené.",
+    "googleUnlinked": "Prihlásenie cez Google nie je prepojené.",
+    "linkGoogle": "Prepojiť Google",
+    "unlinkGoogle": "Odpojiť Google",
+    "googleUnavailable": "Prihlásenie cez Google teraz nie je dostupné.",
+    "apps": "Pripojené aplikácie",
+    "appsHint": "Tieto aplikácie môžu konať vo Vašom mene vo vybranom rozsahu. Odobratím prístupu zablokujete ich ďalšie MCP požiadavky.",
+    "empty": "Nemáte žiadne aktívne prepojenie aplikácií.",
+    "error": "Načítanie alebo zmena sa nepodarila. Skúste to znova.",
+    "revoke": "Odobrať prístup",
+    "revokeConfirm": "Odobrať aplikácii {client} prístup? Ďalšie požiadavky budú zablokované. Už vykonané zmeny tým nevrátite.",
+    "cancel": "Zrušiť",
+    "expires": "Platnosť do {date}",
+    "organizer": "Organizátor #{id}: súčasné aj budúce akcie",
+    "organizerCreate": "Organizátor #{id}: súčasné aj budúce akcie a zakladanie nových podľa Vašich práv",
+    "occasion": "Jednotlivá akcia #{id}",
+    "loginHint": "Na správu prepojení sa prihláste k svojmu účtu.",
+    "revoked": "Prístup aplikácie bol odobratý."
   }
 }

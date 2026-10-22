@@ -1853,7 +1853,9 @@
     "googlePasswordVisibility": "Show or hide password",
     "googleMfa": "Enter the six-digit code from your authenticator app or SMS.",
     "existingAccountPrompt": "Already have an account?",
-    "newAccountPrompt": "Don’t have an account yet?"
+    "newAccountPrompt": "Don’t have an account yet?",
+    "accountConnections": "Account connections",
+    "accountConnectionsHint": "Sign-in methods and app access"
   },
   "Common": {
     "fieldCannotBeEmpty": "Field cannot be empty",
@@ -3611,9 +3613,7 @@
     "wholeOrganizerSelected": "Entire organizer",
     "groupSelection": "Selected events: {selected} of {count}",
     "inheritedSelectionHint": "Included through the organizer. Deselect the organizer to choose individual events.",
-    "selectionRequired": "Select at least one organizer or event.",
-    "manageConnections": "Connected apps (MCP)",
-    "manageConnectionsHint": "Manage access and disconnect apps"
+    "selectionRequired": "Select at least one organizer or event."
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",
@@ -3882,5 +3882,28 @@
     "noDecision": "No admission decision recorded.",
     "decide": "Resolve admissions",
     "dashboard": "Open Stripe Dashboard"
+  },
+  "AccountConnections": {
+    "intro": "Manage how you sign in and the apps you have granted access to.",
+    "signInMethods": "Sign-in methods",
+    "googleHint": "Google is used to sign in to Festapp. Disconnecting it changes how you sign in, not connected apps’ permissions.",
+    "googleLinked": "Google sign-in is linked.",
+    "googleUnlinked": "Google sign-in is not linked.",
+    "linkGoogle": "Link Google",
+    "unlinkGoogle": "Unlink Google",
+    "googleUnavailable": "Google sign-in is currently unavailable.",
+    "apps": "Connected apps",
+    "appsHint": "These apps can act on your behalf within the selected scope. Removing access blocks their subsequent MCP requests.",
+    "empty": "You have no active app connections.",
+    "error": "Loading or updating failed. Try again.",
+    "revoke": "Remove access",
+    "revokeConfirm": "Remove access for {client}? Further requests will be blocked. Changes already made will remain.",
+    "cancel": "Cancel",
+    "expires": "Expires {date}",
+    "organizer": "Organizer #{id}: current and future events",
+    "organizerCreate": "Organizer #{id}: current and future events, including creating new events within your rights",
+    "occasion": "Individual event #{id}",
+    "loginHint": "Sign in to your account to manage connections.",
+    "revoked": "App access has been removed."
   }
 }

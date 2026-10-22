@@ -361,7 +361,9 @@
     "reinviteConfirm": "Einige Benutzer wurden bereits eingeladen. Möchtest du sie erneut einladen und einen neuen Anmeldecode senden?",
     "inviteInfo": "Benutzer erhalten einen Anmeldecode per E-Mail.",
     "welcomeIn": "Willkommen in {name}!",
-    "resetPasswordProceedConfirm": "Sie erhalten eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts. Möchten Sie fortfahren?"
+    "resetPasswordProceedConfirm": "Sie erhalten eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts. Möchten Sie fortfahren?",
+    "accountConnections": "Kontoverbindungen",
+    "accountConnectionsHint": "Anmeldemethoden und App-Zugriff"
   },
   "OccasionServices": {
     "accommodation": "Unterkunft",
@@ -1715,9 +1717,7 @@
     "wholeOrganizerSelected": "Gesamter Veranstalter",
     "groupSelection": "Ausgewählte Veranstaltungen: {selected} von {count}",
     "inheritedSelectionHint": "Über den Veranstalter eingeschlossen. Heben Sie dessen Auswahl auf, um einzelne Veranstaltungen auszuwählen.",
-    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung.",
-    "manageConnections": "Verbundene Apps (MCP)",
-    "manageConnectionsHint": "Zugriff verwalten und Apps trennen"
+    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung."
   },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
@@ -2001,5 +2001,28 @@
     "noDecision": "Noch keine Einlassentscheidung erfasst.",
     "decide": "Einlass klären",
     "dashboard": "Stripe Dashboard öffnen"
+  },
+  "AccountConnections": {
+    "intro": "Verwalten Sie Ihre Anmeldung und die Apps, denen Sie Zugriff gewährt haben.",
+    "signInMethods": "Anmeldemethoden",
+    "googleHint": "Google dient zur Anmeldung bei Festapp. Das Trennen ändert die Anmeldung, nicht die Berechtigungen verbundener Apps.",
+    "googleLinked": "Die Google-Anmeldung ist verknüpft.",
+    "googleUnlinked": "Die Google-Anmeldung ist nicht verknüpft.",
+    "linkGoogle": "Google verknüpfen",
+    "unlinkGoogle": "Google trennen",
+    "googleUnavailable": "Die Google-Anmeldung ist derzeit nicht verfügbar.",
+    "apps": "Verbundene Apps",
+    "appsHint": "Diese Apps können im ausgewählten Umfang in Ihrem Namen handeln. Das Entfernen des Zugriffs blockiert weitere MCP-Anfragen.",
+    "empty": "Sie haben keine aktiven App-Verbindungen.",
+    "error": "Laden oder Ändern fehlgeschlagen. Versuchen Sie es erneut.",
+    "revoke": "Zugriff entfernen",
+    "revokeConfirm": "Zugriff für {client} entfernen? Weitere Anfragen werden blockiert. Bereits vorgenommene Änderungen bleiben bestehen.",
+    "cancel": "Abbrechen",
+    "expires": "Gültig bis {date}",
+    "organizer": "Veranstalter #{id}: aktuelle und zukünftige Veranstaltungen",
+    "organizerCreate": "Veranstalter #{id}: aktuelle und zukünftige Veranstaltungen sowie berechtigtes Erstellen neuer Veranstaltungen",
+    "occasion": "Einzelne Veranstaltung #{id}",
+    "loginHint": "Melden Sie sich an, um Verbindungen zu verwalten.",
+    "revoked": "Der App-Zugriff wurde entfernt."
   }
 }

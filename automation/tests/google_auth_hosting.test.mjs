@@ -20,11 +20,11 @@ test('Flutter map documents allow OSM identification without overriding callback
 });
 test('real generated hosting router chooses the correct callback adapter and disables proof caching',async()=>{
  const paths=[];const env={ASSETS:{fetch:async(request)=>{const p=new URL(request.url).pathname;paths.push(p);return new Response(p,{headers:{'content-type':'application/octet-stream'}});}}};
- for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient']]){
+ for(const [path,entry]of [['/google-auth','/webclient'],['/app/google-auth','/flutter'],['/settings/mcp-connect','/webclient'],['/settings/connections','/webclient']]){
   const response=await worker.fetch(new Request('https://tenant.invalid'+path+'?google_code=proof&google_attempt=fixture'),env);
   assert.equal(await response.text(),entry);assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.equal(response.headers.get('location'),null);
  }
- assert.deepEqual(paths,['/webclient','/flutter','/webclient']);
+ assert.deepEqual(paths,['/webclient','/flutter','/webclient','/webclient']);
  const aasa=await worker.fetch(new Request('https://tenant.invalid/.well-known/apple-app-site-association'),env);assert.equal(aasa.headers.get('content-type'),'application/json');
 });
 
@@ -63,4 +63,18 @@ test('Stripe private deep links reach Flutter before occasion lookup in both ten
  assert.equal(lookups, 0, 'Stripe routes are not occasion slugs');
  assert.equal(requests.length, 12);
  assert.ok(requests.every(url => url.pathname === '/flutter' && url.search === ''), 'private query values never reach asset requests');
+});
+
+
+test('account connections stay in the web client on app and ticketing tenants', async () => {
+ const policy=readFileSync(new URL('../../web_client/src/services/public_occasion_routes.js',import.meta.url),'utf8').replaceAll('export function ','function ');
+ for(const appSupported of [true,false]) {
+  const source=workerSource.replace('const IS_APP_SUPPORTED = true;',`const IS_APP_SUPPORTED = ${appSupported};`).replace('// PUBLIC_OCCASION_ROUTE_POLICY',policy);
+  const {default:current}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+  const env={ASSETS:{fetch:async request=>new Response(new URL(request.url).pathname)}};
+  const response=await current.fetch(new Request('https://tenant.invalid/settings/connections'),env);
+  assert.equal(response.status,200);assert.equal(await response.text(),'/webclient');
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
+ }
 });

@@ -1,3 +1,4 @@
+import { handleMcpManagement } from "./management.ts";
 import type { Session, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import type { McpTenant } from "./config.ts";
 import { issueExistingUserSession } from "../_shared/issueExistingUserSession.ts";
@@ -32,6 +33,9 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     const bytes = new Uint8Array(size); let offset = 0;
     for (const c of chunks) { bytes.set(c, offset); offset += c.length; }
     const body = JSON.parse(new TextDecoder().decode(bytes));
+    if (["connections.list", "connections.revoke"].includes(body?.operation)) {
+      return await handleMcpManagement(req, body, { config, admin, fetch: deps.fetch }, json);
+    }
     if (!/^[A-Za-z0-9_-]{43}$/.test(body.request) || !["details", "approve", "cancel", "status"].includes(body.operation)) throw new Error();
     const broker = async (payload: Record<string, unknown>) => {
       const result = await (deps.fetch ?? fetch)(`${config.issuer}/tenant-connection`, {

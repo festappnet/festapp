@@ -193,7 +193,37 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'connected' });
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
     assert.equal(result.isError, undefined);
-    f.storage.revoke(f.storage.values('Delegation')[0].id);
+    // Account management is independent of the consent request and password login.
+    const manage = (operation, extra = {}, secret = 'b'.repeat(43)) => fetch(f.issuer + '/tenant-connections', {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': secret },
+        body: JSON.stringify({ operation, accessToken: supabaseToken, tenantId: f.config.profile.tenantId,
+            organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }),
+    });
+    const own = f.storage.values('Delegation')[0];
+    f.storage.put('Delegation', 'foreign-grant', { ...own, id: 'foreign-grant', userId: 'other-user' });
+    f.storage.put('Delegation', 'foreign-profile', { ...own, id: 'foreign-profile', profileBinding: 'other-profile' });
+    const mintedBefore = f.calls.filter(c => c.url.pathname === '/auth/v1/token').length;
+    assert.equal((await manage('list', {}, 'wrong')).status, 403);
+    assert.equal((await manage('list', { organizationId: 999 })).status, 403);
+    assert.equal((await manage('list', { tenantOrigin: 'https://wrong.invalid' })).status, 403);
+    assert.notEqual((await manage('list', { accessToken: null })).status, 200);
+    assert.equal((await manage('list', { userId: 'other-user' })).status, 403);
+    const listed = await (await manage('list')).json();
+    assert.deepEqual(listed.connections.map(c => c.id), [own.id]);
+    assert.equal(listed.connections[0].client, 'ChatGPT fixture');
+    assert.deepEqual(listed.connections[0].permissions, ORDER_SCOPES);
+    assert.doesNotMatch(JSON.stringify(listed), /refresh_token|accessToken|profileBinding|binding|userId/);
+    assert.equal((await manage('revoke', { connectionId: 'foreign-grant' })).status, 403);
+    assert.equal((await manage('revoke', { connectionId: 'foreign-profile' })).status, 403);
+    assert.equal((await manage('revoke', { connectionId: 'missing' })).status, 403);
+    assert.equal((await f.browser('/connections')).headers.get('location'), f.config.tenantOrigin + '/settings/connections');
+    assert.deepEqual(await (await manage('revoke', { connectionId: own.id })).json(), { connectionId: own.id, revoked: true });
+    assert.deepEqual(await (await manage('revoke', { connectionId: own.id })).json(), { connectionId: own.id, revoked: true });
+    assert.deepEqual(await (await manage('list')).json(), { connections: [] });
+    assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, mintedBefore, 'management never creates a backend session');
+    assert.equal(f.storage.get('Backend', own.binding), undefined);
+    assert.equal((await fetch(f.config.resource, { method: 'POST', headers: { authorization: `Bearer ${tokens.access_token}`, 'content-type': 'application/json' }, body: '{}' })).status, 401);
+    assert.equal((await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({ client_id: 'chatgpt-fixture', grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource }) })).status, 400);
     assert.equal((await broker('status', { accessToken: supabaseToken })).status, 403);
 });
 
