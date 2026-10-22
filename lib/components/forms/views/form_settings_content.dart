@@ -233,8 +233,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _stripeRecipientFailed = false;
       _stripeRecipientLoaded = false;
       _stripeRecipientLoading = false;
-      if ((widget.showCardPayments ?? StripeFeature.visible) &&
-          _stripeConnectionId != null) _loadStripeRecipient();
+      if (widget.showCardPayments ?? StripeFeature.visible) {
+        _loadStripeRecipient();
+      }
 
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
@@ -763,6 +764,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       Text(PaymentMethodStrings.text('title'),
           style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 12),
+      if (_stripeRecipientLoading) const LinearProgressIndicator(),
+      if (_stripeRecipientFailed)
+        Text(PaymentMethodStrings.reason('unavailable'))
+      else if (recipient == null && _stripeRecipientLoaded)
+        Text(PaymentMethodStrings.reason('not_configured')),
+      if (compatibility != null)
+        Text(PaymentMethodStrings.reason(compatibility)),
       PaymentMethodCards(
         value: cardEnabled
             ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.stripe)
@@ -790,17 +798,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       Text(PaymentMethodStrings.text('stripe'),
           style: Theme.of(context).textTheme.titleSmall),
       const SizedBox(height: 8),
-      if (_stripeRecipientLoading) const LinearProgressIndicator(),
       if (!_stripeRecipientLoaded || _stripeRecipientFailed)
         TextButton(
             onPressed: _stripeRecipientLoading ? null : _loadStripeRecipient,
             child: Text(PaymentMethodStrings.text('checkAccount'))),
-      if (_stripeRecipientFailed)
-        Text(PaymentMethodStrings.reason('unavailable'))
-      else if (recipient == null && _stripeRecipientLoaded)
-        Text(PaymentMethodStrings.reason('not_configured')),
-      if (compatibility != null)
-        Text(PaymentMethodStrings.reason(compatibility)),
       if (cardEnabled &&
           _stripeRecipientLoaded &&
           (recipient == null || candidate != _stripeConnectionId))

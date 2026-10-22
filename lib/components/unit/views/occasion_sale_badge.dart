@@ -93,7 +93,7 @@ class OccasionSaleBadge extends StatelessWidget {
       label: '$label. $detail',
       child: ExcludeSemantics(
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16),
+          IgnoreBaseline(child: Icon(icon, size: 16)),
           if (compactLabel != null) ...[
             const SizedBox(width: 4),
             Flexible(

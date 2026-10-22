@@ -595,11 +595,25 @@ void main() {
     final icon = tester.getRect(find.byIcon(Icons.lock_outline));
     final card = tester.getRect(find.byType(OccasionEditCard));
     final labelRect = tester.getRect(find.text('Pozastaveno'));
-    expect(labelRect.right, greaterThan(card.right - 24));
+    final surface = tester.getRect(find
+        .descendant(of: find.byType(Card), matching: find.byType(Material))
+        .first);
+    expect(labelRect.right, closeTo(surface.right - 40, 0.1));
     expect(icon.right, lessThan(labelRect.left));
     final dateRect =
         tester.getRect(find.byKey(const ValueKey('occasion-card-date')));
-    expect((labelRect.center.dy - dateRect.center.dy).abs(), lessThan(2));
+    final dateBox = tester.renderObject<RenderBox>(
+        find.byKey(const ValueKey('occasion-card-date')));
+    final labelBox = tester.renderObject<RenderBox>(find.text('Pozastaveno'));
+    expect(
+        labelRect.top +
+            labelBox.getDryBaseline(
+                BoxConstraints.tight(labelBox.size), TextBaseline.alphabetic)!,
+        closeTo(
+            dateRect.top +
+                dateBox.getDryBaseline(BoxConstraints.tight(dateBox.size),
+                    TextBaseline.alphabetic)!,
+            0.1));
     expect(labelRect.top, greaterThanOrEqualTo(card.top + 12));
     expect(dateRect.right, lessThanOrEqualTo(icon.left));
     expect(icon.top, greaterThanOrEqualTo(card.top + 12));
@@ -777,10 +791,17 @@ void main() {
         final label = find.text('Prodej za 3 dny');
         expect(label, findsOneWidget);
         final date = find.byKey(const ValueKey('occasion-card-date'));
+        final labelBox = tester.renderObject<RenderBox>(label);
+        final dateBox = tester.renderObject<RenderBox>(date);
         expect(
-            (tester.getRect(label).center.dy - tester.getRect(date).center.dy)
-                .abs(),
-            lessThan(2));
+            tester.getRect(label).top +
+                labelBox.getDryBaseline(BoxConstraints.tight(labelBox.size),
+                    TextBaseline.alphabetic)!,
+            closeTo(
+                tester.getRect(date).top +
+                    dateBox.getDryBaseline(BoxConstraints.tight(dateBox.size),
+                        TextBaseline.alphabetic)!,
+                0.1));
         expect(tester.getRect(label).overlaps(tester.getRect(date)), isFalse);
         expect(
             tester
@@ -887,10 +908,29 @@ void main() {
                 .didExceedMaxLines,
             isFalse);
         final rect = tester.getRect(find.text(label));
-        final card = tester.getRect(
-            find.ancestor(of: find.text(label), matching: find.byType(Card)));
+        final card = tester.getRect(find
+            .descendant(
+                of: find.ancestor(
+                    of: find.text(label), matching: find.byType(Card)),
+                matching: find.byType(Material))
+            .first);
         expect(rect.top, greaterThanOrEqualTo(card.top + 12));
-        expect(rect.right, lessThanOrEqualTo(card.right - 8));
+        expect(rect.right, closeTo(card.right - 40, 0.1));
+        final date = find.descendant(
+            of: find.ancestor(
+                of: find.text(label), matching: find.byType(Card)),
+            matching: find.byKey(const ValueKey('occasion-card-date')));
+        final labelBox = tester.renderObject<RenderBox>(find.text(label));
+        final dateBox = tester.renderObject<RenderBox>(date);
+        expect(
+            rect.top +
+                labelBox.getDryBaseline(BoxConstraints.tight(labelBox.size),
+                    TextBaseline.alphabetic)!,
+            closeTo(
+                tester.getRect(date).top +
+                    dateBox.getDryBaseline(BoxConstraints.tight(dateBox.size),
+                        TextBaseline.alphabetic)!,
+                0.1));
       }
       expect(tester.takeException(), isNull);
       if (const bool.fromEnvironment('OCCASION_CARD_PREVIEW')) {
