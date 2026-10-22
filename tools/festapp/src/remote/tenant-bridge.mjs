@@ -1,9 +1,9 @@
-import { verifySelection } from '../operations/access.mjs';
+import { verifyConsent } from './consent.mjs';
 import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { digest } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
-import { READ_SCOPE } from './config.mjs';
+import { READ_SCOPE, ORDER_SCOPES } from './config.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' &&
@@ -67,13 +67,13 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         }));
         const client = config.clients.find(c => c.id === flow.clientId);
         if (operation === 'details') return res.json({ client: client.name, scope: READ_SCOPE,
-            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, expiresAt: flow.expiresAt });
-        const selected = verifySelection(req.body.access, proof.available, flow.canRequestCreate === true);
+            tenantOrigin: config.tenantOrigin, applicationType: client.applicationType, ...proof.available, canRequestCreate: flow.canRequestCreate === true, requestedPermissions: flow.requestedPermissions ?? [], expiresAt: flow.expiresAt });
+        const { selected, permissions } = verifyConsent(req.body.access, proof.available, flow.canRequestCreate === true, flow.requestedPermissions ?? []);
         // Re-read after remote authorization so concurrent approval cannot fork a mint.
         check(read(request).flow.state === 'pending', 'FORBIDDEN');
         const lease = nonce();
         save(uid, { ...flow, state: 'preparing', lease, userId: proof.userId,
-            selected });
+            selected, permissions });
         return res.json({ lease, userId: proof.userId, organizationId: config.profile.organizationId });
     });
     app.get('/connect/:uid/finish', async (req, res) => {
@@ -93,7 +93,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         let request = flow.request;
         if (!request) {
             request = nonce();
-            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), expiresAt: Date.now() + 600000 };
+            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), requestedPermissions: ORDER_SCOPES.filter(scope => String(d.params.scope ?? '').split(' ').includes(scope)), expiresAt: Date.now() + 600000 };
             save(d.uid, pending);
             storage.put('TenantRequest', digest(request), { uid: d.uid }, 600);
         }

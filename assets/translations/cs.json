@@ -3667,7 +3667,13 @@
     "selectionLimit": "Vybrat lze nejvýše 100 akcí. Vyberte jednotlivé akce, nebo výslovně povolte přístup k celému pořadateli.",
     "organizerCreateHint": "Současné i budoucí akce a zakládání nových. Nové akce budou skryté, se zavřeným prodejem.",
     "organizerReadHint": "Současné i budoucí akce. Tento přístup neumožňuje zakládat nové akce.",
-    "individualOnlyHint": "K dispozici máš pouze výběr jednotlivých akcí."
+    "individualOnlyHint": "K dispozici máš pouze výběr jednotlivých akcí.",
+    "orderPermissions": "Oprávnění k objednávkám",
+    "orderPermissionsHint": "Platí jen pro vybrané pořadatele a akce. Úpravy, platby i odesílání zahrnují také čtení objednávek.",
+    "ordersRead": "Číst objednávky, kontaktní údaje a počty vstupenek",
+    "ordersWrite": "Měnit údaje a položky objednávek a stornovat je",
+    "paymentsWrite": "Zapisovat ruční platby a označovat objednávky jako zaplacené",
+    "ticketsSend": "Odesílat zákazníkům vstupenky e-mailem"
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",

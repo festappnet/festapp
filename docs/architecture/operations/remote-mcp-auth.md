@@ -102,11 +102,67 @@ MCP bearer to Supabase. Existing SQL/RPC permissions remain the final domain
 authority. The OAuth grant narrows access; the stored ordinary Supabase session
 is not claimed to be a cryptographically read-only credential.
 
-Only `festapp:ticket-layouts:read` is admitted. It maps to `context.inspect` and
-`ticket_layouts.inspect` in the existing shared `Operations` catalog. Hidden
-tools are not the boundary: invocation checks the operation and occasion before
-any backend call. No remote preview/quota consumption, saves, sales, issued
-tickets, orders, arbitrary RPC, payment or mail action is admitted.
+The base scope `festapp:ticket-layouts:read` maps to context, access and
+artwork reads. Additional capabilities require separately requested and
+explicitly approved permissions:
+
+| OAuth permission | MCP operations |
+|---|---|
+| `festapp:orders:read` | `orders.report`, `orders.list`, `orders.inspect` |
+| `festapp:orders:write` | `orders.update`, `orders.cancel` |
+| `festapp:payments:write` | `orders.mark_paid`, `payments.record` |
+| `festapp:tickets:send` | `orders.send_tickets` |
+
+Editing, payment and mail permissions also require order reading. The web
+consent checkboxes start unchecked and describe customer contact data, changes,
+manual payments and ticket mail. Both the persisted consent and the current
+OAuth token must carry every required permission. Old grants and refreshes never
+acquire them. The configured native Flutter/standalone consent retains its
+original capabilities until it explicitly implements these choices.
+
+The existing Edge broker forwards a versioned opaque consent envelope through
+its unchanged `access` field: `{consentVersion: 2, selection, permissions}`.
+Only the issuer interprets it. It persists normalized membership `access` and
+functional `permissions` separately. Existing membership-only consent remains
+valid with no order permissions. Tenant, actor, request, lease and organization
+remain pinned by the original verified-session exchange.
+
+### Order module and canonical owners
+
+`operations/orders.mjs` owns the bounded tool input/output contracts and the RPC
+adapter. `operator_orders.sql` binds the selected event and organizer in the
+same transaction as a read, command or receipt replay. The ordinary actor still
+needs canonical order-read/write or organizer-manager rights. A moved event,
+foreign order or revoked role fails closed. Internal projections have no public
+execution grants. The existing administration and operator reads share
+`get_order_allowed_actions_internal_v1`; state/Stripe/waitlist rules cannot drift
+between these projections.
+
+Reports reuse `get_report_ws`, including distinct ticket counts, state counts
+and amounts by currency. One order can contain several people. Valid totals
+exclude cancelled/waitlisted tickets; the separate waiting count does not infer
+admission. Lists are cursor-paginated, at most 50 rows, and details expose the
+IDs/field definitions needed for approved edits. QR symbols, form access keys,
+Auth credentials and raw backend records are not returned.
+
+Writes require explicit approval, the inspected order revision and one command
+UUID bound to the exact payload. The adapter uses the existing canonical
+mutation receipts, not a new ledger. Stale revisions return a receipted conflict;
+reload and renewed approval are required. A lost response must retry the same
+UUID and payload. Expired or mismatched receipts cannot be replaced silently.
+Product changes and cancellation call the existing receipted domain commands;
+other operations reuse the canonical response/note, paid-state, manual
+transaction/pairing and mail-queue owners. No alternate pricing, payment matcher,
+capacity allocator, order state machine, persistent trigger or email sender is
+introduced.
+
+Manual payment recording is a positive cash transaction in the order currency;
+manager rights and canonical pairing still apply. Marking paid only changes the
+administration state and does not invent a provider charge or bank movement.
+Card-payment guards remain authoritative. Ticket delivery targets the saved
+buyer email and returns `delivery: queued` with the message ID; this proves an
+intent, not provider acceptance/delivery. Canonical automatic mail effects of
+product/payment/cancellation commands remain intact and use the global queue.
 
 ## Storage, lifecycle and isolation
 

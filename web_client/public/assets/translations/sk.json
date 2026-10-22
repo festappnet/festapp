@@ -1390,6 +1390,12 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer.",
     "organizerCreateHint": "Súčasné aj budúce akcie a zakladanie nových. Nové akcie budú skryté, s uzavretým predajom.",
     "organizerReadHint": "Súčasné aj budúce akcie. Tento prístup neumožňuje zakladať nové akcie.",
-    "individualOnlyHint": "K dispozícii máš iba výber jednotlivých akcií."
+    "individualOnlyHint": "K dispozícii máš iba výber jednotlivých akcií.",
+    "orderPermissions": "Oprávnenia k objednávkam",
+    "orderPermissionsHint": "Platí len pre vybraných organizátorov a akcie. Úpravy, platby aj odosielanie zahŕňajú čítanie objednávok.",
+    "ordersRead": "Čítať objednávky, kontaktné údaje a počty vstupeniek",
+    "ordersWrite": "Meniť údaje a položky objednávok a stornovať ich",
+    "paymentsWrite": "Zapisovať ručné platby a označovať objednávky ako zaplatené",
+    "ticketsSend": "Odosielať zákazníkom vstupenky e-mailom"
   }
 }

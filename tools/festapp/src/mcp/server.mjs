@@ -25,7 +25,7 @@ export function createServer(operations) {
                 } : {}),
                 annotations: {
                     readOnlyHint: operation.domainReadOnly,
-                    destructiveHint: false,
+                    destructiveHint: operation.destructive ?? false,
                     idempotentHint: operation.idempotent ?? operation.domainReadOnly,
                     openWorldHint: true,
                 },

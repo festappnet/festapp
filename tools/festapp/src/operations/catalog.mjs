@@ -1,3 +1,4 @@
+import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
 import { operatorAccess, accessProjection } from './access.mjs';
 import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +31,7 @@ const projection = z
     })
     .strict();
 const dataSchemas = {
+    ...orderDataSchemas,
     'occasions.create': occasionCreateResult,
     'access.inspect': accessProjection,
     'context.inspect': z.strictObject({
@@ -100,6 +102,7 @@ const resultSchema = (id) =>
         meta: metaSchema,
     });
 const descriptors = [
+    ...orderDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
@@ -179,6 +182,7 @@ export class Operations {
                 (descriptor) =>
                     (!this.owner.allowedOperations || this.owner.allowedOperations.includes(descriptor.id)) &&
                     (!descriptor.requiresLayoutWriteContract || this.writeReady) &&
+                    (!descriptor.requiresDelegatedAccess || this.owner.allowedOperations?.includes(descriptor.id) === true) &&
                     (!descriptor.requiresDelegatedCreate || this.owner.allowedOperations?.includes('occasions.create') === true),
             )
             .map((descriptor) => ({
@@ -277,9 +281,10 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady || this.owner.allowedOperations?.includes('occasions.create') === true,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || orderDescriptors.some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (orderDataSchemas[id]) data = await invokeOrderOperation(this.owner, client, id, args);
                 else if (id === 'occasions.create') data = await createOccasion(client, this.owner.profile, args, { delegated: Boolean(this.owner.delegatedContext) });
                 else if (id === 'ticket_layouts.save') {
                     await this.inspect(client, args.occasionId); // Permission only; never replace the original version.
