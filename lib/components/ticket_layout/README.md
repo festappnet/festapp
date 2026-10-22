@@ -438,3 +438,17 @@ The local resource cutover and remaining release gates are recorded in
 The higher preview CPU budget remains intentionally enabled by the user's
 2026-10-22 instruction. The email worker budget and recursive runtime assets
 remain unchanged.
+
+### Action palette for gallery artwork
+
+New template selections use the draft's concrete `appearance.primary`,
+`appearance.secondary` and `appearance.gradient` values. Presets only populate
+these values; they never select a precolored image. Both preset and custom
+palettes produce the same bounded `palette-<primary>-<secondary>-<template>-v1.png`
+builtin resource ID. Solid styles supply the primary color for both inks.
+`TicketPreviewAssets` renders it locally and `galleryBackground` renders the
+same original artwork for PDF output; pixel parity is tested. Selection and
+subsequent palette edits persist that resource ID as the ticket background.
+Silk photographs retain their authored colors, and text/QR retain the neutral
+contrast rules. Previously published `theme-*` images remain immutable readers
+for already saved layouts; no new selection or generator emits those variants.

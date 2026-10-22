@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 
 import '../../ticket_layout/models/ticket_layout.dart';
+import '../../ticket_layout/ticket_theme_color.dart';
 
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
@@ -28,58 +29,18 @@ class OccasionSetupAppearance {
     if (key == 'silk_light') return '${root}style-silk-v2.png';
     if (key == 'silk_dark') return '${root}style-silk-dark-v2.png';
     if (themedArtwork.contains(key)) {
-      for (final preset in presets) {
-        if (preset['id'] == appearance['id'] ||
-            (preset['primary'] == appearance['primary'] &&
-                preset['secondary'] == appearance['secondary'])) {
-          final version = preset['id'] == 'soft' ? 'v2' : 'v1';
-          return '${root}theme-${preset['id']}-${key.replaceAll('_', '-')}-$version.png';
-        }
-      }
+      final secondary = appearance['gradient'] == true
+          ? appearance['secondary']
+          : appearance['primary'];
+      return '${root}palette-${appearance['primary']}-${secondary}-$key-v1.png';
     }
     return null;
   }
 
   // Same luminance-preserving palette as ticketThemePalette.js. Recoloring ink
   // and paper together preserves each original design's contrast and structure.
-  static String themeColor(String hex, Map appearance) {
-    List<double> channels(String value) => [0, 2, 4]
-        .map((i) => int.parse(value.substring(i, i + 2), radix: 16).toDouble())
-        .toList();
-    double luminance(List<double> rgb) {
-      final linear = rgb.map((v) {
-        final c = v / 255;
-        return c <= .04045
-            ? c / 12.92
-            : math.pow((c + .055) / 1.055, 2.4).toDouble();
-      }).toList();
-      return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
-    }
-
-    final source = channels(hex), desired = luminance(source);
-    if (source.reduce(math.max) - source.reduce(math.min) < 8 &&
-        (desired > .94 || desired < .002)) return hex.toUpperCase();
-    final warm = source[0] > source[1] * 1.03 && source[0] > source[2] * 1.12;
-    final target = channels(appearance[warm ? 'secondary' : 'primary']),
-        end = luminance(target) < desired ? 255.0 : 0.0;
-    var low = 0.0, high = 1.0;
-    for (var i = 0; i < 24; i++) {
-      final blend = (low + high) / 2,
-          rgb = target.map((c) => c + (end - c) * blend).toList();
-      if ((luminance(rgb) < desired) == (end == 255)) {
-        low = blend;
-      } else {
-        high = blend;
-      }
-    }
-    return target
-        .map((c) => (c + (end - c) * (low + high) / 2)
-            .round()
-            .toRadixString(16)
-            .padLeft(2, '0'))
-        .join()
-        .toUpperCase();
-  }
+  static String themeColor(String hex, Map appearance) =>
+      ticketThemeColor(hex, appearance['primary'], appearance['secondary']);
 
   static const fonts = {
     'Roboto':

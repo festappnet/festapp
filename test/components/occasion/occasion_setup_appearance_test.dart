@@ -51,7 +51,7 @@ void main() {
           entry.value);
       expect(
           OccasionSetupAppearance.ticketBackground('concert_stub', appearance),
-          contains('theme-gala-concert-stub'));
+          contains('palette-14284B-A87F28-concert_stub'));
     }
     expect(
         OccasionSetupAppearance.presets

@@ -18,3 +18,34 @@ Deno.test('ticket text is neutral and QR black on white in every theme, includin
   }
  }
 });
+
+Deno.test('preset and custom palettes share one persistent artwork path and renderer', async () => {
+ const {galleryBackground,galleryBackgrounds}=await import('./ticketGallery.ts');
+ const {themedTicketBackground,ticketThemeColor}=await import('./ticketTheme.ts');
+ const {PNG}=await import('npm:pngjs@5.0.0');
+ const {Buffer}=await import('node:buffer');
+ const proofs=[];
+ for(const [primary,secondary] of [['14284B','A87F28'],['198A61','DE5734']]) {
+  for(const key of ['concert_stub','club_panorama']) {
+   const url=themedTicketBackground(key,primary,secondary,galleryBackgrounds[key])!;
+   assert(url.includes(`/palette-${primary}-${secondary}-${key}-v1.png`));
+   const bytes=(await galleryBackground(url))!;
+   const png=PNG.sync.read(Buffer.from(bytes));
+   const original=PNG.sync.read(Buffer.from((await galleryBackground(galleryBackgrounds[key]!))!));
+   assertEquals([png.width,png.height],[original.width,original.height]);
+   const checked=new Set<number>();
+   for(let i=0;i<original.data.length;i+=4){
+    const rgb=(original.data[i]<<16)|(original.data[i+1]<<8)|original.data[i+2];
+    if(checked.has(rgb))continue;checked.add(rgb);
+    assertEquals(Buffer.from(png.data.subarray(i,i+3)).toString('hex').toUpperCase(),ticketThemeColor(rgb.toString(16).padStart(6,'0'),primary,secondary));
+   }
+   const rgbaSha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',png.data))).map(x=>x.toString(16).padStart(2,'0')).join('');
+   proofs.push({key,primary,secondary,url,width:png.width,height:png.height,rgbaSha});
+  }
+ }
+ const out=Deno.env.get('TICKET_CUSTOM_ARTWORK_EVIDENCE');
+ if(out)await Deno.writeTextFile(out,JSON.stringify(proofs));
+ for(const bad of ['https://img.festapp.net/ticket-presets/v1/palette-198A61-DE5734-unknown-v1.png','https://img.festapp.net/ticket-presets/v1/palette-not-a-palette.png']) {
+  let denied=false;try{await galleryBackground(bad);}catch{denied=true;}assert(denied);
+ }
+});

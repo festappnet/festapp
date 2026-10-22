@@ -3,10 +3,9 @@ import {legacyFontIds} from './ticketFonts.ts';
 import type {Template} from './ticketLayout.ts';
 export {ticketThemeColor,ticketThemePalettes};
 const root='https://img.festapp.net/ticket-presets/v1/';
-export function themedTicketBackground(key:string,style:string,original:string|null):string|null {
- const name=key.replaceAll('_','-');
- return style in ticketThemePalettes && themedTicketArtwork.includes(name)
-  ? `${root}theme-${style}-${name}-${style==='soft'?'v2':'v1'}.png`:original;
+export function themedTicketBackground(key:string,primary:string,secondary:string,original:string|null):string|null {
+ return themedTicketArtwork.includes(key.replaceAll('_','-'))
+  ? `${root}palette-${primary}-${secondary}-${key}-v1.png`:original;
 }
 export function themeTicketTemplate(raw:Template,primary:string,secondary:string,fontId:string,key:string):Template {
  const t=structuredClone(raw), color=(hex:string)=>ticketThemeColor(hex,primary,secondary);

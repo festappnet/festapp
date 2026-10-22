@@ -1,7 +1,6 @@
 // Deterministic, dependency-free print gradients. Silk is an authored image.
 import { deflateSync } from 'node:zlib';
 import { writeFileSync } from 'node:fs';
-import {ticketThemeColor,ticketThemePalettes} from '../../supabase/functions/_shared/ticketThemePalette.js';
 const destination = new URL('../../supabase/functions/_shared/ticket-assets/backgrounds/', import.meta.url);
 function chunk(type, data) {
   const payload = Buffer.concat([Buffer.from(type), data]);
@@ -32,13 +31,11 @@ for (const [name, colors] of Object.entries(palettes)) {
 }
 
 // Code-native graphic furniture, with no event text baked into the artwork.
-const graphicSources=new Map();
-function graphic(name, w, h, base, paint, version='v3', palette=null) {
-  if(!palette)graphicSources.set(name,{w,h,base,paint});
+function graphic(name, w, h, base, paint, version='v3') {
   const colorCache=new Map();
   const scale=8, width=Math.round(w*scale),height=Math.round(h*scale);
   const pixels=Buffer.alloc((width*3+1)*height);
-  const rgb=hex=>{if(!colorCache.has(hex)){const value=palette?ticketThemeColor(hex,...palette):hex;colorCache.set(hex,[0,2,4].map(i=>parseInt(value.slice(i,i+2),16)));}return colorCache.get(hex);};
+  const rgb=hex=>{if(!colorCache.has(hex)){const value=hex;colorCache.set(hex,[0,2,4].map(i=>parseInt(value.slice(i,i+2),16)));}return colorCache.get(hex);};
   const put=(x,y,color)=>{if(x<0||y<0||x>=width||y>=height)return;const offset=y*(width*3+1)+1+x*3;for(let c=0;c<3;c++)pixels[offset+c]=color[c];};
   const rect=(x,y,rw,rh,hex)=>{const c=rgb(hex);for(let py=Math.max(0,Math.round(y*scale));py<Math.min(height,Math.round((y+rh)*scale));py++)for(let px=Math.max(0,Math.round(x*scale));px<Math.min(width,Math.round((x+rw)*scale));px++)put(px,py,c);};
   const line=(x,y,length,hex,vertical=false,dashed=false)=>{for(let d=0;d<length;d+=.125)if(!dashed||Math.floor(d/1.5)%2===0)rect(x+(vertical?0:d),y+(vertical?d:0),vertical?.15:.125,vertical?.125:.15,hex);};
@@ -100,9 +97,5 @@ graphic('workshop-card',148,105,'FCFBF5',({rect,line})=>{
 });
 
 
-// Reuse each original composition, rules and blocks; only its ink palette varies.
-for(const [style,palette] of Object.entries(ticketThemePalettes)) {
- for(const [name,source] of graphicSources) {
-  graphic(`theme-${style}-${name}`,source.w,source.h,source.base,source.paint,style==='soft'?'v2':'v1',palette);
- }
-}
+// Action palettes are applied at render time by the shared ticket theme contract.
+// Previously published theme-* images remain immutable saved-layout resources.

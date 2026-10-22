@@ -12,6 +12,7 @@
     "npm:jose@6.1.3": "6.1.3",
     "npm:linebreak@1.1.0": "1.1.0",
     "npm:pdf-lib@*": "1.17.1",
+    "npm:pngjs@5.0.0": "5.0.0",
     "npm:qrcode@*": "1.5.4",
     "npm:standardwebhooks@1.0.0": "1.0.0",
     "npm:undici@6.29.1": "6.29.1",

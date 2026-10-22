@@ -38,6 +38,11 @@ BEGIN
  END IF;
  RETURN jsonb_build_object('revision',d.revision,'title',coalesce(nullif(d.data->>'title',''),'Ukázková událost'),
   'tone',tone,'replyTo',reply_to,'resolved',resolved,
+  'deadlineDurationSeconds',coalesce(nullif(d.data#>>'{formDraft,deadline_duration_seconds}','')::numeric,nullif(d.data->>'deadline','')::numeric*86400),
+  'paymentInfo',(SELECT jsonb_build_object('account_number',b.account_number,
+    'account_number_human_readable',coalesce(nullif(b.account_number_human_readable,''),b.account_number))
+    FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
+    WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH'),
   'ticketsEnabled',coalesce((d.data->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false)),
   'sampleProducts',coalesce((SELECT jsonb_agg(p) FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f CROSS JOIN LATERAL (SELECT p FROM jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p WHERE NOT coalesce((p->>'is_hidden')::boolean,false) LIMIT 1) products(p) WHERE NOT coalesce((f->>'is_hidden')::boolean,false)),'[]'::jsonb),
   'has_custom_template',coalesce((resolved->'template'->>'occasion') IS NOT NULL

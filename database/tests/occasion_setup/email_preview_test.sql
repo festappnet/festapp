@@ -3,7 +3,7 @@
 GRANT EXECUTE ON FUNCTION public.assert_false(boolean,text), public.assert_true(boolean,text), public.assert_eq(anyelement,anyelement,text) TO authenticated;
 DO $$
 DECLARE actor uuid; org bigint; target bigint; source bigint; foreign_org bigint; foreign_unit bigint;
- draft uuid:=gen_random_uuid(); foreign_draft uuid:=gen_random_uuid(); result jsonb; template_id bigint;
+ draft uuid:=gen_random_uuid(); foreign_draft uuid:=gen_random_uuid(); result jsonb; template_id bigint; bank_id bigint; foreign_bank bigint;
 BEGIN
  PERFORM public.create_user_for_test('email_preview_editor','email_preview_editor@test.local');
  actor:=public.get_user_id('email_preview_editor');
@@ -24,6 +24,12 @@ BEGIN
   VALUES('TICKET_ORDER_CONFIRMATION','Source subject','Source static text',source,target,org) RETURNING id INTO template_id;
  INSERT INTO public.email_wrappers(unit,organization,html) VALUES(target,org,'<destination>{{content}}</destination>');
  INSERT INTO public.email_wrappers(occasion,unit,organization,html) VALUES(source,target,org,'<source>{{content}}</source>');
+ INSERT INTO eshop.bank_accounts(title,type,account_number,account_number_human_readable,supported_currencies)
+  VALUES('Preview payment fixture','OTHER','CZ6508000000192000145399','19-2000145399/0800',ARRAY['CZK']) RETURNING id INTO bank_id;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(target,bank_id,0);
+ INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
+  VALUES('Foreign payment fixture','OTHER','CZ6508000000192000145399',ARRAY['CZK']) RETURNING id INTO foreign_bank;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) VALUES(foreign_unit,foreign_bank,0);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  EXECUTE 'SET LOCAL ROLE authenticated';
@@ -39,6 +45,18 @@ BEGIN
  BEGIN PERFORM public.get_occasion_setup_email_preview(foreign_draft,1); RAISE EXCEPTION 'Foreign draft accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.get_occasion_setup_email_preview(gen_random_uuid(),1); RAISE EXCEPTION 'Missing draft accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.get_occasion_setup_email_preview(draft,2); RAISE EXCEPTION 'Stale revision accepted'; EXCEPTION WHEN serialization_failure THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('bankAccountId',bank_id,'deadline','3') WHERE id=draft;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ result:=public.get_occasion_setup_email_preview(draft,1);
+ PERFORM assert_eq(result#>>'{paymentInfo,account_number}','CZ6508000000192000145399','Selected linked IBAN is displayed');
+ PERFORM assert_eq(result#>>'{paymentInfo,account_number_human_readable}','19-2000145399/0800','Complete account and bank code is displayed');
+ PERFORM assert_eq((result->>'deadlineDurationSeconds')::numeric,259200::numeric,'Configured payment deadline is projected');
+ EXECUTE 'RESET ROLE';
+ UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('bankAccountId',foreign_bank) WHERE id=draft;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ result:=public.get_occasion_setup_email_preview(draft,1);
+ PERFORM assert_true(result->'paymentInfo'='null'::jsonb,'Foreign unit bank details cannot enter preview');
  EXECUTE 'RESET ROLE';
  UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('sourceId',source,'copyEmails',true,'communicationTone','formal','replyToMode','custom','replyToEmail','draft@example.invalid') WHERE id=draft;
  EXECUTE 'SET LOCAL ROLE authenticated';

@@ -24,7 +24,7 @@ for(const [style,palette] of Object.entries(ticketThemePalettes)) {
  await Deno.writeFile(`${out}/font-${style}.ttf`,await Deno.readFile(new URL(font.file,assets)));
  for(const [key,raw] of Object.entries(ticketGallery())) {
   const template=themeTicketTemplate(raw,palette[0],palette[1],fid,key);
-  const background=themedTicketBackground(key,style,galleryBackgrounds[key]??null);
+  const background=themedTicketBackground(key,palette[0],palette[1],galleryBackgrounds[key]??null);
   const resources=await loadLayoutResources(occasion,{ticket_type:'wide',layout:{schemaVersion:3,templates:{wide:template}},background});
   const scenarios=Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,occasion,products)]));
   const data=sampleData('normal',occasion,products,template);
