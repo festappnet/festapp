@@ -81,7 +81,8 @@ try {
     'client sync runtime config must not be part of the app-shell precache');
   assert.ok(coreUrls.includes('/main.dart.js'));
   assert.ok(coreUrls.includes('/flutter?pwa-cache=1'));
-  assert.ok(coreUrls.includes('/pro-poradatele'));
+  assert.ok(!coreUrls.includes('/pro-poradatele'));
+  assert.match(worker,/const ORGANIZER_HOMEPAGE = true;/);
   assert.ok(coreUrls.includes('/privacy/'),
     'standalone documents must be available before their first navigation');
   assert.ok(coreUrls.includes('/main.dart.js_7.part.js'),
@@ -205,6 +206,8 @@ try {
       }
       if (!networkAvailable) throw new Error('offline');
       networkCalls++;
+      if (url === 'https://app.test/') return new Response('<html>live organizers</html>');
+      if (url.includes('/organizers-media/') || url.includes('/web-assets/landing-')) return new Response('streamed marketing');
       if (url.includes('/settings/mcp-connect')) {
         assert.equal(options?.cache, 'no-store');
         return new Response('online consent');
@@ -295,8 +298,8 @@ try {
     const request = new Request('https://app.test' + pathname);
     Object.defineProperty(request, 'mode', { value: 'navigate' });
     const response = await dispatchFetch(request, '', 'organizer-tab');
-    assert.equal(await response.text(), '<html>organizers</html>',
-      'organizer navigation must retain its document under an active offline worker');
+    assert.equal(response.status,308);
+    assert.equal(response.headers.get('location'),'https://app.test/');
   }
   const freshAssetResponse = await dispatchFetch(
     new Request('https://app.test/assets/translation.json'),
@@ -718,6 +721,17 @@ try {
   networkAvailable = true;
   assert.equal(await (await dispatchFetch(consent)).text(), 'online consent');
 
+  const marketingRoot = new Request('https://app.test/');
+  Object.defineProperty(marketingRoot,'mode',{value:'navigate'});
+  assert.equal(await (await dispatchFetch(marketingRoot,'','marketing-client')).text(),'<html>live organizers</html>');
+  for (const target of ['/organizers-media/demo.mp4','/web-assets/landing-proof.js']) {
+    assert.equal(await (await dispatchFetch(new Request('https://app.test'+target),'unreported-marketing-client')).text(),'streamed marketing');
+    assert.ok(!cachedPuts.some(url=>url.includes(target)));
+  }
+  const catalogue = new Request('https://app.test/events'); Object.defineProperty(catalogue,'mode',{value:'navigate'});
+  assert.equal(await (await dispatchFetch(catalogue)).text(),'<html>generic event list</html>');
+  networkAvailable=false;
+  assert.equal(await (await dispatchFetch(marketingRoot)).text(),'<html>generic event list</html>');
   console.log('pwa_offline.test: ok');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

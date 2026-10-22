@@ -16,6 +16,7 @@ if (analytics && (analytics.provider !== 'cloudflare' || !/^[a-f0-9]{32}$/.test(
 const beaconTag = analytics ? `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({token:analytics.token,spa:true})}'></script>` : '';
 const withAnalytics = html => html.replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["'][^>]*>[\s\S]*?<\/script>/gi, '').replace('</body>', () => beaconTag + '</body>');
 const jsonScript = value => JSON.stringify(value).replace(/</g, '\\u003c');
+const versionReport = value('VERSION') ? `<script>(()=>{const version=${jsonScript(value('VERSION'))};const report=()=>{try{navigator.serviceWorker?.controller?.postMessage({type:'FESTAPP_CLIENT_VERSION',version});}catch{}};try{navigator.serviceWorker?.addEventListener('controllerchange',report);navigator.serviceWorker?.addEventListener('message',event=>{if(event.data?.type==='FESTAPP_REPORT_VERSION')report();});}catch{}report();})();</script>` : '';
 const outputArg = process.argv.indexOf('--output');
 const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
 const index = path.join(root, 'web_client/index.html');
@@ -101,7 +102,7 @@ const html = `<!doctype html><html lang="cs"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}${beaconTag}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${versionReport}${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}${beaconTag}</body></html>\n`;
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, html);
