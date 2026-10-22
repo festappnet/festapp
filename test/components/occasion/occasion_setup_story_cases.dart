@@ -3,6 +3,38 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_story.dart';
 
 void main() {
+  test('active invalid prices never become a free order; hidden drafts survive',
+      () {
+    final product = <String, dynamic>{'price': 0};
+    final data = <String, dynamic>{
+      'formEnabled': true,
+      'formDraft': {
+        'fields': [
+          {
+            'type': 'product_type',
+            'product_type_data': {
+              'products': [product]
+            }
+          }
+        ]
+      }
+    };
+    for (final price in [0, 100, 1.5]) {
+      product['price'] = price;
+      expect(OccasionSetupStory.productPricesValid(data), isTrue);
+    }
+    for (final price in [-1, 'bad', 'NaN', 'Infinity']) {
+      product['price'] = price;
+      expect(OccasionSetupStory.productPricesValid(data), isFalse,
+          reason: '$price');
+    }
+    product['is_hidden'] = true;
+    expect(OccasionSetupStory.productPricesValid(data), isTrue);
+    product['is_hidden'] = false;
+    data['formEnabled'] = false;
+    expect(OccasionSetupStory.productPricesValid(data), isTrue);
+  });
+
   for (final appSupported in [true, false]) {
     group('story appSupported=$appSupported', () {
       test(

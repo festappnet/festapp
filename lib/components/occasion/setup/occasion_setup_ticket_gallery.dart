@@ -29,8 +29,11 @@ class _OccasionSetupTicketGalleryState
     extends State<OccasionSetupTicketGallery> {
   TicketLayoutResources? _resources;
   TicketLayoutResources? _styledResources;
-  late Future<TicketLayoutResources> _pending = _load();
+  // The loader can flush its parent's draft. Start after the build that mounts
+  // this gallery so that save-state notifications cannot run during build.
+  late Future<TicketLayoutResources> _pending = Future(_load);
   Future<TicketLayoutResources> _load() async {
+    if (!mounted) throw StateError('Gallery closed');
     final resources = await widget.loadResources();
     if (!mounted) {
       resources.dispose();
@@ -70,7 +73,7 @@ class _OccasionSetupTicketGalleryState
                   const Text('Náhledy vstupenek se nepodařilo načíst.'),
                   TextButton(
                       onPressed: () => setState(() {
-                            _pending = _load();
+                            _pending = Future(_load);
                           }),
                       child: const Text('Zkusit znovu')),
                 ]);

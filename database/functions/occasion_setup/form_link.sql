@@ -9,7 +9,7 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Draft access denied'; END IF;
  IF length(coalesce(p_title,''))>500 OR length(coalesce(p_requested_link,''))>80 THEN
   RAISE invalid_parameter_value USING MESSAGE='Invalid public link input'; END IF;
- base:=trim(both '_' from regexp_replace(public.f_unaccent(left(coalesce(p_title,''),500)),'[^a-z0-9_-]+','_','g'));
+ base:=trim(both '_' from regexp_replace(public.f_unaccent(left(coalesce(p_title,''),500)),'[^a-z0-9]+','_','g'));
  base:=trim(trailing '_' from left(base,64));
  IF base='' THEN base:='akce'; END IF;
  year:=substring(coalesce(d.data->>'start',d.data->>'start_time','') from '^([0-9]{4})-');

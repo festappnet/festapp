@@ -110,6 +110,16 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           initialValue: fontFamilies.contains(fontFamily) ? fontFamily : null,
           isExpanded: true,
           itemHeight: null,
+          selectedItemBuilder: (context) => [
+            for (final family in fontFamilies)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(family,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _fontStyle(family, theme.textTheme.bodyLarge)),
+              ),
+          ],
           decoration: const InputDecoration(
               labelText: 'Písmo', border: OutlineInputBorder()),
           items: [

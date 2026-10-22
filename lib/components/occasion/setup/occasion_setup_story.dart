@@ -94,6 +94,19 @@ class OccasionSetupStory {
       (data['bankAccountId'] as int) > 0 &&
       (data['bankAccountFingerprint'] as String? ?? '').isNotEmpty;
 
+  static bool productPricesValid(Map<String, dynamic> data) =>
+      _visibleFields(data).every((field) {
+        final type = field['product_type_data'];
+        if (type is! Map) return true;
+        return (type['products'] as List? ?? [])
+            .whereType<Map>()
+            .every((product) {
+          if (product['is_hidden'] == true) return true;
+          final price = num.tryParse('${product['price'] ?? 0}');
+          return price != null && price.isFinite && price >= 0;
+        });
+      });
+
   /// Validate only active price scheduling. Dormant choices survive backtracking
   /// without blocking a free event or a disabled form.
   static Set<String> pricingIssueKeys(Map<String, dynamic> data, DateTime now) {
