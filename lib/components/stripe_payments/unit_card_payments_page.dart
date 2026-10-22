@@ -254,6 +254,7 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
                 child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
+                        spacing: 12,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(StripeConnectionStrings.title,

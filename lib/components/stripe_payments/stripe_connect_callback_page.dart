@@ -97,13 +97,13 @@ class _StripeConnectCallbackViewState extends State<StripeConnectCallbackView> {
                   child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
+                          spacing: 16,
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(StripeConnectionStrings.text('callbackTitle'),
                                 style:
                                     Theme.of(context).textTheme.headlineSmall),
-                            const SizedBox(height: 24),
                             if (_busy) const LinearProgressIndicator(),
                             Semantics(
                                 liveRegion: true,
