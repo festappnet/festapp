@@ -1,17 +1,17 @@
 ALTER TABLE eshop.blueprints ADD COLUMN IF NOT EXISTS layout_text_resource_ids text[] NOT NULL DEFAULT '{}';
 -- Field definitions and shaping policy come from the core-generated metadata.
 
-REVOKE ALL ON FUNCTION public.blueprint_resolved_label_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_layout_text_requests_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 CREATE INDEX IF NOT EXISTS blueprint_text_resources_descriptor_idx ON public.blueprint_text_resources USING gin((payload->'descriptor') jsonb_path_ops);
 
-REVOKE ALL ON FUNCTION public.blueprint_canonical_text_resources_internal(jsonb,bigint,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.check_blueprint_text_resources_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_text_resource_ids_internal(p_layout jsonb,p_occasion bigint,p_setup_draft uuid DEFAULT NULL)
 RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -162,8 +162,6 @@ BEGIN
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
-
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;

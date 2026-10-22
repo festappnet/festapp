@@ -43,14 +43,14 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
  FROM due;
 $$;
-REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
+
+
 
 -- Customer-visible answers only; field definitions own scope and visibility.
 
-REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -145,5 +145,3 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;

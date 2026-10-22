@@ -1,0 +1,2 @@
+Stripe migration sources match
+Canonical source contract check passed.

@@ -112,11 +112,14 @@ BEGIN
  IF p_message.message_kind='order_storno' THEN RETURN true; END IF;
  IF v_order.state IN ('storno','expired','preparing_payment') THEN RETURN false; END IF;
  IF p_message.message_kind IN ('order_payment_notice','order_tickets') THEN
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_order.payment_info AND payment_method='stripe')
+   AND public.stripe_order_payment_projection_internal(v_order.id)->>'admissionState' IS DISTINCT FROM 'valid' THEN RETURN false; END IF;
   RETURN v_order.state IN ('paid','sent') AND v_order.email_payment_version=p_message.source_version
    AND (p_message.data->>'manual'='true' OR v_order.data->>'email'=p_message.recipient);
  END IF;
  IF p_message.message_kind='order_reminder' THEN
   SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
+  IF v_pi.payment_method='stripe' THEN RETURN false; END IF;
   SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
   SELECT * INTO v_form FROM public.forms WHERE id=v_order.form;
   SELECT x INTO v_feature FROM jsonb_array_elements(v_occ.features) x WHERE x->>'code'='form';

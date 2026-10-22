@@ -233,3 +233,267 @@ No published port or bind mount was used. The fixture and volume were removed,
 and no matching container remains. Existing databases and production were not
 modified. Originals, manifest, static/database proof scripts, checks and receipt:
 `/tmp/festapp-sql-domain-*`. Receipt SHA-256: `01f4e6c70e866ea9ea263c06c5d0b90582b5d4244aa900c0bd7e82d602e47d95`.
+
+## Follow-up 2026-10-22: bank, payment and order helpers
+
+Removed another **40 exact duplicate CREATE statements** across five migrations,
+saving **37,239 SQL bytes**. Cumulative SQL reduction: **220 declarations and
+381,426 bytes**.
+
+| Migration | Removed definitions | Saved SQL bytes |
+| --- | ---: | ---: |
+| `20261004203000_bank_sync_full_cutover_prepare.sql` | 10 | 7,639 |
+| `20261006130000_order_symbol_expand.sql` | 10 | 8,785 |
+| `20261014000200_waitlist_email_offer_presentation.sql` | 5 | 6,869 |
+| `20261018200000_festapp_payment_reference_reservations.sql` | 5 | 5,933 |
+| `20261019120000_bank_sync_email_providers.sql` | 10 | 8,013 |
+
+Earlier identical declarations remain. Owner changes, grants/revokes, table and
+constraint DDL, different-overload DROPs, dynamic permission blocks, transaction
+boundaries, lock settings and NOTIFY are preserved. No activation or payment
+operation was called. Canonical runtime source, generators and immutable history
+were unchanged. The historical-bank-dates migration was excluded from this batch
+because it also updates rows with current timestamps.
+
+Exact-removal checks and effective function-body comparison passed at all 217
+migration boundaries. The generated source contract remained byte-identical.
+Its check, nine source-contract tests, four immutable migration checks and
+targeted whitespace checks passed without changing a guard or hash expectation.
+
+A new network-none PostgreSQL 17.6 fixture replayed the verified baseline,
+order-symbol backfill stage and all 217 forward migrations. Each affected file
+was compared on two database clones taken immediately before that file. All
+**five complete database dump pairs matched**, including table data, sequences,
+function metadata, owners, ACL/default ACL, schema, publications and subscriptions.
+Only generated dump session fences/version headers were normalized. This is
+synthetic replay evidence, not a populated production upgrade rehearsal.
+
+The own fixture used no published ports or bind mounts and scheduling remained
+inactive. Its container and volume were removed, and no matching container
+remains. Existing local databases and production were not changed. Originals,
+manifest, proof scripts, checks and receipt use `/tmp/festapp-sql-payments-*`.
+Receipt SHA-256: `44e906badf53a7c5dc333dee4e4c780401f090e7fb82a26ad9639c1ec0736c30`.
+
+## Follow-up 2026-10-22: demo and occasion setup helpers
+
+Removed another **65 exact duplicate CREATE statements** in ten migrations,
+saving **60,492 SQL bytes**. Cumulative SQL reduction: **285 declarations and
+441,918 bytes**.
+
+| Migration | Removed definitions | Saved SQL bytes |
+| --- | ---: | ---: |
+| `20261005133000_occasion_setup_full_flow.sql` | 3 | 2,254 |
+| `20261005143000_occasion_setup_canonical_initialization.sql` | 3 | 2,719 |
+| `20261007160000_canonical_mutation_write_release.sql` | 3 | 2,300 |
+| `20261010030000_cancelled_orders_read_only.sql` | 3 | 3,219 |
+| `20261013160000_ticket_product_type_cutover.sql` | 3 | 792 |
+| `20261014000000_waitlist_admin_delete.sql` | 5 | 4,625 |
+| `20261014150000_demo_occasions.sql` | 42 | 41,224 |
+| `20261019180000_occasion_setup_feedback.sql` | 1 | 383 |
+| `20261020173000_ticket_layout_legacy_fence.sql` | 1 | 215 |
+| `20261021120000_restore_team_invitation_password_guard.sql` | 1 | 2,761 |
+
+Prior effective declarations remain. Tables, indexes, RLS policies and policy
+validation blocks, dynamic permission blocks, grants/revokes, transaction
+boundaries and distinct-signature DROPs are preserved. No application-row
+backfill was changed, no fixture seeder was invoked, and no canonical runtime
+source, generator or immutable migration changed.
+
+Exact-removal checks and effective function-body comparisons passed at all 217
+migration boundaries. Two generated source-contract provenance comments now
+point to earlier retained declarations; executable assertions are byte-identical.
+The regenerated contract check, nine source-contract tests, four immutable
+migration checks and targeted whitespace checks passed. No guard or hash
+expectation was weakened.
+
+A new network-none PostgreSQL 17.6 fixture replayed the verified baseline,
+order-symbol stage and all 217 forward migrations. Each selected file's complete
+pre-batch and reduced SQL ran on two clones taken immediately before that file.
+All **ten complete database dump pairs matched**, including schema, RLS policies,
+rows, sequences, function metadata, owners, ACL/default ACL, publications and
+subscriptions. Only generated dump session fences/version headers were
+normalized. This remains synthetic replay evidence, not a populated production
+upgrade rehearsal.
+
+The own fixture had no published ports or bind mounts; scheduling remained
+inactive. Its container and volume were removed and no matching container
+remains. Existing local databases and production were not changed. Original SQL,
+manifest, proof scripts, checks and receipt use `/tmp/festapp-sql-setup-*`.
+Receipt SHA-256: `37d833e748f4827cd70f54a28db94f14b7e39382a5b1c4ad0e09fcabed79f56f`.
+
+## Follow-up 2026-10-22: email, public links, bank dates and scanner
+
+Removed **53 exact duplicate declarations** across four migrations, saving
+**66,481 SQL bytes**. Cumulative SQL reduction: **338 declarations and 508,399
+bytes**. These migrations include data operations, so this batch adds an explicit
+per-declaration idempotence check rather than relying only on file-end parity.
+
+| Migration | Removed definitions | Saved SQL bytes |
+| --- | ---: | ---: |
+| `20261004020000_email_capacity_runtime_guards.sql` | 15 | 19,590 |
+| `20261004205000_bank_sync_historical_bank_dates.sql` | 11 | 10,344 |
+| `20261015200000_pretty_public_links.sql` | 21 | 31,792 |
+| `20261019030000_web_scanner.sql` | 6 | 4,755 |
+
+Each of the 53 original CREATE statements was executed in the original variant
+between probes taken immediately before and after it. Every probe verified
+unchanged pg_proc fields (including owner, ACL, body, defaults, attributes and
+configuration), incoming/outgoing pg_depend rows and role/ACL pg_shdepend rows.
+Only diagnostic `:location` offsets inside parsed default/body trees were
+normalized; argument values, resolved objects and runtime attributes were kept.
+All 53 replacements were catalog/dependency no-ops at their actual position in
+the migration chain. The probe helper is disposable verification code under
+`/tmp/festapp_sql_probe.py`, with no new application or migration dependency.
+
+The original data INSERT/UPDATE statements, including the bank-inbox timestamp
+update, remain byte-identical. Table/index DDL, constraints, locks, transaction
+boundaries, different-overload DROPs, role/permission blocks and grants/revokes
+also remain unchanged. No canonical runtime source, generator or protected
+migration was changed.
+
+A new network-none PostgreSQL 17.6 fixture replayed the verified baseline,
+order-symbol stage and all 217 forward migrations. Four original/reduced pairs
+ran on clones taken immediately before their files. All four complete dumps
+matched, including data, sequences, metadata, owners, ACL/default ACL, schema,
+publications and subscriptions. Only generated dump session fences/version
+headers were normalized in dump comparison. This remains synthetic replay with
+sparse reference data, not a populated production upgrade rehearsal; per-CREATE
+probes separately establish that the removals themselves preserve catalog state
+seen by the unchanged data operations.
+
+Exact-removal checks and effective function-body comparison passed at every one
+of 217 migration boundaries. The generated source contract stayed byte-identical.
+Its check, nine source-contract tests, four immutable migration checks and
+targeted whitespace checks passed without weakening assertions or hashes.
+
+The owned fixture had no ports or bind mounts and scheduling stayed inactive.
+It and its volume were removed, with no leftover matching container. Existing
+local databases and production were unchanged. Originals, manifest, proof scripts,
+checks and receipt use `/tmp/festapp-sql-idempotent-*`.
+Receipt SHA-256: `24f0244b04fe02f190294db3dba0523c99cf9857f5bb5b0fdacad6b0098e6eea`.
+
+## Follow-up 2026-10-22: final small wrappers
+
+Removed three exact duplicate declarations (`update_occasion_203(jsonb)`,
+`delete_order_221(bigint)` and `apply_planned_changes()`) from respectively
+`20261002010000_occasion_default_form_link.sql`,
+`20261013180000_allow_cancelled_order_deletion.sql` and
+`20261021220000_occasion_sales_setup_and_catalog.sql`. Savings: **719 SQL bytes**,
+including two EOF whitespace bytes. Cumulative: **341 declarations / 509,118
+SQL bytes**. Prior declarations and all surrounding statements remain.
+
+All three per-CREATE metadata/dependency probes and three complete database dump
+comparisons passed in a new isolated PostgreSQL 17.6 fixture; all 217 forward
+migrations replayed. Static comparison passed at all 217 boundaries. Generated
+contract changes are provenance comments only; executable assertions are
+byte-identical. Its check, nine tests, four immutable migration checks and
+whitespace checks passed. The fixture and volume were removed, with no leftover
+container and no writes to existing databases or production. Evidence:
+`/tmp/festapp-sql-wrappers-*`; receipt SHA-256: `8f221b1e06cc8fd466a02692acb68f0395b98831aae3d55efd1b5c416571cec8`.
+
+The larger remaining repetitions belong to explicit immutable history or
+full-output generator contracts. They remain intact. The two small repetitions
+in the scheduler-bearing canonical email migration still need their own matching
+proof setup; font-related snapshots remain outside the user's cleanup scope.
+This is not blanket permission to prune overwritten bodies or weaken guards.
+
+## Follow-up 2026-10-22: scheduler-bearing email migration
+
+Removed the remaining two exact copies in `20261003200000_canonical_email_delivery.sql`:
+`get_fakturoid_ticket_order_state_v1(bigint)` and `update_occasion_203(jsonb)`.
+Savings: **703 SQL bytes**. Cumulative: **343 declarations / 509,821 SQL bytes**.
+
+The proof used stopped, container-owned PostgreSQL data snapshots so both
+variants retained the real `postgres` database name required by pg_cron. An
+initial comparison differed only in the unchanged initializer's `next_send_at`
+wall-clock value. The successful comparison installs the byte-identical common
+prefix once, checkpoints it immediately before the first removed CREATE, and
+executes original/reduced suffixes on physical copies. The extra checkpoint
+commit exists only in the disposable fixture; repository transaction boundaries
+are unchanged. Both variants retain identical initialized data and scheduler
+context, without normalizing timestamp values or bypassing scheduler checks.
+
+Both per-CREATE metadata/dependency probes and the complete database dump
+comparison passed. The full reduced migration also replayed normally, within its
+original transaction, as part of all 217 forward migrations. Static checks passed
+at every boundary; the generated source contract stayed byte-identical. Its
+check, nine tests, four immutable migration checks and whitespace checks passed.
+This remains synthetic replay, not a populated production upgrade rehearsal.
+
+All owned containers and both temporary snapshot images were removed and their
+absence verified. No ports or bind mounts were used; cron job launching remained
+off. Existing local databases and production were unchanged. Evidence:
+`/tmp/festapp-sql-email-*`; receipt SHA-256: `e5532a8c7478e0fd53acbad11784b446662f87a2c6bf76aa31bfb14a91399a6e`.
+
+The exact-repetition inventory now retains explicit immutable/full-generator
+contracts plus two `can_edit_ticket_layout(bigint)` copies embedded in ticket
+appearance/font migration files, left outside this batch. These are permission
+helpers; no font asset or font runtime change was attempted.
+Earlier overwritten/dropped bodies remain a separate, unproven candidate class.
+
+## Completed continuous sweep - 2026-10-22
+
+The user authorized continuing through all provably safe findings without
+intermediate handoffs. This sweep removed the two remaining identical
+`can_edit_ticket_layout(bigint)` declarations from historical snapshots, plus
+**1,006 function GRANT/REVOKE statements that are structural catalog no-ops**.
+Font definitions/assets and canonical runtime SQL were unchanged. No new
+application implementation or pruning framework was added to the repository.
+
+Across all SQL cleanup batches, **345 function declarations and 1,006 redundant
+permission statements** were removed. Direct comparison against recovery revision
+`f4aa0b6edfa688b03937197d74b0506d2ae81db7` measures **617,396 fewer SQL bytes in
+136 migration files**. All 217 versioned files remain; no ledger or baseline
+manifest was rewritten. Effective function bodies match the original revision
+at every one of the 217 file boundaries.
+
+### Permission proof and repeated audit
+
+The first real PostgreSQL audit identified 1,002 no-op permission statements;
+whole-file original/reduced comparisons passed for all 134 affected files. A
+subsequent sweep found four further no-op permission statements in the two
+ticket appearance/font snapshots. Both additional whole-file comparisons passed.
+Every removed permission statement was checked immediately before/after execution
+against pg_proc state and shared role dependencies. Canonical SQL sources still
+retain their intended authorization declarations; this removes historical copies.
+
+In total this sweep passed **136 complete database dump pairs on PostgreSQL
+17.6**, with no retained/unproven files. Dumps include schema, rows, sequences,
+function attributes, owners, ACL/default ACL, policies, publications and
+subscriptions. Only pg_dump session fences/version headers were normalized.
+The physical-checkpoint method described above preserves the common initializer
+data for scheduler/time-sensitive files; fixture checkpoint commits never change
+repository transactions. Scheduling stayed inactive and all 217 forward
+migrations replayed successfully.
+
+A separate **PostgreSQL 15.8** provider audit executed all **1,006 removed ACL
+statements and both CREATE declarations** at their original positions. All were
+catalog/dependency no-ops there too, and all 217 migrations replayed. PG15 used
+its cached immutable image ID and its actual password-authenticated fixture;
+no authentication rule was weakened. This checks the provider-version risk of
+relying on default ACLs. These are synthetic installations, not populated
+production upgrade rehearsals.
+
+The final independent ACL sweep returned **zero** unprotected no-op permission
+statements. A fresh CREATE scan found **zero** unprotected exact repetitions;
+all **277** remaining exact copies belong to **nine explicitly protected
+immutable/full-generator-contract snapshots**. Each of those nine files was
+verified byte-identical to the recovery revision. A conservative scan found zero
+repeated already-proven-absent top-level function DROPs. The canonical source
+scan found one repeated signature with genuinely different reviewed-migration
+behavior; it was retained. Different historical implementations are not classified
+as dead merely because a later migration replaces them.
+
+The canonical generated contract, all nine source-contract tests, four immutable
+migration checks, composed final-source hashes and whitespace checks passed. No
+assertion, historical hash or generator contract was weakened. All owned
+containers and temporary snapshot images were removed and absence verified.
+Existing local databases, production, commits and published branches were not
+changed. Detailed ephemeral proof inputs/receipts use `/tmp/festapp-sql-final-*`,
+`/tmp/festapp-sql-font-acl-*`, `/tmp/festapp-sql-pg15-*` and
+`/tmp/festapp-sql-acl-exhaustion-*`.
+
+The compact durable [verification receipt](sql-reduction-verification-2026-10-22.json)
+records totals, provider checks, proof-receipt hashes and the protected residual
+file hashes. Within these audited classes, no further safe unprotected reduction
+remains; a new baseline/cutover or behavior change is separate work.

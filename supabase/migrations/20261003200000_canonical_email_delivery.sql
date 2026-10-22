@@ -113,7 +113,7 @@ GRANT ALL ON public.email_confirmation_receipts TO service_role;
 REVOKE ALL ON public.request_secrets FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.request_secrets TO service_role;
 REVOKE ALL ON FUNCTION public.generate_request_secret(integer),public.check_request_secret(text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.generate_request_secret(integer),public.check_request_secret(text) TO service_role;
+
 
 
 -- Source: database/functions/users/get_can_reset_user_password.sql
@@ -262,7 +262,7 @@ BEGIN
  RETURN v_has_permission;
 END $$;
 REVOKE ALL ON FUNCTION public.get_can_reset_user_password(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_can_reset_user_password(uuid) TO authenticated,service_role;
+
 
 
 -- Source: database/functions/users/reset_user_password.sql
@@ -465,7 +465,7 @@ BEGIN
  RETURN v_result||jsonb_build_object('domain',v_domain_result);
 END $$;
 REVOKE ALL ON FUNCTION public.enqueue_account_email(text,jsonb,jsonb,text,jsonb,text,text,text,timestamptz) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.enqueue_account_email(text,jsonb,jsonb,text,jsonb,text,text,text,timestamptz) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.reset_password_and_enqueue_email(p_user uuid,p_password text,p_occasion bigint,p_sealed jsonb,p_content_hash text,p_dedupe text,p_expires timestamptz)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -489,7 +489,7 @@ BEGIN
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;
+
 
 
 -- Source: database/functions/emails/email_queue.sql
@@ -595,7 +595,7 @@ BEGIN
 
 END $$;
 REVOKE ALL ON FUNCTION public.recover_email_leases() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.recover_email_leases() TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.claim_email() RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_row public.email_messages; v_cap public.email_capacity; v_attempt uuid; v_token uuid:=extensions.gen_random_uuid();
@@ -635,7 +635,7 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'stale_email_preparation'; END IF;
 END $$;
 REVOKE ALL ON FUNCTION public.renew_email_preparation(uuid,uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.renew_email_preparation(uuid,uuid) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.prepare_email(p_message uuid,p_token uuid,p_prepared jsonb,p_post_action jsonb DEFAULT '{}') RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -763,7 +763,7 @@ BEGIN
  PERFORM public.reconcile_email_events();
 END $$;
 REVOKE ALL ON FUNCTION public.record_email_events(jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_email_events(jsonb) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.record_email_event(p_event jsonb) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
@@ -801,7 +801,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.invalidate_email_quota(p_reason text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN PERFORM public.require_service_role();UPDATE public.email_capacity SET quota_at=NULL,wake_error=left(p_reason,100);END $$;
 REVOKE ALL ON FUNCTION public.invalidate_email_quota(text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.invalidate_email_quota(text) TO service_role;
+
 
 -- Explicit internal ACLs, including the invoker-only domain helpers.
 DO $$ DECLARE p record; BEGIN
@@ -815,7 +815,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.get_next_email_due() RETURNS timestamptz LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN PERFORM public.require_service_role();RETURN (SELECT min(target_time) FROM public.email_messages WHERE workflow_state IN ('pending','retry_wait'));END $$;
 REVOKE ALL ON FUNCTION public.get_next_email_due() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_next_email_due() TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.reserve_email_quota_refresh() RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
@@ -824,7 +824,7 @@ BEGIN
  RETURN FOUND;
 END $$;
 REVOKE ALL ON FUNCTION public.reserve_email_quota_refresh() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reserve_email_quota_refresh() TO service_role;
+
 CREATE OR REPLACE FUNCTION public.recover_email_delivery() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
@@ -845,7 +845,7 @@ BEGIN
  PERFORM public.wake_email_worker();
 END $$;
 REVOKE ALL ON FUNCTION public.recover_email_delivery() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.recover_email_delivery() TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.reconcile_unknown_email(p_message uuid,p_decision text,p_evidence text,p_provider_id text DEFAULT NULL) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -864,7 +864,7 @@ BEGIN
  PERFORM public.wake_email_worker();
 END $$;
 REVOKE ALL ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reconcile_unknown_email(uuid,text,text,text) TO service_role;
+
 
 
 -- Source: database/functions/emails/email_reporting.sql
@@ -874,7 +874,7 @@ BEGIN
  RETURN (SELECT jsonb_build_object('organization',organization,'unit',unit) FROM public.occasions WHERE id=p_occasion);
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_occasion_context(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_occasion_context(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.email_reporting_state(m public.email_messages) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN m.complained_at IS NOT NULL THEN 'complaint' WHEN m.bounced_at IS NOT NULL THEN 'bounce'
@@ -884,7 +884,7 @@ CREATE OR REPLACE FUNCTION public.email_reporting_state(m public.email_messages)
  WHEN m.provider_failure='delay' THEN 'delay' ELSE m.workflow_state END;
 $$;
 REVOKE ALL ON FUNCTION public.email_reporting_state(public.email_messages) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.email_reporting_state(public.email_messages) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_order_email_summaries(p_occasion bigint,p_orders bigint[]) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_summary jsonb;
@@ -905,7 +905,7 @@ BEGIN
  RETURN v_summary;
 END $$;
 REVOKE ALL ON FUNCTION public.get_order_email_summaries(bigint,bigint[]) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_order_email_summaries(bigint,bigint[]) TO authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.get_order_email_summary(p_order bigint) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_occ bigint;
 BEGIN
@@ -914,7 +914,7 @@ BEGIN
  RETURN coalesce(public.get_order_email_summaries(v_occ,ARRAY[p_order])->p_order::text,jsonb_build_object('state','unavailable','messages','[]'::jsonb,'loaded_at',now()));
 END $$;
 REVOKE ALL ON FUNCTION public.get_order_email_summary(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_order_email_summary(bigint) TO authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.email_report_allowed(p_org bigint,p_occasion bigint,p_user uuid DEFAULT NULL) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -924,7 +924,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
  AND (p_user IS NULL OR EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=p_occasion AND "user"=p_user)));
 $$;
 REVOKE ALL ON FUNCTION public.email_report_allowed(bigint,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.email_report_allowed(bigint,bigint,uuid) TO authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_email_delivery_page(p_occasion bigint,p_before bigint DEFAULT NULL,p_limit integer DEFAULT 30,p_order bigint DEFAULT NULL,p_kind text DEFAULT NULL,p_state text DEFAULT NULL,p_organization bigint DEFAULT NULL,p_user uuid DEFAULT NULL,p_since timestamptz DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -944,7 +944,7 @@ BEGIN
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_page(bigint,bigint,integer,bigint,text,text,bigint,uuid,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_page(bigint,bigint,integer,bigint,text,text,bigint,uuid,timestamptz) TO authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_email_delivery_detail(p_message uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE m public.email_messages;
@@ -957,7 +957,7 @@ BEGIN
  'events',(SELECT coalesce(jsonb_agg(jsonb_build_object('type',event_type,'at',provider_time) ORDER BY provider_time),'[]') FROM (SELECT event_type,provider_time FROM public.email_delivery_events WHERE message_id=p_message ORDER BY provider_time DESC LIMIT 100) e));
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_detail(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_detail(uuid) TO authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.create_email_confirmation_receipt(p_command uuid,p_order bigint,p_hash text) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -970,7 +970,7 @@ BEGIN
  RETURN true;
 END $$;
 REVOKE ALL ON FUNCTION public.create_email_confirmation_receipt(uuid,bigint,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.create_email_confirmation_receipt(uuid,bigint,text) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_email_confirmation_status(p_hash text) RETURNS text
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -985,14 +985,14 @@ BEGIN
  WHEN m.delivered_at IS NOT NULL THEN 'delivered' WHEN m.workflow_state='accepted' THEN 'accepted' WHEN m.workflow_state IN ('unknown','dead','suppressed','expired','cancelled','retry_wait') THEN m.workflow_state ELSE 'queued' END;
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_confirmation_status(text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_confirmation_status(text) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_auth_email_context(p_user uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
  RETURN (SELECT jsonb_build_object('organization',organization,'recipient',public.get_user_delivery_email(id)) FROM public.user_info WHERE id=p_user);
 END $$;
 REVOKE ALL ON FUNCTION public.get_auth_email_context(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_auth_email_context(uuid) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_email_delivery_overview(p_occasion bigint,p_organization bigint DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_org bigint;
 BEGIN
@@ -1006,7 +1006,7 @@ BEGIN
  'feedback_overdue',count(*) FILTER(WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=email_messages.message_id))) FROM public.email_messages WHERE organization=v_org AND (p_occasion IS NULL OR occasion=p_occasion));
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_overview(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_overview(bigint,bigint) TO authenticated,service_role;
+
 
 
 -- Source: database/functions/emails/email_health.sql
@@ -1043,7 +1043,7 @@ BEGIN
  ],NULL)));
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_health() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_delivery_health() TO service_role;
+
 
 
 -- Source: database/functions/users/get_occasion_users_for_edit.sql
@@ -1089,10 +1089,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_occasion_sign_in_email_statuses(bigint)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_sign_in_email_statuses(bigint)
-  TO authenticated;
+
+
 
 
 CREATE OR REPLACE FUNCTION public.get_occasion_users_for_edit(
@@ -1134,10 +1132,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_occasion_users_for_edit(bigint)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_users_for_edit(bigint)
-  TO authenticated;
+
+
 
 
 -- Source: database/functions/emails/queue_payment_reminders.sql
@@ -1295,26 +1291,11 @@ BEGIN
 
 END;
 $$;
-REVOKE ALL ON FUNCTION public.enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)
-  FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_fakturoid_ticket_order_state_v1(p_order_id bigint)
-RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE v_state text;
-BEGIN
-  PERFORM public.require_client_sync_service_role_v1();
-  SELECT o.state INTO v_state FROM eshop.orders o WHERE o.id=p_order_id;
-  IF v_state IS NULL THEN
-    RAISE no_data_found USING MESSAGE='ticket order not found';
-  END IF;
-  RETURN v_state;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
-  TO service_role;
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.complete_fakturoid_ticket_order_v1(
   p_order_id bigint, p_command_id uuid, p_variable_symbol bigint
@@ -1381,10 +1362,8 @@ BEGIN
   RETURN p_variable_symbol;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
-  TO service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.abort_fakturoid_ticket_order_v1(
   p_order_id bigint, p_command_id uuid
@@ -1430,10 +1409,8 @@ BEGIN
     v_before_users,jsonb_build_object('orderId',p_order_id),'service');
 END;
 $$;
-REVOKE ALL ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
-  TO service_role;
+
+
 
 
 -- Source: database/functions/eshop/create_ticket_order.sql
@@ -2953,13 +2930,7 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.update_occasion_internal_v1(input_data);
-END;
-$$;
+
 
 
 -- Source: database/functions/seed/crons.sql

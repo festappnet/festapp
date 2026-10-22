@@ -17,5 +17,3 @@ AS $function$
 $function$;
 
 REVOKE ALL ON FUNCTION public.get_event_attendance_summary(bigint[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_event_attendance_summary(bigint[])
-  TO anon, authenticated, service_role;

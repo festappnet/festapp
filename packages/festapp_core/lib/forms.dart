@@ -4,6 +4,7 @@ export 'src/forms/form_field_definition.dart';
 export 'src/forms/form_option_definition.dart';
 export 'src/forms/form_capacity_model.dart';
 export 'src/forms/form_definition.dart';
+export 'src/forms/form_payment_options.dart';
 export 'src/forms/form_option_product_model.dart';
 export 'src/forms/login_qr_payload.dart';
 export 'src/forms/reception_command_error.dart';

@@ -89,7 +89,7 @@ BEGIN
  END LOOP;
  RETURN mapped;
 END $$;
-REVOKE ALL ON FUNCTION public.copy_setup_area_inventory_internal(jsonb,jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
@@ -529,17 +529,15 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 CREATE OR REPLACE FUNCTION get_blueprint(
     my_secret UUID,
@@ -774,7 +772,7 @@ BEGIN
  UPDATE eshop.spots SET secret=secret_id,secret_expiration_time=statement_timestamp()+make_interval(secs=>duration_seconds),updated_at=now() WHERE id=spot_id RETURNING * INTO s;
  RETURN jsonb_build_object('code',200,'message','Spot selected','expiresAt',s.secret_expiration_time);
 END $$;
-REVOKE ALL ON FUNCTION public.select_spot_single_internal_v1(uuid,uuid,bigint,boolean) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.select_spot(form_key uuid,secret_id uuid,spot_id bigint,selecting boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE ids bigint[]; member_id bigint; r jsonb; occ bigint; bp bigint; fid bigint;
@@ -802,7 +800,7 @@ BEGIN
  END;
  RETURN r||jsonb_build_object('spotIds',to_jsonb(ids));
 END $$;
-REVOKE ALL ON FUNCTION public.select_spot(uuid,uuid,bigint,boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.select_spot(uuid,uuid,bigint,boolean) TO anon,authenticated;
+
+
 
 COMMIT;

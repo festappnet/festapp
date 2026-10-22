@@ -460,8 +460,15 @@ class RouterService {
             segments[2] == 'edit');
   }
 
+  static bool isStripeConnectionReturnPath(String? path) =>
+      path == '/stripe/connect/callback';
+
   static Future<void> handlePostLoginNavigation(BuildContext context,
       {String? fallbackPath, bool useReplacement = false}) async {
+    if (isStripeConnectionReturnPath(fallbackPath)) {
+      await replaceRootPath(context.router.root, '/stripe/connect/callback');
+      return;
+    }
     // An explicit protected destination has priority over the generic unit landing.
     if (isAdministrationReturnPath(fallbackPath)) {
       final target = Uri.parse(fallbackPath!);

@@ -1,0 +1,12 @@
+Follow-up unit activation verification, 2026-10-22
+Main prerequisites: e069a11b7 (current main at publication preflight)
+Final fresh canonical baseline plus forward migration runner: PASS
+Final current-main upgrade runner plus bank-row preservation: PASS
+Final fresh SQL: 12 Stripe scripts plus canonical parity PASS
+Final upgrade SQL: 12 Stripe scripts plus canonical parity PASS
+Six held-lock checkout/webhook/refund/admission races: PASS
+Deno Stripe + real Edge entrypoints:119 PASS
+Production Edge coverage:42 functions,2 contract tests PASS
+Flutter:2 unit-feature cases PASS;3 form-settings +2 canonical-quote cases PASS
+Targeted analyzer:0 errors; existing style/context diagnostics
+No live Stripe API calls or payment/scheduler activation in validation.

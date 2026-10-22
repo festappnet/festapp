@@ -1,14 +1,20 @@
-import 'package:fstapp/components/blueprint/blueprint_layout_adapter.dart';
-import 'package:fstapp/components/forms/reservation_capability_store.dart';
-import '../models/verified_organization_identity.dart';
-import '../widgets_view/organization_identity_footer.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
+import '../payment_quote_refresh.dart';
 import 'package:intl/intl.dart';
 import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/components/blueprint/blueprint_layout_adapter.dart';
+import 'package:fstapp/components/forms/reservation_capability_store.dart';
+import '../widgets_view/form_total_price.dart';
+import '../models/verified_organization_identity.dart';
+import '../payment_method_strings.dart';
+import '../models/holder_models/field_holder.dart';
+import '../widgets_view/organization_identity_footer.dart';
 import 'package:fstapp/components/forms/models/form_presentation.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/order_overview_strings.dart';
 import 'customer_order_overview.dart';
+import 'package:fstapp/components/stripe_payments/stripe_payment_browser_stub.dart'
+    if (dart.library.html) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart'
+    if (dart.library.js_interop) 'package:fstapp/components/stripe_payments/stripe_payment_browser_web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/waitlist_commands.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
@@ -17,6 +23,7 @@ import 'package:fstapp/services/dialog_helper.dart';
 import 'dart:async';
 import 'package:fstapp/components/forms/widgets_view/countdown_content.dart';
 import 'package:fstapp/components/fonts/form_font_catalog.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
@@ -38,7 +45,6 @@ import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/components/forms/widgets_view/option_field_helper.dart';
 import '../../features/feature_constants.dart';
 import '../../features/feature_service.dart';
-import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/buttons_helper.dart';
@@ -80,6 +86,9 @@ class _FormPageState extends State<FormPage> {
   String? _waitlistMessage;
   bool _demoCompleted = false;
   FormBundle? _changedCapacityForm;
+  String? _paymentChangeReason;
+  bool get _paymentReviewRequired => _paymentChangeReason != null;
+  bool _refreshingChangedForm = false;
   bool _isLoading = false;
   bool _formNotAvailable = false;
   bool _formLoadFailed = false;
@@ -92,7 +101,7 @@ class _FormPageState extends State<FormPage> {
   VerifiedOrganizationIdentity? _terminalIdentity;
   FormSession? formSession;
 
-  final _formKey = GlobalKey<FormBuilderState>();
+  var _formKey = GlobalKey<FormBuilderState>();
   final ScrollController _scrollController = ScrollController();
 
   bool _isSeatReservationVisible = false;
@@ -334,9 +343,10 @@ class _FormPageState extends State<FormPage> {
                   size: 24,
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  Utilities.formatPrice(context, formSession?.totalPrice ?? 0,
-                      currencyCode: formHolder!.controller!.currencyCode),
+                FormTotalPrice(
+                  amount: formSession?.totalPrice ?? 0,
+                  currencyCode: formHolder!.controller!.currencyCode,
+                  payments: form?.definition.payments,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -365,6 +375,10 @@ class _FormPageState extends State<FormPage> {
 
   Future<void> _showOrderPreview(BuildContext scrollContext) async {
     if (formHolder?.controller?.reservationPending == true) return;
+    if (_paymentReviewRequired) {
+      await _applyChangedCapacity();
+      return;
+    }
     TextInput.finishAutofillContext();
     final ticket = formHolder?.getTicket();
     if (ticket != null &&
@@ -450,6 +464,8 @@ class _FormPageState extends State<FormPage> {
               organizationIdentity: form?.organizationIdentity,
               formHolder: formHolder!,
               totalPrice: formSession?.totalPrice ?? 0,
+              payments: form!.definition.payments,
+              paymentSurface: stripePaymentSurface(),
               metaSurchargeSums: formSession?.metaSurchargeSums ?? const {},
               onSendPressed: _sendOrder,
               // When user clicks Close in UI, we just pop the sheet.
@@ -480,7 +496,8 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future<void> _sendOrder() async {
-    if (formHolder == null ||
+    if (_isLoading ||
+        formHolder == null ||
         form == null ||
         formHolder?.controller?.reservationPending == true) return;
     if (form!.demoSimulation) {
@@ -503,12 +520,20 @@ class _FormPageState extends State<FormPage> {
     if (formHolder!.paymentType != null) {
       data['payment_type'] = formHolder!.paymentType;
     }
+    if (formHolder!.paymentMethod == 'stripe') {
+      data['payment_method'] = 'stripe';
+      data['payment_type'] = 'full';
+      data['expected_payment_amount_minor'] = formHolder!.paymentAmountMinor;
+      data['expected_payment_currency'] = formHolder!.paymentCurrency;
+      data['stripe_connection_id'] = formHolder!.paymentConnectionId;
+      data['payment_surface'] = stripePaymentSurface();
+    }
     formResult = data;
     await submittingController.rememberReservation();
     final submittedCapability = submittingController.capability;
     if (!mounted) return;
 
-    showGeneralDialog(
+    await showGeneralDialog(
       context: context,
       barrierDismissible: false, // Disable dismissing by tapping outside
       barrierLabel: "FinishOrderDialog",
@@ -533,6 +558,13 @@ class _FormPageState extends State<FormPage> {
             }
           }
           final response = await DbOrders.sendTicketOrder(data);
+          if (response.data is Map &&
+              {'STRIPE_PRICE_CHANGED', 'STRIPE_RECIPIENT_CHANGED'}
+                  .contains(response.data['errorCode'])) {
+            if (mounted)
+              setState(() =>
+                  _paymentChangeReason = response.data['errorCode'] as String);
+          }
           if (response.data is Map &&
               response.data['errorCode'] == 'FORM_CAPACITY_EXCEEDED' &&
               widget.formLink != null) {
@@ -576,6 +608,12 @@ class _FormPageState extends State<FormPage> {
       },
     );
 
+    if (!mounted) return;
+    if (_paymentReviewRequired && _isOrderPreviewVisible) {
+      Navigator.of(context)
+          .pop(); // Retire the stale quote after closing its error.
+      _scrollToTop();
+    }
     setState(() {
       _isLoading = false;
     });
@@ -920,17 +958,27 @@ class _FormPageState extends State<FormPage> {
                                               const SizedBox(height: 16),
                                             ],
                                           ),
-                                        if (_changedCapacityForm != null)
+                                        if (_changedCapacityForm != null ||
+                                            _paymentReviewRequired)
                                           Column(children: [
-                                            Text(WaitlistStrings.text(
-                                                'FORM_CAPACITY_EXCEEDED')),
+                                            Text(_paymentReviewRequired
+                                                ? PaymentMethodStrings.text(
+                                                    _paymentChangeReason ==
+                                                            'STRIPE_RECIPIENT_CHANGED'
+                                                        ? 'reason_recipient_changed'
+                                                        : 'priceChanged')
+                                                : WaitlistStrings.text(
+                                                    'FORM_CAPACITY_EXCEEDED')),
                                             TextButton(
                                                 onPressed:
-                                                    _applyChangedCapacity,
+                                                    _refreshingChangedForm
+                                                        ? null
+                                                        : _applyChangedCapacity,
                                                 child: Text(
-                                                    _changedCapacityForm!
-                                                            .definition
-                                                            .isWaitlist
+                                                    (_changedCapacityForm
+                                                                ?.definition
+                                                                .isWaitlist ??
+                                                            false)
                                                         ? WaitlistStrings.text(
                                                             'regularToWaitlist')
                                                         : WaitlistStrings
@@ -1117,48 +1165,117 @@ class _FormPageState extends State<FormPage> {
   }
 
   Future<void> _applyChangedCapacity() async {
-    final latest = _changedCapacityForm;
-    if (latest == null || formHolder == null) return;
-    if (latest.definition.isWaitlist &&
-        !await DialogHelper.showConfirmationDialog(
-            context, WaitlistStrings.title, WaitlistStrings.explanation))
-      return;
-    if (!mounted) return;
-    final previous = FormHelper.getDataFromForm(formHolder!);
-    final oldController = formHolder!.controller;
-    final holder = FormHolder.fromDefinition(latest.definition)
-      ..controller = oldController;
-    for (final field in holder.fields) {
-      for (final answer in previous['fields'] ?? []) {
-        if ((answer as Map).containsKey('${field.id}'))
-          field.defaultValue = answer['${field.id}'];
+    if (formHolder == null || _refreshingChangedForm) return;
+    final previousHolder = formHolder!;
+    final review = _paymentReviewRequired;
+    setState(() => _refreshingChangedForm = true);
+    try {
+      var latest = review && widget.formLink != null
+          ? await DbForms.getFormFromLink(widget.formLink!)
+          : _changedCapacityForm;
+      if (latest == null || !mounted || formHolder != previousHolder) return;
+      if (latest.definition.isWaitlist &&
+          !await DialogHelper.showConfirmationDialog(
+              context, WaitlistStrings.title, WaitlistStrings.explanation))
+        return;
+      if (!mounted) return;
+      // Preserve the hold capability, but never prices from an old seat model.
+      latest = latest.withDefinition(
+          latest.definition.copyWith(secret: form!.definition.secret));
+      final refreshed = latest;
+      final previousTickets =
+          previousHolder.getTicket()?.tickets ?? <FormTicketModel>[];
+      final refreshedSeats = <int, BlueprintSeat>{};
+      if (!refreshed.definition.isWaitlist &&
+          previousTickets.any((ticket) => ticket.seat != null)) {
+        final blueprintId = refreshed.definition.blueprint;
+        if (blueprintId == null) throw StateError('Missing blueprint');
+        final blueprint = await DbForms.getBlueprint(
+            refreshed.definition.secret!,
+            refreshed.definition.key!,
+            blueprintId);
+        if (blueprint == null) throw StateError('Blueprint unavailable');
+        refreshedSeats.addAll(refreshedReservedPaymentSeats(
+            blueprint, previousTickets.map((ticket) => ticket.seat?.seatId).whereType<int>()));
       }
-    }
-    final people = previous['ticket'] as List? ?? [];
-    holder.getTicket()?.tickets = people.map((p) {
-      final fields =
-          FormHolder.fromDefinition(latest.definition).getTicket()!.fields;
-      for (final field in fields) {
-        for (final answer in p['fields'] ?? []) {
-          if ((answer as Map).containsKey('${field.id}'))
-            field.defaultValue = answer['${field.id}'];
+      if (!mounted || formHolder != previousHolder) return;
+      final holder = FormHolder.fromDefinition(refreshed.definition);
+      void restoreFields(List<FieldHolder> target, List<FieldHolder> previous,
+          GlobalKey<FormBuilderState> key) {
+        for (final field in target) {
+          final old = previous
+              .firstWhereOrNull((candidate) => candidate.id == field.id);
+          if (old == null) continue;
+          final value = old.getValue(key);
+          if (field is OptionsFieldProductHolder) {
+            final values = value is List ? value : [value];
+            final ids = values
+                .map((item) =>
+                    item is FormOptionDefinition ? item.id : item?.toString())
+                .toSet();
+            final selected = field.options
+                .whereType<FormOptionProductModel>()
+                .where(
+                    (option) => ids.contains(option.id) && option.isAvailable)
+                .map((option) => option.id)
+                .toList();
+            field.defaultValue = field.selectionType ==
+                    OptionsFieldProductSelectionType.selectMany
+                ? selected
+                : selected.firstOrNull;
+          } else if (field.fieldType != FormMetadata.fieldTypeSpot &&
+              field.fieldType != FormMetadata.fieldTypeTicket) {
+            field.defaultValue =
+                value is FormOptionDefinition ? value.id : value;
+          }
         }
       }
-      return FormTicketModel(
-          ticketValues: fields, ticketKey: GlobalKey<FormBuilderState>());
-    }).toList();
-    formSession?.dispose();
-    setState(() {
-      form = latest;
-      formHolder = holder;
-      _changedCapacityForm = null;
-      formSession =
-          FormSession(form: latest, formHolder: holder, formKey: _formKey);
-      formSession!.addListener(() {
-        if (mounted) setState(() {});
+
+      restoreFields(holder.fields, previousHolder.fields,
+          previousHolder.controller!.globalKey);
+      holder.getTicket()?.tickets = previousTickets.map((person) {
+        final fields =
+            FormHolder.fromDefinition(refreshed.definition).getTicket()!.fields;
+        restoreFields(fields, person.ticketValues, person.ticketKey);
+        return FormTicketModel(
+            ticketValues: fields,
+            ticketKey: GlobalKey<FormBuilderState>(),
+            ticketId: person.ticketId,
+            seat: refreshedSeats[person.seat?.seat?.id]);
+      }).toList();
+      formSession?.dispose();
+      setState(() {
+        _formKey = GlobalKey<FormBuilderState>();
+        form = refreshed;
+        formHolder = holder;
+        _changedCapacityForm = null;
+        _paymentChangeReason = null;
+        holder.controller = FormHolderController(
+            globalKey: _formKey,
+            secret: refreshed.definition.secret,
+            blueprintId: refreshed.definition.blueprint,
+            formKey: refreshed.definition.key,
+            showSeatReservation: _showSeatReservation,
+            onCloseSeatReservation: _hideSeatReservation);
+        formSession =
+            FormSession(form: refreshed, formHolder: holder, formKey: _formKey);
+        formSession!.addListener(() {
+          if (mounted) setState(() {});
+        });
+        holder.controller!.updateTotalPrice = formSession!.recalculateTotals;
       });
-      holder.controller!.updateTotalPrice = formSession!.recalculateTotals;
-    });
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      formSession!.recalculateTotals();
+      if (review && !refreshed.definition.isWaitlist)
+        await _showOrderPreview(context);
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(PaymentMethodStrings.text('refreshFailed'))));
+    } finally {
+      if (mounted) setState(() => _refreshingChangedForm = false);
+    }
   }
 
   void _populateOfferPeople() {

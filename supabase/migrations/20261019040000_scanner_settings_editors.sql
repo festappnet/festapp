@@ -96,18 +96,18 @@ END $$;
 -- Source: database/functions/scanning/support.sql
 -- Reuse the existing organization app-support feature and target restrictions.
 
-REVOKE ALL ON FUNCTION public.scanner_can_reset_password_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Existing scan reset authority, target restrictions and abuse limits are reused.
 
-REVOKE ALL ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) TO anon,authenticated;
 
-REVOKE ALL ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) TO anon,authenticated;
+
+
+
+
+
+
 CREATE OR REPLACE FUNCTION public.preview_scanner_ticket(p_occasion bigint,p_config jsonb,p_symbol text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;
@@ -117,5 +117,3 @@ BEGIN
  SELECT dto INTO result FROM public.scanner_ticket_projection_internal(p_occasion,p_config,(SELECT id FROM eshop.tickets WHERE occasion=p_occasion AND ticket_symbol=p_symbol LIMIT 1)) WHERE dto->>'symbol'=p_symbol;
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'reason',CASE WHEN result IS NULL THEN 'not_found' END,'data',result,'server_time',now());
 END $$;
-REVOKE ALL ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) TO authenticated;

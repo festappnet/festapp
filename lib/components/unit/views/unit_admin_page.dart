@@ -1,3 +1,4 @@
+import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import '../unit_occasion_dashboard.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -459,6 +461,10 @@ class UnitAdministrationTabsPage extends StatelessWidget {
             route: const UnitBankAccountsNavigationRoute(),
             label: BankAccountStrings.bankAccountsTitle,
             icon: Icons.account_balance),
+      if (StripeFeature.visible && StripeFeature.canManage)
+        RoutedTabDefinition(slug: NavigationPaths.cardPayments,
+            route: const UnitCardPaymentsRoute(),
+            label: StripeConnectionStrings.title, icon: Icons.credit_card),
     ];
     return RoutedTabScaffold(
         key: ValueKey(scope.unit.id),

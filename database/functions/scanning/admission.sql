@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.scanner_admit_ticket_internal(p_ticket bigint)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.check_ticket_is_mutable(p_ticket);
+ IF NOT public.stripe_ticket_admission_allowed_internal(p_ticket) THEN RAISE EXCEPTION 'stripe_admission_hold'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket AND state='used') THEN RAISE EXCEPTION 'already_used'; END IF;
  UPDATE eshop.tickets SET state='used',updated_at=clock_timestamp() WHERE id=p_ticket;
 END $$;
@@ -85,7 +86,8 @@ BEGIN
    PERFORM public.scanner_lock_ticket_internal(tid);
    PERFORM public.check_occasion_writable(s.occasion_id);
    SELECT dto INTO proj FROM public.scanner_ticket_projection_internal(s.occasion_id,cfg.config,tid);
-   IF proj->>'state'='used' THEN outcome:='conflict'; reason:='already_used';
+   IF op->>'snapshot_id' IS NOT NULL AND coalesce((proj->>'online_required')::boolean,false) THEN reason:='online_required';
+   ELSIF proj->>'state'='used' THEN outcome:='conflict'; reason:='already_used';
    ELSIF proj->>'state' IN ('storno','waitlisted') OR NOT coalesce((proj->>'admission_allowed')::boolean,false) THEN reason:='admission_not_allowed';
    ELSIF proj->>'eligibility_fingerprint' IS DISTINCT FROM op->>'eligibility_fingerprint' THEN outcome:='conflict'; reason:='eligibility_changed';
    ELSIF (proj->>'requires_unpaid_confirmation')::boolean AND (NOT coalesce((op->>'confirm_unpaid')::boolean,false) OR op->>'snapshot_id' IS NOT NULL) THEN reason:='unpaid_confirmation_required';

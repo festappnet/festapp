@@ -1,3 +1,5 @@
+import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../verification/verification_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -21,6 +23,7 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
 
@@ -41,6 +44,7 @@ class UnitSettingsScreen extends StatefulWidget {
 class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
+  bool _isUpdatingStripeFeature = false;
   bool _isLoading = true;
   bool _canEdit = false;
   late UnitModel _unit;
@@ -104,6 +108,26 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
       }
     } catch (e) {
       AppLogger.error("Error checking delete constraints: $e");
+    }
+  }
+
+  Future<void> _setStripeFeature(bool enabled) async {
+    final unitId = _unit.id;
+    if (unitId == null ||
+        !StripeFeature.canActivate ||
+        RightsService.currentUnit()?.id != unitId) return;
+    setState(() => _isUpdatingStripeFeature = true);
+    try {
+      await Supabase.instance.client.rpc('set_stripe_unit_feature',
+          params: {'p_unit': unitId, 'p_enabled': enabled});
+      await RightsService.refreshAfterAuthorizationChange();
+      if (mounted) widget.onUnitUpdated();
+    } catch (_) {
+      if (mounted)
+        ToastHelper.Show(context, 'Nastavení Stripe se nepodařilo uložit.',
+            severity: ToastSeverity.NotOk);
+    } finally {
+      if (mounted) setState(() => _isUpdatingStripeFeature = false);
     }
   }
 
@@ -522,6 +546,28 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                     },
                   ),
                 const SizedBox(height: 48),
+                if (StripeFeature.canActivate &&
+                    RightsService.currentUnit()?.id == _unit.id)
+                  ExpansionTile(
+                    title: const Text('Skryté funkce'),
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Platby kartou přes Stripe'),
+                        subtitle: const Text(
+                            'Zpřístupní nastavení pouze této organizaci. Ostré platby se tím nezapnou.'),
+                        value: StripeFeature.visible,
+                        onChanged:
+                            _isUpdatingStripeFeature ? null : _setStripeFeature,
+                      )
+                    ],
+                  ),
+                if (StripeFeature.visible && StripeFeature.canManage)
+                  ListTile(
+                      leading: const Icon(Icons.credit_card),
+                      title: Text(StripeConnectionStrings.title),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.tabsRouter
+                          .navigate(const UnitCardPaymentsRoute())),
                 if (_canEdit)
                   Center(
                     child: Tooltip(

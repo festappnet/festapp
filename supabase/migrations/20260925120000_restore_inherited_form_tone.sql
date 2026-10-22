@@ -14,6 +14,3 @@ SET search_path = ''
 AS $$
     SELECT public.create_form_internal_v1(p_occasion_id, p_link, p_title);
 $$;
-
-REVOKE ALL ON FUNCTION public.create_form(bigint, text, text)
-FROM PUBLIC, anon, authenticated;

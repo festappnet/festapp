@@ -16,4 +16,3 @@ BEGIN
  IF bp IS NOT NULL AND (n IS NOT NULL OR enabled) THEN
   RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','BLUEPRINT_CONFLICT')::text; END IF;
 END $$;
-REVOKE ALL ON FUNCTION public.check_form_capacity_settings_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;

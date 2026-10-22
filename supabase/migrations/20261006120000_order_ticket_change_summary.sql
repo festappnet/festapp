@@ -94,7 +94,7 @@ BEGIN
    'referenceHistoryId',v_reference.id,'latestHistoryId',v_latest,'latestSentAt',v_sent_at);
 END $$;
 REVOKE ALL ON FUNCTION public.get_order_change_summary_v1(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_order_change_summary_v1(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_products_for_ticket(
   ticket_id bigint

@@ -165,7 +165,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM PUBLIC, anon, authenticated;
+
 
 REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM service_role;
 CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
@@ -214,10 +214,8 @@ BEGIN
     v_before_users,jsonb_build_object('ticketIds',to_jsonb(p_tickets),
       'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated));
 END; $$;
-REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  TO authenticated;
+
+
 
 -- Administrative release of temporary holds. Buyers still use select_spot.
 CREATE OR REPLACE FUNCTION public.release_blueprint_holds_client_sync_v1(

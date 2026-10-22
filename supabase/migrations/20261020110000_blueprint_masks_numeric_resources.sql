@@ -1,8 +1,8 @@
 -- Schema-1 admission and derived numeric badge readiness. Canonical SQL sources follow.
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
 
-REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
+
+
 -- Schema-1 dependency boundary. Match effectiveNodeProperties: a kind
 -- declaration wins over an unmasked node value; explicit overrides win last.
 -- Presets have their own document defaults and namespace.
@@ -42,12 +42,12 @@ LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
      WHERE child->>'id'=member AND child->>'parentId'=node->>'id'))
    ORDER BY ordinal LIMIT 1),0)>1)
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_font_dependencies_internal(jsonb) FROM PUBLIC,anon,authenticated;
-
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
+
+
+
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
 -- public layout protocol; commercial identities never belong in the document.
@@ -235,4 +235,3 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_layout_internal(jsonb) FROM PUBLIC,anon,authenticated;

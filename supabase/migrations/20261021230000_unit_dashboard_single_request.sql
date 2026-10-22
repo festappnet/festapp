@@ -189,7 +189,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_unit_edit_data(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_unit_edit_data(bigint) TO authenticated;
+
 
 -- Source: database/functions/others/get_app_config_v219.sql
 -- Transition-only capability bootstrap. v217/v218 remain unchanged for

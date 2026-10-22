@@ -34,7 +34,7 @@ BEGIN
     RETURN jsonb_build_object('code',200,'message','Update successful');
 END $$;
 REVOKE ALL ON FUNCTION public.mark_order_and_tickets_paid_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.mark_order_and_tickets_paid_internal_v1(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_paid(order_id bigint)
 RETURNS jsonb

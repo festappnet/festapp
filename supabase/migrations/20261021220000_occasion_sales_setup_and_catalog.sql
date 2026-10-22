@@ -625,7 +625,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.update_form_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 
 -- Source: database/functions/cron/apply_planned_changes.sql
@@ -709,14 +709,11 @@ BEGIN
     END;
   END LOOP;
 END; $$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes_client_sync_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes_client_sync_v1() TO service_role;
-CREATE OR REPLACE FUNCTION public.apply_planned_changes()
-RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-  SELECT public.apply_planned_changes_client_sync_v1();
-$$;
-REVOKE ALL ON FUNCTION public.apply_planned_changes() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_planned_changes() TO service_role;
+
+
+
+
+
 
 
 -- Source: database/functions/occasion_setup/sale_status.sql
@@ -1191,8 +1188,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 
 COMMIT;

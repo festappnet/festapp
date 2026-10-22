@@ -135,7 +135,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.activate_bank_sync_connection(bigint,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.activate_bank_sync_connection(bigint,text) TO service_role;
+
 
 
 -- SOURCE: eshop_bank_sync/bank_sync_manage.sql
@@ -154,7 +154,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_bank_sync_connection(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connection(bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.begin_bank_sync_operation(p_id uuid,p_account_id bigint,p_operation text,p_hash text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -173,7 +173,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.begin_bank_sync_operation(uuid,bigint,text,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.begin_bank_sync_operation(uuid,bigint,text,text) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.claim_bank_sync_operation(p_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -192,7 +192,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.claim_bank_sync_operation(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.claim_bank_sync_operation(uuid) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.complete_bank_sync_operation(p_id uuid,p_state text,p_result jsonb,p_lease_token uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -204,7 +204,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.complete_bank_sync_operation(uuid,text,jsonb,uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.complete_bank_sync_operation(uuid,text,jsonb,uuid) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.save_bank_sync_connection(p_operation_id uuid,p_instance_id text,p_remote_id text,p_pairing_code text,p_mode text)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -230,7 +230,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.save_bank_sync_connection(uuid,text,text,text,text) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.update_bank_sync_connection_metadata(p_id bigint,p_pairing_code text,p_expiry timestamptz,p_state text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -243,7 +243,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_bank_sync_connections_for_unit(p_unit_id bigint)
 RETURNS TABLE(connection_id bigint,remote_bank_account_id text)
@@ -257,7 +257,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_connections_for_unit(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.record_bank_sync_pull(p_id bigint,p_success_at timestamptz,p_error text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -267,7 +267,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_bank_sync_observations(p_bank_account_id bigint,p_limit integer DEFAULT 50)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -285,7 +285,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_bank_sync_observations(bigint,integer) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_observations(bigint,integer) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.stage_bank_sync_operation(p_id uuid,p_hash text,p_request jsonb,p_token_cipher jsonb)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -302,7 +302,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.stage_bank_sync_operation(uuid,text,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.stage_bank_sync_operation(uuid,text,jsonb,jsonb) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_recoverable_bank_sync_operations()
 RETURNS TABLE(id uuid,request jsonb,token_cipher jsonb,payload_sha256 text)
@@ -315,7 +315,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_recoverable_bank_sync_operations() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_recoverable_bank_sync_operations() TO service_role;
+
 
 
 -- SOURCE: eshop_transactions/match_bank_transaction.sql
@@ -412,9 +412,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.match_bank_transaction(bigint)
-  FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.match_bank_transaction(bigint) TO service_role;
+
+
 
 
 -- SOURCE: eshop_orders/recalculate_order_payment_status.sql
@@ -570,8 +569,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.apply_transaction_pairing(bigint,bigint,text,text,jsonb)
-  FROM PUBLIC, anon, authenticated, service_role;
+
 
 
 -- SOURCE: eshop_bank_sync/ingest_bank_sync_transaction.sql
@@ -713,7 +711,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.ingest_bank_sync_transaction(text,text,text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.ingest_bank_sync_transaction(text,text,text,jsonb) TO service_role;
+
 
 
 -- SOURCE: eshop_transactions/insert_transactions.sql
@@ -794,8 +792,8 @@ END;
 $$;
 
 CREATE INDEX IF NOT EXISTS idx_transaction_id ON eshop.transactions (transaction_id);
-REVOKE ALL ON FUNCTION public.insert_transactions(jsonb,bigint) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.insert_transactions(jsonb,bigint) TO service_role;
+
+
 
 
 -- SOURCE: eshop_transactions/process_email_transaction.sql
@@ -869,8 +867,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.process_email_transaction(jsonb) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.process_email_transaction(jsonb) TO service_role;
+
+
 
 
 -- SOURCE: eshop_transactions/get_bank_account_secret.sql
@@ -1076,8 +1074,8 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.regenerate_bank_account_pairing_code(bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.regenerate_bank_account_pairing_code(bigint) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.regenerate_bank_account_pairing_code(bigint) TO service_role;
+
+
 
 
 -- SOURCE: eshop_bank_accounts/update_bank_account.sql
@@ -1230,7 +1228,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_my_admin_bank_accounts() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_my_admin_bank_accounts() TO authenticated, service_role;
+
 
 
 -- SOURCE: eshop_bank_accounts/get_bank_accounts_for_unit_management.sql
@@ -1289,5 +1287,3 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) TO authenticated, service_role;
-

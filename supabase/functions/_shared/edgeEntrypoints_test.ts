@@ -431,3 +431,18 @@ Deno.test("MCP session exchange entrypoint rejects a foreign origin without priv
   }));
   assertEquals(result.status, 403);
 });
+
+// Hidden rollout must fail closed when Stripe credentials are absent.
+for (const name of ["stripe-connect", "stripe-connect-callback", "stripe-checkout", "stripe-return", "stripe-webhook"]) {
+  Deno.test(`${name} registers and rejects an unconfigured runtime`, async () => {
+    const handler = await loadHandler(name);
+    const response = await handler(new Request("https://edge-test.invalid", {method: "POST", body: "{}"}));
+    assertEquals(response.status, 503);
+    assertEquals((await response.json()).error, "stripe_not_configured");
+  });
+}
+Deno.test("stripe-reconcile registers and rejects non-POST requests before runtime access", async () => {
+  const handler = await loadHandler("stripe-reconcile");
+  const response = await handler(new Request("https://edge-test.invalid"));
+  assertEquals(response.status, 405);
+});

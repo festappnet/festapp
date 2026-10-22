@@ -75,9 +75,12 @@ BEGIN
   RAISE EXCEPTION 'Invalid participant ticket binding'; END IF;
  PERFORM public.validate_waitlist_answers_internal(fid,input,input->'ticket',false);
  UPDATE eshop.order_product_ticket SET "order"=target WHERE "order"=o.id AND ticket=ANY(ids);
- result:=public.finalize_ticket_order_internal_v1(target,input,true);
+ result:=public.finalize_ticket_order_internal_v1(target,input-'stripePaymentSource',true);
  IF coalesce((result->>'code')::integer,500)<>200 THEN RAISE EXCEPTION '%',result::text; END IF;
  UPDATE eshop.waitlist_offer_slots SET outcome='accepted',resulting_order_id=target,updated_at=clock_timestamp() WHERE id=ANY(selected_slots);
+ IF result#>>'{order,payment_info,payment_method}'='stripe' THEN
+  PERFORM public.attach_stripe_order_pay_source_internal(target,p_command,input->'stripePaymentSource');
+ END IF;
  PERFORM public.enqueue_ticket_order_confirmation_v1(p_command,o.occasion,result,input->>'lang');
  IF (SELECT state='preparing_payment' FROM eshop.orders WHERE id=target) THEN
   INSERT INTO eshop.waitlist_acceptance_attempts(command_id,source_order_id,target_order_id,offer_id,conversion,ticket_ids,slot_ids,previous_order_data,previous_tickets,previous_links,previous_slots)

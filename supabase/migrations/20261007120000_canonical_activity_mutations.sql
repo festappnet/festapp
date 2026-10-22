@@ -231,7 +231,7 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.lock_activity_editor_internal_v1(bigint),public.retain_activity_history_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint),public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint),public.publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint),public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint),public.publish_activities_client_sync_v1(bigint,uuid,bigint,jsonb,jsonb,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.get_activity_editor_session_v1(p_occasion bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -250,7 +250,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
  FROM (SELECT 1) root LEFT JOIN LATERAL (SELECT id,parent_history_id,activities_data FROM public.activity_history WHERE occasion_id=p_occasion AND user_id=auth.uid() AND history_type='AUTOSAVE' ORDER BY id DESC LIMIT 1) d ON true;
 $$;
 REVOKE ALL ON FUNCTION public.get_activity_editor_session_v1(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_activity_editor_session_v1(bigint) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.get_latest_autosave(p_occasion_id bigint)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -513,7 +513,7 @@ CREATE OR REPLACE FUNCTION public.import_user_group_assignments(
     p_occasion_id,p_assignments);
 $$;
 
-REVOKE ALL ON FUNCTION public.import_user_group_assignments_internal_v1(bigint,jsonb) FROM PUBLIC,anon,authenticated;
+
 
 
 CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv_internal_v1(p_occasion_id bigint, p_rows jsonb, p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
@@ -530,7 +530,7 @@ BEGIN
 END;
 $function$
 ;
-REVOKE ALL ON FUNCTION public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb),public.import_occasion_users_from_csv_internal_v1(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
+
 -- Released G3 compatibility facade; current callers use import_profiles_client_sync_v1.
 CREATE OR REPLACE FUNCTION public.import_occasion_users_from_csv(p_occasion_id bigint,p_rows jsonb,p_delete_user_ids jsonb DEFAULT '[]'::jsonb)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -543,7 +543,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
 $$;
 REVOKE ALL ON FUNCTION public.profile_group_import_state_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
 
-REVOKE ALL ON FUNCTION public.advance_group_profile_heads_internal_v1(bigint,uuid[]) FROM PUBLIC,anon,authenticated;
+
 -- Adjacent lifecycle owners: only group lock/version seam corrections.
 CREATE OR REPLACE FUNCTION public.import_profiles_client_sync_v1(p_occasion bigint, p_command_id uuid, p_rows jsonb, p_delete_user_ids jsonb)
  RETURNS jsonb
@@ -937,10 +937,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.delete_occasion_user_ws(uuid,bigint)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_occasion_user_ws(uuid,bigint)
-  TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.import_users_from_tickets(p_occasion_id bigint)
 RETURNS JSONB

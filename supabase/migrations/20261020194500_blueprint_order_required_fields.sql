@@ -250,5 +250,3 @@ EXCEPTION WHEN OTHERS THEN
   RETURN JSONB_BUILD_OBJECT('success', false, 'message', SQLERRM);
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_internal_v1(bigint[],jsonb) FROM PUBLIC,anon,authenticated,service_role;

@@ -31,7 +31,7 @@ class OptionFieldHelper {
   static String? buildPriceText(
       BuildContext context, FormOptionDefinition option) {
     if (option is FormOptionProductModel && option.price > 0) {
-      return '+ ${Utilities.formatPrice(context, option.price, currencyCode: option.currencyCode)}';
+      return '+ ${Utilities.formatPrice(context, option.price, currencyCode: option.currencyCode, decimalDigits: option.price == option.price.truncateToDouble() ? 0 : null)}';
     }
     return null;
   }
@@ -40,7 +40,7 @@ class OptionFieldHelper {
   static String buildDepositText(
       BuildContext context, FormOptionProductModel option) {
     final depositStr = Utilities.formatPrice(context, option.depositAmount!,
-        currencyCode: option.currencyCode);
+        currencyCode: option.currencyCode, decimalDigits: option.price == option.price.truncateToDouble() ? 0 : null);
     return '${FormStrings.depositInfo}: $depositStr';
   }
 

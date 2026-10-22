@@ -50,10 +50,8 @@ BEGIN
       'safeLabel',left(p_blueprint->>'title',240),'changedFields',jsonb_build_array(
         'layout','bindings'))),v_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_blueprint_client_sync_v1(jsonb,uuid)
-  TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION get_blueprint(
     my_secret UUID,
@@ -664,8 +662,8 @@ SET search_path = public, extensions
  $$;
 
 
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
 RETURNS bigint
@@ -1075,17 +1073,15 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 -- Configuration only: no responses, orders, customers or reservation secrets.
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_sources(p_unit bigint)
@@ -1133,8 +1129,8 @@ BEGIN
       FROM public.information i WHERE i.occasion=o.id),'[]'::jsonb)
     ) ORDER BY o.start_time DESC,o.id DESC) FROM public.occasions o WHERE o.unit=p_unit),'[]'::jsonb);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_sources(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_sources(bigint) TO authenticated;
+
+
 
 -- Materialize the private configuration exactly once. Provisional draft IDs and
 -- source product IDs are never accepted as IDs in the new aggregate.
@@ -1396,8 +1392,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 DROP FUNCTION IF EXISTS public.update_blueprint(jsonb);
 DROP FUNCTION IF EXISTS public.update_blueprint_internal_v1(jsonb);

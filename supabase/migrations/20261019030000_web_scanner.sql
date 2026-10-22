@@ -455,7 +455,7 @@ BEGIN
  SELECT oh.secret INTO secret FROM public.occasions o JOIN public.occasions_hidden oh ON oh.id=o.occasion_hidden WHERE o.id=s.occasion_id;
  RETURN public.reset_password_via_scan(p_ticket,p_password,secret);
 END $$;
-REVOKE ALL ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) FROM PUBLIC;
+
 GRANT EXECUTE ON FUNCTION public.reset_scanner_password(uuid,text,bigint,text) TO anon,authenticated;
 CREATE OR REPLACE FUNCTION public.get_scanner_event_history(p_occasion bigint,p_before timestamptz DEFAULT now())
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -468,7 +468,7 @@ BEGIN
  WHERE op.occasion_id=p_occasion AND op.committed_at<p_before ORDER BY op.committed_at DESC LIMIT 50) rows;
  RETURN jsonb_build_object('code',200,'data',result,'server_time',now());
 END $$;
-REVOKE ALL ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_scanner_event_history(bigint,timestamptz) TO authenticated;
 CREATE OR REPLACE FUNCTION public.search_scanner_users(p_session uuid,p_token text,p_query text,p_after uuid DEFAULT '00000000-0000-0000-0000-000000000000')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -488,7 +488,7 @@ BEGIN
  AND strpos(lower(concat_ws(' ',u.name,u.surname)),lower(p_query))>0 ORDER BY u.id LIMIT 30) rows;
  RETURN jsonb_build_object('code',200,'data',result,'server_time',now());
 END $$;
-REVOKE ALL ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) FROM PUBLIC;
+
 GRANT EXECUTE ON FUNCTION public.search_scanner_users(uuid,text,text,uuid) TO anon,authenticated;
 CREATE OR REPLACE FUNCTION public.preview_scanner_ticket(p_occasion bigint,p_config jsonb,p_symbol text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -499,7 +499,7 @@ BEGIN
  SELECT dto INTO result FROM public.scanner_ticket_projection_internal(p_occasion,p_config,(SELECT id FROM eshop.tickets WHERE occasion=p_occasion AND ticket_symbol=p_symbol LIMIT 1)) WHERE dto->>'symbol'=p_symbol;
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'reason',CASE WHEN result IS NULL THEN 'not_found' END,'data',result,'server_time',now());
 END $$;
-REVOKE ALL ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) TO authenticated;
 
 -- Source: database/functions/scanning/grants.sql
@@ -507,11 +507,9 @@ GRANT EXECUTE ON FUNCTION public.preview_scanner_ticket(bigint,jsonb,text) TO au
 REVOKE ALL ON FUNCTION public.scanner_default_settings_internal(bigint),public.scanner_validate_settings_internal(bigint,jsonb),
  public.scanner_ticket_projection_internal(bigint,jsonb,bigint),public.scanner_session_internal(uuid,text,boolean),public.scanner_lock_ticket_internal(bigint),public.scanner_admit_ticket_internal(bigint)
  FROM PUBLIC,anon,authenticated,service_role;
-REVOKE ALL ON FUNCTION public.get_scanner_settings(bigint),public.update_scanner_settings(bigint,bigint,jsonb),public.resolve_scanner_conflict(uuid,text) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_scanner_settings(bigint),public.update_scanner_settings(bigint,bigint,jsonb),public.resolve_scanner_conflict(uuid,text) TO authenticated;
-REVOKE ALL ON FUNCTION public.open_scanner_session(text,bigint,text),public.revoke_scanner_session(uuid,text),public.lookup_scanner_ticket(uuid,text,text),
- public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
- public.get_scanner_summary(uuid,text),public.prepare_scanner_snapshot(uuid,text),public.get_scanner_snapshot_page(uuid,text,uuid,integer) FROM PUBLIC;
+
 GRANT EXECUTE ON FUNCTION public.open_scanner_session(text,bigint,text),public.revoke_scanner_session(uuid,text),public.lookup_scanner_ticket(uuid,text,text),
  public.search_scanner_tickets(uuid,text,text,bigint),public.sync_scanner_operations(uuid,text,jsonb),public.get_scanner_receipts(uuid,text,uuid[]),
  public.get_scanner_summary(uuid,text),public.prepare_scanner_snapshot(uuid,text),public.get_scanner_snapshot_page(uuid,text,uuid,integer) TO anon,authenticated;
@@ -684,68 +682,7 @@ BEGIN
 END;
 $$;
 -- Source: database/functions/eshop_orders/update_order_and_tickets_to_paid.sql
-CREATE OR REPLACE FUNCTION public.update_order_and_tickets_to_paid(order_id bigint)
-RETURNS jsonb
-LANGUAGE plpgsql
-SET search_path = public, extensions
-AS $function$
-DECLARE
-    occasion_id bigint;
-    transition_result jsonb;
-BEGIN
-    transition_result := public.mark_order_and_tickets_paid_internal_v1(order_id);
-    IF transition_result->>'code' IS DISTINCT FROM '200' THEN
-        RETURN transition_result;
-    END IF;
-    SELECT occasion INTO occasion_id FROM eshop.orders WHERE id=order_id;
 
-    -- Queue deposit-paid or fully-paid email for orders with deposit
-    DECLARE
-        v_deposit_amount NUMERIC;
-        v_total_amount NUMERIC;
-        v_total_paid NUMERIC;
-        v_email_code TEXT;
-        v_org_id BIGINT;
-        v_unit_id BIGINT;
-    BEGIN
-        -- Fetch payment info for this order
-        SELECT pi.deposit_amount, pi.amount, pi.paid
-        INTO v_deposit_amount, v_total_amount, v_total_paid
-        FROM eshop.payment_info pi
-        JOIN eshop.orders o ON o.payment_info = pi.id
-        WHERE o.id = order_id;
-
-        -- Only queue emails for deposit orders. The template handler branches
-        -- internally on amountPaid >= totalAmount to render either the
-        -- deposit-paid copy (with remaining balance + QR) or the fully-paid copy.
-        IF v_deposit_amount IS NOT NULL AND v_total_paid >= v_deposit_amount THEN
-            -- Get organization and unit from occasion
-            SELECT occ.organization, occ.unit
-            INTO v_org_id, v_unit_id
-            FROM public.occasions occ
-            WHERE occ.id = occasion_id;
-
-            v_email_code := 'TICKET_ORDER_PAYMENT_DONE';
-
-            IF v_email_code IS NOT NULL THEN
-                PERFORM public.enqueue_order_email(v_email_code,jsonb_build_object('order_id',order_id),v_org_id,occasion_id,v_unit_id);
-            END IF;
-        END IF;
-    END;
-
-    PERFORM public.enqueue_paid_order_tickets(order_id);
-
-    -- Return a success message with a status code 200
-    RETURN jsonb_build_object('code', 200, 'message', 'Update successful');
-EXCEPTION WHEN OTHERS THEN
-    -- Rollback is automatic on exception
-    RETURN jsonb_build_object(
-        'code', 500,
-        'message', SQLERRM,
-        'detail', coalesce(SQLERRM, 'An unexpected error occurred')
-    );
-END;
-$function$;
 
 -- Source: database/functions/eshop_orders/get_occasion_by_scan_code.sql
 CREATE OR REPLACE FUNCTION public.get_occasion_by_scan_code(scan_code TEXT)
@@ -1182,56 +1119,14 @@ $$;
 -- Source: database/functions/eshop_orders/check_order_is_mutable.sql
 -- Domain commands authorize callers before invoking these private guards.
 -- Lock the order through the write so cancellation cannot race with an edit.
-CREATE OR REPLACE FUNCTION public.check_order_is_mutable(p_order bigint)
-RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE v_state text;
-BEGIN
-  PERFORM public.check_occasion_writable((SELECT occasion FROM eshop.orders WHERE id=p_order));
-  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
-  SELECT state INTO v_state FROM eshop.orders WHERE id=p_order FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND' USING ERRCODE='P0002'; END IF;
-  IF v_state IN ('waitlisted','preparing_payment') THEN
-    RAISE EXCEPTION 'ORDER_ACTION_NOT_ALLOWED' USING ERRCODE='55000';
-  END IF;
-  IF v_state='storno' THEN
-    RAISE EXCEPTION 'ORDER_CANCELLED: Cancelled orders are read-only' USING ERRCODE='55000';
-  END IF;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.check_ticket_is_mutable(p_ticket bigint)
-RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE v_order bigint; v_state text;
-BEGIN
-  FOR v_order IN SELECT DISTINCT opt."order" FROM eshop.order_product_ticket opt
-    WHERE opt.ticket=p_ticket ORDER BY opt."order" LOOP
-    PERFORM public.check_order_is_mutable(v_order);
-  END LOOP;
-  SELECT state INTO v_state FROM eshop.tickets WHERE id=p_ticket FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'TICKET_NOT_FOUND' USING ERRCODE='P0002'; END IF;
-  IF v_state='waitlisted' THEN RAISE EXCEPTION 'TICKET_ACTION_NOT_ALLOWED' USING ERRCODE='55000'; END IF;
-  IF v_state='storno' THEN
-    RAISE EXCEPTION 'TICKET_CANCELLED: Cancelled tickets are read-only' USING ERRCODE='55000';
-  END IF;
-END $$;
 
-CREATE OR REPLACE FUNCTION public.check_payment_info_is_mutable(p_payment bigint)
-RETURNS void LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE v_order bigint;
-BEGIN
-  FOR v_order IN SELECT id FROM eshop.orders WHERE payment_info=p_payment ORDER BY id LOOP
-    PERFORM public.check_order_is_mutable(v_order);
-  END LOOP;
-END $$;
 
-REVOKE ALL ON FUNCTION public.check_order_is_mutable(bigint),
-  public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.check_order_is_mutable(bigint),
-  public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
-  TO service_role;
+
+
+
+
+
 
 -- Source: database/functions/eshop_orders/update_ticket_to_unused_ws.sql
 CREATE OR REPLACE FUNCTION public.update_ticket_to_unused_ws(
@@ -1273,10 +1168,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.update_ticket_to_unused_ws(bigint)
-FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.update_ticket_to_unused_ws(bigint)
-TO authenticated, service_role;
+
+
 
 -- Source: database/functions/others/duplicate_occasion.sql
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
@@ -1688,24 +1581,15 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
-RETURNS bigint LANGUAGE sql SECURITY DEFINER SET search_path = public, extensions AS $$
- SELECT public.duplicate_occasion_internal_v1(oc,p_target_unit,'en');
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
+
+
 
 -- Source: database/functions/events/get_event_participants_for_edit.sql
 CREATE OR REPLACE FUNCTION public.get_event_participants_for_edit(
@@ -1759,10 +1643,3 @@ BEGIN
   RETURN jsonb_build_object('code', 200, 'data', v_participants);
 END;
 $function$;
-
-REVOKE ALL ON FUNCTION public.get_event_participants_for_edit(bigint)
-  FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.get_event_participants_for_edit(bigint)
-  FROM anon;
-GRANT EXECUTE ON FUNCTION public.get_event_participants_for_edit(bigint)
-  TO authenticated, service_role;

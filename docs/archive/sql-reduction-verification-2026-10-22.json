@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-22",
+  "sourceRevision": "f4aa0b6edfa688b03937197d74b0506d2ae81db7",
+  "sqlBytesSaved": 617396,
+  "functionDeclarationsRemoved": 345,
+  "redundantFunctionAclStatementsRemoved": 1006,
+  "migrationFilesChanged": 136,
+  "pg17DatabasePairs": 136,
+  "migrationBoundaryBodyParity": 217,
+  "pg15": {
+    "postgres_version": "15.8",
+    "image": "sha256:af083ef64d0408c8f098ee6f5c364a59b26f36fbc0f3a334a62c5c1d57362e9b",
+    "acl_probes": 1006,
+    "create_probes": 2,
+    "non_noop": [],
+    "migrations": 217
+  },
+  "finalAclAuditNoops": 0,
+  "finalUnprotectedExactCreateRepeats": 0,
+  "retainedProtectedMigrations": [
+    {
+      "migration": "20261013190000_form_capacity_waitlist.sql",
+      "repetitions": 24,
+      "sha256": "9b431485b2b30c73c8a28ce754718c44bf5aeafd1ae91aa93012bd448d5ed80e"
+    },
+    {
+      "migration": "20261013200000_waitlist_canonical_tickets.sql",
+      "repetitions": 62,
+      "sha256": "a5264ca59741877ba693d52ea427360994ad3508c226ccf1da10ab00670b2b2a"
+    },
+    {
+      "migration": "20261016100000_abuse_admission.sql",
+      "repetitions": 42,
+      "sha256": "5ba74531a242669dd0a0b846af9648a6e63505a1b16494ec0b24b564d9a59f22"
+    },
+    {
+      "migration": "20261018210000_integration_contract_reconciliation.sql",
+      "repetitions": 2,
+      "sha256": "face0361c63741d9324254f0cf8647094af8d1f8a7b3c731dc34d54485ad249d"
+    },
+    {
+      "migration": "20261020120000_canonical_operations_foundation.sql",
+      "repetitions": 84,
+      "sha256": "83709f07dadf93094974385d4c2c43605c936ccd79112780c8533454e34f2a60"
+    },
+    {
+      "migration": "20261021010000_blueprint_reservation_integrity.sql",
+      "repetitions": 13,
+      "sha256": "f5e137f068223398e0cb4705c732aaf1f7d9f473d5448da31dbae3437eaa3019"
+    },
+    {
+      "migration": "20261021020000_blueprint_release_integration.sql",
+      "repetitions": 35,
+      "sha256": "98da54019793ebe446323b69d2a273544c788c4cff0753a9a82f8225b6348918"
+    },
+    {
+      "migration": "20261021040000_order_seating.sql",
+      "repetitions": 7,
+      "sha256": "201564ec915bcd996e6523418df373504484e646612f6644bbcf5a1b778f239b"
+    },
+    {
+      "migration": "20261021100000_canonical_authorization.sql",
+      "repetitions": 8,
+      "sha256": "0ac0bb0d4468a8a7764bfa1aa88a92a0753c16d3be1ff642ece003133b8ded0c"
+    }
+  ],
+  "pg17ReceiptSha256": "54b72bc0d6c248773e51140c9edb16cbeb15ad9a41458f8d7694615f8a5ae614",
+  "additionalPg17ReceiptSha256": "505bf71d65b569c14c15b2b4bfb835046a039d97328e8fa198fb4fcea930cd46"
+}

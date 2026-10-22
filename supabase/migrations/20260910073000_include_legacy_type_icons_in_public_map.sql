@@ -130,9 +130,7 @@ ON CONFLICT (component,scope_type,scope_id,entity_id) DO UPDATE
 SET source_revision=EXCLUDED.source_revision,dirty_since=now(),
     claimed_at=NULL,claim_token=NULL;
 
-REVOKE ALL ON FUNCTION public.get_public_client_sync_component_core_v1(text,text,bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_public_client_sync_component_core_v1(text,text,bigint)
-  TO service_role;
+
+
 
 COMMIT;

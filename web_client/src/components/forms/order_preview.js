@@ -16,6 +16,9 @@ import { FormDataReader } from './form_data_reader.js';
 import { FieldPreviewFactory } from './previews/field_preview_factory.js';
 import { FormHelper } from './form_helper.js';
 import { LocalizationService } from '../../services/localization_service.js';
+import { formPaymentOptions } from './form_payment_options.js';
+import { renderPaymentMethodPicker } from './payment_method_picker.js';
+import { paymentMethodText } from './payment_method_strings.js';
 
 // Inject CSS
 if (typeof document !== 'undefined') {
@@ -45,6 +48,14 @@ export class OrderPreview {
         }
 
         overlay.innerHTML = OrderPreview._render(data);
+        const paymentOptions = formPaymentOptions(formModel.payments, isEmbed() ? 'embed' : 'web');
+        const paymentSubmit = overlay.querySelector('.btn-submit-order');
+        let paymentChoice = {selected:null};
+        if (data.registrationMode !== 'waitlist' && !presentation.submitLabel && data.totalPrice > 0) paymentChoice = renderPaymentMethodPicker(overlay.querySelector('[data-payment-methods]'),paymentOptions,method=>{
+            paymentSubmit.disabled = !method;
+            paymentSubmit.textContent = method === 'stripe' ? paymentMethodText('orderAndPay') : PublicOrderStrings.getSubmitButton(data.hasTickets,data.tone);
+        });
+        else if (data.registrationMode !== 'waitlist' && !presentation.submitLabel) {paymentSubmit.textContent = paymentMethodText('finishFree');overlay.querySelector('[data-payment-methods]').hidden=true;}
 
         // 3. Close Logic (with Animation)
         let isClosing = false;
@@ -100,13 +111,26 @@ export class OrderPreview {
             RouterService.goBackProgrammatically();
         };
 
-        if (closeBtn) closeBtn.onclick = triggerBack;
+        if (closeBtn) {
+            closeBtn.onclick = triggerBack;
+            closeBtn.setAttribute('aria-label', LocalizationService.tr('Common.close'));
+        }
 
         // 4. Listeners
         
         // ESC Key
         const escHandler = (e) => {
-            if (e.key === 'Escape') triggerBack();
+            if (e.key === 'Escape') { e.preventDefault(); triggerBack(); }
+            if (e.key === 'Tab' && !isEmbed()) {
+                const controls = [...overlay.querySelectorAll('button, input, select, textarea, a[href], [tabindex]')]
+                    .filter(el => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden]') && el.type !== 'hidden');
+                const first = controls[0], last = controls.at(-1);
+                if (first && (!overlay.contains(document.activeElement) ||
+                    (e.shiftKey && document.activeElement === first) ||
+                    (!e.shiftKey && document.activeElement === last))) {
+                    e.preventDefault(); (e.shiftKey ? last : first).focus();
+                }
+            }
         };
         document.addEventListener('keydown', escHandler);
 
@@ -123,7 +147,9 @@ export class OrderPreview {
                  // Capture payment_type from deposit radio if present
                  const selectedRadio = overlay.querySelector('input[name="payment_type"]:checked');
                  const paymentType = selectedRadio ? selectedRadio.value : null;
-                 if (onConfirm) onConfirm(overlay, paymentType);
+                 if (onConfirm && (data.totalPrice <= 0 || paymentChoice.selected)) onConfirm(overlay, paymentType, paymentChoice.selected || 'bank',{
+                     amountMinor:Math.round(data.totalPrice*100),currency:data.currency,connectionId:paymentOptions.recipient?.connectionId,surface:isEmbed()?'embed':'web',
+                 });
             };
         }
 
@@ -132,6 +158,11 @@ export class OrderPreview {
         overlay.style.display = 'flex';
         overlay.offsetHeight; // Force reflow
         overlay.classList.add('visible');
+        const dialog = overlay.querySelector('.order-preview-content');
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-labelledby', 'order-preview-title');
+        if (!isEmbed()) dialog.setAttribute('aria-modal', 'true');
+        closeBtn?.focus({ preventScroll: true });
         revealEmbedStep(overlay);
         
         const content = overlay.querySelector('.order-preview-content');
@@ -281,6 +312,7 @@ export class OrderPreview {
         
         // We use passed pricing data to display logic properly
         const totalPriceData = priceData;
+        const cardPricing = formModel.payments?.configured?.stripe === true;
 
         const personalInfo = [];
 
@@ -303,7 +335,7 @@ export class OrderPreview {
                      if (field.id === 'currency_code') return; 
 
                      const result = FieldPreviewFactory.format(field, val, { 
-                          currency: totalPriceData.currency 
+                          currency: totalPriceData.currency, cardPricing
                      });
                      // result is now { value, price }
                      personalInfo.push({ label: formFieldTitle(field), value: result.value, price: result.price });
@@ -347,7 +379,7 @@ export class OrderPreview {
                  let spotLabel = ticketData.spotName || `Spot #${ticketData.spot}`;
                  let spotPrice = null;
                  if (ticketData.spotPrice) {
-                     spotPrice = formatPrice(ticketData.spotPrice, totalPriceData.currency, 0, 'cs-CZ');
+                     spotPrice = formatPrice(ticketData.spotPrice, totalPriceData.currency, cardPricing ? 2 : 0, LocalizationService.currentLocale);
                      // Don't append price to label anymore
                  }
                  
@@ -376,7 +408,7 @@ export class OrderPreview {
 
                            if (val !== undefined) {
                                const result = FieldPreviewFactory.format(subDef, val, {
-                                  currency: totalPriceData.currency,
+                                  currency: totalPriceData.currency, cardPricing,
                                   features: formModel.occasionFeatures,
                                });
                                if (formModel.registrationMode === 'waitlist' && !String(result.value ?? '').trim()) return;
@@ -409,7 +441,8 @@ export class OrderPreview {
             tone: formModel.communicationTone,
             acceptingOffer: Boolean(formModel.offerBundle),
             deposit: depositInfo,
-            metaSurchargeSums
+            metaSurchargeSums,
+            cardPricing
         };
     }
 
@@ -486,10 +519,10 @@ export class OrderPreview {
                     <div class="order-preview-handle"></div>
                 </div>
                 <div class="order-preview-header">
-                    <h2>${data.presentation?.title || (isWaitlist ? WaitlistStrings.title : PublicOrderStrings.summary)}</h2>
-                    <button class="btn-close-preview"><i class="material-icons">close</i></button>
+                    <h2 id="order-preview-title">${data.presentation?.title || (isWaitlist ? WaitlistStrings.title : PublicOrderStrings.summary)}</h2>
+                    <button type="button" class="btn-close-preview"><i class="material-icons" aria-hidden="true">close</i></button>
                 </div>
-                <div class="order-preview-body">
+                <div class="order-preview-body" tabindex="0" role="region" aria-labelledby="order-preview-title">
         `;
 
         const occasionTitle = data.presentation?.occasionTitle || data.occasionTitle;
@@ -586,7 +619,7 @@ export class OrderPreview {
         }
 
         // Total
-        const formattedPrice = formatPrice(data.totalPrice, data.currency, 0, 'cs-CZ');
+        const formattedPrice = formatPrice(data.totalPrice, data.currency, data.cardPricing ? 2 : 0, LocalizationService.currentLocale);
         const totalPriceString = PublicOrderStrings.totalPrice(formattedPrice);
 
         // Per-currency meta surcharge sums (visual-only, NOT added to totalPrice).
@@ -606,7 +639,7 @@ export class OrderPreview {
              </div>
         `;
 
-        html += `</div>`; // Close Body
+        html += `<section data-payment-methods style="padding:16px;min-width:0;overflow-wrap:anywhere"></section></div>`; // Close Body
 
         // Actions
         // Determine Tone and Ticket Status from FormModel? passing it??
