@@ -67,7 +67,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
   assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
-  assert.ok(!bundled.includes('fonts.googleapis.com'));
+  assert.ok(bundled.includes('https://fonts.googleapis.com/icon?family=Material+Icons'));
+  assert.ok(!bundled.includes('css2?family=Roboto'));
   assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
 
   const contentPath = join(root, 'automation/release/organizers/content.json');

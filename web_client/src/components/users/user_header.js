@@ -199,6 +199,10 @@ export class UserHeader extends HTMLElement {
                 shortLabel.setAttribute('aria-hidden', 'true');
                 addEventBtn.append(fullLabel, shortLabel);
                 addEventBtn.onclick = async () => {
+                    if (this.hasAttribute('data-marketing')) {
+                        window.location.assign('/login');
+                        return;
+                    }
                     await import('./login_modal.js');
                     const modal = document.createElement('login-modal');
                     modal.currentView = 'register';
