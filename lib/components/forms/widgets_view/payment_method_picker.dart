@@ -16,9 +16,11 @@ class PaymentMethodPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final methods = options.availableFor(surface);
+    final implicitBank = methods.length == 1 && methods.single == 'bank';
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text(PaymentMethodStrings.text('title'),
-          style: Theme.of(context).textTheme.titleMedium),
+      if (!implicitBank)
+        Text(PaymentMethodStrings.text('title'),
+            style: Theme.of(context).textTheme.titleMedium),
       if (methods.length > 1)
         for (final method in methods)
           RadioListTile<String>(
@@ -30,7 +32,7 @@ class PaymentMethodPicker extends StatelessWidget {
             title: Text(PaymentMethodStrings.text(method)),
             contentPadding: EdgeInsets.zero,
           )
-      else if (methods.length == 1)
+      else if (methods.length == 1 && !implicitBank)
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(PaymentMethodStrings.text(methods.single))),
