@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "1192437f270667aeba54c3a864f75ea3dab261ea",
+  "release": {
+    "version": "0.20.336+830",
+    "note": "Clarify sale and registration countdown labels"
+  }
+}
