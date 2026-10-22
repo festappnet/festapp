@@ -15,7 +15,7 @@ export const galleryBackgrounds: Record<string, string | null> = {
 };
 // Retain already selected v1 sources when a draft is reopened.
 export const backgroundFiles = new Set([
-  ...Object.keys(ticketThemePalettes).flatMap(style=>themedTicketArtwork.map(name=>`theme-${style}-${name}-v1.png`)),'silk-ivory-v1.jpg','aurora-v1.png','midnight-v1.png','coral-v1.png',
+  ...Object.keys(ticketThemePalettes).flatMap(style=>themedTicketArtwork.map(name=>`theme-${style}-${name}-v1.png`)),...themedTicketArtwork.map(name=>`theme-soft-${name}-v2.png`),'silk-ivory-v1.jpg','aurora-v1.png','midnight-v1.png','coral-v1.png',
   ...['concert-stub','festival-poster','club-panorama','theatre-program','gallery-square','boarding-pass'].map(name=>`${name}-v2.png`),
   ...Object.values(galleryBackgrounds).filter((url):url is string=>url!==null).map(url=>url.slice(root.length))]);
 const font = (family: string) => {

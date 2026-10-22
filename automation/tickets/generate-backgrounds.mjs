@@ -103,6 +103,6 @@ graphic('workshop-card',148,105,'FCFBF5',({rect,line})=>{
 // Reuse each original composition, rules and blocks; only its ink palette varies.
 for(const [style,palette] of Object.entries(ticketThemePalettes)) {
  for(const [name,source] of graphicSources) {
-  graphic(`theme-${style}-${name}`,source.w,source.h,source.base,source.paint,'v1',palette);
+  graphic(`theme-${style}-${name}`,source.w,source.h,source.base,source.paint,style==='soft'?'v2':'v1',palette);
  }
 }

@@ -1,14 +1,14 @@
 // Shared presentation order for setup and the ticket editor's template picker.
 const _ticketTemplateOrder = [
   'ball_silk',
-  'silk_dark',
-  'silk_light',
   'festival_poster',
   'club_panorama',
+  'silk_dark',
   'festival_badge',
   'sports_arena',
   'cinema_strip',
   'boarding_pass',
+  'silk_light',
   'gala_invitation',
   'theatre_program',
   'concert_stub',

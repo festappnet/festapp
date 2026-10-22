@@ -1,7 +1,7 @@
 // Keep the artwork's tonal hierarchy while applying an event's two ink colors.
 export const ticketThemePalettes = {
  clean:['4465A6','4465A6'], gala:['14284B','A87F28'], energy:['BB350C','8B182E'],
- nature:['216445','146475'], soft:['885268','885268'], contrast:['111111','111111'],
+ nature:['216445','146475'], soft:['885268','B89A68'], contrast:['111111','111111'],
 };
 export const themedTicketArtwork = ['concert-stub','festival-poster','club-panorama','theatre-program','gallery-square','gala-invitation','boarding-pass','cinema-strip','sports-arena','festival-badge','workshop-card'];
 const channels=hex=>[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));

@@ -118,48 +118,6 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(
-                child: Text(
-                  widget.questionSections?[widget.currentIndex] ??
-                      widget.questionCount,
-                  style: theme.textTheme.labelLarge
-                      ?.copyWith(color: colors.onSurfaceVariant),
-                ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: widget.allQuestionsLabel,
-                onSelected: widget.onQuestionSelected,
-                itemBuilder: (context) => [
-                  for (var index = 0;
-                      index < widget.questionTitles.length;
-                      index++) ...[
-                    if (widget.questionSections != null &&
-                        (index == 0 ||
-                            widget.questionSections![index] !=
-                                widget.questionSections![index - 1]))
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        child: Text(widget.questionSections![index],
-                            style: theme.textTheme.labelLarge),
-                      ),
-                    PopupMenuItem<String>(
-                      value: _keyAt(index),
-                      child: Text(
-                          '${_numberedLabelAt(index)} · ${_stateAt(index)}'),
-                    ),
-                  ],
-                ],
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text('Otázky'),
-                    SizedBox(width: 8),
-                    Icon(Icons.list_alt),
-                  ]),
-                ),
-              ),
-            ]),
             LayoutBuilder(builder: (context, constraints) {
               final count = widget.questionTitles.length;
               final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
@@ -278,7 +236,6 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
                 ],
               );
             }),
-            if (widget.introductionAction != null) widget.introductionAction!,
           ]),
         ),
       ),
@@ -291,39 +248,50 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
     final colors = theme.colorScheme;
     return SafeArea(
       child: Column(children: [
+        Center(
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 960),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 12, 0),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Tooltip(
+                                  message: widget.eventTitle,
+                                  child: Text(widget.eventTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleSmall),
+                                ),
+                                if (widget.contextLabel != null)
+                                  Text(widget.contextLabel!,
+                                      style: theme.textTheme.bodySmall),
+                                Text(widget.status,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                        color: colors.onSurfaceVariant)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            tooltip: widget.leaveLabel,
+                            onPressed: widget.onLeave,
+                            constraints: const BoxConstraints(
+                                minWidth: 48, minHeight: 48),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ]),
+                        if (widget.introductionAction != null)
+                          widget.introductionAction!,
+                      ]),
+                ))),
         _navigation(context),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 12, 0),
-          child: Row(children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Tooltip(
-                    message: widget.eventTitle,
-                    child: Text(widget.eventTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall),
-                  ),
-                  if (widget.contextLabel != null)
-                    Text(widget.contextLabel!,
-                        style: theme.textTheme.bodySmall),
-                  Text(widget.status,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: colors.onSurfaceVariant)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: widget.leaveLabel,
-              onPressed: widget.onLeave,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: const Icon(Icons.close),
-            ),
-          ]),
-        ),
+
         if (widget.error != null)
           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),

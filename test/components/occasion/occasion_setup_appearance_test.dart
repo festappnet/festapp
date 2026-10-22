@@ -2,6 +2,8 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_form_preview.dar
 import 'package:fstapp/components/forms/models/holder_models/form_holder.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:fstapp/components/occasion/setup/occasion_setup_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_story.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart';
@@ -28,6 +30,36 @@ void main() {
           ]
         },
       };
+  test('ten shared font choices preserve the event palette and reach the PDF',
+      () {
+    final catalog = jsonDecode(
+        File('supabase/functions/_shared/ticket-assets/font-catalog.json')
+            .readAsStringSync());
+    final ids = {for (final face in catalog['fonts']) face['id']};
+    expect(OccasionSetupAppearance.fonts.length, 10);
+    for (final entry in OccasionSetupAppearance.fonts.entries) {
+      expect(ids, contains(entry.value));
+      final appearance = {
+        ...OccasionSetupAppearance.presets[1],
+        'id': 'custom',
+        'fontFamily': entry.key
+      };
+      final data = draft();
+      OccasionSetupAppearance.apply(data, appearance);
+      expect(data['formDraft']['data']['design']['font_family'], entry.key);
+      expect(data['ticketDraft']['layout']['templates']['wide']['fontId'],
+          entry.value);
+      expect(
+          OccasionSetupAppearance.ticketBackground('concert_stub', appearance),
+          contains('theme-gala-concert-stub'));
+    }
+    expect(
+        OccasionSetupAppearance.presets
+            .where(
+                (p) => p['gradient'] == true && p['primary'] != p['secondary'])
+            .length,
+        greaterThanOrEqualTo(4));
+  });
   for (final app in [false, true]) {
     for (final tickets in [false, true]) {
       test(
@@ -172,9 +204,17 @@ void main() {
   });
   test('light ticket palettes use dark text without moving geometry', () {
     final data = draft();
-    OccasionSetupAppearance.apply(data,{...OccasionSetupAppearance.presets.first,'primary':'FFFFFF','secondary':'EEEEEE'});
-    final template = (data['ticketDraft'] as Map)['layout']['templates']['wide'];
-    expect((template['elements'] as List).where((e)=>e['binding']!='qr').every((e)=>e['style']['color']=='000000'),true);
+    OccasionSetupAppearance.apply(data, {
+      ...OccasionSetupAppearance.presets.first,
+      'primary': 'FFFFFF',
+      'secondary': 'EEEEEE'
+    });
+    final template =
+        (data['ticketDraft'] as Map)['layout']['templates']['wide'];
+    expect(
+        (template['elements'] as List)
+            .where((e) => e['binding'] != 'qr')
+            .every((e) => e['style']['color'] == '000000'),
+        true);
   });
-
 }

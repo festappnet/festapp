@@ -1,7 +1,6 @@
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
-import '../../fonts/ticket_font_ids.dart';
 import 'occasion_setup_appearance_panel.dart';
 import 'occasion_setup_form_preview.dart';
 import 'occasion_setup_ticket_gallery.dart';
@@ -2353,8 +2352,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : Map<String, dynamic>.from(
                             (d['ticketDraft'] as Map)['layout']),
                     _ticketDraftFeature(d).ticketBackground);
-                final sharedFont = legacyTicketFontIds[OccasionSetupAppearance
-                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']]];
+                final sharedFont = OccasionSetupAppearance
+                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
                 if (sharedFont != null &&
                     !resources.fonts.containsKey(sharedFont)) {
                   resources.fonts[sharedFont] =
