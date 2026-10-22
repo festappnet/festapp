@@ -357,3 +357,37 @@ completion page. An uncertain observation stays explicitly unconfirmed.
 
 Display email uses the existing `AppConfig.removeUserPrefix` tenant adapter;
 raw Auth addresses and account identity used by the protocol remain unchanged.
+
+
+## Canonical account connections
+
+The tenant-owned web route `/settings/connections` is the account surface for
+both Google sign-in identity and MCP app authorizations. Native profile/settings
+and browser menus link to this route; `/settings/mcp-connect` remains the OAuth
+approval route. The issuer's old `/connections` entry redirects only to its
+configured tenant origin. It never accepts a caller-supplied return URL.
+
+Google remains owned by `GoogleAuthService` and `external_login_identities`.
+Link/unlink retains its existing provider/account proof and recovery requirements.
+MCP grants remain exclusively in issuer storage. There is no common connection
+table or generic disconnect command.
+
+`mcp-session-exchange` also exposes the separate, non-minting management interface
+`connections.list` and `connections.revoke`. Its `management.ts` module accepts
+only those operations and an opaque connection ID for revocation. It validates
+Origin, bearer identity and configured organization, then calls only the fixed
+issuer `/tenant-connections` endpoint with the existing broker credential.
+Management does not use a `TenantRequest`, issue an Auth session, or accept
+caller-selected identities, destinations or credentials. The issuer independently
+validates live identity/MFA/organization and returns explicit own-grant DTOs.
+Revocation checks ownership and profile immediately before canonical
+`storage.revoke`, removing linked tokens and the stored downstream credential.
+Repeating revocation of a retained owned grant is safe; foreign/missing IDs fail.
+Google-only users can manage MCP with the current web session, without a password
+login. Native browsers may require ordinary web login because their session is
+separate from the native application.
+
+The page loads both sections independently. One unavailable owner does not hide
+the other. Signing out clears private data and invalidates in-flight results.
+App revocation uses an explicit inline confirmation for the named connection;
+Google unlink continues through the existing verification flow.

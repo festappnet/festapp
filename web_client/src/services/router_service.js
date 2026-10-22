@@ -1,3 +1,4 @@
+import { ACCOUNT_CONNECTIONS_PATH } from '../components/users/account_connections_links.js';
 import { isEmbed } from './embed_context.js';
 import { formLinkFromPath, replaceResolvedPublicLink } from './public_link.js';
 import { resolveScannerRoute } from './scanner_routes.js';
@@ -156,6 +157,14 @@ export class RouterService {
         // The callback owns its continuation dialog until the user finishes or
         // cancels. App-supported tenants must not hand it off to Flutter.
         if (window.location.pathname === '/google-auth') return true;
+        if (window.location.pathname === ACCOUNT_CONNECTIONS_PATH) {
+            const { AccountConnectionsPage } = await import('../components/users/account_connections_page.js');
+            if (mcpGeneration !== RouterService._mcpGeneration || window.location.pathname !== ACCOUNT_CONNECTIONS_PATH) return true;
+            document.getElementById('app')?.setAttribute('hidden', '');
+            RouterService._accountConnectionsPage = new AccountConnectionsPage(document.getElementById('form-page-container'));
+            await RouterService._accountConnectionsPage.init();
+            return true;
+        }
         if (/^\/unit\/[1-9]\d*\/?$/.test(window.location.pathname)) return false;
         if (window.location.pathname === '/settings/mcp-connect') {
             const { McpConnectionPage } = await import('../components/mcp/mcp_connection_page.js');
@@ -489,6 +498,8 @@ export class RouterService {
         RouterService._mcpGeneration++;
         RouterService._mcpPage?.dispose();
         RouterService._mcpPage = null;
+        RouterService._accountConnectionsPage?.dispose();
+        RouterService._accountConnectionsPage = null;
     }
 
     static initPopStateListener() {

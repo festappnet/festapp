@@ -1854,7 +1854,9 @@
     "googlePasswordVisibility": "Zobrazit nebo skrýt heslo",
     "googleMfa": "Zadejte šestimístný kód z ověřovací aplikace nebo SMS.",
     "existingAccountPrompt": "Už máte účet?",
-    "newAccountPrompt": "Ještě nemáte účet?"
+    "newAccountPrompt": "Ještě nemáte účet?",
+    "accountConnections": "Propojení účtu",
+    "accountConnectionsHint": "Způsoby přihlášení a přístup aplikací"
   },
   "Common": {
     "fieldCannotBeEmpty": "Pole nemůže být prázdné",
@@ -3613,9 +3615,7 @@
     "wholeOrganizerSelected": "Celý pořadatel",
     "groupSelection": "Vybrané akce: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuto výběrem pořadatele. Pro výběr jednotlivých akcí zrušte výběr pořadatele.",
-    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci.",
-    "manageConnections": "Připojené aplikace (MCP)",
-    "manageConnectionsHint": "Správa přístupu a odpojení aplikací"
+    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci."
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",
@@ -3884,5 +3884,28 @@
     "noDecision": "Rozhodnutí o vstupu zatím není zaznamenáno.",
     "decide": "Dořešit vstupenky",
     "dashboard": "Otevřít Stripe Dashboard"
+  },
+  "AccountConnections": {
+    "intro": "Spravujte přihlašování ke svému účtu a aplikace, kterým jste udělili přístup.",
+    "signInMethods": "Způsoby přihlášení",
+    "googleHint": "Google slouží k přihlášení do Festapp. Jeho odpojení mění způsob přihlašování, nikoli oprávnění připojených aplikací.",
+    "googleLinked": "Přihlášení přes Google je propojené.",
+    "googleUnlinked": "Přihlášení přes Google není propojené.",
+    "linkGoogle": "Propojit Google",
+    "unlinkGoogle": "Odpojit Google",
+    "googleUnavailable": "Přihlášení přes Google nyní není dostupné.",
+    "apps": "Připojené aplikace",
+    "appsHint": "Tyto aplikace mohou jednat Vaším jménem ve vybraném rozsahu. Odebráním přístupu zablokujete jejich další MCP požadavky.",
+    "empty": "Nemáte žádné aktivní propojení aplikací.",
+    "error": "Načtení nebo změna se nepodařila. Zkuste to znovu.",
+    "revoke": "Odebrat přístup",
+    "revokeConfirm": "Odebrat aplikaci {client} přístup? Další požadavky budou zablokované. Již provedené změny tím nevrátíte.",
+    "cancel": "Zrušit",
+    "expires": "Platnost do {date}",
+    "organizer": "Pořadatel #{id}: současné i budoucí akce",
+    "organizerCreate": "Pořadatel #{id}: současné i budoucí akce a zakládání nových podle Vašich práv",
+    "occasion": "Jednotlivá akce #{id}",
+    "loginHint": "Pro správu propojení se přihlaste ke svému účtu.",
+    "revoked": "Přístup aplikace byl odebrán."
   }
 }

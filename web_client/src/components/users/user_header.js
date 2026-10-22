@@ -1,4 +1,4 @@
-import { MCP_CONNECTIONS_URL } from '../mcp/mcp_links.js';
+import { ACCOUNT_CONNECTIONS_PATH } from './account_connections_links.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -6,7 +6,6 @@ import './user_header.css';
 import { RightsService } from '../../services/rights_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { AppConfig } from '../../app_config.js';
-import { GoogleAuthService } from '../../services/google_auth_service.js';
 
 import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 
@@ -335,16 +334,16 @@ export class UserHeader extends HTMLElement {
             const accountActions = document.createElement('div');
             popover.appendChild(accountActions);
             const connections = document.createElement('a');
-            connections.href = MCP_CONNECTIONS_URL;
+            connections.href = ACCOUNT_CONNECTIONS_PATH;
             connections.target = '_blank';
             connections.rel = 'noopener noreferrer';
-            connections.className = 'popover-logout-row popover-account-action popover-mcp-connections';
+            connections.className = 'popover-logout-row popover-account-action popover-account-connections';
             const connectionsIcon = document.createElement('i');
             connectionsIcon.className = 'material-icons';
             connectionsIcon.setAttribute('aria-hidden', 'true');
             connectionsIcon.textContent = 'extension';
             const connectionsLabel = document.createElement('span');
-            connectionsLabel.textContent = CommonStrings.manageConnections;
+            connectionsLabel.textContent = CommonStrings.accountConnections;
             connections.append(connectionsIcon, connectionsLabel);
             accountActions.appendChild(connections);
             const userId = this.user.id;
@@ -375,26 +374,6 @@ export class UserHeader extends HTMLElement {
                     accountActions.prepend(action);
                 }).catch(() => {});
             }
-            GoogleAuthService.identityStatus().then(status => {
-                if (!wrapper.isConnected || this.user?.id !== userId || status.enabled !== true) return;
-                const action = document.createElement('button');
-                action.type = 'button';
-                action.className = 'popover-logout-row popover-account-action';
-                const icon = document.createElement('i');
-                icon.className = 'material-icons';
-                icon.setAttribute('aria-hidden', 'true');
-                icon.textContent = status.linked ? 'link_off' : 'link';
-                const label = document.createElement('span');
-                label.textContent = status.linked ? CommonStrings.googleUnlink : CommonStrings.googleContinue;
-                action.append(icon, label);
-                action.onclick = async () => {
-                    action.disabled = true;
-                    try { await GoogleAuthService.start(status.linked ? 'unlink' : 'login'); }
-                    catch { action.disabled = false; label.textContent = CommonStrings.googleError; }
-                };
-                accountActions.appendChild(action);
-            }).catch(() => {});
-
             const logoutRow = document.createElement('button');
             logoutRow.type = 'button';
             logoutRow.className = 'popover-logout-row popover-account-action';

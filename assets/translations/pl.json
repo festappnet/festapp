@@ -363,7 +363,9 @@
     "reinviteConfirm": "Niektórzy użytkownicy zostali już zaproszeni. Czy chcesz zaprosić ich ponownie i wysłać nowy kod logowania?",
     "inviteInfo": "Użytkownicy otrzymają kod logowania za pomocą e-maila.",
     "welcomeIn": "Witaj w {name}!",
-    "resetPasswordProceedConfirm": "Otrzymasz e-mail z linkiem do zresetowania hasła. Czy chcesz kontynuować?"
+    "resetPasswordProceedConfirm": "Otrzymasz e-mail z linkiem do zresetowania hasła. Czy chcesz kontynuować?",
+    "accountConnections": "Połączenia konta",
+    "accountConnectionsHint": "Metody logowania i dostęp aplikacji"
   },
   "OccasionServices": {
     "accommodation": "Zakwaterowanie",
@@ -1717,9 +1719,7 @@
     "wholeOrganizerSelected": "Cały organizator",
     "groupSelection": "Wybrane wydarzenia: {selected} z {count}",
     "inheritedSelectionHint": "Uwzględnione przez wybór organizatora. Odznacz organizatora, aby wybrać pojedyncze wydarzenia.",
-    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie.",
-    "manageConnections": "Połączone aplikacje (MCP)",
-    "manageConnectionsHint": "Zarządzaj dostępem i odłączaj aplikacje"
+    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie."
   },
   "EditorFileDrop": {
     "hint": "Upuść obraz, aby zastąpić tło",
@@ -2003,5 +2003,28 @@
     "noDecision": "Nie zapisano jeszcze decyzji o wstępie.",
     "decide": "Rozstrzygnij ważność biletów",
     "dashboard": "Otwórz Stripe Dashboard"
+  },
+  "AccountConnections": {
+    "intro": "Zarządzaj logowaniem do konta i aplikacjami, którym przyznano dostęp.",
+    "signInMethods": "Metody logowania",
+    "googleHint": "Google służy do logowania do Festapp. Odłączenie zmienia sposób logowania, a nie uprawnienia połączonych aplikacji.",
+    "googleLinked": "Logowanie przez Google jest połączone.",
+    "googleUnlinked": "Logowanie przez Google nie jest połączone.",
+    "linkGoogle": "Połącz Google",
+    "unlinkGoogle": "Odłącz Google",
+    "googleUnavailable": "Logowanie przez Google jest obecnie niedostępne.",
+    "apps": "Połączone aplikacje",
+    "appsHint": "Te aplikacje mogą działać w Twoim imieniu w wybranym zakresie. Odebranie dostępu zablokuje ich kolejne żądania MCP.",
+    "empty": "Nie masz aktywnych połączeń aplikacji.",
+    "error": "Nie udało się wczytać lub zmienić danych. Spróbuj ponownie.",
+    "revoke": "Odbierz dostęp",
+    "revokeConfirm": "Odebrać dostęp aplikacji {client}? Kolejne żądania zostaną zablokowane. Wprowadzone zmiany pozostaną.",
+    "cancel": "Anuluj",
+    "expires": "Ważne do {date}",
+    "organizer": "Organizator #{id}: obecne i przyszłe wydarzenia",
+    "organizerCreate": "Organizator #{id}: obecne i przyszłe wydarzenia oraz tworzenie nowych zgodnie z Twoimi uprawnieniami",
+    "occasion": "Pojedyncze wydarzenie #{id}",
+    "loginHint": "Zaloguj się na konto, aby zarządzać połączeniami.",
+    "revoked": "Dostęp aplikacji został odebrany."
   }
 }

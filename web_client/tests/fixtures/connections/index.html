@@ -1,0 +1,10 @@
+<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Account connections fixture</title><div id="connections"></div><script type="module">
+import {AccountConnectionsPage} from '/src/components/users/account_connections_page.js';
+import {LocalizationService} from '/src/services/localization_service.js';
+LocalizationService.translations=await(await fetch('/assets/translations/cs.json')).json();
+const operations=[],googleCalls=[];
+let connections=[{id:'first-grant',client:'Codex - přístup k objednávkám kulturního spolku',expiresAt:'2026-11-01T12:00:00Z',access:{type:'selection',units:[{unitId:8,canCreateOccasions:true}],occasionIds:[99]},permissions:['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send']}];
+const client={auth:{getSession:async()=>({data:{session:{user:{id:'synthetic',email:'synthetic@example.test'}}}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},functions:{invoke:async(name,{body})=>{operations.push(body);if(body.operation==='connections.list')return{data:{connections}};connections=connections.filter(c=>c.id!==body.connectionId);return{data:{connectionId:body.connectionId,revoked:true}};}}};
+const page=new AccountConnectionsPage(document.getElementById('connections'),{client,google:{identityStatus:async()=>({enabled:true,linked:true}),start:async intent=>googleCalls.push(intent)}});
+await page.init();window.connectionsFixture={ready:true,read:()=>({operations,googleCalls,connections:page.connections})};
+</script></html>
