@@ -248,5 +248,7 @@ Reviewed legacy conversion preserves semantic table labels separately from
 appearance normalization. Existing SVG text nodes remain unchanged. An explicit
 `tableLabelStyle` review profile can promote typography to the canonical table
 kind while clearing conflicting local leaves; it never invents unsupported font
-faces. Unprofiled plans preserve their original typography. Table labels use the
+faces. Unprofiled plans preserve their original typography and promote label
+leaves shared by all tables to the table kind, so later tables inherit the same
+font and size. Individual differences remain local overrides. Table labels use the
 centered, shrink-to-fit label box by default.

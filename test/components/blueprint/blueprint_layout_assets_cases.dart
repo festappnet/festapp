@@ -382,6 +382,78 @@ void main() {
     expect(normalizeBlueprintTableTitles(result).toJson(), result.toJson());
   });
 
+  test('imported table captions establish typography for later tables', () {
+    final original = VenueLayoutDocument(schemaVersion: 2, styles: const {
+      'label': {'size': 24, 'fontFamilyId': 'fixture:sans'},
+    }, nodes: [
+      for (final index in [1, 2]) ...[
+        LayoutNode(
+            id: '00000000-0000-4000-8000-00000000000$index',
+            kind: 'table',
+            label: '$index',
+            surface: const {'type': 'rect'}),
+        LayoutNode(
+            id: newLayoutId(),
+            parentId: '00000000-0000-4000-8000-00000000000$index',
+            kind: 'text',
+            label: '$index',
+            style: const {
+              'label': {'size': 44.026656, 'color': '#000000FF'}
+            }),
+      ],
+      LayoutNode(
+          id: '00000000-0000-4000-8000-000000000003',
+          kind: 'text',
+          label: 'VSTUP',
+          properties: const {'text': 'VSTUP'}),
+    ]);
+    final converted = normalizeBlueprintTableTitles(original);
+    final inserted = tableLayout(shape: 'round', count: 6)
+        .nodes
+        .singleWhere((node) => node.kind == 'table');
+    expect(resolveNodeAppearance(converted, inserted).label,
+        resolveNodeAppearance(converted, converted.nodes.first).label);
+    expect(
+        resolveNodeAppearance(converted,
+                converted.nodes.singleWhere((node) => node.label == 'VSTUP'))
+            .label['size'],
+        24);
+    expect((converted.styles['kinds'] as Map)['table']['label']['size'],
+        44.026656);
+    expect(converted.nodes.first.style['label'], isNull);
+    expect(
+        normalizeBlueprintTableTitles(converted).toJson(), converted.toJson());
+  });
+
+  test('different imported table caption sizes remain individual', () {
+    final original = VenueLayoutDocument(schemaVersion: 2, nodes: [
+      for (final index in [1, 2]) ...[
+        LayoutNode(
+            id: '00000000-0000-4000-8000-00000000000$index',
+            kind: 'table',
+            label: '$index',
+            surface: const {'type': 'rect'}),
+        LayoutNode(
+            id: newLayoutId(),
+            parentId: '00000000-0000-4000-8000-00000000000$index',
+            kind: 'text',
+            label: '$index',
+            style: {
+              'label': {'size': index * 20}
+            }),
+      ],
+    ]);
+    final converted = normalizeBlueprintTableTitles(original);
+    expect(
+        resolveNodeAppearance(converted, converted.nodes[0]).label['size'], 20);
+    expect(
+        resolveNodeAppearance(converted, converted.nodes[1]).label['size'], 40);
+    expect(
+        ((converted.styles['kinds'] as Map?)?['table'] as Map?)?['label']
+            ?['size'],
+        isNull);
+  });
+
   test('reviewed native furniture preserves stable chairs and moves together',
       () {
     final source = BlueprintModel(
