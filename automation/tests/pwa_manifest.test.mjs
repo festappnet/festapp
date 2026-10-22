@@ -213,3 +213,17 @@ test('lazy web modules and their styles install with the shell before a deployme
   assert.ok(manifest.coreResources.includes('/assets/translations/cs.json'));
  } finally {await rm(dir,{recursive:true,force:true});}
 });
+
+
+test('marketing streams stay online and do not consume the application offline budget', async t => {
+ const dir=await mkdtemp(path.join(tmpdir(),'festapp-marketing-cache-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ await mkdir(path.join(dir,'organizers-media'),{recursive:true});await mkdir(path.join(dir,'web-assets'),{recursive:true});
+ for(const file of ['flutter','webclient','main.dart.js']) await writeFile(path.join(dir,file),'app');
+ for(const file of ['organizers-page','organizers-media/demo.mp4','organizers-media/poster.jpg','web-assets/landing-proof.js']) await writeFile(path.join(dir,file),'marketing');
+ const manifest=await collectPwaShellManifest(dir);
+ assert.equal(manifest.organizerHomepage,true);
+ assert.deepEqual(manifest.knownResources,['/flutter?pwa-cache=1','/main.dart.js','/webclient?pwa-cache=1']);
+ assert.equal(manifest.knownBytes,9);
+ assert.equal(await readFile(path.join(dir,'organizers-media/demo.mp4'),'utf8'),'marketing');
+});

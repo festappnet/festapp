@@ -45,6 +45,7 @@ const FLUTTER_ENTRY = ${JSON.stringify(flutterEntry)};
 const FLUTTER_MAIN = ${JSON.stringify(manifest.flutterMain)};
 const WEB_CLIENT_ENTRY = ${JSON.stringify(webClientEntry)};
 const IS_APP_SUPPORTED = ${JSON.stringify(isAppSupported)};
+const ORGANIZER_HOMEPAGE = ${JSON.stringify(manifest.organizerHomepage)};
 ${isPublicOccasionAppPath.toString()}
 ${unsupportedOccasionAppRedirect.toString()}
 ${resolveScannerRoute.toString()}
@@ -508,7 +509,7 @@ function cachedNavigationTarget(pathname) {
   }
   const unitPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   const unitCatalogue = unitPath.startsWith('/unit/') && /^[1-9][0-9]*$/.test(unitPath.slice(6));
-  if (pathname === '/' || pathname === '/order' || unitCatalogue || pathname.startsWith('/form/')) {
+  if (pathname === '/' || (ORGANIZER_HOMEPAGE && pathname === '/events') || pathname === '/order' || unitCatalogue || pathname.startsWith('/form/')) {
     return WEB_CLIENT_ENTRY;
   }
   return FLUTTER_ENTRY;
@@ -608,6 +609,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+
+  // A marketing document is independent from the version-pinned offline app.
+  // Serve it from the network; keep the installed catalogue usable offline.
+  if (ORGANIZER_HOMEPAGE) {
+    if (request.mode === 'navigate') {
+      let target = null;
+      if (url.pathname === '/pro-poradatele' || url.pathname === '/pro-poradatele/') target = new URL('/' + url.search, url);
+      else if (['/', '/events', '/events/'].includes(url.pathname) && url.searchParams.get('create') === '1') {
+        target = new URL('/login' + url.search, url); target.searchParams.delete('create');
+      } else if (url.pathname === '/events/' || (url.pathname === '/' && url.searchParams.has('q'))) target = new URL('/events' + url.search, url);
+      if (target) { event.respondWith(Promise.resolve(Response.redirect(target.href, 308))); return; }
+      if (url.pathname === '/') {
+        event.respondWith((async () => {
+          const clientId = event.resultingClientId || event.clientId;
+          if (clientId) { clientCacheNames.delete(clientId); await recordClientVersion(clientId, BUILD_VERSION); }
+          try { return await fetch(request, {cache:'no-store'}); }
+          catch (_) { const cache = await caches.open(CACHE_NAME); return (await cache.match(WEB_CLIENT_ENTRY)) || Response.error(); }
+        })());
+        return;
+      }
+    }
+    if (url.pathname.startsWith('/organizers-media/') || /^\\/web-assets\\/landing-[^/]+\\.js$/.test(url.pathname)) {
+      event.respondWith(fetch(request));
+      return;
+    }
+  }
 
   if (request.mode === 'navigate' && !IS_APP_SUPPORTED) {
     const redirect = unsupportedOccasionAppRedirect(url.pathname);

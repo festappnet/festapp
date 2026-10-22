@@ -14,7 +14,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web_client/index.html', import.meta.url), join(root, 'web_client/index.html'));
   const config = join(root, 'automation/project.conf');
-  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nTHEME_SEED_3=#4465a6\n');
+  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\n');
   const render = () => {
     const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
@@ -30,6 +30,8 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(head.includes(`name="description" content="${seo.description}"`));
   assert.equal((head.match(/rel="canonical"/g) || []).length, 1);
   assert.ok(head.includes('max-image-preview:large'));
+  assert.ok(head.includes('FESTAPP_CLIENT_VERSION'));
+  assert.ok(head.includes('FESTAPP_REPORT_VERSION'));
   assert.ok(head.includes('https://vstupenky.online/organizers-media/organizers-social.png'));
   assert.ok(head.includes('og:image:width" content="1200"'));
   assert.ok(head.includes('name="twitter:card" content="summary_large_image"'));
