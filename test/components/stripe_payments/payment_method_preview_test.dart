@@ -61,6 +61,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
+      'bank-only order submits without displaying a redundant payment choice',
+      (tester) async {
+    final h = holder();
+    int sent = 0;
+    await env().pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: OrderPreviewScreen(
+                    formHolder: h,
+                    totalPrice: 100,
+                    onSendPressed: () => sent++))));
+    await tester.pumpAndSettle();
+    expect(find.text(catalog['PaymentMethods']['title']), findsNothing);
+    expect(find.text(catalog['PaymentMethods']['bank']), findsNothing);
+    final submit = find.byType(FilledButton);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    expect(sent, 1);
+    expect(h.paymentMethod, 'bank');
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets(
       'A06 unavailable paid order cannot submit and free order has no payment choice',
       (tester) async {
     final h = holder();
