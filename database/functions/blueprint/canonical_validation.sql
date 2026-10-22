@@ -1,7 +1,7 @@
 -- Canonical declaration validation consumes the generated core metadata.
 CREATE OR REPLACE FUNCTION public.blueprint_validate_leaves_internal(p_value jsonb,p_rules jsonb)
 RETURNS void LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE entry record; rule jsonb; value jsonb;
+DECLARE entry record; rule jsonb; value jsonb; element jsonb;
 BEGIN
  IF jsonb_typeof(p_value) IS DISTINCT FROM 'object' THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION'; END IF;
  FOR entry IN SELECT * FROM jsonb_each(p_value) LOOP
@@ -12,6 +12,13 @@ BEGIN
   IF rule->>'type' IN ('number','integer') THEN
    IF rule->>'type'='integer' AND value::numeric<>trunc(value::numeric) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
    IF (rule ? 'minimum' AND value::numeric<(rule->>'minimum')::numeric) OR (rule ? 'maximum' AND value::numeric>(rule->>'maximum')::numeric) OR (rule ? 'exclusiveMinimum' AND value::numeric<=(rule->>'exclusiveMinimum')::numeric) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
+  ELSIF rule->>'type'='array' THEN
+   IF (rule ? 'minItems' AND jsonb_array_length(value)<(rule->>'minItems')::int) OR (rule ? 'maxItems' AND jsonb_array_length(value)>(rule->>'maxItems')::int) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
+   IF rule ? 'items' THEN
+    FOR element IN SELECT * FROM jsonb_array_elements(value) LOOP
+     PERFORM public.blueprint_validate_leaves_internal(jsonb_build_object('item',element),jsonb_build_object('item',rule->'items'));
+    END LOOP;
+   END IF;
   ELSIF rule->>'type'='string' THEN
    IF (rule ? 'minLength' AND length(value#>>'{}')<(rule->>'minLength')::int) OR (rule ? 'pattern' AND (value#>>'{}') !~ (rule->>'pattern')) THEN RAISE check_violation USING MESSAGE='BLUEPRINT_INVALID_DECLARATION',DETAIL=entry.key;END IF;
    IF entry.key='fontFamilyId' AND NOT EXISTS(SELECT 1 FROM public.ticket_font_families WHERE id=value#>>'{}') THEN RAISE check_violation USING MESSAGE='BLUEPRINT_FONT_FAMILY_UNAVAILABLE';END IF;

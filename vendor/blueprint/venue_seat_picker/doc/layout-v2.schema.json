@@ -979,6 +979,16 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "edgeCounts": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          }
+        },
         "width": {
           "type": "number",
           "minimum": 1,
@@ -1684,6 +1694,16 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "edgeCounts": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 20000
+              }
+            },
             "width": {
               "type": "number",
               "minimum": 1,
@@ -2917,6 +2937,16 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
+                  "edgeCounts": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 20000
+                    }
+                  },
                   "width": {
                     "type": "number",
                     "minimum": 1,
@@ -3469,6 +3499,16 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
+                  "edgeCounts": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 20000
+                    }
+                  },
                   "width": {
                     "type": "number",
                     "minimum": 1,

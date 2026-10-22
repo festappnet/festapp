@@ -1,25 +1,25 @@
 {
+  "sourceCommit": "9686abfc1debeddf1a848586942baaf58c023097",
   "passed": true,
   "coreSourceByteEquivalent": true,
   "pubSelectedCoreAndWrapper": true,
   "actualNpmPack": true,
-  "cleanConsumerTemplates": 15,
+  "cleanConsumerTemplates": 20,
   "archivedExampleBuilt": true,
   "archivedExampleBrowser": true,
   "requiredNpmFiles": {
     "src/index.js": "52579d730572a0f9102d0f66c8a283f439b045637f6fe7223e3bccf0da73ce08",
     "src/index.d.ts": "183da0fad404867a2e93a44de9e2a32a784b8897f962704def864e7a45814dc6",
-    "dist/venue_layout_kernel.js": "0ccd33fd8aa0a7be5112fcac71fece58c9d1d493679a9ff62cc589a6915a7847",
-    "dist/manifest.json": "52b2689c65344ed1fbcf229ec250a5e7b3f3204178edc03edf6d57609ced6f4f",
+    "dist/venue_layout_kernel.js": "7cbffdde7c86050ccb5d5ffd63d5fd1f95ed023de69df614209c859b6d4197d2",
+    "dist/manifest.json": "8fbd7fbd8749cb66d2eea13e47c20f8ca970509e77284e094b59a1c3be807da9",
     "demo/index.html": "fdffd579eb9e9623ee64e866f96d00193d8b88e4d0426854da3bc06e8615c60c",
     "LICENSE": "2ab2ade1a53c4a2ad8bfcb4fae3aa96fe3c6f0356366e86de179a8f83c9a3395",
-    "assets/layout_fonts/fixtures.json": "65274bb0050d5c1da58394053065eaeef0d0cf2bbfcf57dfb4994626d039d33d",
+    "assets/layout_fonts/fixtures.json": "cc91489cf03fe82e653670b895a21473c919c4febb480d70b0a4e957b0639068",
     "assets/layout_fonts/manifest.json": "8063a7de961f6f4f05661c342286fe896993de6b2b78385701b2a3eff1ad90f6",
     "assets/layout_fonts/Roboto-OFL.txt": "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41",
     "assets/layout_fonts/Roboto-400-normal.ttf": "7f3ec5073a282c666c9a0063573345841229caf50ed34d33017e20d441bf5caf",
     "assets/layout_fonts/Roboto-400-italic.ttf": "cab2f63113328b72dce6b3e1eac7f268a27290911049f79fe760630c7befd861",
     "assets/layout_fonts/Roboto-700-normal.ttf": "a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d",
     "assets/layout_fonts/Roboto-700-italic.ttf": "07b9b53ecf7da2d6c4af6841bb5c9e16087594914c6723a782805a4201b3cdc5"
-  },
-  "sourceCommit": "087c68b53136f3c002395766620cecfd5cf96a3b"
+  }
 }

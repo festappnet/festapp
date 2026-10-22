@@ -655,6 +655,76 @@ class _LayoutInspectorState extends State<LayoutInspector> {
     );
   }
 
+  Widget _tableEdgeControls(LayoutNode table) {
+    const edges = ['top', 'right', 'bottom', 'left'];
+    const labels = ['Top seats', 'Right seats', 'Bottom seats', 'Left seats'];
+    final capacities = tableEdgeCapacities(table);
+    final preference = table.seating['edgeCounts'];
+    final counts = preference is List && preference.length == 4
+        ? preference.cast<int>().toList()
+        : [
+            for (final edge in edges)
+              c.document.nodes
+                  .where(
+                    (n) =>
+                        n.kind == 'seat' &&
+                        n.parentId == table.id &&
+                        tableSideForSeat(c.document, n) == edge,
+                  )
+                  .length,
+          ];
+    final enabled = !(c.readOnly || c.saving || table.locked);
+    Widget field(int side) => Expanded(
+      child: _number(labels[side], counts[side], (value) {
+        if (value != value.roundToDouble() ||
+            value < 0 ||
+            value > capacities[side]) {
+          throw FormatException(
+            VenueLayoutStrings.text(
+              context,
+              'Enter a whole seat count from 0 to ${capacities[side]}.',
+            ),
+          );
+        }
+        final next = [...counts]..[side] = value.toInt();
+        c.apply(
+          reflowTable(
+            c.document,
+            table.id,
+            next.fold<int>(0, (sum, count) => sum + count),
+            edgeCounts: next,
+            protectedSeatIds: c.protectedSeatIds?.call() ?? const {},
+          ),
+          label: 'Adjust table sides',
+        );
+      }),
+    );
+    return ExcludeFocus(
+      excluding: !enabled,
+      child: IgnorePointer(
+        ignoring: !enabled,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 8, bottom: 8),
+              child: LayoutText('Seats on each side'),
+            ),
+            Row(children: [field(0), const SizedBox(width: 8), field(1)]),
+            Row(children: [field(2), const SizedBox(width: 8), field(3)]),
+            LayoutText(
+              'Maximum per side: top/bottom ${capacities[0]}, left/right ${capacities[1]}.',
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 4, bottom: 12),
+              child: LayoutText('Sides follow the table rotation.'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _seatCountControls(LayoutNode node) {
     final couch = isCouchNode(node), minimum = isCouchNode(node) ? 1 : 0;
     final count = couch
@@ -716,6 +786,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
+        if (supportsTableSeatSides(node)) _tableEdgeControls(node),
       ],
     );
   }

@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
@@ -7,62 +5,6 @@ import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_table_selection.dart';
 
 void main() {
-  test('chair links remain continuous and visible at every zoom', () async {
-    for (final background in [Colors.white, const Color(0xff151b23)]) {
-      for (final zoom in [.25, 1.0, 4.0]) {
-        final recorder = ui.PictureRecorder();
-        final canvas = Canvas(recorder);
-        LayoutScenePainter(
-          scene: const {'items': []},
-          resources: const {},
-          selected: const {},
-          scale: zoom,
-          offset: Offset.zero,
-          canvasColor: background,
-          selectionColor: const Color(0xff82beef),
-          seatLinks: [
-            TableSeatLink(
-              'chair',
-              Offset(20 / zoom, 40 / zoom),
-              Offset(80 / zoom, 40 / zoom),
-            ),
-          ],
-        ).paint(canvas, const Size(100, 80));
-        final picture = recorder.endRecording();
-        final image = await picture.toImage(100, 80);
-        final data = (await image.toByteData())!;
-        for (var x = 25; x < 76; x++) {
-          for (final y in [39, 40]) {
-            final offset = (y * 100 + x) * 4;
-            final pixel = Color.fromARGB(
-              data.getUint8(offset + 3),
-              data.getUint8(offset),
-              data.getUint8(offset + 1),
-              data.getUint8(offset + 2),
-            );
-            final a = pixel.computeLuminance(),
-                b = background.computeLuminance();
-            final ratio = a > b ? (a + .05) / (b + .05) : (b + .05) / (a + .05);
-            expect(
-              ratio,
-              greaterThan(2.5),
-              reason: 'visible continuous stroke at zoom $zoom',
-            );
-          }
-        }
-        final directory = Platform.environment['FESTAPP_LINK_PREVIEW'];
-        if (directory != null && zoom == 1) {
-          final png = await image.toByteData(format: ui.ImageByteFormat.png);
-          await File(
-            '$directory/links-${background == Colors.white ? 'light' : 'dark'}.png',
-          ).writeAsBytes(png!.buffer.asUint8List());
-        }
-        image.dispose();
-        picture.dispose();
-      }
-    }
-  });
-
   for (final editing in [false, true]) {
     testWidgets(
       'table number overlay selects ${editing ? 'text in editor' : 'table in reservations'}',

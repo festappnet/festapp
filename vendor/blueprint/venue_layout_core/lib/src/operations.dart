@@ -38,6 +38,32 @@ int tableCapacity(LayoutNode n) {
       .toInt();
 }
 
+List<int> tableEdgeCapacities(LayoutNode table) {
+  if (table.kind != 'table' ||
+      isBarNode(table) ||
+      [
+        'polygon',
+        'grid',
+        'round',
+        'circle',
+        'ellipse',
+        'oval',
+      ].contains(table.surface?['type'] ?? table.properties['shape'])) {
+    throw ArgumentError('Edge seating requires a rectangular table');
+  }
+  final seating = TableSeating.fromTable(table),
+      inset = seating.edgePadding * 2,
+      allowance = seating.edgePadding == 0 ? seating.spacing : 0.0;
+  int capacity(double length) =>
+      max(0, ((length - inset + allowance) / seating.pitch).floor());
+  return [
+    capacity(table.width),
+    capacity(table.height),
+    capacity(table.width),
+    capacity(table.height),
+  ];
+}
+
 VenueLayoutDocument tableLayout({
   required String shape,
   int count = 6,
@@ -47,6 +73,7 @@ VenueLayoutDocument tableLayout({
   double height = 100,
   String? id,
   TableSeating? seating,
+  List<int>? edgeCounts,
 }) {
   final table = LayoutNode(
     id: id ?? newLayoutId(),
@@ -78,15 +105,14 @@ VenueLayoutDocument tableLayout({
     VenueLayoutDocument(schemaVersion: 2, nodes: [table]),
     table.id,
     count,
+    edgeCounts: edgeCounts,
   );
 }
 
 List<Map<String, dynamic>> _anchors(LayoutNode table, int count) {
   final seating = TableSeating.fromTable(table),
-      pitch = seating.pitch,
       inset = seating.edgePadding * 2,
-      offset = seating.offset,
-      endAllowance = seating.edgePadding == 0 ? seating.spacing : 0.0;
+      offset = seating.offset;
   final shape = table.properties['shape'], out = <Map<String, dynamic>>[];
   if (shape == 'polygon') {
     final slots = polygonSurfaceSlots(table);
@@ -179,14 +205,23 @@ List<Map<String, dynamic>> _anchors(LayoutNode table, int count) {
     }
     return out;
   }
-  final capacity = [
-        max(0, ((table.width - inset + endAllowance) / pitch).floor()),
-        max(0, ((table.height - inset + endAllowance) / pitch).floor()),
-        max(0, ((table.width - inset + endAllowance) / pitch).floor()),
-        max(0, ((table.height - inset + endAllowance) / pitch).floor()),
-      ],
-      counts = [0, 0, 0, 0];
-  for (var i = 0; i < count; i++) {
+  final capacity = tableEdgeCapacities(table);
+  final saved = table.seating['edgeCounts'] as List?;
+  final counts = List<int>.generate(
+    4,
+    (i) => saved == null ? 0 : min(capacity[i], saved[i] as int),
+  );
+  var total = counts.fold<int>(0, (sum, n) => sum + n);
+  // Saved edge distribution is a preference when the overall count or size changes.
+  while (total > count) {
+    var edge = 0;
+    for (var i = 1; i < 4; i++) {
+      if (counts[i] > counts[edge]) edge = i;
+    }
+    counts[edge]--;
+    total--;
+  }
+  while (total < count) {
     final candidates =
         List.generate(
           4,
@@ -199,6 +234,7 @@ List<Map<String, dynamic>> _anchors(LayoutNode table, int count) {
         });
     if (candidates.isEmpty) throw StateError('Table capacity exceeded');
     counts[candidates.first]++;
+    total++;
   }
   for (var edge = 0; edge < 4; edge++) {
     for (var i = 0; i < counts[edge]; i++) {
@@ -248,14 +284,29 @@ VenueLayoutDocument reflowTable(
   int count, {
   bool constrainToCanvas = false,
   Set<String> protectedSeatIds = const {},
+  List<int>? edgeCounts,
 }) {
   d = reflowCanonicalPins(d, tableId);
   final originalTable = d.nodes.firstWhere((n) => n.id == tableId);
   final seating = TableSeating.fromDocument(d, originalTable);
   final table = originalTable.copyWith(
     properties: {...surfaceGeometryProperties(originalTable)},
-    seating: seating.record,
+    seating: {
+      ...seating.record,
+      if (originalTable.seating['edgeCounts'] != null)
+        'edgeCounts': originalTable.seating['edgeCounts'],
+      if (edgeCounts != null) 'edgeCounts': List<int>.of(edgeCounts),
+    },
   );
+  if (edgeCounts != null) {
+    final caps = tableEdgeCapacities(table);
+    if (edgeCounts.length != 4 ||
+        edgeCounts.any((v) => v < 0) ||
+        edgeCounts.fold<int>(0, (sum, n) => sum + n) != count ||
+        List.generate(4, (i) => i).any((i) => edgeCounts[i] > caps[i])) {
+      throw ArgumentError('Invalid table edge counts');
+    }
+  }
   if (table.kind != 'table') throw ArgumentError('Target must be a table');
   final nodeIndex = {for (final n in d.nodes) n.id: n};
   final visitedAncestors = <String>{};
@@ -484,6 +535,32 @@ VenueLayoutDocument reflowTable(
           properties: {...next[i].properties, 'slot': i},
         ),
   ];
+  final actualEdges = List<int>.filled(4, 0);
+  if (table.seating.containsKey('edgeCounts')) {
+    for (final seat in placed) {
+      final edge = fixed(seat)
+          ? (seat.x.abs() / table.width > seat.y.abs() / table.height
+                ? (seat.x < 0 ? 'left' : 'right')
+                : (seat.y < 0 ? 'top' : 'bottom'))
+          : selectedAnchors[seat.id]?['edge'];
+      final index = [
+        'top',
+        'right',
+        'bottom',
+        'left',
+      ].indexOf(edge as String? ?? '');
+      if (index >= 0) actualEdges[index]++;
+    }
+    if (edgeCounts != null &&
+        !List.generate(
+          4,
+          (i) => i,
+        ).every((i) => actualEdges[i] == edgeCounts[i])) {
+      throw StateError(
+        'Fixed chairs or obstacles prevent the requested edge distribution',
+      );
+    }
+  }
   final removed = seats.map((n) => n.id).toSet();
   return d.copyWith(
     nodes: [
@@ -491,7 +568,13 @@ VenueLayoutDocument reflowTable(
           .where((n) => !removed.contains(n.id))
           .map(
             (n) => n.id == tableId
-                ? (originalTable.copyWith(seating: seating.record))
+                ? (originalTable.copyWith(
+                    seating: {
+                      ...seating.record,
+                      if (table.seating.containsKey('edgeCounts'))
+                        'edgeCounts': actualEdges,
+                    },
+                  ))
                 : n,
           ),
       ...placed,
@@ -2572,7 +2655,7 @@ VenueLayoutDocument configureTableSeating(
     nodes: [
       for (final n in doc.nodes)
         if (n.id == tableId)
-          n.copyWith(seating: seating.record)
+          n.copyWith(seating: {...n.seating, ...seating.record})
         else if (ids.contains(n.id))
           n.copyWith(
             width: seating.width,
