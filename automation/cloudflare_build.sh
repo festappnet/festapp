@@ -448,9 +448,13 @@ async function routeRequest(request, env) {
     if (path.startsWith("/form/")) return handleForm(request, env, path);
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.
-    if (path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect") {
-      const entry = path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
-      const res = await serveAsset(env, request, entry);
+    const stripePrivateRoute = /^\/(?:app\/)?stripe\/(?:connect\/callback|pay|return)$/.test(path);
+    if (stripePrivateRoute || path === "/google-auth" || path === "/app/google-auth" || path === "/settings/mcp-connect") {
+      const entry = stripePrivateRoute || path === "/app/google-auth" ? FLUTTER_ENTRY : WEB_CLIENT_INDEX;
+      // The browser retains callback parameters; the static asset fetch needs none.
+      const assetUrl = new URL(request.url);
+      assetUrl.search = "";
+      const res = await serveAsset(env, stripePrivateRoute ? new Request(assetUrl) : request, entry);
       const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
       response.headers.set("referrer-policy", "no-referrer");

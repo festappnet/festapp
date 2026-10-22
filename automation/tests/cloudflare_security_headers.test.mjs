@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
-const source = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
+const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const origin = 'https://tenant.invalid';
 const env = {ASSETS: {fetch: async request => {
