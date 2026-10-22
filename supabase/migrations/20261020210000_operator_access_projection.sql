@@ -29,7 +29,7 @@ BEGIN
           OR public.get_is_editor_order_view_on_occasion(o.id)
           OR public.get_is_manager_on_unit(o.unit) OR public.get_is_editor_view_on_unit(o.unit))), '[]'::jsonb));
 END $$;
-REVOKE ALL ON FUNCTION public.get_operator_access_v1(bigint,bigint,bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_operator_access_v1(bigint,bigint,bigint) TO authenticated;
 
 COMMIT;

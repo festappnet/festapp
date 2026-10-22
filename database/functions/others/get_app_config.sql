@@ -380,7 +380,8 @@ BEGIN
         'occasion_user', COALESCE(to_jsonb(occasion_user)::jsonb, NULL),
         'unit_user', COALESCE(to_jsonb(unit_user)::jsonb, NULL),
         'occasion', COALESCE(occasion_json, '{}'::jsonb),
-        'unit', COALESCE(unit_json, '{}'::jsonb),
+        'unit', COALESCE(unit_json, '{}'::jsonb) || jsonb_build_object(
+          'stripe_preview_enabled', public.stripe_unit_feature_enabled_internal((unit_json->>'id')::bigint)),
         'bank_accounts_admin', COALESCE(bank_account_ids, '{}'),
         'bank_capabilities',coalesce(bank_capabilities,'{}'::jsonb),
         'user_info', COALESCE(user_info_json, '{}'::jsonb),

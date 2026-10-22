@@ -9,7 +9,6 @@ import 'package:fstapp/components/forms/widgets_view/option_field_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/widgets/buttons_helper.dart';
 
 import 'package:collection/collection.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -18,6 +17,8 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import '../models/holder_models/form_holder.dart';
 import '../models/holder_models/ticket_holder.dart';
+import '../payment_method_strings.dart';
+import '../widgets_view/payment_method_picker.dart';
 
 class OrderPreviewScreen extends StatefulWidget {
   final FormHolder formHolder;
@@ -28,6 +29,8 @@ class OrderPreviewScreen extends StatefulWidget {
   final VerifiedOrganizationIdentity? organizationIdentity;
   final bool hasTickets;
   final Map<String, double> metaSurchargeSums;
+  final Map<String, dynamic>? payments;
+  final String paymentSurface;
 
   static const double fontSizeFactor = 1.1;
 
@@ -41,6 +44,8 @@ class OrderPreviewScreen extends StatefulWidget {
     this.organizationIdentity,
     this.hasTickets = true,
     this.metaSurchargeSums = const {},
+    this.payments,
+    this.paymentSurface = 'web',
   });
 
   @override
@@ -50,11 +55,21 @@ class OrderPreviewScreen extends StatefulWidget {
 class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
   late ScrollController _scrollController;
   String _paymentType = 'full';
+  late final FormPaymentOptions _paymentOptions;
+  late final String _quotedCurrency;
+  String? _paymentMethod;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _paymentOptions = FormPaymentOptions.fromJson(widget.payments);
+    _quotedCurrency = widget.formHolder.controller?.currencyCode ?? 'CZK';
+    final methods = _paymentOptions.availableFor(widget.paymentSurface);
+    _paymentMethod = methods.contains(widget.formHolder.paymentMethod)
+        ? widget.formHolder.paymentMethod
+        : methods.firstOrNull;
+    _paymentType = widget.formHolder.paymentType ?? 'full';
 
     // After the frame is rendered, animate scroll to the bottom to reveal the Submit button.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -147,18 +162,59 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                         const SizedBox(height: 16),
 
                         // Submit Button
+                        if (widget.totalPrice > 0) ...[
+                          PaymentMethodPicker(
+                              options: _paymentOptions,
+                              surface: widget.paymentSurface,
+                              selected: _paymentMethod,
+                              onChanged: (method) =>
+                                  setState(() => _paymentMethod = method)),
+                          const SizedBox(height: 16),
+                        ],
                         Center(
-                          child: ButtonsHelper.primaryButton(
-                            context: context,
-                            onPressed: () {
-                              widget.formHolder.paymentType = _paymentType;
-                              widget.onSendPressed();
-                            },
-                            label: PublicOrderStrings.getSubmitButton(
-                                widget.hasTickets, widget.tone),
-                            height: 50.0,
-                            width: 250.0,
-                          ),
+                          child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 440),
+                              child: SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                        minimumSize: const Size(0, 50),
+                                        padding: const EdgeInsets.all(16)),
+                                    onPressed: widget.totalPrice > 0 &&
+                                            _paymentMethod == null
+                                        ? null
+                                        : () {
+                                            widget.formHolder.paymentType =
+                                                _paymentType;
+                                            widget.formHolder.paymentMethod =
+                                                widget.totalPrice > 0
+                                                    ? _paymentMethod
+                                                    : null;
+                                            widget.formHolder
+                                                    .paymentAmountMinor =
+                                                (widget.totalPrice * 100)
+                                                    .round();
+                                            widget.formHolder.paymentCurrency =
+                                                _quotedCurrency;
+                                            widget.formHolder
+                                                    .paymentConnectionId =
+                                                _paymentOptions
+                                                    .stripeConnectionId;
+                                            widget.onSendPressed();
+                                          },
+                                    child: Text(
+                                        widget.totalPrice <= 0
+                                            ? PaymentMethodStrings.text(
+                                                'finishFree')
+                                            : _paymentMethod == 'stripe'
+                                                ? PaymentMethodStrings.text(
+                                                    'orderAndPay')
+                                                : PublicOrderStrings
+                                                    .getSubmitButton(
+                                                        widget.hasTickets,
+                                                        widget.tone),
+                                        textAlign: TextAlign.center),
+                                  ))),
                         ),
                         OrganizationIdentityFooter(
                             identity: widget.organizationIdentity),
@@ -281,7 +337,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                   products.fold(0, (sum, product) => sum + product.price);
               s = value.toString();
               priceText =
-                  '+ ${Utilities.formatPrice(context, sectionPrice, currencyCode: widget.formHolder.controller!.currencyCode)}';
+                  '+ ${Utilities.formatPrice(context, sectionPrice, currencyCode: _quotedCurrency, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)}';
               final metaTexts = products
                   .map((p) =>
                       OptionFieldHelper.buildMetaSurchargeText(context, p))
@@ -394,7 +450,9 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
             PublicOrderStrings.totalPrice(
                 context,
                 Utilities.formatPrice(context, widget.totalPrice,
-                    currencyCode: widget.formHolder.controller!.currencyCode)),
+                    currencyCode: _quotedCurrency,
+                    decimalDigits:
+                        _paymentOptions.stripeConfigured ? null : 0)),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
                   fontWeight: FontWeight.bold,
@@ -466,7 +524,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
 
   Widget _buildDepositSection(BuildContext context) {
     final depositTotal = _calculateDepositTotal();
-    final currencyCode = widget.formHolder.controller!.currencyCode;
+    final currencyCode = _quotedCurrency;
     final depositFeature = FeatureService.getDepositFeature();
     final isOnSite = depositFeature?.depositDeadline == "on_site";
     final infoText = isOnSite
@@ -490,7 +548,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
           groupValue: _paymentType,
           onChanged: (v) => setState(() => _paymentType = v!),
           title: Text(
-            '${PublicOrderStrings.payWithDeposit} (${Utilities.formatPrice(context, depositTotal, currencyCode: currencyCode)})',
+            '${PublicOrderStrings.payWithDeposit} (${Utilities.formatPrice(context, depositTotal, currencyCode: currencyCode, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)})',
             style: TextStyle(fontSize: 14 * OrderPreviewScreen.fontSizeFactor),
           ),
           subtitle: Text(
@@ -508,7 +566,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
           groupValue: _paymentType,
           onChanged: (v) => setState(() => _paymentType = v!),
           title: Text(
-            '${PublicOrderStrings.payFullAmount} (${Utilities.formatPrice(context, widget.totalPrice, currencyCode: currencyCode)})',
+            '${PublicOrderStrings.payFullAmount} (${Utilities.formatPrice(context, widget.totalPrice, currencyCode: currencyCode, decimalDigits: _paymentOptions.stripeConfigured ? null : 0)})',
             style: TextStyle(fontSize: 14 * OrderPreviewScreen.fontSizeFactor),
           ),
           dense: true,

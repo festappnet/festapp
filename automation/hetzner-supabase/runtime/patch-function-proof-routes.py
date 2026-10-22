@@ -23,6 +23,18 @@ if marker not in source:
 # a one-use issuer request; anonymous cancellation must reach that owner too.
 source = source.replace('"bank-sync-reconcile"].includes', '"bank-sync-reconcile", "mcp-session-exchange"].includes')
 
+# These routes authenticate a separate pay/return capability, raw Stripe
+# signature or machine requestSecret inside the owning Edge handler.
+stripe_routes = ('stripe-checkout', 'stripe-return', 'stripe-webhook', 'stripe-reconcile')
+proof_routes = re.search(r'!\[(.*?)\]\.includes\(new URL\(req.url\)\.pathname\.split\("/"\)\[1\]\)', source)
+if proof_routes is None:
+    raise SystemExit('installed Function proof routing contract changed')
+entries = proof_routes.group(1)
+for route in stripe_routes:
+    if f'"{route}"' not in entries:
+        entries += f', "{route}"'
+source = source[:proof_routes.start(1)] + entries + source[proof_routes.end(1):]
+
 # Remove the former standalone sender route guard from an installed router.
 source = re.sub(r'(?m)^\s*if \(service_name === "send-email-gateway"\) return new Response\("Not found", \{status: 404\}\); /\* festapp-email-gateway-private \*/\n', '\n', source)
 if '/* festapp-email-gateway-private */' in source:

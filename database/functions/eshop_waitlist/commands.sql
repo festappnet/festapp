@@ -7,7 +7,7 @@ BEGIN
  IF jsonb_typeof(p_value)='object' THEN
   SELECT coalesce(jsonb_object_agg(key,public.sanitize_waitlist_history_internal(value)),'{}') INTO result
   FROM jsonb_each(p_value) WHERE lower(key) NOT IN
-   ('token','secret','password','offertoken','managetoken','capability','waitlistenvelope','sealed','tokenhash');
+   ('token','secret','password','offertoken','managetoken','capability','waitlistenvelope','sealed','tokenhash','stripepaymentsource');
   RETURN result;
  ELSIF jsonb_typeof(p_value)='array' THEN
   SELECT coalesce(jsonb_agg(public.sanitize_waitlist_history_internal(value) ORDER BY ordinal),'[]') INTO result
@@ -48,7 +48,7 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Order editor required'; END IF;
  previous_sub:=current_setting('request.jwt.claim.sub',true);
  PERFORM set_config('request.jwt.claim.sub',coalesce(p_actor::text,''),true);
- hash:=encode(extensions.digest(jsonb_build_object('operation',p_operation,'payload',p_payload,'actor',p_actor)::text,'sha256'),'hex');
+ hash:=encode(extensions.digest(jsonb_build_object('operation',p_operation,'payload',p_payload#-'{orderDetails,stripePaymentSource}','actor',p_actor)::text,'sha256'),'hex');
  BEGIN
   IF p_actor IS NULL THEN claim:=public.begin_anonymous_client_mutation_v1(p_command_id,'inventory.waitlist.'||p_operation,occ,p_client_id,hash); actor_kind:='unknown';
   ELSE claim:=public.begin_client_mutation_v1(p_command_id,'inventory.waitlist.'||p_operation,occ,p_actor,hash); actor_kind:='user'; END IF;

@@ -37,6 +37,9 @@ import { CurrencySelectorWidget } from './widgets/currency_selector_widget.js';
 import { FormValidator } from './form_validator.js';
 import { FormNetwork } from './form_network.js';
 import { OrderResult } from './order_result.js';
+import { paymentMethodText } from './payment_method_strings.js';
+import { BlueprintLayoutAdapter } from '../blueprint/blueprint_layout_adapter.js';
+import { CardPaymentController } from './card_payment_controller.js';
 
 export class FormPage extends Component {
     // Keep internal session static for now if needed across hot-reloads, or instance?
@@ -315,22 +318,42 @@ export class FormPage extends Component {
         } catch { /* Keep the editable draft on a network failure. */ }
     }
 
-    async refreshCapacityChoice(model) {
+    async refreshCapacityChoice(model, reason = 'FORM_CAPACITY_EXCEEDED') {
         const current = this.currentSession;
-        const latest = await DbForms.getFormByLink(this.currentLink);
-        if (!latest) return;
-        const message = document.createElement('p'); message.setAttribute('role', 'alert');
-        message.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED');
+        const link = this.currentLink;
+        const priceChanged = reason === 'STRIPE_PRICE_CHANGED';
+        const recipientChanged = reason === 'STRIPE_RECIPIENT_CHANGED';
+        const reviewRequired = priceChanged || recipientChanged;
+        if (reviewRequired) this._paymentReviewPending = true;
+        const message = document.createElement('div'); message.setAttribute('role', 'alert');
+        const text = document.createElement('p');
+        text.textContent = recipientChanged ? paymentMethodText('reason_recipient_changed') : priceChanged ? paymentMethodText('priceChanged') : WaitlistStrings.text(reason);
         const button = document.createElement('button'); button.type = 'button';
-        button.textContent = latest.registrationMode === 'waitlist' ? WaitlistStrings.text('regularToWaitlist') : WaitlistStrings.refresh;
-        button.onclick = () => {
-            if (FormAvailabilityService.renderStatus(this.host, latest, FormAvailabilityService.getStatus(latest))) return;
-            this.renderForm(latest, false);
-            for (const [id, value] of current.state.fields) this.currentSession.state.fields.set(id, value);
-            this.currentSession.state.tickets = current.state.tickets.map(t => ({ ...t, fields: t.fields.filter(f => this.currentSession._getTicketSubDef(f._subFieldId)) }));
-            this.currentSession._syncPayloadFromState(); this.currentSession._emitStateChanged();
+        button.textContent = priceChanged ? paymentMethodText('reviewCurrentPrices') : WaitlistStrings.refresh;
+        if (reviewRequired) button.dataset.refreshPayment = 'true';
+        button.onclick = async () => {
+            button.disabled = true;
+            try {
+                const latest = await DbForms.getFormByLink(link);
+                if (!latest || this.currentSession !== current || this.currentLink !== link) return;
+                if (latest.registrationMode === 'waitlist' && !window.confirm(WaitlistStrings.explanation)) return;
+                // Keep the reservation capability while reading fresh seat prices.
+                latest.secret = model.secret;
+                let spots = [];
+                if (current.state.tickets.some(ticket => ticket.spot) && latest.blueprint && latest.registrationMode !== 'waitlist') {
+                    const blueprint = await DbForms.getBlueprint(latest.secret, latest.key, latest.blueprint.id || latest.blueprint);
+                    spots = [...new BlueprintLayoutAdapter(blueprint).models.values()];
+                }
+                if (this.currentSession !== current || this.currentLink !== link) return;
+                if (FormAvailabilityService.renderStatus(this.host, latest, FormAvailabilityService.getStatus(latest))) return;
+                this._pendingPaymentType = this._pendingPaymentMethod = this._pendingPaymentQuote = null;
+                this._paymentReviewPending = false;
+                this.renderForm(latest, false, { previous: current, spots, review: reviewRequired });
+            } catch {
+                text.textContent = paymentMethodText('refreshFailed');
+            } finally { button.disabled = false; }
         };
-        message.appendChild(button); this.host.prepend(message);
+        message.append(text, button); this.host.prepend(message);
     }
 
     renderWaitlistOutcome(outcome, bundle) {
@@ -510,7 +533,7 @@ export class FormPage extends Component {
         ThemeService.applyThemeFromModel(formModel);
     }
 
-    renderForm(formModel, showPreview) {
+    renderForm(formModel, showPreview, restoredDraft = null) {
         this.setOverviewLayout(false);
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
@@ -519,6 +542,7 @@ export class FormPage extends Component {
         const session = new FormSession(formModel);
         this.currentSession = session;
         prepareOfferSession(session, formModel);
+        if (restoredDraft) session.restoreDraft(restoredDraft.previous, restoredDraft.spots);
 
         // Subscribe to Validation Changes
         session.addEventListener('validation-changed', (e) => {
@@ -677,13 +701,18 @@ export class FormPage extends Component {
             if (form) {
                 // Initial syncing
                 // Parse the initial form state (e.g. default values) into the session
-                session.initialize(form);
+                if (restoredDraft) {
+                    prefillOfferFields(form, session);
+                    session._syncPayloadFromState();
+                    session._recalculate();
+                } else session.initialize(form);
                 if (formModel.offerBundle) prefillOfferFields(form, session);
 
                 // Initial syncing
                 // If the session initialized with a currency (e.g. from logic), ensure filter runs.
                 // Disptach current state to trigger filter
                 session.setIsReady(true);
+                if (restoredDraft?.review && formModel.registrationMode !== 'waitlist') this.validateAndSubmit(form, formModel);
             }
         }, 100);
 
@@ -715,6 +744,10 @@ export class FormPage extends Component {
     }
 
     validateAndSubmit(form, formModel) {
+        if (this._paymentReviewPending) {
+            this.host.querySelector('[data-refresh-payment]')?.click();
+            return;
+        }
         if (this.currentSession.state.tickets.length > this.currentSession.maxTickets) {
             const error = document.createElement('p'); error.setAttribute('role', 'alert'); error.textContent = WaitlistStrings.text('FORM_CAPACITY_EXCEEDED'); form.prepend(error); revealEmbedStep(error); return;
         }
@@ -758,9 +791,11 @@ export class FormPage extends Component {
                  const priceData = this.calculateTotal(form, formModel);
                  const precalculatedPayload = this.currentSession ? this.currentSession.payload : null;
 
-                 OrderPreview.show(form, formModel, priceData, (overlay, paymentType) => {
+                 OrderPreview.show(form, formModel, priceData, (overlay, paymentType, paymentMethod, paymentQuote) => {
                      // On Confirm
                      this._pendingPaymentType = paymentType || null;
+                     this._pendingPaymentMethod = paymentMethod;
+                     this._pendingPaymentQuote = paymentQuote;
                      this.submitOrder(form, formModel, overlay || document.body);
                  }, () => {
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
@@ -824,6 +859,17 @@ export class FormPage extends Component {
         }
 
         // 4. Submit via Network
+        if(this._pendingPaymentMethod){
+            if(this._pendingPaymentMethod==='stripe'){
+                payload.payment_method='stripe';
+                payload.payment_type='full';
+                payload.expected_payment_amount_minor=this._pendingPaymentQuote.amountMinor;
+                payload.expected_payment_currency=this._pendingPaymentQuote.currency;
+                payload.stripe_connection_id=this._pendingPaymentQuote.connectionId;
+                payload.payment_surface=this._pendingPaymentQuote.surface;
+            }
+            this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
+        }
         const submittedSession = this.currentSession;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
@@ -889,7 +935,7 @@ export class FormPage extends Component {
                  window.scrollTo(0, 0);
              }
 
-             if (!result.success && result.data?.errorCode === 'FORM_CAPACITY_EXCEEDED') await this.refreshCapacityChoice(formModel);
+             if (!result.success && ['FORM_CAPACITY_EXCEEDED', 'STRIPE_PRICE_CHANGED', 'STRIPE_RECIPIENT_CHANGED'].includes(result.data?.errorCode)) await this.refreshCapacityChoice(formModel, result.data.errorCode);
              this.showFullScreenResult(result.success, result.data, formModel);
 
         }).catch(async e => {
@@ -988,8 +1034,10 @@ export class FormPage extends Component {
             if (isEmbed() && event.key === 'Escape') RouterService.goBackProgrammatically();
         });
 
+        let cardPaymentController = null;
         // Cleanup Function
         const cleanup = () => {
+            cardPaymentController?.dispose();
             if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
             container.remove();
             previousFocus?.focus({ preventScroll: true });
@@ -1002,7 +1050,6 @@ export class FormPage extends Component {
                 // init renders a loading state before fetching the current server mode.
                 void this.init(link);
             }
-
         };
 
         // Handle Back History
@@ -1012,15 +1059,28 @@ export class FormPage extends Component {
         };
         window.addEventListener('popstate', popHandler, { once: true });
 
-        OrderResult.render(container, success, resultData, formModel, () => {
-            // On Close (Button Click) -> Trigger History Back
-            // This will fire 'popstate', which calls cleanup()
-            RouterService.goBackProgrammatically();
-        });
-        if (this.identityFooter) {
-            this.identityFooter.render(formModel.organizationIdentity);
-            container.append(this.identityFooter.host);
-        }
+        const renderResult = () => {
+            const focusedAction = document.activeElement?.dataset?.paymentAction;
+            OrderResult.render(container, success, resultData, formModel, () => {
+                RouterService.goBackProgrammatically();
+            }, cardPaymentController ? {
+                onPay: () => cardPaymentController.continue(),
+                onRefresh: () => cardPaymentController.refresh(),
+            } : {});
+            if (this.identityFooter) {
+                this.identityFooter.render(formModel.organizationIdentity);
+                container.append(this.identityFooter.host);
+            }
+            if (focusedAction) container.querySelector(`[data-payment-action="${focusedAction}"]`)?.focus({preventScroll:true});
+        };
+        if (!isEmbed()) cardPaymentController = CardPaymentController.fromResult(resultData, {onPayment: payment => {
+            resultData.payment = payment;
+            if(container.isConnected)renderResult();
+        }});
+        renderResult();
         revealEmbedStep(container);
+        if (cardPaymentController && resultData.checkout_url) {
+            try { cardPaymentController.openPrepared(resultData.checkout_url); } catch { /* The same order remains resumable. */ }
+        }
     }
 }

@@ -16,6 +16,12 @@ BEGIN
     IF v_order.id IS NULL THEN RAISE EXCEPTION 'Order not found'; END IF;
     IF v_order.state='storno' THEN RETURN; END IF;
     PERFORM public.check_order_is_mutable(order_id);
+    -- Card finances and admission are resolved by provider facts and the
+    -- audited refund decision, never by resetting an order's original price.
+    IF EXISTS(SELECT 1 FROM eshop.payment_info pi
+      WHERE pi.id=v_order.payment_info AND pi.payment_method='stripe') THEN
+        RAISE EXCEPTION 'STRIPE_USE_REFUND_ADMISSION_DECISION';
+    END IF;
     PERFORM public.cancel_order_email_intents(order_id);
     -- Retrieve all ticket ids associated with the order
     SELECT ARRAY_AGG(t.id) INTO ticket_ids

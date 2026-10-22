@@ -44,9 +44,7 @@ BEGIN
  IF bp IS NOT NULL AND (n IS NOT NULL OR enabled) THEN
   RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','BLUEPRINT_CONFLICT')::text; END IF;
 END $$;
-REVOKE ALL ON FUNCTION public.get_form_capacity_snapshot_internal(bigint,timestamptz),
- public.get_form_registration_mode_internal(bigint,timestamptz),public.check_form_capacity_settings_internal(bigint,jsonb)
- FROM PUBLIC,anon,authenticated;
+
 
 -- Source: database/functions/eshop_forms/get_form_by_link.sql
 CREATE OR REPLACE FUNCTION public.get_form_bundle_internal(p_form_id bigint,p_allow_closed boolean DEFAULT false)
@@ -193,7 +191,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
+
 
 
 

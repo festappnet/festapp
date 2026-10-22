@@ -1,9 +1,9 @@
 -- Private pure projection. No matcher, paid transition or payment side effect.
 
-REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
+
+
 
 -- Customer-visible answers only; field definitions own scope and visibility.
 CREATE OR REPLACE FUNCTION public.customer_order_answers_internal(p_form bigint,p_data jsonb,p_ticket boolean)
@@ -118,8 +118,8 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.occasion_reserved_public_paths_internal()
 RETURNS text[] LANGUAGE sql IMMUTABLE SET search_path = public, extensions AS $$

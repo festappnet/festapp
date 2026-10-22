@@ -31,3 +31,27 @@
 
 /embed.js
   Cache-Control: public, max-age=300, must-revalidate
+
+
+/stripe/connect/callback
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+/app/stripe/connect/callback
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/stripe/pay
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/stripe/return
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/app/stripe/pay
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/app/stripe/return
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer

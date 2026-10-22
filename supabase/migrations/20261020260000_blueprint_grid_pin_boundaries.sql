@@ -2,13 +2,13 @@
 -- Canonical source: database/functions/blueprint/canonical_validation.sql
 -- Canonical declaration validation consumes the generated core metadata.
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_leaves_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_style_internal(jsonb,text) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_grid_contains_internal(jsonb,numeric,numeric) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_grid_cell_filled_internal(p_surface jsonb,p_x numeric,p_y numeric)
 RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
@@ -19,16 +19,16 @@ $$;
 REVOKE ALL ON FUNCTION public.blueprint_grid_cell_filled_internal(jsonb,numeric,numeric) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_canonical_surface_projection_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_path_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_gradient_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_vector_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_canonical_geometry_projection_internal(p_doc jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
@@ -119,4 +119,3 @@ BEGIN
  RETURN (p_doc-ARRAY['styles','seatingDefaults','textPolicy'])||jsonb_build_object('schemaVersion',1,'nodes',nodes,'attachments',attachments,'presets',presets,
   'defaultTextStyle',jsonb_build_object('fontId','geometry-validation-only','size',24,'color','#222222FF'));
 END $$;
-REVOKE ALL ON FUNCTION public.blueprint_canonical_geometry_projection_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;

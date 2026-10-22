@@ -76,10 +76,7 @@ REVOKE ALL ON FUNCTION public.resolve_existing_user_session_v1(uuid),
   public.acquire_existing_user_session_lease_v1(uuid,uuid),
   public.check_existing_user_session_lease_v1(uuid,uuid),
   public.release_existing_user_session_lease_v1(uuid,uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.resolve_existing_user_session_v1(uuid),
-  public.acquire_existing_user_session_lease_v1(uuid,uuid),
-  public.check_existing_user_session_lease_v1(uuid,uuid),
-  public.release_existing_user_session_lease_v1(uuid,uuid) TO service_role;
+
 
 
 -- Source: database/functions/users/create_user_in_organization_with_data_pure.sql
@@ -209,7 +206,7 @@ BEGIN
   RETURN v_unit;
 END $$;
 REVOKE ALL ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.initialize_registration_unit_v1(uuid,bigint,text,text) TO service_role;
+
 
 
 -- Source: database/functions/users/create_user_from_registration.sql
@@ -471,7 +468,7 @@ BEGIN
   DELETE FROM public.external_login_rate_limits WHERE window_start<clock_timestamp()-interval '1 hour';
 END $$;
 REVOKE ALL ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text),public.google_auth_rate_limit_v1(text,integer),public.cleanup_external_login_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.google_auth_transition_v1(text,uuid,text,jsonb),public.google_auth_resolve_account_v1(bigint,text),public.google_auth_rate_limit_v1(text,integer),public.cleanup_external_login_v1() TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.invalidate_external_login_for_user_v1(p_user uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -485,7 +482,7 @@ BEGIN
   DELETE FROM public.existing_user_session_leases WHERE user_id=p_user;
 END $$;
 REVOKE ALL ON FUNCTION public.invalidate_external_login_for_user_v1(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.invalidate_external_login_for_user_v1(uuid) TO service_role;
+
 
 
 -- Source: database/functions/account_deletion/account_deletion_contract.sql
@@ -744,20 +741,20 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_account_deletion_request(uuid,bigint,text,timestamptz,text) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.set_account_deletion_email_state(uuid,boolean) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.claim_account_deletion(text) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.cleanup_account_deletion_domain(uuid) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.get_account_deletion_storage_batch(uuid,integer) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.update_account_deletion_job(uuid,boolean,boolean,text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.create_account_deletion_request(uuid,bigint,text,timestamptz,text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.set_account_deletion_email_state(uuid,boolean) TO service_role;
-GRANT EXECUTE ON FUNCTION public.claim_account_deletion(text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_account_deletion_domain(uuid) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_account_deletion_storage_batch(uuid,integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.update_account_deletion_job(uuid,boolean,boolean,text) TO service_role;
-REVOKE ALL ON FUNCTION public.inspect_account_deletion_token(text) FROM PUBLIC, authenticated;
-GRANT EXECUTE ON FUNCTION public.inspect_account_deletion_token(text) TO anon, service_role;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 DO $$ BEGIN
   IF current_database() = current_setting('cron.database_name', true)

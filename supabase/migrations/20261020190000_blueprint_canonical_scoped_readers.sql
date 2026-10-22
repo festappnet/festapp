@@ -1,12 +1,12 @@
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
 
-REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
+
+
 -- Schema-1 dependency boundary. Match effectiveNodeProperties: a kind
 -- declaration wins over an unmasked node value; explicit overrides win last.
 -- Presets have their own document defaults and namespace.
 
-REVOKE ALL ON FUNCTION public.blueprint_layout_font_dependencies_internal(jsonb) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_legacy_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('protocol',1,'fonts',coalesce((SELECT jsonb_object_agg(a.id,a.layout_outline)
@@ -16,7 +16,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  FROM public.blueprint_image_assets a WHERE (a.occasion=p_occasion OR a.unit=p_unit) AND a.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion UNION ALL SELECT organization FROM public.units WHERE id=p_unit)
  AND a.state='ready' AND a.asset_ref=p_layout#>>'{background,assetRef}' AND a.hash=p_layout#>>'{background,hash}'),'{}'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_legacy_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_layout_asset_refs_internal(p_layout jsonb)
 RETURNS TABLE(asset_ref text,hash text) LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
@@ -206,11 +206,11 @@ BEGIN
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
 
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 
 
@@ -626,17 +626,15 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 -- Temporary staged rollout: only organization 3 is released first.
 -- Retire both private legacy readers after the remaining tenants are migrated.

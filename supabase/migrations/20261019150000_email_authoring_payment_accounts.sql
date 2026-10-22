@@ -62,6 +62,3 @@ BEGIN
   RETURN jsonb_build_object('linkedAccounts', v_linked, 'formAccountIds', v_form_accounts);
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.get_email_authoring_payment_accounts(bigint, bigint) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_authoring_payment_accounts(bigint, bigint) TO service_role;

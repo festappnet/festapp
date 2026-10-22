@@ -23,14 +23,14 @@ REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
 -- form, product, reminders or other rows escape into the normal application.
 -- PostgreSQL sequences may advance; those IDs are draft-local references.
 
-REVOKE ALL ON FUNCTION public.build_occasion_setup_configuration(bigint,uuid) FROM PUBLIC,anon,authenticated;
+
 
 -- Client-generated UUID makes canonical draft initialization safe to retry.
 
 
 
-REVOKE ALL ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.save_occasion_setup_draft(p_id uuid, p_expected_revision bigint, p_data jsonb, p_step integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
@@ -54,10 +54,3 @@ BEGIN
     revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
   RETURN to_jsonb(d);
 END $$;
-
-
-
-REVOKE ALL ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) TO authenticated;

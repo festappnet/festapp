@@ -3,6 +3,42 @@
 <head>
   <!-- Inherit the hosting Referrer-Policy: maps identify their origin to tile
        providers, while sensitive auth callbacks retain no-referrer. -->
+  <script>
+    // Capture the short-lived Connect code before bootstrap or any analytics.
+    // It stays in memory only; the same Festapp user must finalize it server-side.
+    (function () {
+      let target = new URL(window.location.href);
+      const redirect = target.searchParams.get('redirect');
+      if (redirect) {
+        const restored = new URL(redirect, target.origin);
+        if (restored.origin === target.origin) target = restored;
+      }
+      if (target.pathname.endsWith('/stripe/pay') || target.pathname.endsWith('/stripe/return')) {
+        const isReturn = target.pathname.endsWith('/stripe/return');
+        const fragment = new URLSearchParams(target.hash.slice(1));
+        const saved = window.history.state && window.history.state.festappStripePayment;
+        const handoff = !isReturn && fragment.get('handoff');
+        const token = isReturn ? target.searchParams.get('return_handle') : handoff || fragment.get('pay') ||
+          (saved && saved.kind === 'pay' ? saved.token : null);
+        if (typeof token === 'string' && /^[a-f0-9]{64}$/.test(token)) {
+          window.__festappStripePaymentLink = JSON.stringify({kind:isReturn?'return':handoff?'handoff':'pay',token});
+        }
+        for (const key of ['return_handle','pay','handoff']) target.searchParams.delete(key);
+        target.hash = '';
+        window.history.replaceState(window.history.state, '', target.pathname + target.search);
+        return;
+      }
+      if (!target.pathname.endsWith('/stripe/connect/callback')) return;
+      const callback = {};
+      for (const key of ['code', 'state', 'error']) {
+        if (target.searchParams.has(key)) callback[key] = target.searchParams.get(key);
+      }
+      if (!Object.keys(callback).length) return;
+      window.__festappStripeConnectCallback = JSON.stringify(callback);
+      for (const key of ['code', 'state', 'error', 'error_description']) target.searchParams.delete(key);
+      window.history.replaceState(null, '', target.pathname + target.search + target.hash);
+    })();
+  </script>
   <!--
     Passkeys Web SDK shim. supabase_flutter pulls passkeys_web, whose
     registerWith() calls PasskeyAuthenticator.init() at startup and throws when

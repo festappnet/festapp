@@ -29,7 +29,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.is_service_role() FROM PUBLIC, anon, authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.require_service_role()
 RETURNS void
@@ -44,8 +44,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.require_service_role() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.require_service_role() TO service_role;
+
+
 
 
 -- Source: database/functions/user_permissions/get_can_view_user_auth.sql
@@ -156,7 +156,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.add_user_to_unit(bigint, uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.add_user_to_unit(bigint, uuid) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/users/get_user_id_by_email.sql
@@ -172,7 +172,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_user_id_by_email(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_user_id_by_email(text) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/users/process_token_register.sql
@@ -220,7 +220,7 @@ $$ LANGUAGE plpgsql;
 
 
 REVOKE ALL ON FUNCTION public.process_token_register(jsonb) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.process_token_register(jsonb) TO service_role;
+
 
 
 -- Source: database/functions/users/get_last_sign_in_at.sql
@@ -238,7 +238,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_last_sign_in_at(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_last_sign_in_at(uuid) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/eshop_bank_accounts/get_bank_account_users.sql
@@ -312,8 +312,8 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.get_bank_account_users(bigint, bigint) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.get_bank_account_users(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_account_users(bigint, bigint) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_bank_account_users(bigint) TO authenticated, service_role;
+
+
 
 
 -- Source: database/functions/others/get_all_email_templates.sql
@@ -442,7 +442,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_all_email_templates(jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_all_email_templates(jsonb) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/others/get_entity_email_templates.sql
@@ -537,7 +537,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_entity_email_templates(text, bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_entity_email_templates(text, bigint) TO authenticated, service_role;
+
 
 
 -- Source: database/functions/eshop_orders/scan_ticket.sql

@@ -35,6 +35,16 @@ export class ThemeService {
         ThemeService.apply();
     }
 
+    static showFontError(formModel) {
+        if (ThemeService._lastFormModel !== formModel || document.getElementById('shared-font-error')) return;
+        const message = document.createElement('div');
+        message.id = 'shared-font-error'; message.setAttribute('role', 'alert');
+        const retry = document.createElement('button');
+        retry.textContent = 'Písmo se nepodařilo načíst. Zkusit znovu';
+        retry.onclick = () => { message.remove(); ThemeService.applyThemeFromModel(formModel); };
+        message.appendChild(retry); document.body.prepend(message);
+    }
+
     static toggle() {
         // Toggle logic rotates: Auto -> Dark -> Light -> Auto? Or just Light/Dark?
         // User asked for explicit switch. 'toggle' might be legacy. 
@@ -87,6 +97,7 @@ export class ThemeService {
      * Replaces the old FormPage.applyTheme logic.
      */
     static applyThemeFromModel(formModel) {
+        if (ThemeService._lastFormModel !== formModel) document.getElementById('shared-font-error')?.remove();
         ThemeService._lastFormModel = formModel; // Cache for re-application on mode switch
         const root = document.body;
 
@@ -97,6 +108,15 @@ export class ThemeService {
             familyName = formModel.fontFamily.trim();
             fontLink.href = `https://fonts.googleapis.com/css?family=${familyName.replace(/ /g, '+')}:400,500,700&display=swap`;
             fontLink.rel = 'stylesheet';
+            if (formModel.backgroundMode) {
+                fontLink.onload = async () => {
+                    try {
+                        if (document.fonts && (await document.fonts.load(`16px "${familyName}"`)).length === 0) throw new Error('font unavailable');
+                        document.getElementById('shared-font-error')?.remove();
+                    } catch { ThemeService.showFontError(formModel); }
+                };
+                fontLink.onerror = () => ThemeService.showFontError(formModel);
+            }
             document.head.appendChild(fontLink);
             root.style.setProperty('--font-family-base', `"${familyName}", sans-serif`);
             root.style.setProperty('--input-font-family', `"${familyName}", sans-serif`);
@@ -187,6 +207,16 @@ export class ThemeService {
         
         root.style.setProperty('--background-color', blendedBg);
         document.body.style.backgroundColor = blendedBg;
+
+        const explicitBackground = formModel.backgroundMode;
+        const background = explicitBackground === 'gradient'
+            ? `linear-gradient(90deg, ${formModel.primaryColor}, ${formModel.secondaryColor})`
+            : explicitBackground === 'solid' ? formModel.primaryColor : null;
+        if (background) {
+            root.dataset.sharedAppearance = 'true';
+            root.style.setProperty('--form-background', background);
+            root.style.background = background;
+        } else { delete root.dataset.sharedAppearance; root.style.removeProperty('--form-background'); root.style.background = blendedBg; }
 
         // Content Colors
         const onPrimary = ThemeService.getBestTextColor(finalPrimaryHex);

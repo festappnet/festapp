@@ -5,8 +5,12 @@ from urllib.parse import urlparse
 root, web_link, android_id, fingerprints = sys.argv[1:]
 root = pathlib.Path(root)
 url = urlparse(web_link)
-if url.scheme != 'https' or not url.hostname or url.path not in ('', '/'):
+if url.scheme != 'https' or not url.hostname or url.path not in ('', '/') or url.username or url.password or url.query or url.fragment:
     raise SystemExit('Google auth App Links require a canonical HTTPS web origin')
+payment_paths = ['/stripe/pay', '/stripe/return', '/app/stripe/pay', '/app/stripe/return']
+link_paths = ['/app/google-auth', *payment_paths]
+port_attribute = f' android:port="{url.port}"' if url.port and url.port != 443 else ''
+android_data = '\n'.join(f'                <data android:scheme="https" android:host="{url.hostname}"{port_attribute} android:path="{path}" />' for path in link_paths)
 prints = [v.strip().upper() for v in fingerprints.split(',') if v.strip()]
 if any(not re.fullmatch(r'(?:[0-9A-F]{2}:){31}[0-9A-F]{2}', v) for v in prints):
     raise SystemExit('Invalid public Android SHA-256 signing certificate fingerprint')
@@ -19,7 +23,7 @@ if manifest.exists():
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="{url.hostname}" android:path="/app/google-auth" />
+{android_data}
             </intent-filter>
             <!-- FESTAPP_GOOGLE_AUTH_LINK_END -->'''
     if '<!-- FESTAPP_GOOGLE_AUTH_LINK_BEGIN -->' in source:
@@ -36,11 +40,11 @@ for relative in ['web/apple-app-site-association','web/.well-known/apple-app-sit
     if path.exists():
         data=json.loads(path.read_text())
         for detail in data.get('applinks',{}).get('details',[]):
-            if 'paths' in detail and '/app/google-auth' not in detail['paths']:
-                detail['paths'].insert(0,'/app/google-auth')
-        for detail in data.get('applinks',{}).get('details',[]):
-            if 'components' in detail and not any(c.get('/') == '/app/google-auth' for c in detail['components']):
-                detail['components'].insert(0, {'/':'/app/google-auth'})
+            if 'paths' in detail:
+                detail['paths'] = [p for p in link_paths if p not in detail['paths']] + detail['paths']
+            if 'components' in detail:
+                present = {c.get('/') for c in detail['components']}
+                detail['components'] = [{'/':p} for p in link_paths if p not in present] + detail['components']
         path.write_text(json.dumps(data,indent=2)+'\n')
 
 well_known = root / 'web/.well-known/apple-app-site-association'

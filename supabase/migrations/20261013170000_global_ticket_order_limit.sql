@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.ticket_order_limit()
 RETURNS integer LANGUAGE sql IMMUTABLE SET search_path = public, extensions
 AS $$ SELECT 20; $$;
 REVOKE ALL ON FUNCTION public.ticket_order_limit() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.ticket_order_limit() TO anon, authenticated, service_role;
+
 
 CREATE OR REPLACE FUNCTION public.create_ticket_order_internal_v1(input_data JSONB)
 RETURNS JSONB

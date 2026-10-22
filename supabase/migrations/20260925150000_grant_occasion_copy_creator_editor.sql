@@ -48,8 +48,7 @@ BEGIN
     'sync', jsonb_build_object('replacements', '[]'::jsonb)),
     v_commit.commit_id);
 END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_domain_command_internal_v1(bigint, uuid)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- A copied occasion has no occasion_users rows. Its creator needs editor rights
 -- to copy its images and save the final media URLs after the database copy.
@@ -86,8 +85,3 @@ BEGIN
   END IF;
   RETURN v_response;
 END; $$;
-
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid)
-  TO authenticated;

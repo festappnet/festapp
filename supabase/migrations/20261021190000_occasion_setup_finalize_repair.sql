@@ -20,6 +20,6 @@ BEGIN
   END IF;
   RETURN to_jsonb(d);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_draft(uuid) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_draft(uuid) TO authenticated;
 COMMIT;

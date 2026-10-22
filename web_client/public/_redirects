@@ -10,6 +10,12 @@
 /admin   /flutter.html  200
 /transfer /flutter.html 200
 
+/stripe/pay /flutter.html 200
+/stripe/return /flutter.html 200
+/app/stripe/pay /flutter.html 200
+/app/stripe/return /flutter.html 200
+/stripe/connect/callback /flutter.html 200
+
 # Fallback (Flutter)
 # Any other route not matched above falls back to Flutter
 /*       /flutter.html  200

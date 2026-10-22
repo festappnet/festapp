@@ -18,7 +18,7 @@ BEGIN
  END;
 END $$;
 
-REVOKE ALL ON FUNCTION public.wake_email_worker() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.wake_email_worker() TO service_role;
+
+
 NOTIFY pgrst,'reload schema';
 COMMIT;

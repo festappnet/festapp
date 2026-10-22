@@ -92,6 +92,6 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.update_email_template(jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.update_email_template(jsonb) TO authenticated, service_role;
+
 
 NOTIFY pgrst, 'reload schema';

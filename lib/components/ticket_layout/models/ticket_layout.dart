@@ -1,4 +1,5 @@
 import '../../fonts/ticket_font_ids.dart';
+
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -9,7 +10,7 @@ const ticketQrColors = [
   '17365D',
   '123B20',
   '401529',
-  'FFFFFF'
+  'FFFFFF',
 ];
 bool ticketQrColorReadable(String color, [String background = 'FFFFFF']) {
   if (!RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(color)) return false;
@@ -47,7 +48,7 @@ const ticketBindings = [
   'orderName',
   'logo',
   'footer',
-  'text'
+  'text',
 ];
 Map<String, dynamic> copyTicketJson(Map value) =>
     (jsonDecode(jsonEncode(value)) as Map).cast<String, dynamic>();
@@ -61,129 +62,140 @@ class TicketElement {
   final bool visible, locked, bold, italic, underline;
   final double fontSize, minFontSize;
   final int maxLines;
-  const TicketElement(
-      {this.fontId,
-      this.productTypeId,
-      this.label,
-      this.text,
-      required this.id,
-      required this.binding,
-      required this.box,
-      this.visible = true,
-      this.locked = false,
-      this.fontSize = 12,
-      this.minFontSize = 6,
-      this.maxLines = 3,
-      this.color = '2A2A2A',
-      this.align = 'left',
-      this.bold = false,
-      this.italic = false,
-      this.underline = false});
+  const TicketElement({
+    this.fontId,
+    this.productTypeId,
+    this.label,
+    this.text,
+    required this.id,
+    required this.binding,
+    required this.box,
+    this.visible = true,
+    this.locked = false,
+    this.fontSize = 12,
+    this.minFontSize = 6,
+    this.maxLines = 3,
+    this.color = '2A2A2A',
+    this.align = 'left',
+    this.bold = false,
+    this.italic = false,
+    this.underline = false,
+  });
   factory TicketElement.fromJson(Map j) {
     final b = j['box'] as Map, s = j['style'] as Map;
     return TicketElement(
-        fontId: s['fontId'],
-        productTypeId: j['productTypeId'],
-        label: j['label'],
-        text: j['text'],
-        id: j['id'],
-        binding: j['binding'],
-        box: Rect.fromLTWH(
-            (b['x'] as num).toDouble(),
-            (b['y'] as num).toDouble(),
-            (b['width'] as num).toDouble(),
-            (b['height'] as num).toDouble()),
-        visible: j['visible'],
-        locked: j['locked'],
-        fontSize: (s['fontSize'] as num).toDouble(),
-        minFontSize: (s['minFontSize'] as num).toDouble(),
-        maxLines: s['maxLines'],
-        color: s['color'],
-        align: s['align'],
-        bold: s['bold'] as bool? ?? false,
-        italic: s['italic'] as bool? ?? false,
-        underline: s['underline'] as bool? ?? false);
+      fontId: s['fontId'],
+      productTypeId: j['productTypeId'],
+      label: j['label'],
+      text: j['text'],
+      id: j['id'],
+      binding: j['binding'],
+      box: Rect.fromLTWH(
+        (b['x'] as num).toDouble(),
+        (b['y'] as num).toDouble(),
+        (b['width'] as num).toDouble(),
+        (b['height'] as num).toDouble(),
+      ),
+      visible: j['visible'],
+      locked: j['locked'],
+      fontSize: (s['fontSize'] as num).toDouble(),
+      minFontSize: (s['minFontSize'] as num).toDouble(),
+      maxLines: s['maxLines'],
+      color: s['color'],
+      align: s['align'],
+      bold: s['bold'] as bool? ?? false,
+      italic: s['italic'] as bool? ?? false,
+      underline: s['underline'] as bool? ?? false,
+    );
   }
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'binding': binding,
-        if (productTypeId != null) 'productTypeId': productTypeId,
-        if (label != null) 'label': label,
-        if (text != null) 'text': text,
-        'box': boxJson(box),
-        'visible': visible,
-        'locked': locked,
-        'style': {
-          if (fontId != null) 'fontId': fontId,
-          'fontSize': fontSize,
-          'minFontSize': minFontSize,
-          'maxLines': maxLines,
-          'color': color,
-          'align': align,
-          if (bold) 'bold': true,
-          if (italic) 'italic': true,
-          if (underline) 'underline': true
-        }
-      };
-  TicketElement copyWith(
-          {String? binding,
-          String? text,
-          int? productTypeId,
-          String? label,
-          String? fontId,
-          bool resetFont = false,
-          Rect? box,
-          bool? visible,
-          bool? locked,
-          bool? bold,
-          bool? italic,
-          bool? underline,
-          double? fontSize,
-          String? color,
-          String? align,
-          int? maxLines}) =>
-      TicketElement(
-          productTypeId: productTypeId ?? this.productTypeId,
-          label: label ?? this.label,
-          fontId: resetFont ? null : fontId ?? this.fontId,
-          id: id,
-          binding: binding ?? this.binding,
-          text: text ?? this.text,
-          box: box ?? this.box,
-          visible: visible ?? this.visible,
-          locked: locked ?? this.locked,
-          fontSize: fontSize ?? this.fontSize,
-          minFontSize: minFontSize,
-          maxLines: maxLines ?? this.maxLines,
-          color: color ?? this.color,
-          align: align ?? this.align,
-          bold: bold ?? this.bold,
-          italic: italic ?? this.italic,
-          underline: underline ?? this.underline);
+    'id': id,
+    'binding': binding,
+    if (productTypeId != null) 'productTypeId': productTypeId,
+    if (label != null) 'label': label,
+    if (text != null) 'text': text,
+    'box': boxJson(box),
+    'visible': visible,
+    'locked': locked,
+    'style': {
+      if (fontId != null) 'fontId': fontId,
+      'fontSize': fontSize,
+      'minFontSize': minFontSize,
+      'maxLines': maxLines,
+      'color': color,
+      'align': align,
+      if (bold) 'bold': true,
+      if (italic) 'italic': true,
+      if (underline) 'underline': true,
+    },
+  };
+  TicketElement copyWith({
+    String? binding,
+    String? text,
+    int? productTypeId,
+    String? label,
+    String? fontId,
+    bool resetFont = false,
+    Rect? box,
+    bool? visible,
+    bool? locked,
+    bool? bold,
+    bool? italic,
+    bool? underline,
+    double? fontSize,
+    String? color,
+    String? align,
+    int? maxLines,
+  }) => TicketElement(
+    productTypeId: productTypeId ?? this.productTypeId,
+    label: label ?? this.label,
+    fontId: resetFont ? null : fontId ?? this.fontId,
+    id: id,
+    binding: binding ?? this.binding,
+    text: text ?? this.text,
+    box: box ?? this.box,
+    visible: visible ?? this.visible,
+    locked: locked ?? this.locked,
+    fontSize: fontSize ?? this.fontSize,
+    minFontSize: minFontSize,
+    maxLines: maxLines ?? this.maxLines,
+    color: color ?? this.color,
+    align: align ?? this.align,
+    bold: bold ?? this.bold,
+    italic: italic ?? this.italic,
+    underline: underline ?? this.underline,
+  );
 }
 
-Map<String, dynamic> boxJson(Rect b) =>
-    {'x': b.left, 'y': b.top, 'width': b.width, 'height': b.height};
+Map<String, dynamic> boxJson(Rect b) => {
+  'x': b.left,
+  'y': b.top,
+  'width': b.width,
+  'height': b.height,
+};
 
 class TicketTemplate {
   final Map<String, dynamic> appearance;
   String? get fontId => appearance['fontId'] as String?;
   String get font => appearance['font'] as String? ?? 'futura';
+  List<String>? get canvasGradient =>
+      (appearance['canvasGradient'] as List?)?.cast<String>();
   String get canvasColor => appearance['canvasColor'] as String? ?? 'E6E6E6';
   double get canvasOpacity => canvasColor == 'transparent'
       ? 0
       : (appearance['canvasOpacity'] as num?)?.toDouble() ?? 1;
   TicketTemplate withCanvasColor(String color, {double? opacity}) =>
       TicketTemplate(
-          fitPageToTicket: fitPageToTicket,
-          page: page,
-          area: area,
-          elements: elements,
-          appearance: {
-            ...appearance,
-            'canvasColor': color,
-            if (opacity != null) 'canvasOpacity': opacity
-          });
+        fitPageToTicket: fitPageToTicket,
+        page: page,
+        area: area,
+        elements: elements,
+        appearance: {
+          ...appearance,
+          'canvasColor': color,
+          if (opacity != null) 'canvasOpacity': opacity,
+        },
+      );
   Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
   List<TicketElement> positionedElements(Map<String, String?> data) {
     final flow = (appearance['flow'] as List? ?? const [])
@@ -207,242 +219,278 @@ class TicketTemplate {
     if (!(appearance['flow'] is List) || (appearance['flow'] as List).isEmpty)
       return this;
     return TicketTemplate(
-        fitPageToTicket: fitPageToTicket,
-        page: page,
-        area: area,
-        appearance: {
-          for (final entry in appearance.entries)
-            if (!['flow', 'flowStep'].contains(entry.key))
-              entry.key: entry.value
-        },
-        elements: positionedElements(data));
+      fitPageToTicket: fitPageToTicket,
+      page: page,
+      area: area,
+      appearance: {
+        for (final entry in appearance.entries)
+          if (!['flow', 'flowStep'].contains(entry.key)) entry.key: entry.value,
+      },
+      elements: positionedElements(data),
+    );
   }
 
   final bool fitPageToTicket;
   final Size page;
   final Rect area;
   final List<TicketElement> elements;
-  TicketTemplate(
-      {this.fitPageToTicket = false,
-      this.appearance = const {},
-      required this.page,
-      required this.area,
-      required List<TicketElement> elements})
-      : elements = List.unmodifiable(elements);
+  TicketTemplate({
+    this.fitPageToTicket = false,
+    this.appearance = const {},
+    required this.page,
+    required this.area,
+    required List<TicketElement> elements,
+  }) : elements = List.unmodifiable(elements);
   factory TicketTemplate.fromJson(Map j) {
     if (j.containsKey('pageFit') && j['pageFit'] != 'ticket') {
       throw const FormatException('Invalid page fit');
     }
     final p = j['page'], a = j['ticketArea'];
     return TicketTemplate(
-        fitPageToTicket: j['pageFit'] == 'ticket',
-        appearance: {
-          for (final key in [
-            'fontId',
-            'font',
-            'flow',
-            'flowStep',
-            'qrAppearance',
-            'backgroundTransform',
-            'backgroundCrop',
-            'canvasColor',
-            'canvasOpacity',
-            'pageMargin',
-            'border'
-          ])
-            if (j.containsKey(key)) key: j[key]
-        },
-        page: Size(
-            (p['width'] as num).toDouble(), (p['height'] as num).toDouble()),
-        area: Rect.fromLTWH(
-            (a['x'] as num).toDouble(),
-            (a['y'] as num).toDouble(),
-            (a['width'] as num).toDouble(),
-            (a['height'] as num).toDouble()),
-        elements: (j['elements'] as List)
-            .map((e) => TicketElement.fromJson(e))
-            .toList());
+      fitPageToTicket: j['pageFit'] == 'ticket',
+      appearance: {
+        for (final key in [
+          'fontId',
+          'font',
+          'flow',
+          'flowStep',
+          'qrAppearance',
+          'backgroundTransform',
+          'backgroundCrop',
+          'canvasGradient',
+          'canvasColor',
+          'canvasOpacity',
+          'pageMargin',
+          'border',
+        ])
+          if (j.containsKey(key)) key: j[key],
+      },
+      page: Size(
+        (p['width'] as num).toDouble(),
+        (p['height'] as num).toDouble(),
+      ),
+      area: Rect.fromLTWH(
+        (a['x'] as num).toDouble(),
+        (a['y'] as num).toDouble(),
+        (a['width'] as num).toDouble(),
+        (a['height'] as num).toDouble(),
+      ),
+      elements: (j['elements'] as List)
+          .map((e) => TicketElement.fromJson(e))
+          .toList(),
+    );
   }
   Map get backgroundTransform =>
       appearance['backgroundTransform'] as Map? ?? const {};
   double get backgroundScale =>
       (backgroundTransform['scale'] as num?)?.toDouble() ?? 1;
   Offset get backgroundOffset => Offset(
-      (backgroundTransform['x'] as num?)?.toDouble() ?? 0,
-      (backgroundTransform['y'] as num?)?.toDouble() ?? 0);
+    (backgroundTransform['x'] as num?)?.toDouble() ?? 0,
+    (backgroundTransform['y'] as num?)?.toDouble() ?? 0,
+  );
   Rect backgroundRect(Size image) {
     final scale =
         math.min(area.width / image.width, area.height / image.height) *
-            backgroundScale;
+        backgroundScale;
     return Rect.fromCenter(
-        center: Offset(area.width / 2 + backgroundOffset.dx * area.width,
-            area.height / 2 + backgroundOffset.dy * area.height),
-        width: image.width * scale,
-        height: image.height * scale);
+      center: Offset(
+        area.width / 2 + backgroundOffset.dx * area.width,
+        area.height / 2 + backgroundOffset.dy * area.height,
+      ),
+      width: image.width * scale,
+      height: image.height * scale,
+    );
   }
 
   Rect get backgroundCrop {
     final crop = appearance['backgroundCrop'];
     if (crop is! Map) return const Rect.fromLTWH(0, 0, 1, 1);
     return Rect.fromLTWH(
-        (crop['x'] as num).toDouble(),
-        (crop['y'] as num).toDouble(),
-        (crop['width'] as num).toDouble(),
-        (crop['height'] as num).toDouble());
+      (crop['x'] as num).toDouble(),
+      (crop['y'] as num).toDouble(),
+      (crop['width'] as num).toDouble(),
+      (crop['height'] as num).toDouble(),
+    );
   }
 
   Rect croppedBackgroundRect(Size image) {
     final full = backgroundRect(image), crop = backgroundCrop;
     return Rect.fromLTWH(
-        full.left + crop.left * full.width,
-        full.top + crop.top * full.height,
-        crop.width * full.width,
-        crop.height * full.height);
+      full.left + crop.left * full.width,
+      full.top + crop.top * full.height,
+      crop.width * full.width,
+      crop.height * full.height,
+    );
   }
 
   TicketTemplate withBackgroundCrop(Rect crop) => TicketTemplate(
-      fitPageToTicket: fitPageToTicket,
-      page: page,
-      area: area,
-      elements: elements,
-      appearance: {...appearance, 'backgroundCrop': boxJson(crop)});
+    fitPageToTicket: fitPageToTicket,
+    page: page,
+    area: area,
+    elements: elements,
+    appearance: {...appearance, 'backgroundCrop': boxJson(crop)},
+  );
 
   TicketTemplate withBackground(double scale, Offset offset) => TicketTemplate(
-          fitPageToTicket: fitPageToTicket,
-          page: page,
-          area: area,
-          elements: elements,
-          appearance: {
-            ...appearance,
-            'backgroundTransform': {
-              'scale': scale,
-              'x': offset.dx,
-              'y': offset.dy
-            }
-          });
+    fitPageToTicket: fitPageToTicket,
+    page: page,
+    area: area,
+    elements: elements,
+    appearance: {
+      ...appearance,
+      'backgroundTransform': {'scale': scale, 'x': offset.dx, 'y': offset.dy},
+    },
+  );
   static const defaultPageMargin = 3 * 72 / 25.4;
   double get pageMargin => appearance['pageMargin'] is num
       ? (appearance['pageMargin'] as num).toDouble()
       : 0;
   TicketTemplate withPaper(bool ticket, {double margin = 0}) => TicketTemplate(
-      fitPageToTicket: ticket,
-      page: ticket
-          ? Size(area.width + 2 * margin, area.height + 2 * margin)
-          : const Size(595.28, 841.89),
-      area: ticket
-          ? Rect.fromLTWH(margin, margin, area.width, area.height)
-          : Rect.fromLTWH(
-              math.max(0, (595.28 - area.width) / 2),
-              math.min(29.764, math.max(0, 841.89 - area.height)),
-              area.width,
-              area.height),
-      appearance: {
-        for (final entry in appearance.entries)
-          if (entry.key != 'pageMargin') entry.key: entry.value,
-        if (ticket) 'pageMargin': margin
-      },
-      elements: elements);
+    fitPageToTicket: ticket,
+    page: ticket
+        ? Size(area.width + 2 * margin, area.height + 2 * margin)
+        : const Size(595.28, 841.89),
+    area: ticket
+        ? Rect.fromLTWH(margin, margin, area.width, area.height)
+        : Rect.fromLTWH(
+            math.max(0, (595.28 - area.width) / 2),
+            math.min(29.764, math.max(0, 841.89 - area.height)),
+            area.width,
+            area.height,
+          ),
+    appearance: {
+      for (final entry in appearance.entries)
+        if (entry.key != 'pageMargin') entry.key: entry.value,
+      if (ticket) 'pageMargin': margin,
+    },
+    elements: elements,
+  );
   TicketTemplate withQrColors(String foreground, String background) =>
       TicketTemplate(
-          fitPageToTicket: fitPageToTicket,
-          page: page,
-          area: area,
-          appearance: {
-            ...appearance,
-            'qrAppearance': {
-              'margin': 4,
+        fitPageToTicket: fitPageToTicket,
+        page: page,
+        area: area,
+        appearance: {
+          ...appearance,
+          'qrAppearance': {
+            'margin': 4,
+            'opacity': 1,
+            ...qrAppearance,
+            'background': background,
+            if (background != (qrAppearance['background'] ?? 'FFFFFF'))
               'opacity': 1,
-              ...qrAppearance,
-              'background': background,
-              if (background != (qrAppearance['background'] ?? 'FFFFFF'))
-                'opacity': 1,
-            }
           },
-          elements: elements
-              .map((e) => e.binding == 'qr' ? e.copyWith(color: foreground) : e)
-              .toList());
+        },
+        elements: elements
+            .map((e) => e.binding == 'qr' ? e.copyWith(color: foreground) : e)
+            .toList(),
+      );
   TicketTemplate withFont(String? value) => TicketTemplate(
-      fitPageToTicket: fitPageToTicket,
-      page: page,
-      area: area,
-      appearance: {
-        for (final entry in appearance.entries)
-          if (!['font', 'fontId'].contains(entry.key)) entry.key: entry.value,
-        'fontId':
-            legacyTicketFontIds[value] ?? value ?? legacyTicketFontIds['futura']
-      },
-      elements: elements);
+    fitPageToTicket: fitPageToTicket,
+    page: page,
+    area: area,
+    appearance: {
+      for (final entry in appearance.entries)
+        if (!['font', 'fontId'].contains(entry.key)) entry.key: entry.value,
+      'fontId':
+          legacyTicketFontIds[value] ?? value ?? legacyTicketFontIds['futura'],
+    },
+    elements: elements,
+  );
   TicketTemplate withElements(List<TicketElement> next) => TicketTemplate(
-      fitPageToTicket: fitPageToTicket,
-      appearance: {
-        ...appearance,
-        if (appearance['flow'] is List)
-          'flow': (appearance['flow'] as List)
-              .where((id) => next.any((e) => e.id == id))
-              .toList()
-      },
-      page: page,
-      area: area,
-      elements: next);
+    fitPageToTicket: fitPageToTicket,
+    appearance: {
+      ...appearance,
+      if (appearance['flow'] is List)
+        'flow': (appearance['flow'] as List)
+            .where((id) => next.any((e) => e.id == id))
+            .toList(),
+    },
+    page: page,
+    area: area,
+    elements: next,
+  );
   TicketTemplate replace(TicketElement e) => TicketTemplate(
-      fitPageToTicket: fitPageToTicket,
-      appearance: appearance,
-      page: page,
-      area: area,
-      elements: elements.map((old) => old.id == e.id ? e : old).toList());
+    fitPageToTicket: fitPageToTicket,
+    appearance: appearance,
+    page: page,
+    area: area,
+    elements: elements.map((old) => old.id == e.id ? e : old).toList(),
+  );
 
   /// Resize the surface, not its content. Hidden boxes stay contract-valid.
-  TicketTemplate resizeCanvasArea(Size size,
-      {Size? backgroundImage, Offset origin = Offset.zero}) {
+  TicketTemplate resizeCanvasArea(
+    Size size, {
+    Size? backgroundImage,
+    Offset origin = Offset.zero,
+  }) {
     final bounds = origin & size;
     if (size == area.size &&
         origin == Offset.zero &&
-        elements.every((e) =>
-            e.box.left >= 0 &&
-            e.box.top >= 0 &&
-            e.box.right <= size.width &&
-            e.box.bottom <= size.height)) return this;
-    final required =
-        elements.where((e) => ['qr', 'ticketSymbol'].contains(e.binding));
+        elements.every(
+          (e) =>
+              e.box.left >= 0 &&
+              e.box.top >= 0 &&
+              e.box.right <= size.width &&
+              e.box.bottom <= size.height,
+        ))
+      return this;
+    final required = elements.where(
+      (e) => ['qr', 'ticketSymbol'].contains(e.binding),
+    );
     if (!size.width.isFinite ||
         !size.height.isFinite ||
         size.width < 60 ||
         size.height < 60 ||
-        required.any((e) =>
-            e.box.left < bounds.left - .001 ||
-            e.box.top < bounds.top - .001 ||
-            e.box.right > bounds.right + .001 ||
-            e.box.bottom > bounds.bottom + .001)) {
+        required.any(
+          (e) =>
+              e.box.left < bounds.left - .001 ||
+              e.box.top < bounds.top - .001 ||
+              e.box.right > bounds.right + .001 ||
+              e.box.bottom > bounds.bottom + .001,
+        )) {
       throw const FormatException('Required ticket elements outside canvas');
     }
     var next = TicketTemplate(
-        fitPageToTicket: fitPageToTicket,
-        appearance: appearance,
-        page: fitPageToTicket
-            ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
-            : page,
-        area: Rect.fromLTWH(area.left, area.top, size.width, size.height),
-        elements: elements.map((original) {
-          final e = original.copyWith(box: original.box.shift(-origin));
-          if (e.box.left >= -.001 &&
-              e.box.top >= -.001 &&
-              e.box.right <= size.width + .001 &&
-              e.box.bottom <= size.height + .001) return e;
-          final w = math.min(e.box.width, size.width),
-              h = math.min(e.box.height, size.height);
-          return e.copyWith(
-              visible: false,
-              box: Rect.fromLTWH(e.box.left.clamp(0, size.width - w),
-                  e.box.top.clamp(0, size.height - h), w, h));
-        }).toList());
+      fitPageToTicket: fitPageToTicket,
+      appearance: appearance,
+      page: fitPageToTicket
+          ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
+          : page,
+      area: Rect.fromLTWH(area.left, area.top, size.width, size.height),
+      elements: elements.map((original) {
+        final e = original.copyWith(box: original.box.shift(-origin));
+        if (e.box.left >= -.001 &&
+            e.box.top >= -.001 &&
+            e.box.right <= size.width + .001 &&
+            e.box.bottom <= size.height + .001)
+          return e;
+        final w = math.min(e.box.width, size.width),
+            h = math.min(e.box.height, size.height);
+        return e.copyWith(
+          visible: false,
+          box: Rect.fromLTWH(
+            e.box.left.clamp(0, size.width - w),
+            e.box.top.clamp(0, size.height - h),
+            w,
+            h,
+          ),
+        );
+      }).toList(),
+    );
     if (backgroundImage != null) {
       final original = backgroundRect(backgroundImage).shift(-origin);
-      final contain = math.min(size.width / backgroundImage.width,
-          size.height / backgroundImage.height);
+      final contain = math.min(
+        size.width / backgroundImage.width,
+        size.height / backgroundImage.height,
+      );
       next = next.withBackground(
-          original.width / backgroundImage.width / contain,
-          Offset((original.center.dx - size.width / 2) / size.width,
-              (original.center.dy - size.height / 2) / size.height));
+        original.width / backgroundImage.width / contain,
+        Offset(
+          (original.center.dx - size.width / 2) / size.width,
+          (original.center.dy - size.height / 2) / size.height,
+        ),
+      );
     }
     return next;
   }
@@ -457,12 +505,15 @@ class TicketTemplate {
     if (size == area.size) return this;
     final sx = size.width / area.width, sy = size.height / area.height;
     final qr = elements.where((e) => e.binding == 'qr').firstOrNull;
-    final scale =
-        math.max(math.min(sx, sy), qr == null ? 0.0 : 60 / qr.box.width);
+    final scale = math.max(
+      math.min(sx, sy),
+      qr == null ? 0.0 : 60 / qr.box.width,
+    );
     // Transform the design as one group: no new overlaps when aspect changes.
     // Keep QR printable, consuming surrounding whitespace before rejecting size.
-    final bounds =
-        elements.map((e) => e.box).reduce((a, b) => a.expandToInclude(b));
+    final bounds = elements
+        .map((e) => e.box)
+        .reduce((a, b) => a.expandToInclude(b));
     double shift(double target, double original, double start, double end) {
       final preferred = (target - original * scale) / 2;
       final low = -start * scale, high = target - end * scale;
@@ -475,35 +526,44 @@ class TicketTemplate {
     // after right-left subtraction and JSON serialization at arbitrary mm sizes.
     double coordinate(double value) => (value * 1024).round() / 1024;
     return TicketTemplate(
-        fitPageToTicket: fitPageToTicket,
-        appearance: {
-          ...appearance,
-          if (appearance['flowStep'] != null)
-            'flowStep': (appearance['flowStep'] as num) * scale
-        },
-        page: fitPageToTicket
-            ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
-            : page,
-        area: Rect.fromLTWH(fitPageToTicket ? pageMargin : area.left,
-            fitPageToTicket ? pageMargin : area.top, size.width, size.height),
-        elements: elements
-            .map((e) => e.copyWith(
-                box: Rect.fromLTWH(
-                    coordinate(e.box.left * scale + dx),
-                    coordinate(e.box.top * scale + dy),
-                    coordinate(e.box.width * scale),
-                    coordinate(e.box.height * scale)),
-                fontSize: (e.fontSize * scale).clamp(e.minFontSize, 72)))
-            .toList());
+      fitPageToTicket: fitPageToTicket,
+      appearance: {
+        ...appearance,
+        if (appearance['flowStep'] != null)
+          'flowStep': (appearance['flowStep'] as num) * scale,
+      },
+      page: fitPageToTicket
+          ? Size(size.width + 2 * pageMargin, size.height + 2 * pageMargin)
+          : page,
+      area: Rect.fromLTWH(
+        fitPageToTicket ? pageMargin : area.left,
+        fitPageToTicket ? pageMargin : area.top,
+        size.width,
+        size.height,
+      ),
+      elements: elements
+          .map(
+            (e) => e.copyWith(
+              box: Rect.fromLTWH(
+                coordinate(e.box.left * scale + dx),
+                coordinate(e.box.top * scale + dy),
+                coordinate(e.box.width * scale),
+                coordinate(e.box.height * scale),
+              ),
+              fontSize: (e.fontSize * scale).clamp(e.minFontSize, 72),
+            ),
+          )
+          .toList(),
+    );
   }
 
   Map<String, dynamic> toJson() => {
-        ...appearance,
-        if (fitPageToTicket) 'pageFit': 'ticket',
-        'page': {'width': page.width, 'height': page.height},
-        'ticketArea': boxJson(area),
-        'elements': elements.map((e) => e.toJson()).toList()
-      };
+    ...appearance,
+    if (fitPageToTicket) 'pageFit': 'ticket',
+    'page': {'width': page.width, 'height': page.height},
+    'ticketArea': boxJson(area),
+    'elements': elements.map((e) => e.toJson()).toList(),
+  };
   List<String> validate(String type) {
     final errors = <String>[];
     if (appearance.containsKey('canvasOpacity') &&
@@ -512,6 +572,13 @@ class TicketTemplate {
             (appearance['canvasOpacity'] as num) < 0 ||
             (appearance['canvasOpacity'] as num) > 1))
       errors.add('canvasOpacity');
+    if (appearance.containsKey('canvasGradient') &&
+        (appearance['canvasGradient'] is! List ||
+            canvasGradient!.length != 2 ||
+            canvasGradient!.any(
+              (c) => !RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(c),
+            )))
+      errors.add('canvasGradient');
     if (appearance.containsKey('canvasColor') &&
         (appearance['canvasColor'] is! String ||
             (canvasColor != 'transparent' &&
@@ -524,7 +591,8 @@ class TicketTemplate {
     if (appearance.containsKey('backgroundTransform') &&
         (transform is! Map ||
             !['scale', 'x', 'y'].every(
-                (k) => transform[k] is num && (transform[k] as num).isFinite) ||
+              (k) => transform[k] is num && (transform[k] as num).isFinite,
+            ) ||
             (transform['scale'] as num) < .1 ||
             (transform['scale'] as num) > 10 ||
             (transform['x'] as num).abs() > 10 ||
@@ -534,8 +602,12 @@ class TicketTemplate {
     final crop = appearance['backgroundCrop'];
     if (appearance.containsKey('backgroundCrop') &&
         (crop is! Map ||
-            !['x', 'y', 'width', 'height']
-                .every((k) => crop[k] is num && (crop[k] as num).isFinite) ||
+            ![
+              'x',
+              'y',
+              'width',
+              'height',
+            ].every((k) => crop[k] is num && (crop[k] as num).isFinite) ||
             (crop['x'] as num) < 0 ||
             (crop['y'] as num) < 0 ||
             (crop['width'] as num) < .001 ||
@@ -549,7 +621,8 @@ class TicketTemplate {
             appearance['pageMargin'] is! num ||
             !pageMargin.isFinite ||
             pageMargin < 0 ||
-            pageMargin > 72)) errors.add('geometry');
+            pageMargin > 72))
+      errors.add('geometry');
     if (!validFont(fontId)) errors.add('font');
     bool inside(Rect b, Size size) =>
         [b.left, b.top, b.width, b.height].every((v) => v.isFinite) &&
@@ -560,13 +633,15 @@ class TicketTemplate {
         b.right <= size.width + .001 &&
         b.bottom <= size.height + .001;
     final pageValid = fitPageToTicket
-        ? [page.width, page.height]
-                .every((v) => v.isFinite && v >= 60 && v <= 842) &&
-            area.topLeft == Offset(pageMargin, pageMargin) &&
-            (area.width + 2 * pageMargin - page.width).abs() < .001 &&
-            (area.height + 2 * pageMargin - page.height).abs() < .001
+        ? [
+                page.width,
+                page.height,
+              ].every((v) => v.isFinite && v >= 60 && v <= 842) &&
+              area.topLeft == Offset(pageMargin, pageMargin) &&
+              (area.width + 2 * pageMargin - page.width).abs() < .001 &&
+              (area.height + 2 * pageMargin - page.height).abs() < .001
         : page == const Size(595.28, 841.89) ||
-            page == const Size(212.5, 387.5);
+              page == const Size(212.5, 387.5);
     if (!pageValid ||
         !inside(area, page) ||
         elements.length < 2 ||
@@ -586,16 +661,20 @@ class TicketTemplate {
             !productIds.add(e.productTypeId!) ||
             e.label == null ||
             e.label != e.label!.trim() ||
-            e.label!.runes.length > 120) errors.add(e.id);
-      } else if (e.productTypeId != null || e.label != null) errors.add(e.id);
+            e.label!.runes.length > 120)
+          errors.add(e.id);
+      } else if (e.productTypeId != null || e.label != null)
+        errors.add(e.id);
       if (e.binding == 'text'
           ? e.text == null || e.text!.runes.length > 2000
-          : e.text != null) errors.add(e.id);
+          : e.text != null)
+        errors.add(e.id);
       if (!validFont(e.fontId) ||
           (e.fontId != null && ['qr', 'logo'].contains(e.binding)) ||
           !ids.add(e.id) ||
           !RegExp(r'^[a-zA-Z0-9_-]{1,40}$').hasMatch(e.id) ||
-          (!['productType', 'text'].contains(e.binding) && !bindings.add(e.binding)) ||
+          (!['productType', 'text'].contains(e.binding) &&
+              !bindings.add(e.binding)) ||
           !ticketBindings.contains(e.binding) ||
           !inside(e.box, area.size) ||
           !e.fontSize.isFinite ||
@@ -618,7 +697,9 @@ class TicketTemplate {
         if (e.box.width != e.box.height ||
             e.box.width < 60 ||
             !ticketQrColorReadable(
-                e.color, qrAppearance['background'] as String? ?? 'FFFFFF')) {
+              e.color,
+              qrAppearance['background'] as String? ?? 'FFFFFF',
+            )) {
           errors.add(e.id);
         }
       }
@@ -627,8 +708,11 @@ class TicketTemplate {
     if (flow != null &&
         (flow is! List ||
             flow.toSet().length != flow.length ||
-            flow.any((id) => !elements.any(
-                (e) => e.id == id && !['qr', 'logo'].contains(e.binding)))))
+            flow.any(
+              (id) => !elements.any(
+                (e) => e.id == id && !['qr', 'logo'].contains(e.binding),
+              ),
+            )))
       errors.add('flow');
     if (!bindings.containsAll(['qr', 'ticketSymbol'])) errors.add('required');
     if (qr != null) {
@@ -661,8 +745,10 @@ int ticketLayoutByteSize(Map<String, dynamic> layout) {
   return utf8.encode(jsonEncode(layout)).length + spacing(layout);
 }
 
-void validateTicketLayout(Map<String, dynamic> layout,
-    {Set<String>? allowedFontIds}) {
+void validateTicketLayout(
+  Map<String, dynamic> layout, {
+  Set<String>? allowedFontIds,
+}) {
   if (ticketLayoutByteSize(layout) > 32768) {
     throw const FormatException('Layout too large');
   }
@@ -680,42 +766,48 @@ void validateTicketLayout(Map<String, dynamic> layout,
   final ids = <String>{};
   for (final entry in templates.entries) {
     final raw = entry.value as Map;
-    if (raw.keys.any((k) => ![
-          'canvasColor',
-          'canvasOpacity',
-          'backgroundCrop',
-          'pageMargin',
-          'backgroundTransform',
-          'fontId',
-          'flow',
-          'flowStep',
-          'qrAppearance',
-          'border',
-          'pageFit',
-          'page',
-          'ticketArea',
-          'elements'
-        ].contains(k)))
+    if (raw.keys.any(
+      (k) => ![
+        'canvasGradient',
+        'canvasColor',
+        'canvasOpacity',
+        'backgroundCrop',
+        'pageMargin',
+        'backgroundTransform',
+        'fontId',
+        'flow',
+        'flowStep',
+        'qrAppearance',
+        'border',
+        'pageFit',
+        'page',
+        'ticketArea',
+        'elements',
+      ].contains(k),
+    ))
       throw const FormatException('Invalid template metadata');
     if (version == 3 && raw.containsKey('font')) {
       throw const FormatException('Legacy font field in schema 2');
     }
     for (final element in raw['elements'] as List) {
-      if ((element as Map).keys.any((k) => ![
-            'id',
-            'binding',
-            'productTypeId',
-            'label',
-            'text',
-            'box',
-            'visible',
-            'locked',
-            'style'
-          ].contains(k)))
+      if ((element as Map).keys.any(
+        (k) => ![
+          'id',
+          'binding',
+          'productTypeId',
+          'label',
+          'text',
+          'box',
+          'visible',
+          'locked',
+          'style',
+        ].contains(k),
+      ))
         throw const FormatException('Invalid element metadata');
     }
-    final styles =
-        (raw['elements'] as List).map((e) => (e as Map)['style'] as Map);
+    final styles = (raw['elements'] as List).map(
+      (e) => (e as Map)['style'] as Map,
+    );
     if ((raw.containsKey('fontId') && raw['fontId'] is! String) ||
         styles.any((s) => s.containsKey('fontId') && s['fontId'] is! String)) {
       throw const FormatException('Invalid font');
@@ -724,8 +816,10 @@ void validateTicketLayout(Map<String, dynamic> layout,
     if (t.validate(entry.key).isNotEmpty) {
       throw const FormatException('Invalid ticket template');
     }
-    final fonts =
-        [t.fontId, ...t.elements.map((e) => e.fontId)].whereType<String>();
+    final fonts = [
+      t.fontId,
+      ...t.elements.map((e) => e.fontId),
+    ].whereType<String>();
     if (allowedFontIds != null &&
         fonts.any((id) => !allowedFontIds.contains(id))) {
       throw const FormatException('Unknown font');

@@ -74,7 +74,7 @@ class BasePreviewStrategy {
             const locale = LocalizationService.currentLocale;
             // Extract price if pertinent and available in context
             if (found.price && context && context.currency) {
-                 priceStr = formatPrice(found.price, context.currency, 0, locale);
+                 priceStr = formatPrice(found.price, context.currency, context.cardPricing ? 2 : 0, locale);
             }
             const metaSurcharge = _buildMetaSurchargeForProduct(found, context);
             return { value: title, price: priceStr, metaSurcharge };

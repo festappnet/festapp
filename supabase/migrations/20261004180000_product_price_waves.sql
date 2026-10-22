@@ -56,7 +56,7 @@ BEGIN
   RETURN to_jsonb(v_wave);
 END; $$;
 REVOKE ALL ON FUNCTION public.create_product_price_wave(text,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.create_product_price_wave(text,timestamptz) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.save_product_wave_target(
   p_wave_id bigint,p_product_id bigint,p_expected_wave_revision bigint,p_price numeric,p_is_hidden boolean,
@@ -110,7 +110,7 @@ BEGIN
   END IF;
 END; $$;
 REVOKE ALL ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.move_product_price_wave(p_wave_id bigint,p_expected_revision bigint,p_change_time timestamptz)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -140,7 +140,7 @@ BEGIN
   RETURN to_jsonb(v_wave);
 END; $$;
 REVOKE ALL ON FUNCTION public.move_product_price_wave(bigint,bigint,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.move_product_price_wave(bigint,bigint,timestamptz) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.cancel_product_price_wave(p_wave_id bigint,p_expected_revision bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -155,7 +155,7 @@ BEGIN
   DELETE FROM eshop.product_price_waves WHERE id=p_wave_id;
 END; $$;
 REVOKE ALL ON FUNCTION public.cancel_product_price_wave(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.cancel_product_price_wave(bigint,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.save_product_price_change(
   p_product_id bigint, p_price numeric, p_change_time timestamptz,
@@ -189,8 +189,8 @@ BEGIN
   END IF;
   RETURN to_jsonb(v_change);
 END; $$;
-REVOKE ALL ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_product_price_change(bigint,numeric,timestamptz,bigint,bigint) TO authenticated;
+
+
 
 
 CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
@@ -335,8 +335,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.delete_product_internal_v1(p_product_id BIGINT)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER

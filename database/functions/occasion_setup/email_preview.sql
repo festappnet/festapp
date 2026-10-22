@@ -38,6 +38,8 @@ BEGIN
  END IF;
  RETURN jsonb_build_object('revision',d.revision,'title',coalesce(nullif(d.data->>'title',''),'Ukázková událost'),
   'tone',tone,'replyTo',reply_to,'resolved',resolved,
+  'ticketsEnabled',coalesce((d.data->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false)),
+  'sampleProducts',coalesce((SELECT jsonb_agg(p) FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f CROSS JOIN LATERAL (SELECT p FROM jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p WHERE NOT coalesce((p->>'is_hidden')::boolean,false) LIMIT 1) products(p) WHERE NOT coalesce((f->>'is_hidden')::boolean,false)),'[]'::jsonb),
   'has_custom_template',coalesce((resolved->'template'->>'occasion') IS NOT NULL
     OR (resolved->'template'->>'unit') IS NOT NULL OR (resolved->'template'->>'organization') IS NOT NULL,false));
 END $$;

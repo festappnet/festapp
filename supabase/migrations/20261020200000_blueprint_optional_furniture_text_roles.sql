@@ -1,6 +1,6 @@
 -- Field definitions and shaping policy come from the core-generated metadata.
 
-REVOKE ALL ON FUNCTION public.blueprint_resolved_label_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_layout_text_requests_internal(p_layout jsonb,p_presets boolean DEFAULT false)
 RETURNS TABLE(node_key text,font_family_id text,font_face_id text,role text,descriptor jsonb)
@@ -39,14 +39,6 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     'fit',CASE WHEN role='text' THEN 'wrap' ELSE 'shrink' END)) END
  FROM requests WHERE role='number' OR source<>''
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_text_requests_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
 
 CREATE INDEX IF NOT EXISTS blueprint_text_resources_descriptor_idx ON public.blueprint_text_resources USING gin((payload->'descriptor') jsonb_path_ops);
-
-REVOKE ALL ON FUNCTION public.blueprint_canonical_text_resources_internal(jsonb,bigint,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
-
-
-REVOKE ALL ON FUNCTION public.check_blueprint_text_resources_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
-
-
-REVOKE ALL ON FUNCTION public.blueprint_text_resource_ids_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;

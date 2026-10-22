@@ -45,9 +45,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.check_order_is_mutable(bigint),
   public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
   FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.check_order_is_mutable(bigint),
-  public.check_ticket_is_mutable(bigint),public.check_payment_info_is_mutable(bigint)
-  TO service_role;
+
 
 -- Source: database/functions/emails/email_domain.sql
 -- Invoker-only helper. Its ACL prevents public use; public domain commands own permissions.
@@ -434,66 +432,15 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.delete_order_client_sync_v1(
-  p_order bigint,p_command_id uuid
-) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_unit bigint;
-  v_begin jsonb; v_hash text; v_removed_users uuid[]; v_remaining_users uuid[];
-  v_public text[]:='{}'; v_dirty jsonb:='[]'::jsonb;
-BEGIN
-  SELECT o.occasion,oc.unit INTO v_occasion,v_unit FROM eshop.orders o
-    JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=p_order;
-  IF v_actor IS NULL OR v_occasion IS NULL
-    OR NOT public.get_is_manager_on_unit(v_unit) THEN
-    RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
-  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'order',p_order)::text,'UTF8'),'sha256'),'hex');
-  v_begin:=public.begin_client_mutation_v1(p_command_id,
-    'inventory.order.delete',v_occasion,v_actor,v_hash);
-  IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
-  PERFORM public.lock_activity_aggregate_internal_v1(v_occasion);
-  PERFORM public.check_is_manager_on_unit(v_unit);
-  SELECT COALESCE(array_agg(DISTINCT ou."user"),'{}'::uuid[]) INTO v_removed_users
-  FROM eshop.order_product_ticket opt JOIN public.occasion_users ou
-    ON ou.ticket=opt.ticket AND ou.occasion=v_occasion
-  WHERE opt."order"=p_order;
-  PERFORM public.delete_order_internal_v1(p_order);
-  DELETE FROM public.client_sync_private_scopes s WHERE s.occasion=v_occasion
-    AND s.user_id=ANY(v_removed_users);
-  DELETE FROM public.client_aggregate_versions v
-    WHERE v.aggregate_type='occasion_user' AND v.scope_type='occasion'
-      AND v.scope_id=v_occasion AND v.aggregate_id=ANY(
-        ARRAY(SELECT id::text FROM unnest(v_removed_users) id));
-  SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_remaining_users
-    FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  IF cardinality(v_removed_users)>0 THEN
-    v_public:=ARRAY['live_public'];
-    SELECT COALESCE(jsonb_agg(jsonb_build_object('component','live_public',
-      'entityId',e.id)),'[]'::jsonb) INTO v_dirty
-      FROM public.events e WHERE e.occasion=v_occasion;
-  END IF;
-  RETURN public.complete_private_profile_mutation_v1(p_command_id,v_occasion,
-    'inventory.order.delete',jsonb_build_array(jsonb_build_object(
-      'entityType','order','entityId',p_order,'operation','delete',
-      'safeLabel','Order','changedFields',jsonb_build_array(
-        'tickets','membership','allocations'))),v_remaining_users,v_public,v_dirty,
-    jsonb_build_object('orderId',p_order,'removedUsers',cardinality(v_removed_users)));
-END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.delete_order_221(order_id bigint)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.delete_order_client_sync_v1(
-    order_id,extensions.gen_random_uuid());
-END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_221(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_221(bigint) TO authenticated;
+
+
+
+
+
+
+
 
 -- Source: database/functions/eshop_orders/delete_order_history.sql
 CREATE OR REPLACE FUNCTION public.delete_order_history(p_history_id bigint)
@@ -1208,19 +1155,8 @@ $$;
 
 -- The receipted Client Sync command must use the same payment and email
 -- transition as the legacy RPC, rather than its pre-email-cutover copy.
-CREATE OR REPLACE FUNCTION public.update_ticket_products_internal_v1(
-  p_ticket_id bigint, p_products jsonb
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY INVOKER
-SET search_path = public, extensions AS $$
-BEGIN
-  RETURN public.update_ticket_products_wsv2(p_ticket_id, p_products);
-END;
-$$;
-REVOKE ALL ON FUNCTION public.update_ticket_products_internal_v1(bigint,jsonb)
-  FROM PUBLIC, anon, authenticated;
+
+
 
 -- Source: database/functions/eshop_orders/update_ticket_to_unused_ws.sql
 CREATE OR REPLACE FUNCTION public.update_ticket_to_unused_ws(
@@ -1259,10 +1195,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.update_ticket_to_unused_ws(bigint)
-FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.update_ticket_to_unused_ws(bigint)
-TO authenticated, service_role;
+
+
 
 -- Source: database/functions/eshop_orders/update_ticket_to_used.sql
 CREATE OR REPLACE FUNCTION public.update_ticket_to_used(
@@ -1504,8 +1438,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.apply_transaction_pairing(bigint,bigint,text,text,jsonb)
-  FROM PUBLIC, anon, authenticated, service_role;
+
 
 -- Source: database/functions/eshop_transactions/get_transactions_for_order.sql
 CREATE OR REPLACE FUNCTION public.get_transactions_for_order(order_id bigint)

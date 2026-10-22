@@ -1,8 +1,8 @@
 -- Scoped font save/read closure. Sources: database/functions/blueprint/{resources,validation}.sql
 ALTER TABLE public.ticket_font_assets ADD COLUMN IF NOT EXISTS layout_outline jsonb;
 
-REVOKE ALL ON FUNCTION public.register_blueprint_layout_font(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.register_blueprint_layout_font(text,jsonb) TO service_role;
+
+
 -- Schema-1 dependency boundary. Match effectiveNodeProperties: a kind
 -- declaration wins over an unmasked node value; explicit overrides win last.
 -- Presets have their own document defaults and namespace.
@@ -29,7 +29,7 @@ LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
    WHEN node->>'kind'='text' THEN coalesce(node->>'text','') ELSE coalesce(node->>'label','') END
  FROM documents CROSS JOIN LATERAL jsonb_array_elements(coalesce(doc->'nodes','[]')) node
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_font_dependencies_internal(jsonb) FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION public.blueprint_layout_resources_internal(p_layout jsonb,p_occasion bigint,p_unit bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('protocol',1,'fonts',coalesce((SELECT jsonb_object_agg(a.id,a.layout_outline)
@@ -39,10 +39,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  FROM public.blueprint_image_assets a WHERE (a.occasion=p_occasion OR a.unit=p_unit) AND a.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion UNION ALL SELECT organization FROM public.units WHERE id=p_unit)
  AND a.state='ready' AND a.asset_ref=p_layout#>>'{background,assetRef}' AND a.hash=p_layout#>>'{background,hash}'),'{}'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
+
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
 -- public layout protocol; commercial identities never belong in the document.
@@ -221,4 +221,3 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_layout_internal(jsonb) FROM PUBLIC,anon,authenticated;

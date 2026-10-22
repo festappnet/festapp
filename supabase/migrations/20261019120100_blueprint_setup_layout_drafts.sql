@@ -14,7 +14,7 @@ BEGIN
   jsonb_build_object('actor',auth.uid(),'unit',d.unit,'organization',d.organization),jsonb_build_object('ticket.preview.payload.bytes',p_bytes));
  RETURN public.bound_document_data_v1('{}');
 END $$;
-REVOKE ALL ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_blueprint_resources(p_draft uuid)
@@ -32,7 +32,7 @@ BEGIN
  ELSE resource_occasion:=source_id; END IF;
  RETURN public.bound_document_data_v1(jsonb_build_object('resources',public.blueprint_layout_resources_internal(doc,resource_occasion,resource_unit)));
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) TO authenticated;
 
 -- Copy shared inventory configuration through its existing command owners.
@@ -197,8 +197,8 @@ BEGIN
       FROM public.information i WHERE i.occasion=o.id),'[]'::jsonb)
     ) ORDER BY o.start_time DESC,o.id DESC) FROM public.occasions o WHERE o.unit=p_unit),'[]'::jsonb);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_sources(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_sources(bigint) TO authenticated;
+
+
 
 
 -- Materialize the private configuration exactly once. Provisional draft IDs and
@@ -339,8 +339,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 
 COMMIT;

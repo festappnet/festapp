@@ -158,7 +158,7 @@ BEGIN
  SELECT p_unit,org,revision,auth.uid(),'submit',to_jsonb(t) FROM public.unit_legal_profiles t WHERE unit_id=p_unit;
  RETURN jsonb_build_object('code',200,'outcome','applied','profile',public.get_unit_legal_profile(p_unit)->'profile');
 END $$;
-REVOKE ALL ON FUNCTION public.get_unit_legal_profile(bigint),public.save_unit_legal_profile(bigint,bigint,jsonb),public.submit_unit_verification(bigint,bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_unit_legal_profile(bigint),public.save_unit_legal_profile(bigint,bigint,jsonb),public.submit_unit_verification(bigint,bigint) TO authenticated;
 
 -- Source: database/functions/organization_verification/review_commands.sql
@@ -216,7 +216,7 @@ BEGIN
  SELECT p_unit,org,revision,auth.uid(),p_decision,to_jsonb(t) FROM public.unit_legal_profiles t WHERE unit_id=p_unit;
  RETURN jsonb_build_object('code',200,'outcome','applied','profile',public.get_unit_legal_profile(p_unit)->'profile');
 END $$;
-REVOKE ALL ON FUNCTION public.get_unit_verification_queue(bigint,text,jsonb,integer),public.review_unit_verification(bigint,bigint,text,text,text,text) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_unit_verification_queue(bigint,text,jsonb,integer),public.review_unit_verification(bigint,bigint,text,text,text,text) TO authenticated;
 
 -- Source: database/functions/organization_verification/public_identity.sql
@@ -389,7 +389,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
+
 
 
 
@@ -606,14 +606,14 @@ $$;
 -- Source: database/functions/eshop_waitlist/order_overview.sql
 -- Private pure projection. No matcher, paid transition or payment side effect.
 
-REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.customer_ticket_label_internal(bigint,bigint) FROM PUBLIC,anon,authenticated;
+
+
 
 -- Customer-visible answers only; field definitions own scope and visibility.
 
-REVOKE ALL ON FUNCTION public.customer_order_answers_internal(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview(p_token text,p_order_id bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -714,20 +714,20 @@ BEGIN
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.get_customer_order_overview(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
+
+
 
 -- Source: database/functions/eshop_waitlist/capabilities.sql
 -- Only visible name/surname definitions in this form can label a ticket.
 
-REVOKE ALL ON FUNCTION public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
 
 
-REVOKE ALL ON FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(bigint) FROM PUBLIC,anon,authenticated;
+
+
 
 -- Action/activity policy is shared by compact ordinary orders and full waitlist summaries.
 
-REVOKE ALL ON FUNCTION public.get_order_action_summary_internal(text,boolean,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 
 
 CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)
@@ -775,12 +775,12 @@ BEGIN
    FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id),'waitlistSummary',public.get_waitlist_summary_internal(oid));
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
-REVOKE ALL ON FUNCTION public.check_waitlist_scope_internal(bigint,uuid,text,uuid,text),public.get_waitlist_summary_internal(bigint) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) TO anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.get_waitlist_order_detail(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_order_detail(bigint) TO authenticated;
+
+
+
+
+
 
 COMMIT;

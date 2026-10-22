@@ -17,7 +17,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WHEN s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp() THEN CASE WHEN s.secret=p_secret THEN 'selected_by_me' ELSE 'selected' END
  ELSE 'available' END) ORDER BY b.node_id) FROM eshop.blueprint_seat_bindings b JOIN eshop.spots s ON s.id=b.spot WHERE b.blueprint=p_blueprint),'[]'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_binding_projection_internal(bigint),public.blueprint_public_binding_projection_internal(bigint,uuid) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.save_blueprint_layout_impl_internal(p_blueprint jsonb,p_reviewed_demo boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -152,11 +152,11 @@ BEGIN
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
 
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint, p_locale text)
 RETURNS bigint
@@ -566,34 +566,32 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 -- Unit-scoped preparation uses the existing ticket preview admission policy.
 
-REVOKE ALL ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) TO authenticated;
 
 
-REVOKE ALL ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) TO authenticated;
+
+
+
+
 
 -- Copy shared inventory configuration through its existing command owners.
 -- Only empty target inventory is created; source holds/bookings never enter it.
 
-REVOKE ALL ON FUNCTION public.copy_setup_area_inventory_internal(jsonb,jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.materialize_setup_area_inventory_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.materialize_setup_blueprint_layout_internal(p_draft jsonb,p_product_map jsonb,p_source bigint,p_target bigint,p_unit bigint)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -642,4 +640,3 @@ BEGIN
  result:=public.save_blueprint_layout_internal_v1(jsonb_build_object('occasion',p_target,'expected_layout_revision',0,'title','Blueprint','layout',doc,'seatChanges',seats,'groupProductChanges',groups,'areaBindingChanges',areas));
  RETURN (result->>'blueprint_id')::bigint;
 END $$;
-REVOKE ALL ON FUNCTION public.materialize_setup_blueprint_layout_internal(jsonb,jsonb,bigint,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

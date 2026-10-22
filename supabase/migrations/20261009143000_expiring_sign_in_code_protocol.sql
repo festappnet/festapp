@@ -22,7 +22,7 @@ BEGIN
  ON CONFLICT(user_id) DO UPDATE SET code_hash=excluded.code_hash,version=gen_random_uuid(),expires_at=excluded.expires_at,attempts=0,consumed_at=NULL;
 END $$;
 REVOKE ALL ON FUNCTION public.store_sign_in_code_v1(uuid,text,timestamptz) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.store_sign_in_code_v1(uuid,text,timestamptz) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.consume_sign_in_code_v1(p_email text,p_organization bigint,p_code text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -42,7 +42,7 @@ BEGIN
  RETURN jsonb_build_object('userId',v_user,'authEmail',v_email);
 END $$;
 REVOKE ALL ON FUNCTION public.consume_sign_in_code_v1(text,bigint,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.consume_sign_in_code_v1(text,bigint,text) TO service_role;
+
 
 
 CREATE OR REPLACE FUNCTION public.enqueue_account_email(p_operation text,p_domain jsonb,p_context jsonb,p_recipient text,p_sealed jsonb,p_content_hash text,p_dedupe text,p_code text,p_expires timestamptz)
@@ -159,4 +159,3 @@ BEGIN
 END $$;
 
 REVOKE ALL ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.enqueue_sign_in_code_v1(uuid,text,bigint,jsonb,text,text,timestamptz) TO authenticated;

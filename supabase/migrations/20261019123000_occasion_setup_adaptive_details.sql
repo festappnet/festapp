@@ -30,7 +30,7 @@ BEGIN
   ELSE p_requested_link ~ '^[a-z0-9]+(-[a-z0-9]+)*$'
     AND NOT EXISTS(SELECT 1 FROM public.form_link_reservations WHERE slug=p_requested_link) END);
 END $$;
-REVOKE ALL ON FUNCTION public.suggest_occasion_setup_form_link(uuid,text,text) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.suggest_occasion_setup_form_link(uuid,text,text) TO authenticated;
 
 
@@ -58,7 +58,7 @@ BEGIN
   FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
   WHERE u.unit=d.unit AND b.type<>'CASH'),'[]'::jsonb));
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_bank_accounts(uuid) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_bank_accounts(uuid) TO authenticated;
 
 
@@ -272,8 +272,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;

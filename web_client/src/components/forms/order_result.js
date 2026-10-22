@@ -5,11 +5,49 @@ import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
 import { PublicOrderStrings } from './public_order_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
+import { renderCardPaymentStatus } from './card_payment_status.js';
+import { paymentMethodText } from './payment_method_strings.js';
 
 export class OrderResult {
-    static render(container, success, resultData, formModel, onClose) {
+    static render(container, success, resultData, formModel, onClose, paymentActions = {}) {
         container._orderDeliveryObserver?.stop();
         if (formModel.demoSimulation) resultData = {};
+        if (success && resultData?.payment?.method === 'stripe') {
+            container.replaceChildren();
+            const statusHost = document.createElement('section');
+            const symbol = document.createElement('p');
+            symbol.textContent = resultData?.ticketOrder?.order?.order_symbol || '';
+            container.append(symbol, statusHost);
+            const handoff = resultData.payment_access?.kind === 'handoff';
+            // Embedded receipt never consumes or upgrades the one-use capability.
+            renderCardPaymentStatus(statusHost, resultData.payment, handoff ? {} : paymentActions);
+            if (handoff) {
+                const access = resultData.payment_access;
+                try {
+                    const url = new URL(access.url);
+                    if (typeof access.token === 'string' && /^[a-f0-9]{64}$/.test(access.token) && url.protocol === 'https:' &&
+                        url.origin === window.location.origin && !url.username && !url.password &&
+                        !url.search && url.pathname.endsWith('/stripe/pay') && url.hash === `#handoff=${access.token}`) {
+                        const link = document.createElement('a');
+                        link.href = url.toString();
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.className = 'btn btn-primary card-payment-handoff';
+                        link.textContent = paymentMethodText('continueInNewTab');
+                        container.append(link);
+                    }
+                } catch { /* An invalid handoff never becomes a payment action. */ }
+            }
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'btn btn-outline-secondary card-payment-close';
+            close.textContent = resultData.overviewAvailable ? overviewText('title') : PublicOrderStrings.backToForm;
+            close.onclick = () => { container._orderDeliveryObserver?.stop(); onClose?.(); };
+            container.append(close);
+            // This receipt observes the order confirmation, not ticket delivery.
+            // Card delivery state comes from the canonical payment projection.
+            return;
+        }
         // Prepare Data
         const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
@@ -28,6 +66,10 @@ export class OrderResult {
             title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+        } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
+            title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
+        } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {
+            title=paymentMethodText('priceChanged');subtitle=paymentMethodText('reviewPrices');icon='error';colorClass='error-color';
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
             const prodTitle = (resultData.product && resultData.product.title) || "";
             title = PublicOrderStrings.productUnavailable(prodTitle);

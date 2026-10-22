@@ -15,6 +15,7 @@ const resolved = {
   wrapper: { html: "<main>{{content}}</main>" },
 };
 const context = {
+  sampleProducts: [{title:"Sample",price:1000,currency_code:"CZK"}],
   revision: 3,
   title: "Ukázková událost",
   tone: "formal",
@@ -29,7 +30,7 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
     context: { organization: 1 },
     to: "recipient@example.invalid",
     substitutions: confirmationSubstitutions(
-      previewOrder(context.title, context.tone),
+      previewOrder(context.title, context.tone, context),
     ),
     replyTo: context.replyTo,
   }, () => Promise.resolve(resolved));
@@ -113,4 +114,18 @@ Deno.test("endpoint forwards user JWT and draft revision; denied/stale requests 
     }));
     assert((await denied(request(valid))).status === status);
   }
+});
+
+Deno.test("preview reflects configured ticket/product content and retains authored email CSS", async () => {
+  const context = { title: "Concert", tone: "formal", ticketsEnabled: true,
+    sampleProducts: [{title:"Balcony",price:250,currency_code:"CZK"}],
+    resolved:{template:{id:2,subject:"{{occasionTitle}}",html:'<style>h1{color:red}</style><h1 style="font-family:serif">{{occasionTitle}}</h1>{{fullOrder}}'},wrapper:{html:'<html><body style="background:white">{{content}}</body></html>'}} };
+  const result = await renderDraftPreview(context);
+  const sent = await renderEmail({to:"sample@example.invalid",context:{organization:1},substitutions:confirmationSubstitutions(previewOrder(context.title,context.tone,context))},async()=>context.resolved);
+  assert(result.html === sent.html);
+  assert(result.html.includes('<style>h1{color:red}</style>'));
+  assert(result.html.includes('font-family:serif'));
+  assert(result.html.includes('Balcony'));
+  assert(previewOrder(context.title,context.tone,context).payment_info.amount===250);
+  assert(previewOrder(context.title,context.tone,context).occasion.features[0].code==='ticket');
 });

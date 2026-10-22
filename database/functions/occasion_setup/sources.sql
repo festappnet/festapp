@@ -62,13 +62,13 @@ BEGIN
  IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Source access denied'; END IF;
  IF NOT EXISTS(SELECT 1 FROM public.units target JOIN public.units source ON source.organization=target.organization
-   WHERE target.id=p_unit AND source.id=coalesce(p_source_unit,p_unit)) THEN
+   WHERE target.id=p_unit AND (p_source_unit IS NULL OR source.id=p_source_unit)) THEN
   RAISE insufficient_privilege USING MESSAGE='Source tenant denied'; END IF;
  RETURN coalesce((SELECT jsonb_agg(jsonb_build_object('occasion',jsonb_build_object(
   'id',o.id,'title',o.title,'start_time',o.start_time,'end_time',o.end_time),
   'forms',coalesce((SELECT jsonb_agg(jsonb_build_object('id',f.id,'title',f.title)) FROM public.forms f WHERE f.occasion=o.id),'[]'::jsonb),
   'blueprints',coalesce((SELECT jsonb_agg(jsonb_build_object('id',b.id,'title',b.title)) FROM eshop.blueprints b WHERE b.occasion=o.id),'[]'::jsonb)) ORDER BY o.start_time DESC,o.id DESC)
-  FROM public.occasions o WHERE o.unit=coalesce(p_source_unit,p_unit) AND public.can_copy_occasion_source(o.id)),'[]');
+  FROM public.occasions o WHERE o.organization=(SELECT organization FROM public.units WHERE id=p_unit) AND (p_source_unit IS NULL OR o.unit=p_source_unit) AND public.can_copy_occasion_source(o.id)),'[]');
 END $$;
 
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_source(p_unit bigint,p_occasion bigint)

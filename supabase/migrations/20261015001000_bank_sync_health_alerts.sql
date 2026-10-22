@@ -66,7 +66,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_bank_sync_health_targets(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_bank_sync_health_targets(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.record_bank_sync_health(p_organization_id bigint,p_connection_id bigint,
  p_success_at timestamptz,p_error text,p_ingest_enabled boolean,p_polling_enabled boolean,p_token_present boolean)
@@ -99,7 +99,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.enqueue_bank_sync_health_alerts(p_organization_id bigint)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -138,7 +138,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.enqueue_bank_sync_health_alerts(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.enqueue_bank_sync_health_alerts(bigint) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.configure_bank_sync_health_monitor(p_organization_id bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -153,7 +153,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.configure_bank_sync_health_monitor(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.configure_bank_sync_health_monitor(bigint) TO service_role;
+
 
 -- Explicit administrator remediation starts a new observation window. Pending
 -- incident mail becomes invalid immediately when synchronization is changed.
@@ -165,7 +165,7 @@ BEGIN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.reset_bank_sync_control_health(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reset_bank_sync_control_health(bigint) TO service_role;
+
 
 
 -- SOURCE: database/functions/eshop_orders/get_orders.sql
@@ -708,7 +708,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_bank_accounts_for_unit_management(bigint) TO authenticated, service_role;
+
 
 
 -- SOURCE: database/functions/emails/email_queue.sql (email_intent_valid)
@@ -772,4 +772,3 @@ BEGIN
  END IF;
  RETURN true;
 END $$;
-

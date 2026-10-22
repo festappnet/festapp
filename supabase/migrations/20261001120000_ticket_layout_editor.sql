@@ -9,7 +9,7 @@ SET search_path = public, extensions AS $$
     FROM public.occasions o WHERE o.id=p_occasion),false);
 $$;
 REVOKE ALL ON FUNCTION public.can_edit_ticket_layout(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.can_edit_ticket_layout(bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql IMMUTABLE
@@ -440,18 +440,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.save_occasion_client_sync_v1(
-  bigint,
-  uuid,
-  bigint,
-  jsonb
-) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.save_occasion_client_sync_v1(
-  bigint,
-  uuid,
-  bigint,
-  jsonb
-) TO authenticated;
+
+
 
 
 
@@ -616,9 +606,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.save_occasion_domain_command_internal_v1(
-  bigint, uuid, bigint, jsonb
-) FROM PUBLIC, anon, authenticated;
+
 
 
 

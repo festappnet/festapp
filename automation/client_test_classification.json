@@ -605,6 +605,111 @@
       "sources": [
         "test/components/blueprint/blueprint_toolbar_test.dart"
       ]
+    },
+    "test/components/stripe_payments/unit_card_payments_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/unit_card_payments_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_connect_callback_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/stripe_connect_callback_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_method_cards_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/payment_method_cards_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/form_payment_settings_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/form_payment_settings_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_access_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/payment_access_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_payment_link_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/stripe_payment_link_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/hidden_feature_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/hidden_feature_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_products_dialog_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/stripe_products_dialog_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/admin_payment_precision_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/admin_payment_precision_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/payment_method_preview_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/payment_method_preview_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/card_refund_decision_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/stripe_payments/card_refund_decision_test.dart"
+      ]
+    },
+    "test/components/forms/card_payment_status_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/forms/card_payment_status_test.dart"
+      ]
+    },
+    "test/components/forms/form_total_price_test.dart": {
+      "kind": "environment",
+      "reason": "Real Flutter widget, routing, localization or platform-link boundary for hidden Stripe integration; portable payment policy is tested in festapp_core.",
+      "sources": [
+        "test/components/forms/form_total_price_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/canonical_quote_refresh_test.dart": {
+      "kind": "environment",
+      "reason": "Canonical Blueprint model and Flutter seat adapter preserve held seat identity and current exact payment prices.",
+      "sources": [
+        "test/components/stripe_payments/canonical_quote_refresh_test.dart"
+      ]
+    },
+    "test/components/stripe_payments/stripe_feature_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises SQL-projected unit feature visibility and admin capabilities through the real rights context.",
+      "sources": [
+        "test/components/stripe_payments/stripe_feature_test.dart"
+      ]
     }
   }
 }

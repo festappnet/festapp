@@ -19,4 +19,3 @@ BEGIN
         AND bau."user"=auth.uid() AND bau.is_admin));
 END;
 $$;
-REVOKE ALL ON FUNCTION public.bank_sync_warning(bigint) FROM PUBLIC,anon,authenticated,service_role;

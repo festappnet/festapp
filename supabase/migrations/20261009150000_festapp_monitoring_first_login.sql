@@ -67,7 +67,7 @@ BEGIN
   RETURN v_count;
 END $$;
 REVOKE ALL ON FUNCTION public.configure_first_login_notifications_v1(bigint,text,boolean),public.enqueue_first_login_notifications_v1() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.configure_first_login_notifications_v1(bigint,text,boolean),public.enqueue_first_login_notifications_v1() TO service_role;
+
 
 -- A separate hashed capability exposes bounded operational facts only. It cannot
 -- mint sessions, enqueue mail or access customer rows through another RPC.
@@ -99,7 +99,7 @@ BEGIN
   RETURN jsonb_build_object('ok',cardinality(v_alerts)=0,'alerts',to_jsonb(v_alerts));
 END $$;
 REVOKE ALL ON FUNCTION public.get_festapp_monitoring_health_v1(text) FROM PUBLIC,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_festapp_monitoring_health_v1(text) TO anon;
+
 
 NOTIFY pgrst, 'reload schema';
 COMMIT;

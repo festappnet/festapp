@@ -17,4 +17,3 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   FROM eshop.bank_sync_connections c LEFT JOIN eshop.bank_sync_health h ON h.connection_id=c.id
   WHERE c.id=p_connection_id;
 $$;
-REVOKE ALL ON FUNCTION public.bank_sync_problem(bigint) FROM PUBLIC,anon,authenticated,service_role;

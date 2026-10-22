@@ -6,6 +6,27 @@ import '../support/occasion_report_fixture.dart';
 void main() {
   setUpAll(tzdata.initializeTimeZones);
   test(
+    'Stripe subsets, dispute availability and unattributed external amounts survive snapshot parsing',
+    () {
+      final response = reportResponse();
+      response['report']['money_by_currency'][0].addAll({
+        'stripe_received': '50.00',
+        'stripe_refunded': '20.00',
+        'disputed': '10.00',
+        'available_after_disputes': '85.00',
+        'external_unattributed': '25.00',
+      });
+      final report = OccasionReport.fromResponse(response);
+      expect(report.money.first.amounts['stripe_received'], '50.00');
+      expect(report.money.first.amounts['disputed'], '10.00');
+      expect(report.money.first.amounts['external_unattributed'], '25.00');
+      expect(
+        () => report.money.first.amounts['stripe_received'] = '0',
+        throwsUnsupportedError,
+      );
+    },
+  );
+  test(
     'ticket history counts people independently of orders and follows validity',
     () {
       final response = reportResponse();

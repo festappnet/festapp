@@ -152,7 +152,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.delete_order_internal_v1(bigint) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.delete_order_client_sync_v1(
   p_order bigint,p_command_id uuid
@@ -200,18 +200,11 @@ BEGIN
         'tickets','membership','allocations'))),v_remaining_users,v_public,v_dirty,
     jsonb_build_object('orderId',p_order,'removedUsers',cardinality(v_removed_users)));
 END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_client_sync_v1(bigint,uuid)
-  TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.delete_order_221(order_id bigint)
-RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.delete_order_client_sync_v1(
-    order_id,extensions.gen_random_uuid());
-END; $$;
-REVOKE ALL ON FUNCTION public.delete_order_221(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_order_221(bigint) TO authenticated;
+
+
+
+
+
 
 COMMIT;

@@ -5,10 +5,10 @@
 
 -- Field definitions and shaping policy come from the core-generated metadata.
 
-REVOKE ALL ON FUNCTION public.blueprint_resolved_label_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_layout_text_requests_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 -- Explicit declarations, including unused kind styles, are catalog metadata.
 -- They do not acquire arbitrary text resources or cross a preset projection.
@@ -39,25 +39,25 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'textLayouts',coalesce((SELECT jsonb_object_agg(resource_id,payload) FROM prepared WHERE resource_kind='text'),'{}'),
   'numberSymbols',coalesce((SELECT jsonb_object_agg(payload->>'fontFaceId',payload) FROM prepared WHERE resource_kind='number'),'{}'))
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_canonical_text_resources_internal(jsonb,bigint,uuid,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.check_blueprint_text_resources_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_text_resource_ids_internal(jsonb,bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 -- Canonical source: database/functions/blueprint/canonical_validation.sql
 
 -- Canonical declaration validation consumes the generated core metadata.
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_leaves_internal(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_style_internal(jsonb,text) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_grid_contains_internal(jsonb,numeric,numeric) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_canonical_surface_projection_internal(p_node jsonb)
 RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
@@ -101,16 +101,16 @@ BEGIN
  IF vertices>512 OR min_x<>0 OR min_y<>0 OR max_x*max_y>16384 OR abs((p_node->>'width')::numeric-max_x*module)>1.0/1024 OR abs((p_node->>'height')::numeric-max_y*module)>1.0/1024 THEN RAISE check_violation USING MESSAGE='BLUEPRINT_GRID_DIMENSIONS';END IF;
  RETURN (p_node-'surface')||jsonb_build_object('shape','polygon','points',projected->0,'holes',projected-0);
 END $$;
-REVOKE ALL ON FUNCTION public.blueprint_canonical_surface_projection_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_path_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_gradient_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_validate_vector_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.blueprint_canonical_geometry_projection_internal(p_doc jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
@@ -185,24 +185,24 @@ BEGIN
  RETURN (p_doc-ARRAY['styles','seatingDefaults','textPolicy'])||jsonb_build_object('schemaVersion',1,'nodes',nodes,'attachments',attachments,'presets',presets,
   'defaultTextStyle',jsonb_build_object('fontId','geometry-validation-only','size',24,'color','#222222FF'));
 END $$;
-REVOKE ALL ON FUNCTION public.blueprint_canonical_geometry_projection_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Canonical source: database/functions/blueprint/canonical_resource_projection.sql
 
 
-REVOKE ALL ON FUNCTION public.blueprint_layout_asset_refs_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_canonical_asset_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.check_blueprint_bitmap_resources_internal(jsonb,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.blueprint_layout_resources_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.copy_blueprint_text_resources_internal(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
+
+
 
 -- Internal caller supplies a source occasion and/or the authorized setup unit.
 -- Only exact referenced processed manifests are copied into the new aggregate.
@@ -369,11 +369,11 @@ BEGIN
  IF octet_length(result::text)>4194304 THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_RESULT_TOO_LARGE'; END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Runtime entry always enforces occasion writability, including demo read-only.
 
-REVOKE ALL ON FUNCTION public.save_blueprint_layout_internal_v1(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Canonical source: database/functions/others/duplicate_occasion.sql
 
@@ -789,24 +789,22 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
+
 
 -- Canonical source: database/functions/occasion_setup/blueprint_layout.sql
 
 -- Unit-scoped preparation uses the existing ticket preview admission policy.
 
-REVOKE ALL ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.get_occasion_setup_blueprint_resources(p_draft uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -833,16 +831,16 @@ BEGIN
  ELSE resource_occasion:=source_id; END IF;
  RETURN public.bound_document_data_v1(jsonb_build_object('resources',public.blueprint_layout_resources_internal(doc,resource_occasion,resource_unit)));
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_blueprint_resources(uuid) TO authenticated;
+
+
 
 -- Copy shared inventory configuration through its existing command owners.
 -- Only empty target inventory is created; source holds/bookings never enter it.
 
-REVOKE ALL ON FUNCTION public.copy_setup_area_inventory_internal(jsonb,jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 
-REVOKE ALL ON FUNCTION public.materialize_setup_area_inventory_internal(jsonb,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.materialize_setup_blueprint_layout_internal(p_draft jsonb,p_product_map jsonb,p_source bigint,p_target bigint,p_unit bigint)
 RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -896,7 +894,7 @@ BEGIN
  result:=public.save_blueprint_layout_internal_v1(jsonb_build_object('occasion',p_target,'expected_layout_revision',0,'title','Blueprint','layout',doc,'seatChanges',seats,'groupProductChanges',groups,'areaBindingChanges',areas)||CASE WHEN doc->>'schemaVersion'='2' THEN jsonb_build_object('textResourceIds',to_jsonb(public.blueprint_text_resource_ids_internal(doc,p_target))) ELSE '{}'::jsonb END);
  RETURN (result->>'blueprint_id')::bigint;
 END $$;
-REVOKE ALL ON FUNCTION public.materialize_setup_blueprint_layout_internal(jsonb,jsonb,bigint,bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- Canonical source: database/functions/occasion_setup/finalize.sql
 
@@ -1163,8 +1161,8 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 -- Canonical image copy functions
 
@@ -1186,7 +1184,7 @@ BEGIN
  ON CONFLICT(occasion,asset_ref) WHERE occasion IS NOT NULL DO NOTHING;
  PERFORM public.check_blueprint_image_resource_internal(p_layout,p_target_occasion);
 END $$;
-REVOKE ALL ON FUNCTION public.copy_blueprint_image_resources_internal(bigint,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.copy_blueprint_unit_image_resources_internal(p_source_unit bigint,p_target_occasion bigint,p_layout jsonb)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
@@ -1203,7 +1201,7 @@ BEGIN
  ON CONFLICT(occasion,asset_ref) WHERE occasion IS NOT NULL DO NOTHING;
  PERFORM public.check_blueprint_image_resource_internal(p_layout,p_target_occasion);
 END $$;
-REVOKE ALL ON FUNCTION public.copy_blueprint_unit_image_resources_internal(bigint,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 
 ALTER FUNCTION public.get_blueprint_image_upload_access(bigint,text,bigint) OWNER TO postgres;
 ALTER FUNCTION public.register_blueprint_image_asset(bigint,text,jsonb,bigint,text,bigint) OWNER TO postgres;

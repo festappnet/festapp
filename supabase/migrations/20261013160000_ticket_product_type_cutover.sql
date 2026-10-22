@@ -3,14 +3,9 @@ BEGIN;
 
 -- Source: database/functions/others/ticket_layout.sql
 -- Layout writes are accepted only through the explicit occasion-save boundary.
-CREATE OR REPLACE FUNCTION public.can_edit_ticket_layout(p_occasion bigint)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT auth.uid() IS NOT NULL AND COALESCE((SELECT public.get_is_editor_on_unit(o.unit)
-    FROM public.occasions o WHERE o.id=p_occasion),false);
-$$;
-REVOKE ALL ON FUNCTION public.can_edit_ticket_layout(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.can_edit_ticket_layout(bigint) TO authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql STABLE
@@ -214,7 +209,7 @@ BEGIN
   THEN RAISE EXCEPTION 'ticket_product_type_missing'; END IF;
 END; $$;
 REVOKE ALL ON FUNCTION public.validate_ticket_layout_references(bigint,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.validate_ticket_layout_references(bigint,jsonb) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.ticket_layout_uses_product_type(p_occasion bigint,p_type bigint)
 RETURNS boolean LANGUAGE sql STABLE SET search_path = public, extensions AS $$
@@ -224,7 +219,7 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path = public, extensions AS $$
  WHERE o.id=p_occasion AND f->>'code'='ticket' AND e->>'binding'='productType' AND (e->>'productTypeId')::bigint=p_type);
 $$;
 REVOKE ALL ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) TO service_role;
+
 
 -- Source: database/functions/eshop/get_products_and_types.sql
 CREATE OR REPLACE FUNCTION public.get_products_and_types(p_occasion_id bigint)
@@ -538,8 +533,8 @@ BEGIN
 END; $function$;
 
 
-REVOKE ALL ON FUNCTION public.delete_form_ws(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.delete_form_ws(bigint) TO authenticated;
+
+
 
 -- Source: database/functions/eshop_forms/update_form.sql
 CREATE OR REPLACE FUNCTION public.update_form_internal_v1(input_data JSONB)
@@ -1490,13 +1485,7 @@ SET search_path = public, extensions
  END;
  $$;
 
-CREATE OR REPLACE FUNCTION public.update_occasion_203(input_data jsonb)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public, extensions AS $$
-BEGIN
-  PERFORM public.update_occasion_internal_v1(input_data);
-END;
-$$;
+
 
 -- Source: database/functions/others/duplicate_occasion.sql
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint, p_target_unit bigint)
@@ -1852,16 +1841,10 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
+
+
 
 COMMIT;

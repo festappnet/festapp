@@ -70,6 +70,14 @@ class ReportMoney {
           'beyond_deposit_received_gross',
         ])
           key: json[key] as String,
+        for (final key in const [
+          'stripe_received',
+          'stripe_refunded',
+          'disputed',
+          'available_after_disputes',
+          'external_unattributed',
+        ])
+          if (json.containsKey(key)) key: json[key] as String,
       }) {
     if (amounts.values.any((v) => !RegExp(r'^-?\d+(\.\d+)?$').hasMatch(v))) {
       throw const FormatException('Invalid decimal amount');

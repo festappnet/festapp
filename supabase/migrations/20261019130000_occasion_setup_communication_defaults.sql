@@ -21,7 +21,7 @@ BEGIN
     'leadSeconds',coalesce((u.data->>'reminder_interval_seconds')::bigint,86400)),
   'unit',CASE WHEN manager THEN jsonb_build_object('id',u.id,'title',u.title,'data',u.data,'aggregate_version',coalesce(version,0)) ELSE NULL END);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_communication(uuid) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.get_occasion_setup_communication(uuid) TO authenticated;
 
 -- Materialize the private configuration exactly once. Provisional draft IDs and
@@ -273,7 +273,7 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 NOTIFY pgrst, 'reload schema';
 COMMIT;

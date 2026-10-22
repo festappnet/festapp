@@ -132,5 +132,3 @@ EXCEPTION WHEN OTHERS THEN
   RETURN jsonb_build_object('code',500,'message','Report could not be generated.');
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_report_ws(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_report_ws(text) TO authenticated;

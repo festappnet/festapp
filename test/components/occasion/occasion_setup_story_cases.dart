@@ -100,7 +100,7 @@ void main() {
           expect(pages.last.key, 'review');
           expect(
             pages.where((q) => !q.optional).map((q) => q.step).toSet(),
-            appSupported ? {0, 1, 2, 3, 4, 5} : {0, 1, 2, 3, 4, 5, 6},
+            appSupported ? {1, 2, 3, 4, 5} : {1, 2, 3, 4, 5, 6},
           );
         },
       );
@@ -154,15 +154,15 @@ void main() {
         ).map((q) => q.key).toList();
     expect(
       keys(formData()),
-      containsAll(['form', 'pricing', 'payments', 'ticket']),
+      containsAll(['form', 'pricing', 'payments', 'appearance']),
     );
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
-    expect(keys(formData(price: 0)), contains('ticket'));
-    expect(keys(formData(tickets: false)), isNot(contains('ticket')));
+    expect(keys(formData(price: 0)), contains('appearance'));
+    expect(keys(formData(tickets: false)), contains('ticket'));
     expect(keys(formData(tickets: false)), contains('pricing'));
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
-    expect(keys(formData(hiddenField: true)), isNot(contains('ticket')));
+    expect(keys(formData(hiddenField: true)), contains('ticket'));
     expect(
       keys(formData(enabled: false)),
       isNot(
@@ -182,14 +182,13 @@ void main() {
     () {
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), false),
-        {0, 1, 5},
+        {1, 2, 5},
       );
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), true),
-        {0, 1, 2, 5},
+        {1, 2, 5},
       );
       expect(OccasionSetupStory.applicableSteps(formData(price: 0), false), {
-        0,
         1,
         2,
         3,
@@ -212,7 +211,7 @@ void main() {
     },
   );
 
-  test('disabled payments resume forward instead of restarting the wizard', () {
+  test('inactive payments resume at the next applicable question', () {
     final data = {
       ...formData(price: 0),
       'step': 4,
@@ -369,7 +368,7 @@ void main() {
   );
 
   test(
-    'completed required steps reach 100% without organization verification',
+    'completed active questions reach 100% after explicit review',
     () {
       final draft = OccasionSetupDraft.fromJson({
         'id': 'draft',
@@ -378,7 +377,13 @@ void main() {
         'current_step': 5,
         'data': {
           'title': 'Ples',
-          'completed': OccasionSetupDraft.supportedSteps,
+          'completedQuestions':
+              OccasionSetupStory.questions(true, data: {'title': 'Ples'})
+                  .where((q) => !q.optional)
+                  .map((q) => q.key)
+                  .toList(),
+          'reviewed': true,
+          'reviewConfirmed': true,
         },
       });
       expect(draft.progress, 100);

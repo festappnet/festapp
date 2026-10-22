@@ -51,7 +51,7 @@ AS $$
 $$;
 -- Invoker privileges retain table RLS; privileged callers own authorization.
 REVOKE ALL ON FUNCTION public.get_resolved_email_template(text,jsonb) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_resolved_email_template(text,jsonb) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.update_email_template(p_data jsonb)
 RETURNS void
@@ -156,8 +156,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.update_email_template(jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.update_email_template(jsonb) TO authenticated, service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.get_all_email_templates(p_context jsonb)
 RETURNS jsonb
@@ -267,8 +267,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_all_email_templates(jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_all_email_templates(jsonb) TO authenticated, service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.get_email_template_and_wrapper(p_code text, p_context jsonb)
 RETURNS jsonb

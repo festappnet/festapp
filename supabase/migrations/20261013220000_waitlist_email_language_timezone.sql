@@ -59,10 +59,8 @@ BEGIN
   'manageEnvelope',manage_message.data->'waitlistEnvelope',
   'manageContentHash',manage_message.data->>'content_hash');
 END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- TO service_role;
+
+
 
 UPDATE public.email_templates SET subject='Potvrzení zařazení mezi náhradníky - {{occasion_title}}',html='<h2>Jste mezi náhradníky</h2><p>Potvrzujeme přihlášku <strong>{{order_symbol}}</strong> pro {{participant_phrase}} na {{occasion_title}}.</p><p>Zatím nic neplatíte. Jakmile se uvolní místo, pošleme vám nabídku. Čekání můžete spravovat nebo ukončit přes tento odkaz:</p><p>{{manage_waitlist_button}}</p>' WHERE code='waitlist_confirmation' AND organization IS NULL AND unit IS NULL AND occasion IS NULL AND subject='Potvrzení zařazení mezi náhradníky - {{occasion_title}}' AND html='<h2>Jste v pořadníku náhradníků</h2><p>Potvrzujeme přihlášení na {{occasion_title}}. Číslo přihlášky: <strong>{{order_symbol}}</strong>. Počet osob: {{participant_count}}.</p><p>Zatím nic neplatíte a nevybíráte produkty. Pokud se uvolní místa, pošleme vám nabídku.</p><p>{{manage_waitlist_button}}</p><p>Vlastní čekání můžete ukončit jednotlivě. Tento odkaz neslouží ke stornu již potvrzené objednávky.</p>';
 UPDATE public.email_templates SET subject='Nabídka pro {{offered_places}} - {{occasion_title}}',html='<h2>Máme pro vás nabídku</h2><p>Pro přihlášku <strong>{{order_symbol}}</strong> na {{occasion_title}} nabízíme {{offered_places}}. Nabídka platí do {{offer_expires_at}}.</p><p>Po otevření nabídky vyberete, kdo přijde, a produkty podle aktuální dostupnosti. Objednávku pak potvrdíte.</p><p>{{offer_button}}</p><p>{{manage_waitlist_button}}</p>' WHERE code='waitlist_offer' AND organization IS NULL AND unit IS NULL AND occasion IS NULL AND subject='Nabídka {{offered_count}} míst - {{occasion_title}}' AND html='<h2>Máme pro vás volná místa</h2><p>Pro přihlášku <strong>{{order_symbol}}</strong> na {{occasion_title}} nabízíme {{offered_count}} míst z celkových {{participant_count}} osob. Platnost nabídky: {{offer_expires_at}} (UTC).</p><p>Po otevření nabídky vyberete osoby a produkty a objednávku výslovně potvrdíte. Produkty nejsou rezervované; vybíráte je podle aktuální dostupnosti. Samotné otevření odkazu nic nepotvrzuje.</p><p>{{offer_button}}</p><p>Nepřijatá místa zůstávají do konce platnosti nabídky k dispozici. Čekání lze spravovat zde:</p><p>{{manage_waitlist_button}}</p>';

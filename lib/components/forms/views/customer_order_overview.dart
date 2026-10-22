@@ -3,6 +3,8 @@ import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:festapp_core/forms.dart';
+import '../widgets_view/card_payment_status.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CustomerOrderOverviewView extends StatefulWidget {
   const CustomerOrderOverviewView(
@@ -53,8 +55,13 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
   }
 
   String text(String key) => OrderOverviewStrings.text(key);
-  String money(dynamic value, dynamic currency) =>
-      value == null ? text('unknown') : '$value ${currency ?? ''}';
+  String money(dynamic value, dynamic currency, {bool card = false}) => card
+      ? CardPaymentStatus.formatMoney(
+              value, currency, context.locale.toLanguageTag()) ??
+          text('unknown')
+      : value == null
+          ? text('unknown')
+          : '$value ${currency ?? ''}';
   Widget paragraph(String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 4), child: Text(value));
   @override
@@ -117,7 +124,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                       paragraph(
                                           '${text('orderState')}: ${text(order['state'] ?? 'unknown')}'),
                                       paragraph(
-                                          '${text('total')}: ${money(order['total'], order['currency'])}'),
+                                          '${text('total')}: ${money(order['total'], order['currency'], card: order['payment']?['method'] == 'stripe')}'),
                                       for (final item in order['items'] ?? []) ...[
                                         paragraph(
                                             '${item['title'] ?? ''}: ${money(item['price'], item['currency'])}'),
@@ -148,22 +155,32 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                     ]))));
   }
 
-  List<Widget> _payment(Map payment, dynamic currency) => [
-        Text(text(payment['status']),
-            style: Theme.of(context).textTheme.titleMedium),
-        for (final key in [
-          'received',
-          'totalOutstanding',
-          'returned',
-          'overpaid'
-        ])
-          paragraph('${text(key)}: ${money(payment[key], currency)}'),
-        if (payment['instructionsAvailable'] == true) ...[
-          paragraph('${text('dueNow')}: ${money(payment['dueNow'], currency)}'),
-          paragraph('${text('dueAt')}: ${payment['dueAt'] ?? text('onSite')}'),
-          if (payment['overdue'] == true) paragraph(text('overdue')),
-          paragraph('${text('account')}: ${payment['publicAccount']}'),
-          paragraph('${payment['referenceKind']}: ${payment['reference']}'),
-        ],
-      ];
+  List<Widget> _payment(Map payment, dynamic currency) => payment['method'] ==
+          'stripe'
+      ? [
+          CardPaymentStatus(payment: {
+            ...payment.cast<String, dynamic>(),
+            'currency': currency
+          }, onRefresh: _refresh)
+        ]
+      : [
+          Text(text(payment['status']),
+              style: Theme.of(context).textTheme.titleMedium),
+          for (final key in [
+            'received',
+            'totalOutstanding',
+            'returned',
+            'overpaid'
+          ])
+            paragraph('${text(key)}: ${money(payment[key], currency)}'),
+          if (payment['instructionsAvailable'] == true) ...[
+            paragraph(
+                '${text('dueNow')}: ${money(payment['dueNow'], currency)}'),
+            paragraph(
+                '${text('dueAt')}: ${payment['dueAt'] ?? text('onSite')}'),
+            if (payment['overdue'] == true) paragraph(text('overdue')),
+            paragraph('${text('account')}: ${payment['publicAccount']}'),
+            paragraph('${payment['referenceKind']}: ${payment['reference']}'),
+          ],
+        ];
 }

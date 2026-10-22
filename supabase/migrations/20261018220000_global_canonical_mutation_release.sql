@@ -24,5 +24,3 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='canonical editor requires an enabled current release';
  END IF;
 END $$;
-REVOKE ALL ON FUNCTION public.assert_canonical_mutation_write_release_internal_v1(bigint)
- FROM PUBLIC,anon,authenticated,service_role;

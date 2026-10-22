@@ -94,8 +94,8 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.canonical_payment_reference_account_internal(text),public.payment_reference_scope_enabled_internal(bigint)
  FROM PUBLIC,anon,authenticated,service_role;
-REVOKE ALL ON FUNCTION public.enroll_payment_reference_account(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.enroll_payment_reference_account(bigint) TO service_role;
+
+
 
 -- Inventory only: malformed unrelated accounts must not break grouping. Issuing
 -- always calls the strict validator above and never falls back to an ID/string.
@@ -260,8 +260,8 @@ BEGIN
  END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.import_payment_reference(bigint,text,bigint,text,bigint,bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.import_payment_reference(bigint,text,bigint,text,bigint,bigint) TO service_role;
+
+
 
 CREATE OR REPLACE FUNCTION public.activate_payment_reference_scope(p_organization bigint,p_manifest_sha256 text,p_history_reviewed boolean)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -303,8 +303,8 @@ BEGIN
  INSERT INTO eshop.payment_reference_scopes(organization_id,phase,manifest_sha256) VALUES(p_organization,'active',p_manifest_sha256)
  ON CONFLICT(organization_id) DO UPDATE SET phase='active',manifest_sha256=excluded.manifest_sha256,updated_at=clock_timestamp();
 END $$;
-REVOKE ALL ON FUNCTION public.activate_payment_reference_scope(bigint,text,boolean) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.activate_payment_reference_scope(bigint,text,boolean) TO service_role;
+
+
 
 
 -- Source: database/functions/eshop_payment_references/replay.sql
@@ -1086,7 +1086,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 
 -- Source: database/functions/eshop/confirm_blueprint_order_change.sql
@@ -1236,10 +1236,8 @@ BEGIN
       'changedFields',jsonb_build_array('cancellations','allocations'))),
     v_before_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
-  bigint[],jsonb,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.confirm_blueprint_order_change_client_sync_v1(
-  bigint[],jsonb,uuid) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.replace_blueprint_order_client_sync_v1(
   p_spot_ids bigint[],p_input_data jsonb,p_command_id uuid
@@ -1288,10 +1286,8 @@ BEGIN
         'cancellations','tickets','products','allocations','membership'))),
     v_before_users,v_result);
 END; $$;
-REVOKE ALL ON FUNCTION public.replace_blueprint_order_client_sync_v1(
-  bigint[],jsonb,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.replace_blueprint_order_client_sync_v1(
-  bigint[],jsonb,uuid) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_orders/create_ticket_order_client_sync_v1.sql
@@ -1347,38 +1343,16 @@ BEGIN
         'tickets','products','allocations','membership'))),v_before_users,v_result,
     v_actor_kind);
 END; $$;
-REVOKE ALL ON FUNCTION public.create_ticket_order_client_sync_v1(
-  jsonb,uuid,uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_ticket_order_client_sync_v1(
-  jsonb,uuid,uuid) TO anon,authenticated;
+
+
 
 
 -- Source: database/functions/eshop_waitlist/commands.sql
 -- Edge is the trusted preparation boundary for random capabilities and sealed email.
 -- It verifies the bearer user; SQL still checks the explicit actor's occasion rights.
-CREATE OR REPLACE FUNCTION public.sanitize_waitlist_history_internal(p_value jsonb)
-RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE result jsonb;
-BEGIN
- IF jsonb_typeof(p_value)='object' THEN
-  SELECT coalesce(jsonb_object_agg(key,public.sanitize_waitlist_history_internal(value)),'{}') INTO result
-  FROM jsonb_each(p_value) WHERE lower(key) NOT IN
-   ('token','secret','password','offertoken','managetoken','capability','waitlistenvelope','sealed','tokenhash');
-  RETURN result;
- ELSIF jsonb_typeof(p_value)='array' THEN
-  SELECT coalesce(jsonb_agg(public.sanitize_waitlist_history_internal(value) ORDER BY ordinal),'[]') INTO result
-  FROM jsonb_array_elements(p_value) WITH ORDINALITY item(value,ordinal);
-  RETURN result;
- END IF;
- RETURN p_value;
-END $$;
-CREATE OR REPLACE FUNCTION public.snapshot_waitlist_tickets_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(public.sanitize_waitlist_history_internal(to_jsonb(p)||jsonb_build_object('answers',p.data,'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(p.id))) ORDER BY created_at,id),'[]')
- FROM public.get_order_tickets_internal(p_order) p;
-$$;
-REVOKE ALL ON FUNCTION public.sanitize_waitlist_history_internal(jsonb),public.snapshot_waitlist_tickets_internal(bigint)
- FROM PUBLIC,anon,authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.execute_waitlist_command_client_sync_v1(
  p_operation text,p_payload jsonb,p_command_id uuid,p_client_id uuid,p_actor uuid DEFAULT NULL,p_deliveries jsonb DEFAULT '[]')
@@ -1512,8 +1486,8 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.execute_waitlist_command_client_sync_v1(text,jsonb,uuid,uuid,uuid,jsonb) TO service_role;
+
+
 
 
 -- Source: database/functions/eshop_payment_references/legacy_boundaries.sql
@@ -1525,8 +1499,8 @@ BEGIN
   RETURN public.create_ticket_order_client_sync_v1(input_data,
     extensions.gen_random_uuid(),COALESCE(auth.uid(),extensions.gen_random_uuid()))->'data';
 END; $$;
-REVOKE ALL ON FUNCTION public.create_ticket_order(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_ticket_order(jsonb) TO anon,authenticated;
+
+
 
 
 CREATE OR REPLACE FUNCTION public.confirm_blueprint_order_change(
@@ -1536,10 +1510,8 @@ BEGIN
   RETURN public.confirm_blueprint_order_change_client_sync_v1(
     p_spot_ids,p_input_data,extensions.gen_random_uuid())->'data';
 END; $$;
-REVOKE ALL ON FUNCTION public.confirm_blueprint_order_change(bigint[],jsonb)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.confirm_blueprint_order_change(bigint[],jsonb)
-  TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop/update_payment_info_variable_symbol.sql
@@ -1582,7 +1554,7 @@ BEGIN
   jsonb_build_array(jsonb_build_object('entityType','order','entityId',target.id,'operation','update','safeLabel','Payment reference',
   'changedFields',jsonb_build_array('payment_info'))),users,jsonb_build_object('code',200,'variable_symbol',symbol));
 END $$;
-REVOKE ALL ON FUNCTION public.reserve_draft_payment_reference(bigint,bigint,uuid) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.reserve_draft_payment_reference(bigint,bigint,uuid) TO authenticated;
 
 
@@ -1697,60 +1669,12 @@ $$;
 -- Source: database/functions/emails/fakturoid_email_gate.sql
 -- A Fakturoid checkout is not an accepted order until its proforma exists.
 -- Keep its confirmation out of the email worker until checkout finalizes it.
-CREATE OR REPLACE FUNCTION public.enqueue_ticket_order_confirmation_v1(
-  p_command_id uuid, p_occasion bigint, p_order_payload jsonb, p_language text
-) RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE
-  v_organization bigint;
-  v_unit bigint;
-  v_order_id bigint := (p_order_payload#>>'{order,id}')::bigint;
-  v_await_fakturoid boolean;
-BEGIN
-  SELECT o.organization, o.unit INTO v_organization, v_unit
-  FROM public.occasions o WHERE o.id = p_occasion;
-  IF v_organization IS NULL OR p_command_id IS NULL OR v_order_id IS NULL
-     OR p_order_payload IS NULL THEN
-    RAISE invalid_parameter_value USING MESSAGE='invalid ticket order effect';
-  END IF;
-  SELECT (coalesce((p_order_payload#>>'{order,payment_info,amount}')::numeric,0)>0)
-    AND EXISTS (SELECT 1 FROM eshop.external_services es
-                WHERE es.unit=v_unit AND es.type='FAKTUROID')
-  INTO v_await_fakturoid;
-  IF v_await_fakturoid THEN
-    UPDATE eshop.orders SET state='preparing_payment', updated_at=now()
-    WHERE id=v_order_id AND occasion=p_occasion AND state='ordered';
-    IF NOT FOUND THEN
-      RAISE check_violation USING MESSAGE='Fakturoid order is not ready for preparation';
-    END IF;
-  END IF;
-  PERFORM public.enqueue_order_email('TICKET_ORDER_CONFIRMATION',jsonb_build_object(
-    'command_id',p_command_id,'ticket_order',p_order_payload,'lang',coalesce(nullif(p_language,''),'cs'),
-    'fakturoid_pending',v_await_fakturoid),v_organization,p_occasion,v_unit,
-    CASE WHEN v_await_fakturoid THEN 'infinity'::timestamptz ELSE now() END);
 
-END;
-$$;
-REVOKE ALL ON FUNCTION public.enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)
-  FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_fakturoid_ticket_order_state_v1(p_order_id bigint)
-RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE v_state text;
-BEGIN
-  PERFORM public.require_client_sync_service_role_v1();
-  SELECT o.state INTO v_state FROM eshop.orders o WHERE o.id=p_order_id;
-  IF v_state IS NULL THEN
-    RAISE no_data_found USING MESSAGE='ticket order not found';
-  END IF;
-  RETURN v_state;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_fakturoid_ticket_order_state_v1(bigint)
-  TO service_role;
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.complete_fakturoid_ticket_order_v1(
   p_order_id bigint, p_command_id uuid, p_variable_symbol bigint
@@ -1815,64 +1739,12 @@ BEGIN
   RETURN p_variable_symbol;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.complete_fakturoid_ticket_order_v1(bigint,uuid,bigint)
-  TO service_role;
 
-CREATE OR REPLACE FUNCTION public.abort_fakturoid_ticket_order_v1(
-  p_order_id bigint, p_command_id uuid
-) RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE
-  v_state text;
-  v_occasion bigint;
-  v_queue_id bigint;
-  v_before_users uuid[];
-  v_abort_command uuid := extensions.gen_random_uuid();
-  v_hash text;
-BEGIN
-  PERFORM public.require_client_sync_service_role_v1();
-  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
-  IF EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE command_id=p_command_id AND target_order_id=p_order_id AND state='aborted') THEN RETURN; END IF;
-  SELECT o.state,o.occasion INTO v_state,v_occasion
-  FROM eshop.orders o WHERE o.id=p_order_id FOR UPDATE;
-  IF v_state='storno' THEN RETURN; END IF;
-  IF v_state IS DISTINCT FROM 'preparing_payment' OR p_command_id IS NULL THEN
-    RAISE check_violation USING MESSAGE='Fakturoid order is not pending';
-  END IF;
-  SELECT q.id INTO v_queue_id FROM public.email_messages q
-  WHERE q.code='TICKET_ORDER_CONFIRMATION'
-    AND q.data->>'command_id'=p_command_id::text
-    AND (q.data#>>'{ticket_order,order,id}')::bigint=p_order_id
-    AND q.data->>'fakturoid_pending'='true'
-  FOR UPDATE;
-  IF v_queue_id IS NULL THEN
-    RAISE check_violation USING MESSAGE='Fakturoid order confirmation claim missing';
-  END IF;
-  SELECT coalesce(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
-  FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'order',p_order_id,'reason','fakturoid_failed')::text,'UTF8'),'sha256'),'hex');
-  PERFORM public.begin_anonymous_client_mutation_v1(v_abort_command,
-    'inventory.order.fakturoid_abort',v_occasion,extensions.gen_random_uuid(),v_hash);
-  UPDATE public.email_messages SET workflow_state='cancelled',last_error='fakturoid_aborted' WHERE id=v_queue_id;
-  IF NOT public.abort_waitlist_acceptance_internal(p_order_id,p_command_id) THEN
-    UPDATE eshop.orders SET state='ordered' WHERE id=p_order_id;
-    PERFORM public.update_order_and_tickets_to_storno_221(p_order_id);
-  END IF;
-  PERFORM public.complete_profile_inventory_membership_mutation_v1(
-    v_abort_command,v_occasion,'inventory.order.fakturoid_abort',
-    jsonb_build_array(jsonb_build_object('entityType','order',
-      'entityId',p_order_id,'operation','update','safeLabel','Failed order',
-      'changedFields',jsonb_build_array('state','tickets','allocations'))),
-    v_before_users,jsonb_build_object('orderId',p_order_id),'service');
-END;
-$$;
-REVOKE ALL ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
-  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.abort_fakturoid_ticket_order_v1(bigint,uuid)
-  TO service_role;
+
+
+
+
+
 
 
 -- Direct payment writes cannot publish an unreserved symbol. Domain RPC owners

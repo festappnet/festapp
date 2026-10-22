@@ -119,8 +119,8 @@ BEGIN
       FROM public.information i WHERE i.occasion=o.id),'[]'::jsonb)
     ) ORDER BY o.start_time DESC,o.id DESC) FROM public.occasions o WHERE o.unit=p_unit),'[]'::jsonb);
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_setup_sources(bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_sources(bigint) TO authenticated;
+
+
 
 -- Source: database/functions/occasion_setup/finalize.sql
 -- Materialize the private configuration exactly once. Provisional draft IDs and
@@ -384,7 +384,7 @@ BEGIN
  UPDATE public.occasion_setup_drafts SET data=data || jsonb_build_object('finalizedOccasion',new_id,'finalizeResponse',receipt),revision=revision+1 WHERE id=p_id;
  RETURN receipt;
 END $$;
-REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
+
 
 COMMIT;

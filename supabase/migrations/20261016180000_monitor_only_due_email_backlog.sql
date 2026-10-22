@@ -28,7 +28,7 @@ BEGIN
   'policyRevision',(SELECT revision FROM public.abuse_policy_revision WHERE singleton),
   'queue',queues,'oldestExpiredUsageAt',expired_at,'oldestGrowthEvidenceAt',evidence_at,'provider',capacity);
 END $$;
-REVOKE ALL ON FUNCTION public.abuse_health_internal_v1() FROM PUBLIC,anon,authenticated,service_role;
+
 
 -- A separate hashed capability exposes bounded operational facts only. It cannot
 -- mint sessions, enqueue mail or access customer rows through another RPC.
@@ -71,5 +71,3 @@ BEGIN
   IF (abuse->>'oldestGrowthEvidenceAt')::timestamptz<statement_timestamp()-make_interval(secs=>(thresholds->>'monitor.growth.age.seconds')::integer) THEN v_alerts:=array_append(v_alerts,'abuse_growth_stale'); END IF;
   RETURN jsonb_build_object('ok',cardinality(v_alerts)=0,'alerts',to_jsonb(v_alerts),'abuse',abuse);
 END $$;
-REVOKE ALL ON FUNCTION public.get_festapp_monitoring_health_v1(text) FROM PUBLIC,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_festapp_monitoring_health_v1(text) TO anon;

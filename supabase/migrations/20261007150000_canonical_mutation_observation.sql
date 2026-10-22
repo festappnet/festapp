@@ -21,7 +21,7 @@ BEGIN
  RAISE LOG 'FESTAPP_MUTATION_OBSERVATION %',fields;
 END $$;
 REVOKE ALL ON FUNCTION public.log_canonical_mutation_request_v1() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.log_canonical_mutation_request_v1() TO anon,authenticated,service_role;
+
 
 CREATE OR REPLACE FUNCTION public.log_canonical_mutation_scope_internal_v1(p_occasion bigint)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path = public, extensions AS $$
@@ -47,5 +47,3 @@ BEGIN
  SELECT 'user_group','occasion',p_occasion,id::text,0 FROM public.user_group_info WHERE occasion=p_occasion ORDER BY id ON CONFLICT DO NOTHING;
  PERFORM 1 FROM public.client_aggregate_versions WHERE aggregate_type='user_group' AND scope_type='occasion' AND scope_id=p_occasion ORDER BY aggregate_id::bigint FOR UPDATE;
 END $$;
-
-REVOKE ALL ON FUNCTION public.lock_group_occasion_internal_v1(bigint) FROM PUBLIC,anon,authenticated;

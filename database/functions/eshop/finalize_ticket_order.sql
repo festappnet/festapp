@@ -59,6 +59,9 @@ DECLARE
     is_editor BOOLEAN;
     v_product_deposit NUMERIC;
     v_total_deposit NUMERIC := 0;
+    v_payment_method text;
+    v_stripe_connection uuid;
+    v_stripe_attempt uuid;
 BEGIN
     PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid)]);
     PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
@@ -104,6 +107,10 @@ BEGIN
         INTO organization_id, unit_id, occasion_title, occasion_features
         FROM public.occasions
         WHERE id = occasion_id;
+
+        form_deadline_duration := COALESCE(form_deadline_duration,
+            (SELECT (elem->>'deadline_duration_seconds')::bigint
+             FROM jsonb_array_elements(occasion_features) elem WHERE elem->>'code'='form'),604800);
 
         IF organization_id IS NULL THEN
             RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1005, 'message', 'No organization found for the occasion')::TEXT;
@@ -418,8 +425,31 @@ BEGIN
             );
         END LOOP;
 
-        order_data := input_data - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
+        order_data := input_data - 'ticket' - 'stripePaymentSource' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
 
+        v_payment_method:=coalesce(input_data->>'payment_method','bank');
+        IF v_payment_method NOT IN ('bank','stripe') THEN RAISE EXCEPTION 'PAYMENT_METHOD_INVALID'; END IF;
+        IF calculated_price=0 THEN v_payment_method:='bank'; END IF;
+        IF calculated_price=0 THEN
+          bank_account_id:=NULL;
+          INSERT INTO eshop.payment_info(amount,currency_code,created_at) VALUES(0,first_currency_code,now) RETURNING id INTO payment_info_id;
+        ELSIF v_payment_method='stripe' THEN
+          IF coalesce(input_data->>'payment_type','full')<>'full' OR v_total_deposit>0 THEN
+            RAISE EXCEPTION 'STRIPE_DEPOSIT_UNSUPPORTED'; END IF;
+          v_stripe_connection:=public.assert_stripe_form_payable_internal(form_id,
+            (input_data->>'stripe_connection_id')::uuid,input_data->>'payment_surface');
+          IF (input_data->>'expected_payment_amount_minor')::numeric IS DISTINCT FROM calculated_price*100
+            OR input_data->>'expected_payment_currency' IS DISTINCT FROM first_currency_code::text THEN
+            RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','STRIPE_PRICE_CHANGED','message','Order price changed. Review the order before paying.')::text;
+          END IF;
+          IF first_currency_code NOT IN ('CZK','EUR','PLN','USD','GBP') OR calculated_price*100<>trunc(calculated_price*100) THEN
+            RAISE EXCEPTION 'STRIPE_AMOUNT_UNSUPPORTED'; END IF;
+          bank_account_id:=NULL;
+          INSERT INTO eshop.payment_info(amount,currency_code,created_at,payment_method,stripe_connection_id)
+          VALUES(calculated_price,first_currency_code,now,'stripe',v_stripe_connection) RETURNING id INTO payment_info_id;
+        ELSE
+          IF calculated_price>0 AND coalesce(form_data#>'{payments,bankEnabled}','true'::jsonb)<>'true'::jsonb THEN
+            RAISE EXCEPTION 'BANK_PAYMENT_NOT_CONFIGURED'; END IF;
         -- Determine the bank account details based on the form and supported currency fallback using unit accounts only
         -- Modified Bank Account Selection: Exclude CASH Accounts
         IF bank_account_id IS NULL THEN
@@ -505,6 +535,8 @@ BEGIN
           WHERE id = payment_info_id AND creditor_reference IS NULL;
         END IF;
 
+        END IF;
+
         -- persist all of the non‐state fields
         UPDATE eshop.orders
         SET
@@ -531,7 +563,10 @@ BEGIN
             (SELECT (feature->>'deadline_duration_seconds')::bigint
              FROM jsonb_array_elements(occasion_features) feature WHERE feature->>'code'='form'),604800);
           -- Calculate deadline if deadline duration is provided
-          IF form_deadline_duration IS NOT NULL THEN
+          IF v_payment_method='stripe' THEN
+              v_stripe_attempt:=public.create_stripe_order_attempt_internal(order_id);
+              SELECT reservation_expires_at INTO deadline FROM eshop.stripe_checkout_attempts WHERE id=v_stripe_attempt;
+          ELSIF form_deadline_duration IS NOT NULL THEN
               deadline := now + make_interval(secs => form_deadline_duration);
               PERFORM public.set_payment_deadline(payment_info_id, deadline);
           ELSE
@@ -600,6 +635,7 @@ BEGIN
         -- Prepare the success response JSON
         result := JSONB_BUILD_OBJECT(
             'code', 200,
+            'payment',public.stripe_order_payment_projection_internal(order_id),
             'order', JSONB_BUILD_OBJECT(
                 'id', order_id,
                 'order_symbol', assigned_order_symbol,
@@ -610,6 +646,7 @@ BEGIN
                 ),
                 'payment_info', JSONB_BUILD_OBJECT(
                     'id', payment_info_id,
+                    'payment_method',v_payment_method,
                     'variable_symbol', generated_variable_symbol,
                     'creditor_reference', generated_creditor_reference,
                     'creditor_name', creditor_name,
@@ -636,6 +673,9 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN
         -- In case of any error, the inner block is rolled back and we capture the error message.
         result := CASE
+            WHEN SQLERRM = 'STRIPE_RECIPIENT_CHANGED' THEN
+                JSONB_BUILD_OBJECT('code',409,'errorCode','STRIPE_RECIPIENT_CHANGED',
+                    'message','The payment recipient changed. Review the current form.')
             WHEN left(SQLERRM, 1) = '{' THEN SQLERRM::JSONB
             ELSE JSONB_BUILD_OBJECT('code', 1013, 'message', SQLERRM)
         END;

@@ -61,7 +61,8 @@ BEGIN
     INSERT INTO public.forms (title, data, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds)
     SELECT
         public.copy_occasion_title_internal(title,'en'),
-        data,
+        CASE WHEN source_unit_id IS DISTINCT FROM (SELECT unit FROM public.occasions WHERE id=target_occasion_id)
+          THEN data #- '{payments,stripeConnectionId}' ELSE data END,
         target_occasion_id,
         type,
         bank_account,

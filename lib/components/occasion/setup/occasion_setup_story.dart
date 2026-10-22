@@ -8,6 +8,23 @@ class OccasionSetupQuestion {
 }
 
 class OccasionSetupStory {
+  static void normalize(Map<String, dynamic> data, bool appSupported) {
+    data.remove('eventKind');
+    data.remove('eventKindNeedsConfirmation');
+    if (data['storyQuestion'] == 'kind') {
+      data['storyQuestion'] = 'appearance';
+      data['step'] = 2;
+    }
+    if (data['storyQuestion'] == null && data['step'] == 0) {
+      data['storyQuestion'] = data['sourceId'] != null ? 'source' : 'name';
+      data['step'] = data['sourceId'] != null ? 0 : 1;
+    }
+    if (data['storyQuestion'] == 'start' || data['storyQuestion'] == 'end')
+      data['storyQuestion'] = 'dates';
+    if (data['formDraft'] is Map)
+      (data['formDraft'] as Map)['title'] = data['title'] ?? '';
+  }
+
   static bool formEnabled(Map<String, dynamic> data) =>
       data['formEnabled'] != false;
 
@@ -21,6 +38,27 @@ class OccasionSetupStory {
 
   static bool hasTickets(Map<String, dynamic> data) =>
       _visibleFields(data).any((field) => field['type'] == 'ticket');
+
+  static void setTicketsEnabled(Map<String, dynamic> data, bool enabled) {
+    final form = data['formDraft'] as Map;
+    final fields = List<dynamic>.from(form['fields'] as List? ?? []);
+    final tickets =
+        fields.whereType<Map>().where((f) => f['type'] == 'ticket').toList();
+    if (tickets.isEmpty && enabled) {
+      fields.add(<String, dynamic>{
+        'type': 'ticket',
+        'is_ticket_field': true,
+        'is_required': true,
+        'is_hidden': false,
+        'order': -2
+      });
+    } else {
+      for (final field in tickets) {
+        field['is_hidden'] = !enabled;
+      }
+    }
+    form['fields'] = fields;
+  }
 
   static bool hasPaidProducts(Map<String, dynamic> data) =>
       _visibleFields(data).any((field) {
@@ -103,14 +141,18 @@ class OccasionSetupStory {
     bool appSupported, {
     Map<String, dynamic>? data,
     bool organizationVerified = false,
+    bool includeSource = false,
   }) {
     final form = data == null || formEnabled(data);
     final paid = data == null || hasPaidProducts(data);
-    final tickets = data == null || hasTickets(data);
+
     return [
-      const OccasionSetupQuestion(0, 'source'),
+      if (includeSource)
+        const OccasionSetupQuestion(0, 'source', optional: true),
       const OccasionSetupQuestion(1, 'name'),
       const OccasionSetupQuestion(1, 'dates'),
+      const OccasionSetupQuestion(2, 'appearance'),
+      if (form) const OccasionSetupQuestion(2, 'ticket'),
       if (appSupported) const OccasionSetupQuestion(1, 'presentation'),
       if (appSupported) const OccasionSetupQuestion(1, 'link'),
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
@@ -121,7 +163,6 @@ class OccasionSetupStory {
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'paymentTiming'),
       if (form) const OccasionSetupQuestion(3, 'communication'),
       if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
-      if (tickets) const OccasionSetupQuestion(2, 'ticket'),
       const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),
@@ -145,6 +186,7 @@ class OccasionSetupStory {
     Map<String, dynamic> data,
     bool appSupported, {
     bool organizationVerified = false,
+    bool includeSource = false,
   }) {
     // Sparse historical position records have no form context. Full drafts
     // always carry formEnabled/formDraft and use the dependent journey.
@@ -156,10 +198,12 @@ class OccasionSetupStory {
       appSupported,
       data: context,
       organizationVerified: organizationVerified,
+      includeSource: includeSource,
     );
     final savedKey = switch (data['storyQuestion']) {
       'presentation' when !appSupported => 'form',
       'scanner' => 'team',
+      'kind' => 'appearance',
       final value => value,
     };
     final key = savedKey == 'start' || savedKey == 'end' ? 'dates' : savedKey;
@@ -168,9 +212,11 @@ class OccasionSetupStory {
           p.key == key &&
           (p.step == data['step'] ||
               data['storyQuestion'] == 'scanner' ||
-              data['storyQuestion'] == 'presentation'),
+              data['storyQuestion'] == 'presentation' ||
+              data['storyQuestion'] == 'kind'),
     );
     if (exact >= 0) return exact;
+    if (key == 'verification' && organizationVerified) return pages.length - 1;
     if (data['step'] == 5) return pages.length - 1;
     final first = pages.indexWhere((p) => p.step == data['step']);
     if (first >= 0) return first;

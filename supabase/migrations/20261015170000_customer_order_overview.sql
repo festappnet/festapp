@@ -120,7 +120,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;
 REVOKE ALL ON FUNCTION public.get_customer_order_overview(text,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_customer_order_overview(text,bigint) TO anon,authenticated,service_role;
+
 
 
 -- Source: database/functions/eshop_waitlist/order_overview_access.sql
@@ -196,7 +196,7 @@ BEGIN
   'source',CASE WHEN s.token_hash IS NOT NULL THEN jsonb_build_object('sealed',s.sealed,'contentHash',s.content_hash,'tokenHash',s.token_hash,'expiresAt',s.expires_at) END);
 END $$;
 REVOKE ALL ON FUNCTION public.resolve_customer_order_access_v1(text,bigint,uuid,uuid,jsonb,uuid,boolean) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.resolve_customer_order_access_v1(text,bigint,uuid,uuid,jsonb,uuid,boolean) TO service_role;
+
 
 CREATE OR REPLACE FUNCTION public.cleanup_order_overview_sources_internal(p_limit integer DEFAULT 200)
 RETURNS integer LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -226,7 +226,7 @@ BEGIN
  'source',jsonb_build_object('sealed',s.sealed,'contentHash',s.content_hash,'tokenHash',s.token_hash));
 END $$;
 REVOKE ALL ON FUNCTION public.get_registered_order_overview_source_v1(bigint,uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_registered_order_overview_source_v1(bigint,uuid) TO service_role;
+
 
 
 -- Source: database/functions/eshop_waitlist/order_overview_email.sql
@@ -259,7 +259,7 @@ BEGIN
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.enqueue_order_overview_reissue_v1(bigint,uuid,uuid,jsonb,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.enqueue_order_overview_reissue_v1(bigint,uuid,uuid,jsonb,text) TO service_role;
+
 
 
 -- Source: database/functions/eshop_waitlist/offers.sql
@@ -287,20 +287,20 @@ BEGIN
  p_command::text||':'||o.id::text,code,now(),expiry,o.id,NULL);
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.expire_waitlist_form_internal(bigint,timestamptz,integer),public.enqueue_waitlist_email_internal(bigint,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_proposal(bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_proposal(bigint) TO authenticated;
+
+
+
 
 
 -- Source: database/functions/eshop_waitlist/email_render_context.sql
 -- Shared presentation metadata; no lifecycle or capability decisions.
 
-REVOKE ALL ON FUNCTION public.get_waitlist_form_timezone_internal(bigint) FROM PUBLIC,anon,authenticated;
+
 
 -- One presentation vocabulary for both gated delivery and authenticated preview.
 -- The existing effective-form resolver owns tone inheritance.
 
-REVOKE ALL ON FUNCTION public.get_waitlist_email_tone_substitutions_internal(bigint) FROM PUBLIC,anon,authenticated;
+
 
 -- Private queue renderer boundary. Personal capabilities remain encrypted in
 -- existing queue sources; the renderer receives only their hashes and envelopes.
@@ -354,10 +354,8 @@ BEGIN
   'overviewSource',(SELECT jsonb_build_object('sealed',s.sealed,'contentHash',s.content_hash,'tokenHash',s.token_hash) FROM eshop.order_overview_sources s JOIN eshop.waitlist_capabilities c USING(token_hash) WHERE c.order_id=o.id AND c.kind='order_view' AND c.revoked_at IS NULL AND c.expires_at>statement_timestamp() ORDER BY s.created_at DESC LIMIT 1),
   'manageContentHash',manage_message.data->>'content_hash');
 END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- TO service_role;
+
+
 
 
 -- Source: database/functions/eshop_waitlist/fakturoid_recovery.sql
@@ -386,8 +384,8 @@ BEGIN
  END LOOP;
  RETURN jsonb_build_object('expiredSlots',affected);
 END $$;
-REVOKE ALL ON FUNCTION public.abort_waitlist_acceptance_internal(bigint,uuid),public.expire_waitlist_offers(integer) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.expire_waitlist_offers(integer) TO service_role;
+
+
 
 
 -- Source: database/functions/emails/email_queue.sql (email_intent_valid only)

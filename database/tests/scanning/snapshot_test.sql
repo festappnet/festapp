@@ -1,10 +1,9 @@
 BEGIN;
 DO $$
-DECLARE oc bigint; h bigint; session jsonb; r jsonb; pg jsonb; sid uuid; token text; manifest jsonb;
+DECLARE fixture jsonb; oc bigint; h bigint; session jsonb; r jsonb; pg jsonb; sid uuid; token text; manifest jsonb;
 BEGIN
- SELECT id INTO oc FROM public.occasions LIMIT 1;
- INSERT INTO public.occasions_hidden(secret) VALUES('SNAPSHOT_TEST_ONLY') RETURNING id INTO h;UPDATE public.occasions SET occasion_hidden=h WHERE id=oc;
- session:=public.open_scanner_session('SNAPSHOT_TEST_ONLY');sid:=(session#>>'{data,session_id}')::uuid;token:=session#>>'{data,token}';
+ fixture:=public.scanner_test_fixture(2);oc:=(fixture->>'occasion')::bigint;
+ session:=public.open_scanner_session(fixture->>'scan_code');sid:=(session#>>'{data,session_id}')::uuid;token:=session#>>'{data,token}';
  r:=public.prepare_scanner_snapshot(sid,token);PERFORM assert_eq(r->>'code','200','snapshot prepared');manifest:=r->'data';
  FOR pg IN SELECT value FROM jsonb_array_elements(manifest->'pages') LOOP
   r:=public.get_scanner_snapshot_page(sid,token,(manifest->>'snapshot_id')::uuid,(pg->>'index')::integer);

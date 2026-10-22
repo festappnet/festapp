@@ -1,6 +1,6 @@
 -- Qualify the generated geometry-key column independently of PL/pgSQL variables.
 
-REVOKE ALL ON FUNCTION public.validate_blueprint_polygon_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated;
+
 
 -- Storage boundary validation. Numeric limits and authoring keys mirror the
 -- public layout protocol; commercial identities never belong in the document.
@@ -99,4 +99,3 @@ BEGIN
   PERFORM public.validate_blueprint_geometry_internal(a->'document');
  END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.validate_blueprint_geometry_internal(jsonb) FROM PUBLIC,anon,authenticated;

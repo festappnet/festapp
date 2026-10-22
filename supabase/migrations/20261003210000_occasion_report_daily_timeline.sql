@@ -45,7 +45,7 @@ BEGIN
   RETURN result;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.format_occasion_report_text(jsonb) FROM PUBLIC, anon, authenticated, service_role;
+
 
 CREATE OR REPLACE FUNCTION public.get_report_ws(occasion_link text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
@@ -143,5 +143,3 @@ EXCEPTION WHEN OTHERS THEN
   RETURN jsonb_build_object('code',500,'message','Report could not be generated.');
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_report_ws(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_report_ws(text) TO authenticated;

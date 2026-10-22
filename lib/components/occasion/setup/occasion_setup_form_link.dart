@@ -1,12 +1,16 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
+
 import 'occasion_setup_details_strings.dart';
 import 'occasion_setup_strings.dart';
 
 typedef SuggestSetupLink = Future<Map<String, dynamic>> Function(
-    String title, String? requested);
+  String title,
+  String? requested,
+);
 
 /// Availability is only a preview. The canonical allocator checks again during
 /// finalization and can choose the next suffix for an automatic suggestion.
@@ -16,15 +20,16 @@ class OccasionSetupFormLink extends StatefulWidget {
   final void Function(String value, bool automatic) onChanged;
   final SuggestSetupLink? suggest;
   final ValueChanged<bool?>? onValidityChanged;
-  const OccasionSetupFormLink(
-      {super.key,
-      required this.draftId,
-      required this.title,
-      required this.value,
-      required this.automatic,
-      required this.onChanged,
-      this.suggest,
-      this.onValidityChanged});
+  const OccasionSetupFormLink({
+    super.key,
+    required this.draftId,
+    required this.title,
+    required this.value,
+    required this.automatic,
+    required this.onChanged,
+    this.suggest,
+    this.onValidityChanged,
+  });
   @override
   State<OccasionSetupFormLink> createState() => _OccasionSetupFormLinkState();
 }
@@ -53,7 +58,8 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
     if (old.title != widget.title && widget.automatic) _forceSuggestion = true;
     if (old.title != widget.title ||
         old.value != widget.value ||
-        old.automatic != widget.automatic) _schedule();
+        old.automatic != widget.automatic)
+      _schedule();
   }
 
   void _schedule() {
@@ -84,12 +90,16 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
     try {
       final result = widget.suggest != null
           ? await widget.suggest!(widget.title, value)
-          : Map<String, dynamic>.from(await Supabase.instance.client
-              .rpc('suggest_occasion_setup_form_link', params: {
-              'p_id': widget.draftId,
-              'p_title': widget.title,
-              'p_requested_link': value,
-            }));
+          : Map<String, dynamic>.from(
+              await Supabase.instance.client.rpc(
+                'suggest_occasion_setup_form_link',
+                params: {
+                  'p_id': widget.draftId,
+                  'p_title': widget.title,
+                  'p_requested_link': value,
+                },
+              ),
+            );
       if (!mounted || token != _request) return;
       if (widget.automatic) {
         final next = !force && result['available'] == true && value.isNotEmpty
@@ -120,51 +130,69 @@ class _OccasionSetupFormLinkState extends State<OccasionSetupFormLink> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(OccasionSetupStrings.story('formLink')),
-        SelectableText(publicLinkUrl(_controller.text)),
-        Text(OccasionSetupStrings.story('linkAfterCreation')),
-        TextButton(
-            onPressed: () => setState(() => _editing = !_editing),
-            child: Text(OccasionSetupStrings.story('editLink'))),
-        if (_editing)
-          TextField(
-            controller: _controller,
-            decoration: InputDecoration(
-              suffixIcon: IconButton(
-                onPressed: _checking
-                    ? null
-                    : () {
-                        _forceSuggestion = true;
-                        widget.onValidityChanged?.call(null);
-                        widget.onChanged('', true);
-                        _controller.clear();
-                        _schedule();
-                      },
-                icon: const Icon(Icons.auto_fix_high),
-                tooltip: OccasionSetupDetailsStrings.text('suggestLink'),
-              ),
-              labelText: OccasionSetupDetailsStrings.text('formAddress'),
-              helperMaxLines: 3,
-              errorText: _error ??
-                  (_available == false
-                      ? OccasionSetupDetailsStrings.text('linkTaken')
-                      : null),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        children: [
+          Text(OccasionSetupStrings.story('formLink')),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width - 96,
             ),
-            onChanged: (value) {
-              setState(() {
-                _available = null;
-                _error = null;
-              });
-              widget.onValidityChanged?.call(null);
-              widget.onChanged(value, false);
-              _schedule();
-            },
+            child: SelectableText(publicLinkUrl(_controller.text)),
           ),
-        const SizedBox(height: 8),
-        if (_editing && _checking) const LinearProgressIndicator(),
-        if (_editing && _available == true)
-          Text(OccasionSetupDetailsStrings.text('linkAvailable')),
-      ]);
+          TextButton(
+            onPressed: () => setState(() => _editing = !_editing),
+            child: Text(OccasionSetupStrings.story('editLink')),
+          ),
+        ],
+      ),
+      Text(
+        OccasionSetupStrings.story('linkAfterCreation'),
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      if (_editing)
+        TextField(
+          controller: _controller,
+          decoration: InputDecoration(
+            suffixIcon: IconButton(
+              onPressed: _checking
+                  ? null
+                  : () {
+                      _forceSuggestion = true;
+                      widget.onValidityChanged?.call(null);
+                      widget.onChanged('', true);
+                      _controller.clear();
+                      _schedule();
+                    },
+              icon: const Icon(Icons.auto_fix_high),
+              tooltip: OccasionSetupDetailsStrings.text('suggestLink'),
+            ),
+            labelText: OccasionSetupDetailsStrings.text('formAddress'),
+            helperMaxLines: 3,
+            errorText:
+                _error ??
+                (_available == false
+                    ? OccasionSetupDetailsStrings.text('linkTaken')
+                    : null),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _available = null;
+              _error = null;
+            });
+            widget.onValidityChanged?.call(null);
+            widget.onChanged(value, false);
+            _schedule();
+          },
+        ),
+      const SizedBox(height: 8),
+      if (_editing && _checking) const LinearProgressIndicator(),
+      if (_editing && _available == true)
+        Text(OccasionSetupDetailsStrings.text('linkAvailable')),
+    ],
+  );
 }

@@ -93,6 +93,49 @@ export class FormSession extends EventTarget {
         }
     }
 
+    // Restore answers by stable field/product IDs, never restore quoted prices.
+    restoreDraft(previous, freshSpots = []) {
+        const optionsFor = def => def.options || def.data?.options || [];
+        const restoreValue = (def, value) => {
+            if (def.type !== 'product_type') return value;
+            const ids = Array.isArray(value) ? value : String(value ?? '').split(' | ');
+            return ids.filter(id => optionsFor(def).some(option => String(option.id) === String(id) && option.isAvailable !== false)).join(' | ');
+        };
+        for (const [id, value] of previous.state.fields) {
+            const def = this.formModel.visibleFields.find(field => String(field.id) === String(id));
+            if (def) this.state.fields.set(id, restoreValue(def, value));
+        }
+        this.spotModels = new Map(freshSpots.map(spot => [String(spot.id), spot]));
+        this.state.tickets = previous.state.tickets.map(ticket => {
+            const restored = { ...ticket, fields: [] };
+            delete restored.spotPrice;
+            const spot = this.spotModels.get(String(ticket.spot));
+            if (spot && ['available', 'selected_by_me'].includes(spot.state) && spot.productModel?.price != null) {
+                restored.spotPrice = Number(spot.productModel.price);
+                restored.spotName = spot.title;
+                this.state.currency = spot.productModel.currency_code || spot.productModel.currency || this.state.currency;
+            } else {
+                delete restored.spot;
+                delete restored.spotName;
+            }
+            for (const answer of ticket.fields || []) {
+                const def = this._getTicketSubDef(answer._subFieldId);
+                if (!def || def.type === 'spot') continue;
+                const value = restoreValue(def, answer[def.type] ?? answer[def.id]);
+                const field = { _subFieldId: def.id, [def.type]: value };
+                if (def.type === 'product_type') {
+                    const selected = String(value).split(' | ').map(id => optionsFor(def).find(option => String(option.id) === id)).filter(Boolean);
+                    field.price = selected.reduce((sum, option) => sum + Number(option.price || 0), 0);
+                    field.currency_code = selected[0]?.currency || selected[0]?.currencyCode || selected[0]?.currency_code;
+                }
+                restored.fields.push(field);
+            }
+            return restored;
+        });
+        this._syncPayloadFromState();
+        this._recalculate();
+    }
+
     getComponentState(key) {
         return this.uiState.get(key);
     }
@@ -682,6 +725,13 @@ export class FormSession extends EventTarget {
             }
             // TODO: Multi-value currency logic? (Usually ignored for Checkboxes)
             
+            if (fieldDef.type === 'product_type') {
+                const options = fieldDef.options || fieldDef.data?.options || [];
+                const ids = Array.isArray(value) ? value : String(value ?? '').split(' | ');
+                const selected = ids.map(id => options.find(option => String(option.id) === String(id))).filter(Boolean);
+                entry.price = selected.reduce((sum, option) => sum + Number(option.price || 0), 0);
+                if (selected.length) entry.currency_code = selected[0].currency || selected[0].currencyCode || selected[0].currency_code;
+            }
             this.payload.fields.push(entry);
         }
     }

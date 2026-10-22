@@ -35,8 +35,3 @@ BEGIN
   END IF;
   RETURN v_response;
 END; $$;
-
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid)
-  TO authenticated;

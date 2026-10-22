@@ -88,6 +88,7 @@ def prepare():
     sql('-f', str(ROOT / 'database/functions/user_permissions/get_is_manager_on_unit.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/sources.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/drafts.sql'), admin=True)
+    sql('-f', str(ROOT / 'database/functions/occasion_setup/appearance.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/finalize.sql'), admin=True)
     sql('-f', str(ROOT / 'database/functions/occasion_setup/email_preview.sql'), admin=True)
     sql('-c', "NOTIFY pgrst, 'reload schema'")

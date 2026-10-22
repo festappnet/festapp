@@ -4,7 +4,7 @@ import {parseLayout,preset,pdfBox,backgroundBox,croppedBackgroundBox} from './ti
 import {fitText} from './ticketText.ts';
 import {normalizeTicketData,sampleData,sampleSymbol,sampleQr} from './ticketRenderData.ts';
 import {generateTicketPdf,activeTemplate,prepareTicketRenderer} from './ticketGeneration.ts';
-import {PDFDocument,PDFRawStream,PDFName} from 'npm:pdf-lib';
+import {PDFDocument,PDFRawStream,PDFName,PDFDict} from 'npm:pdf-lib';
 import {inflateSync} from 'node:zlib';
 const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');const metrics=fontMetrics(font);
 const png=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='),c=>c.charCodeAt(0));
@@ -214,4 +214,18 @@ Deno.test('default admissions render actual event details and preserve saved lay
     const saved=preset(type);
     assertEquals(await resolveTicketTemplate({...occasion,features:[{code:'ticket',ticket_type:type,layout:{schemaVersion:3,templates:{[type]:saved}}}]},resources),saved);
   }
+});
+
+Deno.test('shared gradient is validated and reaches actual PDF paint operations',async()=>{
+ const t={...preset('wide'),canvasColor:'14284B',canvasGradient:['14284B','A87F28']};
+ parseLayout({schemaVersion:3,templates:{wide:t}});
+ for(const gradient of [[],['FFFFFF'],['FFFFFF','bad'],['FFFFFF','000000','222222']]) assertThrows(()=>parseLayout({schemaVersion:3,templates:{wide:{...t,canvasGradient:gradient}}}));
+ const output=await generateTicketPdf(sampleData('normal',undefined,undefined,t),{...r,background:undefined},t,'wide',true);
+ const pdf=await PDFDocument.load(output.bytes);
+ const ops=pdf.context.enumerateIndirectObjects().filter(([,o])=>o instanceof PDFRawStream).map(([,o])=>o as PDFRawStream).filter(s=>s.dict.get(PDFName.of('Filter'))?.toString()==='/FlateDecode').map(s=>new TextDecoder().decode(inflateSync(s.getContents()))).join('\n');
+ assert(ops.includes('/SharedGradient sh'));
+ const shading=pdf.context.enumerateIndirectObjects().map(([,o])=>o).find(o=>o instanceof PDFDict && o.get(PDFName.of('ShadingType'))?.toString()==='2') as PDFDict;
+ assert(shading);assert(shading.toString().includes('/DeviceRGB'));
+ assert(shading.toString().includes('0.6588235294117647'));
+ assert(output.bytes.length>1000);
 });

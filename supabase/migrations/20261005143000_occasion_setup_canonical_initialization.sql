@@ -16,15 +16,7 @@ CREATE INDEX IF NOT EXISTS occasion_setup_drafts_unit_idx ON public.occasion_set
 ALTER TABLE public.occasion_setup_drafts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_occasion_setup_drafts(p_unit bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  RETURN COALESCE((SELECT jsonb_agg(to_jsonb(d) ORDER BY updated_at DESC)
-    FROM public.occasion_setup_drafts d WHERE unit = p_unit), '[]'::jsonb);
-END $$;
+
 
 -- Run the canonical creator inside a rollback-only subtransaction. Its
 -- complete configuration survives in a PL/pgSQL variable, but no occasion,
@@ -103,48 +95,3 @@ BEGIN
   RETURN to_jsonb(d);
 END $$;
 REVOKE ALL ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.save_occasion_setup_draft(p_id uuid, p_expected_revision bigint, p_data jsonb, p_step integer)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts;
-BEGIN
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  -- Retry a successfully committed identical save without changing its revision.
-  IF d.revision = p_expected_revision + 1 AND d.data = p_data AND d.current_step = p_step THEN
-    RETURN to_jsonb(d);
-  END IF;
-  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
-  END IF;
-  IF p_data IS NULL OR jsonb_typeof(p_data) <> 'object' OR octet_length(p_data::text) > 262144 OR p_step IS NULL OR p_step NOT BETWEEN 0 AND 5 THEN
-    RAISE EXCEPTION 'Invalid draft' USING ERRCODE = '22023';
-  END IF;
-  UPDATE public.occasion_setup_drafts SET data = p_data, current_step = p_step,
-    revision = revision + 1, updated_at = now() WHERE id = p_id RETURNING * INTO d;
-  RETURN to_jsonb(d);
-END $$;
-
-CREATE OR REPLACE FUNCTION public.delete_occasion_setup_draft(p_id uuid, p_unit bigint, p_expected_revision bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts;
-BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND THEN RETURN; END IF;
-  IF d.unit <> p_unit THEN RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501'; END IF;
-  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
-  END IF;
-  DELETE FROM public.occasion_setup_drafts WHERE id = p_id;
-END $$;
-
-REVOKE ALL ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) TO authenticated;

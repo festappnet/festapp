@@ -18,6 +18,15 @@ BEGIN
       || 'Čistý příjem: ' || (item->>'net_received') || E'\n'
       || 'Ručně evidováno: ' || (item->>'manual_received') || E'\n'
       || 'Ostatní příjmy: ' || (item->>'other_received') || E'\n';
+    IF item ? 'stripe_received' THEN
+      result:=result||'Z toho přijato přes Stripe: '||(item->>'stripe_received')||E'\n'
+       ||'Z toho vráceno přes Stripe: '||(item->>'stripe_refunded')||E'\n'
+       ||'Částka ve sporu (není vratka): '||(item->>'disputed')||E'\n'
+       ||'Dostupné po odečtení sporů: '||(item->>'available_after_disputes')||E'\n';
+    END IF;
+    IF item ? 'external_unattributed' THEN
+      result:=result||'Externí částka bez doloženého přiřazení: '||(item->>'external_unattributed')||E'\n';
+    END IF;
     IF (item->>'has_deposits')::boolean THEN
       result := result || 'Přijaté zálohy (hrubé): ' || (item->>'deposit_received_gross') || E'\n'
         || 'Přijato nad zálohu (hrubé): ' || (item->>'beyond_deposit_received_gross') || E'\n';
@@ -28,7 +37,7 @@ BEGIN
     FOR item IN SELECT value FROM jsonb_array_elements(report->'timeline'->'orders') LOOP
       result := result || (item->>'day') || ' ' || (item->>'currency') || ': ' || (item->>'count') || E'\n';
     END LOOP;
-    result := result || E'\nZaevidované platby po dnech (datum transakce; včetně částečných plateb):\n';
+    result := result || E'\nZaevidované platby po dnech (datum bankovní transakce nebo čas pohybu Stripe v Europe/Prague; včetně částečných plateb):\n';
     FOR item IN SELECT value FROM jsonb_array_elements(report->'timeline'->'payments') LOOP
       result := result || (item->>'day') || ' ' || (item->>'currency') || ': přijato ' || (item->>'received') || ', vráceno ' || (item->>'returned') || E'\n';
     END LOOP;

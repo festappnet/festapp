@@ -118,7 +118,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_report_ws(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_report_ws(text) TO authenticated;
+
 
 -- Measured against 50k synthetic orders / 100k transactions. Existing baseline
 -- indexes do not cover these keys. No indexes on item or transaction tables

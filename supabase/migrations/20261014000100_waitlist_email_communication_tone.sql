@@ -77,10 +77,8 @@ BEGIN
   'manageEnvelope',manage_message.data->'waitlistEnvelope',
   'manageContentHash',manage_message.data->>'content_hash');
 END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_email_render_context_v1(bigint,uuid,text)
- TO service_role;
+
+
 
 
 -- Source: database/functions/eshop_waitlist/email_preview.sql
@@ -124,8 +122,8 @@ BEGIN
  'communicationTone',public.get_effective_form_data(f.id)->>'communication_tone',
  'toneSubstitutions',tone);
 END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_email_preview(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_email_preview(bigint) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_waitlist/email_templates.sql

@@ -8,7 +8,7 @@ SET search_path = public, extensions AS $$
  SELECT coalesce(public.can_write_blueprints(p_occasion),false)
      OR coalesce(public.can_edit_ticket_layout(p_occasion),false);
 $$;
-REVOKE ALL ON FUNCTION public.can_prepare_layout_resources(bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.can_prepare_layout_resources(bigint) TO authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.admit_layout_resources_limits_v1(p_occasion bigint,p_bytes bigint)
@@ -27,7 +27,7 @@ BEGIN
   jsonb_build_object('ticket.preview.payload.bytes',p_bytes));
  RETURN public.bound_document_data_v1('{}');
 END $$;
-REVOKE ALL ON FUNCTION public.admit_layout_resources_limits_v1(bigint,bigint) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.admit_layout_resources_limits_v1(bigint,bigint) TO authenticated;
 
 COMMIT;

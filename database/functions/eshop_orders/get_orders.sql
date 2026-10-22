@@ -157,7 +157,7 @@ BEGIN
               OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
               THEN o.waitlist_summary END,
             'isActive',(o.waitlist_summary->>'isActive')::boolean,
-            'allowedActions',o.waitlist_summary->'allowedActions',
+            'allowedActions',(o.waitlist_summary->'allowedActions') - CASE WHEN EXISTS(SELECT 1 FROM eshop.payment_info card WHERE card.id=o.payment_info AND card.payment_method='stripe') THEN ARRAY['cancel','paid']::text[] ELSE ARRAY[]::text[] END,
             'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),
@@ -183,7 +183,7 @@ BEGIN
 
     -- Fetch payment information linked to the orders
     SELECT jsonb_agg(jsonb_build_object(
-        'id', pi.id, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
+        'id', pi.id, 'payment_method', pi.payment_method, 'bank_account', pi.bank_account, 'variable_symbol', pi.variable_symbol, 'amount', pi.amount, 'deposit_amount', pi.deposit_amount,
         'deposit_deadline', pi.deposit_deadline, 'paid', pi.paid, 'returned', pi.returned, 'deadline', pi.deadline, 'currency_code', pi.currency_code, 'data', pi.data,
         'bank_sync_warning', public.bank_sync_warning(pi.bank_account)
     ))

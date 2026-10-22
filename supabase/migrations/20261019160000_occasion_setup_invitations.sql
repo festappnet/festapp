@@ -33,7 +33,7 @@ BEGIN
  FROM (SELECT DISTINCT lower(btrim(e)) e FROM unnest(p_emails) e) normalized;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.normalize_occasion_setup_invite_emails(text[]) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.occasion_setup_invitation_role(p_roles jsonb,p_email text)
 RETURNS text LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
@@ -45,7 +45,7 @@ BEGIN
   RAISE invalid_parameter_value USING MESSAGE='Invalid invitation role'; END IF;
  RETURN coalesce(p_roles->>p_email,'editor');
 END $$;
-REVOKE ALL ON FUNCTION public.occasion_setup_invitation_role(jsonb,text) FROM PUBLIC,anon,authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.preview_occasion_setup_invitations(p_id uuid,p_emails text[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -79,7 +79,7 @@ BEGIN
    'id',event_id,'link',event_link,'title',event_title,'unit',d.unit,'organization',d.organization),
    'organizationData',org_data);
 END $$;
-REVOKE ALL ON FUNCTION public.preview_occasion_setup_invitations(uuid,text[]) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.preview_occasion_setup_invitations(uuid,text[]) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.enqueue_occasion_setup_invitation(p_id uuid,p_email text,p_token_hash text,p_sealed jsonb,p_content_hash text,p_role text DEFAULT NULL)
@@ -127,7 +127,7 @@ BEGIN
  PERFORM public.admit_email_intent_v1((SELECT id FROM public.email_messages WHERE message_id=(queued->>'message_id')::uuid),true);
  RETURN queued||jsonb_build_object('invitation_id',invitation.id,'status','queued');
 END $$;
-REVOKE ALL ON FUNCTION public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text) FROM PUBLIC,anon;
+
 GRANT EXECUTE ON FUNCTION public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_occasion_team_invitation(p_token text)
@@ -145,7 +145,7 @@ BEGIN
  AND EXISTS(SELECT 1 FROM public.unit_users uu WHERE uu.unit=i.unit AND uu."user"=i.created_by AND uu.is_manager);
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.get_occasion_team_invitation(text) FROM PUBLIC;
+
 GRANT EXECUTE ON FUNCTION public.get_occasion_team_invitation(text) TO anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.accept_occasion_team_invitation(p_token text,p_password text DEFAULT NULL)
@@ -201,7 +201,7 @@ BEGIN
   CASE WHEN auth.uid() IS NULL THEN 'unknown' ELSE 'user' END,'Invited event team member accepted');
  RETURN jsonb_build_object('accepted',true,'newAccount',new_account,'link',(SELECT link FROM public.occasions WHERE id=invitation.occasion));
 END $$;
-REVOKE ALL ON FUNCTION public.accept_occasion_team_invitation(text,text) FROM PUBLIC;
+
 GRANT EXECUTE ON FUNCTION public.accept_occasion_team_invitation(text,text) TO anon,authenticated;
 
 -- Neutral default invitation content contains no account credential fields.

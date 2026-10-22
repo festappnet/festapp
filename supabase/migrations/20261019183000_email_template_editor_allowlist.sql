@@ -128,6 +128,3 @@ BEGIN
   RETURN email_data;
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.get_all_email_templates(jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_all_email_templates(jsonb) TO authenticated, service_role;

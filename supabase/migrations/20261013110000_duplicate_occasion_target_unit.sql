@@ -352,8 +352,7 @@ RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
   SELECT public.duplicate_occasion_internal_v1(oc, NULL);
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- The duplicate command must use the audit operation accepted by
 -- client_commit_items_operation_check. The old value, 'create', rolled back
@@ -418,8 +417,7 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
   FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint)
-  TO authenticated;
+
 
 
 -- Keep existing client signatures routed through the same canonical command.
@@ -429,8 +427,8 @@ CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(
 SET search_path = public, extensions AS $$
   SELECT public.duplicate_occasion_client_sync_v1(p_occasion, p_command_id, NULL);
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) TO authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint, p_target_unit bigint)
 RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER
@@ -441,15 +439,15 @@ BEGIN
   RETURN (v_response #>> '{data,occasionId}')::bigint;
 END; $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint,bigint) TO authenticated;
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint)
 RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
 SET search_path = public, extensions AS $$
   SELECT public.duplicate_occasion(oc, NULL);
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint) TO authenticated;
+
+
 
 -- Return only authorized destinations. The navigation unit list does not carry
 -- membership flags and may include units visible only through an occasion.
@@ -467,4 +465,3 @@ BEGIN
     FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id)), '[]'::jsonb);
 END; $$;
 REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;

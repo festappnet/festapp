@@ -21,7 +21,7 @@ BEGIN
  IF started->>'disposition'='replay' THEN RETURN started->'response'; END IF;
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
- payload := d.data;
+ payload := public.normalize_occasion_setup_appearance_internal(d.data);
  blueprint_mode:=CASE payload->>'blueprintMode'
   WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
   ELSE payload->>'blueprintMode' END;

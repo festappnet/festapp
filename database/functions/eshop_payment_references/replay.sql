@@ -16,6 +16,9 @@ BEGIN
     'creditor_reference',payment.creditor_reference,'amount',payment.amount,'deposit_amount',payment.deposit_amount,
     'deadline',payment.deadline,'deposit_deadline',payment.deposit_deadline,'currency_code',payment.currency_code);
    payload:=jsonb_set(payload,'{order,payment_info}',details);
+   IF payment.payment_method='stripe' THEN
+    payload:=payload||jsonb_build_object('payment',public.stripe_order_payment_projection_internal(target.id));
+   END IF;
   END IF;
  END IF;
  IF p_response ? 'data' THEN RETURN jsonb_set(p_response,'{data}',payload); END IF;

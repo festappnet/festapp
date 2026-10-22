@@ -27,6 +27,11 @@ class FormFontCatalog {
   List<String> get families =>
       font_runtime.GoogleFonts.asMap().keys.toList(growable: false);
 
+  Future<void> ensureFamily(String family) async {
+    font_runtime.GoogleFonts.getTextTheme(family);
+    await font_runtime.GoogleFonts.pendingFonts();
+  }
+
   TextStyle getFont(String family) => font_runtime.GoogleFonts.getFont(family);
 
   Future<TextStyle> previewStyle(String family) async {

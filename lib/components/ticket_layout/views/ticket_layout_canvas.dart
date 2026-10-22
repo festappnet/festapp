@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
+
 import '../ticket_layout_controller.dart';
 import '../models/ticket_layout.dart';
 import '../ticket_layout_service.dart';
@@ -24,23 +26,24 @@ class TicketLayoutCanvas extends StatefulWidget {
       editCanvas;
   final double gridStep;
   final TransformationController transform;
-  const TicketLayoutCanvas(
-      {super.key,
-      this.onDismiss,
-      this.onCanvasElementAttempt,
-      required this.controller,
-      required this.resources,
-      required this.data,
-      required this.transform,
-      this.pan = false,
-      this.editBackground = false,
-      this.cropBackground = false,
-      this.editCanvas = false,
-      this.additiveSelection = false,
-      this.wholePage = false,
-      this.snap = true,
-      this.grid = false,
-      this.gridStep = 10});
+  const TicketLayoutCanvas({
+    super.key,
+    this.onDismiss,
+    this.onCanvasElementAttempt,
+    required this.controller,
+    required this.resources,
+    required this.data,
+    required this.transform,
+    this.pan = false,
+    this.editBackground = false,
+    this.cropBackground = false,
+    this.editCanvas = false,
+    this.additiveSelection = false,
+    this.wholePage = false,
+    this.snap = true,
+    this.grid = false,
+    this.gridStep = 10,
+  });
   @override
   State<TicketLayoutCanvas> createState() => TicketLayoutCanvasState();
 }
@@ -64,8 +67,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     }
     final value = e.text ?? widget.data[e.id] ?? '';
     if (_inlineText.text != value) {
-      _inlineText.value = TextEditingValue(text: value,
-          selection: TextSelection.collapsed(offset: value.length));
+      _inlineText.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
     }
     setState(() {});
   }
@@ -83,41 +88,79 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   }
 
   void _startInline() {
-    if (_doubleTapPosition == null || panning || widget.editCanvas || widget.editBackground) return;
-    final point = widget.transform.toScene(_doubleTapPosition!) - widget.controller.document.area.topLeft;
-    final e = widget.controller.document.positionedElements(widget.data).reversed
-        .where((e) => e.visible && e.box.contains(point)).firstOrNull;
-    if (e == null || e.locked || !['text', 'footer'].contains(e.binding)) return;
+    if (_doubleTapPosition == null ||
+        panning ||
+        widget.editCanvas ||
+        widget.editBackground)
+      return;
+    final point =
+        widget.transform.toScene(_doubleTapPosition!) -
+        widget.controller.document.area.topLeft;
+    final e = widget.controller.document
+        .positionedElements(widget.data)
+        .reversed
+        .where((e) => e.visible && e.box.contains(point))
+        .firstOrNull;
+    if (e == null || e.locked || !['text', 'footer'].contains(e.binding))
+      return;
     widget.controller.endGesture();
     widget.controller.select(e.id);
     _inlineText.text = e.text ?? widget.data[e.id] ?? '';
-    _inlineText.selection = TextSelection(baseOffset: 0, extentOffset: _inlineText.text.length);
-    setState(() { _inlineId = e.id; _editing = null; });
+    _inlineText.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _inlineText.text.length,
+    );
+    setState(() {
+      _inlineId = e.id;
+      _editing = null;
+    });
     _inlineFocus.requestFocus();
   }
 
   Widget _inlineEditor(TicketElement e) => Positioned.fromRect(
-      rect: e.box.shift(widget.controller.document.area.topLeft),
-      child: TextField(
-        key: const ValueKey('ticket-inline-text'),
-        controller: _inlineText, focusNode: _inlineFocus,
-        maxLines: null, expands: true, maxLength: 2000,
-        textAlignVertical: TextAlignVertical.top,
-        textAlign: e.align == 'center' ? TextAlign.center : e.align == 'right' ? TextAlign.right : TextAlign.left,
-        style: TextStyle(fontFamily: widget.resources.fontFor(widget.controller.document, e).loaderName,
-            fontSize: e.fontSize, height: 1.2,
-            color: Color(int.parse('ff${e.color}', radix: 16)),
-            fontWeight: e.bold ? FontWeight.bold : FontWeight.normal,
-            fontStyle: e.italic ? FontStyle.italic : FontStyle.normal,
-            decoration: e.underline ? TextDecoration.underline : TextDecoration.none),
-        decoration: const InputDecoration(isCollapsed: true, contentPadding: EdgeInsets.zero,
-            border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
-            filled: false, counterText: ''),
-        onTapOutside: (_) => _finishInline(),
-        onChanged: (value) {
-          widget.controller.beginGesture();
-          widget.controller.change(e.copyWith(binding: 'text', text: value));
-        }));
+    rect: e.box.shift(widget.controller.document.area.topLeft),
+    child: TextField(
+      key: const ValueKey('ticket-inline-text'),
+      controller: _inlineText,
+      focusNode: _inlineFocus,
+      maxLines: null,
+      expands: true,
+      maxLength: 2000,
+      textAlignVertical: TextAlignVertical.top,
+      textAlign: e.align == 'center'
+          ? TextAlign.center
+          : e.align == 'right'
+          ? TextAlign.right
+          : TextAlign.left,
+      style: TextStyle(
+        fontFamily: widget.resources
+            .fontFor(widget.controller.document, e)
+            .loaderName,
+        fontSize: e.fontSize,
+        height: 1.2,
+        color: Color(int.parse('ff${e.color}', radix: 16)),
+        fontWeight: e.bold ? FontWeight.bold : FontWeight.normal,
+        fontStyle: e.italic ? FontStyle.italic : FontStyle.normal,
+        decoration: e.underline
+            ? TextDecoration.underline
+            : TextDecoration.none,
+      ),
+      decoration: const InputDecoration(
+        isCollapsed: true,
+        contentPadding: EdgeInsets.zero,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        filled: false,
+        counterText: '',
+      ),
+      onTapOutside: (_) => _finishInline(),
+      onChanged: (value) {
+        widget.controller.beginGesture();
+        widget.controller.change(e.copyWith(binding: 'text', text: value));
+      },
+    ),
+  );
   final Set<int> _pointers = {};
   int? _editing, _imageCorner, _canvasHandle;
   int? _middlePan;
@@ -131,7 +174,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
   double get zoom {
     final matrix = widget.transform.value;
     return math.sqrt(
-        math.pow(matrix.entry(0, 0), 2) + math.pow(matrix.entry(1, 0), 2));
+      math.pow(matrix.entry(0, 0), 2) + math.pow(matrix.entry(1, 0), 2),
+    );
   }
 
   ui.Image? get backgroundImage {
@@ -141,16 +185,20 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
 
   Size? get backgroundSize => backgroundImage == null
       ? null
-      : Size(backgroundImage!.width.toDouble(),
-          backgroundImage!.height.toDouble());
+      : Size(
+          backgroundImage!.width.toDouble(),
+          backgroundImage!.height.toDouble(),
+        );
   Rect get viewBounds {
     final doc = widget.controller.document;
     var bounds = widget.wholePage ? Offset.zero & doc.page : doc.area;
     if (widget.editBackground && backgroundSize != null) {
-      bounds = bounds.expandToInclude((widget.cropBackground
-              ? doc.backgroundRect(backgroundSize!)
-              : doc.croppedBackgroundRect(backgroundSize!))
-          .shift(doc.area.topLeft));
+      bounds = bounds.expandToInclude(
+        (widget.cropBackground
+                ? doc.backgroundRect(backgroundSize!)
+                : doc.croppedBackgroundRect(backgroundSize!))
+            .shift(doc.area.topLeft),
+      );
     }
     return bounds;
   }
@@ -197,16 +245,28 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final size = viewportSize, matrix = widget.transform.value;
     final scale = zoom;
     double translation(
-        double current, double start, double end, double viewport) {
+      double current,
+      double start,
+      double end,
+      double viewport,
+    ) {
       final inset = math.min(16.0, viewport / 4);
       final low = viewport - inset - end * scale, high = inset - start * scale;
       return current.clamp(math.min(low, high), math.max(low, high));
     }
 
-    final x =
-        translation(matrix.entry(0, 3), bounds.left, bounds.right, size.width);
-    final y =
-        translation(matrix.entry(1, 3), bounds.top, bounds.bottom, size.height);
+    final x = translation(
+      matrix.entry(0, 3),
+      bounds.left,
+      bounds.right,
+      size.width,
+    );
+    final y = translation(
+      matrix.entry(1, 3),
+      bounds.top,
+      bounds.bottom,
+      size.height,
+    );
     if ((x - matrix.entry(0, 3)).abs() < .001 &&
         (y - matrix.entry(1, 3)).abs() < .001) {
       return;
@@ -227,8 +287,12 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         .min((size.width - 40) / b.width, (size.height - 40) / b.height)
         .clamp(widget.editBackground ? .02 : .2, 6.0);
     widget.transform.value = Matrix4.identity()
-      ..translateByDouble((size.width - b.width * scale) / 2 - b.left * scale,
-          (size.height - b.height * scale) / 2 - b.top * scale, 0, 1)
+      ..translateByDouble(
+        (size.width - b.width * scale) / 2 - b.left * scale,
+        (size.height - b.height * scale) / 2 - b.top * scale,
+        0,
+        1,
+      )
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
@@ -238,15 +302,20 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final scale = (zoom * factor).clamp(widget.editBackground ? .02 : .2, 6.0);
     widget.transform.value = Matrix4.identity()
       ..translateByDouble(
-          point.dx - scene.dx * scale, point.dy - scene.dy * scale, 0, 1)
+        point.dx - scene.dx * scale,
+        point.dy - scene.dy * scale,
+        0,
+        1,
+      )
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
   TicketResizeHandle? _handleAt(Rect box, Offset point) {
     final tolerance = 10 / zoom;
     // Corners take precedence over sides, including on short text boxes.
-    for (final handle
-        in TicketResizeHandle.values.where((h) => h.x != 0 && h.y != 0)) {
+    for (final handle in TicketResizeHandle.values.where(
+      (h) => h.x != 0 && h.y != 0,
+    )) {
       if ((point - handle.position(box)).distance <= tolerance) return handle;
     }
     final verticalTolerance = math.min(6 / zoom, box.height / 4);
@@ -283,9 +352,11 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
 
   void _hover(PointerHoverEvent event) {
     final selectedBounds = widget.controller.selectionBounds;
-    final point = widget.transform.toScene(event.localPosition) -
+    final point =
+        widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
-    final handle = panning ||
+    final handle =
+        panning ||
             widget.editBackground ||
             widget.editCanvas ||
             selectedBounds == null
@@ -311,7 +382,8 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       return;
     }
     if (panning || event.buttons != kPrimaryButton) return;
-    final point = widget.transform.toScene(event.localPosition) -
+    final point =
+        widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
     if (widget.editCanvas) {
       final size = widget.controller.document.area.size;
@@ -347,13 +419,14 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     }
     if (widget.editBackground) {
       if (backgroundSize == null) return;
-      final rect =
-          widget.controller.document.croppedBackgroundRect(backgroundSize!);
+      final rect = widget.controller.document.croppedBackgroundRect(
+        backgroundSize!,
+      );
       final corners = [
         rect.topLeft,
         rect.topRight,
         rect.bottomRight,
-        rect.bottomLeft
+        rect.bottomLeft,
       ];
       _imageCorner = null;
       for (var i = 0; i < corners.length; i++) {
@@ -369,22 +442,25 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       return;
     }
     final selectedBounds = widget.controller.selectionBounds;
-    _resizeHandle =
-        selectedBounds == null ? null : _handleAt(selectedBounds, point);
+    _resizeHandle = selectedBounds == null
+        ? null
+        : _handleAt(selectedBounds, point);
     final hit = widget.controller.document
         .positionedElements(widget.data)
         .reversed
         .where((e) => e.visible && e.box.inflate(3 / zoom).contains(point))
         .firstOrNull;
-    final additive = widget.additiveSelection ||
+    final additive =
+        widget.additiveSelection ||
         HardwareKeyboard.instance.isShiftPressed ||
         HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
     if (_resizeHandle == null) {
       if (hit == null) {
         _marqueeStart = point;
-        _selectionBeforeMarquee =
-            additive ? {...widget.controller.selectedIds} : {};
+        _selectionBeforeMarquee = additive
+            ? {...widget.controller.selectedIds}
+            : {};
         widget.controller.selectAll(_selectionBeforeMarquee);
         setState(() => _editing = event.pointer);
         return;
@@ -417,16 +493,19 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       return;
     }
     if (event.pointer != _editing || _pointers.length != 1) return;
-    final point = widget.transform.toScene(event.localPosition) -
+    final point =
+        widget.transform.toScene(event.localPosition) -
         widget.controller.document.area.topLeft;
     if (widget.editCanvas && _last != null && _canvasHandle != null) {
       final beforeOrigin = widget.controller.canvasOrigin;
-      widget.controller.resizeCanvas(event.delta / zoom,
-          backgroundImage: backgroundSize,
-          handle: _canvasHandle!,
-          zoom: zoom,
-          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
-          gridStep: widget.grid ? widget.gridStep : null);
+      widget.controller.resizeCanvas(
+        event.delta / zoom,
+        backgroundImage: backgroundSize,
+        handle: _canvasHandle!,
+        zoom: zoom,
+        snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+        gridStep: widget.grid ? widget.gridStep : null,
+      );
       final shift = (widget.controller.canvasOrigin - beforeOrigin) * zoom;
       if (shift != Offset.zero) {
         final matrix = widget.transform.value.clone();
@@ -439,13 +518,15 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     }
     if (widget.editBackground && _last != null) {
       (widget.cropBackground
-              ? widget.controller.cropBackground
-              : widget.controller.transformBackground)(
-          backgroundSize!, point - _last!,
-          corner: _imageCorner,
-          zoom: zoom,
-          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
-          gridStep: widget.grid ? widget.gridStep : null);
+          ? widget.controller.cropBackground
+          : widget.controller.transformBackground)(
+        backgroundSize!,
+        point - _last!,
+        corner: _imageCorner,
+        zoom: zoom,
+        snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+        gridStep: widget.grid ? widget.gridStep : null,
+      );
       _last = point;
       return;
     }
@@ -457,7 +538,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
         ...widget.controller.document
             .positionedElements(widget.data)
             .where((e) => e.visible && rect.overlaps(e.box))
-            .map((e) => e.id)
+            .map((e) => e.id),
       });
       return;
     }
@@ -470,16 +551,20 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
     final delta = point - _last!;
     _last = point;
     if (_resizeHandle != null) {
-      widget.controller.resize(delta,
-          handle: _resizeHandle!,
-          zoom: zoom,
-          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
-          gridStep: widget.grid ? widget.gridStep : null);
+      widget.controller.resize(
+        delta,
+        handle: _resizeHandle!,
+        zoom: zoom,
+        snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+        gridStep: widget.grid ? widget.gridStep : null,
+      );
     } else {
-      widget.controller.move(delta,
-          zoom: zoom,
-          snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
-          gridStep: widget.grid ? widget.gridStep : null);
+      widget.controller.move(
+        delta,
+        zoom: zoom,
+        snap: widget.snap && !HardwareKeyboard.instance.isAltPressed,
+        gridStep: widget.grid ? widget.gridStep : null,
+      );
     }
   }
 
@@ -497,16 +582,32 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       widget.controller.endGesture();
       setState(() => _editing = null);
     }
-    if (e is PointerUpEvent && !_dragStarted && _inlineId == null &&
-        !panning && !widget.editBackground && !widget.editCanvas) {
-      final point = widget.transform.toScene(e.localPosition) - widget.controller.document.area.topLeft;
-      final hit = widget.controller.document.positionedElements(widget.data).reversed
-          .where((element) => element.visible && element.box.contains(point)).firstOrNull;
-      if (hit != null && !hit.locked && ['text', 'footer'].contains(hit.binding)) {
-        final elapsed = _lastTextTapTime == null ? null : e.timeStamp - _lastTextTapTime!;
-        if (_lastTextTapId == hit.id && elapsed != null &&
-            elapsed >= kDoubleTapMinTime && elapsed <= kDoubleTapTimeout &&
-            (e.localPosition - _doubleTapPosition!).distance <= kDoubleTapSlop) {
+    if (e is PointerUpEvent &&
+        !_dragStarted &&
+        _inlineId == null &&
+        !panning &&
+        !widget.editBackground &&
+        !widget.editCanvas) {
+      final point =
+          widget.transform.toScene(e.localPosition) -
+          widget.controller.document.area.topLeft;
+      final hit = widget.controller.document
+          .positionedElements(widget.data)
+          .reversed
+          .where((element) => element.visible && element.box.contains(point))
+          .firstOrNull;
+      if (hit != null &&
+          !hit.locked &&
+          ['text', 'footer'].contains(hit.binding)) {
+        final elapsed = _lastTextTapTime == null
+            ? null
+            : e.timeStamp - _lastTextTapTime!;
+        if (_lastTextTapId == hit.id &&
+            elapsed != null &&
+            elapsed >= kDoubleTapMinTime &&
+            elapsed <= kDoubleTapTimeout &&
+            (e.localPosition - _doubleTapPosition!).distance <=
+                kDoubleTapSlop) {
           _doubleTapPosition = e.localPosition;
           _lastTextTapTime = null;
           _startInline();
@@ -535,14 +636,17 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       return KeyEventResult.handled;
     }
     if (e is KeyUpEvent) return KeyEventResult.ignored;
-    final ctrl = HardwareKeyboard.instance.isControlPressed ||
+    final ctrl =
+        HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
     if (!widget.editBackground &&
         ctrl &&
         e.logicalKey == LogicalKeyboardKey.keyA) {
-      widget.controller.selectAll(widget.controller.document.elements
-          .where((e) => e.visible)
-          .map((e) => e.id));
+      widget.controller.selectAll(
+        widget.controller.document.elements
+            .where((e) => e.visible)
+            .map((e) => e.id),
+      );
       return KeyEventResult.handled;
     }
     if (e.logicalKey == LogicalKeyboardKey.escape) {
@@ -554,8 +658,12 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       widget.onDismiss?.call();
       return KeyEventResult.handled;
     }
-    if (!widget.editBackground && !widget.editCanvas &&
-        [LogicalKeyboardKey.delete, LogicalKeyboardKey.backspace].contains(e.logicalKey)) {
+    if (!widget.editBackground &&
+        !widget.editCanvas &&
+        [
+          LogicalKeyboardKey.delete,
+          LogicalKeyboardKey.backspace,
+        ].contains(e.logicalKey)) {
       widget.controller.removeSelectedOptionalFields();
       return KeyEventResult.handled;
     }
@@ -564,7 +672,7 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       LogicalKeyboardKey.arrowLeft: Offset(-step, 0),
       LogicalKeyboardKey.arrowRight: Offset(step, 0),
       LogicalKeyboardKey.arrowUp: Offset(0, -step),
-      LogicalKeyboardKey.arrowDown: Offset(0, step)
+      LogicalKeyboardKey.arrowDown: Offset(0, step),
     }[e.logicalKey];
     if (delta != null) {
       if (widget.cropBackground &&
@@ -574,9 +682,10 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
       } else if (widget.editBackground) {
         final doc = widget.controller.document;
         widget.controller.changeBackground(
-            doc.backgroundScale,
-            doc.backgroundOffset +
-                Offset(delta.dx / doc.area.width, delta.dy / doc.area.height));
+          doc.backgroundScale,
+          doc.backgroundOffset +
+              Offset(delta.dx / doc.area.width, delta.dy / doc.area.height),
+        );
       } else {
         widget.controller.move(delta, snap: false);
       }
@@ -587,53 +696,68 @@ class TicketLayoutCanvasState extends State<TicketLayoutCanvas> {
 
   @override
   Widget build(BuildContext context) => Focus(
-      focusNode: _focus,
-      onKeyEvent: _key,
-      child: ClipRect(
-          child: ColoredBox(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: MouseRegion(
-                  cursor: _cursor,
-                  onHover: _hover,
-                  onExit: (_) => setState(() => _hoverHandle = null),
-                  child: Listener(
-                      key: _viewport,
-                      onPointerDown: _down,
-                      onPointerMove: _move,
-                      onPointerUp: _up,
-                      onPointerCancel: (e) {
-                        widget.controller.cancelGesture();
-                        _up(e);
-                      },
-                      child: InteractiveViewer(
-                          transformationController: widget.transform,
-                          constrained: false,
-                          boundaryMargin: const EdgeInsets.all(double.infinity),
-                          minScale: widget.editBackground ? .02 : .2,
-                          maxScale: 6,
-                          panEnabled: _inlineId == null && (panning || _editing == null),
-                          scaleEnabled: true,
-                          child: ListenableBuilder(
-                              listenable: widget.transform,
-                              builder: (context, _) => RepaintBoundary(
-                                  child: Stack(children: [CustomPaint(
-                                      size: widget.controller.document.page,
-                                      painter: TicketLayoutPainter(
-                                          widget.controller,
-                                          widget.resources,
-                                          widget.data,
-                                          editingTextId: _inlineId,
-                                          zoom: zoom,
-                                          editBackground: widget.editBackground,
-                                          editCanvas: widget.editCanvas,
-                                          cropBackground: widget.cropBackground,
-                                          gridStep: widget.grid
-                                              ? widget.gridStep
-                                              : null)),
-                                    if (_inlineId != null && widget.controller.selection != null)
-                                      _inlineEditor(widget.controller.document.positionedElements(widget.data)
-                                          .firstWhere((e) => e.id == _inlineId)),
-                                  ])))))))));
+    focusNode: _focus,
+    onKeyEvent: _key,
+    child: ClipRect(
+      child: ColoredBox(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: MouseRegion(
+          cursor: _cursor,
+          onHover: _hover,
+          onExit: (_) => setState(() => _hoverHandle = null),
+          child: Listener(
+            key: _viewport,
+            onPointerDown: _down,
+            onPointerMove: _move,
+            onPointerUp: _up,
+            onPointerCancel: (e) {
+              widget.controller.cancelGesture();
+              _up(e);
+            },
+            child: InteractiveViewer(
+              transformationController: widget.transform,
+              constrained: false,
+              boundaryMargin: const EdgeInsets.all(double.infinity),
+              minScale: widget.editBackground ? .02 : .2,
+              maxScale: 6,
+              panEnabled: _inlineId == null && (panning || _editing == null),
+              scaleEnabled: true,
+              child: ListenableBuilder(
+                listenable: widget.transform,
+                builder: (context, _) => RepaintBoundary(
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        size: widget.controller.document.page,
+                        painter: TicketLayoutPainter(
+                          widget.controller,
+                          widget.resources,
+                          widget.data,
+                          editingTextId: _inlineId,
+                          zoom: zoom,
+                          editBackground: widget.editBackground,
+                          editCanvas: widget.editCanvas,
+                          cropBackground: widget.cropBackground,
+                          gridStep: widget.grid ? widget.gridStep : null,
+                        ),
+                      ),
+                      if (_inlineId != null &&
+                          widget.controller.selection != null)
+                        _inlineEditor(
+                          widget.controller.document
+                              .positionedElements(widget.data)
+                              .firstWhere((e) => e.id == _inlineId),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class TicketLayoutPainter extends CustomPainter {
@@ -644,25 +768,32 @@ class TicketLayoutPainter extends CustomPainter {
   final double zoom;
   final double? gridStep;
   final bool cropToTicket, editBackground, cropBackground, editCanvas;
-  TicketLayoutPainter(this.controller, this.resources, this.data,
-      {this.editingTextId,
-      this.zoom = 1,
-      this.gridStep,
-      this.cropToTicket = false,
-      this.editBackground = false,
-      this.cropBackground = false,
-      this.editCanvas = false})
-      : super(repaint: controller);
+  TicketLayoutPainter(
+    this.controller,
+    this.resources,
+    this.data, {
+    this.editingTextId,
+    this.zoom = 1,
+    this.gridStep,
+    this.cropToTicket = false,
+    this.editBackground = false,
+    this.cropBackground = false,
+    this.editCanvas = false,
+  }) : super(repaint: controller);
   void _image(Canvas canvas, ui.Image image, Rect box, {double opacity = 1}) {
-    final fitted = applyBoxFit(BoxFit.contain,
-        Size(image.width.toDouble(), image.height.toDouble()), box.size);
+    final fitted = applyBoxFit(
+      BoxFit.contain,
+      Size(image.width.toDouble(), image.height.toDouble()),
+      box.size,
+    );
     canvas.drawImageRect(
-        image,
-        Offset.zero & Size(image.width.toDouble(), image.height.toDouble()),
-        Alignment.center.inscribe(fitted.destination, box),
-        Paint()
-          ..color = Colors.white.withValues(alpha: opacity)
-          ..filterQuality = FilterQuality.medium);
+      image,
+      Offset.zero & Size(image.width.toDouble(), image.height.toDouble()),
+      Alignment.center.inscribe(fitted.destination, box),
+      Paint()
+        ..color = Colors.white.withValues(alpha: opacity)
+        ..filterQuality = FilterQuality.medium,
+    );
   }
 
   @override
@@ -680,48 +811,72 @@ class TicketLayoutPainter extends CustomPainter {
       final step = 10 / zoom;
       for (double y = doc.area.top; y < doc.area.bottom; y += step) {
         for (double x = doc.area.left; x < doc.area.right; x += step) {
-          final dark = (((x - doc.area.left) / step).round() +
-                  ((y - doc.area.top) / step).round())
-              .isEven;
-          canvas.drawRect(Rect.fromLTWH(x, y, step, step),
-              Paint()..color = dark ? const Color(0xffe5e7eb) : Colors.white);
+          final dark =
+              (((x - doc.area.left) / step).round() +
+                      ((y - doc.area.top) / step).round())
+                  .isEven;
+          canvas.drawRect(
+            Rect.fromLTWH(x, y, step, step),
+            Paint()..color = dark ? const Color(0xffe5e7eb) : Colors.white,
+          );
         }
       }
       canvas.restore();
     }
     if (doc.canvasOpacity > 0) {
       canvas.drawRect(
-          doc.area,
-          Paint()
-            ..color = Color(int.parse('ff${doc.canvasColor}', radix: 16))
-                .withValues(alpha: doc.canvasOpacity));
+        doc.area,
+        Paint()
+          ..color = Color(int.parse('ff${doc.canvasColor}', radix: 16))
+              .withValues(alpha: doc.canvasOpacity),
+      );
+    }
+    if (doc.canvasGradient != null) {
+      canvas.drawRect(
+        doc.area,
+        Paint()
+          ..shader = LinearGradient(
+            colors: [
+              for (final c in doc.canvasGradient!)
+                Color(int.parse('ff$c', radix: 16))
+                    .withValues(alpha: doc.canvasOpacity),
+            ],
+          ).createShader(doc.area),
+      );
     }
     final artwork = resources.artworks[controller.artworkKey];
     final background = artwork != null ? artwork.image : resources.background;
     if (background != null) {
       if (editBackground && cropBackground) {
         _image(
-            canvas,
-            background,
-            doc
-                .backgroundRect(Size(
-                    background.width.toDouble(), background.height.toDouble()))
-                .shift(doc.area.topLeft),
-            opacity: .2);
-      }
-      canvas.save();
-      canvas.clipRect(doc.area);
-      canvas.clipRect(doc
-          .croppedBackgroundRect(
-              Size(background.width.toDouble(), background.height.toDouble()))
-          .shift(doc.area.topLeft));
-      _image(
           canvas,
           background,
           doc
-              .backgroundRect(Size(
-                  background.width.toDouble(), background.height.toDouble()))
-              .shift(doc.area.topLeft));
+              .backgroundRect(
+                Size(background.width.toDouble(), background.height.toDouble()),
+              )
+              .shift(doc.area.topLeft),
+          opacity: .2,
+        );
+      }
+      canvas.save();
+      canvas.clipRect(doc.area);
+      canvas.clipRect(
+        doc
+            .croppedBackgroundRect(
+              Size(background.width.toDouble(), background.height.toDouble()),
+            )
+            .shift(doc.area.topLeft),
+      );
+      _image(
+        canvas,
+        background,
+        doc
+            .backgroundRect(
+              Size(background.width.toDouble(), background.height.toDouble()),
+            )
+            .shift(doc.area.topLeft),
+      );
       canvas.restore();
     }
     if (doc.appearance['border'] == true) {
@@ -730,14 +885,20 @@ class TicketLayoutPainter extends CustomPainter {
         ..strokeWidth = 1;
       for (double x = doc.area.left; x < doc.area.right; x += 5) {
         for (final y in [doc.area.top, doc.area.bottom]) {
-          canvas.drawLine(Offset(x, y),
-              Offset(math.min(x + 3.75, doc.area.right), y), paint);
+          canvas.drawLine(
+            Offset(x, y),
+            Offset(math.min(x + 3.75, doc.area.right), y),
+            paint,
+          );
         }
       }
       for (double y = doc.area.top; y < doc.area.bottom; y += 5) {
         for (final x in [doc.area.left, doc.area.right]) {
-          canvas.drawLine(Offset(x, y),
-              Offset(x, math.min(y + 3.75, doc.area.bottom)), paint);
+          canvas.drawLine(
+            Offset(x, y),
+            Offset(x, math.min(y + 3.75, doc.area.bottom)),
+            paint,
+          );
         }
       }
     }
@@ -754,9 +915,10 @@ class TicketLayoutPainter extends CustomPainter {
         canvas.drawLine(Offset(0, y), Offset(doc.area.width, y), paint);
       }
     }
-    for (final e in doc
-        .positionedElements(data)
-        .where((e) => e.visible && e.binding != 'qr')) {
+    for (final e
+        in doc
+            .positionedElements(data)
+            .where((e) => e.visible && e.binding != 'qr')) {
       if (e.binding == 'logo') {
         if (resources.logo != null) _image(canvas, resources.logo!, e.box);
         continue;
@@ -769,21 +931,25 @@ class TicketLayoutPainter extends CustomPainter {
         fit = fitTicketText(text, e, resources.metricsFor(doc, e));
       } on FormatException {
         canvas.drawRect(
-            e.box, Paint()..color = Colors.red.withValues(alpha: .2));
+          e.box,
+          Paint()..color = Colors.red.withValues(alpha: .2),
+        );
         continue;
       }
       canvas.save();
       canvas.clipRect(e.box);
       for (var i = 0; i < fit.lines.length; i++) {
-        var x = e.box.left +
+        var x =
+            e.box.left +
             (e.align == 'center'
                 ? (e.box.width - fit.widths[i]) / 2
                 : e.align == 'right'
-                    ? e.box.width - fit.widths[i]
-                    : 0);
+                ? e.box.width - fit.widths[i]
+                : 0);
         x += ticketTextInsets(e, resources.metricsFor(doc, e)).left * fit.size;
         final lineStart = x;
-        final baseline = e.box.top +
+        final baseline =
+            e.box.top +
             resources.metricsFor(doc, e).ascent * fit.size +
             i * fit.size * 1.2;
         for (final rune in fit.lines[i].runes) {
@@ -791,32 +957,37 @@ class TicketLayoutPainter extends CustomPainter {
           canvas.save();
           canvas.translate(x, baseline);
           if (e.italic) {
-            canvas.transform((Matrix4.identity()
-                  ..setEntry(0, 1, -.2125565616700221))
-                .storage);
+            canvas.transform(
+              (Matrix4.identity()..setEntry(0, 1, -.2125565616700221)).storage,
+            );
           }
           for (final outline in [if (e.bold) true, false]) {
             final painter = TextPainter(
-                text: TextSpan(
-                    text: c,
-                    style: TextStyle(
-                        fontFamily: resources.fontFor(doc, e).loaderName,
-                        fontSize: fit.size,
-                        height: 1,
-                        foreground: Paint()
-                          ..color = Color(int.parse('ff${e.color}', radix: 16))
-                          ..style = outline
-                              ? PaintingStyle.stroke
-                              : PaintingStyle.fill
-                          ..strokeWidth = fit.size * .04)),
-                textDirection: TextDirection.ltr)
-              ..layout();
+              text: TextSpan(
+                text: c,
+                style: TextStyle(
+                  fontFamily: resources.fontFor(doc, e).loaderName,
+                  fontSize: fit.size,
+                  height: 1,
+                  foreground: Paint()
+                    ..color = Color(int.parse('ff${e.color}', radix: 16))
+                    ..style = outline
+                        ? PaintingStyle.stroke
+                        : PaintingStyle.fill
+                    ..strokeWidth = fit.size * .04,
+                ),
+              ),
+              textDirection: TextDirection.ltr,
+            )..layout();
             painter.paint(
-                canvas,
-                Offset(
-                    0,
-                    -painter.computeDistanceToActualBaseline(
-                        TextBaseline.alphabetic)));
+              canvas,
+              Offset(
+                0,
+                -painter.computeDistanceToActualBaseline(
+                  TextBaseline.alphabetic,
+                ),
+              ),
+            );
             painter.dispose();
           }
           canvas.restore();
@@ -824,11 +995,12 @@ class TicketLayoutPainter extends CustomPainter {
         }
         if (e.underline) {
           canvas.drawLine(
-              Offset(lineStart, baseline + fit.size * .1),
-              Offset(x, baseline + fit.size * .1),
-              Paint()
-                ..color = Color(int.parse('ff${e.color}', radix: 16))
-                ..strokeWidth = fit.size * .05);
+            Offset(lineStart, baseline + fit.size * .1),
+            Offset(x, baseline + fit.size * .1),
+            Paint()
+              ..color = Color(int.parse('ff${e.color}', radix: 16))
+              ..strokeWidth = fit.size * .05,
+          );
         }
       }
       canvas.restore();
@@ -840,21 +1012,30 @@ class TicketLayoutPainter extends CustomPainter {
     final margin = (doc.qrAppearance['margin'] as num?)?.toDouble() ?? 4;
     final module = q.box.width / (resources.qrSize + 2 * margin);
     canvas.drawRect(
-        q.box,
-        Paint()
-          ..color = Color(int.parse(
-                  'ff${doc.qrAppearance['background'] ?? 'FFFFFF'}',
-                  radix: 16))
-              .withValues(
-                  alpha:
-                      (doc.qrAppearance['opacity'] as num?)?.toDouble() ?? 1));
+      q.box,
+      Paint()
+        ..color =
+            Color(
+              int.parse(
+                'ff${doc.qrAppearance['background'] ?? 'FFFFFF'}',
+                radix: 16,
+              ),
+            ).withValues(
+              alpha: (doc.qrAppearance['opacity'] as num?)?.toDouble() ?? 1,
+            ),
+    );
     for (var y = 0; y < resources.qrSize; y++) {
       for (var x = 0; x < resources.qrSize; x++) {
         if (resources.qrModules[y * resources.qrSize + x] != 0) {
           canvas.drawRect(
-              Rect.fromLTWH(q.box.left + (x + margin) * module,
-                  q.box.top + (y + margin) * module, module, module),
-              Paint()..color = Color(int.parse('ff${q.color}', radix: 16)));
+            Rect.fromLTWH(
+              q.box.left + (x + margin) * module,
+              q.box.top + (y + margin) * module,
+              module,
+              module,
+            ),
+            Paint()..color = Color(int.parse('ff${q.color}', radix: 16)),
+          );
         }
       }
     }
@@ -862,32 +1043,43 @@ class TicketLayoutPainter extends CustomPainter {
       ..color = Colors.pink
       ..strokeWidth = 1 / zoom;
     if (controller.guideX != null) {
-      canvas.drawLine(Offset(controller.guideX!, 0),
-          Offset(controller.guideX!, doc.area.height), guide);
+      canvas.drawLine(
+        Offset(controller.guideX!, 0),
+        Offset(controller.guideX!, doc.area.height),
+        guide,
+      );
     }
     if (controller.guideY != null) {
-      canvas.drawLine(Offset(0, controller.guideY!),
-          Offset(doc.area.width, controller.guideY!), guide);
+      canvas.drawLine(
+        Offset(0, controller.guideY!),
+        Offset(doc.area.width, controller.guideY!),
+        guide,
+      );
     }
     if (editCanvas) {
-      for (final e in doc.elements
-          .where((e) => controller.canvasBlockers.contains(e.id))) {
-        canvas.drawRect(e.box.inflate(3 / zoom),
-            Paint()..color = Colors.deepOrange.withValues(alpha: .18));
+      for (final e in doc.elements.where(
+        (e) => controller.canvasBlockers.contains(e.id),
+      )) {
         canvas.drawRect(
-            e.box.inflate(3 / zoom),
-            Paint()
-              ..color = Colors.deepOrange
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 3 / zoom);
+          e.box.inflate(3 / zoom),
+          Paint()..color = Colors.deepOrange.withValues(alpha: .18),
+        );
+        canvas.drawRect(
+          e.box.inflate(3 / zoom),
+          Paint()
+            ..color = Colors.deepOrange
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3 / zoom,
+        );
       }
       final rect = Offset.zero & doc.area.size;
       canvas.drawRect(
-          rect,
-          Paint()
-            ..color = Colors.blue
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5 / zoom);
+        rect,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 / zoom,
+      );
       for (final point in [
         rect.centerRight,
         rect.bottomCenter,
@@ -898,31 +1090,39 @@ class TicketLayoutPainter extends CustomPainter {
         rect.topRight,
         rect.bottomLeft,
       ]) {
-        canvas.drawCircle(point, 12 / zoom,
-            Paint()..color = Colors.blue.withValues(alpha: .18));
+        canvas.drawCircle(
+          point,
+          12 / zoom,
+          Paint()..color = Colors.blue.withValues(alpha: .18),
+        );
         canvas.drawCircle(point, 9 / zoom, Paint()..color = Colors.blue);
         canvas.drawCircle(point, 6 / zoom, Paint()..color = Colors.white);
       }
     }
     if (editBackground && background != null) {
-      final imageSize =
-          Size(background.width.toDouble(), background.height.toDouble());
+      final imageSize = Size(
+        background.width.toDouble(),
+        background.height.toDouble(),
+      );
       final rect = doc.croppedBackgroundRect(imageSize);
       canvas.drawRect(
-          rect,
-          Paint()
-            ..color = Colors.blue
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5 / zoom);
+        rect,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 / zoom,
+      );
       final corners = [
         rect.topLeft,
         rect.topRight,
         rect.bottomRight,
-        rect.bottomLeft
+        rect.bottomLeft,
       ];
       if (cropBackground) {
-        final length =
-            math.min(18 / zoom, math.min(rect.width, rect.height) / 3);
+        final length = math.min(
+          18 / zoom,
+          math.min(rect.width, rect.height) / 3,
+        );
         for (var i = 0; i < corners.length; i++) {
           final point = corners[i];
           final dx = i == 0 || i == 3 ? length : -length;
@@ -932,73 +1132,93 @@ class TicketLayoutPainter extends CustomPainter {
             ..lineTo(point.dx, point.dy)
             ..lineTo(point.dx, point.dy + dy);
           canvas.drawPath(
-              path,
-              Paint()
-                ..color = Colors.black54
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = 6 / zoom);
+            path,
+            Paint()
+              ..color = Colors.black54
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 6 / zoom,
+          );
           canvas.drawPath(
-              path,
-              Paint()
-                ..color = Colors.white
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = 3 / zoom);
+            path,
+            Paint()
+              ..color = Colors.white
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3 / zoom,
+          );
         }
       } else {
         final h = 10 / zoom;
         for (final point in corners) {
-          canvas.drawRect(Rect.fromCenter(center: point, width: h, height: h),
-              Paint()..color = Colors.blue);
+          canvas.drawRect(
+            Rect.fromCenter(center: point, width: h, height: h),
+            Paint()..color = Colors.blue,
+          );
         }
       }
     }
 
     if (controller.selectionRect case final Rect rect) {
       canvas.drawRect(
-          rect, Paint()..color = Colors.blue.withValues(alpha: .12));
+        rect,
+        Paint()..color = Colors.blue.withValues(alpha: .12),
+      );
       canvas.drawRect(
-          rect,
-          Paint()
-            ..color = Colors.blue
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1 / zoom);
+        rect,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1 / zoom,
+      );
     }
     if (!editCanvas && !editBackground && controller.selectedIds.length > 1) {
       final bounds = controller.selectionBounds;
       if (bounds != null) {
         canvas.drawRect(
-            bounds,
-            Paint()
-              ..color = Colors.blue
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5 / zoom);
-        for (final handle in TicketResizeHandle.values) {
-          canvas.drawRect(
-              Rect.fromCenter(
-                  center: handle.position(bounds),
-                  width: 10 / zoom,
-                  height: 10 / zoom),
-              Paint()..color = Colors.blue);
-        }
-      }
-    }
-    for (final selected in doc.positionedElements(data).where((e) =>
-        !editCanvas &&
-        !editBackground &&
-        controller.selectedIds.contains(e.id))) {
-      canvas.drawRect(
-          selected.box,
+          bounds,
           Paint()
             ..color = Colors.blue
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5 / zoom);
+            ..strokeWidth = 1.5 / zoom,
+        );
+        for (final handle in TicketResizeHandle.values) {
+          canvas.drawRect(
+            Rect.fromCenter(
+              center: handle.position(bounds),
+              width: 10 / zoom,
+              height: 10 / zoom,
+            ),
+            Paint()..color = Colors.blue,
+          );
+        }
+      }
+    }
+    for (final selected
+        in doc
+            .positionedElements(data)
+            .where(
+              (e) =>
+                  !editCanvas &&
+                  !editBackground &&
+                  controller.selectedIds.contains(e.id),
+            )) {
+      canvas.drawRect(
+        selected.box,
+        Paint()
+          ..color = Colors.blue
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5 / zoom,
+      );
       if (!selected.locked && controller.selectedIds.length == 1) {
         final h = 10 / zoom;
         for (final handle in TicketResizeHandle.values) {
           canvas.drawRect(
-              Rect.fromCenter(
-                  center: handle.position(selected.box), width: h, height: h),
-              Paint()..color = Colors.blue);
+            Rect.fromCenter(
+              center: handle.position(selected.box),
+              width: h,
+              height: h,
+            ),
+            Paint()..color = Colors.blue,
+          );
         }
       }
       if (!selected.visible ||
@@ -1006,11 +1226,12 @@ class TicketLayoutPainter extends CustomPainter {
               selected.binding != 'qr' &&
               selected.binding != 'logo') {
         final p = TextPainter(
-            text: TextSpan(
-                text: TicketLayoutStrings.binding(selected.binding),
-                style: const TextStyle(color: Colors.blue, fontSize: 10)),
-            textDirection: TextDirection.ltr)
-          ..layout(maxWidth: selected.box.width);
+          text: TextSpan(
+            text: TicketLayoutStrings.binding(selected.binding),
+            style: const TextStyle(color: Colors.blue, fontSize: 10),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: selected.box.width);
         p.paint(canvas, selected.box.topLeft);
         p.dispose();
       }
@@ -1040,16 +1261,18 @@ class TicketBackgroundPreviewPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final source = Rect.fromLTWH(
-        crop.left * image.width,
-        crop.top * image.height,
-        crop.width * image.width,
-        crop.height * image.height);
+      crop.left * image.width,
+      crop.top * image.height,
+      crop.width * image.width,
+      crop.height * image.height,
+    );
     final fit = applyBoxFit(BoxFit.contain, source.size, size);
     canvas.drawImageRect(
-        image,
-        source,
-        Alignment.center.inscribe(fit.destination, Offset.zero & size),
-        Paint()..filterQuality = FilterQuality.medium);
+      image,
+      source,
+      Alignment.center.inscribe(fit.destination, Offset.zero & size),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
   }
 
   @override

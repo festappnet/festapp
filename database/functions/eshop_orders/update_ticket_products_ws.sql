@@ -50,6 +50,8 @@ BEGIN
   END IF;
 
   PERFORM public.check_ticket_is_mutable(p_ticket_id);
+  IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND payment_method='stripe') THEN
+    RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
 
   /* Check for negative prices in the input */
   IF EXISTS (

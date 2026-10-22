@@ -247,8 +247,8 @@ BEGIN
         'configuration','fields','products'))),'{}'::uuid[],
     jsonb_build_object('form',v_form));
 END; $$;
-REVOKE ALL ON FUNCTION public.create_form_client_sync_v1(text,text,text,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.create_form_client_sync_v1(text,text,text,uuid) TO authenticated;
+
+
 
 
 -- Source: database/functions/others/get_occasion_for_edit_v1.sql
@@ -304,8 +304,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_occasion_for_edit_v1(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_for_edit_v1(text) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_forms/update_form.sql
@@ -1220,8 +1220,8 @@ BEGIN
     RAISE invalid_parameter_value USING MESSAGE='Occasion save rejected';
   END IF;
 END; $$;
-REVOKE ALL ON FUNCTION public.update_occasion_203(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion_203(jsonb) TO authenticated;
+
+
 
 
 -- Source: database/functions/others/duplicate_occasion.sql
@@ -1626,17 +1626,11 @@ BEGIN
   RETURN new_occ;
 END;
 $$ LANGUAGE plpgsql;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint)
-  FROM PUBLIC, anon, authenticated;
+
 
 -- Existing internal callers retain same-unit semantics.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_internal_v1(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint)
-  FROM PUBLIC, anon, authenticated;
+
+
 
 REVOKE ALL ON FUNCTION public.duplicate_occasion_internal_v1(bigint,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_internal_v1(oc bigint,p_target_unit bigint)
@@ -1785,8 +1779,8 @@ CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion(source_form_id bigi
 RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT (public.duplicate_form_to_occasion_client_sync_v1(source_form_id,target_occasion_link,gen_random_uuid())#>>'{data,formId}')::bigint;
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion(bigint,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_form_to_occasion(bigint,text) TO authenticated;
+
+
 
 
 -- Source: database/functions/others/duplicate_occasion_client_sync_v1.sql
@@ -1854,70 +1848,40 @@ BEGIN
 END; $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint, text)
   FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint, uuid, bigint, text)
-  TO authenticated;
+
 
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(p_occasion bigint,p_command_id uuid,p_target_unit bigint)
 RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
  SELECT public.duplicate_occasion_client_sync_v1(p_occasion,p_command_id,p_target_unit,NULL);
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid,bigint) TO authenticated;
+
+
 -- Keep existing client signatures routed through the same canonical command.
-CREATE OR REPLACE FUNCTION public.duplicate_occasion_client_sync_v1(
-  p_occasion bigint, p_command_id uuid
-) RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion_client_sync_v1(p_occasion, p_command_id, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion_client_sync_v1(bigint,uuid) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint, p_target_unit bigint)
-RETURNS bigint LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE v_response jsonb;
-BEGIN
-  v_response := public.duplicate_occasion_client_sync_v1(oc, gen_random_uuid(), p_target_unit);
-  RETURN (v_response #>> '{data,occasionId}')::bigint;
-END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint,bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint)
-RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-  SELECT public.duplicate_occasion(oc, NULL);
-$$;
-REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint) TO authenticated;
+
+
+
+
+
+
+
+
+
 
 -- Return only authorized destinations. The navigation unit list does not carry
 -- membership flags and may include units visible only through an occasion.
-CREATE OR REPLACE FUNCTION public.get_occasion_copy_units(p_occasion bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = public, extensions AS $$
-DECLARE v_org bigint; v_unit bigint;
-BEGIN
-  SELECT organization, unit INTO v_org, v_unit FROM public.occasions WHERE id=p_occasion;
-  IF auth.uid() IS NULL OR v_unit IS NULL
-     OR NOT public.can_copy_occasion_source(p_occasion) THEN
-    RAISE insufficient_privilege USING MESSAGE='source unit manager required';
-  END IF;
-  RETURN COALESCE((SELECT jsonb_agg(jsonb_build_object(
-    'id', u.id, 'title', u.title, 'organization', u.organization) ORDER BY u.title,u.id)
-    FROM public.units u WHERE u.organization=v_org AND public.get_is_manager_on_unit(u.id) AND NOT public.is_demo_unit(u.id)), '[]'::jsonb);
-END; $$;
-REVOKE ALL ON FUNCTION public.get_occasion_copy_units(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_copy_units(bigint) TO authenticated;
+
+
+
 
 CREATE OR REPLACE FUNCTION public.duplicate_occasion(oc bigint,p_target_unit bigint,p_locale text)
 RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
  SELECT (public.duplicate_occasion_client_sync_v1(oc,gen_random_uuid(),p_target_unit,p_locale)#>>'{data,occasionId}')::bigint;
 $$;
 REVOKE ALL ON FUNCTION public.duplicate_occasion(bigint,bigint,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_occasion(bigint,bigint,text) TO authenticated;
+
 
 
 -- Source: database/functions/eshop_forms/get_all_form_fields.sql
@@ -2186,155 +2150,9 @@ $$;
 
 
 -- Source: database/functions/eshop_forms/get_form_by_link.sql
-CREATE OR REPLACE FUNCTION public.get_form_bundle_internal(p_form_id bigint,p_allow_closed boolean DEFAULT false)
-RETURNS JSON LANGUAGE plpgsql SECURITY INVOKER
-SET search_path = public, extensions AS $$
-DECLARE
-    allData JSON;
-    generated_secret UUID := gen_random_uuid();
-    form_exists BOOLEAN;
-    is_editor_view BOOLEAN := false;
-    occ_id BIGINT;
-BEGIN
-    -- Check if the form exists
-    SELECT EXISTS (
-        SELECT 1
-        FROM public.forms
-        WHERE id = p_form_id
-    ) INTO form_exists;
-
-    IF NOT form_exists THEN
-        RETURN jsonb_build_object(
-            'code', 404,
-            'message', 'Form does not exist.'
-        );
-    END IF;
-
-    SELECT occasion INTO occ_id FROM public.forms WHERE id = p_form_id;
-    IF public.is_demo_occasion(occ_id) AND NOT public.can_read_demo_occasion(occ_id) THEN
-        RETURN jsonb_build_object('code',404,'message','Form does not exist.');
-    END IF;
-    is_editor_view := public.get_is_editor_order_view_on_occasion(occ_id);
 
 
-    IF NOT p_allow_closed AND NOT is_editor_view AND NOT EXISTS (
-        SELECT 1
-        FROM public.forms
-        WHERE id = p_form_id AND is_open = true
-    ) THEN
-        -- If the form is closed, retrieve only the 'header_off' message
-        SELECT jsonb_build_object(
-            'code', 400,
-            'data', jsonb_build_object(
-                'header_off', f.header_off,
-                'is_open', f.is_open
-            )
-        )
-        INTO allData
-        FROM public.forms f
-        WHERE f.id = p_form_id;
 
-        RETURN allData;
-    END IF;
-
-    -- If the form is open, retrieve the full form data including dynamic product availability
-    SELECT jsonb_build_object(
-        'code', 200,
-        'data', jsonb_build_object(
-            'demo_simulation', public.is_demo_occasion(f.occasion),
-            'capacity', public.get_form_capacity_snapshot_internal(f.id),
-            'registrationMode',public.get_form_registration_mode_internal(f.id),
-            'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
-            'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
-            'id', f.id,
-            'link', f.link,
-            'key', f.key,
-            'created_at', f.created_at,
-            'data', public.get_effective_form_data(f.id),
-            'type', f.type,
-            'title', f.title,
-            'is_open', f.is_open,
-            'header', f.header,
-            'header_off', f.header_off,
-            'occasion', jsonb_build_object(
-                'id', o.id,
-                'title', o.title,
-                'features', o.features,
-                'start_time', o.start_time
-            ),
-            'blueprint', CASE WHEN jsonb_path_exists(o.features,
-                '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN f.blueprint END,
-            'deadline_duration_seconds', f.deadline_duration_seconds,
-            'account_number', ba.account_number,
-            'secret', generated_secret,
-            'fields', (
-                SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'id', ff.id,
-                        'title', ff.title,
-                        'description', ff.description,
-                        'data', ff.data,
-                        'type', ff.type,
-                        'is_required', ff.is_required,
-                        'is_hidden', ff.is_hidden,
-                        'is_ticket_field', ff.is_ticket_field,
-                        'order', ff."order",
-                        'product_type_data', (
-                            CASE
-                                WHEN ff.product_type IS NOT NULL THEN
-                                    jsonb_build_object(
-                                        'id', pt.id,
-                                        'title', pt.title,
-                                        'description', pt.description,
-                                        'type', pt.type,
-                                        'data', pt.data,
-                                        'occasion', pt.occasion,
-                                        'products', (
-                                            SELECT jsonb_agg(
-                                                jsonb_build_object(
-                                                    'id', p.id,
-                                                    'title', p.title,
-                                                    'description', p.description,
-                                                    'price', p.price,
-                                                    'currency_code', p.currency_code,
-                                                    'data', p.data,
-                                                    'order', p."order",
-                                                    'ordered_count', (
-                                                        SELECT count(*)
-                                                        FROM eshop.order_product_ticket opt
-                                                        WHERE opt.product = p.id
-                                                    ),
-                                                    'maximum', p.maximum,
-                                                    'is_dynamically_available', is_product_dynamically_available(p.id)
-                                                ) ORDER BY COALESCE(p."order", 0)
-                                            )
-                                            FROM eshop.products p
-                                            WHERE p.product_type = pt.id
-                                              AND NOT p.is_hidden
-                                        )
-                                    )
-                                ELSE NULL
-                            END
-                        )
-                    ) ORDER BY COALESCE(ff."order", 0)
-                )
-                FROM public.form_fields ff
-                LEFT JOIN eshop.product_types pt ON ff.product_type = pt.id
-                WHERE ff.form = f.id AND ff.is_hidden = false
-            )
-        )
-    )
-    INTO allData
-    FROM public.forms f
-    LEFT JOIN eshop.bank_accounts ba ON f.bank_account = ba.id
-    LEFT JOIN public.occasions o ON f.occasion = o.id
-    WHERE f.id = p_form_id;
-
-    RETURN allData;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.get_form_bundle_internal(bigint,boolean) FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_form_by_link(form_link text)
 RETURNS json LANGUAGE sql SECURITY DEFINER
@@ -2943,8 +2761,8 @@ EXCEPTION WHEN OTHERS THEN
   RETURN jsonb_build_object('code',500,'message','Report could not be generated.');
 END;
 $$;
-REVOKE ALL ON FUNCTION public.get_report_ws(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_report_ws(text) TO authenticated;
+
+
 
 
 -- Source: database/functions/inventory/get_inventory_pools_by_occasion_link.sql
@@ -3126,7 +2944,7 @@ BEGIN
    FROM jsonb_array_elements(forms) f);
 END $$;
 REVOKE ALL ON FUNCTION public.get_forms_by_link(text,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_forms_by_link(text,text) TO authenticated;
+
 
 
 -- Source: database/functions/eshop_forms/get_all_forms_with_fields.sql
@@ -3254,8 +3072,8 @@ BEGIN
         'configuration','fields','products'))),'{}'::uuid[],
     jsonb_build_object('formId',v_form));
 END; $$;
-REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid) TO authenticated;
+
+
 
 
 -- Source: database/functions/others/get_occasion_seo_data.sql
@@ -3308,9 +3126,9 @@ END;
 $$;
 
 -- Grant access to anon
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_occasion_seo_data(TEXT) TO service_role;
+
+
+
 
 
 -- Source: database/functions/synchronization/sync_source_via_http.sql
@@ -3508,10 +3326,10 @@ END;
 $$;
 
 -- Security Hardening
-REVOKE EXECUTE ON FUNCTION public.sync_source_via_http(text) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.sync_source_via_http(text) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.sync_source_via_http(text) FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.sync_source_via_http(text) TO service_role;
+
+
+
+
 
 
 -- Source: database/functions/occasion_setup/drafts.sql
@@ -3533,15 +3351,7 @@ CREATE INDEX IF NOT EXISTS occasion_setup_drafts_unit_idx ON public.occasion_set
 ALTER TABLE public.occasion_setup_drafts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.occasion_setup_drafts FROM PUBLIC, anon, authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_occasion_setup_drafts(p_unit bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  RETURN COALESCE((SELECT jsonb_agg(to_jsonb(d) ORDER BY updated_at DESC)
-    FROM public.occasion_setup_drafts d WHERE unit = p_unit), '[]'::jsonb);
-END $$;
+
 
 -- Run the canonical creator inside a rollback-only subtransaction. Its
 -- complete configuration survives in a PL/pgSQL variable, but no occasion,
@@ -3575,55 +3385,14 @@ BEGIN
     FROM jsonb_array_elements(configuration->'forms') f),'[]'::jsonb));
   RETURN configuration;
 END $$;
-REVOKE ALL ON FUNCTION public.build_occasion_setup_configuration(bigint,uuid) FROM PUBLIC,anon,authenticated;
+
 
 -- Client-generated UUID makes canonical draft initialization safe to retry.
-CREATE OR REPLACE FUNCTION public.create_occasion_setup_draft(p_id uuid, p_unit bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts; configuration jsonb;
-BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  INSERT INTO public.occasion_setup_drafts(id,unit,organization,author)
-    SELECT p_id,id,organization,auth.uid() FROM public.units WHERE id = p_unit
-    ON CONFLICT (id) DO NOTHING;
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id;
-  IF d.unit IS DISTINCT FROM p_unit OR d.author IS DISTINCT FROM auth.uid() THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  IF NOT (d.data ? 'defaultConfiguration') THEN
-    configuration := public.build_occasion_setup_configuration(p_unit,p_id);
-    UPDATE public.occasion_setup_drafts SET data =
-      jsonb_build_object('defaultConfiguration',configuration,
-        'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
-      || d.data WHERE id = p_id RETURNING * INTO d;
-  END IF;
-  RETURN to_jsonb(d);
-END $$;
 
-CREATE OR REPLACE FUNCTION public.initialize_occasion_setup_draft_defaults(p_id uuid, p_expected_revision bigint)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts; configuration jsonb;
-BEGIN
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND OR auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(d.unit) OR public.get_is_manager_on_unit(d.unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  IF d.data ? 'defaultConfiguration' THEN RETURN to_jsonb(d); END IF;
-  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
-  END IF;
-  configuration := public.build_occasion_setup_configuration(d.unit,p_id);
-  UPDATE public.occasion_setup_drafts SET data =
-    jsonb_build_object('defaultConfiguration',configuration,
-      'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
-    || d.data, revision = revision+1, updated_at=now()
-    WHERE id=p_id RETURNING * INTO d;
-  RETURN to_jsonb(d);
-END $$;
-REVOKE ALL ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.initialize_occasion_setup_draft_defaults(uuid,bigint) TO authenticated;
+
+
+
+
 
 CREATE OR REPLACE FUNCTION public.save_occasion_setup_draft(p_id uuid, p_expected_revision bigint, p_data jsonb, p_step integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
@@ -3657,26 +3426,10 @@ BEGIN
   RETURN to_jsonb(d);
 END $$;
 
-CREATE OR REPLACE FUNCTION public.delete_occasion_setup_draft(p_id uuid, p_unit bigint, p_expected_revision bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE d public.occasion_setup_drafts;
-BEGIN
-  IF auth.uid() IS NULL OR NOT (public.get_is_editor_on_unit(p_unit) OR public.get_is_manager_on_unit(p_unit)) THEN
-    RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
-  END IF;
-  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id = p_id FOR UPDATE;
-  IF NOT FOUND THEN RETURN; END IF;
-  IF d.unit <> p_unit THEN RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501'; END IF;
-  IF d.revision IS DISTINCT FROM p_expected_revision THEN
-    RAISE EXCEPTION 'Draft changed in another session' USING ERRCODE = '40001';
-  END IF;
-  DELETE FROM public.occasion_setup_drafts WHERE id = p_id;
-END $$;
 
-REVOKE ALL ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_occasion_setup_drafts(bigint), public.create_occasion_setup_draft(uuid,bigint),
-  public.save_occasion_setup_draft(uuid,bigint,jsonb,integer), public.delete_occasion_setup_draft(uuid,bigint,bigint) TO authenticated;
+
+
+
 
 
 -- Source: database/functions/eshop_forms/create_form_ws.sql
@@ -3696,8 +3449,8 @@ BEGIN
       THEN 'Form created successfully' ELSE v_response#>>'{data,message}' END,
     'data',v_response#>'{data,form}');
 END; $$;
-REVOKE ALL ON FUNCTION public.create_form_ws(jsonb) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.create_form_ws(jsonb) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop/product_price_waves.sql
@@ -3718,17 +3471,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS planned_product_wave_target_unique
   ON eshop.planned_changes(wave_id,subject_id,change_type)
   WHERE wave_id IS NOT NULL AND NOT applied;
 
-CREATE OR REPLACE FUNCTION public.check_product_wave_editor(p_occasion bigint)
-RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.occasions o
-    JOIN public.user_info ui ON ui.organization=o.organization
-    WHERE o.id=p_occasion AND ui.id=auth.uid()) THEN
-    RAISE insufficient_privilege USING MESSAGE='ORDER_EDITOR_REQUIRED';
-  END IF;
-  PERFORM public.check_is_editor_order_on_occasion(p_occasion);
-END; $$;
-REVOKE ALL ON FUNCTION public.check_product_wave_editor(bigint) FROM PUBLIC,anon,authenticated;
+
+
 
 CREATE OR REPLACE FUNCTION public.create_product_price_wave(p_occasion_link text,p_change_time timestamptz)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -3758,107 +3502,20 @@ BEGIN
   IF p_change_time<=clock_timestamp() THEN RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
   RETURN to_jsonb(v_wave);
 END; $$;
-REVOKE ALL ON FUNCTION public.create_product_price_wave(text,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.create_product_price_wave(text,timestamptz) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.save_product_wave_target(
-  p_wave_id bigint,p_product_id bigint,p_expected_wave_revision bigint,p_price numeric,p_is_hidden boolean,
-  p_expected_price_revision bigint DEFAULT NULL,p_expected_visibility_revision bigint DEFAULT NULL
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_wave eshop.product_price_waves%ROWTYPE; v_product eshop.products%ROWTYPE;
-  v_price eshop.planned_changes%ROWTYPE; v_visibility eshop.planned_changes%ROWTYPE;
-BEGIN
-  SELECT * INTO STRICT v_wave FROM eshop.product_price_waves WHERE id=p_wave_id FOR UPDATE;
-  PERFORM public.check_product_wave_editor(v_wave.occasion);
-  IF v_wave.revision IS DISTINCT FROM p_expected_wave_revision THEN RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  IF v_wave.change_time<=clock_timestamp() THEN RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
-  SELECT * INTO STRICT v_product FROM eshop.products WHERE id=p_product_id FOR UPDATE;
-  IF v_product.occasion IS DISTINCT FROM v_wave.occasion OR NOT EXISTS(
-    SELECT 1 FROM eshop.product_types WHERE id=v_product.product_type AND occasion=v_wave.occasion) THEN
-    RAISE insufficient_privilege USING MESSAGE='PRODUCT_OCCASION_MISMATCH'; END IF;
-  IF v_wave.change_time<=clock_timestamp() THEN RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
-  -- Lock in the same subject/plan order as the executor and single-product editor.
-  PERFORM 1 FROM eshop.planned_changes WHERE subject_id=p_product_id AND wave_id=p_wave_id
-    AND NOT applied ORDER BY id FOR UPDATE;
-  SELECT * INTO v_price FROM eshop.planned_changes WHERE subject_id=p_product_id
-    AND wave_id=p_wave_id AND change_type='products.price' AND NOT applied;
-  SELECT * INTO v_visibility FROM eshop.planned_changes WHERE subject_id=p_product_id
-    AND wave_id=p_wave_id AND change_type='products.is_hidden' AND NOT applied;
-  IF v_price.revision IS DISTINCT FROM p_expected_price_revision OR
-    v_visibility.revision IS DISTINCT FROM p_expected_visibility_revision THEN
-    RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  IF EXISTS(SELECT 1 FROM eshop.planned_changes WHERE subject_id=p_product_id
-    AND change_time=v_wave.change_time AND NOT applied AND wave_id IS DISTINCT FROM p_wave_id
-    AND ((change_type='products.price' AND p_price IS NOT NULL) OR
-         (change_type='products.is_hidden' AND p_is_hidden IS NOT NULL))) THEN
-    RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  IF p_price IS NOT NULL THEN
-    PERFORM public.validate_product_price(p_price,v_product.data,v_product.currency_code);
-    IF v_price.id IS NULL THEN
-      INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
-        VALUES('products.price',p_product_id,p_price::text,v_wave.change_time,v_wave.occasion,p_wave_id);
-    ELSE
-      UPDATE eshop.planned_changes SET new_value=p_price::text,failed_at=NULL,failure_code=NULL,revision=revision+1 WHERE id=v_price.id;
-    END IF;
-  ELSIF v_price.id IS NOT NULL THEN DELETE FROM eshop.planned_changes WHERE id=v_price.id;
-  END IF;
-  IF p_is_hidden IS NOT NULL THEN
-    IF v_visibility.id IS NULL THEN
-      INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
-        VALUES('products.is_hidden',p_product_id,p_is_hidden::text,v_wave.change_time,v_wave.occasion,p_wave_id);
-    ELSE
-      UPDATE eshop.planned_changes SET new_value=p_is_hidden::text,failed_at=NULL,failure_code=NULL,revision=revision+1 WHERE id=v_visibility.id;
-    END IF;
-  ELSIF v_visibility.id IS NOT NULL THEN DELETE FROM eshop.planned_changes WHERE id=v_visibility.id;
-  END IF;
-END; $$;
-REVOKE ALL ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.move_product_price_wave(p_wave_id bigint,p_expected_revision bigint,p_change_time timestamptz)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_wave eshop.product_price_waves%ROWTYPE;
-BEGIN
-  SELECT * INTO STRICT v_wave FROM eshop.product_price_waves WHERE id=p_wave_id FOR UPDATE;
-  PERFORM public.check_product_wave_editor(v_wave.occasion);
-  IF v_wave.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  IF p_change_time IS NULL OR NOT isfinite(p_change_time) OR p_change_time<=clock_timestamp() THEN
-    RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
-  IF EXISTS(SELECT 1 FROM eshop.planned_changes WHERE wave_id=p_wave_id AND applied) THEN
-    RAISE invalid_parameter_value USING MESSAGE='WAVE_ALREADY_APPLIED'; END IF;
-  PERFORM 1 FROM eshop.products WHERE id IN(SELECT subject_id FROM eshop.planned_changes
-    WHERE wave_id=p_wave_id AND NOT applied) ORDER BY id FOR UPDATE;
-  PERFORM 1 FROM eshop.planned_changes WHERE wave_id=p_wave_id AND NOT applied ORDER BY subject_id,id FOR UPDATE;
-  IF EXISTS(SELECT 1 FROM eshop.planned_changes target JOIN eshop.planned_changes other
-    ON other.subject_id=target.subject_id AND other.change_type=target.change_type
-    WHERE target.wave_id=p_wave_id AND NOT target.applied AND NOT other.applied
-      AND other.wave_id IS DISTINCT FROM p_wave_id AND other.change_time=p_change_time) THEN
-    RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  IF EXISTS(SELECT 1 FROM eshop.planned_changes WHERE wave_id=p_wave_id AND applied) THEN
-    RAISE invalid_parameter_value USING MESSAGE='WAVE_ALREADY_APPLIED'; END IF;
-  IF p_change_time<=clock_timestamp() THEN RAISE invalid_parameter_value USING MESSAGE='FUTURE_TIME_REQUIRED'; END IF;
-  UPDATE eshop.product_price_waves SET change_time=p_change_time,revision=revision+1 WHERE id=p_wave_id RETURNING * INTO v_wave;
-  UPDATE eshop.planned_changes SET change_time=p_change_time,revision=revision+1,failed_at=NULL,failure_code=NULL
-    WHERE wave_id=p_wave_id AND NOT applied;
-  RETURN to_jsonb(v_wave);
-END; $$;
-REVOKE ALL ON FUNCTION public.move_product_price_wave(bigint,bigint,timestamptz) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.move_product_price_wave(bigint,bigint,timestamptz) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.cancel_product_price_wave(p_wave_id bigint,p_expected_revision bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_wave eshop.product_price_waves%ROWTYPE;
-BEGIN
-  SELECT * INTO STRICT v_wave FROM eshop.product_price_waves WHERE id=p_wave_id FOR UPDATE;
-  PERFORM public.check_product_wave_editor(v_wave.occasion);
-  IF v_wave.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='PRICE_CHANGE_CONFLICT'; END IF;
-  PERFORM 1 FROM eshop.products WHERE id IN(SELECT subject_id FROM eshop.planned_changes
-    WHERE wave_id=p_wave_id AND NOT applied) ORDER BY id FOR UPDATE;
-  DELETE FROM eshop.planned_changes WHERE wave_id=p_wave_id AND NOT applied;
-  DELETE FROM eshop.product_price_waves WHERE id=p_wave_id;
-END; $$;
-REVOKE ALL ON FUNCTION public.cancel_product_price_wave(bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.cancel_product_price_wave(bigint,bigint) TO authenticated;
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- Source: database/functions/eshop/get_blueprint_for_edit.sql
@@ -4210,8 +3867,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;
+
+
 
 
 -- Source: database/functions/eshop_orders/update_scan_code.sql
@@ -4630,41 +4287,7 @@ $$;
 
 
 -- Source: database/functions/eshop_orders/get_orders_tab_data.sql
-CREATE OR REPLACE FUNCTION public.get_orders_tab_data(
-    p_occasion_link TEXT
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SET search_path = public, extensions
-AS $$
-DECLARE
-    v_orders_data JSONB;
-    v_forms_data JSONB;
-BEGIN
 
-    SELECT get_orders(p_occasion_link, NULL, '{}'::jsonb) INTO v_orders_data;
-
-    IF (v_orders_data->>'code')::INT <> 200 THEN
-          RAISE EXCEPTION 'get_orders failed: %', v_orders_data->>'message';
-    END IF;
-
-    SELECT get_all_forms_with_fields(p_occasion_link) INTO v_forms_data;
-
-    IF (v_forms_data->>'code')::INT <> 200 THEN
-          RAISE EXCEPTION 'get_all_forms_with_fields failed: %', v_forms_data->>'message';
-    END IF;
-
-    -- No orders means no delivery status. Do not resolve an ambiguous event slug.
-    RETURN (v_orders_data->'data') || jsonb_build_object('forms', v_forms_data->'data', 'email_delivery',
-      CASE WHEN jsonb_array_length(v_orders_data#>'{data,orders}') = 0
-        THEN '{}'::jsonb
-        ELSE public.get_order_email_summaries(
-          (v_orders_data->>'occasion_id')::bigint,
-          ARRAY(SELECT (ord->>'id')::bigint
-            FROM jsonb_array_elements(v_orders_data#>'{data,orders}') ord))
-      END);
-END;
-$$;
 
 
 -- Source: database/functions/others/create_occasion_domain_command_internal_v1.sql
@@ -4871,133 +4494,26 @@ BEGIN
  RETURN receipt;
 END $$;
 REVOKE ALL ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.finalize_occasion_setup_draft(uuid,bigint,uuid) TO authenticated;
+
 
 
 -- Source: database/functions/eshop_waitlist/capabilities.sql
 -- Only visible name/surname definitions in this form can label a ticket.
-CREATE OR REPLACE FUNCTION public.get_waitlist_ticket_display_name_internal(p_form bigint,p_answers jsonb,p_contact jsonb DEFAULT '{}')
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(nullif((SELECT string_agg(btrim(answer.value#>>'{}'),' ' ORDER BY CASE definition.type WHEN 'name' THEN 0 ELSE 1 END,definition."order" NULLS LAST,definition.id)
- FROM jsonb_array_elements(CASE WHEN jsonb_typeof(p_answers->'fields')='array' THEN p_answers->'fields' ELSE '[]' END) field
- CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(field)='object' THEN field ELSE '{}' END) answer
- JOIN public.form_fields definition ON definition.id::text=answer.key
- WHERE definition.form=p_form AND definition.is_ticket_field AND NOT definition.is_hidden
- AND definition.type IN ('name','surname') AND jsonb_typeof(answer.value)='string' AND btrim(answer.value#>>'{}')<>''),''),
- nullif(btrim(concat_ws(' ',nullif(btrim(p_contact->>'name'),''),nullif(btrim(p_contact->>'surname'),''))),''));
-$$;
-REVOKE ALL ON FUNCTION public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(p_ticket bigint)
-RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT CASE WHEN t.state='storno' THEN CASE WHEN t.ticket_symbol IS NULL THEN 'withdrawn' ELSE 'cancelled' END
- WHEN t.state IS DISTINCT FROM 'waitlisted' THEN 'admitted'
- WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id AND s.outcome='pending' AND w.expires_at>clock_timestamp()) THEN 'offered'
- ELSE coalesce((SELECT CASE s.outcome WHEN 'expired' THEN 'offer_expired' WHEN 'declined' THEN 'offer_declined' WHEN 'cancelled' THEN 'offer_cancelled' WHEN 'pending' THEN 'offer_expired' ELSE 'waiting' END
- FROM eshop.waitlist_offer_slots s JOIN eshop.waitlist_offers w ON w.id=s.offer_id WHERE s.ticket_id=t.id ORDER BY w.created_at DESC,s.updated_at DESC,s.id DESC LIMIT 1),'waiting') END
- FROM eshop.tickets t WHERE t.id=p_ticket;
-$$;
-REVOKE ALL ON FUNCTION public.get_effective_waitlist_ticket_lifecycle_internal(bigint) FROM PUBLIC,anon,authenticated;
-CREATE OR REPLACE FUNCTION public.check_waitlist_scope_internal(p_order bigint,p_offer uuid,p_token text,p_actor uuid,p_operation text)
-RETURNS bigint LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; c eshop.waitlist_capabilities; occ public.occasions;
-BEGIN
- SELECT * INTO o FROM eshop.orders WHERE id=p_order; SELECT * INTO occ FROM public.occasions WHERE id=o.occasion;
- IF o.id IS NULL OR o.form IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- IF p_actor IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users WHERE occasion=o.occasion AND "user"=p_actor AND is_editor_order) THEN
-  IF p_offer IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE id=p_offer AND order_id=p_order AND form_id=o.form) THEN
-   RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF; RETURN o.form;
- END IF;
- IF p_operation IN ('send','cancel','proposal') OR p_token IS NULL OR length(p_token)<>64 THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- SELECT * INTO c FROM eshop.waitlist_capabilities WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
- AND organization_id=occ.organization AND form_id=o.form AND order_id=o.id AND (revoked_at IS NULL OR p_operation='read')
- AND ((p_operation='withdraw' AND kind='manage' AND o.state='waitlisted') OR
- (p_operation IN ('read','accept','decline') AND kind='offer' AND offer_id=p_offer));
- IF c.token_hash IS NULL THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- -- Expired offer links may read their own terminal state; writers recheck time under locks.
- IF p_operation<>'read' AND c.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'OFFER_EXPIRED'; END IF;
- RETURN o.form;
-END $$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_summary_internal(p_order bigint)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- WITH effective AS (SELECT public.get_effective_waitlist_ticket_lifecycle_internal(person.id) lifecycle
- FROM public.get_order_tickets_internal(p_order) person), p AS (SELECT lifecycle,count(*) n FROM effective GROUP BY lifecycle),
- s AS (SELECT count(*) n,min(w.expires_at) expiry FROM eshop.waitlist_offer_slots x JOIN eshop.waitlist_offers w ON w.id=x.offer_id
- JOIN public.get_order_tickets_internal(p_order) person ON person.id=x.ticket_id WHERE true AND x.outcome='pending' AND w.expires_at>clock_timestamp())
- SELECT jsonb_build_object('counts',coalesce((SELECT jsonb_object_agg(lifecycle,n) FROM p),'{}'),
- 'pendingPlaces',s.n,'earliestExpiry',s.expiry,'isActive',CASE WHEN o.state='waitlisted' THEN
-  coalesce((SELECT n>0 FROM p WHERE lifecycle='waiting'),false) OR s.n>0 ELSE o.state IS DISTINCT FROM 'storno' END,
- 'allowedActions',CASE WHEN o.state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
- WHEN o.state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
- WHEN o.state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
- ELSE jsonb_build_array('view','note','edit','cancel','send') END)
- FROM eshop.orders o CROSS JOIN s WHERE o.id=p_order;
-$$;
-CREATE OR REPLACE FUNCTION public.get_waitlist_offer_form(p_token text DEFAULT NULL,p_offer_id uuid DEFAULT NULL,p_order_id bigint DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE oid bigint; fid bigint; bundle jsonb; w eshop.waitlist_offers;
-BEGIN
- PERFORM set_config('response.headers','[{"Cache-Control":"no-store"},{"Referrer-Policy":"no-referrer"}]',true);
- SELECT * INTO w FROM eshop.waitlist_offers WHERE id=p_offer_id;
- oid:=coalesce(w.order_id,p_order_id);
- fid:=public.check_waitlist_scope_internal(oid,p_offer_id,p_token,auth.uid(),CASE WHEN p_offer_id IS NULL THEN 'withdraw' ELSE 'read' END);
- -- Terminal links explain their own outcome without exposing form answers,
- -- contact data, products, or payment details after capability revocation.
- IF p_offer_id IS NOT NULL AND (w.expires_at<=clock_timestamp() OR NOT EXISTS(
-  SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='pending')) THEN
-  RETURN jsonb_build_object('code',200,'registrationMode','offer',
-   'occasionTitle',(SELECT title FROM public.occasions WHERE id=(SELECT occasion FROM eshop.orders WHERE id=oid)),
-   'orderSymbol',(SELECT order_symbol FROM eshop.orders WHERE id=oid),
-   'timeZone',public.get_waitlist_form_timezone_internal(fid),
-   'communicationTone',public.get_effective_form_data(fid)->>'communication_tone',
-   'form',NULL,'formLink',(SELECT link FROM public.forms WHERE id=fid),
-   'offerId',w.id,'pendingCount',0,'expiresAt',w.expires_at,'serverTime',clock_timestamp(),
-   'offerStatus',CASE
-    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='declined') THEN 'declined'
-    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND outcome='cancelled') THEN 'cancelled'
-    WHEN EXISTS(SELECT 1 FROM eshop.waitlist_offer_slots WHERE offer_id=w.id AND (outcome='expired' OR outcome='pending' AND w.expires_at<=clock_timestamp())) THEN 'expired'
-    ELSE 'accepted' END,'tickets','[]'::jsonb,'slots','[]'::jsonb);
- END IF;
- -- A revoked token can explain a terminal outcome above, never reopen live data.
- IF p_token IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.waitlist_capabilities
-  WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex') AND revoked_at IS NOT NULL) THEN
-  RAISE EXCEPTION 'INVALID_CAPABILITY';
- END IF;
- bundle:=public.get_form_bundle_internal(fid,true)::jsonb;
- bundle:=jsonb_set(bundle,'{data,registrationMode}',to_jsonb(CASE WHEN p_offer_id IS NOT NULL THEN 'offer'::text ELSE 'waitlist' END),true);
- RETURN jsonb_build_object('code',200,'form',bundle->'data','registrationMode',CASE WHEN p_offer_id IS NOT NULL THEN 'offer' ELSE 'waitlist' END,
-  'timeZone',public.get_waitlist_form_timezone_internal(fid),
-  'orderSymbol',(SELECT order_symbol FROM eshop.orders WHERE id=oid),
-  'occasionTitle',(SELECT occ.title FROM public.occasions occ JOIN eshop.orders source ON source.occasion=occ.id WHERE source.id=oid),
-  'orderData',(SELECT data FROM eshop.orders WHERE id=oid),'pendingCount',(SELECT count(*) FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id AND outcome='pending' AND w.expires_at>clock_timestamp()),
-  'orderId',oid,'offerId',p_offer_id,'serverTime',clock_timestamp(),'expiresAt',w.expires_at,
-  'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'displayName',public.get_waitlist_ticket_display_name_internal(fid,data,CASE WHEN (SELECT count(*) FROM public.get_order_tickets_internal(oid))=1 THEN (SELECT source.data FROM eshop.orders source WHERE source.id=oid) ELSE '{}'::jsonb END),'answers',public.extract_ticket_answers_internal(fid,data),'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(id)) ORDER BY created_at,id),'[]')
-   FROM public.get_order_tickets_internal(oid)),
-  'slots',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'ticketId',ticket_id,'outcome',CASE WHEN outcome='pending' AND w.expires_at<=clock_timestamp() THEN 'expired' ELSE outcome END)),'[]')
-   FROM eshop.waitlist_offer_slots WHERE offer_id=p_offer_id),'waitlistSummary',public.get_waitlist_summary_internal(oid));
-EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
-END $$;
-REVOKE ALL ON FUNCTION public.check_waitlist_scope_internal(bigint,uuid,text,uuid,text),public.get_waitlist_summary_internal(bigint) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_offer_form(text,uuid,bigint) TO anon,authenticated,service_role;
 
-CREATE OR REPLACE FUNCTION public.get_waitlist_order_detail(p_order_id bigint)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders;
-BEGIN
- SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order_id;
- IF NOT public.get_is_editor_order_view_on_occasion(o.occasion) THEN RAISE insufficient_privilege USING MESSAGE='Order viewer required'; END IF;
- RETURN jsonb_build_object('orderId',o.id,'sourceOrderId',o.source_waitlist_order_id,
- 'occasionTitle',(SELECT title FROM public.occasions WHERE id=o.occasion),'waitlistSummary',public.get_waitlist_summary_internal(o.id),
- 'capacity',public.get_form_capacity_snapshot_internal(o.form),
- 'tickets',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'displayName',public.get_waitlist_ticket_display_name_internal(o.form,p.data,CASE WHEN (SELECT count(*) FROM public.get_order_tickets_internal(o.id))=1 THEN o.data ELSE '{}'::jsonb END),'createdAt',p.created_at,'waitlistQueueAt',p.waitlist_queue_at,'answers',public.extract_ticket_answers_internal(o.form,p.data),
-  'lifecycle',public.get_effective_waitlist_ticket_lifecycle_internal(p.id)) ORDER BY created_at,id),'[]') FROM public.get_order_tickets_internal(o.id) p),
- 'offers',(SELECT coalesce(jsonb_agg(to_jsonb(w)||jsonb_build_object('slots',(SELECT coalesce(jsonb_agg((to_jsonb(s)-'ticket_id')||jsonb_build_object('ticketId',s.ticket_id)),'[]') FROM eshop.waitlist_offer_slots s WHERE offer_id=w.id)) ORDER BY created_at),'[]')
- FROM eshop.waitlist_offers w WHERE order_id=o.id),
- 'linkedOrders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'orderSymbol',order_symbol,'state',state)),'[]') FROM eshop.orders WHERE source_waitlist_order_id=o.id));
-END $$;
-REVOKE ALL ON FUNCTION public.get_waitlist_order_detail(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_waitlist_order_detail(bigint) TO authenticated;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 -- Source: database/functions/public_links/legacy_readers.sql
@@ -6439,8 +5955,7 @@ RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,ext
 $$;
 REVOKE ALL ON FUNCTION public.update_occasion(jsonb),public.update_occasion_182(jsonb),
  public.duplicate_form(bigint),public.copy_form_with_fields(bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.update_occasion(jsonb),public.update_occasion_182(jsonb),
- public.duplicate_form(bigint),public.copy_form_with_fields(bigint) TO authenticated;
+
 -- Abandoned implementations have no remaining callers after the cutover.
 DROP FUNCTION IF EXISTS public.create_form_ws_obsolete_v1(jsonb);
 DROP FUNCTION IF EXISTS public.sync_source_via_http_internal_v1(text);

@@ -144,8 +144,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;
+
+
 
 -- Source: database/functions/eshop/product_price_waves.sql (save_product_wave_target)
 CREATE OR REPLACE FUNCTION public.save_product_wave_target(
@@ -206,6 +206,3 @@ BEGIN
   ELSIF v_visibility.id IS NOT NULL THEN DELETE FROM eshop.planned_changes WHERE id=v_visibility.id;
   END IF;
 END; $$;
-REVOKE ALL ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint) TO authenticated;
-
