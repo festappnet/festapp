@@ -14,8 +14,8 @@ void main() {
           expect(
             basics,
             appSupported
-                ? ['name', 'dates', 'presentation', 'link', 'promotion']
-                : ['name', 'dates', 'promotion'],
+                ? ['name', 'dates', 'kind', 'presentation', 'link', 'promotion']
+                : ['name', 'dates', 'kind', 'promotion'],
           );
         },
       );
@@ -159,10 +159,10 @@ void main() {
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
     expect(keys(formData(price: 0)), contains('appearance'));
-    expect(keys(formData(tickets: false)), contains('ticket'));
+    expect(keys(formData(tickets: false)), isNot(contains('ticket')));
     expect(keys(formData(tickets: false)), contains('pricing'));
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
-    expect(keys(formData(hiddenField: true)), contains('ticket'));
+    expect(keys(formData(hiddenField: true)), isNot(contains('ticket')));
     expect(
       keys(formData(enabled: false)),
       isNot(
@@ -193,7 +193,6 @@ void main() {
         2,
         3,
         5,
-        6,
       });
       final paid = formData();
       final pages = OccasionSetupStory.questions(false, data: paid);
@@ -211,14 +210,14 @@ void main() {
     },
   );
 
-  test('inactive payments resume at the next applicable question', () {
+  test('inactive saved payments resume at the kind decision', () {
     final data = {
       ...formData(price: 0),
       'step': 4,
       'storyQuestion': 'payments',
     };
     final pages = OccasionSetupStory.questions(false, data: data);
-    expect(pages[OccasionSetupStory.index(data, false)].key, 'communication');
+    expect(pages[OccasionSetupStory.index(data, false)].key, 'kind');
   });
 
   test(
@@ -338,7 +337,7 @@ void main() {
         final communication = pages.indexWhere((q) => q.key == 'communication');
         expect(pages[communication].step, 3);
         expect(pages[communication - 1].key, 'paymentTiming');
-        expect(pages[communication + 1].key, 'blueprint');
+        expect(pages[communication + 1].key, 'team');
         final form = pages.indexWhere((q) => q.key == 'form');
         final pricing = pages.indexWhere((q) => q.key == 'pricing');
         expect(OccasionSetupStory.completesRequiredStep(pages, form), isFalse);
@@ -377,11 +376,7 @@ void main() {
         'current_step': 5,
         'data': {
           'title': 'Ples',
-          'completedQuestions':
-              OccasionSetupStory.questions(true, data: {'title': 'Ples'})
-                  .where((q) => !q.optional)
-                  .map((q) => q.key)
-                  .toList(),
+          'completedQuestions': OccasionSetupStory.questions(true, data: {'title': 'Ples'}).where((q) => !q.optional).map((q) => q.key).toList(),
           'reviewed': true,
           'reviewConfirmed': true,
         },

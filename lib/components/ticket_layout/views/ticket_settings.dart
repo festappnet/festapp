@@ -25,7 +25,6 @@ class TicketSettings extends StatefulWidget {
   final TicketLayoutService service;
   final TicketPreviewOccasion? previewOccasion;
   final bool showScanningSettings;
-  final bool showPreview;
   TicketSettings(
       {super.key,
       required this.feature,
@@ -36,7 +35,6 @@ class TicketSettings extends StatefulWidget {
       this.borrowResourcesOnly = false,
       this.previewOccasion,
       this.showScanningSettings = true,
-      this.showPreview = true,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -58,7 +56,7 @@ class _TicketSettingsState extends State<TicketSettings> {
     super.didUpdateWidget(oldWidget);
     if (jsonEncode(oldWidget.previewOccasion?.toJson()) !=
         jsonEncode(widget.previewOccasion?.toJson())) {
-      if (widget.showPreview) refresh();
+      refresh();
     }
   }
 
@@ -74,8 +72,7 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void initState() {
     super.initState();
-    if (widget.showPreview)
-      WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
+    WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
   }
 
   @override
@@ -208,7 +205,7 @@ class _TicketSettingsState extends State<TicketSettings> {
           });
           if (jsonEncode(result.template.toJson()) != initialTemplate ||
               result.background != initialBackground) {
-            if (widget.showPreview) unawaited(refresh());
+            unawaited(refresh());
           }
         }
       });
@@ -241,7 +238,7 @@ class _TicketSettingsState extends State<TicketSettings> {
           Padding(
               padding: const EdgeInsets.all(12),
               child: Text(TicketLayoutStrings.missingBackground)),
-        if (widget.showPreview && thumbnail != null && !unsupported)
+        if (thumbnail != null && !unsupported)
           InkWell(
               onTap: () => showDialog<void>(
                   context: context,

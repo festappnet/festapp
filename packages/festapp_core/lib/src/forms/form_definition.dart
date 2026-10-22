@@ -36,7 +36,6 @@ class FormDefinition {
   final int? waitlistOfferDurationSeconds;
   final FormCapacityModel? capacity;
   final String? registrationMode;
-  final Map<String, dynamic>? payments;
   bool get isWaitlist => registrationMode == 'waitlist';
   final int? id;
   final DateTime? createdAt;
@@ -101,7 +100,6 @@ class FormDefinition {
     this.waitlistOfferDurationSeconds,
     this.capacity,
     this.registrationMode,
-    Map<String, dynamic>? payments,
     this.id,
     this.createdAt,
     this.title,
@@ -122,10 +120,7 @@ class FormDefinition {
     this.stats,
     this.isReminderEnabled,
     this.canDelete,
-  }) : payments = payments == null
-           ? null
-           : freezeJsonValue(payments) as Map<String, dynamic>,
-       data = data == null
+  }) : data = data == null
            ? null
            : freezeJsonValue(data) as Map<String, dynamic>,
        relatedFields = List.unmodifiable(relatedFields ?? const []);
@@ -146,9 +141,6 @@ class FormDefinition {
           ? FormCapacityModel.fromJson(json['capacity'])
           : null,
       registrationMode: json['registrationMode'],
-      payments: json['payments'] is Map
-          ? (json['payments'] as Map).cast<String, dynamic>()
-          : null,
       id: json['id'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -206,7 +198,6 @@ class FormDefinition {
     'waitlist_enabled': waitlistEnabled,
     'show_remaining_capacity': showRemainingCapacity,
     'waitlist_offer_duration_seconds': waitlistOfferDurationSeconds,
-    if (payments != null) 'payments': payments,
     'id': id,
     'created_at': createdAt?.toIso8601String(),
     'title': title,
@@ -464,7 +455,6 @@ class FormDefinition {
     Object? waitlistOfferDurationSeconds = _unchanged,
     Object? capacity = _unchanged,
     Object? registrationMode = _unchanged,
-    Object? payments = _unchanged,
     Object? id = _unchanged,
     Object? createdAt = _unchanged,
     Object? title = _unchanged,
@@ -506,9 +496,6 @@ class FormDefinition {
     registrationMode: identical(registrationMode, _unchanged)
         ? this.registrationMode
         : registrationMode as String?,
-    payments: identical(payments, _unchanged)
-        ? this.payments
-        : (payments as Map?)?.cast<String, dynamic>(),
     id: identical(id, _unchanged) ? this.id : id as int?,
     createdAt: identical(createdAt, _unchanged)
         ? this.createdAt

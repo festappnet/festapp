@@ -36,7 +36,8 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     required this.onSecondaryChanged,
     required this.onGradientChanged,
     required this.formPreview,
-    this.fontStyle,
+    this.ticketPreview,
+    this.ticketSettings,
     this.customLabel = 'Vlastní vzhled',
   });
 
@@ -53,9 +54,8 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
   final ValueChanged<Color> onSecondaryChanged;
   final ValueChanged<bool> onGradientChanged;
   final Widget formPreview;
-
-  /// Resolves the loaded font alias; the owner handles loading and failures.
-  final TextStyle Function(String family, TextStyle base)? fontStyle;
+  final Widget? ticketPreview;
+  final Widget? ticketSettings;
   final String customLabel;
 
   Widget _colorControl(BuildContext context, String label, Color color,
@@ -93,50 +93,20 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     );
   }
 
-  TextStyle _fontStyle(String family, TextStyle? base) {
-    final resolvedBase = base ?? const TextStyle(fontSize: 16);
-    return fontStyle?.call(family, resolvedBase) ?? resolvedBase;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return LayoutBuilder(builder: (context, constraints) {
       final narrow = constraints.maxWidth < 700;
-      final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        DropdownButtonFormField<String>(
-          key: ValueKey('appearance-font-$fontFamily'),
-          initialValue: fontFamilies.contains(fontFamily) ? fontFamily : null,
-          isExpanded: true,
-          itemHeight: null,
-          decoration: const InputDecoration(
-              labelText: 'Písmo', border: OutlineInputBorder()),
-          items: [
-            for (final family in fontFamilies)
-              DropdownMenuItem(
-                  value: family,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(family,
-                        style: _fontStyle(family, theme.textTheme.bodyLarge)),
-                  ))
-          ],
-          onChanged: (value) {
-            if (value != null) onFontChanged(value);
-          },
-        ),
-        const SizedBox(height: 24),
         Wrap(spacing: 12, runSpacing: 12, children: [
           for (final preset in presets)
             SizedBox(
-              width: largeText
-                  ? constraints.maxWidth
-                  : narrow
-                      ? (constraints.maxWidth < 360
-                          ? constraints.maxWidth
-                          : (constraints.maxWidth - 12) / 2)
-                      : (constraints.maxWidth - 24) / 3,
+              width: narrow
+                  ? (constraints.maxWidth < 360
+                      ? constraints.maxWidth
+                      : (constraints.maxWidth - 12) / 2)
+                  : (constraints.maxWidth - 24) / 3,
               child: Semantics(
                 selected: selectedPresetId == preset.id,
                 child: OutlinedButton(
@@ -172,19 +142,15 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                                 ))),
                         const SizedBox(height: 8),
                         Text(preset.label,
-                            style: _fontStyle(preset.fontFamily,
-                                theme.textTheme.titleMedium)),
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontFamily: preset.fontFamily)),
                         Text('Příběh naší akce',
-                            style: _fontStyle(
-                                preset.fontFamily, theme.textTheme.bodyLarge)),
-                        SizedBox(
-                          height: 20,
-                          child: selectedPresetId == preset.id
-                              ? const Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: Icon(Icons.check, size: 20))
-                              : null,
-                        ),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontFamily: preset.fontFamily)),
+                        if (selectedPresetId == preset.id)
+                          const Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: Icon(Icons.check, size: 20)),
                       ]),
                 ),
               ),
@@ -197,6 +163,20 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           tilePadding: EdgeInsets.zero,
           title: Text(customLabel),
           children: [
+            DropdownButtonFormField<String>(
+              initialValue:
+                  fontFamilies.contains(fontFamily) ? fontFamily : null,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                  labelText: 'Písmo', border: OutlineInputBorder()),
+              items: [
+                for (final family in fontFamilies)
+                  DropdownMenuItem(value: family, child: Text(family))
+              ],
+              onChanged: (value) {
+                if (value != null) onFontChanged(value);
+              },
+            ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: const Text('Dvoubarevný přechod'),
@@ -216,7 +196,51 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        formPreview,
+        if (ticketPreview == null)
+          formPreview
+        else if (narrow)
+          DefaultTabController(
+            length: 2,
+            child: Builder(builder: (context) {
+              final controller = DefaultTabController.of(context);
+              return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const TabBar(
+                        tabs: [Tab(text: 'Formulář'), Tab(text: 'Vstupenka')]),
+                    const SizedBox(height: 16),
+                    AnimatedBuilder(
+                        animation: controller,
+                        builder: (context, _) => controller.index == 0
+                            ? formPreview
+                            : ticketPreview!),
+                  ]);
+            }),
+          )
+        else
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                  Text('Formulář', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  formPreview
+                ])),
+            const SizedBox(width: 24),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                  Text('Vstupenka', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  ticketPreview!
+                ])),
+          ]),
+        if (ticketSettings != null) ...[
+          const SizedBox(height: 24),
+          ticketSettings!
+        ],
       ]);
     });
   }

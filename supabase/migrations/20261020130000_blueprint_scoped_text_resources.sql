@@ -42,3 +42,5 @@ BEGIN
   END LOOP;
  END LOOP;
 END $$;
+REVOKE ALL ON FUNCTION public.register_blueprint_text_resources(bigint,uuid,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.register_blueprint_text_resources(bigint,uuid,jsonb) TO service_role;

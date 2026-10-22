@@ -2,7 +2,6 @@
 abstract final class NavigationPaths {
   static const admin = 'admin';
   static const bankAccounts = 'bank-accounts';
-  static const cardPayments = 'card-payments';
   static const blueprint = 'blueprint';
   static const changes = 'changes';
   static const checkpoints = 'checkpoints';

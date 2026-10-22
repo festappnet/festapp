@@ -9,26 +9,10 @@
           "8WKBB6L8LT.festapp.festapp"
         ],
         "paths": [
-          "/stripe/pay",
-          "/stripe/return",
-          "/app/stripe/pay",
-          "/app/stripe/return",
           "/app/google-auth",
           "*"
         ],
         "components": [
-          {
-            "/": "/stripe/pay"
-          },
-          {
-            "/": "/stripe/return"
-          },
-          {
-            "/": "/app/stripe/pay"
-          },
-          {
-            "/": "/app/stripe/return"
-          },
           {
             "/": "/app/google-auth"
           },
