@@ -182,7 +182,13 @@
 body.dark-mode{--paper:var(--background-color,#232529);--surface:var(--surface-color,#2b2d31);--ink:#e3eaf4;--muted:#bdcadb;--accent:#80bdf2;--line:#43516a;--wash:#303b4e;color-scheme:dark}
 body.dark-mode .hero-air .ink{color:#80bdf2}
 body.dark-mode .hero-air .hero-copy{background:radial-gradient(ellipse at center,#232529f0 10%,#232529b8 52%,transparent 78%)}
-body.dark-mode .hero-air .actions>.text-link,body.dark-mode .payment-zero,body.dark-mode .pricing-note,body.dark-mode .technical-grid article,body.dark-mode .reference-controls button,body.dark-mode .variant-tabs button{background:#303b4ee6;color:var(--ink);border-color:var(--line)}
+body.dark-mode .actions>.text-link,body.dark-mode .technical-grid article,body.dark-mode .reference-controls button,body.dark-mode .variant-tabs button{background:#303b4ee6;color:var(--ink);border-color:var(--line)}
+body.dark-mode .direct-payment .payment-zero,body.dark-mode .pricing-note{background:transparent;border-color:var(--line)}
+body.dark-mode .bank-endpoint span{color:var(--ink)}
+body.dark-mode .bank-endpoint small{color:var(--muted)}
+body.dark-mode .bank-endpoint svg{stroke:var(--accent)}
+body.dark-mode .bank-connection{background:var(--line)}
+body.dark-mode .bank-connection i{background:var(--accent)}
 body.dark-mode .technical-grid a{color:#9bcffa}
 body.dark-mode .architectural-plan{stroke:#80bdf2}
 body.dark-mode .feature,body.dark-mode .feature:nth-of-type(even),body.dark-mode .feature#prehled{background:var(--paper)}

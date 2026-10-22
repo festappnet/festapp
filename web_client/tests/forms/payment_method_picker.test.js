@@ -19,3 +19,10 @@ test('A06/A24 one method is a summary; two methods have a labelled choice and in
 test('A07 recipient shown in the preview is a detached snapshot and names are text',t=>{
   const host=setup(t),raw=options();raw.recipient.name='<script>private</script>';const normalized=formPaymentOptions(raw);raw.recipient.connectionId='changed';renderPaymentMethodPicker(host,normalized,()=>{});assert.equal(normalized.recipient.connectionId,id);assert.equal(host.querySelector('script'),null);assert.match(host.textContent,/<script>/);
 });
+test('QR-only checkout keeps bank selected without displaying an unnecessary method section',t=>{
+  const host=setup(t);const values=[];
+  const state=renderPaymentMethodPicker(host,formPaymentOptions(null),value=>values.push(value));
+  assert.equal(host.hidden,true);assert.equal(state.selected,'bank');assert.deepEqual(values,['bank']);
+  host.replaceChildren();renderPaymentMethodPicker(host,formPaymentOptions(options()),()=>{});
+  assert.equal(host.hidden,false);assert.equal(host.querySelectorAll('input[type=radio]').length,2);
+});
