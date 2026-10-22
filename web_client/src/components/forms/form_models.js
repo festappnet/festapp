@@ -42,7 +42,6 @@ export class FormFieldModel {
         this.organizationIdentity = parseOrganizationIdentity(data.organizationIdentity);
         this.capacity = data.capacity || null;
         this.registrationMode = data.registrationMode || null;
-        this.payments = data.payments || null;
         this.waitlistEnabled = data.waitlist_enabled === true;
         this.id = data.id;
         this.createdAt = data.created_at ? new Date(data.created_at) : null;
@@ -119,7 +118,6 @@ export class FormModel {
     static metaCommunicationTone = "communication_tone";
 
     constructor(data = {}) {
-        this.payments = data.payments || null;
         this.organizationIdentity = parseOrganizationIdentity(data.organizationIdentity);
         this.capacity = data.capacity || null;
         this.registrationMode = data.registrationMode || null;

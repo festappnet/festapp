@@ -8,8 +8,7 @@ import {
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 const escapeContact = (value: unknown) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
-    const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
+export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string): string {
     const { name, surname, email, phone, note } = orderData;
 
     const tr = {
@@ -88,7 +87,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const meta = extractMetaSurcharge(product, depositFeature?.deposit_mode);
         if (!meta) return null;
         metaSurchargeAmounts.push(meta);
-        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, currencyFormat);
+        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, formatCurrency);
         return metaSurchargeDescription
             ? `${amountText} — ${metaSurchargeDescription}`
             : amountText;
@@ -98,7 +97,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const productsRows = ticket.products.map((product: any) => {
             const price = Number(product.price || 0);
             overallTotal += price;
-            const formattedPrice = currencyFormat(price, product.currency_code || currencyCode);
+            const formattedPrice = formatCurrency(price, product.currency_code || currencyCode);
 
             const escape = (value: unknown) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escape).join(': ');
@@ -142,7 +141,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     }).join("");
 
     // --- 3. Total Price ---
-    const formattedOverallTotal = currencyFormat(overallTotal, currencyCode);
+    const formattedOverallTotal = formatCurrency(overallTotal, currencyCode);
 
     // Per-currency meta surcharge sums (visual-only, NOT included in overallTotal).
     // Renders as separate lines under Total Price, one per currency.

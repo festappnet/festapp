@@ -1,4 +1,3 @@
-import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { PublicOrderStrings } from './public_order_strings.js';
 import { renderPaymentDetails } from './payment_details.js';
@@ -29,14 +28,8 @@ function section(host, title, className = '') {
 function fact(list, label, value) {
     const row = line(list, 'div', ''); line(row, 'dt', label); line(row, 'dd', value);
 }
-function renderOrderState(host, order, includeReference = true, hasTickets = false, onRefresh = null) {
+function renderOrderState(host, order, includeReference = true, hasTickets = false) {
     const payment = order.payment;
-    if (payment?.method === 'stripe') {
-        const statusHost = line(host, 'section', '');
-        if (includeReference) line(statusHost, 'p', `${overviewText('orderReference')} ${order.symbol}`);
-        renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh });
-        return statusHost;
-    }
     const state = order.state === 'storno' ? 'cancelled' : payment?.status || order.state;
     const complete = ['fully_paid', 'free'].includes(state);
     const overdue = payment?.instructionsAvailable && payment.overdue && !complete;
@@ -65,7 +58,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     }
     return text;
 }
-export function renderOrderOverview(host, data, onContinue, offerInPage = false, onDownload = null, onRefresh = null) {
+export function renderOrderOverview(host, data, onContinue, offerInPage = false, onDownload = null) {
     host.replaceChildren(); host.classList.add('order-overview');
     line(host, 'h1', `${overviewText('title')} ${data.root.symbol}`);
     line(host, 'p', data.root.title || '').className = 'overview-event-title';
@@ -79,7 +72,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         if (!data.orders.length) line(summary, 'p', overviewText('not_required_yet'));
     }
     const paymentLinks = new Map();
-    for (const order of data.orders) paymentLinks.set(order.id, renderOrderState(summary, order, !singleOrder, data.root.hasTickets, onRefresh));
+    for (const order of data.orders) paymentLinks.set(order.id, renderOrderState(summary, order, !singleOrder, data.root.hasTickets));
     if (!waiting && !data.orders.length) line(summary, 'p', overviewText('withdrawn'));
     for (const offer of data.offers.filter(o => o.pendingPlaces > 0)) line(summary, 'p', `${overviewText('offeredPlaces')}: ${offer.pendingPlaces} · ${overviewText('validUntil')}: ${date(offer.expiresAt)}`);
     if (onContinue) { const button = line(summary, 'button', overviewText('continue')); button.type = 'button'; button.onclick = onContinue; }
@@ -140,9 +133,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         renderOverviewCustomer(card, order.answers, `order:${order.id}`);
         renderAdmissions(card, data.people.filter(person => String(person.currentOrderId) === String(order.id)), order);
         const total = line(card, 'dl', ''); total.className = 'overview-order-total';
-        fact(total, overviewText('total'), (order.payment?.method === 'stripe' ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
+        fact(total, overviewText('total'), money(order.total, order.currency));
         const payment = order.payment;
-        if (payment?.method !== 'stripe' && payment) {
+        if (payment) {
             if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0) {
                 const amounts = line(card, 'dl', ''); amounts.className = 'overview-amounts';
                 fact(amounts, overviewText('received'), money(payment.received, order.currency));
@@ -266,7 +259,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                     link.download = `ticket_${String(symbol).replace(/[^a-zA-Z0-9_-]/g, '')}.pdf`;
                     document.body.appendChild(link); link.click(); link.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
+                });
             host.querySelectorAll('details[data-overview-key]').forEach(detail => { if (opened.has(detail.dataset.overviewKey)) detail.open = opened.get(detail.dataset.overviewKey); });
             host._overviewSnapshot = snapshot;
         }

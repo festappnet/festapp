@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:math' as math;
-import 'package:flutter/painting.dart';
 
 import '../../fonts/ticket_font_ids.dart';
 
@@ -123,43 +121,27 @@ class OccasionSetupAppearance {
             'schemaVersion': 3,
             'templates': {'wide': _template()},
           };
-    for (final entry in (layout['templates'] as Map).entries.toList()) {
-      layout['templates'][entry.key] =
-          styledTemplate(entry.value as Map, appearance);
+    final fontId = legacyTicketFontIds[fonts[appearance['fontFamily']]]!;
+    final colors = [appearance['primary'], appearance['secondary']];
+    // Palette and font change only style, preserving user geometry and content.
+    for (final t in (layout['templates'] as Map).values.cast<Map>()) {
+      t['fontId'] = fontId;
+      t['canvasColor'] = appearance['primary'];
+      t['canvasOpacity'] = 1;
+      if (appearance['gradient'] == true) {
+        t['canvasGradient'] = colors;
+      } else {
+        t.remove('canvasGradient');
+      }
+      t['qrAppearance'] = {'background': 'FFFFFF', 'opacity': 1, 'margin': 4};
+      for (final e in (t['elements'] as List).cast<Map>()) {
+        final style = e['style'] as Map;
+        style.remove('fontId');
+        style['color'] = e['binding'] == 'qr' ? '000000' : 'FFFFFF';
+      }
     }
     feature['layout'] = layout;
     data['ticketDraft'] = feature;
-  }
-
-  static Map<String, dynamic> styledTemplate(Map raw, Map appearance) {
-    final t = Map<String, dynamic>.from(jsonDecode(jsonEncode(raw)));
-    final fontId = legacyTicketFontIds[fonts[appearance['fontFamily']]];
-    if (fontId == null) return t;
-    final colors = [appearance['primary'], appearance['secondary']];
-    final luminance = colors
-        .take(appearance['gradient'] == true ? 2 : 1)
-        .map((hex) => Color(int.parse('ff$hex', radix: 16)).computeLuminance())
-        .toList();
-    final whiteContrast =
-        luminance.map((l) => 1.05 / (l + .05)).reduce(math.min);
-    final blackContrast =
-        luminance.map((l) => (l + .05) / .05).reduce(math.min);
-    final foreground = blackContrast > whiteContrast ? '000000' : 'FFFFFF';
-    t['fontId'] = fontId;
-    t['canvasColor'] = appearance['primary'];
-    t['canvasOpacity'] = 1;
-    if (appearance['gradient'] == true) {
-      t['canvasGradient'] = colors;
-    } else {
-      t.remove('canvasGradient');
-    }
-    t['qrAppearance'] = {'background': 'FFFFFF', 'opacity': 1, 'margin': 4};
-    for (final e in (t['elements'] as List).cast<Map>()) {
-      final style = e['style'] as Map;
-      style.remove('fontId');
-      style['color'] = e['binding'] == 'qr' ? '000000' : foreground;
-    }
-    return t;
   }
 
   static Map<String, dynamic> _template() {
@@ -171,21 +153,20 @@ class OccasionSetupAppearance {
       double h,
       double size, {
       int lines = 1,
-    }) =>
-        {
-          'id': binding,
-          'binding': binding,
-          'box': {'x': x, 'y': y, 'width': w, 'height': h},
-          'visible': true,
-          'locked': false,
-          'style': {
-            'fontSize': size,
-            'minFontSize': 6,
-            'maxLines': lines,
-            'color': binding == 'qr' ? '000000' : 'FFFFFF',
-            'align': 'left',
-          },
-        };
+    }) => {
+      'id': binding,
+      'binding': binding,
+      'box': {'x': x, 'y': y, 'width': w, 'height': h},
+      'visible': true,
+      'locked': false,
+      'style': {
+        'fontSize': size,
+        'minFontSize': 6,
+        'maxLines': lines,
+        'color': binding == 'qr' ? '000000' : 'FFFFFF',
+        'align': 'left',
+      },
+    };
     return {
       'page': {'width': 595.28, 'height': 841.89},
       'ticketArea': {'x': 0, 'y': 0, 'width': 595.28, 'height': 250.0},

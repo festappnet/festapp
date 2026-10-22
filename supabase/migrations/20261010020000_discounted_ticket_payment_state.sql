@@ -270,3 +270,5 @@ BEGIN
   RETURN public.update_ticket_products_wsv2(p_ticket_id, p_products);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.update_ticket_products_internal_v1(bigint,jsonb)
+  FROM PUBLIC, anon, authenticated;

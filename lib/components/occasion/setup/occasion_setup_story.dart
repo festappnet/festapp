@@ -19,6 +19,10 @@ class OccasionSetupStory {
       data['storyQuestion'] = data['sourceId'] != null ? 'source' : 'name';
       data['step'] = data['sourceId'] != null ? 0 : 1;
     }
+    if (data['storyQuestion'] == 'ticket') {
+      data['storyQuestion'] = 'appearance';
+      data['step'] = 2;
+    }
     if (data['storyQuestion'] == 'start' || data['storyQuestion'] == 'end')
       data['storyQuestion'] = 'dates';
     if (data['formDraft'] is Map)
@@ -38,27 +42,6 @@ class OccasionSetupStory {
 
   static bool hasTickets(Map<String, dynamic> data) =>
       _visibleFields(data).any((field) => field['type'] == 'ticket');
-
-  static void setTicketsEnabled(Map<String, dynamic> data, bool enabled) {
-    final form = data['formDraft'] as Map;
-    final fields = List<dynamic>.from(form['fields'] as List? ?? []);
-    final tickets =
-        fields.whereType<Map>().where((f) => f['type'] == 'ticket').toList();
-    if (tickets.isEmpty && enabled) {
-      fields.add(<String, dynamic>{
-        'type': 'ticket',
-        'is_ticket_field': true,
-        'is_required': true,
-        'is_hidden': false,
-        'order': -2
-      });
-    } else {
-      for (final field in tickets) {
-        field['is_hidden'] = !enabled;
-      }
-    }
-    form['fields'] = fields;
-  }
 
   static bool hasPaidProducts(Map<String, dynamic> data) =>
       _visibleFields(data).any((field) {
@@ -152,7 +135,6 @@ class OccasionSetupStory {
       const OccasionSetupQuestion(1, 'name'),
       const OccasionSetupQuestion(1, 'dates'),
       const OccasionSetupQuestion(2, 'appearance'),
-      if (form) const OccasionSetupQuestion(2, 'ticket'),
       if (appSupported) const OccasionSetupQuestion(1, 'presentation'),
       if (appSupported) const OccasionSetupQuestion(1, 'link'),
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
