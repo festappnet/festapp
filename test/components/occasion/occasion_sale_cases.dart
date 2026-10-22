@@ -352,6 +352,49 @@ void main() {
         startsWith('Prodej od '));
   });
   testWidgetsWithEnvironment(() => environment,
+      'scheduled mode seeds tomorrow once and preserves an edited start',
+      (tester) async {
+    final before = DateTime.now().add(const Duration(hours: 24));
+    final data = <String, dynamic>{
+      'saleMode': 'preparation',
+      'end': DateTime.now()
+          .add(const Duration(days: 30))
+          .toUtc()
+          .toIso8601String(),
+    };
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+          body: SingleChildScrollView(
+              child: StatefulBuilder(
+            builder: (context, setState) => OccasionSetupSaleSettings(
+                data: data,
+                onChanged: (patch) => setState(() => data.addAll(patch))),
+          )),
+        )));
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('scheduled');
+    await tester.pump();
+    final seeded = DateTime.parse(data['saleStart'] as String);
+    expect(seeded.isBefore(before), isFalse);
+    expect(seeded.difference(before).inSeconds, lessThan(10));
+    final edited =
+        DateTime.now().add(const Duration(days: 3)).toUtc().toIso8601String();
+    data['saleStart'] = edited;
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('preparation');
+    await tester.pump();
+    tester
+        .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+        .onChanged('scheduled');
+    await tester.pump();
+    expect(data['saleStart'], edited);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgetsWithEnvironment(() => environment,
       'scheduled picker stores UTC and countdown never changes the window',
       (tester) async {
     final oldLocation = tz.local;
@@ -440,11 +483,15 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, 'Kopírovat'), findsOneWidget);
+    await tester.ensureVisible(find.text('Spravovat akci'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Spravovat akci'));
     await tester.pumpAndSettle();
     expect(next, OccasionSetupNext.manage);
     expect(find.byType(OccasionSetupCompleted), findsNothing);
     await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Přejít do přehledu akcí'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Přejít do přehledu akcí'));
     await tester.pumpAndSettle();
@@ -522,7 +569,7 @@ void main() {
   });
 
   testWidgetsWithEnvironment(() => environment,
-      'paused card shows its label and lock with keyboard and tap details',
+      'paused card shows a neutral informational status and remains editable',
       (tester) async {
     var opened = 0;
     final occasion = OccasionModel(
@@ -556,19 +603,20 @@ void main() {
     expect(labelRect.top, greaterThanOrEqualTo(card.top + 12));
     expect(dateRect.right, lessThanOrEqualTo(icon.left));
     expect(icon.top, greaterThanOrEqualTo(card.top + 12));
-    final button = tester.widget<TextButton>(find.byType(TextButton));
-    expect(button.style!.backgroundColor!.resolve({}), Colors.transparent);
-    for (var i = 0;
-        i < 4 && find.textContaining('Pozastaveno\n').evaluate().isEmpty;
-        i++) {
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-      await tester.pumpAndSettle();
-    }
-    expect(find.textContaining('Pozastaveno\n'), findsOneWidget);
+    expect(find.byType(TextButton), findsNothing);
+    expect(
+        find.descendant(
+            of: find.byType(OccasionSaleBadge), matching: find.byType(Tooltip)),
+        findsNothing);
+    final info = tester.widget<Semantics>(find
+        .descendant(
+            of: find.byType(OccasionSaleBadge),
+            matching: find.byType(Semantics))
+        .first);
+    expect(info.properties.label, contains('Pozastaveno'));
     await tester.tap(find.byIcon(Icons.lock_outline));
-    await tester.pump();
-    expect(find.textContaining('Pozastaveno\n'), findsOneWidget);
-    expect(opened, 0);
+    expect(opened, 1,
+        reason: 'Status is part of the editable card, not a separate action');
     expect(tester.takeException(), isNull);
   });
 
@@ -606,9 +654,13 @@ void main() {
       expect(find.text('V prodeji 2/3'), findsNothing);
       await tester.tap(find.text('2/3'));
       await tester.pump();
-      expect(find.textContaining('Otevřené formuláře: 2/3'), findsOneWidget);
-      expect(opened, 0,
-          reason: 'Opening status must not navigate to the occasion');
+      final info = tester.widget<Semantics>(find
+          .descendant(
+              of: find.byType(OccasionSaleBadge),
+              matching: find.byType(Semantics))
+          .first);
+      expect(info.properties.label, contains('Otevřené formuláře: 2/3'));
+      expect(opened, 1);
       expect(tester.takeException(), isNull);
     });
   }
@@ -671,10 +723,13 @@ void main() {
           inactive ? lessThan(1.0) : equals(1.0));
       if (state == OccasionSaleState.waitlist) {
         expect(find.text('Náhradníci 1/2'), findsOneWidget);
-        final tooltip = tester.widget<Tooltip>(find.ancestor(
-            of: find.byType(TextButton), matching: find.byType(Tooltip)));
-        expect(tooltip.message, contains('Prodej končí:'));
-        expect(tooltip.message, isNot(contains('Prodej začíná:')));
+        final info = tester.widget<Semantics>(find
+            .descendant(
+                of: find.byType(OccasionSaleBadge),
+                matching: find.byType(Semantics))
+            .first);
+        expect(info.properties.label, contains('Předprodej končí:'));
+        expect(info.properties.label, isNot(contains('Předprodej začíná:')));
       }
       if (state == OccasionSaleState.finished) {
         expect(find.byType(OccasionSaleBadge), findsNothing);
@@ -733,10 +788,13 @@ void main() {
                 .style!
                 .fontSize,
             16);
-        final tooltip = tester.widget<Tooltip>(find.ancestor(
-            of: find.byType(TextButton), matching: find.byType(Tooltip)));
-        expect(tooltip.message, contains('Prodej začíná:'));
-        expect(tooltip.message, isNot(contains('Prodej končí:')));
+        final info = tester.widget<Semantics>(find
+            .descendant(
+                of: find.byType(OccasionSaleBadge),
+                matching: find.byType(Semantics))
+            .first);
+        expect(info.properties.label, contains('Předprodej začíná:'));
+        expect(info.properties.label, isNot(contains('Předprodej končí:')));
         expect(find.textContaining('Prodej od'), findsNothing);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());

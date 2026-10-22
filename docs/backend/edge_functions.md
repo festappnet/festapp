@@ -42,6 +42,7 @@ Production packaging still rejects that directory if reintroduced.
 | `request-account-deletion` | Creates an opaque deletion request and sends its confirmation link to the resolved delivery address. |
 | `send-app-links` | Sends CSM application links and records their delivery state idempotently. |
 | `send-email` | Enqueues transactional order email; legacy `processQueue` only wakes the canonical worker. Template codes: `TICKET_ORDER_STORNO`, `TICKET_ORDER_UPDATE`, `TICKET_ORDER_REMINDER`. Strategy Pattern for data gathering. |
+| `occasion-setup-email-preview` | User JWT and draft creation permission; exact saved revision and server-resolved confirmation template/wrapper. Synthetic content only, with no delivery, identity lookup, QR, invoice or attachment effects. |
 | `send-custom-email` | Validates editor role, renders/encrypts a snapshot, enqueues and awaits canonical provider acceptance. |
 | `send-sign-in-code` | Resets password and sends sign-in code through the delivery resolver (`email_delivery`, otherwise `email_readonly`). Used by admins/editors to invite users. |
 | `process-email-queue` | The only SES sender; drains all message kinds through the global SQL gate. |

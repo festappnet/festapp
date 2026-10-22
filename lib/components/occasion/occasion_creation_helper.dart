@@ -90,9 +90,15 @@ class OccasionCreationHelper {
     final formKey = GlobalKey<FormState>();
     String? title = AdministrationStrings.myFestival;
     String? link = '';
-    DateTime? startDate = DateTime.now()
-        .add(Duration(days: 30))
-        .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
+    final seed = DateTime.now().add(const Duration(days: 30));
+    DateTime? startDate = DateTime(seed.year, seed.month, seed.day, seed.hour)
+        .add(Duration(
+            minutes: ((seed.minute * 60 +
+                            seed.second +
+                            (seed.microsecond + seed.millisecond > 0 ? 1 : 0)) /
+                        1800)
+                    .ceil() *
+                30));
     DateTime? endDate = startDate
         .add(Duration(days: 3))
         .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);

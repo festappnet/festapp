@@ -107,7 +107,7 @@ export class PriceWidget {
         }
 
         const locale = LocalizationService.currentLocale;
-        const formattedPrice = formatPrice(totalPrice, currency, 0, locale);
+        const formattedPrice = formatPrice(totalPrice, currency, this.session.formModel.payments?.configured?.stripe ? 2 : 0, locale);
 
         // Per-currency meta surcharge lines (visual-only, NOT added to totalPrice).
         // Negative amounts (slevy) render with "−".

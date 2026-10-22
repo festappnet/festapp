@@ -5,6 +5,7 @@ import QRCode from 'npm:qrcode';
 import { Buffer } from 'node:buffer';
 import { PDFDocument } from 'npm:pdf-lib';
 import { parseLayout, preset, ticketPresets, TicketType } from '../_shared/ticketLayout.ts';
+import {ticketGallery, galleryBackgrounds, galleryBackground} from '../_shared/ticketGallery.ts';
 import { sampleData, type ProductCatalog, validateProductReferences } from '../_shared/ticketRenderData.ts';
 import { loadLayoutResources, generateTicketPdf, resolveTicketTemplate } from '../_shared/ticketGeneration.ts';
 import {TicketFontError,type TicketFont} from '../_shared/ticketFonts.ts';
@@ -102,11 +103,11 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
     if(resources.background){const doc=await PDFDocument.create();let img;try{img=await doc.embedPng(resources.background);}catch{img=await doc.embedJpg(resources.background);}width=img.width;height=img.height;}
-    const choices=ticketPresets();
+    const choices=readOnly?ticketPresets():ticketGallery();
     const initial=await resolveTicketTemplate({...occasion,features:[feature]},resources);
 
     if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')) {
-      const colored=[...Object.entries(choices).filter(([key])=>!key.startsWith('portrait')).map(([,t])=>t),...(type==='wide'&&!layout&&resources.background?[initial]:[])];
+      const colored=[...Object.entries(choices).filter(([key])=>['classic','compact','event'].includes(key)).map(([,t])=>t),...(type==='wide'&&!layout&&resources.background?[initial]:[])];
       for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
     }
     template??=initial;
@@ -119,7 +120,9 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     };
     const data=sampleData(scenario,previewOccasion,catalogError?undefined:products,template);
     const qr=QRCode.create(data[template.elements.find(e=>e.binding==='qr')!.id]!,{errorCorrectionLevel:'M'}).modules;
-    if(mode==='resolve') return boundedReply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,previewOccasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
+    const presetArtwork:Record<string,{background:string|null;image:string|null}>={};
+    if(mode==='resolve'&&!readOnly)for(const [key,url] of Object.entries(galleryBackgrounds))presetArtwork[key]={background:url,image:url?Buffer.from((await galleryBackground(url))!).toString('base64'):null};
+    if(mode==='resolve') return boundedReply(200,{catalogError,catalog:[...products.types.values()],missingBackground:resources.missingBackground===true,fonts:resources.fonts?Object.fromEntries(Object.entries(resources.fonts).map(([id,f])=>[id,fontReply(f)])):undefined,template,preset:initial,presets:choices,presetArtwork,presetBackgrounds:{portrait:null,portrait_compact:null,portrait_event:null},backgroundUrl:feature.background??null,data,qrMatrix:{size:qr.size,data:Array.from(qr.data)},scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,previewOccasion,products)])),background:resources.background?Buffer.from(resources.background).toString('base64'):null,logo:resources.logo?Buffer.from(resources.logo).toString('base64'):null,metrics:resources.metrics,font:Buffer.from(resources.font).toString('base64')});
     const result=await generateTicketPdf(data,resources,template,type,true);
     boundDocumentOutput(result.bytes,1,limits);
     return boundedReply(200,{file:Buffer.from(result.bytes).toString('base64'),warnings:result.warnings});

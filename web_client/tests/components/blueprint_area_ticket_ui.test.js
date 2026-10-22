@@ -43,3 +43,12 @@ test('standing summary and payload work without a duplicate admission product fi
     assert.equal(session.payload.ticket[0]._blueprintProduct,undefined);
     assert.equal(view.querySelectorAll('input[required]').length,0);
 });
+
+test('tickets without additional fields show their product without a placeholder', () => {
+    const model = new FormModel({key:'k',secret:'s',fields:[{id:99,type:'ticket',data:{max_tickets:5}}]});
+    const session = new FormSession(model);
+    session.setAreaQuantity({nodeId:'standing',productId:9},2,3,{id:9,title:'Standing admission',price:80,currency_code:'CZK'});
+    const view = TicketFieldBuilder.create(model.visibleFields[0],model,session);
+    assert.equal(view.querySelectorAll('.ticket-area-product').length,2);
+    assert.doesNotMatch(view.textContent,/Ticket details/);
+});

@@ -1,0 +1,5 @@
+ℹ tests 246
+ℹ suites 12
+ℹ pass 246
+ℹ fail 0
+ℹ skipped 0

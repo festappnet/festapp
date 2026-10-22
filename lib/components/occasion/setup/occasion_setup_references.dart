@@ -1,3 +1,4 @@
+import 'blueprint_setup_layout_draft.dart';
 import 'dart:convert';
 import 'occasion_setup_story.dart';
 
@@ -9,12 +10,15 @@ class OccasionSetupReferences {
 
   Map<int, Map> get types {
     final result = <int, Map>{};
-    for (final field in ((data['formDraft'] as Map?)?['fields'] as List? ?? []).whereType<Map>()) {
+    for (final field in ((data['formDraft'] as Map?)?['fields'] as List? ?? [])
+        .whereType<Map>()) {
       final type = field['product_type_data'] ?? field['product_type'];
-      if (type is Map && type['id'] is num) result[(type['id'] as num).toInt()] = type;
+      if (type is Map && type['id'] is num)
+        result[(type['id'] as num).toInt()] = type;
     }
     return result;
   }
+
   Map<int, Map> get seatProducts => {
         for (final type in types.values.where((type) => type['type'] == 'spot'))
           for (final product
@@ -23,7 +27,7 @@ class OccasionSetupReferences {
       };
   bool get blueprintActive =>
       OccasionSetupStory.formEnabled(data) &&
-      data['blueprintMode'] != 'Bez plánku';
+      SetupBlueprintConfiguration(data).active;
   Iterable<Map> get _blueprintBindings sync* {
     if (!blueprintActive) return;
     final draft = data['blueprintLayoutDraft'];

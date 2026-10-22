@@ -681,7 +681,7 @@ PY
 
     # Update Is App Supported
     if [ ! -z "$IS_APP_SUPPORTED" ]; then
-        sed_inplace "s|static const bool isAppSupported = .*;|static const bool isAppSupported = $IS_APP_SUPPORTED;|g" "$FLUTTER_CONFIG"
+        sed_inplace "s|static const bool isAppSupported = .*;|static const bool isAppSupported = bool.fromEnvironment('FESTAPP_APP_SUPPORTED', defaultValue: $IS_APP_SUPPORTED);|g" "$FLUTTER_CONFIG"
     fi
 
     # Keep Flutter's unit-level startup mode on the same canonical tenant flag

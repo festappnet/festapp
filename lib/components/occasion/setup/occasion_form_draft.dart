@@ -6,6 +6,7 @@ import '../occasion_model.dart';
 import '../occasion_sale_strings.dart';
 
 import 'package:festapp_core/eshop.dart';
+import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
@@ -129,4 +130,20 @@ void setDraftSeatSelection(Map<String, dynamic> data, bool enabled) {
       'order': fields.length
     });
   }
+}
+
+/// The displayed default does not become a form override on unrelated edits.
+int effectiveSetupDeadlineSeconds(Map<String, dynamic> data) {
+  final raw = (data['deadline'] as String? ?? '').trim();
+  final days = int.tryParse(raw);
+  final features = (((data['defaultConfiguration'] as Map?)?['occasion']
+              as Map?)?['features'] as List? ??
+          [])
+      .whereType<Map>();
+  final inherited = features
+      .where((f) => f['code'] == 'form')
+      .firstOrNull?['deadline_duration_seconds'] as num?;
+  return FormDefinition(
+          deadlineDurationSeconds: days == null ? null : days * 86400)
+      .effectiveDeadlineDurationSeconds(occasionDefault: inherited?.toInt());
 }

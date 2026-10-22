@@ -293,6 +293,59 @@
         "auth-session-create"
       ],
       "mutates_authority": true
+    },
+    "occasion-setup-email-preview": {
+      "trigger": "client-http",
+      "effects": ["database-read"],
+      "mutates_authority": false
+    },
+    "stripe-connect": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "stripe-connect-callback": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "stripe-checkout": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "stripe-return": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "stripe-read"
+      ],
+      "mutates_authority": false
+    },
+    "stripe-webhook": {
+      "trigger": "provider-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "stripe-reconcile": {
+      "trigger": "machine-http",
+      "effects": [
+        "database-rpc",
+        "stripe-api"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -358,7 +411,11 @@
       "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
       "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
       "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only",
-      "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt"
+      "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt",
+      "stripe-checkout": "scoped-expiring-order-pay-or-single-use-handoff-capability-immutable-recipient",
+      "stripe-return": "scoped-expiring-return-read-capability-no-payment-write",
+      "stripe-webhook": "bounded-raw-body-signature-timestamp-connected-account-mode-binding-atomic-inbox",
+      "stripe-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

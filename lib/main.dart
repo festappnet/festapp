@@ -1,3 +1,4 @@
+import 'package:fstapp/components/stripe_payments/stripe_payment_link_service.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
     show VenueLayoutLocalizations;
 import 'package:fstapp/startup/startup_language.dart';
@@ -49,7 +50,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:pwa_install/pwa_install.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-Future<void> main() async {
+Future<void> main() => startApplication();
+
+/// Local integration fixtures supply the same bootstrap with their schema adapter.
+Future<void> startApplication({Future<void> Function()? initialize}) async {
   debugProfileBuildsEnabled = true;
   configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,14 +63,22 @@ Future<void> main() async {
   } catch (_) {
     // A missing native link/storage plugin must not block existing sign-in.
   }
-  final initialRoute = GoogleAuthService.hasCallback
-      ? "/login"
-      : kIsWeb
-          ? initialRouteForUri(RouterService.getCurrentBrowserUri())
-          : WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+  try {
+    await StripePaymentLinkService.initialize()
+        .timeout(const Duration(seconds: 3));
+  } catch (_) {
+    // Missing native link support must not block startup. Never log link data.
+  }
+  final initialRoute = StripePaymentLinkService.inbox.pendingRoute ??
+      (GoogleAuthService.hasCallback
+          ? "/login"
+          : kIsWeb
+              ? initialRouteForUri(RouterService.getCurrentBrowserUri())
+              : nativeInitialRoute(
+                  WidgetsBinding.instance.platformDispatcher.defaultRouteName));
   runApp(FestappBootstrap(
     initialRoute: initialRoute,
-    initialize: initializeEverything,
+    initialize: initialize ?? initializeEverything,
     buildReadyApp: () => EasyLocalization(
       supportedLocales:
           AppConfig.availableLanguages().map((e) => e.locale).toList(),
@@ -80,6 +92,14 @@ Future<void> main() async {
 }
 
 NotificationReconnectCoordinator? _notificationReconnectCoordinator;
+
+String nativeInitialRoute(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null) return '/';
+  final stripeRoute = StripePaymentLinkInbox.routeForPath(uri.path);
+  if (stripeRoute != null) return stripeRoute;
+  return value;
+}
 
 String initialRouteForUri(Uri uri) {
   if (uri.path == '/app/google-auth') return '/login';
@@ -97,6 +117,9 @@ String initialRouteForUri(Uri uri) {
 }
 
 bool isUnitAdminStartupRoute(Uri uri) {
+  if (StripePaymentLinkInbox.routeForPath(uri.path) != null ||
+      uri.path == '/stripe/connect/callback' ||
+      uri.path == '/app/stripe/connect/callback') return true;
   if (RegExp(r'^/organizationEdit(?:/[1-9][0-9]*)?/?$').hasMatch(uri.path)) {
     return true;
   }
@@ -485,7 +508,45 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Offset _offset = Offset.zero;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      StripePaymentLinkService.attachNavigator((path) async {
+        if (!mounted || RouterService.router.currentPath == path) return;
+        if (await RetainedDraftGuard.instance
+            .confirmPath(RouterService.router, Uri.parse(path))) {
+          await RouterService.router.pushPath(path);
+        }
+      }, widget.initialRoute);
+    });
+  }
+
+  @override
+  void dispose() {
+    StripePaymentLinkService.detachNavigator();
+    super.dispose();
+  }
+
   Future<DeepLink> _resolveDeepLink(PlatformDeepLink platformDeepLink) async {
+    if (StripePaymentLinkService.isNativeMobile) {
+      final stripeRoute =
+          StripePaymentLinkInbox.routeForPath(platformDeepLink.uri.path);
+      if (stripeRoute != null) {
+        StripePaymentLinkService.capture(platformDeepLink.uri);
+        if (!platformDeepLink.initial &&
+            RouterService.router.currentPath == stripeRoute) {
+          return DeepLink.none;
+        }
+        if (!platformDeepLink.initial &&
+            !await RetainedDraftGuard.instance
+                .confirmPath(RouterService.router, Uri.parse(stripeRoute))) {
+          return DeepLink.none;
+        }
+        return DeepLink.path(stripeRoute, includePrefixMatches: false);
+      }
+    }
     if (GoogleAuthService.captureCallback(platformDeepLink.uri)) {
       return DeepLink.path('/login', includePrefixMatches: false);
     }

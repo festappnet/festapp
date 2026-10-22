@@ -1,3 +1,4 @@
+import 'blueprint_setup_layout_draft.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:festapp_core/eshop.dart';
@@ -90,7 +91,7 @@ class OccasionSetupPriceWaveDraft implements ProductPriceWaveActions {
       products: [
         for (final product in form.products)
           product.copyWith(
-            isUsedInBlueprint: data['blueprintMode'] != 'Bez plánku' &&
+            isUsedInBlueprint: SetupBlueprintConfiguration(data).active &&
                 (data['blueprintObjects'] as List? ?? [])
                     .whereType<Map>()
                     .any((o) => o['product'] == product.id),
@@ -162,6 +163,8 @@ class OccasionSetupPricing extends StatelessWidget {
                   context: context,
                   builder: (_) => ProductPriceWavesDialog(
                         occasionLink: '',
+                        occasionEnd:
+                            DateTime.tryParse(data['end'] as String? ?? ''),
                         initialBundle: draft.bundle(),
                         canEdit: true,
                         actions: draft,

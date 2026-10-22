@@ -65,6 +65,10 @@ class FormHolder {
   final List<String> phonePrefixes;
   final String? communicationTone;
   String? paymentType;
+  String? paymentMethod;
+  int? paymentAmountMinor;
+  String? paymentCurrency;
+  String? paymentConnectionId;
 
   TicketHolder? getTicket() =>
       fields.firstWhereOrNull((f) => f is TicketHolder) as TicketHolder?;

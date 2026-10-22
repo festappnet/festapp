@@ -27,20 +27,23 @@ class ProductInfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalPaid = paymentInfo?.paid ?? 0;
     final orderPrice = order.price ?? 0;
+    final stripe = paymentInfo?.isStripe ?? order.isStripePayment;
+    String amount(double value) => Utilities.formatPrice(context, value,
+        decimalDigits: stripe ? 2 : 0,
+        currencyCode:
+            stripe ? (paymentInfo?.currencyCode ?? order.currencyCode) : null);
     final isFullyPaid = totalPaid >= orderPrice && orderPrice > 0;
 
     return Column(
       children: [
-        _buildInfoRow(
-            context, OrdersStrings.infoTicketSymbol, ticket.ticketSymbol ?? "N/A"),
+        _buildInfoRow(context, OrdersStrings.infoTicketSymbol,
+            ticket.ticketSymbol ?? "N/A"),
         _buildInfoRow(
             context, OrdersStrings.infoEmail, order.data?["email"] ?? "N/A"),
         _buildInfoRow(context, OrdersStrings.infoOrderStatus,
             OrderModel.stateToLocale(order.state!)),
-        _buildInfoRow(
-            context,
-            OrdersStrings.infoPayment,
-            "${Utilities.formatPrice(context, totalPaid)} / ${Utilities.formatPrice(context, orderPrice)}",
+        _buildInfoRow(context, OrdersStrings.infoPayment,
+            "${amount(totalPaid)} / ${amount(orderPrice)}",
             valueColor: isFullyPaid ? Colors.green : Colors.orange.shade700),
         if (orderHistory.isNewerVersionAvailable)
           Padding(

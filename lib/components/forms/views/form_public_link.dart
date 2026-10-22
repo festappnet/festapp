@@ -9,7 +9,7 @@ import '../form_strings.dart';
 bool isValidPublicSlug(String value, {bool allowEmpty = false}) =>
     (allowEmpty && value.isEmpty) ||
     (value.length <= 80 &&
-        RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(value));
+        RegExp(r'^[a-z0-9]+(?:[-_][a-z0-9]+)*$').hasMatch(value));
 
 String publicLinkUrl(String link, {bool isForm = true}) =>
     '${AppConfig.webLink}/${isForm ? 'form/' : ''}${Uri.encodeComponent(link)}${isForm ? '' : '/event'}';

@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-21",
+  "sandboxOnly": true,
+  "productionChanges": false,
+  "platform": "acct_1USva6KFDUB0JGj3",
+  "organizer": "acct_1USvmwGTldKlAm7L",
+  "unit": 1,
+  "accountExistedBeforeThisAuthorization": true,
+  "accountOrigin": "Created in earlier explicitly authorized sandbox setup; this run selected that existing account.",
+  "fullAppStartAndCallbackVerified": true,
+  "loggedOutFestappCallbackThenLoginVerified": true,
+  "codeAndStateRemovedFromUrlBeforeLogin": true,
+  "callbackRetainedOnlyInProcessMemory": true,
+  "googleLogin": {
+    "provider": "Stripe-hosted Sign in with Google",
+    "observedGoogleScreen": "You are signing back in to Stripe",
+    "selectedExistingIdentity": true,
+    "googleContinueCompleted": true,
+    "stripeAccountSelectorReturned": true,
+    "sameAccountCallbackCommitted": true,
+    "passwordOrOtpReadOrEnteredByAgent": false
+  },
+  "canonicalResult": {
+    "state": "completed",
+    "connected": "true",
+    "unit": 1,
+    "account": "acct_1USvmwGTldKlAm7L",
+    "livemode": false,
+    "modelVerified": true
+  }
+}

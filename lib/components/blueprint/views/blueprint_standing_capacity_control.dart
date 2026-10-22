@@ -75,7 +75,9 @@ class _CapacityState extends State<BlueprintStandingCapacityControl> {
         onRedo: widget.controller.layout.redo,
         child: EditorNumberScroll(
           enabled: widget.enabled,
-          step: 1, min: 0, max: 1000000,
+          step: 1,
+          min: 0,
+          max: 1000000,
           onChanged: commit,
           child: TextField(
             key: const ValueKey('standing-capacity-field'),

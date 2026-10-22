@@ -15,7 +15,7 @@ void main() {
             basics,
             appSupported
                 ? ['name', 'dates', 'presentation', 'link', 'promotion']
-                : ['name', 'dates', 'presentation', 'promotion'],
+                : ['name', 'dates', 'promotion'],
           );
         },
       );
@@ -100,7 +100,7 @@ void main() {
           expect(pages.last.key, 'review');
           expect(
             pages.where((q) => !q.optional).map((q) => q.step).toSet(),
-            appSupported ? {0, 1, 2, 3, 4, 5} : {0, 1, 2, 3, 4, 5, 6},
+            appSupported ? {1, 2, 3, 4, 5} : {1, 2, 3, 4, 5, 6},
           );
         },
       );
@@ -154,15 +154,15 @@ void main() {
         ).map((q) => q.key).toList();
     expect(
       keys(formData()),
-      containsAll(['form', 'pricing', 'payments', 'ticket']),
+      containsAll(['form', 'pricing', 'payments', 'appearance']),
     );
     expect(keys(formData(price: 0)), isNot(contains('pricing')));
     expect(keys(formData(price: 0)), isNot(contains('payments')));
-    expect(keys(formData(price: 0)), contains('ticket'));
-    expect(keys(formData(tickets: false)), isNot(contains('ticket')));
+    expect(keys(formData(price: 0)), contains('appearance'));
+    expect(keys(formData(tickets: false)), contains('ticket'));
     expect(keys(formData(tickets: false)), contains('pricing'));
     expect(keys(formData(hiddenProduct: true)), isNot(contains('payments')));
-    expect(keys(formData(hiddenField: true)), isNot(contains('ticket')));
+    expect(keys(formData(hiddenField: true)), contains('ticket'));
     expect(
       keys(formData(enabled: false)),
       isNot(
@@ -182,14 +182,13 @@ void main() {
     () {
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), false),
-        {0, 1, 5},
+        {1, 2, 5},
       );
       expect(
         OccasionSetupStory.applicableSteps(formData(enabled: false), true),
-        {0, 1, 2, 5},
+        {1, 2, 5},
       );
       expect(OccasionSetupStory.applicableSteps(formData(price: 0), false), {
-        0,
         1,
         2,
         3,
@@ -212,7 +211,7 @@ void main() {
     },
   );
 
-  test('disabled payments resume forward instead of restarting the wizard', () {
+  test('inactive payments resume at the next applicable question', () {
     final data = {
       ...formData(price: 0),
       'step': 4,
@@ -255,44 +254,17 @@ void main() {
     },
   );
 
-  test(
-    'scanner is opt-in, requires tickets and adds no readiness requirement',
-    () {
-      final base = formData();
-      final defaults = OccasionSetupStory.questions(false, data: base);
-      expect(defaults.any((question) => question.key == 'scanner'), isFalse);
-      final configured = {...base, 'configureScanning': true};
-      final pages = OccasionSetupStory.questions(false, data: configured);
-      final index = pages.indexWhere((question) => question.key == 'scanner');
-      expect(index, greaterThan(0));
-      expect(pages[index].optional, isTrue);
-      expect(pages[index - 1].key, 'ticket');
-      expect(
-        OccasionSetupStory.completesRequiredStep(pages, index - 1),
-        isTrue,
-      );
-      expect(OccasionSetupStory.completesRequiredStep(pages, index), isFalse);
-      expect(
-        OccasionSetupStory.applicableSteps(configured, false),
-        OccasionSetupStory.applicableSteps(base, false),
-      );
-      expect(
-        OccasionSetupStory.index({
-          ...configured,
-          'step': 2,
-          'storyQuestion': 'scanner',
-        }, false),
-        index,
-      );
-      expect(
-        OccasionSetupStory.questions(
-          false,
-          data: {...formData(tickets: false), 'configureScanning': true},
-        ).any((question) => question.key == 'scanner'),
-        isFalse,
-      );
-    },
-  );
+  test('scanner is absent and old questions resume safely', () {
+    final configured = {...formData(), 'configureScanning': true};
+    final pages = OccasionSetupStory.questions(false, data: configured);
+    expect(pages.any((q) => q.key == 'scanner'), isFalse);
+    final restored = OccasionSetupStory.index(
+        {...configured, 'step': 2, 'storyQuestion': 'scanner'}, false);
+    expect(pages[restored].key, 'team');
+    final presentation = OccasionSetupStory.index(
+        {...configured, 'step': 1, 'storyQuestion': 'presentation'}, false);
+    expect(pages[presentation].key, 'form');
+  });
 
   test(
     'paid app events have a dedicated payments question before blueprint',
@@ -326,23 +298,23 @@ void main() {
   );
 
   test(
-    'payment confirmation requires an account and derives currency context',
+    'payment readiness requires a verified account and derives currency context',
     () {
-      expect(OccasionSetupStory.paymentAccountConfirmed({}), isFalse);
+      expect(OccasionSetupStory.paymentAccountReady({}), isFalse);
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({'bankAccountId': 7}),
+        OccasionSetupStory.paymentAccountReady({'bankAccountId': 7}),
         isFalse,
       );
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({
-          'bankAccountConfirmed': true,
+        OccasionSetupStory.paymentAccountReady({
+          'bankAccountFingerprint': 'verified',
         }),
         isFalse,
       );
       expect(
-        OccasionSetupStory.paymentAccountConfirmed({
+        OccasionSetupStory.paymentAccountReady({
           'bankAccountId': 7,
-          'bankAccountConfirmed': true,
+          'bankAccountFingerprint': 'verified',
         }),
         isTrue,
       );
@@ -396,7 +368,7 @@ void main() {
   );
 
   test(
-    'completed required steps reach 100% without organization verification',
+    'completed active questions reach 100% after explicit review',
     () {
       final draft = OccasionSetupDraft.fromJson({
         'id': 'draft',
@@ -405,7 +377,13 @@ void main() {
         'current_step': 5,
         'data': {
           'title': 'Ples',
-          'completed': OccasionSetupDraft.supportedSteps,
+          'completedQuestions':
+              OccasionSetupStory.questions(true, data: {'title': 'Ples'})
+                  .where((q) => !q.optional)
+                  .map((q) => q.key)
+                  .toList(),
+          'reviewed': true,
+          'reviewConfirmed': true,
         },
       });
       expect(draft.progress, 100);

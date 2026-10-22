@@ -47,7 +47,13 @@ BEGIN
         public.bank_sync_warning(ba.id) AS bank_sync_warning
     FROM eshop.bank_accounts ba
     JOIN eshop.unit_bank_accounts uba ON ba.id = uba.bank_account
-    LEFT JOIN eshop.bank_account_users membership ON membership.bank_account=ba.id AND membership."user"=auth.uid()
+    -- Historical memberships need not be unique. Preserve any active admin
+    -- grant while returning one row for each linked bank account.
+    LEFT JOIN (
+      SELECT grants.bank_account,bool_or(grants.is_admin) AS is_admin
+      FROM eshop.bank_account_users grants WHERE grants."user"=auth.uid()
+      GROUP BY grants.bank_account
+    ) membership ON membership.bank_account=ba.id
     LEFT JOIN (SELECT DISTINCT bank_account FROM public.demo_occasions) protected ON protected.bank_account=ba.id
     WHERE uba.unit = p_unit_id
     AND ba.type != 'CASH'

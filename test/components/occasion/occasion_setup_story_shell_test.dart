@@ -12,6 +12,7 @@ void main() {
     final font = FontLoader('Futura')
       ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
     await font.load();
+    await (FontLoader('MaterialIcons')..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
   });
   for (final variant in [
     (name: 'mobile', size: const Size(375, 812), scale: 1.0, dark: false),
@@ -46,20 +47,24 @@ void main() {
             child: Scaffold(
               body: OccasionSetupStoryShell(
                 questionTitles: const [
-                  'Jak má nová událost vzniknout?',
+                  'Jak chceš začít?',
                   'Jak se událost jmenuje?',
-                  'Kdy se událost koná?',
-                  'Jak bude událost představena?',
+                  'Kdy začíná?',
+                  'Kdy končí?',
                   'Jak má vypadat formulář?',
-                  'Bude součástí prodeje plánek míst?',
-                  'Jak budou nastavené platby?',
+                  'Potřebuješ plánek?',
+                  'Jak nastavíme platby?',
                   'Jak má vypadat vstupenka?',
-                  'Ověření organizace (nepovinné)',
+                  'Chceš ověřit organizaci?',
                   'Je vše připravené?',
                 ],
                 currentIndex: 1,
+                onQuestionSelected: (_) {},
+                completedKeys: const {'0', '3'},
+                visitedKeys: const {'4'},
                 eventTitle: 'Koncept · Podzimní slavnost',
                 status: 'Uloženo',
+                readiness: 'Dokončené nastavení: 20 %',
                 questionCount: 'Otázka 2 z 10',
                 segmentStates: const ['Dokončeno', 'Právě teď', 'Následuje'],
                 leaveLabel: 'Odejít',
@@ -105,46 +110,25 @@ void main() {
     });
   }
 
-  testWidgets(
-      'named question list supports touch navigation without a second percentage',
-      (tester) async {
-    var selected = -1;
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: OccasionSetupStoryShell(
-      questionTitles: const ['Source', 'Name', 'Review'],
-      currentIndex: 0,
-      eventTitle: 'Draft',
-      status: 'Saved',
-      questionCount: 'Question 1 of 3',
-      segmentStates: const ['Completed', 'Current', 'Upcoming'],
-      leaveLabel: 'Leave',
-      backLabel: 'Back',
-      onLeave: () {},
-      onBack: null,
-      onQuestionSelected: (index) => selected = index,
-      child: const Text('Content'),
-    ))));
-    await tester.tap(find.text('Question 1 of 3'));
-    await tester.pumpAndSettle();
-    expect(find.widgetWithText(ListTile, 'Review'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ListTile, 'Review'));
-    await tester.pumpAndSettle();
-    expect(selected, 2);
-    expect(find.byType(ListTile), findsNothing);
-    expect(find.textContaining('%'), findsNothing);
-  });
-
-  testWidgets('segments expose current position and journey states',
+  testWidgets('navigation uses supplied states and supports click and keyboard',
       (tester) async {
     final semantics = tester.ensureSemantics();
+    final selected = <String>[];
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: OccasionSetupStoryShell(
           questionTitles: const ['Source', 'Name', 'Start'],
+          questionKeys: const ['source', 'name', 'start'],
+          questionLabels: const ['Source', 'Name', 'Start'],
+          questionSections: const ['Basics', 'Basics', 'Finish'],
+          completedKeys: const {'start'},
+          visitedKeys: const {'source'},
+          visitedLabel: 'In progress',
+          onQuestionSelected: selected.add,
           currentIndex: 1,
           eventTitle: 'Draft',
           status: 'Saved',
+          readiness: 'Required setup: 20 %',
           questionCount: 'Question 2 of 3',
           segmentStates: const ['Completed', 'Current', 'Upcoming'],
           leaveLabel: 'Leave',
@@ -156,9 +140,9 @@ void main() {
       ),
     ));
     for (final pair in [
-      ('Source', 'Completed'),
+      ('Source', 'In progress'),
       ('Name', 'Current'),
-      ('Start', 'Upcoming'),
+      ('Start', 'Completed'),
     ]) {
       final segment = find.byWidgetPredicate((widget) =>
           widget is Semantics &&
@@ -166,40 +150,127 @@ void main() {
           widget.properties.value == pair.$2);
       expect(segment, findsOneWidget);
     }
-    expect(find.textContaining('%'), findsNothing);
+    expect(find.text('Required setup: 20 %'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('story-target-start')));
+    expect(selected, ['start']);
+    // Request the Material button's actual focus node, then activate by Space.
+    final labelContext =
+        tester.element(find.descendant(of: find.byKey(const ValueKey('story-target-source')), matching: find.byType(Icon)).first);
+    Focus.of(labelContext).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    expect(selected.last, 'source');
+    await tester.tap(find.byTooltip('Všechny otázky'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2 Name · Current'));
+    await tester.pumpAndSettle();
+    expect(selected.last, 'name');
     semantics.dispose();
   });
-  testWidgets('segments navigate directly to upcoming and previous questions',
+  testWidgets('optional targets do not consume question numbers',
       (tester) async {
-    var current = 1;
     await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: StatefulBuilder(builder: (context, update) {
-          return OccasionSetupStoryShell(
-            questionTitles: const ['Source', 'Name', 'Review'],
-            currentIndex: current,
-            eventTitle: 'Draft',
-            status: 'Saved',
-            questionCount: 'Question ${current + 1} of 3',
-            segmentStates: const ['Completed', 'Current', 'Upcoming'],
-            leaveLabel: 'Leave',
-            backLabel: 'Back',
-            onLeave: () {},
-            onBack: () {},
-            onQuestionSelected: (index) => update(() => current = index),
-            child: Text('Content $current'),
-          );
-        }),
-      ),
-    ));
-    await tester.tap(find.byTooltip('Review'));
+        home: Scaffold(
+            body: OccasionSetupStoryShell(
+      questionTitles: const [
+        'Choose source',
+        'Enter name',
+        'Choose appearance',
+        'Verify organization'
+      ],
+      questionKeys: const ['source', 'name', 'appearance', 'verification'],
+      questionLabels: const ['Source', 'Name', 'Appearance', 'Verification'],
+      questionNumbers: const [null, 1, 4, null],
+      currentIndex: 1,
+      eventTitle: 'Draft',
+      status: 'Saved',
+      readiness: 'Incomplete',
+      questionCount: 'Question 1 of 4',
+      segmentStates: const ['Completed', 'Current', 'Upcoming'],
+      leaveLabel: 'Leave',
+      backLabel: 'Back',
+      onLeave: () {},
+      onBack: () {},
+      onQuestionSelected: (_) {},
+      child: const Text('Question content'),
+    ))));
     await tester.pumpAndSettle();
-    expect(find.text('Content 2'), findsOneWidget);
-    expect(find.textContaining('%'), findsNothing);
-    await tester.tap(find.byTooltip('Source'));
+    expect(find.text('1 Name'), findsOneWidget);
+    for (final label in ['Source', '4 Appearance', 'Verification']) {
+      expect(find.text(label), findsNothing);
+    }
+    expect(find.text('1 Source'), findsNothing);
+    expect(find.text('4 Verification'), findsNothing);
+    await tester.tap(find.byTooltip('Všechny otázky'));
     await tester.pumpAndSettle();
-    expect(find.text('Content 0'), findsOneWidget);
-    expect(tester.getSize(find.byTooltip('Source')).height,
-        greaterThanOrEqualTo(44));
+    for (final label in [
+      'Source · Upcoming',
+      '1 Name · Current',
+      '4 Appearance · Upcoming',
+      'Verification · Upcoming'
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
   });
+  for (final width in [320.0, 375.0, 812.0, 1440.0]) {
+    testWidgets(
+        '18 story targets fit width $width with only current label expanded',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final selected = <String>[];
+      for (final active in [0, 8, 17]) {
+        await tester.pumpWidget(MaterialApp(
+            home: Scaffold(
+                body: OccasionSetupStoryShell(
+          questionTitles: List.generate(18, (i) => 'Full question $i'),
+          questionLabels: List.generate(18, (i) => 'Step $i'),
+          questionKeys: List.generate(18, (i) => 'key-$i'),
+          currentIndex: active,
+          completedKeys: const {'key-1'},
+          visitedKeys: const {'key-4'},
+          onQuestionSelected: selected.add,
+          eventTitle: 'Draft',
+          status: 'Saved',
+          readiness: 'In progress',
+          questionCount: 'Question ${active + 1} of 18',
+          segmentStates: const ['Completed', 'Current', 'Upcoming'],
+          leaveLabel: 'Leave',
+          backLabel: 'Back',
+          onLeave: () {},
+          onBack: () {},
+          child: const Text('Question content'),
+        ))));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final track =
+            tester.getRect(find.byKey(const ValueKey('story-progress-track')));
+        expect(track.left, greaterThanOrEqualTo(0));
+        expect(track.right, lessThanOrEqualTo(width));
+        expect(find.text('${active + 1} Step $active'), findsOneWidget);
+        for (var i = 0; i < 18; i++) {
+          if (i != active) expect(find.text('${i + 1} Step $i'), findsNothing);
+          final marker = find.byKey(ValueKey('story-marker-key-$i'));
+          if (marker.evaluate().isNotEmpty) {
+            final rect = tester.getRect(marker);
+            expect(rect.left, greaterThanOrEqualTo(track.left));
+            expect(rect.right, lessThanOrEqualTo(track.right + .001));
+          }
+        }
+        expect(
+            find.byWidgetPredicate((w) =>
+                w is SingleChildScrollView &&
+                w.scrollDirection == Axis.horizontal),
+            findsNothing);
+      }
+      await tester.tap(find.byTooltip('Všechny otázky'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 Step 0 · Upcoming'));
+      await tester.pumpAndSettle();
+      expect(selected.last, 'key-0');
+    });
+  }
 }

@@ -172,7 +172,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
   bool _showGrid = false;
   int _templateViewport = 0;
   late final _templatePeeks = [
-    for (final template in VenueLayoutTemplates.all.take(3)) template.create(),
+    for (final template in VenueLayoutTemplates.recommended.take(3))
+      template.create(),
   ];
   bool _canvasSelected = false;
   bool _backgroundSelected = false;
@@ -868,8 +869,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                   : '#CBD5E1FF',
               'stroke': '#334155FF',
               'strokeWidth': 2,
-              if (kind == 'Standing')
-                'label': {'size': 32, 'align': 'center'},
+              if (kind == 'Standing') 'label': {'size': 32, 'align': 'center'},
             },
       properties: kind == 'Text'
           ? {'text': VenueLayoutStrings.text(context, 'Your text')}
@@ -1920,9 +1920,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
-                    itemCount: VenueLayoutTemplates.all.length,
+                    itemCount: VenueLayoutTemplates.recommended.length,
                     itemBuilder: (context, index) {
-                      final template = VenueLayoutTemplates.all[index];
+                      final template = VenueLayoutTemplates.recommended[index];
                       return LayoutTemplateCard(
                         key: ValueKey('layout-template-${template.id}'),
                         template: template,
@@ -2967,7 +2967,10 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     for (final point in candidates) {
       if (occupiedSeats.any(
         (b) => Rect.fromLTWH(
-          b['x']!, b['y']!, b['width']!, b['height']!,
+          b['x']!,
+          b['y']!,
+          b['width']!,
+          b['height']!,
         ).contains(point),
       )) {
         continue;

@@ -186,6 +186,28 @@ Save freezes capacity metadata alongside the document before text preparation.
 Undo after save therefore restores an explicit inventory capacity change, while
 geometry-only saves omit capacity. The reservation detail shows available places
 and a focused numeric control; product/physical inventory limits still apply.
+An unbound standing area can assign a visible, priced admission (`spot`) product.
+The occasion-scoped edit catalog returns type metadata separately from products.
+The setup resolves admission types and occasion ownership before filtering,
+creating products or refreshing them after inventory preparation.
+The setup reuses its existing quantity-one inventory context (unique within the
+blueprint), or prepares a pool, context, resource supply and product-context link
+through the inventory/catalog commands. Products with existing orders remain
+available; the canonical inventory-link command checks capacity and reallocates
+existing items atomically. Product and inventory preparation is immediate;
+the initial binding and sale-limit intent are undoable until the plan is saved.
+One standing count sets the sellable capacity. Saving the plan also provisions
+any missing resource supply through the existing inventory command, in the same
+transaction. Existing resources and allocations remain intact; decreasing below
+committed capacity is rejected. Shared pool limits affect its products and contexts. Form offers and checkout continue to derive admission
+from saved bindings through the existing blueprint form-product projection.
+
+Preparation retains successful pool/resource steps while the dialog retries,
+including switching products. Closing after a partial failure leaves these
+entities saved and manageable in Products/Inventory; it does not attempt unsafe
+compensating deletion. Reopening starts from the authoritative catalog. A new
+preparation can therefore leave an unused pool from an earlier incomplete setup.
+
 The editor workspace adapts to theme brightness while authored document fills
 remain unchanged. Neutral line thumbnails use brighter strokes in dark mode and
 a minimum visible stroke width; material thumbnails show their canonical family.

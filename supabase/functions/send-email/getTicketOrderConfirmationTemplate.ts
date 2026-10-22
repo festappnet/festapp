@@ -1,16 +1,13 @@
-import { confirmationPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
-import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
+import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
-import {
-  formatDatetime,
-  formatIBAN,
-} from "../_shared/utilities.ts";
+import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
 import { translations } from "../_shared/translations/translations.ts";
-import type { Tone } from "../_shared/translations/translations.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
+import { openStripePaySource } from "../_shared/stripe/paySource.ts";
+import { stripeConfirmationBalance } from "../_shared/stripe/email.ts";
 
 type Attachment = {
   filename: string;
@@ -67,13 +64,67 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     ? requestedLanguage as keyof typeof translations
     : "cs";
   const order = await withOrderIdentity(ticketOrder.order, async (params) => {
-    const { data, error } = await supabaseAdmin.rpc("read_order_identity", params);
+    const { data, error } = await supabaseAdmin.rpc(
+      "read_order_identity",
+      params,
+    );
     if (error) throw error;
     return data;
   }, { id: task.occasion, organization: task.organization });
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
   const attachments: Attachment[] = [];
+  if (paymentInfo.payment_method === "stripe") {
+    const { data: source, error } = await supabaseAdmin.rpc(
+      "get_stripe_order_pay_source_internal",
+      { p_order: order.id, p_command: task.data.command_id },
+    );
+    if (error) throw new Error("stripe_email_source_unavailable");
+    const payable = ["open", "preparing"].includes(source?.payment?.status);
+    const secrets = payable ? await openStripePaySource(source) : undefined;
+    return {
+      subs: {
+        occasionTitle: occasion.title,
+        orderSymbol: order.order_symbol,
+        balanceReasoning: stripeConfirmationBalance(
+          source,
+          secrets,
+          lang,
+          formatCurrency(paymentInfo.amount, paymentInfo.currency_code, 2),
+          formatDatetime(paymentInfo.deadline, lang) ?? "",
+          JSON.parse(Deno.env.get("STRIPE_ALLOWED_ORIGINS") ?? "[]"),
+        ),
+        price: paymentInfo.amount,
+        currencyCode: paymentInfo.currency_code,
+        amount: formatCurrency(
+          paymentInfo.amount,
+          paymentInfo.currency_code,
+          2,
+        ),
+        accountNumber: "",
+        iban: "",
+        variableSymbol: "",
+        deadline: formatDatetime(paymentInfo.deadline, lang),
+        fullOrder: generateFullOrder(
+          order.data,
+          order.data.tickets,
+          occasion.features,
+          lang,
+          order.order_symbol,
+          2,
+        ),
+      },
+      sender: occasion.title,
+      receiver: order.data.email,
+      context: {
+        organization: occasion.organization,
+        unit: occasion.unit,
+        occasion: occasion.id,
+      },
+      attachments,
+      reply_to: order.reply_to,
+    };
+  }
 
   const { data: externalServices, error } = await supabaseAdmin.rpc(
     "get_external_services",
@@ -96,7 +147,6 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       commandId: String(task.data.command_id),
     });
     if (invoice.attachment) attachments.push(invoice.attachment);
-
   } else if (paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
@@ -117,33 +167,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     attachments,
   );
 
-  const tone: Tone = order.form?.data?.communication_tone === "informal"
-    ? "informal"
-    : "formal";
-  const paymentPresentation = confirmationPaymentSubstitutions(
-    paymentInfo, occasion.features ?? [], lang, tone,
-  );
-
   return {
-    subs: {
-      occasionTitle: occasion.title,
-      orderSymbol: order.order_symbol,
-      balanceReasoning: paymentPresentation.balanceReasoning,
-      price: paymentInfo.amount,
-      currencyCode: paymentInfo.currency_code,
-      amount: paymentPresentation.amount,
-      accountNumber: paymentInfo.account_number_human_readable,
-      iban: formatIBAN(paymentInfo.account_number),
-      variableSymbol: paymentReferenceValue(paymentInfo),
-      deadline: formatDatetime(paymentInfo.deadline, lang),
-      fullOrder: generateFullOrder(
-        order.data,
-        order.data.tickets,
-        occasion.features,
-        lang,
-        order.order_symbol,
-      ),
-    },
+    subs: confirmationSubstitutions(order, lang),
     sender: occasion.title,
     receiver: order.data.email,
     context: {

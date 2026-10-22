@@ -583,6 +583,8 @@ BEGIN
                is_open = CASE WHEN input_data ? 'is_open' THEN (input_data->>'is_open')::boolean ELSE is_open END
          WHERE id = form_id;
 
+        PERFORM public.validate_form_payment_configuration_internal(form_id);
+
         ----------------------------------------------------------------------------
         -- After updating the form, requeue payment reminders for the whole occasion
         -- as the form's settings (e.g., is_reminder_enabled) might have changed.

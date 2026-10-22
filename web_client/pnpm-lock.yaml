@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@festapp/venue-layout':
-        specifier: file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz
-        version: file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz
+        specifier: file:vendor/festapp-venue-layout-0.3.5-9d4940ac75e1.tgz
+        version: file:vendor/festapp-venue-layout-0.3.5-9d4940ac75e1.tgz
       '@supabase/supabase-js':
         specifier: ^2.117.3
         version: 2.117.3
@@ -274,8 +274,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz':
-    resolution: {integrity: sha512-mb/PiN4OaJ4IhHO+aZ4iHvouvF6mSenvC3J3SVE0CI7N+bOj/3eax5jChs+lvytJBa3+AoNpXX/ipSu4Dr+tvw==, tarball: file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-9d4940ac75e1.tgz':
+    resolution: {integrity: sha512-GEdKWRCJKRaSfWkqlX3f3PhzKQZxyWhVezaXKtWKE4Xg07UHML7vfcksB2r8cuZu3rMRuAWsWAqIH9CLI5tntA==, tarball: file:vendor/festapp-venue-layout-0.3.5-9d4940ac75e1.tgz}
     version: 0.3.5
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
@@ -1043,7 +1043,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-ae5909c6a879.tgz': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-9d4940ac75e1.tgz': {}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

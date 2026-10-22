@@ -92,4 +92,38 @@ BEGIN
  PERFORM assert_eq(response->>'status','applied','Failed command can retry after correction');
  EXECUTE 'RESET ROLE';
  PERFORM assert_eq((SELECT count(*) FROM public.occasions),before_count+2,'Corrected retry commits exactly one event');
+
+ -- Stable mode none ignores an imported layout while retaining normal products.
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ draft_id:=gen_random_uuid(); command:=gen_random_uuid();
+ d:=public.create_occasion_setup_draft(draft_id,target);
+ payload:=payload||jsonb_build_object('blueprintMode','none','link','no-plan-'||draft_id);
+ d:=public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,payload,5);
+ response:=public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command);
+ new_id:=(response->'data'->>'occasionId')::bigint;
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_eq((SELECT count(*) FROM eshop.blueprints WHERE occasion=new_id),0::bigint,'None ignores stale layout');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.products WHERE occasion=new_id),'No-plan sale retains products');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields f JOIN public.forms fm ON fm.id=f.form WHERE fm.occasion=new_id AND f.type='spot'),'No-plan form has no seat selector');
+ -- Bindings to decoration are not sellable places. Definite rejection can be corrected.
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ draft_id:=gen_random_uuid(); command:=gen_random_uuid();
+ d:=public.create_occasion_setup_draft(draft_id,target);
+ payload:=payload||jsonb_build_object('blueprintMode','new','link','invalid-plan-'||draft_id);
+ payload:=jsonb_set(payload,'{blueprintLayoutDraft,layout,nodes,0,kind}','"shape"');
+ d:=public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,payload,5);
+ BEGIN PERFORM public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command);
+  RAISE EXCEPTION 'Decoration-only plan accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ payload:=payload||jsonb_build_object('blueprintMode','copy','blueprintLayoutDraft',source#>'{blueprints,0,blueprintLayoutDraft}');
+ d:=public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,payload,5);
+ response:=public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command);
+ new_id:=(response->'data'->>'occasionId')::bigint;
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.form_fields f JOIN public.forms fm ON fm.id=f.form WHERE fm.occasion=new_id AND f.type='spot' AND f.is_ticket_field AND NOT coalesce(f.is_hidden,false)),'Active plan normalizes public seat selector');
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ response:=public.delete_occasion_client_sync_v1(new_id,gen_random_uuid());
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_false(EXISTS(SELECT 1 FROM public.occasions WHERE id=new_id),'A completed layout event can be deleted without binding FK failures');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM public.occasions WHERE id=source_id),'Deleting the copy preserves its source');
 END $$;

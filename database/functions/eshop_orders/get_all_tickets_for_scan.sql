@@ -52,6 +52,7 @@ BEGIN
         WHERE o.occasion = occasion_id_val
           AND t.state IS DISTINCT FROM 'storno' AND t.state IS DISTINCT FROM 'waitlisted'
           AND t.ticket_symbol IS NOT NULL AND o.state IS DISTINCT FROM 'waitlisted'
+          AND NOT public.stripe_ticket_requires_online_internal(t.id)
         ORDER BY t.id
     ) t;
 

@@ -1,3 +1,11 @@
+-- Round in the event tenant's civil time; a single captured instant owns defaults.
+CREATE OR REPLACE FUNCTION public.occasion_setup_default_start_internal(p_now timestamptz,p_timezone text DEFAULT 'Europe/Prague')
+RETURNS timestamptz LANGUAGE sql STABLE SET search_path = public, extensions AS $$
+ SELECT (date_trunc('hour',local_now) + ceil(extract(epoch FROM (local_now-date_trunc('hour',local_now)))/1800)*interval '30 minutes') AT TIME ZONE p_timezone
+ FROM (SELECT (p_now AT TIME ZONE p_timezone)+interval '30 days' local_now) x;
+$$;
+REVOKE ALL ON FUNCTION public.occasion_setup_default_start_internal(timestamptz,text) FROM PUBLIC,anon,authenticated,service_role;
+
 -- Drafts are private workspace objects, never public occasions.
 CREATE TABLE IF NOT EXISTS public.occasion_setup_drafts (
   id uuid PRIMARY KEY,
@@ -48,21 +56,22 @@ GRANT EXECUTE ON FUNCTION public.get_occasion_setup_draft(uuid) TO authenticated
 CREATE OR REPLACE FUNCTION public.build_occasion_setup_configuration(p_unit bigint, p_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE configuration jsonb; organization_id bigint;
+  default_start timestamptz; event_zone text;
   provisional_link text := 'draft-' || p_id::text;
 BEGIN
   IF auth.uid() IS NULL OR NOT public.can_create_occasion(p_unit) THEN
     RAISE EXCEPTION 'Draft access denied' USING ERRCODE = '42501';
   END IF;
-  SELECT organization INTO organization_id FROM public.units WHERE id = p_unit;
+  SELECT organization,coalesce(data->>'timezone','Europe/Prague') INTO organization_id,event_zone FROM public.units WHERE id = p_unit;
+  default_start:=public.occasion_setup_default_start_internal(now(),event_zone);
   BEGIN
     PERFORM public.update_occasion_internal_v1(jsonb_build_object(
       'unit',p_unit,'organization',organization_id,'title','',
       'link',provisional_link,'is_hidden',true,'is_open',false,
       'features','[{"code":"form","is_enabled":true}]'::jsonb,
-      'start_time',now()+interval '30 days','end_time',now()+interval '33 days'));
-    SELECT item INTO configuration
-      FROM jsonb_array_elements(public.get_occasion_setup_sources(p_unit)) item
-      WHERE item->'occasion'->>'link' = provisional_link;
+      'start_time',default_start,'end_time',((default_start AT TIME ZONE event_zone)+interval '3 days') AT TIME ZONE event_zone));
+    SELECT public.occasion_setup_source_internal(id) INTO configuration
+      FROM public.occasions WHERE link=provisional_link AND unit=p_unit;
     IF configuration IS NULL THEN RAISE EXCEPTION 'Creation configuration missing'; END IF;
     RAISE EXCEPTION 'Rollback provisional creation' USING ERRCODE = 'ZX001';
   EXCEPTION WHEN SQLSTATE 'ZX001' THEN

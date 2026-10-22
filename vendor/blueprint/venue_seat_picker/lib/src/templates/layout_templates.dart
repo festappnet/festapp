@@ -3,8 +3,10 @@ import 'package:venue_layout_core/venue_layout_core.dart';
 import 'scout_hall.dart';
 import 'cinema_hall.dart';
 import 'scout_balcony_hall.dart';
+import 'reference_templates.dart';
+import 'approved_round_ball.dart';
 
-/// A synthetic, editable layout. Every creation allocates fresh identities.
+/// An editable layout preset. Every creation allocates fresh identities.
 class LayoutTemplate {
   const LayoutTemplate(
     this.id,
@@ -119,9 +121,26 @@ VenueLayoutDocument localizeLayoutDefaultLabels(
 
 /// Version 1 of the package-owned geometric template library.
 abstract final class VenueLayoutTemplates {
-  static const version = 8;
-  static const defaultId = 'ball-classic';
+  static const version = 9;
+  static const defaultId = 'reference-belvedere';
   static final List<LayoutTemplate> all = List.unmodifiable([
+    for (final spec in referenceTemplateSpecs)
+      LayoutTemplate(
+        spec.id,
+        spec.title,
+        spec.description,
+        spec.seats,
+        0,
+        () => createReferenceTemplate(spec.id),
+      ),
+    LayoutTemplate(
+      'studio-tables',
+      'Ples u kulatých stolů',
+      'Dvanáct kulatých stolů po osmi místech a pódium',
+      96,
+      0,
+      approvedRoundBall,
+    ),
     LayoutTemplate(
       'scout-ball-182',
       'Scout ball - original hall',
@@ -245,6 +264,17 @@ abstract final class VenueLayoutTemplates {
       0,
       () => _Seed().finish(),
     ),
+  ]);
+  static final List<LayoutTemplate> recommended = List.unmodifiable([
+    for (final id in [
+      'reference-belvedere',
+      'reference-lipoltice',
+      'reference-brandys',
+      'reference-lucerna',
+      'studio-tables',
+      'blank',
+    ])
+      byId(id),
   ]);
   static LayoutTemplate byId(String id) => all.firstWhere(
     (t) => t.id == id,

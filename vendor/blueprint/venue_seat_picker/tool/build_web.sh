@@ -6,7 +6,7 @@ fvm dart tool/export_demo_seed.dart
 mkdir -p web/dist web/assets/layout_fonts
 cp assets/layout_fonts/* web/assets/layout_fonts/
 fvm dart compile js --no-source-maps -O2 web/kernel/main.dart -o web/dist/venue_layout_kernel.js
-web/node_modules/.bin/esbuild web/demo/demo.js --bundle --format=iife --target=es2020 --outfile=web/dist/demo.js
+(cd web && pnpm exec esbuild demo/demo.js --bundle --format=iife --target=es2020 --outfile=dist/demo.js)
 python3 - <<'PY'
 import gzip,hashlib,json,pathlib,subprocess
 root=pathlib.Path.cwd(); files={}

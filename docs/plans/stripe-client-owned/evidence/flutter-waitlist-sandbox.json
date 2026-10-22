@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-21",
+  "sandbox": true,
+  "liveMoney": false,
+  "orderId": 10,
+  "conversion": "in_place",
+  "registeredPeople": 2,
+  "registeredWithoutPaymentInfo": true,
+  "offeredPeople": 2,
+  "acceptedPeople": 2,
+  "amountMinor": 19752,
+  "currency": "czk",
+  "paid": "197.52",
+  "state": "paid",
+  "attemptCount": 1,
+  "checkoutCancelReturnRendered": true,
+  "storageClearedBeforeRecovery": {
+    "localStorageItems": 0,
+    "sessionStorageItems": 0
+  },
+  "recoveredFrom": "real queued confirmation private pay link",
+  "sameOrderAndAttemptAfterRecovery": true,
+  "signedWebhook": true,
+  "paidReturnRendered": true,
+  "subsequentPartialRefund": {
+    "sandbox": true,
+    "amountMinor": 9876,
+    "status": "succeeded",
+    "admissionDecision": {
+      "reason": "partial_refund_cancel",
+      "tickets": [
+        10
+      ],
+      "actorVerified": true,
+      "providerRevisionRecorded": true
+    },
+    "remainingPaidTickets": 1,
+    "cancelledTickets": 1,
+    "queuedEmailVerified": {
+      "remainingValidTicketPdfs": 1,
+      "cancelledTicketExcluded": true,
+      "transport": "local file capture"
+    }
+  }
+}

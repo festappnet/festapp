@@ -8,7 +8,7 @@ Poskytovatelem systému Festapp a Vstupenky.online je Michael Bujnovský, IČO 0
 
 ## K čemu systém slouží
 
-Vstupenky.online je webový systém pro pořadatele a účastníky akcí. Umožňuje zveřejňovat nabídky, spravovat přihlášky a objednávky, prodávat vstupenky nebo účast na akci a komunikovat s účastníky. Lze jej využít například pro skautské a jiné tábory, kurzy, setkání, kulturní akce nebo další jednorázové i opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivý člověk.
+Vstupenky.online je webový systém pro pořadatele a účastníky akcí. Umožňuje zveřejňovat nabídky, spravovat přihlášky a objednávky, prodávat vstupenky nebo účast na akci a komunikovat s účastníky. Lze jej využít například pro plesy, kulturní akce, skautské a jiné tábory, kurzy, setkání nebo další jednorázové i opakované akce. Pořadatelem může být spolek, oddíl, firma i jednotlivý člověk.
 
 ## Systém a pořadatel akce
 

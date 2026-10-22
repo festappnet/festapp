@@ -8,7 +8,8 @@ import {
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 const escapeContact = (value: unknown) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string): string {
+export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
+    const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
 
     const tr = {
@@ -23,6 +24,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             itemNote: "Poznámka",
             table: "Stůl",
             seat: "Místo",
+            standing: "Stání",
             totalPrice: "Celková cena",
         },
         en: {
@@ -36,6 +38,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             itemNote: "Note",
             table: "Table",
             seat: "Seat",
+            standing: "Standing",
             totalPrice: "Total Price",
         }
     }[lang];
@@ -85,7 +88,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const meta = extractMetaSurcharge(product, depositFeature?.deposit_mode);
         if (!meta) return null;
         metaSurchargeAmounts.push(meta);
-        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, formatCurrency);
+        const amountText = formatSignedMetaSurcharge(meta.amount, meta.currency, currencyFormat);
         return metaSurchargeDescription
             ? `${amountText} — ${metaSurchargeDescription}`
             : amountText;
@@ -95,14 +98,15 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const productsRows = ticket.products.map((product: any) => {
             const price = Number(product.price || 0);
             overallTotal += price;
-            const formattedPrice = formatCurrency(price, product.currency_code || currencyCode);
+            const formattedPrice = currencyFormat(price, product.currency_code || currencyCode);
 
             const escape = (value: unknown) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escape).join(': ');
             const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
                 .filter(([, value]) => value != null && String(value).trim() !== '')
                 .map(([label, value]) => `${label}: ${escape(value)}`).join(' · ');
-            const seatingHtml = seating ? `<div style="margin-top: 4px; font-weight: 600;">${seating}</div>` : '';
+            const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escape).join(': ') : seating;
+            const seatingHtml = admission ? `<div style="margin-top: 4px; font-weight: 600;">${admission}</div>` : '';
 
             const rowStyle = 'style="border-bottom: 1px solid #e2e8f0;"';
 
@@ -138,7 +142,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     }).join("");
 
     // --- 3. Total Price ---
-    const formattedOverallTotal = formatCurrency(overallTotal, currencyCode);
+    const formattedOverallTotal = currencyFormat(overallTotal, currencyCode);
 
     // Per-currency meta surcharge sums (visual-only, NOT included in overallTotal).
     // Renders as separate lines under Total Price, one per currency.

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_communication.dart';
-import 'package:fstapp/components/unit/unit_model.dart';
+import 'dart:async';
+import 'package:fstapp/components/occasion/setup/occasion_setup_email_preview.dart';
 
 import '../../support/fixtures/localization_log_fixture.dart';
 
@@ -135,7 +136,6 @@ void main() {
     WidgetTester tester,
     Map<String, dynamic> data, {
     required bool manager,
-    required Future<UnitModel> Function(UnitModel) save,
     bool firstEvent = true,
     bool paymentTiming = false,
   }) async {
@@ -171,7 +171,6 @@ void main() {
                       },
                     },
                   },
-                  saveDefaults: save,
                 );
               },
             ),
@@ -185,71 +184,13 @@ void main() {
   testWidgets('inherited reply choice names the organization address',
       (tester) async {
     final data = _draft();
-    await mount(tester, data, manager: false, save: (unit) async => unit);
+    await mount(tester, data, manager: false);
     expect(
         find.text(
-            'OccasionSetup.setupDetails.inheritOrganization (organization@example.org)'),
+            'OccasionSetup.setupDetails.inheritOrganization: organization@example.org'),
         findsWidgets);
     expect(data['replyToMode'], 'inherit');
   });
-
-  for (final paymentTiming in [false, true]) {
-    testWidgets(
-      'manager saves only visible defaults with CAS: timing=$paymentTiming',
-      (tester) async {
-        final data = _draft()
-          ..addAll({
-            'replyToMode': 'custom',
-            'replyToEmail': 'events@example.org',
-            'communicationTone': 'informal',
-            'remindersMode': 'disabled',
-            'reminderLeadDays': '2',
-          });
-        final saved = <UnitModel>[];
-        await mount(
-          tester,
-          data,
-          manager: true,
-          paymentTiming: paymentTiming,
-          save: (unit) async {
-            saved.add(unit);
-            return unit;
-          },
-        );
-        expect(saved, isEmpty);
-        expect(
-          find.text('OccasionSetup.setupDetails.firstEventDefaultsHint'),
-          findsOneWidget,
-        );
-        await tester.ensureVisible(
-          find.byWidgetPredicate((widget) => widget is OutlinedButton),
-        );
-        await tester.tap(
-          find.byWidgetPredicate((widget) => widget is OutlinedButton),
-        );
-        await tester.pumpAndSettle();
-        expect(saved, hasLength(1));
-        expect(saved.single.id, 7);
-        expect(saved.single.aggregateVersion, 9);
-        expect(saved.single.data, {
-          'unrelated': 'preserved',
-          'reply_to':
-              paymentTiming ? 'original@example.org' : 'events@example.org',
-          'communication_tone': paymentTiming ? 'formal' : 'informal',
-          'is_reminder_enabled': !paymentTiming,
-          'reminder_interval_seconds': paymentTiming ? 172800 : 86400,
-        });
-        expect(data['replyToMode'], paymentTiming ? 'custom' : 'inherit');
-        expect(
-          data['communicationTone'],
-          paymentTiming ? 'informal' : 'inherit',
-        );
-        expect(data['remindersMode'], paymentTiming ? 'inherit' : 'disabled');
-        expect(data['reminderLeadDays'], paymentTiming ? '' : '2');
-        expect(tester.takeException(), isNull);
-      },
-    );
-  }
 
   test(
     'each question validates only its own inputs; review validates both',
@@ -276,15 +217,10 @@ void main() {
     (tester) async {
       final data = _draft(paid: false)
         ..addAll({'replyToMode': 'custom', 'replyToEmail': 'old@example.org'});
-      var saves = 0;
       await mount(
         tester,
         data,
         manager: false,
-        save: (unit) async {
-          saves++;
-          return unit;
-        },
       );
       expect(
         find.byWidgetPredicate((widget) => widget is OutlinedButton),
@@ -300,33 +236,50 @@ void main() {
       );
       await tester.pump();
       expect(data['replyToEmail'], 'new@example.org');
-      expect(saves, 0);
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('failed organization save retains event overrides for retry', (
-    tester,
-  ) async {
-    final data = _draft()..['communicationTone'] = 'informal';
-    await mount(
-      tester,
-      data,
-      manager: true,
-      save: (_) async => throw StateError('revision conflict'),
-    );
-    await tester.ensureVisible(
-      find.byWidgetPredicate((widget) => widget is OutlinedButton),
-    );
-    await tester.tap(
-      find.byWidgetPredicate((widget) => widget is OutlinedButton),
-    );
+  testWidgets('manager edits event without organization save action',
+      (tester) async {
+    final data = _draft();
+    await mount(tester, data, manager: true, paymentTiming: true);
+    expect(find.byType(OutlinedButton), findsNothing);
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pump();
+    expect(data['remindersMode'], 'disabled');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('preview ignores stale completion after draft change',
+      (tester) async {
+    final first = Completer<Map<String, dynamic>>();
+    final second = Completer<Map<String, dynamic>>();
+    var calls = 0;
+    final data = <String, dynamic>{'title': 'first'};
+    Future<Map<String, dynamic>> load(Map<String, dynamic> snapshot) {
+      calls++;
+      expect(snapshot['title'], calls == 1 ? 'first' : 'second');
+      snapshot['title'] = 'detached';
+      return calls == 1 ? first.future : second.future;
+    }
+
+    Widget view() => MaterialApp(
+        home: Scaffold(
+            body: OccasionSetupEmailPreview(draft: data, loadPreview: load)));
+    await tester.pumpWidget(view());
+    await tester.pump(const Duration(milliseconds: 301));
+    expect(data['title'], 'first');
+    data['title'] = 'second';
+    await tester.pumpWidget(view());
+    await tester.pump(const Duration(milliseconds: 301));
+    second.complete({'subject': 'current', 'html': '<p>Current preview</p>'});
     await tester.pumpAndSettle();
-    expect(data['communicationTone'], 'informal');
-    expect(
-      find.text('OccasionSetup.setupDetails.organizationDefaultsFailed'),
-      findsOneWidget,
-    );
+    first.complete({'subject': 'stale', 'html': '<p>Stale preview</p>'});
+    await tester.pumpAndSettle();
+    expect(find.text('current'), findsOneWidget);
+    expect(find.text('stale'), findsNothing);
+    expect(data['title'], 'second');
     expect(tester.takeException(), isNull);
   });
 }

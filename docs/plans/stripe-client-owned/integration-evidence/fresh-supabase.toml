@@ -1,0 +1,9 @@
+project_id = "festapp-stripe-readiness-20261022"
+
+[db]
+port = 61232
+shadow_port = 61230
+major_version = 15
+
+[db.seed]
+enabled = false

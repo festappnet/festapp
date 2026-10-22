@@ -18,3 +18,37 @@ an empty allowlisted object. Product rows are deduplicated, and neither bindings
 nor layout resources contain secrets, customer/order metadata or private SVG
 originals. Loading failure keeps an explicit retry state and releases the
 selector's loading controls.
+
+The host standing-quantity overlay uses public kernel scene bounds and the
+viewer's SVG viewport transform, refreshing its anchors through the camera
+callback (including resize). Compact controls sit inside the area when space
+permits or immediately beside it. Only the generic standing detail controls are
+replaced; the package still owns map rendering, hit testing and seat gestures.
+Quantity edits remain drafts until explicit confirmation, with validation and
+checkout updates owned by the existing adapter and form session. Selectable
+standing areas suppress the duplicate product tooltip; unavailable areas retain
+their explanation.
+
+The expanded standing control names the area and shows unit price, availability,
+a numeric stepper and a labeled confirmation action. Wheel gestures over the
+control are relayed to the viewer SVG at their original cursor coordinates.
+On narrow viewports it anchors above the area if the zoom toolbar would overlap.
+Published Blueprint catalogs are checked against the canonical dictionaries by
+the build gate; browser fixtures consume the actual public catalogs.
+
+Interaction references: [Masters of Rock standing purchase](https://www.mastersofrock.cz/en/koncerty/2027-masters-of-rock)
+uses ticket type, price and a minus/quantity/plus stepper;
+[Rock am Ring](https://www.rock-am-ring.com/en/tickets) separates admission categories
+from camping/add-ons. The map anchor is Festapp's adaptation for mixed seating
+and standing plans, not a claim that those festivals use this exact overlay.
+
+Standing controls are hidden until the area is activated. The non-modal mini
+dialog opens beside that area, proposes one as an uncommitted draft for an empty
+selection, and closes on confirmation, Escape or outside pointer/click. Dismissal
+discards the unconfirmed draft; only explicit confirmation updates checkout.
+Escape/confirmation restores focus to the area's semantic button. Outside clicks
+continue normally and pending completion never steals their focus.
+This follows the action-first initial offer seen in [Sziget's ticket shop](https://szigetfestival.com/en/tickets).
+[Primavera Sound's AccessTicket shop](https://primavera-sound-barcelona-2027.webstore.acst.app/)
+separates ticket-category selection from its Amount section; proceeding there
+requires login, so its authenticated checkout was not evaluated.

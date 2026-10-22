@@ -1,3 +1,5 @@
+import 'package:fstapp/components/blueprint/views/blueprint_standing_setup_dialog.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_inline_name.dart';
 import '../../support/fixtures/blueprint_native_font_fixture.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -109,14 +111,19 @@ void main() {
   tearDown(() {
     pickerResponse = null;
   });
-  for (final mobile in [(390.0, 844.0, 1.0), (320.0, 640.0, 1.6)]) {
-    testWidgetsWithEnvironment(() => environment,
+  testWidgetsWithEnvironment(() => environment,
       'commercial name edits inline, trims once and cancels with Escape',
       (tester) async {
     final changes = <String>[];
-    await environment.pumpWidget(tester, MaterialApp(home: Scaffold(
-      body: BlueprintInlineName(nodeId: 'table', name: 'B3', enabled: true,
-          onSubmitted: changes.add))));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintInlineName(
+                    nodeId: 'table',
+                    name: 'B3',
+                    enabled: true,
+                    onSubmitted: changes.add))));
     final edit = find.byKey(const ValueKey('rename-commercial-table'));
     await tester.tap(edit);
     await tester.pumpAndSettle();
@@ -139,7 +146,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(changes, ['B4']);
   });
-  testWidgetsWithEnvironment(() => environment,
+  for (final mobile in [(390.0, 844.0, 1.0), (320.0, 640.0, 1.6)]) {
+    testWidgetsWithEnvironment(() => environment,
         'mobile blueprint keeps canvas dominant and all actions reachable ${mobile.$1}',
         (tester) async {
       tester.view.physicalSize = Size(mobile.$1, mobile.$2);
@@ -389,6 +397,10 @@ void main() {
                         controller: c, nodeId: id, enabled: true)))));
     final field = find.byKey(const ValueKey('standing-capacity-field'));
     expect(tester.widget<TextField>(field).controller!.text, '30');
+    expect(tester.widget<TextField>(field).decoration!.labelText,
+        BlueprintStrings.standingCapacity);
+    expect(tester.widget<TextField>(field).decoration!.helperText,
+        BlueprintStrings.capacitySaveHint);
     await tester.enterText(field, '25');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
@@ -1754,6 +1766,8 @@ void main() {
         'commercial-table-10000000-0000-4000-8000-000000000010'));
     final areaRow = find.byKey(
         const ValueKey('commercial-area-10000000-0000-4000-8000-000000000020'));
+    expect(find.descendant(of: areaRow, matching: find.byIcon(Icons.people_outline)), findsOneWidget);
+    expect(find.descendant(of: areaRow, matching: find.text('(20)')), findsOneWidget);
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);
@@ -2303,6 +2317,54 @@ void main() {
   });
 
   testWidgetsWithEnvironment(() => environment,
+      'wizard returns only after confirmed save and accepted geometry baseline',
+      (tester) async {
+    var completed = 0;
+    var saves = 0;
+    final pending = Completer<void>();
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: BlueprintLayoutDemo(
+          initialDocument: VenueLayoutDocument(nodes: [
+            LayoutNode(
+                id: '10000000-0000-4000-8000-000000000099', kind: 'group')
+          ]),
+          initialResources: const {
+            'protocol': 2,
+            'fontFamilies': {},
+            'textLayouts': {},
+            'assets': {}
+          },
+          initiallyUnsaved: true,
+          onSaved: () => completed++,
+          onSave: (_) {
+            saves++;
+            return saves == 1 ? pending.future : Future.value();
+          },
+        )));
+    await tester.pumpAndSettle();
+    final save = find.byType(FilledButton).last;
+    await tester.tap(save);
+    await tester.pump();
+    expect(completed, 0);
+    pending.completeError(StateError('draft_save_failed'));
+    await tester.pumpAndSettle();
+    expect(completed, 0);
+    expect(find.textContaining('draft_save_failed'), findsOneWidget);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(completed, 1);
+    expect(
+        tester
+            .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+            .controller
+            .dirty,
+        isFalse);
+    expect(find.byType(EditorActionBar), findsNothing);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
       'empty catalog cannot invent a product template or call the writer',
       (tester) async {
     await environment.pumpWidget(
@@ -2321,7 +2383,7 @@ void main() {
     expect(find.byType(EditProductDialog), findsNothing);
   });
   testWidgetsWithEnvironment(() => environment,
-      'unbound standing shows its configured capacity instead of sold out stock',
+      'unbound standing offers sold table products and keeps its configured capacity',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1;
@@ -2329,6 +2391,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final originalRights = RightsService.occasionLinkModelNotifier.value;
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        occasion: OccasionModel(
+            id: 1,
+            link: 'standing-fixture',
+            isOpen: false,
+            isHidden: true,
+            isPromoted: false),
         capabilities: {
           AuthorizationCapabilities.occasionsWrite: true,
           AuthorizationCapabilities.ordersWrite: true
@@ -2370,9 +2438,107 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('commercial-area-$id')));
     await tester.pump();
-    expect(find.text('${BlueprintStrings.standingCapacity}: 100'), findsOneWidget);
+    expect(
+        find.text('${BlueprintStrings.standingCapacity}: 100'), findsOneWidget);
     expect(find.text(BlueprintStrings.standingRequiresProduct), findsOneWidget);
-    expect(find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
+    expect(
+        find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
+    pickerResponse = (request) {
+      expect(
+          request.url.path, endsWith('/rpc/get_products_and_types_for_edit'));
+      return http.Response(
+          jsonEncode({
+            'server_time': '2026-10-21T10:00:00Z',
+            'product_types': [
+              {'id': 2, 'title': 'Admission', 'type': 'spot'},
+              {'id': 3, 'title': 'Extras', 'type': 'other'}
+            ],
+            'products': [
+              {
+                'id': 9,
+                'title': 'Standing ticket',
+                'price': 80,
+                'currency_code': 'CZK',
+                'product_type': 2,
+                'ordered_count': 1
+              },
+              {
+                'id': 10,
+                'title': 'Table ticket',
+                'price': 500,
+                'currency_code': 'CZK',
+                'product_type': 2,
+                'ordered_count': 4
+              },
+              {
+                'id': 11,
+                'title': 'Non-admission product',
+                'price': 50,
+                'product_type': 3
+              }
+            ],
+            'inventory_pools': [
+              {
+                'id': 5,
+                'occasion': 1,
+                'title': 'Standing',
+                'sellable_capacity': 25
+              }
+            ],
+            'inventory_contexts': [
+              {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
+            ],
+            'product_inventory_contexts': [
+              {'product': 9, 'inventory_context': 6, 'quantity': 1}
+            ],
+            'forms': [],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+          request: request);
+    };
+    await tester.tap(find.byKey(const ValueKey('assign-standing-product')));
+    await tester.pumpAndSettle();
+    expect(find.byType(BlueprintStandingSetupDialog), findsOneWidget);
+    expect(find.byType(BlueprintProductOptions), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Table ticket'), findsOneWidget);
+    expect(find.text('Non-admission product'), findsNothing);
+    expect(find.text(BlueprintStrings.noSpotProducts), findsNothing);
+    await tester
+        .tap(find.widgetWithText(TextButton, BlueprintStrings.createProduct));
+    await tester.pumpAndSettle();
+    expect(find.byType(EditProductDialog), findsOneWidget);
+    expect(find.text(BlueprintStrings.standingNoAdmissionType), findsNothing);
+    await tester.tap(find.descendant(
+        of: find.byType(EditProductDialog),
+        matching: find.widgetWithText(TextButton, CommonStrings.storno)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Table ticket'));
+    await tester.pump();
+    final setupCapacity = find.descendant(
+        of: find.byType(BlueprintStandingSetupDialog),
+        matching: find.byType(TextField));
+    expect(tester.widget<TextField>(setupCapacity).controller!.text, '100');
+    expect(tester.widget<TextField>(setupCapacity).enabled, isTrue);
+    await tester.tap(find.widgetWithText(ListTile, 'Standing ticket'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+        of: find.byType(BlueprintStandingSetupDialog),
+        matching: find.widgetWithText(
+            FilledButton, BlueprintStrings.assignStandingProduct)));
+    await tester.pumpAndSettle();
+    expect(find.byType(BlueprintStandingSetupDialog), findsNothing);
+    expect(find.byKey(const ValueKey('assign-standing-product')), findsNothing);
+    expect(find.byType(BlueprintProductDetail), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(BlueprintProductDetail),
+            matching: find.textContaining('Standing ticket (')),
+        findsOneWidget);
+    final capacityField = tester.widget<TextField>(
+        find.byKey(const ValueKey('standing-capacity-field')));
+    expect(capacityField.controller!.text, '25');
+    // No blueprint write is sent until the user explicitly saves the draft.
+    expect(source.layoutSnapshot!.areaBindings, isEmpty);
   });
-
 }

@@ -2050,8 +2050,8 @@ class LayoutScenePainter extends CustomPainter {
       canvas.restore();
     }
     final connectionPaint = Paint()
-      ..color = selectionColor.withValues(alpha: .55)
-      ..strokeWidth = 1 / zoom
+      ..color = Color.lerp(selectionColor, const Color(0xff16354d), .25)!
+      ..strokeWidth = 2.5 / zoom
       ..strokeCap = StrokeCap.round;
     final viewport = Rect.fromPoints(topLeft, bottomRight);
     for (final link in seatLinks) {
@@ -2063,19 +2063,11 @@ class LayoutScenePainter extends CustomPainter {
       }
       final delta = link.seatPoint - link.tablePoint, length = delta.distance;
       if (length < 1e-6) continue;
-      final direction = delta / length;
-      // Bound work even for manually detached chairs far from their table.
-      final dashStep = math.max(6 / zoom, length / 128);
-      for (var distance = 0.0; distance < length; distance += dashStep) {
-        canvas.drawLine(
-          link.tablePoint + direction * distance,
-          link.tablePoint + direction * math.min(length, distance + 3 / zoom),
-          connectionPaint,
-        );
-      }
+      // Solid screen-space strokes stay visible even in the short chair gap.
+      canvas.drawLine(link.tablePoint, link.seatPoint, connectionPaint);
       canvas.drawCircle(
         link.tablePoint,
-        2 / zoom,
+        3 / zoom,
         Paint()..color = connectionPaint.color,
       );
     }

@@ -1,3 +1,4 @@
+import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
 import 'blueprint_standing_capacity_control.dart';
@@ -868,8 +869,36 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final availability = controller.adapter.areaAvailability[area.id];
     final capacity = controller.areaCapacity(area.id);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _commercialName(area, style: Theme.of(context).textTheme.titleMedium),
-      Text(_productText(controller.snapshot.areaBindings[area.id]?.productId)),
+      BlueprintProductDetail(
+        key: ValueKey(controller.snapshot.areaBindings.containsKey(area.id)
+            ? 'commercial-area-product'
+            : 'assign-standing-product'),
+        title: BlueprintStrings.areaProduct,
+        productText:
+            _productText(controller.snapshot.areaBindings[area.id]?.productId),
+        status: controller.snapshot.areaBindings.containsKey(area.id)
+            ? BlueprintStrings.areaProductAssigned
+            : BlueprintStrings.noProductAssigned,
+        statusIcon: controller.snapshot.areaBindings.containsKey(area.id)
+            ? Icons.check_circle_outline
+            : Icons.info_outline,
+        statusColor: controller.snapshot.areaBindings.containsKey(area.id)
+            ? ThemeConfig.greenColor(context)
+            : Theme.of(context).colorScheme.onSurfaceVariant,
+        onTap: !_canEdit || _busy
+            ? null
+            : controller.snapshot.areaBindings.containsKey(area.id)
+                ? () => _editAreaProduct(area)
+                : !_canOrder
+                    ? null
+                    : () => showDialog<void>(
+                        context: context,
+                        builder: (_) => BlueprintStandingSetupDialog(
+                            controller: controller,
+                            nodeId: area.id,
+                            occasionLink:
+                                RightsService.currentOccasion()!.link!)),
+      ),
       const SizedBox(height: 12),
       if (!controller.snapshot.areaBindings.containsKey(area.id)) ...[
         Text('${BlueprintStrings.standingCapacity}: $capacity'),
@@ -885,14 +914,6 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         BlueprintStandingCapacityControl(
             controller: controller, nodeId: area.id, enabled: !_busy),
       ],
-      if (_canEdit &&
-          controller.products.containsKey(
-              controller.snapshot.areaBindings[area.id]?.productId))
-        TextButton.icon(
-            key: const ValueKey('commercial-area-product'),
-            onPressed: _busy ? null : () => _editAreaProduct(area),
-            icon: const Icon(Icons.sell_outlined, size: 18),
-            label: Text(BlueprintStrings.editAreaProduct)),
     ]);
   }
 
@@ -906,12 +927,29 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         : _productText(products.isEmpty
             ? controller.snapshot.groupProducts[table.id]
             : products.single);
+    return _commercialNodeRow(
+      node: table,
+      selected: selected,
+      summary: summary,
+      count: members.length,
+      icon: Icons.table_restaurant_outlined,
+      highlighted: {table.id, ...members.map((seat) => seat.nodeId)},
+    );
+  }
+
+  Widget _commercialNodeRow({
+    required LayoutNode node,
+    required bool selected,
+    required String summary,
+    required int count,
+    required IconData icon,
+    Set<String>? highlighted,
+  }) {
     return Padding(
-      key: _commercialRowKeys.putIfAbsent(table.id, () => GlobalKey()),
+      key: _commercialRowKeys.putIfAbsent(node.id, () => GlobalKey()),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: MouseRegion(
-        onEnter: (_) => controller.layout.highlightObjects(
-            {table.id, ...members.map((seat) => seat.nodeId)}),
+        onEnter: (_) => controller.layout.highlightObjects(highlighted ?? {node.id}),
         onExit: (_) => controller.layout.highlightObjects({}),
         child: Ink(
           decoration: BoxDecoration(
@@ -925,21 +963,19 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 : null,
           ),
           child: ListTile(
-            key: ValueKey('commercial-table-${table.id}'),
+            key: ValueKey('commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             minLeadingWidth: 18,
             horizontalTitleGap: 8,
             selected: selected,
-            leading: const Icon(Icons.table_restaurant_outlined, size: 18),
-            title: Text(table.label.isEmpty
-                ? BlueprintStrings.tablesTitle
-                : table.label),
-            subtitle:
-                Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Text('(${members.length})',
-                style: Theme.of(context).textTheme.bodySmall),
-            onTap: _busy ? null : () => _selectCommercialRow(table.id),
+            leading: Icon(icon, size: 18),
+            title: Text(node.label.isEmpty
+                ? (node.kind == 'capacityArea' ? BlueprintStrings.standingAreas : BlueprintStrings.tablesTitle)
+                : node.label),
+            subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: Text('($count)', style: Theme.of(context).textTheme.bodySmall),
+            onTap: _busy ? null : () => _selectCommercialRow(node.id),
           ),
         ),
       ),
@@ -964,45 +1000,20 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(BlueprintStrings.groupDefaultProduct,
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text(_productText(defaultId),
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(
-                    mixed
-                        ? Icons.tune
-                        : defaultId == null
-                            ? Icons.info_outline
-                            : Icons.check_circle_outline,
-                    size: 16,
-                    color: statusColor),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
-                        mixed
-                            ? BlueprintStrings.statusMixed
-                            : defaultId == null
-                                ? BlueprintStrings.noProductAssigned
-                                : BlueprintStrings.statusUniform,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: statusColor))),
-              ]),
-            ],
-          ),
-          trailing: _canEdit && blockers == 0
-              ? const Icon(Icons.edit_outlined, size: 18)
-              : null,
+        BlueprintProductDetail(
+          title: BlueprintStrings.groupDefaultProduct,
+          productText: _productText(defaultId),
+          status: mixed
+              ? BlueprintStrings.statusMixed
+              : defaultId == null
+                  ? BlueprintStrings.noProductAssigned
+                  : BlueprintStrings.statusUniform,
+          statusIcon: mixed
+              ? Icons.tune
+              : defaultId == null
+                  ? Icons.info_outline
+                  : Icons.check_circle_outline,
+          statusColor: statusColor,
           onTap: !_canEdit || _busy || blockers > 0
               ? null
               : () => _product(table.id, group: true),
@@ -1254,6 +1265,9 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                     entry.value.contains(entry.key))
                   _commercialName(tables[entry.key]!,
                       style: Theme.of(context).textTheme.titleSmall)
+                else if (byId[entry.key]?.kind == 'capacityArea')
+                  _commercialName(byId[entry.key]!,
+                      style: Theme.of(context).textTheme.titleSmall)
                 else
                   Text(
                       tables[entry.key]?.label ??
@@ -1323,22 +1337,12 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                   Text(BlueprintStrings.standingAreas,
                       style: Theme.of(context).textTheme.titleMedium),
                   for (final area in areas)
-                    MouseRegion(
-                      onEnter: (_) =>
-                          controller.layout.highlightObjects({area.id}),
-                      onExit: (_) => controller.layout.highlightObjects({}),
-                      child: ListTile(
-                        key: ValueKey('commercial-area-${area.id}'),
-                        contentPadding: EdgeInsets.zero,
-                        selected: _commercialSelection.contains(area.id),
-                        title: Text(area.label.isEmpty
-                            ? BlueprintStrings.standingAreas
-                            : area.label),
-                        subtitle: Text(_productText(controller
-                            .snapshot.areaBindings[area.id]?.productId)),
-                        onTap:
-                            _busy ? null : () => _selectCommercialRow(area.id),
-                      ),
+                    _commercialNodeRow(
+                      node: area,
+                      selected: _commercialSelection.contains(area.id),
+                      summary: _productText(controller.snapshot.areaBindings[area.id]?.productId),
+                      count: controller.areaCapacity(area.id),
+                      icon: Icons.people_outline,
                     ),
                   const Divider(),
                 ],

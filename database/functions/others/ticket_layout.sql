@@ -13,7 +13,7 @@ BEGIN
     UNION ALL SELECT elem.value->'style'->>'fontId' FROM jsonb_each(p_layout->'templates') tmpl CROSS JOIN LATERAL jsonb_array_elements(tmpl.value->'elements') elem
   ) fonts WHERE id IS NOT NULL)>12 THEN RAISE EXCEPTION 'Too many ticket fonts'; END IF;
   FOR kind,t IN SELECT * FROM jsonb_each(p_layout->'templates') LOOP
-    IF EXISTS(SELECT 1 FROM jsonb_object_keys(t) AS keys(key) WHERE keys.key NOT IN ('canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements')) THEN RAISE EXCEPTION 'Invalid template metadata'; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_object_keys(t) AS keys(key) WHERE keys.key NOT IN ('canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements')) THEN RAISE EXCEPTION 'Invalid template metadata'; END IF;
     IF kind NOT IN ('wide','named') OR jsonb_typeof(t->'elements') IS DISTINCT FROM 'array'
       OR jsonb_array_length(t->'elements') NOT BETWEEN 2 AND 32
       OR (t ? 'pageFit' AND t->'pageFit' IS DISTINCT FROM '"ticket"'::jsonb)
@@ -24,6 +24,10 @@ BEGIN
     IF t ? 'canvasOpacity' AND (jsonb_typeof(t->'canvasOpacity') IS DISTINCT FROM 'number'
       OR (t->>'canvasOpacity')::numeric NOT BETWEEN 0 AND 1)
     THEN RAISE EXCEPTION 'Invalid ticket canvas opacity'; END IF;
+    IF t ? 'canvasGradient' THEN
+      IF jsonb_typeof(t->'canvasGradient') IS DISTINCT FROM 'array' OR jsonb_array_length(t->'canvasGradient')<>2 THEN RAISE EXCEPTION 'Invalid gradient'; END IF;
+      IF EXISTS(SELECT 1 FROM jsonb_array_elements(t->'canvasGradient') c WHERE jsonb_typeof(c)<>'string' OR c#>>'{}' !~ '^[a-fA-F0-9]{6}$') THEN RAISE EXCEPTION 'Invalid gradient'; END IF;
+    END IF;
     IF t ? 'canvasColor' AND (jsonb_typeof(t->'canvasColor') IS DISTINCT FROM 'string'
       OR (t->>'canvasColor' <> 'transparent' AND t->>'canvasColor' !~ '^[a-fA-F0-9]{6}$'))
     THEN RAISE EXCEPTION 'Invalid ticket canvas color'; END IF;

@@ -36,6 +36,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   bool _isLoading = true;
   bool _hasLoaded = false;
   int? _organizationId;
+  bool _accountsLoadFailed = false;
+  bool _organizationLoadFailed = false;
 
   @override
   void initState() {
@@ -93,29 +95,59 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _accountsLoadFailed = false;
+    });
+    // Organization context is optional. Its failure must not hide valid accounts.
+    final organization = _loadOrganization();
     try {
-      // Share the initial list request with a routed detail; mutations refresh.
       final accounts =
           BankAccountsLoadScope.maybeOf(context)?.load(_hasLoaded) ??
               DbBankAccounts.current.getBankAccountsForUnit(widget.unitId);
       _hasLoaded = true;
-      _unitAccounts = await accounts;
-      // Get Organization ID (if admin)
-      final orgData = await DbUsers.getCurrentOrganization();
-      _organizationId = orgData?.id;
-
+      final loaded = await accounts;
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
+      setState(() => _unitAccounts = loaded);
+    } catch (error, stack) {
+      AppLogger.error(
+          'get_bank_accounts_for_unit_management failed: $error\n$stack');
+      if (mounted) setState(() => _accountsLoadFailed = true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+    await organization;
+  }
+
+  Future<void> _loadOrganization() async {
+    if (mounted) setState(() => _organizationLoadFailed = false);
+    try {
+      final organization = await DbUsers.getCurrentOrganization();
+      if (mounted) setState(() => _organizationId = organization?.id);
+    } catch (error, stack) {
+      AppLogger.error('get_current_organization_data failed: $error\n$stack');
       if (mounted) {
-        setState(() => _isLoading = false);
-        _showError('Error loading accounts: $e');
+        setState(() {
+          _organizationId = null;
+          _organizationLoadFailed = true;
+        });
       }
     }
   }
+
+  Widget _loadError(VoidCallback retry) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(child: Text(CommonStrings.unexpectedError)),
+            TextButton.icon(
+              onPressed: retry,
+              icon: const Icon(Icons.refresh),
+              label: Text(CommonStrings.retry),
+            ),
+          ],
+        ),
+      );
 
   Future<List<BankAccountModel>> _loadAvailableAccounts() async {
     final organizationAccounts = _organizationId == null
@@ -449,6 +481,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                 constraints: const BoxConstraints(maxWidth: 800),
                 child: Column(
                   children: [
+                    if (_accountsLoadFailed) _loadError(_loadData),
+                    if (_organizationLoadFailed) _loadError(_loadOrganization),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(

@@ -72,4 +72,3 @@ export function auditLegacyAdapters(
     coverage_proof: 'partial-static-evidence-not-operation-completeness',
   };
 }
-

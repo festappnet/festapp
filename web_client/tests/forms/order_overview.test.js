@@ -331,3 +331,16 @@ test('submitted answers localize gender and calendar dates without exposing stor
  const values=[...host.querySelectorAll('.overview-answers dd')].map(x=>x.textContent);
  assert.deepEqual(values,['Žena','24. 1. 1990']);
 });
+
+test('standing tickets display the saved area name beside the unchanged product and price', t => {
+    const host = setup(t);
+    const data = fixture();
+    data.orders[0].items = [{ticketId:2,id:9,title:'Místo',price:500,currency:'CZK',isStanding:true,standingAreaTitle:'Parket <VIP>'}];
+    renderOrderOverview(host,data);
+    const seating = host.querySelector('.overview-product-seating');
+    assert.ok(seating);
+    assert.match(seating.textContent,/Parket <VIP>/);
+    assert.equal(seating.querySelector('vip'),null);
+    assert.match(host.textContent,/Místo/);
+    assert.match(host.textContent,/500,00/);
+});

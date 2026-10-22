@@ -4,6 +4,8 @@ import 'package:fstapp/components/users/unit_user_model.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import '../../support/fixtures/root_supabase_fixture.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -13,6 +15,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/unit_occasion_dashboard.dart';
 import 'package:fstapp/components/unit/views/occasions_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -33,6 +36,8 @@ void main() {
   testWidgets(
       'landing is controlled only through card menus with one visible marker',
       (tester) async {
+    tzdata.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting();
@@ -84,17 +89,29 @@ void main() {
                     key: boundary,
                     child: OccasionsScreen(
                       unit: UnitModel(id: 999),
-                      initialOccasions: [
-                        for (final id in [1, 2])
-                          OccasionModel(
-                              id: id,
-                              title: 'Slunovrat ${2025 + id}',
-                              startTime: DateTime(2025 + id, 6, 18),
-                              endTime: DateTime(2025 + id, 6, 20),
-                              isOpen: true,
-                              isHidden: false,
-                              isPromoted: false)
-                      ],
+                      initialDashboard: UnitOccasionDashboard.fromJson({
+                        'unit_id': 999,
+                        'drafts': [],
+                        'demo_catalog': {'items': []},
+                        'app_landing': {
+                          'enabled': true,
+                          'can_manage': true,
+                          'occasion_id': selected,
+                          'occasion_title': 'Slunovrat 2026',
+                        },
+                        'occasions': [
+                          for (final id in [1, 2])
+                            OccasionModel(
+                                    id: id,
+                                    title: 'Slunovrat ${2025 + id}',
+                                    startTime: DateTime(2025 + id, 6, 18),
+                                    endTime: DateTime(2025 + id, 6, 20),
+                                    isOpen: true,
+                                    isHidden: false,
+                                    isPromoted: false)
+                                .toJson()
+                        ],
+                      }),
                     ))))));
     await tester.pumpAndSettle();
     expect(find.text('Aplikace se otevře akcí: Slunovrat 2026'), findsNothing);
@@ -131,6 +148,8 @@ void main() {
   testWidgets(
       'unit role labels never substitute for creation capabilities and revocation hides controls',
       (tester) async {
+    tzdata.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Europe/Prague'));
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await initializeDateFormatting();

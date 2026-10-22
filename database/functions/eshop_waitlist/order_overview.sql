@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.customer_order_payment_internal(p_order bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH facts AS (
- SELECT o.*,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
+ SELECT o.*,p.payment_method,p.amount,coalesce(p.paid,0) received,coalesce(p.returned,0) returned,
  p.deposit_amount,p.deposit_deadline,p.deadline,p.variable_symbol,p.creditor_reference,
  b.account_number,b.account_number_human_readable,
  coalesce(nullif(trim(b.creditor_name),''),(SELECT left(trim(regexp_replace(org.title,'[[:space:][:cntrl:]]+',' ','g')),70) FROM public.occasions occ JOIN public.organizations org ON org.id=occ.organization WHERE occ.id=o.occasion)) creditor_name,
@@ -21,7 +21,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  due AS (SELECT *,greatest(amount-received,0) outstanding,
  CASE WHEN deposit_amount>received THEN greatest(deposit_amount-received,0) ELSE greatest(amount-received,0) END due_now,
  CASE WHEN deposit_amount>received THEN deposit_deadline ELSE deadline END due_at FROM facts)
- SELECT jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
+ SELECT CASE WHEN payment_method='stripe' THEN public.stripe_order_payment_projection_internal(p_order) ELSE jsonb_build_object('status',status,'amount',amount,'received',received,'returned',returned,
  'totalOutstanding',outstanding,'overpaid',greatest(received-amount,0),'depositAmount',deposit_amount,
  'depositDeadline',deposit_deadline,'finalDeadline',deadline,
  'dueNow',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN due_now ELSE 0 END,
@@ -41,7 +41,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
   'kind',CASE WHEN t.transaction_type='return' THEN 'refund' WHEN t.amount>0 THEN 'payment_received' ELSE 'payment_adjustment' END)
   ORDER BY t.created_at NULLS LAST,t.id),'[]') FROM eshop.transactions t WHERE t.payment_info=due.payment_info),
  'publicAccount',CASE WHEN status IN ('unpaid','partially_paid','deposit_paid') THEN coalesce(account_number_human_readable,account_number) END)
- FROM due;
+ END FROM due;
 $$;
 REVOKE ALL ON FUNCTION public.customer_order_payment_internal(bigint) FROM PUBLIC,anon,authenticated;
 
@@ -164,7 +164,7 @@ BEGIN
   'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
   'items',CASE WHEN o.state='preparing_payment' THEN '[]'::jsonb ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object(
-   'ticketId',t->'id','id',p->'id','title',p->>'title','spotTitle',p->>'spot_title','spotGroupTitle',p->>'spot_group_title','price',p->'price','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
+   'ticketId',t->'id','id',p->'id','title',p->>'title','spotTitle',p->>'spot_title','spotGroupTitle',p->>'spot_group_title','isStanding',coalesce((p->>'is_standing')::boolean,false),'standingAreaTitle',p->>'standing_area_title','price',p->'price','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
     (SELECT min(coalesce(ff."order",0)) FROM public.form_fields ff WHERE ff.form=f.id AND ff.product_type=product.product_type) NULLS LAST,
     coalesce(product."order",0),product.id),'[]')
    FROM jsonb_array_elements(public.order_tickets_with_seating_internal(o.id,o.data->'tickets')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p

@@ -274,7 +274,7 @@ const expectedIsAllUnit = configValue('WEB_IS_ALL_UNIT');
 const expectedIsAppSupported = configValue('IS_APP_SUPPORTED');
 assert.match(
   flutterConfig,
-  new RegExp(`static const bool isAppSupported = ${expectedIsAppSupported};`),
+  new RegExp(`static const bool isAppSupported\\s*=\\s*bool\\.fromEnvironment\\(\\s*'FESTAPP_APP_SUPPORTED',\\s*defaultValue:\\s*${expectedIsAppSupported}\\s*\\);`),
   'generated Flutter isAppSupported differs from project.conf',
 );
 assert.match(
@@ -299,6 +299,7 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
   const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
   const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
   assert.deepEqual(published.Scanner, canonical.Scanner, `published ${locale} scanner translations differ from canonical source`);
+  assert.deepEqual(published.FeatureBlueprint, canonical.FeatureBlueprint, `published ${locale} blueprint translations differ from canonical source`);
 }
 
 const siteManifest = JSON.parse(siteManifestText);

@@ -2,12 +2,14 @@
 class OccasionSaleForm {
   final int id;
   final bool isOpen;
+  final bool hasTickets;
   final DateTime? start, end;
   final bool countdown, hasAvailability, isPreparation;
   final String mode;
   const OccasionSaleForm(
       {required this.id,
       required this.isOpen,
+      this.hasTickets = true,
       this.start,
       this.end,
       this.countdown = false,
@@ -19,6 +21,7 @@ class OccasionSaleForm {
       OccasionSaleForm(
           id: json['id'] as int,
           isOpen: json['is_open'] == true,
+          hasTickets: json['has_tickets'] != false,
           start:
               DateTime.tryParse(json['start_time'] as String? ?? '')?.toUtc(),
           end: DateTime.tryParse(json['end_time'] as String? ?? '')?.toUtc(),
@@ -30,6 +33,7 @@ class OccasionSaleForm {
   Map<String, dynamic> toJson() => {
         'id': id,
         'is_open': isOpen,
+        'has_tickets': hasTickets,
         'start_time': start?.toIso8601String(),
         'end_time': end?.toIso8601String(),
         'enable_countdown': countdown,

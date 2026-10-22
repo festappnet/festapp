@@ -65,6 +65,12 @@ const canonicalOriginalSourceFields = <String, Map<String, Object>>{
   'sha256': {'type': 'string', 'pattern': r'^[a-f0-9]{64}$'},
 };
 const canonicalSeatingFields = <String, Map<String, Object>>{
+  'edgeCounts': {
+    'type': 'array',
+    'minItems': 4,
+    'maxItems': 4,
+    'items': {'type': 'integer', 'minimum': 0, 'maximum': 20000},
+  },
   'width': {'type': 'number', 'minimum': 1, 'maximum': 1000000},
   'height': {'type': 'number', 'minimum': 1, 'maximum': 1000000},
   'gap': {'type': 'number', 'minimum': 0, 'maximum': 1000000},
@@ -282,6 +288,24 @@ List<CanonicalContractIssue> validateCanonicalLeaves(
             (rule['exclusiveMinimum'] == null ||
                 v > (rule['exclusiveMinimum'] as num)) &&
             (rule['maximum'] == null || v <= (rule['maximum'] as num));
+      case 'array':
+        valid =
+            valid &&
+            v is List &&
+            (rule['minItems'] == null ||
+                v.length >= (rule['minItems'] as int)) &&
+            (rule['maxItems'] == null || v.length <= (rule['maxItems'] as int));
+        if (valid && rule['items'] is Map) {
+          final itemRule = Map<String, Object>.from(rule['items'] as Map);
+          for (final item in v) {
+            if (validateCanonicalLeaves(
+              {'value': item},
+              {'value': itemRule},
+              at,
+            ).isNotEmpty)
+              valid = false;
+          }
+        }
       case 'boolean':
         valid = valid && v is bool;
     }
