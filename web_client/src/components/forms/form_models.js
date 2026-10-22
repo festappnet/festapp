@@ -127,6 +127,7 @@ export class FormModel {
         this.id = data.id;
         this.createdAt = data.created_at ? new Date(data.created_at) : null;
         this.title = data.title;
+        this.seo = data.seo || null;
         this.description = data.description;
         this.data = data.data || {};
         this.key = data.key;

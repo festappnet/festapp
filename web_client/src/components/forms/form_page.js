@@ -153,6 +153,7 @@ export class FormPage extends Component {
         this.pageHost.append(this.host, footer);
         this.identityFooter = new OrganizationIdentityFooter(footer);
         this.renderLoading();
+        document.getElementById("public-seo-summary")?.remove();
         // Containment for fixed children (Embedding Support)
         this.pageHost.style.transform = 'translate(0)';
         this.pageHost.style.display = 'block';

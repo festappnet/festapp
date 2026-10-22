@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import { getOccasionHref } from '../../web_client/src/components/occasion/occasion_link.js';
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
-const workerSource = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+const scannerSource = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
+const workerSource = scannerSource + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+  .replace('// SHARED_PUBLIC_PAGE_SEO', readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('// SHARED_CATALOG_CLASSIFICATION', readFileSync(new URL('../../web_client/src/components/occasion/catalog.js', import.meta.url), 'utf8').replaceAll('export function', 'function'))
   .replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = "vstupenky.online";');
 const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(workerSource).toString('base64'));
@@ -13,8 +15,8 @@ const env = {
   SUPABASE_URL: 'https://backend.invalid', SUPABASE_ANON_KEY: 'public-fixture', ORGANIZATION_ID: 3,
   ASSETS: { fetch: async request => {
     const path = new URL(request.url).pathname;
-    return ['/webclient', '/flutter'].includes(path)
-      ? new Response(path === '/webclient' ? shell : 'flutter app')
+    return ['/webclient', '/flutter', '/organizers-page'].includes(path)
+      ? new Response(path === '/webclient' ? shell : path === '/organizers-page' ? '<h1>Marketing</h1>' : 'flutter app')
       : new Response('missing', { status: 404 });
   } },
 };
@@ -34,7 +36,6 @@ test('server HTML and sitemap agree with native card destinations, escape conten
   const home = await worker.fetch(request('/'), env);
   const html = await home.text();
   assert.equal(home.status, 200);
-  assert.ok(html.includes('href="/pro-poradatele"'), 'main catalogue retains organizer navigation');
   for (const occasion of occasions) {
     const href = getOccasionHref(occasion).replaceAll('&', '&amp;');
     assert.ok(html.includes(`<a href="${href}">`), href);
@@ -79,7 +80,7 @@ test('confirmed missing forms, unknown slugs and missing assets return 404; vali
     assert.equal(response.status, 404, path);
     assert.ok((await response.text()).includes('noindex'));
   }
-  for (const path of ['/valid-event/event', '/unit/3/edit/orders', '/signup', '/login-qr', '/resetPassword']) {
+  for (const path of ['/unit/3/edit/orders', '/signup', '/resetPassword']) {
     const response = await worker.fetch(request(path), env);
     assert.equal(response.status, 200, path);
     assert.equal(await response.text(), 'flutter app');
@@ -89,7 +90,11 @@ test('confirmed missing forms, unknown slugs and missing assets return 404; vali
 test('backend outages never turn an existing form or app route into a 404', async t => {
   t.mock.method(globalThis, 'fetch', async () => { throw new Error('network unavailable'); });
   for (const path of ['/form/valid-event', '/valid-event/event']) {
-    assert.equal((await worker.fetch(request(path), env)).status, 200);
+    const response = await worker.fetch(request(path), env);
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('retry-after'), '60');
+    assert.match(response.headers.get('cache-control'), /no-store/);
+    if (path.startsWith('/form/')) assert.ok((await response.text()).includes('href="https://tickets.invalid' + path + '"'));
   }
 });
 
@@ -133,12 +138,12 @@ test('organizer route serves its own HTML, uses apex in sitemap and deduplicates
   t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [...occasions, occasions[0]] }));
   const pageEnv = { ...env, ASSETS: { fetch: async request => new URL(request.url).pathname === '/organizers-page'
     ? new Response('<h1>Prodej vstupenek a registrace na akce</h1>') : env.ASSETS.fetch(request) } };
-  const response = await productionWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
+  const response = await productionWorker.fetch(new Request('https://vstupenky.online/'), pageEnv);
   assert.equal(response.status, 200);
   assert.match(await response.text(), /Prodej vstupenek/);
   assert.equal((await worker.fetch(request('/pro-poradatele'), env)).status, 404);
   const xml = await (await productionWorker.fetch(new Request('https://preview.pages.dev/sitemap.xml'), pageEnv)).text();
-  assert.ok(xml.includes('https://vstupenky.online/pro-poradatele'));
+  assert.ok(xml.includes('https://vstupenky.online/events'));
   assert.equal((xml.match(/<loc>https:\/\/vstupenky.online\/form\/camp-registration<\/loc>/g) || []).length, 1);
   assert.ok(!xml.includes('preview.pages.dev'));
 });
@@ -153,7 +158,7 @@ test('server catalogue preserves undated records and orders present, upcoming an
   const html = await (await worker.fetch(request('/'), env)).text();
   assert.ok(html.indexOf('Current</a>') < html.indexOf('Next</a>'));
   assert.ok(html.indexOf('Next</a>') < html.indexOf('Archive (Copy)</a>'));
-  assert.match(html, /<section class="catalog-archive"><h2>Proběhlé události<\/h2>/);
+  assert.ok(html.includes('<section class="catalog-archive"><h2>Proběhlé události</h2>'));
   assert.ok(html.includes('No date</a>'));
   assert.ok(html.includes('data-server-catalog="ready"'));
 });
@@ -167,18 +172,79 @@ test('malformed catalogue payload is unavailable rather than an empty catalogue'
 });
 
 
-test('organizer route is preserved by the real ticket-only policy', async () => {
-  const source = productionSource.replace('const IS_APP_SUPPORTED = true;', 'const IS_APP_SUPPORTED = false;')
-    .replace('// PUBLIC_OCCASION_ROUTE_POLICY', readFileSync(new URL('../../web_client/src/services/public_occasion_routes.js', import.meta.url), 'utf8').replaceAll('export function ', 'function '));
-  const { default: ticketWorker } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
-  const pageEnv = { ...env, ASSETS: { fetch: async request => new URL(request.url).pathname === '/organizers-page'
-    ? new Response('<h1>Prodej vstupenek a registrace na akce</h1>') : env.ASSETS.fetch(request) } };
-  const response = await ticketWorker.fetch(new Request('https://vstupenky.online/pro-poradatele'), pageEnv);
-  assert.equal(response.status, 200);
-  assert.match(await response.text(), /Prodej vstupenek/);
+test('marketing root stays backend independent; catalog and legacy redirects preserve queries', async t => {
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('backend down'); });
+  const root = await productionWorker.fetch(request('/?utm_source=mail'), env);
+  assert.equal(root.status, 200);
+  assert.match(await root.text(), /Marketing/);
+  assert.equal(fetch.mock.calls.length, 0);
+  for (const [source, target] of [
+    ['/?create=1&utm_source=mail', '/login?utm_source=mail'],
+    ['/?q=ples', '/events?q=ples'], ['/events/?q=ples', '/events?q=ples'],
+    ['/pro-poradatele?utm_source=mail', '/?utm_source=mail'], ['/pro-poradatele/', '/'],
+  ]) {
+    const response = await productionWorker.fetch(request(source), env);
+    assert.equal(response.status, 308);
+    assert.equal(new URL(response.headers.get('location')).pathname + new URL(response.headers.get('location')).search, target);
+  }
+  const catalog = await productionWorker.fetch(request('/events'), env);
+  assert.equal(catalog.status, 200);
+  assert.match(await catalog.text(), /https:\/\/vstupenky.online\/events/);
+});
+
+test('marketing tenant keeps scanner, OAuth and internal document response policies', async () => {
+  for (const path of ['/scan', '/scan/private-code', '/login-qr', '/google-auth', '/app/google-auth']) {
+    const response = await productionWorker.fetch(request(path), env);
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get('cache-control'), 'no-store', path);
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer', path);
+  }
+  for (const path of ['/organizers-page', '/webclient', '/flutter']) {
+    const response = await productionWorker.fetch(request(path), env);
+    assert.equal(response.status, 301, path);
+    assert.equal(new URL(response.headers.get('location')).pathname, '/');
+  }
 });
 
 
+test('saved route identity redirects aliases with query intact and never confuses event/form namespaces', async t => {
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    const args = JSON.parse(options.body);
+    assert.equal(args.p_link_slug, 'old');
+    return Response.json({ title: 'Occasion', form_title: 'Ticket form', form_link: args.p_route_type === 'form' ? 'new-form' : null, occasion_link: 'new-event' });
+  });
+  for (const [path, target] of [['/form/old?code=a%2Bb', '/form/new-form?code=a%2Bb'], ['/old/event?utm_source=old', '/new-event/event?utm_source=old']]) {
+    const response = await worker.fetch(request(path), env);
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('location'), 'https://tickets.invalid' + target);
+  }
+});
+
+test('public event HTML contains factual escaped content without JS and removes its summary on Flutter readiness', async t => {
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.equal(JSON.parse(options.body).p_route_type, 'event');
+    return Response.json({ title: 'Concert & friends', description: '<p>Doors &amp; music</p><script>bad()</script>', occasion_link: 'concert', start_time: '2027-02-20T18:00:00Z' });
+  });
+  const fixtureEnv = { ...env, ASSETS: { fetch: async () => new Response('<html><head><title>Old</title></head><body>Flutter</body></html>') } };
+  const response = await worker.fetch(request('/concert/event'), fixtureEnv);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.ok(html.includes('<h1>Concert &amp; friends</h1>'));
+  assert.ok(html.includes('Doors &amp; music'));
+  assert.ok(html.includes('datetime="2027-02-20T18:00:00Z"'));
+  assert.ok(!html.includes('flutter-first-frame')); // Cleanup belongs to the static CSP-bound Flutter bootstrap.
+  assert.ok(!html.includes('bad()'));
+  assert.ok(!html.includes('application/ld+json'));
+});
+
+test('HTTP errors, malformed payloads and missing backend configuration return temporary form failure', async t => {
+  for (const result of [new Response('bad', {status:503}), Response.json([]), Response.json({error:'bad'})]) {
+    t.mock.method(globalThis, 'fetch', async () => result.clone());
+    assert.equal((await worker.fetch(request('/form/live'), env)).status, 503);
+    t.mock.restoreAll();
+  }
+  assert.equal((await worker.fetch(request('/form/live'), {...env, SUPABASE_URL:null})).status, 503);
+});
 test('server archive stays visible and groups large multi-year archives', async t => {
   const past = Array.from({length: 9}, (_, i) => ({
     ...occasions[0], title: `Archive ${i}`, link: `archive-${i}`,
@@ -243,4 +309,16 @@ test('unit catalogue exposes escaped organizer identity in HTML even without Jav
   assert.ok(!html.includes('href="/pro-poradatele"'), 'individual organizer catalogues omit organizer navigation');
   assert.ok(html.includes('<title>Pořadatel &lt;script&gt;bad&lt;/script&gt; | vstupenky.online</title>'));
   assert.ok(!html.includes('<script>bad</script>'));
+});
+
+
+test('other tenants keep their event catalogue and never serve the marketing homepage', async t => {
+ t.mock.method(globalThis,'fetch',async()=>Response.json({occasions}));
+ const response=await worker.fetch(new Request('https://other.invalid/'),env);
+ const html=await response.text();
+ assert.equal(response.status,200);
+ assert.ok(html.includes('data-server-catalog="ready"'));
+ assert.ok(html.includes('/form/camp-registration'));
+ assert.ok(!html.includes('data-page="organizers"'));
+ assert.equal((await worker.fetch(new Request('https://other.invalid/pro-poradatele'),env)).status,404);
 });

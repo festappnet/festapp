@@ -1,3 +1,5 @@
+import { FormModel } from '../../src/components/forms/form_models.js';
+import { publicPageSeo } from '../../src/services/public_page_seo.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
@@ -16,11 +18,11 @@ test('SPA form changes update canonical, share URLs and images without retaining
     SeoService.updateMetaTags({ title: 'Second', description: 'Second description' }, 'https://tickets.invalid/form/second?campaign=another');
     assert.equal(document.title, 'Second - vstupenky.online');
     for (const property of ['og:url', 'twitter:url']) {
-        assert.equal(document.querySelector(`meta[property="${property}"]`).content, 'https://tickets.invalid/form/second');
+        assert.equal(document.querySelector(`meta[property="${property}"],meta[name="${property}"]`).content, 'https://tickets.invalid/form/second');
     }
     assert.equal(document.querySelector('link[rel=canonical]').href, 'https://tickets.invalid/form/second');
     for (const property of ['og:image', 'twitter:image']) {
-        assert.equal(document.querySelector(`meta[property="${property}"]`).content, 'https://tickets.invalid/android-chrome-512x512.png');
+        assert.equal(document.querySelector(`meta[property="${property}"],meta[name="${property}"]`).content, 'https://tickets.invalid/android-chrome-512x512.png');
     }
     assert.equal(document.querySelector('meta[property="og:image:width"]'), null);
     assert.equal(document.querySelector('meta[property="og:image:height"]'), null);
@@ -36,4 +38,18 @@ test('tenant www URL canonicalizes to configured HTTPS apex without tracking or 
         assert.equal(document.querySelector('link[rel=canonical]').href, 'https://vstupenky.online/form/live');
         assert.equal(document.querySelector('meta[property="og:url"]').content, 'https://vstupenky.online/form/live');
     } finally { AppConfig.webLink = previous; dom.window.close(); }
+});
+
+
+test('hydrated metadata equals the edge projection, including alias identity, entities and image', () => {
+    const dom = new JSDOM('<!doctype html><head></head>', { url: 'https://tickets.invalid/form/old' });
+    globalThis.window = dom.window; globalThis.document = dom.window.document;
+    const seo = { title: 'Occasion', form_title: 'Tickets', form_description: '<p>Dinner&nbsp;&amp; music &#269;</p><script>bad()</script>', form_link: 'saved', image: 'posters/event.png' };
+    const expected = publicPageSeo(seo, {origin:'https://tickets.invalid', siteName:AppConfig.appTitleShort, path:'/form/old'});
+    SeoService.updateMetaTags(new FormModel({title:'Different fallback', seo}), dom.window.location.href);
+    assert.equal(document.title, expected.title);
+    assert.equal(document.querySelector('meta[name="description"]').content, 'Dinner & music č');
+    assert.equal(document.querySelector('meta[property="og:image"]').content, expected.image);
+    assert.equal(document.querySelector('link[rel="canonical"]').href, expected.canonical);
+    dom.window.close();
 });

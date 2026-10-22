@@ -5,6 +5,7 @@ const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 
 const profiles = Object.fromEntries(['webclient','flutter','auth_bridge','organizers','none','static-test'].map(profile => [profile, {policy: `base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-${profile}'; script-src-attr 'none'; report-uri /_security/csp-report?profile=${profile}; report-to csp-${profile}`} ]));
 const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
 const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+ .replace('// SHARED_PUBLIC_PAGE_SEO',readFileSync(new URL('../../web_client/src/services/public_page_seo.js', import.meta.url),'utf8').replaceAll('export function','function'))
  .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', () => `const CSP_MANIFEST = ${JSON.stringify({profiles, documents:{'privacy/index.html':{profile:'static-test'}}})};`)
  .replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
@@ -14,7 +15,7 @@ const env = {ASSETS:{fetch:async req => {
 }}};
 const request = path => new Request('https://fixture.invalid' + path);
 test('all actual HTML router branches including bridge, callback, fallback and static responses carry their document policy', async () => {
- for (const [path, profile] of [['/','webclient'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/settings/mcp-connect','webclient'],['/auth_bridge.html','auth_bridge'],['/pro-poradatele','organizers'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
+ for (const [path, profile] of [['/','organizers'],['/form/example','webclient'],['/admin','flutter'],['/app/google-auth','flutter'],['/google-auth','webclient'],['/settings/mcp-connect','webclient'],['/auth_bridge.html','auth_bridge'],['/events','webclient'],['/unknown/deep','flutter'],['/missing.js','none'],['/privacy/','static-test'],['/flutter?pwa-cache=1','flutter']]) {
   const res = await worker.fetch(request(path), env);
   assert.equal(res.headers.get('content-security-policy'), "base-uri 'self'; object-src 'none'", path);
   assert.equal(res.headers.get('content-security-policy-report-only'), profiles[profile].policy, path);
@@ -49,7 +50,7 @@ test('accepted reports log only bounded fields and discard tokens, sample, refer
 test('enforcing manifest moves script policy to enforcement without a duplicate Report-Only header', async () => {
  const enforcing = source.replace('const CSP_MANIFEST = ' + JSON.stringify({profiles, documents:{'privacy/index.html':{profile:'static-test'}}}) + ';', () => 'const CSP_MANIFEST = ' + JSON.stringify({mode:'enforce',profiles,documents:{}}) + ';');
  const {default: active} = await import('data:text/javascript;base64,' + Buffer.from(enforcing).toString('base64'));
- for (const [path,profile] of [['/','webclient'],['/admin','flutter'],['/auth_bridge','auth_bridge'],['/unknown','flutter']]) {
+ for (const [path,profile] of [['/','organizers'],['/admin','flutter'],['/auth_bridge','auth_bridge'],['/unknown','flutter']]) {
   const response = await active.fetch(request(path),env);
   assert.equal(response.headers.get('content-security-policy'),profiles[profile].policy);
   assert.equal(response.headers.get('content-security-policy-report-only'),null);

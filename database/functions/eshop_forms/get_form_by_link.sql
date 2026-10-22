@@ -40,6 +40,7 @@ BEGIN
             'data', jsonb_build_object(
                 'organizationIdentity', (SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
                 'header_off', f.header_off,
+                'seo', public.get_occasion_seo_data(f.link, 'form'),
                 'is_open', f.is_open
             )
         )
@@ -68,6 +69,7 @@ BEGIN
             'data', public.get_effective_form_data(f.id),
             'type', f.type,
             'title', f.title,
+            'seo', public.get_occasion_seo_data(f.link, 'form'),
             'is_open', f.is_open,
             'header', f.header,
             'header_off', f.header_off,

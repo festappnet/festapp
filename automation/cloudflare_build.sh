@@ -197,6 +197,11 @@ async function handleHome(request, env) {
   const base = await serveAsset(env, request, WEB_CLIENT_INDEX);
   let html = await base.text();
   const unitMatch = new URL(request.url).pathname.match(/^\/unit\/([1-9]\d*)\/?$/);
+  if (ORGANIZERS_ENABLED && !unitMatch) {
+    const canonical = (CANONICAL_ORIGIN || new URL(request.url).origin) + "/events";
+    html = html.replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
+      .replace(/(<meta[^>]*property="(?:og:url|twitter:url)"[^>]*content=")[^"]*/gi, (_, prefix) => prefix + canonical);
+  }
   if (unitMatch) html = html.replace(/<!-- ORGANIZERS_NAV_START -->[\s\S]*?<!-- ORGANIZERS_NAV_END -->/, '');
   try {
     const { occasions, title } = await publicCatalogue(env, unitMatch ? Number(unitMatch[1]) : null);
@@ -264,7 +269,7 @@ async function handleSitemap(request, env) {
   const baseUrl = CANONICAL_ORIGIN || url.origin;
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
 
-  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/pro-poradatele</loc></url>` : "";
+  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "";
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -304,79 +309,63 @@ ${organizerEntry}
 // ---------------------------------------------------------------------------
 // /form/<slug> — web client HTML with OG / twitter / canonical meta injected
 // ---------------------------------------------------------------------------
-async function handleForm(request, env, path) {
-  // Fetch base HTML (web client index) so the rest of the SPA works as usual.
-  const baseRes = await serveAsset(env, request, WEB_CLIENT_INDEX);
+// SHARED_PUBLIC_PAGE_SEO
+function publicSeoHtml(baseHtml, seo) {
+  let page = baseHtml.replace(/<title[^>]*>[\s\S]*?<\/title>/i, () => `<title>${escapeHtml(seo.title)}</title>`);
+  // Remove both attribute orders and stale catalog structured data, then emit one identity.
+  page = page.replace(/<meta\b[^>]*(?:name|property)=["'](?:description|(?:og|twitter):(?:title|description|image(?::(?:width|height))?|url))["'][^>]*>/gi, '')
+    .replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi, '')
+    .replace(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  const tags = `<link rel="canonical" href="${escapeHtml(seo.canonical)}"><meta name="description" content="${escapeHtml(seo.description)}">`
+    + ['og', 'twitter'].map(prefix => Object.entries({ title: seo.title, description: seo.description, image: seo.image, url: seo.canonical })
+      .map(([name, value]) => `<meta ${prefix === 'twitter' ? 'name' : 'property'}="${prefix}:${name}" content="${escapeHtml(value)}">`).join('')).join('');
+  return page.replace('</head>', () => tags + '</head>');
+}
+
+// A backend outage is temporary, never an unrelated successful catalog page.
+function publicSeoUnavailable(baseHtml, headers, url, kind) {
+  const seo = publicPageSeo({ title: 'Informace o akci jsou dočasně nedostupné' }, {
+    origin: CANONICAL_ORIGIN || url.origin, siteName: SITE_NAME, path: url.pathname, kind,
+  });
+  const response = htmlResponse(publicSeoHtml(baseHtml, seo), headers, 503, kind === "event" ? "flutter" : "webclient");
+  response.headers.set('cache-control', 'no-store, max-age=0');
+  response.headers.set('retry-after', '60');
+  return response;
+}
+
+async function handlePublicPage(request, env, path, kind) {
+  const baseRes = await serveAsset(env, request, kind === 'form' ? WEB_CLIENT_INDEX : FLUTTER_ENTRY);
   const baseHtml = await baseRes.text();
-  const baseHeaders = baseRes.headers;
-
+  const url = new URL(request.url);
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length !== 2) return notFound();
+  let slug;
+  try { slug = decodeURIComponent(parts[kind === 'form' ? 1 : 0]); } catch { return notFound(); }
+  if (!slug || /[\/\u0000-\u001f]/.test(slug)) return notFound();
   try {
-    const url = new URL(request.url);
-    const slug = path.replace(/^\/form\//, "").split("/")[0];
-    if (!slug || path.split("/").filter(Boolean).length !== 2) return notFound();
-
-    const supabaseUrl = env.SUPABASE_URL;
-    const supabaseKey = env.SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) return htmlResponse(baseHtml, baseHeaders);
-
-    const rpc = await fetch(`${supabaseUrl}/rest/v1/rpc/get_occasion_seo_data`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: supabaseKey,
-        authorization: `Bearer ${supabaseKey}`,
-      },
-      body: JSON.stringify({ p_link_slug: decodeURIComponent(slug) }),
-      signal: AbortSignal.timeout(2500),
+    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error('SEO backend configuration unavailable');
+    const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_occasion_seo_data`, {
+      method: 'POST', headers: { 'content-type': 'application/json', apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ p_link_slug: slug, p_route_type: kind }), signal: AbortSignal.timeout(2500),
     });
-    if (!rpc.ok) return htmlResponse(baseHtml, baseHeaders);
-    const seo = await rpc.json();
-    if (!seo) return notFound();
+    if (!rpc.ok) throw new Error(`SEO backend HTTP ${rpc.status}`);
+    const data = await rpc.json();
+    if (data === null) return notFound();
+    if (typeof data !== 'object' || Array.isArray(data) || typeof data.title !== 'string') throw new Error('Invalid SEO backend response');
+    const seo = publicPageSeo(data, { origin: CANONICAL_ORIGIN || url.origin, siteName: SITE_NAME, path, kind });
+    // Only a resolved saved identity can redirect an alias. Preserve payment/OAuth queries.
+    if ((kind === 'form' ? data.form_link : data.occasion_link) && url.pathname !== new URL(seo.canonical).pathname) {
+      const target = new URL(seo.canonical); target.search = url.search;
+      return Response.redirect(target.href, 308);
+    }
+    let page = publicSeoHtml(baseHtml, seo);
+    const summary = `<section id="public-seo-summary" style="max-width:48rem;margin:2rem auto;padding:1rem"><h1>${escapeHtml(seo.name)}</h1><p>${escapeHtml(seo.description)}</p>${data.start_time && Number.isFinite(Date.parse(data.start_time)) ? `<p><time datetime="${escapeHtml(data.start_time)}">${escapeHtml(new Intl.DateTimeFormat('cs-CZ', {dateStyle:'long', timeStyle:'short', timeZone:'Europe/Prague'}).format(new Date(data.start_time)))}</time></p>` : ''}</section>`;
+    page = page.replace(/<body\b[^>]*>/i, match => match + summary);
 
-    const orgTitle = SITE_NAME;
-    const title = seo.title || "Event";
-    let description = seo.form_description || seo.description ||
-      "Rychlé a jednoduché založení události, prodej vstupenek a registrace.";
-    description = description.replace(/<[^>]+>/gm, " ").replace(/\s+/g, " ").trim();
-    const imagePath = (seo.data && seo.data.image) || seo.image;
-    let imageUrl;
-    if (imagePath && /^https?:\/\//i.test(imagePath)) imageUrl = imagePath;
-    else if (imagePath) imageUrl = `https://img.festapp.net/${imagePath}`;
-    else imageUrl = `${CANONICAL_ORIGIN || url.origin}/android-chrome-512x512.png`;
-    const fullTitle = `${title} - ${orgTitle}`;
-    const canonicalUrl = new URL(url.pathname, CANONICAL_ORIGIN || url.origin).href;
-
-    let page = baseHtml;
-    page = page.replace(/<title[^>]*>.*?<\/title>/i, () => `<title>${escapeHtml(fullTitle)}</title>`);
-
-    const replaceMeta = (attr, name, content) => {
-      const re = new RegExp(`(<meta[^>]*${attr}=["']${name}["'][^>]*content=["'])([^"']*)(["'][^>]*>)`, "gi");
-      if (re.test(page)) {
-        page = page.replace(re, (_match, before, _old, after) => before + escapeHtml(content) + after);
-      } else {
-        const tagRe = new RegExp(`<meta[^>]*${attr}=["']${name}["'][^>]*>`, "gi");
-        page = page.replace(tagRe, (m) => m.replace(/content=["'][^"']*["']/i, () => `content="${escapeHtml(content)}"`));
-      }
-    };
-
-    replaceMeta("property", "og:title", fullTitle);
-    replaceMeta("property", "twitter:title", fullTitle);
-    replaceMeta("name", "description", description);
-    replaceMeta("property", "og:description", description);
-    replaceMeta("property", "twitter:description", description);
-    replaceMeta("property", "og:image", imageUrl);
-    replaceMeta("property", "twitter:image", imageUrl);
-    replaceMeta("property", "og:url", canonicalUrl);
-    replaceMeta("property", "twitter:url", canonicalUrl);
-    page = page.replace(
-      /<link[^>]*rel=["']canonical["'][^>]*href=["'][^"']*["'][^>]*>/i,
-      () => `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`
-    );
-
-    return htmlResponse(page, baseHeaders);
-  } catch (e) {
-    console.error("form OG inject error", e);
-    return htmlResponse(baseHtml, baseHeaders);
+    return htmlResponse(page, baseRes.headers, 200, kind === "event" ? "flutter" : "webclient");
+  } catch (error) {
+    console.error('Public SEO unavailable', error.message);
+    return publicSeoUnavailable(baseHtml, baseRes.headers, url, kind);
   }
 }
 
@@ -402,9 +391,23 @@ async function routeRequest(request, env) {
 
     if (path === "/pro-poradatele" || path === "/pro-poradatele/") {
       if (!ORGANIZERS_ENABLED) return notFound();
-      if (path.endsWith("/")) return Response.redirect(new URL("/pro-poradatele" + url.search, url).href, 308);
-      const res = await serveAsset(env, request, "/organizers-page");
-      return res.ok ? htmlResponse(res.body, res.headers, 200, "organizers") : notFound();
+      return Response.redirect(new URL("/" + url.search, url).href, 308);
+    }
+    if (ORGANIZERS_ENABLED) {
+      if (["/", "/events", "/events/"].includes(path) && url.searchParams.get("create") === "1") {
+        const target = new URL("/login", url); target.search = url.search; target.searchParams.delete("create");
+        return Response.redirect(target.href, 308);
+      }
+      if (path === "/events/" || (path === "/" && url.searchParams.has("q"))) {
+        return Response.redirect(new URL("/events" + url.search, url).href, 308);
+      }
+      if (path === "/") {
+        const res = await serveAsset(env, request, "/organizers-page");
+        const response = res.ok ? htmlResponse(res.body, res.headers, 200, "organizers") : notFound();
+        response.headers.set("referrer-policy", "no-referrer");
+        return response;
+      }
+      if (path === "/events") return handleHome(request, env);
     }
 
     if (path === "/sitemap.xml") return handleSitemap(request, env);
@@ -445,7 +448,8 @@ async function routeRequest(request, env) {
       response.headers.set("referrer-policy", "no-referrer");
       return response;
     }
-    if (path.startsWith("/form/")) return handleForm(request, env, path);
+    if (path.startsWith("/form/")) return handlePublicPage(request, env, path, 'form');
+    if (/^\/[^/]+\/event\/?$/.test(path) && IS_APP_SUPPORTED) return handlePublicPage(request, env, path, 'event');
 
     // OAuth handoffs must reach the correct adapter and never enter HTML caches.
     const stripePrivateRoute = /^\/(?:app\/)?stripe\/(?:connect\/callback|pay|return)$/.test(path);
@@ -582,6 +586,8 @@ scanner_routes = pathlib.Path("web_client/src/services/scanner_routes.js").read_
 source = scanner_routes + "\n" + source
 catalog = pathlib.Path("web_client/src/components/occasion/catalog.js").read_text(encoding="utf-8").replace("export function", "function")
 source = source.replace("// SHARED_CATALOG_CLASSIFICATION", catalog)
+public_seo = pathlib.Path("web_client/src/services/public_page_seo.js").read_text(encoding="utf-8").replace("export function", "function")
+source = source.replace("// SHARED_PUBLIC_PAGE_SEO", public_seo)
 config = pathlib.Path(config_path).read_text(encoding="utf-8")
 app_supported = re.search(r'^IS_APP_SUPPORTED=(true|false)\s*$', config, re.MULTILINE)
 if not app_supported:
@@ -601,7 +607,7 @@ if canonical.scheme != 'https' or not canonical.hostname or canonical.path or ca
     raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
 source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
 source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + ('true' if canonical.hostname == 'vstupenky.online' else 'false') + ';', 1)
-name_match = re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
+name_match = re.search(r'^APP_TITLE_SHORT=(.*)$', config, re.MULTILINE) or re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
 site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
 source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)
 source, count = re.subn(

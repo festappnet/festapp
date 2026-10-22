@@ -92,6 +92,12 @@ cp -R web_client/dist/. build/web/
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
 
+# Marketing media belongs only to the vstupenky.online homepage.
+LANDING_DOMAIN="$(sed -n 's/^DOMAIN=//p' automation/project.conf | tr -d '\"' | tr -d "'" | tr -d '\r')"
+if [ "$LANDING_DOMAIN" != vstupenky.online ]; then
+    rm -rf "$BUILD_WEB_DIR/organizers-media"
+fi
+
 if [ "$TARGET" = cloudflare ]; then
     mv build/web/index.html build/web/webclient
     if [ -f build/web/auth_bridge.html ]; then

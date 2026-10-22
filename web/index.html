@@ -337,7 +337,7 @@
   <script src="festapp_flutter_bootstrap_guard.js" defer></script>
   <script src="festapp_pwa_bridge.js" defer></script>
   <script src="festapp_update_prompt.js" defer></script>
-</head>
+<noscript><style>#loader-content{display:none!important}</style></noscript></head>
 <body>
 
 <script>
@@ -475,6 +475,7 @@
   window.markFestappAppReady = function() {
     if (window.__FESTAPP_APP_READY__ === true) return;
     window.__FESTAPP_APP_READY__ = true;
+    document.getElementById('public-seo-summary')?.remove();
     const loader = document.getElementById('loader-content');
     if (loader) {
       loader.style.opacity = '0';

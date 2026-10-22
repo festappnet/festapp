@@ -1,3 +1,4 @@
+import { publicPageSeo } from './public_page_seo.js';
 import { AppConfig } from '../app_config.js';
 
 export class SeoService {
@@ -9,6 +10,24 @@ export class SeoService {
     static updateMetaTags(formModel, currentUrl) {
         if (!formModel) return;
 
+        if (formModel.seo && currentUrl) {
+            const url = new URL(currentUrl, window.location.origin);
+            const tenant = new URL(AppConfig.webLink);
+            const origin = [tenant.hostname, 'www.' + tenant.hostname].includes(url.hostname) ? tenant.origin : url.origin;
+            const seo = publicPageSeo(formModel.seo, { origin, siteName: AppConfig.appTitleShort, path: url.pathname });
+            document.title = seo.title;
+            this._setMetaTag('name', 'description', seo.description);
+            for (const prefix of ['og', 'twitter']) {
+                for (const [key, value] of Object.entries({ title: seo.title, description: seo.description, image: seo.image, url: seo.canonical })) {
+                    this._setMetaTag('property', `${prefix}:${key}`, value);
+                }
+            }
+            let canonical = document.querySelector('link[rel="canonical"]');
+            if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
+            canonical.href = seo.canonical;
+            for (const dimension of ['width', 'height']) document.querySelector(`meta[property="og:image:${dimension}"]`)?.remove();
+            return;
+        }
         const title = formModel.title || AppConfig.appName;
         
         // Extract plain text description from HTML header
@@ -89,8 +108,16 @@ export class SeoService {
             safeContent = safeContent.substring(0, 297) + '...';
         }
 
-        let element = document.querySelector(`meta[${attrName}="${attrValue}"]`);
-        
+        // Twitter uses name; accept and replace legacy property tags without duplicates.
+        if (attrValue.startsWith('twitter:')) attrName = 'name';
+        const matches = [...document.querySelectorAll(`meta[name="${attrValue}"], meta[property="${attrValue}"]`)];
+        let element = matches.shift();
+        for (const duplicate of matches) duplicate.remove();
+        if (element) {
+            element.removeAttribute(attrName === 'name' ? 'property' : 'name');
+            element.setAttribute(attrName, attrValue);
+        }
+
         if (!element) {
             element = document.createElement('meta');
             element.setAttribute(attrName, attrValue);
