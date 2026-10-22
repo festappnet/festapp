@@ -10,9 +10,12 @@ const excludedNames = new Set([
   'client-sync-config.json',
   'flutter_service_worker.js',
   'festapp_service_worker.js',
+  'organizers-page',
 ]);
 
 export function shouldPrecache(relativePath) {
+  // Marketing demonstrations are streamed, not part of the offline app.
+  if (relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
   const name = path.posix.basename(relativePath);
   if (excludedNames.has(name)) return false;
   if (name === 'NOTICES' || name.endsWith('.map') || name.endsWith('.symbols')) {
@@ -72,6 +75,8 @@ export async function collectPwaShellManifest(buildDir) {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
+  let organizerHomepage = false;
+  try { await access(path.join(buildDir, 'organizers-page')); organizerHomepage = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const collected = await collectFiles(buildDir);
   let canvasKitOnly = false;
   try {
@@ -135,6 +140,7 @@ export async function collectPwaShellManifest(buildDir) {
 
   return {
     flutterEntry,
+    organizerHomepage,
     flutterMain,
     webClientEntry,
     standaloneDocuments,

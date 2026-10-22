@@ -1,5 +1,6 @@
 import {paymentMethodText as text,paymentMethodRecipient,paymentMethodReservation} from './payment_method_strings.js';
 export function renderPaymentMethodPicker(host,options,onChanged) {
+    host.hidden=false;
     const state={selected:options.available[0]??null};
     const choiceHost=document.createElement('fieldset');choiceHost.style.cssText='border:0;padding:0;min-width:0';
     const legend=document.createElement('legend');legend.textContent=text('title');choiceHost.append(legend);host.append(choiceHost);
@@ -13,6 +14,9 @@ export function renderPaymentMethodPicker(host,options,onChanged) {
         }
         if(options.stripeConfigured&&!options.available.includes('stripe'))line(text('reason_'+options.unavailableReason));
         if(!options.available.length){line(text('unavailable'));detail.setAttribute('role','alert');}
+        const bankOnly=options.available.length===1&&state.selected==='bank';
+        choiceHost.hidden=bankOnly;
+        host.hidden=bankOnly&&detail.childElementCount===0;
         onChanged(state.selected);
     };
     for(const method of options.available){

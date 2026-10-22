@@ -17,7 +17,9 @@ export default defineConfig({
   },
   build: {
     assetsDir: 'web-assets',
+    manifest: true,
     rollupOptions: {
+      input: { index: path.resolve('index.html'), landing: path.resolve('src/marketing/landing.js') },
       output: {
         // Version the entry filename so shared chunks refer to the same module
         // identity and cached failures cannot survive a release.

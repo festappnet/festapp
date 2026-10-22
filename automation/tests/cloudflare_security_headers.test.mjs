@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 
 const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
 const scannerRoutes = readFileSync(new URL('../../web_client/src/services/scanner_routes.js', import.meta.url), 'utf8').replaceAll('export function', 'function');
-const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
+const source = scannerRoutes + '\n' + script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]
+ .replace('// SHARED_PUBLIC_PAGE_SEO',readFileSync(new URL('../../web_client/src/services/public_page_seo.js',import.meta.url),'utf8').replaceAll('export function','function'));
 const {default: worker} = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 const origin = 'https://tenant.invalid';
 const env = {ASSETS: {fetch: async request => {
@@ -19,7 +20,7 @@ function assertPolicy(response) {
 
 test('generated Pages worker secures HTML and assets while preserving route bodies', async () => {
   for (const [path, body] of [
-    ['/', '/webclient'], ['/form/example', '/webclient'],
+    ['/', '/webclient'],
     ['/login', '/flutter'], ['/auth_bridge', '/auth_bridge'], ['/unknown', '/unknown'],
     ['/web-assets/app.js', '/web-assets/app.js'], ['/main.dart.js', '/main.dart.js'],
   ]) {
@@ -29,6 +30,12 @@ test('generated Pages worker secures HTML and assets while preserving route bodi
     assert.equal(await response.text(), body);
     if (path === '/main.dart.js') assert.equal(response.headers.get('cache-control'), 'no-cache, must-revalidate');
   }
+  const temporary=await worker.fetch(new Request(origin+'/form/example'),env);
+  assertPolicy(temporary);
+  assert.equal(temporary.status,503);
+  assert.equal(temporary.headers.get('retry-after'),'60');
+  assert.match(temporary.headers.get('cache-control'),/no-store/);
+  assert.equal(await temporary.text(),'/webclient');
 });
 
 test('empty form slug returns a secured 404 rather than a successful shell', async () => {

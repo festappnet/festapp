@@ -349,7 +349,7 @@ source, count = re.subn(
     source,
     count=1,
 )
-if count != 1:
+if '"SearchAction"' in source and count != 1:
     raise SystemExit(f"missing WebSite JSON-LD search target in {path}")
 source, count = re.subn(
     r'(<link\s+[^>]*rel=["\']canonical["\'][^>]*href=["\'])[^"\']*(["\'][^>]*>)',
@@ -379,7 +379,8 @@ pathlib.Path(path).write_text(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     f'  <url><loc>https://{html.escape(domain)}/</loc></url>\n'
-    '</urlset>\n', encoding='utf-8')
+    + ('  <url><loc>https://vstupenky.online/events</loc></url>\n' if domain == 'vstupenky.online' else '')
+    + '</urlset>\n', encoding='utf-8')
 SITEMAP
 fi
 
