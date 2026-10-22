@@ -15,9 +15,9 @@ function initHeroSketch(root, win, preference) {
       [...svg.querySelectorAll(`[data-sketch-side="${side}"]`)].map((element, motifIndex) => {
         const transform = compact.matches
           ? laneIndex === 0
-            ? motifIndex % 2 === 0 ? 'translate(12 0) scale(.62)' : 'translate(152 0) scale(.62)'
-            : motifIndex % 2 === 0 ? 'translate(152 410) scale(.62)' : 'translate(12 410) scale(.62)'
-          : laneIndex === 0 ? 'translate(30 60) scale(.88)' : 'translate(900 60) scale(.88)';
+            ? motifIndex % 2 === 0 ? 'translate(12 0) scale(.7)' : 'translate(130 0) scale(.7)'
+            : motifIndex % 2 === 0 ? 'translate(130 390) scale(.7)' : 'translate(12 390) scale(.7)'
+          : laneIndex === 0 ? 'translate(30 60) scale(1)' : 'translate(870 60) scale(1)';
         element.setAttribute('transform', transform);
         element.dataset.sketchCorner = laneIndex === 0 ? motifIndex % 2 === 0 ? 'top-left' : 'top-right' : motifIndex % 2 === 0 ? 'bottom-right' : 'bottom-left';
         let total = 0;
