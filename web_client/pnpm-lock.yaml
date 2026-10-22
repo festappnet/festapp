@@ -15,8 +15,8 @@ importers:
   .:
     dependencies:
       '@festapp/venue-layout':
-        specifier: file:vendor/festapp-venue-layout-0.3.5-309647091d6d.tgz
-        version: file:vendor/festapp-venue-layout-0.3.5-309647091d6d.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)
+        specifier: file:vendor/festapp-venue-layout-0.3.5-ea3b4d08710f.tgz
+        version: file:vendor/festapp-venue-layout-0.3.5-ea3b4d08710f.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)
       '@supabase/supabase-js':
         specifier: ^2.117.3
         version: 2.117.3
@@ -277,8 +277,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-309647091d6d.tgz':
-    resolution: {integrity: sha512-ZhJG+ZRYFqpg0rSvI5/v+4KJsVrj2LKJEkFquPxk+3AwfPzOIBUXeBb7r+7/DSfkblajlKgrVEr3K43ZocilpA==, tarball: file:vendor/festapp-venue-layout-0.3.5-309647091d6d.tgz}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-ea3b4d08710f.tgz':
+    resolution: {integrity: sha512-x59/ayExtKlvQwk2sFEXiaTP7yyEZhBOs4ayxyfTFJBCB6RdRnMTZoQZH82tiOrLvHarNgU32cf4ggtXik74bg==, tarball: file:vendor/festapp-venue-layout-0.3.5-ea3b4d08710f.tgz}
     version: 0.3.5
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
@@ -1046,7 +1046,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-309647091d6d.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)': {}
+  '@festapp/venue-layout@file:vendor/festapp-venue-layout-0.3.5-ea3b4d08710f.tgz(patch_hash=d5d9073aeae8f123dc8a65b574053ae4c00cca69b8a4f4f89a612765dcb209ab)': {}
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true

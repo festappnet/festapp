@@ -194,10 +194,10 @@
         "description": "Začněte existující šablonou a upravte ji podle své akce.",
         "items": [
           {
-            "title": "Lipoltice",
+            "title": "Sál s tanečním parketem",
             "description": "186 míst u stolů, taneční parket a oddělené části sálu.",
-            "image": "/organizers-media/layout-lipoltice-wood.svg",
-            "alt": "Skutečná šablona sálu Lipoltice se 186 místy, dřevěnými stoly a tanečním parketem.",
+            "image": "/organizers-media/layout-sal-s-parketem-wood.svg",
+            "alt": "Šablona sálu se 186 místy, dřevěnými stoly, tanečním parketem a oddělenými částmi.",
             "width": 2868,
             "height": 2660
           },
