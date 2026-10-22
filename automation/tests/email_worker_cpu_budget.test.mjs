@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 const runtime = new URL('../hetzner-supabase/runtime/', import.meta.url);
 const patch = new URL('patch-function-email-cpu-budget.py', runtime).pathname;
 
-test('email PDF preparation gets a bounded CPU budget while other routes retain defaults', () => {
+test('email PDFs and ticket editor resources get a bounded CPU budget while other routes retain defaults', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'email-cpu-'));
   try {
     const file = path.join(dir, 'index.ts');
@@ -18,13 +18,18 @@ test('email PDF preparation gets a bounded CPU budget while other routes retain 
     assert.equal(spawnSync('python3', [patch, file]).status, 0);
     const result = fs.readFileSync(file, 'utf8');
     const options = result.slice(result.indexOf('create(') + 7, result.lastIndexOf(')'));
-    for (const service_name of ['process-email-queue', 'bank-sync-webhook', 'send-ticket-order', 'google-auth-start']) {
+    for (const service_name of ['process-email-queue', 'preview-ticket-layout', 'bank-sync-webhook', 'send-ticket-order', 'google-auth-start']) {
       const actual = vm.runInNewContext(`(${options})`, { service_name, servicePath: 'path', memoryLimitMb: 512, envVars: [] });
-      assert.equal(actual.cpuTimeSoftLimitMs, service_name === 'process-email-queue' ? 20000 : undefined);
-      assert.equal(actual.cpuTimeHardLimitMs, service_name === 'process-email-queue' ? 30000 : undefined);
+      assert.equal(actual.cpuTimeSoftLimitMs, ['process-email-queue','preview-ticket-layout'].includes(service_name) ? 20000 : undefined);
+      assert.equal(actual.cpuTimeHardLimitMs, ['process-email-queue','preview-ticket-layout'].includes(service_name) ? 30000 : undefined);
       assert.equal(actual.memoryLimitMb, 512);
     }
     assert.ok(result.startsWith('checkAuthorization(req);\n'));
+    assert.equal(spawnSync('python3', [patch, file]).status, 0);
+    assert.equal(fs.readFileSync(file, 'utf8'), result);
+    const previous = result.replace('["process-email-queue", "preview-ticket-layout"].includes(service_name)', 'service_name === "process-email-queue"')
+      .replace('// Document workers share a CPU budget across PDFs and font/gallery loading.', '// PDF attachments share one worker CPU budget across all tickets.');
+    fs.writeFileSync(file, previous);
     assert.equal(spawnSync('python3', [patch, file]).status, 0);
     assert.equal(fs.readFileSync(file, 'utf8'), result);
     for (const invalid of ['unrecognized router', source.replace('      envVars,', '      cpuTimeHardLimitMs: 0,\n      envVars,')]) {

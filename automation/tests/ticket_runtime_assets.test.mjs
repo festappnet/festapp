@@ -13,7 +13,7 @@ test('font enters the actual worker options without altering auth or routing',()
   fs.writeFileSync(file,source);
   assert.equal(spawnSync('python3',[patch,file]).status,0);
   const result=fs.readFileSync(file,'utf8');
-  assert.equal(result.replace('      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/*.ttf"],\n',''),source);
+  assert.equal(result.replace('      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/**/*"],\n',''),source);
   assert.equal(spawnSync('python3',[patch,file]).status,0);
   assert.equal(fs.readFileSync(file,'utf8'),result);
   fs.writeFileSync(file,'unrecognized router');
@@ -26,4 +26,15 @@ test('runtime upgrades retain the font helper used by the bundle installer',()=>
  assert.match(upgrade,/install_runtime_file "\$SCRIPT_DIR\/patch-function-static-assets.py" "\$COMPOSE_DIR\/patch-function-static-assets.py"/);
  const installer=fs.readFileSync(new URL('../hetzner-supabase/runtime/install-production-function-bundle.sh',import.meta.url),'utf8');
  assert.match(installer,/patch-function-static-assets.py/);
+});
+
+// Upgrade the exact router option used by the affected production runtime.
+test('existing top-level-only assets are upgraded for gallery fonts and artwork',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ticket-gallery-assets-'));
+ try {
+  const file=path.join(dir,'index.ts');
+  fs.writeFileSync(file,'    const worker = await EdgeRuntime.userWorkers.create({\n      staticPatterns: ["/home/deno/functions/_shared/ticket-assets/*.ttf"],\n      servicePath,\n    })\n');
+  assert.equal(spawnSync('python3',[patch,file]).status,0);
+  assert.match(fs.readFileSync(file,'utf8'),/ticket-assets\/\*\*\/\*/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });

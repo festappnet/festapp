@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""Allow bounded multi-ticket PDF preparation in the canonical email worker."""
+"""Allow bounded PDF preparation and editor resource loading in document workers."""
 import pathlib
 import sys
 
 path = pathlib.Path(sys.argv[1])
 source = path.read_text()
 anchor = '    const worker = await EdgeRuntime.userWorkers.create({\n'
-option = '''      // PDF attachments share one worker CPU budget across all tickets.
+old_option = '''      // PDF attachments share one worker CPU budget across all tickets.
       ...(service_name === "process-email-queue" ? {
         cpuTimeSoftLimitMs: 20_000,
         cpuTimeHardLimitMs: 30_000,
       } : {}), // festapp-email-cpu-budget-v1
 '''
+option = old_option.replace(
+    '// PDF attachments share one worker CPU budget across all tickets.',
+    '// Document workers share a CPU budget across PDFs and font/gallery loading.',
+).replace('service_name === "process-email-queue"',
+          '["process-email-queue", "preview-ticket-layout"].includes(service_name)')
+source = source.replace(old_option, option)
 if source.count(anchor) != 1:
     raise SystemExit('upstream Function worker contract changed')
 if option not in source:
