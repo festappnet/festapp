@@ -149,3 +149,15 @@ Deno.test('shared preview defaults and configured bank details render in full', 
   assert(result.html.includes('19-2000145399/0800')&&result.html.replace(/<[^>]*>/g,'').includes('CZ65 0800 0000 1920 0014 5399'));
   assert(result.html.includes(defaults.name));
 });
+
+Deno.test("draft catalog returns the same authorized templates and preview context", async () => {
+  const emailTemplates = [{code:"TICKET_ORDER_CONFIRMATION", template:resolved.template, customized:true}];
+  const emailScope = {unit:{id:1},organization:{id:3}};
+  const preview = await renderDraftPreview({...context,emailTemplates,emailScope});
+  assert(preview.emailTemplates === emailTemplates);
+  assert(preview.emailScope === emailScope);
+  assert(preview.authoringContext.senderAddress === (Deno.env.get("DEFAULT_EMAIL") || ""));
+  assert(preview.authoringContext.wrapperHtml === resolved.wrapper.html);
+  assert(preview.previewContext.title === context.title);
+  assert(preview.previewContext.products[0].price === 1000);
+});

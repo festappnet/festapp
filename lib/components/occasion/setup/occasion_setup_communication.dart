@@ -11,6 +11,7 @@ import 'occasion_form_draft.dart';
 import 'occasion_setup_details_strings.dart';
 import 'occasion_setup_strings.dart';
 import 'occasion_setup_email_preview.dart';
+import 'occasion_setup_email_templates.dart';
 
 void initializeCommunicationDraft(
   Map<String, dynamic> data, {
@@ -276,8 +277,10 @@ class _OccasionSetupCommunicationState
               child: Text(story('restoreDefault'))),
         if (widget.loadPreview != null) ...[
           const SizedBox(height: 24),
-          OccasionSetupEmailPreview(
-              draft: widget.data, loadPreview: widget.loadPreview!),
+          OccasionSetupEmailTemplates(
+              draft: widget.data,
+              loadPreview: widget.loadPreview!,
+              onChanged: widget.onChanged),
         ],
       ],
       if (paid && widget.paymentTiming) ...[

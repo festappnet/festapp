@@ -2336,7 +2336,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 if (!await _flush())
                   throw StateError('Koncept se nepodařilo uložit');
                 final service = TicketLayoutService()
-                    .forSetupDraft(_stored.id, _stored.unit, revision: _stored.revision)
+                    .forSetupDraft(_stored.id, _stored.unit,
+                        revision: _stored.revision)
                     .withPreviewOccasion(TicketPreviewOccasion(
                         title: d['title'] as String,
                         startTime: DateTime.tryParse(d['start'] as String),
@@ -2759,15 +2760,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       onBack: index == 0 || _presentationUploading
           ? null
           : () => _jump(_questions[index - 1].key),
+      onNext:
+          isReview || _presentationUploading || _finalizing ? null : _advance,
+      nextLabel: CommonStrings.continueAction,
       onQuestionSelected: _presentationUploading ? null : _jump,
-      maxContentWidth: question.key == 'appearance' || question.key == 'ticket'
+      maxContentWidth: question.key == 'appearance' ||
+              question.key == 'ticket' ||
+              question.key == 'communication'
           ? 1120
           : step == 3
               ? StylesConfig.formMaxWidth
               : isReview || question.optional
                   ? 960
                   : 680,
-      centerQuestion: !isEditor && !isReview && !question.optional,
+      centerQuestion: !isEditor &&
+          !isReview &&
+          !question.optional &&
+          question.key != 'communication',
       error: _error == null
           ? null
           : Row(

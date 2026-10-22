@@ -576,8 +576,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fail_stripe_reconciliation_internal(uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='4094c9113bda3eadaf32585e29f42b13'),'current SQL source parity: public.fail_stripe_reconciliation_internal(uuid,uuid)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fanout_unit_map_catalog_internal_v1(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7ce4f86bcbf5ea1284ee9f93c60b7b2b'),'current SQL source parity: public.fanout_unit_map_catalog_internal_v1(uuid,bigint)');
--- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='c348623d0a8f83cc9f8f00c92e380298'),'current SQL source parity: public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)');
+-- supabase/migrations/20261022221000_order_history_seat_snapshot_canonical.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='9aaaa6282c8725e051f0b65161b3273d'),'current SQL source parity: public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)');
 -- supabase/migrations/20261022170000_stripe_connections.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finish_stripe_connection_flow_error_internal(uuid,uuid,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='1c54d898bee790218b09b38f99a9faef'),'current SQL source parity: public.finish_stripe_connection_flow_error_internal(uuid,uuid,boolean)');
 -- supabase/migrations/20261022170000_stripe_connections.sql
