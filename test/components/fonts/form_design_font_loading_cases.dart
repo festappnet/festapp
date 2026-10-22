@@ -16,6 +16,8 @@ late WidgetEnvironmentFixture _environment;
 
 class _Fonts implements FormFontCatalog {
   @override
+  Future<void> ensureFamily(String family) async {}
+  @override
   List<String> get families => ['Inter', 'Roboto'];
   @override
   Future<TextStyle> previewStyle(String family) async => getFont(family);
