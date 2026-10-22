@@ -128,6 +128,11 @@ boundaries is a blanket permission to disable authentication on another route.
 
 ## Deployment
 
+The pinned router includes the complete `ticket-assets` tree in worker static
+files, including gallery backgrounds and gallery fonts. `preview-ticket-layout`
+and `process-email-queue` use bounded 20 s soft / 30 s hard CPU budgets for cold
+font loading and PDF work; other routes retain the runtime defaults.
+
 Canonical production uses the reviewed self-hosted Function bundle, not
 `supabase functions deploy` to a cloud project.
 
