@@ -180,9 +180,7 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                                     occasion.startTime!, occasion.endTime!),
                                 key: const ValueKey('occasion-card-date'),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: inactive
-                                      ? theme.colorScheme.onSurface
-                                      : theme.colorScheme.primary,
+                                  color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 1,
