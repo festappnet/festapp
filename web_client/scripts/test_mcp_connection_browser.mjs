@@ -23,7 +23,8 @@ try {
         if(req.url==='/assets/translations/cs.json'){res.setHeader('content-type','application/json');res.end(await readFile(new URL('../../assets/translations/cs.json',import.meta.url)));return;} next();
     });}}]});
     await server.listen();
-    await browser('open',`http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/mcp/index.html`);
+    const fixtureUrl=`http://127.0.0.1:${server.httpServer.address().port}/tests/fixtures/mcp/index.html`;
+    await browser('open',fixtureUrl);
     await browser('wait','--fn','window.consentFixture?.ready === true');
     await browser('set','viewport','1280','1000');
     await browser('snapshot','-i');
@@ -47,5 +48,24 @@ try {
     assert.equal(await evaluate('consentFixture.read().openerIsNull'),true);
     assert.equal(await evaluate('consentFixture.read().popupClosed'),true);
     assert.equal(await evaluate('performance.getEntriesByType("resource").some(r=>/flutter|main\\.dart|canvaskit/.test(r.name))'),false);
-    console.log('mcp-consent-browser: pass (real JS controls; synthetic auth/broker; no Flutter runtime)');
+    await browser('open',fixtureUrl);
+    await browser('wait','--fn','window.consentFixture?.ready === true');
+    await browser('set','viewport','320','900');
+    await browser('eval',"document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
+    await browser('snapshot','-i');
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'tree fits mobile viewport');
+    assert.equal(await evaluate('document.querySelector("[data-whole-unit]") === null'),true);
+    await browser('click','input[data-unit="3"]');
+    await browser('snapshot','-i');
+    await browser('click','input[data-unit="4"]');
+    await browser('snapshot','-i');
+    assert.deepEqual(await evaluate('consentFixture.read().access'),{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:true}],occasionIds:[]});
+    assert.equal(await evaluate('[...document.querySelectorAll("[data-occasion]")].every(i=>i.checked && i.disabled)'),true);
+    await browser('screenshot','/private/tmp/festapp-mcp-tree-mobile.png');
+    await browser('set','viewport','1280','1000');
+    await browser('screenshot','/private/tmp/festapp-mcp-tree-desktop.png');
+    await browser('find','role','button','click','--name','Povolit a propojit');
+    await browser('wait','--fn','window.consentFixture.read().state === "connected"');
+    assert.equal(await evaluate('consentFixture.read().operations[1].access.units.length'),2);
+    console.log('mcp-consent-browser: pass (tree consent, multiple organizers, mobile/dark, synthetic auth/broker)');
 } finally { await browser('close').catch(()=>{}); await server?.close(); await rm(temporary,{recursive:true,force:true}); }

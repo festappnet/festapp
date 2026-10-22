@@ -7,7 +7,7 @@ import { Operations } from '../operations/catalog.mjs';
 import { createServer } from '../mcp/server.mjs';
 import { check, safeError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
-import { operatorAccess, verifySelection } from '../operations/access.mjs';
+import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
 import { READ_SCOPE, CREATE_SCOPE } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
@@ -126,7 +126,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const completeConsent = async (req, res, d, f, selection) => {
         const access = await loginOwner(d.uid).authorized(async backend =>
             verifySelection(selection, await availableAccess(null, backend), canRequestCreate(d)));
-        const scopes = `${READ_SCOPE}${access.type === 'unit' && access.canCreateOccasions ? ' ' + CREATE_SCOPE : ''}`;
+        const scopes = `${READ_SCOPE}${canCreateWithAccess(access) ? ' ' + CREATE_SCOPE : ''}`;
         const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
         grant.addOIDCScope(`openid offline_access ${scopes}`);
         grant.addResourceScope(config.resource, scopes);

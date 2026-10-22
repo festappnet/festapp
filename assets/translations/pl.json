@@ -1674,8 +1674,9 @@
     "login": "Sign in",
     "client": "Connecting {client}",
     "scope": "The connected application can read your identity, accessible occasions and ticket artwork within the selected access. Allow occasion creation separately below.",
-    "choose": "Choose occasions to allow:",
-    "selectAll": "Zaznacz wszystko",
+    "treeScope": "Połączona aplikacja może odczytywać twoją tożsamość, dostępne wydarzenia i wygląd biletów w wybranym zakresie. Wybór organizatora obejmuje przyszłe wydarzenia i pozwala tworzyć nowe zgodnie z twoimi uprawnieniami.",
+    "choose": "Wybierz organizatorów lub poszczególne wydarzenia:",
+    "selectAll": "Wybierz wszystkie obecne wydarzenia",
     "duration": "Access lasts 7 days. You can revoke it earlier in Festapp connection management.",
     "approve": "Allow and connect",
     "cancel": "Cancel",
@@ -1695,7 +1696,10 @@
     "organizer": "Organizer",
     "allowCreate": "Allow creating new occasions",
     "allowCreateHint": "New occasions will be hidden, with sales closed.",
-    "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer."
+    "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer.",
+    "organizerCreateHint": "Obecne i przyszłe wydarzenia oraz tworzenie nowych. Nowe wydarzenia będą ukryte, ze sprzedażą zamkniętą.",
+    "organizerReadHint": "Obecne i przyszłe wydarzenia. Ten dostęp nie obejmuje tworzenia nowych wydarzeń.",
+    "individualOnlyHint": "Można wybrać tylko poszczególne wydarzenia."
   },
   "EditorFileDrop": {
     "hint": "Upuść obraz, aby zastąpić tło",

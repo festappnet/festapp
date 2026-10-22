@@ -13,6 +13,7 @@ import { openRemoteStorage } from '../src/remote/storage.mjs';
 import { createRemoteApp } from '../src/remote/server.mjs';
 import { DelegatedOwner, boundOwner } from '../src/remote/delegation.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
+import { verifySelection } from '../src/operations/access.mjs';
 
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const secrets = { cookieKeys: ['a'.repeat(48), 'b'.repeat(48)], jwks: { keys: [{
@@ -121,7 +122,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     const f = await setup(t, { tenant: true });
     const verifier = 'v'.repeat(43);
     const query = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
-        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: READ_SCOPE,
+        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: `${READ_SCOPE} ${CREATE_SCOPE}`,
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
     let r = await f.browser('/auth?' + query);
     const connectPath = r.headers.get('location');
@@ -146,7 +147,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     // Merely displaying consent never mints or adopts a backend refresh session.
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
     assert.equal(f.storage.values('Delegation').length, 0);
-    r = await broker('prepare', { accessToken: supabaseToken, access: { type: 'occasions', occasionIds: [7] } });
+    r = await broker('prepare', { accessToken: supabaseToken, access: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] } });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
@@ -174,9 +175,10 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert.equal(r.status, 200, await r.clone().text());
     const tokens = await r.json();
     assert(tokens.access_token);
+    assert(tokens.scope.split(' ').includes(CREATE_SCOPE));
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);
-    assert.deepEqual(f.storage.values('Delegation')[0].access.occasionIds, [7]);
+    assert.deepEqual(f.storage.values('Delegation')[0].access, { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] });
     const client = new Client({ name: 'tenant-consent-test', version: '1' });
     await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
@@ -382,4 +384,46 @@ test('organizer consent needs requested create scope; read consent never exposes
     assert(authorized.allowedOperations.includes('occasions.create'));
     assert.throws(() => authorized.authorizeOperation('occasions.create', { unitId: 4 }), /FORBIDDEN/);
     await authorized.authorizeOperation('occasions.create', { unitId: 3 });
+});
+
+
+test('tree consent validates every organizer, occasion and create permission', () => {
+    const available={units:[{id:3,canCreateOccasions:true},{id:4,canCreateOccasions:false}],occasions:[{id:7,unitId:3},{id:8,unitId:5}]};
+    const selection={type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:false}],occasionIds:[8]};
+    assert.deepEqual(verifySelection(selection,available,true),selection);
+    for (const invalid of [
+        {...selection,units:[{unitId:3,canCreateOccasions:true},{unitId:999,canCreateOccasions:false}]},
+        {...selection,units:[{unitId:4,canCreateOccasions:true}]},
+        {...selection,units:[{unitId:3,canCreateOccasions:false},{unitId:3,canCreateOccasions:true}]},
+        {...selection,occasionIds:[999]}, {type:'selection',units:[],occasionIds:[]},
+    ]) assert.throws(()=>verifySelection(invalid,available,true),/FORBIDDEN/);
+    assert.throws(()=>verifySelection(selection,available,false),/FORBIDDEN/);
+});
+
+test('tree grant includes future occasions only in selected organizers and keeps creation scoped', async t => {
+    const f=await setup(t);
+    const binding='tree-session';
+    await boundOwner(f.config,f.storage,binding,{fetchImpl:f.owner.fetch}).login('fixture@example.test','fixture-password');
+    const id='tree-grant';
+    f.storage.put('Delegation',id,{id,userId:actor,clientId:'chatgpt-fixture',binding,
+        profileBinding:f.config.profile.binding,access:{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:false}],occasionIds:[8]},expiresAt:Date.now()+60000,revoked:false});
+    const owner=new DelegatedOwner(f.config,f.storage,{grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:READ_SCOPE+' '+CREATE_SCOPE,exp:Date.now()/1000+300},{fetchImpl:f.owner.fetch});
+    let occasions=[{id:7,title:'Current',unitId:3},{id:8,title:'Selected separately',unitId:5},{id:9,title:'Other organizer',unitId:5},{id:10,title:'Second organizer',unitId:4}];
+    const client={rpc:async()=>({data:{units:[{id:3,title:'First',canCreateOccasions:true},{id:4,title:'Second',canCreateOccasions:true},{id:5,title:'Excluded',canCreateOccasions:true}],occasions:occasions.map(o=>({...o,capabilities:{'ticket_layouts.read':true}}))},error:null})};
+    const listed=await owner.listAccess(client);
+    assert.deepEqual(listed.occasions.map(o=>o.id),[7,8,10]);
+    assert.deepEqual(listed.units.map(u=>u.canCreateOccasions),[true,false]);
+    occasions.push({id:11,title:'Future',unitId:4});
+    assert.deepEqual((await owner.listAccess(client)).occasions.map(o=>o.id),[7,8,10,11]);
+    assert.deepEqual(await owner.delegatedContext(client,11),{organizationId:1,unitId:4});
+    assert.deepEqual(await owner.delegatedContext(client,8),{organizationId:1,unitId:null});
+    await assert.rejects(owner.delegatedContext(client,9),/FORBIDDEN/);
+    occasions[0].unitId=5;
+    await assert.rejects(owner.delegatedContext(client,7),/FORBIDDEN/);
+    assert.throws(()=>owner.authorizeOperation('occasions.create',{unitId:4}),/FORBIDDEN/);
+    assert.throws(()=>owner.authorizeOperation('occasions.create',{unitId:5}),/FORBIDDEN/);
+    owner.authorizeOperation('occasions.create',{unitId:3});
+    const readOnly=new DelegatedOwner(f.config,f.storage,{...owner.token,scope:READ_SCOPE},{fetchImpl:f.owner.fetch});
+    assert(!readOnly.allowedOperations.includes('occasions.create'));
+    f.storage.revoke(id);await assert.rejects(owner.delegatedContext(client,8),/FORBIDDEN/);
 });
