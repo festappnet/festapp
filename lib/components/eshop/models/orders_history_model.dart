@@ -237,7 +237,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
       final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+          Utilities.formatPrice(context, price, currencyCode: currencyCode);
       return ' ($priceString)';
     }
 
@@ -301,7 +301,7 @@ class OrderHistoryModel extends ITrinaRowModel {
     String formatOptionalPrice(double? price, String? currencyCode) {
       if (price == null) return ''; // Return empty string if price is null
       final priceString =
-          Utilities.formatPrice(context, price, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+          Utilities.formatPrice(context, price, currencyCode: currencyCode);
       return ' ($priceString)';
     }
 
@@ -608,11 +608,11 @@ class OrderHistoryModel extends ITrinaRowModel {
           context, previousHistoryRecord!.price ?? 0,
           currencyCode: previousHistoryRecord!.currencyCode);
       final newPrice = Utilities.formatPrice(context, price ?? 0,
-          currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0);
+          currencyCode: currencyCode);
       priceText = "$oldPrice → $newPrice";
     } else {
       priceText = price != null
-          ? Utilities.formatPrice(context, price!, currencyCode: currencyCode, decimalDigits: orderModel?.amountDecimalDigits ?? 0)
+          ? Utilities.formatPrice(context, price!, currencyCode: currencyCode)
           : "";
     }
 

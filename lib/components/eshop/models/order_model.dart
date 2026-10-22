@@ -93,11 +93,6 @@ class OrderModel extends ITrinaRowModel {
   String? formKey;
   int? formId;
   String? currencyCode;
-  // Read-only payment method supplied by authorized order/history projections.
-  String? paymentMethod;
-  bool get isStripePayment =>
-      (paymentInfoModel?.paymentMethod ?? paymentMethod) == 'stripe';
-  int get amountDecimalDigits => isStripePayment ? 2 : 0;
   String? noteHidden;
   Map<String, dynamic>? emailDelivery;
 
@@ -225,7 +220,6 @@ class OrderModel extends ITrinaRowModel {
     this.formKey,
     this.formId,
     this.currencyCode,
-    this.paymentMethod,
     this.noteHidden,
     this.form,
     this.relatedTickets,
@@ -267,7 +261,6 @@ class OrderModel extends ITrinaRowModel {
           ? double.tryParse(json[TbEshop.orders.price].toString())
           : null,
       currencyCode: json[TbEshop.orders.currency_code],
-      paymentMethod: json['payment_method'] as String?,
       state: json[TbEshop.orders.state],
       formKey: orderData is Map<String, dynamic>
           ? orderData[TbEshop.orders.data_form]
@@ -335,29 +328,25 @@ class OrderModel extends ITrinaRowModel {
       EshopColumnIds.ORDER_PRICE: TrinaCell(
           value: price != null
               ? Utilities.formatPrice(context, price!,
-                  currencyCode: currencyCode,
-                  decimalDigits: amountDecimalDigits)
+                  currencyCode: currencyCode)
               : ""),
       EshopColumnIds.ORDER_STATE:
           TrinaCell(value: OrderModel.formatState(state ?? orderedState)),
       EshopColumnIds.PAYMENT_INFO_AMOUNT: TrinaCell(
           value: paymentInfoModel?.amount != null
               ? Utilities.formatPrice(context, paymentInfoModel!.amount!,
-                  currencyCode: paymentInfoModel!.currencyCode,
-                  decimalDigits: amountDecimalDigits)
+                  currencyCode: paymentInfoModel!.currencyCode)
               : ""),
       EshopColumnIds.PAYMENT_INFO_PAID: TrinaCell(
           value: paymentInfoModel?.paid != null
               ? Utilities.formatPrice(context, paymentInfoModel!.paid!,
-                  currencyCode: paymentInfoModel!.currencyCode,
-                  decimalDigits: amountDecimalDigits)
+                  currencyCode: paymentInfoModel!.currencyCode)
               : ""),
       EshopColumnIds.PAYMENT_INFO_ID: TrinaCell(value: paymentInfo ?? 0),
       EshopColumnIds.PAYMENT_INFO_RETURNED: TrinaCell(
           value: paymentInfoModel?.returned != null
               ? Utilities.formatPrice(context, paymentInfoModel!.returned!,
-                  currencyCode: paymentInfoModel!.currencyCode,
-                  decimalDigits: amountDecimalDigits)
+                  currencyCode: paymentInfoModel!.currencyCode)
               : ""),
       EshopColumnIds.PAYMENT_INFO_VARIABLE_SYMBOL:
           TrinaCell(value: paymentInfoModel?.variableSymbol ?? 0),

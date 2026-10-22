@@ -1,9 +1,9 @@
-export function formatCurrency(amount: number, currencyCode = "CZK", decimalDigits = 0) {
+export function formatCurrency(amount: number, currencyCode = "CZK") {
   return new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currency: currencyCode,
-    minimumFractionDigits: decimalDigits,
-    maximumFractionDigits: decimalDigits,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

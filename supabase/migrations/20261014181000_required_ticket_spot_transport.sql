@@ -25,3 +25,4 @@ BEGIN
   END IF;
  END LOOP;
 END $$;
+REVOKE ALL ON FUNCTION public.validate_waitlist_answers_internal(bigint,jsonb,jsonb,boolean) FROM PUBLIC,anon,authenticated;

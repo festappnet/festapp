@@ -103,8 +103,8 @@ END $$;
 
 REVOKE ALL ON FUNCTION public.get_account_deletion_asset_batch(uuid,integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.ack_account_deletion_asset(uuid,uuid,text) FROM PUBLIC,anon,authenticated;
-
-
+GRANT EXECUTE ON FUNCTION public.get_account_deletion_asset_batch(uuid,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.ack_account_deletion_asset(uuid,uuid,text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.update_account_deletion_job(
   p_request_id uuid,

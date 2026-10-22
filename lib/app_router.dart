@@ -91,16 +91,6 @@ class AppRouter extends RootStackRouter {
             page: BankAccountConnectionSettingsRoute.page,
             path: '/bank-accounts/:accountId/connection',
             usesPathAsKey: true),
-        AutoRoute(
-            page: StripeConnectCallbackRoute.page,
-            path: '/stripe/connect/callback'),
-        RedirectRoute(
-            path: '/app/stripe/connect/callback',
-            redirectTo: '/stripe/connect/callback'),
-        AutoRoute(page: StripePayRoute.page, path: '/stripe/pay'),
-        AutoRoute(page: StripeReturnRoute.page, path: '/stripe/return'),
-        RedirectRoute(path: '/app/stripe/pay', redirectTo: '/stripe/pay'),
-        RedirectRoute(path: '/app/stripe/return', redirectTo: '/stripe/return'),
         AutoRoute(page: InstallRoute.page, path: sl(InstallPage.ROUTE)),
         AutoRoute(page: TransferRoute.page, path: "/${TransferPage.ROUTE}"),
         CustomRoute(
@@ -139,9 +129,6 @@ class AppRouter extends RootStackRouter {
                               page: UnitLegalProfileRoute.page,
                               path: NavigationPaths.legalProfile),
                         ]),
-                    AutoRoute(
-                        page: UnitCardPaymentsRoute.page,
-                        path: NavigationPaths.cardPayments),
                     AutoRoute(
                         page: UnitBankAccountsNavigationRoute.page,
                         path: NavigationPaths.bankAccounts,
@@ -627,7 +614,7 @@ class AppRouter extends RootStackRouter {
       return "/";
     }
 
-    if (RightsService.useOfflineVersion && RightsService.currentLink != null) {
+    if (RightsService.useOfflineVersion) {
       return getOccasionLandingPath(RightsService.currentLink!);
     }
     if (RightsService.currentLink != null) {
@@ -665,7 +652,6 @@ class AppRouter extends RootStackRouter {
       ScanPage.ROUTE,
       TransferPage.ROUTE,
       'app',
-      'stripe',
       'privacy',
       'terms',
       'support',

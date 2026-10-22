@@ -132,8 +132,7 @@ class FormEditorDraft {
   Map<String, dynamic> toEditedJson() {
     final result = toJson()
       ..remove('account_number')
-      ..remove('secret')
-      ..remove('payments');
+      ..remove('secret');
     result['expected_aggregate_version'] = aggregateVersion;
     result['expected_product_versions'] =
         Map<String, int>.from(_productVersions);

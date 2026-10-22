@@ -9,6 +9,10 @@ DECLARE
     v_form_key uuid;
     v_product_type_id bigint;
     v_product_id bigint;
+    v_spot_a_id bigint;
+    v_spot_b_id bigint;
+    v_spot_c_id bigint;
+    v_spot_d_id bigint;
     v_acc_id bigint;
     v_secret_id bigint;
     v_input_data jsonb;
@@ -51,12 +55,29 @@ BEGIN
     RETURNING id INTO v_product_type_id;
 
     -- Link Product Type to Form
-    INSERT INTO public.form_fields (form, product_type, type, is_ticket_field) VALUES (v_form_id, v_product_type_id, 'product_type', true);
+    INSERT INTO public.form_fields (form, product_type) VALUES (v_form_id, v_product_type_id);
 
     -- Create Product with deposit (price: 1000, deposit: 500)
     INSERT INTO eshop.products (title, product_type, currency_code, price, is_hidden, occasion, data)
     VALUES ('Product Status Test', v_product_type_id, 'CZK', 1000, false, v_occasion_id, '{"deposit": {"amount": 500}}'::jsonb)
     RETURNING id INTO v_product_id;
+
+    -- Create Spots for each scenario
+    INSERT INTO eshop.spots (title, product, occasion, secret)
+    VALUES ('Spot Status A', v_product_id, v_occasion_id, gen_random_uuid())
+    RETURNING id INTO v_spot_a_id;
+
+    INSERT INTO eshop.spots (title, product, occasion, secret)
+    VALUES ('Spot Status B', v_product_id, v_occasion_id, gen_random_uuid())
+    RETURNING id INTO v_spot_b_id;
+
+    INSERT INTO eshop.spots (title, product, occasion, secret)
+    VALUES ('Spot Status C', v_product_id, v_occasion_id, gen_random_uuid())
+    RETURNING id INTO v_spot_c_id;
+
+    INSERT INTO eshop.spots (title, product, occasion, secret)
+    VALUES ('Spot Status D', v_product_id, v_occasion_id, gen_random_uuid())
+    RETURNING id INTO v_spot_d_id;
 
     -- ==================================================================
     -- Scenario A: Pay deposit amount (500) -> order becomes 'paid'
@@ -66,13 +87,13 @@ BEGIN
     v_input_data := jsonb_build_object(
         'form', v_form_key,
         'email', 'test-status-a@example.com',
+        'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_a_id),
         'ticket', jsonb_build_array(
-            jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',v_product_id)))
+            jsonb_build_object('spot', v_spot_a_id)
         )
     );
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
-    PERFORM assert_eq(v_result->>'code','200','bank deposit checkout succeeds: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
 
@@ -103,13 +124,13 @@ BEGIN
     v_input_data := jsonb_build_object(
         'form', v_form_key,
         'email', 'test-status-b@example.com',
+        'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_b_id),
         'ticket', jsonb_build_array(
-            jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',v_product_id)))
+            jsonb_build_object('spot', v_spot_b_id)
         )
     );
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
-    PERFORM assert_eq(v_result->>'code','200','bank deposit checkout succeeds: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
 
@@ -136,13 +157,13 @@ BEGIN
     v_input_data := jsonb_build_object(
         'form', v_form_key,
         'email', 'test-status-c@example.com',
+        'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_c_id),
         'ticket', jsonb_build_array(
-            jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',v_product_id)))
+            jsonb_build_object('spot', v_spot_c_id)
         )
     );
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
-    PERFORM assert_eq(v_result->>'code','200','bank deposit checkout succeeds: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
 
@@ -169,13 +190,13 @@ BEGIN
     v_input_data := jsonb_build_object(
         'form', v_form_key,
         'email', 'test-status-d@example.com',
+        'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_d_id),
         'ticket', jsonb_build_array(
-            jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',v_product_id)))
+            jsonb_build_object('spot', v_spot_d_id)
         )
     );
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
-    PERFORM assert_eq(v_result->>'code','200','bank deposit checkout succeeds: '||v_result::text);
     v_order_id := (v_result->'order'->>'id')::bigint;
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
 

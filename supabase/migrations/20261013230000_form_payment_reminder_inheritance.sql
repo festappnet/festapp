@@ -754,3 +754,5 @@ BEGIN
     RETURN result;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean) FROM PUBLIC,anon,authenticated;
