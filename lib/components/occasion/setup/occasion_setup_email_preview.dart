@@ -101,13 +101,21 @@ class _OccasionSetupEmailPreviewState extends State<OccasionSetupEmailPreview> {
         Text('${_preview!['subject'] ?? ''}',
             style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
-        Container(
+        Align(
+          alignment: Alignment.topCenter,
+          child: Container(
             width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 400),
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant),
-                borderRadius: BorderRadius.circular(8)),
-            child: SetupEmailDocument(html: '${_preview!['html'] ?? ''}')),
+              color: Colors.white,
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SetupEmailDocument(html: '${_preview!['html'] ?? ''}'),
+          ),
+        ),
         if (_preview!['has_custom_template'] == true)
           Padding(
               padding: const EdgeInsets.only(top: 8),
