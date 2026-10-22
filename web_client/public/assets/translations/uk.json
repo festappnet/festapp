@@ -1555,6 +1555,8 @@
     "wholeOrganizerSelected": "Увесь організатор",
     "groupSelection": "Вибрані події: {selected} з {count}",
     "inheritedSelectionHint": "Включено через вибір організатора. Скасуйте вибір організатора, щоб вибрати окремі події.",
-    "selectionRequired": "Виберіть принаймні одного організатора або подію."
+    "selectionRequired": "Виберіть принаймні одного організатора або подію.",
+    "manageConnections": "Підключені застосунки (MCP)",
+    "manageConnectionsHint": "Керування доступом і відключення застосунків"
   }
 }

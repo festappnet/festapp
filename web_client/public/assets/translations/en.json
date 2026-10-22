@@ -3611,7 +3611,9 @@
     "wholeOrganizerSelected": "Entire organizer",
     "groupSelection": "Selected events: {selected} of {count}",
     "inheritedSelectionHint": "Included through the organizer. Deselect the organizer to choose individual events.",
-    "selectionRequired": "Select at least one organizer or event."
+    "selectionRequired": "Select at least one organizer or event.",
+    "manageConnections": "Connected apps (MCP)",
+    "manageConnectionsHint": "Manage access and disconnect apps"
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

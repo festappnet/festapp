@@ -1383,6 +1383,8 @@
     "wholeOrganizerSelected": "Cały organizator",
     "groupSelection": "Wybrane wydarzenia: {selected} z {count}",
     "inheritedSelectionHint": "Uwzględnione przez wybór organizatora. Odznacz organizatora, aby wybrać pojedyncze wydarzenia.",
-    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie."
+    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie.",
+    "manageConnections": "Połączone aplikacje (MCP)",
+    "manageConnectionsHint": "Zarządzaj dostępem i odłączaj aplikacje"
   }
 }

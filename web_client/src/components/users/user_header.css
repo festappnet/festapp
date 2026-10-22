@@ -233,6 +233,8 @@ body.dark-mode .popover-logout-row:hover {
     color: white;
 }
 .popover-account-action {
+    text-decoration: none;
+    box-sizing: border-box;
     width: 100%;
     min-height: 44px;
     border: 0;

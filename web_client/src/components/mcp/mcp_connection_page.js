@@ -1,3 +1,4 @@
+import { MCP_CONNECTIONS_URL } from './mcp_links.js';
 import { AppConfig } from '../../app_config.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -303,6 +304,12 @@ export class McpConnectionPage {
             const message = add('p', this.text(this.state === 'loading' ? 'connecting' : this.state));
             message.setAttribute('role', this.state === 'error' ? 'alert' : 'status');
             if (this.state === 'error') button('retry', () => this.init());
+        }
+        if (this.user) {
+            const management = add('a', this.text('manageConnections'));
+            management.href = MCP_CONNECTIONS_URL;
+            management.target = '_blank';
+            management.rel = 'noopener noreferrer';
         }
         const style = document.createElement('style');
         style.textContent = `.mcp-connection{max-width:640px;margin:32px auto;padding:24px;color:var(--text-color,inherit)}.mcp-connection h1{font-size:2rem}.mcp-organizer{margin-block:24px}.mcp-organizer h3{font-size:1.125rem;margin:0;flex:1;min-width:0}.mcp-organizer-header{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}.mcp-organizer-header .mcp-organizer-toggle{font:inherit;font-size:.875rem;margin:0;padding:8px 12px;background:transparent;color:inherit;border:1px solid currentColor;border-radius:8px}.mcp-access-summary{margin-block:24px;padding-block:16px;border-block:1px solid currentColor}.mcp-access-summary h2{font-size:1.125rem;margin:0}.mcp-access-summary ul{padding-inline-start:24px;line-height:1.6}.mcp-selection-summary{font-weight:600}.mcp-organizer label span{overflow-wrap:anywhere}.mcp-organizer-hint{margin:0 0 8px;padding-inline-start:34px;font-size:.875rem}.mcp-organizer-occasions{margin-inline-start:10px;padding-inline-start:24px;border-inline-start:1px solid currentColor}.mcp-connection h3 label{padding-bottom:4px}.mcp-connection p{line-height:1.6}.mcp-connection fieldset{border:0;padding:0;margin:24px 0}.mcp-connection legend{font-weight:600;margin-bottom:12px}.mcp-connection label{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#273f65)}.mcp-connection button{min-height:44px;margin:8px 12px 8px 0;padding:10px 22px;border-radius:24px;cursor:pointer}.mcp-connection button:disabled{cursor:default}.mcp-connection a{display:block;margin-top:16px}.mcp-connection :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;

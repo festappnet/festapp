@@ -1,6 +1,7 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class CommonStrings {
+    static get manageConnections() { return LocalizationService.tr('McpConnection.manageConnections'); }
     static get price() { return LocalizationService.tr("Common.price"); }
     static signupLegalNotice(terms, privacy) { return LocalizationService.tr("FeatureUser.signupLegalNotice", { button: CommonStrings.createAccount, terms, privacy }); }
     static get signupTerms() { return LocalizationService.tr("FeatureUser.signupTerms"); }

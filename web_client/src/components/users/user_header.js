@@ -1,3 +1,4 @@
+import { MCP_CONNECTIONS_URL } from '../mcp/mcp_links.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { RouterService } from '../../services/router_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
@@ -333,6 +334,19 @@ export class UserHeader extends HTMLElement {
 
             const accountActions = document.createElement('div');
             popover.appendChild(accountActions);
+            const connections = document.createElement('a');
+            connections.href = MCP_CONNECTIONS_URL;
+            connections.target = '_blank';
+            connections.rel = 'noopener noreferrer';
+            connections.className = 'popover-logout-row popover-account-action popover-mcp-connections';
+            const connectionsIcon = document.createElement('i');
+            connectionsIcon.className = 'material-icons';
+            connectionsIcon.setAttribute('aria-hidden', 'true');
+            connectionsIcon.textContent = 'extension';
+            const connectionsLabel = document.createElement('span');
+            connectionsLabel.textContent = CommonStrings.manageConnections;
+            connections.append(connectionsIcon, connectionsLabel);
+            accountActions.appendChild(connections);
             const userId = this.user.id;
             const organizationId = Number(AppConfig.organization);
             if (Number.isSafeInteger(organizationId) && organizationId > 0) {

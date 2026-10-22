@@ -1,3 +1,4 @@
+import 'package:fstapp/components/mcp/mcp_connections_link.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/users/widgets/google_account_link_setting.dart';
 import 'dart:async';
@@ -563,6 +564,8 @@ class _UserPageState extends State<UserPage> {
                             ? null
                             : () => _requestPasswordReset(userData?.email),
                       ),
+                      const Divider(height: 1, indent: 56),
+                      const McpConnectionsLink(),
                       const Divider(height: 1, indent: 56),
                       const GoogleAccountLinkSetting(),
                       const Divider(height: 1, indent: 56),

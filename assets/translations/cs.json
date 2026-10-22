@@ -3685,7 +3685,9 @@
     "wholeOrganizerSelected": "Celý pořadatel",
     "groupSelection": "Vybrané akce: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuto výběrem pořadatele. Pro výběr jednotlivých akcí zrušte výběr pořadatele.",
-    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci."
+    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci.",
+    "manageConnections": "Připojené aplikace (MCP)",
+    "manageConnectionsHint": "Správa přístupu a odpojení aplikací"
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",

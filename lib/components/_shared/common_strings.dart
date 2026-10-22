@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class CommonStrings {
+  static String get manageConnections => 'McpConnection.manageConnections'.tr();
+  static String get manageConnectionsHint =>
+      'McpConnection.manageConnectionsHint'.tr();
   static String get discardChanges => 'Common.discardChanges'.tr();
   static String get discardChangesConfirmation =>
       'Common.discardChangesConfirmation'.tr();
