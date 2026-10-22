@@ -15,6 +15,7 @@ class OccasionSaleStrings {
       'selling',
       'soldOut',
       'startsIn',
+      'shortStartsIn',
       'endsIn',
       'startsSoon',
       'endsSoon',

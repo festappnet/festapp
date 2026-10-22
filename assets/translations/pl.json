@@ -1719,7 +1719,7 @@
     "paused": "Wstrzymane",
     "ended": "Sprzedaż zakończona",
     "finished": "Wydarzenie zakończone",
-    "shortStartsIn": "Zaczyna się za {duration}",
+    "shortStartsIn": "Sprzedaż za {duration}",
     "startsIn": "Sprzedaż rozpocznie się za {duration}",
     "endsIn": "Sprzedaż kończy się za {duration}",
     "startsSoon": "Sprzedaż rozpocznie się w ciągu minuty",
@@ -1777,6 +1777,7 @@
     "seatSelection": "Wybór miejsc",
     "previousQuestion": "Poprzednie pytanie",
     "ticketing": {
+      "shortStartsIn": "Sprzedaż za {duration}",
       "scheduled": "Przedsprzedaż zaplanowana",
       "selling": "W przedsprzedaży",
       "soldOut": "Wyprzedane",
@@ -1810,6 +1811,7 @@
       "question": "Kiedy rozpocznie się przedsprzedaż?"
     },
     "registration": {
+      "shortStartsIn": "Zapisy za {duration}",
       "scheduled": "Zapisy zaplanowana",
       "selling": "W zapisów",
       "soldOut": "Wyprzedane",
