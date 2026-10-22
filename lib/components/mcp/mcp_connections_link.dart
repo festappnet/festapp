@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 
@@ -12,8 +12,8 @@ class McpConnectionsLink extends StatelessWidget {
         target: LinkTarget.blank,
         builder: (context, followLink) => ListTile(
           leading: const Icon(Icons.extension_outlined),
-          title: Text('McpConnection.manageConnections'.tr()),
-          subtitle: Text('McpConnection.manageConnectionsHint'.tr()),
+          title: Text(CommonStrings.manageConnections),
+          subtitle: Text(CommonStrings.manageConnectionsHint),
           trailing: const Icon(Icons.open_in_new, size: 20),
           onTap: followLink,
         ),
