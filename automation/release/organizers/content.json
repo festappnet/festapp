@@ -109,6 +109,11 @@
       "imageAlt": "Vstupenky pro Vaši akci - vlastní plánek, vlastní vstupenka a QR platby bez transakčních poplatků.",
       "catalogTitle": "Akce a plesy - vstupenky online | vstupenky.online",
       "catalogDescription": "Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa."
+    },
+    "analytics": {
+      "provider": "cloudflare",
+      "token": "10a70df3585344258adf7bb3b6611a84",
+      "spa": true
     }
   },
   "internalSources": {

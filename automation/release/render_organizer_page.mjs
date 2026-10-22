@@ -11,6 +11,10 @@ const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '')
 const enabled = value('DOMAIN') === 'vstupenky.online';
 const contentData = enabled ? JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers/content.json'), 'utf8')) : null;
 const seo = contentData?.publicProjection?.seo;
+const analytics = contentData?.publicProjection?.analytics;
+if (analytics && (analytics.provider !== 'cloudflare' || !/^[a-f0-9]{32}$/.test(analytics.token))) throw new Error('Invalid public Cloudflare analytics identity');
+const beaconTag = analytics ? `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({token:analytics.token,spa:true})}'></script>` : '';
+const withAnalytics = html => html.replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["'][^>]*>[\s\S]*?<\/script>/gi, '').replace('</body>', () => beaconTag + '</body>');
 const jsonScript = value => JSON.stringify(value).replace(/</g, '\\u003c');
 const outputArg = process.argv.indexOf('--output');
 const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
@@ -31,7 +35,7 @@ if (fs.existsSync(index)) {
         '@context':'https://schema.org', '@type':'WebSite', name:seo.siteName, url:new URL('/', value('WEB_LINK')).href,
       })}</script>`);
   }
-  fs.writeFileSync(index, catalog);
+  fs.writeFileSync(index, withAnalytics(catalog));
 }
 if (!enabled) {
   fs.rmSync(target, { force: true });
@@ -97,7 +101,7 @@ const html = `<!doctype html><html lang="cs"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}${beaconTag}</body></html>\n`;
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, html);
