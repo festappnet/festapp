@@ -185,5 +185,10 @@ body.dark-mode .hero-air .hero-copy{background:radial-gradient(ellipse at center
 body.dark-mode .hero-air .actions>.text-link,body.dark-mode .payment-zero,body.dark-mode .pricing-note,body.dark-mode .technical-grid article,body.dark-mode .reference-controls button,body.dark-mode .variant-tabs button{background:#303b4ee6;color:var(--ink);border-color:var(--line)}
 body.dark-mode .technical-grid a{color:#9bcffa}
 body.dark-mode .architectural-plan{stroke:#80bdf2}
+body.dark-mode .feature,body.dark-mode .feature:nth-of-type(even),body.dark-mode .feature#prehled{background:var(--paper)}
+body.dark-mode .feature#odbaveni{background:var(--chrome)}
+body.dark-mode .hero .lead,body.dark-mode .hero .account-note,body.dark-mode .hero-air .hero-payment,body.dark-mode .feature-copy>p:not(.eyebrow),body.dark-mode .feature-copy .feature-detail,body.dark-mode .payment-zero span{color:var(--muted)}
+body.dark-mode .hero-air:before{background:radial-gradient(ellipse at center,#34425b55,transparent 70%)}
+body.dark-mode .output-card{background:var(--surface)}
 .hero-outlines .architectural-plan{opacity:.4}
 @media(max-width:760px){.hero-outlines .architectural-plan{opacity:.34}}
