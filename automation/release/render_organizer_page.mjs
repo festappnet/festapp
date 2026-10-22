@@ -89,12 +89,12 @@ if (builtIndexArg >= 0) {
   entryScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
   const builtIndex = fs.readFileSync(path.resolve(process.argv[builtIndexArg + 1]), 'utf8');
   themeLinks = (builtIndex.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [])
-    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag)).join('');
+    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).join('');
   if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
 }
 const html = `<!doctype html><html lang="cs"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
 <title>${escape(title)}</title><meta name="description" content="${escape(description)}">
 <meta name="robots" content="index,follow,max-image-preview:large"><link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website"><meta property="og:locale" content="cs_CZ"><meta property="og:site_name" content="${escape(seo.siteName)}">
@@ -102,7 +102,7 @@ const html = `<!doctype html><html lang="cs"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${versionReport}${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}${beaconTag}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${versionReport}${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending .header-signin{visibility:visible}</style></noscript></head><body data-page="organizers">${content}${entryScript}${beaconTag}</body></html>\n`;
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, html);

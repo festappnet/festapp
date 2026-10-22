@@ -17,7 +17,7 @@ function initHeroSketch(root, win, preference) {
           ? laneIndex === 0
             ? motifIndex % 2 === 0 ? 'translate(-110 -95) scale(1.04)' : 'translate(178 -105) scale(1.02)'
             : motifIndex % 2 === 0 ? 'translate(174 400) scale(1.04)' : 'translate(-140 400) scale(1.04)'
-          : laneIndex === 0 ? 'translate(-160 -155) scale(1.9)' : 'translate(880 -130) scale(1.85)';
+          : laneIndex === 0 ? 'translate(-15 55) scale(1.05)' : 'translate(900 25) scale(1.05)';
         element.setAttribute('transform', transform);
         element.dataset.sketchCorner = laneIndex === 0 ? motifIndex % 2 === 0 ? 'top-left' : 'top-right' : motifIndex % 2 === 0 ? 'bottom-right' : 'bottom-left';
         let total = 0;
