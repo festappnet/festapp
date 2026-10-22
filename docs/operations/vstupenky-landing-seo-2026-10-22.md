@@ -261,3 +261,24 @@ nikoli načtení dashboardových statistik.
 
 Podklad: [Cloudflare Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/)
 popisuje vazbu veřejného site tokenu na hostname a použití pro subdomény.
+
+
+### Offline cache produkčního buildu
+
+Před uploadem kontrola zachytila známé offline prostředky 73 627 534 B při
+limitu 62 914 560 B. Marketingová média tvořila 10 601 039 B a marketingový
+HTML dokument dalších 230 849 B. Limity se nezvyšují a média se nemažou z webu.
+Marketingová homepage, její vlastní JS vstup a média zůstávají síťovými
+prostředky mimo offline aplikační cache. Známá cache hotového buildu je po
+opravě 62 784 266 B, jádro 24 073 501 B; obě kontroly procházejí.
+
+Service worker rozlišuje marketingovou homepage podle skutečně přítomného
+volitelného dokumentu, tedy pouze pro vstupenky.online. Online `/` načte novou
+homepage, offline poskytne zachovaný katalog. `/events` používá katalogový
+shell, staré odkazy zrcadlí serverová přesměrování. Marketingový vstup hlásí
+aktuální build existujícím protokolem, aby restart workeru neblokoval prostředky.
+Google callbacky a pravidla verzování aplikačního kódu se nemění.
+
+Cílené testy skutečného generátoru, manifestu a VM service workeru ověřují síťovou
+homepage, offline katalog, neukládání streamovaných médií a zachování
+aplikačních modulů. Není to příslib offline přehrávání ukázkových videí.
