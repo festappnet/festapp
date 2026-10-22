@@ -1217,8 +1217,7 @@
       "availableCount": "Voľných: {count}",
       "confirmQuantity": "Potvrdiť počet",
       "pending": "Spracováva sa",
-      "quantityRejected": "Počet sa nepodarilo potvrdiť",
-      "chooseQuantity": "Vybrať počet"
+      "quantityRejected": "Počet sa nepodarilo potvrdiť"
     },
     "standingCapacity": "Počet miest",
     "capacitySaveHint": "Zmena sa prejaví po uložení plánku."
