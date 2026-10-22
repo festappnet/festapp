@@ -17,7 +17,8 @@ export class BlueprintCapacityControls {
             if (!bounds) continue;
             const group = document.createElement('div');
             group.className = 'blueprint-capacity-control';
-            group.setAttribute('role', 'group');
+            group.setAttribute('role', 'dialog');
+            group.setAttribute('aria-modal', 'false');
             group.setAttribute('aria-label', node.label || options.messages.standing);
             const button = (text, label, action) => {
                 const element = document.createElement('button');
@@ -45,7 +46,7 @@ export class BlueprintCapacityControls {
             group.addEventListener('keydown', event => {
                 if (event.key === 'Escape' && entry.editing && !entry.pending) {
                     event.preventDefault(); event.stopPropagation();
-                    entry.editing = false; this.refresh(entry); entry.count.focus();
+                    this.dismiss(entry, true);
                 }
             });
             this.entries.set(node.id, entry); this.layer.append(group);
@@ -67,6 +68,13 @@ export class BlueprintCapacityControls {
             event.stopPropagation();
         }, {passive: false});
         content.append(this.layer);
+        this.dismissOutside = event => {
+            for (const entry of this.entries.values()) {
+                if (entry.editing && !entry.group.contains(event.target)) this.dismiss(entry);
+            }
+        };
+        content.ownerDocument.addEventListener('pointerdown', this.dismissOutside, true);
+        content.ownerDocument.addEventListener('click', this.dismissOutside, true);
         // Capture activation using the same public kernel hit test as the viewer.
         // This prevents the package's generic below-canvas quantity editor.
         this.pointerStart = event => { this.pointer = {x: event.clientX, y: event.clientY}; };
@@ -90,9 +98,19 @@ export class BlueprintCapacityControls {
         content.addEventListener('click', this.activate, true);
         this.update(options.capacityPresentation);
     }
+    focusArea(entry) {
+        this.content.querySelector(`button[data-node-id="${entry.id}"]`)?.focus({preventScroll: true});
+    }
+    dismiss(entry, restoreFocus = false) {
+        entry.editing = false;
+        this.refresh(entry);
+        if (restoreFocus) this.focusArea(entry);
+    }
     edit(entry) {
         if (entry.pending) return;
         if (!entry.editing) {
+            for (const other of this.entries.values()) if (other !== entry) this.dismiss(other);
+            entry.error = '';
             entry.editing = true;
             entry.draft = entry.state.quantity || (entry.state.selectable ? 1 : 0);
         }
@@ -105,16 +123,22 @@ export class BlueprintCapacityControls {
     async confirm(entry) {
         if (entry.pending) return;
         entry.pending = true; entry.error = ''; this.refresh(entry);
+        let restoreFocus = false;
         try {
             const result = await this.options.onQuantityRequested(entry.id, entry.draft);
             if (this.disposed) return;
             if (result?.accepted) {
+                restoreFocus = entry.editing;
                 entry.state = {...entry.state, quantity: entry.draft}; entry.editing = false;
             } else entry.error = result?.message || this.options.messages.quantityRejected;
         } catch (error) { entry.error = error.message || this.options.messages.quantityRejected; }
         finally {
             entry.pending = false;
-            if (!this.disposed) { this.refresh(entry); this.position(); entry.count.focus({preventScroll: true}); }
+            if (!this.disposed) {
+                this.refresh(entry); this.position();
+                if (restoreFocus) this.focusArea(entry);
+                else if (entry.editing) entry.count.focus({preventScroll: true});
+            }
         }
     }
     update(presentation) {
@@ -126,6 +150,7 @@ export class BlueprintCapacityControls {
     }
     refresh(entry) {
         const {state, editing, pending} = entry;
+        entry.group.hidden = !editing;
         const count = editing ? entry.draft : state.quantity || 0;
         const summary = count > 0 ? BlueprintStrings.placeCount(count) : BlueprintStrings.chooseQuantity;
         entry.count.textContent = editing ? String(count) : summary;
@@ -165,13 +190,15 @@ export class BlueprintCapacityControls {
                 y + controlHeight > zoom.top - parent.top && y < zoom.bottom - parent.top && top >= controlHeight + 12) {
                 y = top - controlHeight - 4;
             }
-            entry.group.hidden = left + width < 0 || top + height < 0 || left > parent.width || top > parent.height;
+            entry.group.hidden = !entry.editing || left + width < 0 || top + height < 0 || left > parent.width || top > parent.height;
             entry.group.style.left = `${x}px`;
             entry.group.style.top = `${Math.max(8, Math.min(parent.height - controlHeight - 8, y))}px`;
         }
     }
     dispose() {
         this.disposed = true;
+        this.content.ownerDocument.removeEventListener('pointerdown', this.dismissOutside, true);
+        this.content.ownerDocument.removeEventListener('click', this.dismissOutside, true);
         this.content.removeEventListener('click', this.activate, true);
         this.content.removeEventListener('pointerdown', this.pointerStart, true);
         this.layer.remove();

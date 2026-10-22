@@ -247,5 +247,5 @@ body.blueprint-active #floating-price-widget {
 .blueprint-capacity-control .blueprint-capacity-confirm { grid-column: 1 / -1; background: var(--primary-color, #4465a6); color: #fff; font-size: 14px; font-weight: 600; }
 .blueprint-capacity-control button:focus-visible { outline: 3px solid var(--primary-color, #4465a6); outline-offset: 2px; }
 .blueprint-capacity-control button:disabled { opacity: .45; cursor: default; }
-.blueprint-capacity-control [hidden] { display: none; }
+.blueprint-capacity-control[hidden], .blueprint-capacity-control [hidden] { display: none; }
 .blueprint-capacity-message { grid-column: 1 / -1; text-align: center; font-size: 12px; line-height: 1.4; padding: 0 4px 4px; overflow-wrap: anywhere; }

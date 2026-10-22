@@ -42,9 +42,12 @@ uses ticket type, price and a minus/quantity/plus stepper;
 from camping/add-ons. The map anchor is Festapp's adaptation for mixed seating
 and standing plans, not a claim that those festivals use this exact overlay.
 
-An empty standing selection shows a localized “Choose quantity” action without
-a zero count, including its accessible name. Opening the editor proposes one
-as a draft only; cancelling or confirming a release restores the empty action.
+Standing controls are hidden until the area is activated. The non-modal mini
+dialog opens beside that area, proposes one as an uncommitted draft for an empty
+selection, and closes on confirmation, Escape or outside pointer/click. Dismissal
+discards the unconfirmed draft; only explicit confirmation updates checkout.
+Escape/confirmation restores focus to the area's semantic button. Outside clicks
+continue normally and pending completion never steals their focus.
 This follows the action-first initial offer seen in [Sziget's ticket shop](https://szigetfestival.com/en/tickets).
 [Primavera Sound's AccessTicket shop](https://primavera-sound-barcelona-2027.webstore.acst.app/)
 separates ticket-category selection from its Amount section; proceeding there
