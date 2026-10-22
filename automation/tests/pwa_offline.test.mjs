@@ -208,6 +208,10 @@ try {
       networkCalls++;
       if (url === 'https://app.test/') return new Response('<html>live organizers</html>');
       if (url.includes('/organizers-media/') || url.includes('/web-assets/landing-')) return new Response('streamed marketing');
+      if (url.includes('/settings/connections')) {
+        assert.equal(options?.cache, 'no-store');
+        return new Response('online connections');
+      }
       if (url.includes('/settings/mcp-connect')) {
         assert.equal(options?.cache, 'no-store');
         return new Response('online consent');
@@ -720,6 +724,13 @@ try {
     'consent must not fall back to a cached Flutter document');
   networkAvailable = true;
   assert.equal(await (await dispatchFetch(consent)).text(), 'online consent');
+  const management = new Request('https://app.test/settings/connections');
+  Object.defineProperty(management, 'mode', { value: 'navigate' });
+  networkAvailable = false;
+  await assert.rejects(dispatchFetch(management), /offline/, 'management must not fall back to a cached Flutter document');
+  networkAvailable = true;
+  assert.equal(await (await dispatchFetch(management)).text(), 'online connections');
+  assert.equal(cachedPuts.some(url => url.includes('/settings/connections')), false);
 
   const marketingRoot = new Request('https://app.test/');
   Object.defineProperty(marketingRoot,'mode',{value:'navigate'});
