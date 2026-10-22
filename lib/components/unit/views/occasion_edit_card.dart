@@ -171,7 +171,12 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
+                          Padding(
+                            padding: EdgeInsetsDirectional.only(
+                                end: showSaleBadge ? 24 : 0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 if (occasion.startTime != null &&
@@ -210,7 +215,9 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                                               fontWeight: FontWeight.bold),
                                       label: Text(widget.badge!)),
                                 ],
-                              ]),
+                              ],
+                            ),
+                          ),
                           SizedBox(height: showSaleBadge ? 2 : 4),
                           Tooltip(
                             message: occasion.title ?? '',
