@@ -7,6 +7,7 @@
   "additionalProperties": false,
   "x-operationRequirements": {
     "canonicalEmailDelivery": ["EMAIL_PAYLOAD_KEY", "EMAIL_SNS_TOPIC_ARN", "EMAIL_SES_ACCOUNT_ID", "EMAIL_SES_REGION", "EMAIL_SES_ACCESS_KEY_ID", "EMAIL_SES_SECRET_ACCESS_KEY", "EMAIL_SES_TRANSACTIONAL_SET", "EMAIL_SES_SECURITY_SET", "AUTH_EMAIL_PUBLIC_URL", "AUTH_EMAIL_HOOK_SECRET", "APP_LINKS_ORGANIZATION_ID", "EMAIL_DELIVERY_OWNER_EMAIL"],
+    "stripeConnectPreview": ["STRIPE_MODE", "STRIPE_SECRET_KEY", "STRIPE_PLATFORM_ACCOUNT_ID", "STRIPE_API_VERSION", "STRIPE_ALLOWED_ORIGINS", "STRIPE_CONNECT_CLIENT_ID", "STRIPE_CONNECT_CALLBACK_URL"],
     "googleSignInBroker": ["GOOGLE_OIDC_CLIENT_ID", "GOOGLE_OIDC_CLIENT_SECRET", "GOOGLE_OIDC_CALLBACK_URL", "GOOGLE_AUTH_ENCRYPTION_KEY", "GOOGLE_AUTH_MAILBOX_HMAC_KEY"],
     "supabaseManagement": ["SUPABASE_ACCESS_TOKEN"],
     "databaseAdministration": ["DATABASE_URL"],
@@ -33,6 +34,14 @@
     "clientSyncPrivateLoad": ["FESTAPP_TEST_ACCESS_TOKEN"]
   },
   "properties": {
+    "STRIPE_MODE": {"type": "string", "enum": ["test", "live"]},
+    "STRIPE_SECRET_KEY": {"type": "string", "minLength": 1},
+    "STRIPE_PLATFORM_ACCOUNT_ID": {"type": "string", "minLength": 1},
+    "STRIPE_API_VERSION": {"type": "string", "minLength": 1},
+    "STRIPE_ALLOWED_ORIGINS": {"type": "string", "minLength": 1},
+    "STRIPE_CONNECT_CLIENT_ID": {"type": "string", "minLength": 1},
+    "STRIPE_CONNECT_CALLBACK_URL": {"type": "string", "minLength": 1},
+    "STRIPE_WEBHOOK_SECRETS": {"type": "string"},
     "EMAIL_PAYLOAD_KEY": {"type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$"},
     "EMAIL_SNS_TOPIC_ARN": {"type": "string", "minLength": 1},
     "EMAIL_SES_ACCOUNT_ID": {"type": "string", "pattern": "^[0-9]{12}$"},
