@@ -12,6 +12,7 @@ class UnitModel {
   List<OccasionModel>? occasions;
   UnitUserModel? unitUser;
   int aggregateVersion;
+  final bool stripePreviewEnabled;
 
   UnitModel({
     this.id,
@@ -22,11 +23,13 @@ class UnitModel {
     this.occasions,
     this.unitUser,
     this.aggregateVersion = 0,
+    this.stripePreviewEnabled = false,
   });
 
   factory UnitModel.fromJson(Map<String, dynamic> json) {
     return UnitModel(
       id: json[Tb.units.id],
+      stripePreviewEnabled: json['stripe_preview_enabled'] == true,
       title: json[Tb.units.title],
       data: json[Tb.units.data],
       features: json[Tb.units.features] is List
@@ -54,6 +57,7 @@ class UnitModel {
       Tb.units.organization: organization,
       "unit_user": unitUser?.toJson(),
       'aggregate_version': aggregateVersion,
+      'stripe_preview_enabled': stripePreviewEnabled,
     };
   }
 }

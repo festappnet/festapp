@@ -3,6 +3,7 @@ DECLARE org bigint; unit_id bigint; oc bigint; pi bigint; oid bigint; connection
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Disconnect tenant') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Disconnect organizer',org) RETURNING id INTO unit_id;
+ INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(unit_id,true);
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Disconnect event',org,unit_id,'disconnect-'||extensions.gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;
  PERFORM public.create_user_for_test('stripe_disconnect_manager','stripe-disconnect@example.test');actor:=get_user_id('stripe_disconnect_manager');
  UPDATE public.user_info SET organization=org WHERE id=actor;

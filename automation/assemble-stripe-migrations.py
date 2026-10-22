@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = {
     "20261022160000_stripe_foundation.sql": (
         "Stripe foundation only; new payments disabled. No production application authorized.",
-        ["eshop_stripe/schema.sql", "eshop_stripe/capabilities.sql",
+        ["eshop_stripe/schema.sql", "eshop_stripe/feature_settings.sql", "eshop_stripe/capabilities.sql",
          "eshop_transactions/payment_totals.sql", "eshop_transactions/apply_transaction_pairing.sql"],
     ),
     "20261022170000_stripe_connections.sql": (
@@ -27,7 +27,7 @@ MIGRATIONS = {
          "eshop_forms/duplicate_form_to_occasion.sql", "eshop_payment_references/replay.sql",
          "eshop_waitlist/order_overview.sql", "eshop_orders/update_ticket_products_ws.sql",
          "eshop_orders/update_order_and_tickets_to_storno.sql", "eshop_orders/storno_tickets_bulk.sql", "eshop_orders/get_orders.sql", "eshop_orders/get_orders_tab_data.sql", "eshop/get_order_history.sql", "eshop/swap_spot_tickets.sql",
-         "eshop/confirm_blueprint_order_change.sql", "emails/email_queue.sql", "eshop/format_occasion_report_text.sql", "eshop/get_report_ws.sql", "eshop_stripe/client_sync.sql"],
+         "eshop/confirm_blueprint_order_change.sql", "emails/email_queue.sql", "eshop/format_occasion_report_text.sql", "eshop/get_report_ws.sql", "eshop_stripe/client_sync.sql", "others/get_app_config.sql"],
     ),
 }
 

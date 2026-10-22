@@ -6,7 +6,9 @@ DECLARE org bigint; u bigint; other_unit bigint; actor uuid; editor uuid;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Stripe connection tenant') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Connection organizer',org) RETURNING id INTO u;
+ INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
  INSERT INTO public.units(title,organization) VALUES('Other organizer',org) RETURNING id INTO other_unit;
+ INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(other_unit,true);
  PERFORM public.create_user_for_test('stripe_manager','stripe-manager@example.test');actor:=get_user_id('stripe_manager');
  PERFORM public.create_user_for_test('stripe_editor','stripe-editor@example.test');editor:=get_user_id('stripe_editor');
  UPDATE public.user_info SET organization=org WHERE id IN(actor,editor);

@@ -1,21 +1,21 @@
 # Stripe integration readiness - 2026-10-22
 
-Vlny 1-4 jsou připravené v samostatném worktree. Stripe je **skrytá a výchozím stavem deaktivovaná funkce** podle následného zadání uživatele. Neproběhl commit, push, merge, produkční migrace, deploy, instalace scheduleru ani nová provider platba/refundace.
+Vlny 1-4 byly připravené v samostatném worktree. Navazující zadání autorizovalo publikaci a produkční release jednoho tenanta a skrytou aktivaci unity 8. Aktuální kontrakt a dodatečné ověření popisuje [release záznam](../../operations/stripe-hidden-unit-release-2026-10-22.md). Níže zachované důkazy původní přípravy nejsou potvrzením produkčního nasazení.
 
 ## Zdroj a samostatný patch
 
 - Upstream byl před přípravou načten pomocí `git fetch origin main`. Base: `eab22c17db361362fc7fd1c5aa84a09dd4c427eb`, včetně nového průvodce, sdíleného vzhledu formulářů/vstupenek a opravy bankovních členství.
 - Zdroj: původní dirty checkout `/Users/miakh/source/festapp`, větev `feat/occasion-setup-wizard-20261007`, HEAD `eb23047248d59bf86345b9e0b79db4a988275231`. Při zahájení měl 2387 změněných cest. Tento checkout nebyl resetován, stashed ani přepsán.
-- Výsledek: `/Users/miakh/source/festapp-stripe-readiness-20261022`, větev `integrate/stripe-readiness-20261022`, zatím bez nového commitu.
+- Výsledek: `/Users/miakh/source/festapp-stripe-readiness-20261022`, větev `integrate/stripe-readiness-20261022`, původní příprava commitnutá jako `cc7896c20`, aktuální `main` `e069a11b7` následně integrován.
 - [Manifest](INTEGRATION-MANIFEST.json) obsahuje konkrétní cesty, důvody, finální SHA-256 a dostupné hashe dirty zdrojů. [Přesný pathspec](INTEGRATION-PATHS.txt) zahrnuje i nové soubory. [Původní kandidáti](integration-evidence/source-candidates.txt) jsou širší inventář, nikoli seznam k publikaci.
 
 Sdílené soubory byly integrovány po Stripe úpravách. Zůstaly současné SQL `can_*` kontroly, Blueprint zámky a vazby, rychlý agregát objednávek, BankSync varování, `/order`, routing, dialogy, bankovní editor i nové UI průvodce. Nebyla převzata celá feature větev, její dirty diff, starý fontový katalog, jiné migrace ani lokální sandbox tooling/secrets. Historické sanitizované důkazy jsou zachované se svými limity.
 
 ## Skrytí a deaktivace
 
-`StripeFeature.visible` čte `FESTAPP_STRIPE_PREVIEW`, výchozí hodnota je `false`. Běžné menu pořadatele, vstup z nastavení, přímá stránka správy karet i volba v editoru formuláře jsou skryté. Widgetové preview fixture mají explicitní `showCardPayments: true`; není to serverové oprávnění ani zapnutí prodeje. Běžné nastavení neprovádí Stripe read a neodstraňuje případnou uloženou konfiguraci.
+`StripeFeature.visible` čte serverový příznak aktuální unity `stripe_preview_enabled`, výchozí hodnota je `false`. Skrytou aktivaci ovládá pouze administrátor portálu přes SQL `set_stripe_unit_feature`; build-wide preview přepínač byl odstraněn. Běžné menu pořadatele, vstup z nastavení, přímá stránka správy karet i volba v editoru formuláře jsou skryté. Widgetové preview fixture mají explicitní `showCardPayments: true`; není to serverové oprávnění ani zapnutí prodeje. Běžné nastavení neprovádí Stripe read a neodstraňuje případnou uloženou konfiguraci.
 
-SQL runtime policy má `new_payments_enabled=false` a nepovolené povrchy ve výchozím stavu. Rehearsal neobsahuje jedinou zapnutou policy. Samotné propojení účtu nezapíná kartu a chybějící provider secrets neblokují bankovní checkout. Čtení historie, oddělené capability, webhook/recovery a admission/email fences zůstávají implementované i při zastavení nových plateb. Tento patch nemění konfiguraci žádného živého tenanta.
+SQL runtime policy má `new_payments_enabled=false` a nepovolené povrchy ve výchozím stavu. Rehearsal neobsahuje jedinou zapnutou policy. Samotné propojení účtu nezapíná kartu a chybějící provider secrets neblokují bankovní checkout. Čtení historie, oddělené capability, webhook/recovery a admission/email fences zůstávají implementované i při zastavení nových plateb. Původní příprava neměnila živou konfiguraci; následné zadání autorizovalo zviditelnění pouze unity 8 při vypnutém prodeji.
 
 ## Konečné migrace a opravy při integraci
 
@@ -66,5 +66,5 @@ Návrh commit message: `feat(payments): integrate hidden Stripe checkout with ca
 1. Zkontrolovat manifest a soubory v novém worktree, poté stage pouze přes `git add --pathspec-from-file=docs/plans/stripe-client-owned/INTEGRATION-PATHS.txt`. V této přípravě se nestagovalo ani necommitovalo.
 2. Bezprostředně před publikací znovu `git fetch origin main`, porovnat s base `eab22c17...`, integrovat intervenující změny a zopakovat jen jejich dotčené kontroly. Ověřit požadované repository gates a CI triggery, včetně výše uvedeného chybějícího architecture checkeru. Nepoužít obecný push s implicitním targetem.
 3. Při výslovném schválení commit/push preferovat ověřené přímé začlenění do autoritativního main, dovolují-li to pravidla větve. Není připraven PR jako mezikrok. Zaznamenat skutečný výsledný commit.
-4. Deploy je samostatné zadání: vybrat jednoho tenanta a overlay, dodržet lokální build a `automation/deploy_direct.sh`, projít backend/client/email/router pořadí a všechny release gates. `FESTAPP_STRIPE_PREVIEW` nepředávat jako true a nové Stripe prodeje ponechat vypnuté. Rutinní release delegovat podle AGENTS.md.
+4. Deploy je samostatné zadání: vybrat jednoho tenanta a overlay, dodržet lokální build a `automation/deploy_direct.sh`, projít backend/client/email/router pořadí a všechny release gates. Viditelnost nastavovat po unitách přes admin RPC a nové Stripe prodeje ponechat vypnuté. Rutinní release delegovat podle AGENTS.md.
 5. Zviditelnění/aktivace pilotu jsou další samostatná rozhodnutí. Samotná publikace kódu ani deploy je neautorizují.

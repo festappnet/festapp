@@ -180,6 +180,8 @@ DECLARE nonce text; flow uuid; org bigint; previous uuid; deadline timestamptz;
 BEGIN
  PERFORM public.check_stripe_unit_manager_internal(p_unit,auth.uid());
  SELECT organization INTO org FROM public.units WHERE id=p_unit FOR UPDATE;
+ IF NOT public.stripe_unit_feature_enabled_internal(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='STRIPE_FEATURE_DISABLED'; END IF;
  IF EXISTS(SELECT 1 FROM eshop.stripe_disconnect_intents intent JOIN eshop.stripe_connections c ON c.id=intent.connection_id
   WHERE c.unit_id=p_unit AND c.livemode=p_livemode AND intent.state<>'completed') THEN RAISE EXCEPTION 'STRIPE_DISCONNECT_PENDING'; END IF;
  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('stripe.connect',p_unit,org),

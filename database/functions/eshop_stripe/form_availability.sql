@@ -63,7 +63,7 @@ BEGIN
    WHEN NOT c.model_verified THEN 'model_unverified'
    WHEN c.paused THEN 'paused'
    WHEN NOT c.charges_enabled OR NOT c.card_payments_active OR c.state<>'connected' THEN 'stripe_restricted'
-   WHEN NOT coalesce(policy.new_payments_enabled,false) THEN 'payments_disabled'
+   WHEN NOT public.stripe_unit_feature_enabled_internal(u) OR NOT coalesce(policy.new_payments_enabled,false) THEN 'payments_disabled'
    ELSE public.stripe_form_compatibility_internal(p_form) END;
   IF reason IS NULL THEN methods:=jsonb_build_array('stripe')||methods; END IF;
  ELSE reason:='not_configured'; END IF;

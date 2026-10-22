@@ -33,6 +33,7 @@ test('Stripe SQL authority serializes checkout, duplicate webhook and refund/adm
   const scalar=async(sql,args=[])=>Object.values((await control.query(sql,args)).rows[0])[0];
   const org=await scalar(`INSERT INTO public.organizations(title,data) VALUES('Stripe concurrency','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id`);
   const unit=await scalar("INSERT INTO public.units(title,organization) VALUES('Race recipient',$1) RETURNING id",[org]);
+  await control.query('INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES($1,true)',[unit]);
   const occ=await scalar("INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Race',$1,$2,$3,now(),now()+interval '2 days') RETURNING id",[org,unit,name]);
   const conn=await scalar("INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused,model_verified,charges_enabled,card_payments_active) VALUES($1,$2,'acct_raceFixture',false,'connected',false,true,true,true) RETURNING id",[org,unit]);
   await control.query("INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled,online_admission_verified,reservation_policy_verified,dispute_policy_accepted,supported_surfaces) VALUES($1,false,true,true,true,true,ARRAY['web'])",[org]);

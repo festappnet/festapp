@@ -11,6 +11,7 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  INSERT INTO public.organizations(title,data) VALUES('Stripe create tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Card receiver',org) RETURNING id INTO u;
+ INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Card order',org,u,'stripe-create-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
  INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused,model_verified,charges_enabled,card_payments_active)

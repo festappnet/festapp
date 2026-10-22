@@ -1,13 +1,12 @@
 {
   "formatVersion": 1,
-  "createdAt": "2026-10-22T03:06:15.035672+00:00",
-  "base": "eab22c17db361362fc7fd1c5aa84a09dd4c427eb",
+  "createdAt": "2026-10-22T03:43:35.246665+00:00",
+  "base": "e069a11b7fcd9f566219c76180dc5565054ac2a6",
   "sourceHead": "eb23047248d59bf86345b9e0b79db4a988275231",
   "sourceWasDirty": true,
   "sourceChangedPathsAtStart": 2387,
   "worktree": "/Users/miakh/source/festapp-stripe-readiness-20261022",
   "branch": "integrate/stripe-readiness-20261022",
-  "publicationPerformed": false,
   "stripeHiddenByDefault": true,
   "newStripePaymentsEnabled": false,
   "selfExcludedFromFileDigests": "docs/plans/stripe-client-owned/INTEGRATION-MANIFEST.json",
@@ -64,14 +63,14 @@
     {
       "path": "automation/assemble-stripe-migrations.py",
       "status": "added",
-      "sha256": "f8f65795bda572ce1e1c98bf4841f9eae5bcee1feb308c60ceecc888dc103889",
+      "sha256": "a606f7dd14291e718e1e1bffcf444c16af32ddd2558d6b3c312b49b09609cdd5",
       "reason": "Scoped migration assembly, canonical/discovery contract, private routing/cache or guarded recovery installer",
       "dirtySourceSha256": "3a996464516d2cdfeb40bd36f343698eab2f18fd317c35426a58a3aade789d35"
     },
     {
       "path": "automation/canonical-source-contract.json",
       "status": "modified",
-      "sha256": "f7ff2b0a3642977d88b28df5391c26f59d20dcfbadde556ae72a6c8aba42ffe8",
+      "sha256": "2738af29e07ceadad8ff9b23aadccc56222399c09756e8b99e63f047ad1926d3",
       "reason": "Scoped migration assembly, canonical/discovery contract, private routing/cache or guarded recovery installer",
       "dirtySourceSha256": "b6ebb4d19e34180486a572f12c6ec6c07eb6c0866af3b5b02c847e6ee39ab55d",
       "extractionBase": "5b82540b6bfe86cbb10c9ca639c6f5d676745d7f"
@@ -79,7 +78,7 @@
     {
       "path": "automation/client_test_classification.json",
       "status": "modified",
-      "sha256": "0480587e48b17eb1321a864c6e08c4e83506642bbc05738b9947c0462d0ecafc",
+      "sha256": "53362142870fc9a7399e9df0b3ed2a1a8acd6dd452cbd3daf0d04b8b96fc3a92",
       "reason": "Scoped migration assembly, canonical/discovery contract, private routing/cache or guarded recovery installer",
       "dirtySourceSha256": "287192a5ff94315b299909bc995d15ccac8e6e8f84597de365f0ca09bf25e196",
       "extractionBase": "c52e2c0214074e9a10216304decf3328fa0e94f7"
@@ -101,6 +100,12 @@
       "extractionBase": "6361622f0a8645eb09240bf1f43e2990b852ca1f"
     },
     {
+      "path": "automation/hetzner-supabase/merge/runtime-writer-policy.json",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "be58ffbb188c6c629a0d09a30aa421cfa620434f0f7fe3ab0a310e0d874fa8aa"
+    },
+    {
       "path": "automation/hetzner-supabase/runtime/install-stripe-reconciliation.sh",
       "status": "added",
       "sha256": "9fbf53e91ad1d43e28d9fa71cf139422ada8595c4ca955a9fd6962f8e5588ae0",
@@ -114,6 +119,12 @@
       "reason": "Scoped migration assembly, canonical/discovery contract, private routing/cache or guarded recovery installer",
       "dirtySourceSha256": "0ff27db0392abd35e77162d37ce11abc684c26393efcb45f4da87c526e7ac469",
       "extractionBase": "0690dc33e3e9dc0013b8276bb76c45be367404b7"
+    },
+    {
+      "path": "automation/tests/edge_function_test_coverage.test.mjs",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "0179625048fd7751d4e626922abb7ecc51f6cdc2c3727e3dd248ccb263db16e0"
     },
     {
       "path": "automation/tests/google_auth_links.test.mjs",
@@ -367,7 +378,7 @@
     {
       "path": "database/functions/eshop_stripe/connections.sql",
       "status": "added",
-      "sha256": "24f8956e1cc958a8b16af260720625ddb2b12682ee43500d626f99fae723164c",
+      "sha256": "5b0c9795b4892e681148a5d5bc46fb3e9a0c4852bba5a66b2618368a6674cdf5",
       "reason": "Canonical payment authority, security, immutable attempts, admission, email or retained bank/report boundary",
       "dirtySourceSha256": "24f8956e1cc958a8b16af260720625ddb2b12682ee43500d626f99fae723164c"
     },
@@ -393,9 +404,15 @@
       "dirtySourceSha256": "731b39e1e1d188040e3203a85ae0da6d96762f7e89b93e5d2597856e72554de7"
     },
     {
+      "path": "database/functions/eshop_stripe/feature_settings.sql",
+      "status": "added",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "eb1481bbb8a85b07a57c6199960aa85d2f7c940186e87204a6cfdbf957ad32a9"
+    },
+    {
       "path": "database/functions/eshop_stripe/form_availability.sql",
       "status": "added",
-      "sha256": "a5202c140381c113f126b072542654cf61124b1340e7b132a3a1aa4820d68162",
+      "sha256": "be51f6cad2da4f7a88409481ddd1cb5444c71a21c43562a1acf8381ff173b4b8",
       "reason": "Canonical payment authority, security, immutable attempts, admission, email or retained bank/report boundary",
       "dirtySourceSha256": "a5202c140381c113f126b072542654cf61124b1340e7b132a3a1aa4820d68162"
     },
@@ -488,6 +505,12 @@
       "extractionBase": "9ea1398d409b8df96e3fd87fc0bc1a4432a7c80d"
     },
     {
+      "path": "database/functions/others/get_app_config.sql",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "c136b898fc43aa153f9d05d51962427b9d5607041fc691bf6d618dc061f5e76e"
+    },
+    {
       "path": "database/functions/public_links/registry.sql",
       "status": "modified",
       "sha256": "a648e345657b6022815f46e736817484706ace833f9282097844bdedabb14793",
@@ -520,7 +543,7 @@
     {
       "path": "database/tests/canonical_mutation_source_parity_test.sql",
       "status": "modified",
-      "sha256": "16cde680979817204c01caea950c0acb7e1e4e7e4e1c529c902e38f02442560d",
+      "sha256": "fd4f2b646f91913107455dd557bef61d09232e685715d7217b0c05969ea9e7fe",
       "reason": "Payment/bank/scanner regression and current canonical fixture or source-parity contract",
       "dirtySourceSha256": "22234640bde3ef5f1a6c2067e5027a4cbc2f56885a05a0dfc29c089fcc5ea4d3"
     },
@@ -548,28 +571,34 @@
     {
       "path": "database/tests/eshop/stripe/connections_test.sql",
       "status": "added",
-      "sha256": "a062542c3af15b0d34762504799b3fc339292f7ff411605bfbb757729d6e936c",
+      "sha256": "bacdccd32d645ece6a754cb89673fac9940197b18c49cfa239b17d5023ee60e6",
       "reason": "Payment/bank/scanner regression and current canonical fixture or source-parity contract",
       "dirtySourceSha256": "a062542c3af15b0d34762504799b3fc339292f7ff411605bfbb757729d6e936c"
     },
     {
       "path": "database/tests/eshop/stripe/create_order_test.sql",
       "status": "added",
-      "sha256": "2bfae445a4a9124ce41313bda0319fa558deeb80717435143abb355d00b5a491",
+      "sha256": "c1e2126e3e28da1f62443f7218cf16ba7720240b58d9a8a9add92f024483b203",
       "reason": "Payment/bank/scanner regression and current canonical fixture or source-parity contract",
       "dirtySourceSha256": "2bfae445a4a9124ce41313bda0319fa558deeb80717435143abb355d00b5a491"
     },
     {
       "path": "database/tests/eshop/stripe/disconnect_test.sql",
       "status": "added",
-      "sha256": "1626d23b6e79d3de44c7ebd157f7ed7ac438e4b728f3f22392645cc5f3df5c8d",
+      "sha256": "3f268658249167644912d5d9bed3a0f8910064a203541dce5c26c349e8cc00db",
       "reason": "Payment/bank/scanner regression and current canonical fixture or source-parity contract",
       "dirtySourceSha256": "1626d23b6e79d3de44c7ebd157f7ed7ac438e4b728f3f22392645cc5f3df5c8d"
     },
     {
+      "path": "database/tests/eshop/stripe/feature_settings_test.sql",
+      "status": "added",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "0cd5322d9cd0a5e1c709946be18350db3a8b0ba0eed69a3df04ff07b4861d9e1"
+    },
+    {
       "path": "database/tests/eshop/stripe/form_availability_test.sql",
       "status": "added",
-      "sha256": "db537be72c3ff14ac91cbdd3e4af0eeb42a1ff2949d6f1d3a860ed5ee0d14226",
+      "sha256": "83d76c31b4e41cfd66c83f392e048aeb8ea68e41bb6e1e368b914b1cbfc382f0",
       "reason": "Payment/bank/scanner regression and current canonical fixture or source-parity contract",
       "dirtySourceSha256": "db537be72c3ff14ac91cbdd3e4af0eeb42a1ff2949d6f1d3a860ed5ee0d14226"
     },
@@ -615,6 +644,12 @@
       "dirtySourceSha256": "dffbd99383443715c18b5e907664426ef4fb9b4a6e5cbed27483b98fb9aee508"
     },
     {
+      "path": "docs/operations/stripe-hidden-unit-release-2026-10-22.md",
+      "status": "added",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "14cbdc364304fa3e33d9388119e9f2ec95d846bedc263f685bf59f2146ce95d8"
+    },
+    {
       "path": "docs/plans/stripe-client-owned-EXECUTION-PROMPT-2026-10-21.md",
       "status": "added",
       "sha256": "9a1ff1a616a3cbe6d48c09397c819897c792aca183e433eb895aa755a9ae73ba",
@@ -638,19 +673,19 @@
     {
       "path": "docs/plans/stripe-client-owned/INTEGRATION-PATHS.txt",
       "status": "added",
-      "sha256": "9c1f5c8ec8a928117f7d02d09127ca0c7684a8e6ac0a7d0a823fc1048c91da0d",
+      "sha256": "a5849319ffa47bc8a0c940f9589fa8f82c2f55feb06b56ed104fecd8226300c4",
       "reason": "Domain contract, historical evidence, hidden-feature state or integration/release gates"
     },
     {
       "path": "docs/plans/stripe-client-owned/INTEGRATION-READINESS.md",
       "status": "added",
-      "sha256": "6b8b0508151311770fcaed26906b67e2053082cd018a4e68cc456ff9160d1e39",
+      "sha256": "dcd1069f033537e7b4572140d2fd41fc81a3dda97d91328357e9a6434149d4f3",
       "reason": "Domain contract, historical evidence, hidden-feature state or integration/release gates"
     },
     {
       "path": "docs/plans/stripe-client-owned/PILOT-RUNBOOK.md",
       "status": "added",
-      "sha256": "da6c59e7aeb83d374a96b16f0ece34b1e2e8e323d703dbaf77102170377c8cee",
+      "sha256": "84f1f71b281bec3db4b9e3b96620aeb8babeae7e2c8ad8179f77bb397966986b",
       "reason": "Domain contract, historical evidence, hidden-feature state or integration/release gates",
       "dirtySourceSha256": "89136d4e5216a35d274f5f2c5749603858f63e3b644edfa55a844f2a7c40f0be"
     },
@@ -1051,6 +1086,12 @@
       "reason": "Sanitized current-main validation receipt or exact local reproduction input"
     },
     {
+      "path": "docs/plans/stripe-client-owned/integration-evidence/unit-activation-verification.txt",
+      "status": "added",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "c0ffbaee74a099547558490cadd390f16fc22f13b761c947a79e47fbfb3a6b70"
+    },
+    {
       "path": "docs/plans/stripe-client-owned/integration-evidence/upgrade-readback.json",
       "status": "added",
       "sha256": "c922569f029dff4a43d8bc08c1ebee9cd3f79ee9d6f1b74d78fa07ff1fb7672b",
@@ -1202,7 +1243,7 @@
     {
       "path": "lib/components/forms/views/form_settings_content.dart",
       "status": "modified",
-      "sha256": "e2a401479c60bebb61e94285f724e87f705fc0b5f7478b3a962888aa6a799a39",
+      "sha256": "d45887e0fba98027b1f9c2fe3e566c13c58dedc20c73e3c28f808809fef46f6a",
       "reason": "Both client payment/configuration/history interfaces with current-main routing, authorization, held seats and bank behavior preserved",
       "dirtySourceSha256": "834927621900c58ab48dd8ede3e69db825209b86af45a75e5c74a70cf143120d",
       "extractionBase": "e8b0b495a53a372824546d7a51ff0054ef507728"
@@ -1338,7 +1379,7 @@
     {
       "path": "lib/components/stripe_payments/stripe_feature.dart",
       "status": "added",
-      "sha256": "b339bd1785a35f2b2f46d010174a642f1fdf0527c2de42a0693d616d457108ea",
+      "sha256": "2983d1a159f11a0266d78c767a36d1269b09a19721cac070803e520271e60643",
       "reason": "Both client payment/configuration/history interfaces with current-main routing, authorization, held seats and bank behavior preserved"
     },
     {
@@ -1384,6 +1425,12 @@
       "dirtySourceSha256": "19030df58cf48684504388e50d2aee39fbdfa36de8b9fc5951fc8f8174bdb204"
     },
     {
+      "path": "lib/components/unit/unit_model.dart",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "05e1a4d2a72e2c48dbf34bf448bf350281dd57a7459a2d4f2e14958d7caca8b4"
+    },
+    {
       "path": "lib/components/unit/views/unit_admin_page.dart",
       "status": "modified",
       "sha256": "abff682f1551199bc9e6f494290a4b5844f036504aa11481a83c923762c7df2a",
@@ -1394,7 +1441,7 @@
     {
       "path": "lib/components/unit/views/unit_settings_screen.dart",
       "status": "modified",
-      "sha256": "e7e9f6405e59c72072c37b05c0bb3869fece689eb8d8e97e094680e9d0d2d25f",
+      "sha256": "ff20038834516fe3ec20442aacc25f97bc5d51af63af8a99799f10b25e5495c4",
       "reason": "Both client payment/configuration/history interfaces with current-main routing, authorization, held seats and bank behavior preserved",
       "dirtySourceSha256": "1523aafd8590c7d84e9922fff0d7207b4c84bfb68c74efbbb87cf933722f67a5",
       "extractionBase": "ddad660166ae07400c302ed30d92fb693448d097"
@@ -1465,6 +1512,12 @@
       "sha256": "00d5b9e48ab7d204cf0410e20e4911439bbaec8bd378147fc50b1a45eaabcdfb",
       "reason": "Private payment/return link routing and no-store/referrer boundary; ordinary auth/navigation preserved",
       "dirtySourceSha256": "cb8369c338f1f35ef6c35a538f429b07dacd6617e4d6f781c4a3281df0be7266"
+    },
+    {
+      "path": "supabase/functions/_shared/edgeEntrypoints_test.ts",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "fad127540390fe7968663f7a8815547282f2a091c85412bddff6ef401caddd58"
     },
     {
       "path": "supabase/functions/_shared/orderOverview.ts",
@@ -1672,21 +1725,27 @@
       "dirtySourceSha256": "f48f975639b48d88eaf606b61ca56eab6db36f0fa7578f81fa2c64566049329a"
     },
     {
+      "path": "supabase/functions/test-coverage.json",
+      "status": "modified",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "5ff3b8dc2b52af1dc422e138f9d091c75ac20ba89ce137e7303a220f0a0e1481"
+    },
+    {
       "path": "supabase/migrations/20261022160000_stripe_foundation.sql",
       "status": "added",
-      "sha256": "73789f4e4b84d20be6c58ed0fbc58183853ae0c2a46771a6c1b4ccc98a18049f",
+      "sha256": "17bdf42eaa6d438130553569a5f5dc298a165899e4e8faf55a141987a196904d",
       "reason": "Generated unpublished forward migration from final canonical SQL owners"
     },
     {
       "path": "supabase/migrations/20261022170000_stripe_connections.sql",
       "status": "added",
-      "sha256": "18b81ae4d8e635b62029516b27702ffafda0a673e32b4fcd1dcc771cdb8da2ee",
+      "sha256": "c1d0b4114e42ec9747f01d67c607be28a9175a173bb19bb547972f445fd9d163",
       "reason": "Generated unpublished forward migration from final canonical SQL owners"
     },
     {
       "path": "supabase/migrations/20261022180000_stripe_checkout_ingest.sql",
       "status": "added",
-      "sha256": "9529a9462e465e1e6ea6d609782c02a809968048645f503fbebe99ad366dde65",
+      "sha256": "f589d748e3601d48e97f5e2addec26cc514c4ef29a3bd00930dc05fa2293a8d5",
       "reason": "Generated unpublished forward migration from final canonical SQL owners"
     },
     {
@@ -1770,6 +1829,12 @@
       "sha256": "7177c38ed1108af427ba4c124651ca846ee50aef24e6f52f31a884068ca2c8bb",
       "reason": "Executed targeted regression or retained historical app fixture",
       "dirtySourceSha256": "7177c38ed1108af427ba4c124651ca846ee50aef24e6f52f31a884068ca2c8bb"
+    },
+    {
+      "path": "test/components/stripe_payments/stripe_feature_test.dart",
+      "status": "added",
+      "reason": "Follow-up hidden unit activation, production inventory or verification documentation",
+      "sha256": "241717337dcd4e8cd3d1e52394f6bf397736525c76bdd5743eb50ba8d4db410e"
     },
     {
       "path": "test/components/stripe_payments/stripe_payment_link_test.dart",
@@ -2010,7 +2075,7 @@
     {
       "path": "web_client/tests/database/stripe_concurrency.test.js",
       "status": "added",
-      "sha256": "a320fd823c6cdd2554f0461a44651858e329b2cb384e75442c7212a7c2a3b704",
+      "sha256": "2cb34760d3b95012eec20b7dd99e582365ca259e66eb84dfe1380393654d781d",
       "reason": "Executed targeted regression or retained historical app fixture",
       "dirtySourceSha256": "9a171aa3563d359a964ca0b6ee548c75795ff3a6a62e6ccbb3cd3be2c1a1e03f"
     },
@@ -2063,5 +2128,9 @@
       "reason": "Executed targeted regression or retained historical app fixture",
       "dirtySourceSha256": "5d0220ecd6f5456fd4acdde3337ad6d26cc9d74389f0bbb507e9800bc88ea4a2"
     }
-  ]
+  ],
+  "preparationBase": "eab22c17db361362fc7fd1c5aa84a09dd4c427eb",
+  "publicationPerformedAtManifestCreation": false,
+  "publicationAuthorized": true,
+  "visibilityScope": "unit; tenant-admin activation only; requested unit 8 of organization 3"
 }

@@ -10,8 +10,10 @@ automation/canonical-source-contract.json
 automation/client_test_classification.json
 automation/generate_pwa_service_worker.mjs
 automation/google-auth-links.py
+automation/hetzner-supabase/merge/runtime-writer-policy.json
 automation/hetzner-supabase/runtime/install-stripe-reconciliation.sh
 automation/hetzner-supabase/runtime/patch-function-proof-routes.py
+automation/tests/edge_function_test_coverage.test.mjs
 automation/tests/google_auth_links.test.mjs
 automation/tests/google_auth_runtime_router.test.mjs
 database/functions/abuse/policy.sql
@@ -49,6 +51,7 @@ database/functions/eshop_stripe/connections.sql
 database/functions/eshop_stripe/connections_schema.sql
 database/functions/eshop_stripe/disconnect.sql
 database/functions/eshop_stripe/disconnect_schema.sql
+database/functions/eshop_stripe/feature_settings.sql
 database/functions/eshop_stripe/form_availability.sql
 database/functions/eshop_stripe/form_recipient.sql
 database/functions/eshop_stripe/handoff.sql
@@ -62,6 +65,7 @@ database/functions/eshop_transactions/payment_totals.sql
 database/functions/eshop_waitlist/accept_offer.sql
 database/functions/eshop_waitlist/commands.sql
 database/functions/eshop_waitlist/order_overview.sql
+database/functions/others/get_app_config.sql
 database/functions/public_links/registry.sql
 database/functions/public_links/reserved_paths.sql
 database/functions/scanning/admission.sql
@@ -73,6 +77,7 @@ database/tests/eshop/stripe/connection_status_test.sql
 database/tests/eshop/stripe/connections_test.sql
 database/tests/eshop/stripe/create_order_test.sql
 database/tests/eshop/stripe/disconnect_test.sql
+database/tests/eshop/stripe/feature_settings_test.sql
 database/tests/eshop/stripe/form_availability_test.sql
 database/tests/eshop/stripe/form_recipient_test.sql
 database/tests/eshop/stripe/foundation_test.sql
@@ -80,6 +85,7 @@ database/tests/eshop/stripe/integration_readiness_test.sql
 database/tests/eshop/stripe/payment_totals_test.sql
 database/tests/eshop/stripe/refund_decisions_test.sql
 database/tests/scanning/snapshot_test.sql
+docs/operations/stripe-hidden-unit-release-2026-10-22.md
 docs/plans/stripe-client-owned-EXECUTION-PROMPT-2026-10-21.md
 docs/plans/stripe-client-owned-plan-2026-10-21.md
 docs/plans/stripe-client-owned/IMPLEMENTATION-STATUS.md
@@ -147,6 +153,7 @@ docs/plans/stripe-client-owned/integration-evidence/readback.sql
 docs/plans/stripe-client-owned/integration-evidence/rehearse-executed.sh
 docs/plans/stripe-client-owned/integration-evidence/snapshotFixture-summary.txt
 docs/plans/stripe-client-owned/integration-evidence/source-candidates.txt
+docs/plans/stripe-client-owned/integration-evidence/unit-activation-verification.txt
 docs/plans/stripe-client-owned/integration-evidence/upgrade-readback.json
 docs/plans/stripe-client-owned/integration-evidence/upgrade-replay.json
 docs/plans/stripe-client-owned/integration-evidence/upgrade-supabase.toml
@@ -194,6 +201,7 @@ lib/components/stripe_payments/stripe_payment_browser_web.dart
 lib/components/stripe_payments/stripe_payment_link_service.dart
 lib/components/stripe_payments/stripe_payment_page.dart
 lib/components/stripe_payments/unit_card_payments_page.dart
+lib/components/unit/unit_model.dart
 lib/components/unit/views/unit_admin_page.dart
 lib/components/unit/views/unit_settings_screen.dart
 lib/main.dart
@@ -205,6 +213,7 @@ packages/festapp_core/lib/src/forms/form_payment_options.dart
 packages/festapp_core/test/eshop/occasion_report_test.dart
 packages/festapp_core/test/forms/form_payment_options_test.dart
 supabase/config.toml
+supabase/functions/_shared/edgeEntrypoints_test.ts
 supabase/functions/_shared/orderOverview.ts
 supabase/functions/_shared/stripe/connect.ts
 supabase/functions/_shared/stripe/connect_test.ts
@@ -234,6 +243,7 @@ supabase/functions/stripe-connect/index.ts
 supabase/functions/stripe-reconcile/index.ts
 supabase/functions/stripe-return/index.ts
 supabase/functions/stripe-webhook/index.ts
+supabase/functions/test-coverage.json
 supabase/migrations/20261022160000_stripe_foundation.sql
 supabase/migrations/20261022170000_stripe_connections.sql
 supabase/migrations/20261022180000_stripe_checkout_ingest.sql
@@ -249,6 +259,7 @@ test/components/stripe_payments/payment_access_test.dart
 test/components/stripe_payments/payment_method_cards_test.dart
 test/components/stripe_payments/payment_method_preview_test.dart
 test/components/stripe_payments/stripe_connect_callback_test.dart
+test/components/stripe_payments/stripe_feature_test.dart
 test/components/stripe_payments/stripe_payment_link_test.dart
 test/components/stripe_payments/stripe_products_dialog_test.dart
 test/components/stripe_payments/unit_card_payments_test.dart

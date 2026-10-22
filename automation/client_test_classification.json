@@ -703,6 +703,13 @@
       "sources": [
         "test/components/stripe_payments/canonical_quote_refresh_test.dart"
       ]
+    },
+    "test/components/stripe_payments/stripe_feature_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises SQL-projected unit feature visibility and admin capabilities through the real rights context.",
+      "sources": [
+        "test/components/stripe_payments/stripe_feature_test.dart"
+      ]
     }
   }
 }

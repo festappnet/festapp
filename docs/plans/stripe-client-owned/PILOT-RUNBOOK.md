@@ -4,7 +4,7 @@ Status: implementation and local evidence only. No production migration, runtime
 
 ## Hidden integration state - 2026-10-22
 
-[INTEGRATION-READINESS.md](INTEGRATION-READINESS.md) owns the prepared main patch and current local proof. Keep `FESTAPP_STRIPE_PREVIEW=false` (the default) and SQL `new_payments_enabled=false`. Admin discovery, direct card settings and form-method configuration are hidden in an ordinary build. Neither a preview build nor connecting an account authorizes sales. Current local fresh/upgrade replay is complete; the older replay paragraph below describes the gate that must be preserved for a later authorized source revision. The full client wrapper currently references a missing upstream architecture checker; resolve that gate before claiming a full release validation.
+[INTEGRATION-READINESS.md](INTEGRATION-READINESS.md) owns the prepared main patch and current local proof. Keep unit-scoped `stripe_preview_enabled=false` (the default) and SQL `new_payments_enabled=false`. Only a tenant administrator may enable discovery for a selected unit using `set_stripe_unit_feature`; discovery never enables sales. Admin discovery, direct card settings and form-method configuration are hidden for units without explicit activation. Neither a preview build nor connecting an account authorizes sales. Current local fresh/upgrade replay is complete; the older replay paragraph below describes the gate that must be preserved for a later authorized source revision. The full client wrapper currently references a missing upstream architecture checker; resolve that gate before claiming a full release validation.
 
 ## Pilot boundary
 

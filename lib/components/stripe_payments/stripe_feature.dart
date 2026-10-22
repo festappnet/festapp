@@ -1,9 +1,17 @@
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 
-/// Hidden preview only. SQL runtime policy independently authorizes new sales.
+/// Unit-scoped discovery gate projected by SQL. Sales have an independent gate.
 abstract final class StripeFeature {
-  static bool get canManage => !RightsService.isDemoReadOnly &&
-      (RightsService.occasionLinkModelNotifier.value?.unitUser?.isManager ?? false);
-  static const visible =
-      bool.fromEnvironment('FESTAPP_STRIPE_PREVIEW', defaultValue: false);
+  static bool get canManage =>
+      !RightsService.isDemoReadOnly &&
+      (RightsService.occasionLinkModelNotifier.value?.unitUser?.isManager ??
+          false);
+  static bool get canActivate =>
+      !RightsService.isDemoReadOnly &&
+      RightsService.hasCapability(
+          AuthorizationCapabilities.organizationSettingsWrite);
+  static bool get visible =>
+      !RightsService.isDemoReadOnly &&
+      (RightsService.currentUnit()?.stripePreviewEnabled ?? false);
 }

@@ -46,7 +46,7 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
   // Preview fixtures can opt in; normal application builds keep the feature hidden.
-  final bool showCardPayments;
+  final bool? showCardPayments;
   final Future<Map<String, dynamic>?> Function(int, int)? loadStripeRecipient;
   final ValueListenable<({int accountId, int revision})>? bankConnectionChanges;
   final Future<FormEditBundle?> Function(String)? loadBundle;
@@ -56,7 +56,7 @@ class FormSettingsContent extends StatefulWidget {
   const FormSettingsContent({
     super.key,
     this.formLink,
-    this.showCardPayments = StripeFeature.visible,
+    this.showCardPayments,
     this.loadStripeRecipient,
     this.bankConnectionChanges,
     this.onActionCompleted,
@@ -233,8 +233,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _stripeRecipientFailed = false;
       _stripeRecipientLoaded = false;
       _stripeRecipientLoading = false;
-      if (widget.showCardPayments && _stripeConnectionId != null)
-        _loadStripeRecipient();
+      if ((widget.showCardPayments ?? StripeFeature.visible) &&
+          _stripeConnectionId != null) _loadStripeRecipient();
 
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
@@ -1039,7 +1039,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         .titleLarge,
                                   ),
                                   const SizedBox(height: 24),
-                                  (widget.showCardPayments
+                                  ((widget.showCardPayments ??
+                                          StripeFeature.visible)
                                       ? _buildPaymentMethods(innerContext)
                                       : _buildUsedBankAccounts(innerContext)),
                                   const SizedBox(height: 16),
