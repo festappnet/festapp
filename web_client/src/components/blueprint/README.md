@@ -28,3 +28,16 @@ Quantity edits remain drafts until explicit confirmation, with validation and
 checkout updates owned by the existing adapter and form session. Selectable
 standing areas suppress the duplicate product tooltip; unavailable areas retain
 their explanation.
+
+The expanded standing control names the area and shows unit price, availability,
+a numeric stepper and a labeled confirmation action. Wheel gestures over the
+control are relayed to the viewer SVG at their original cursor coordinates.
+On narrow viewports it anchors above the area if the zoom toolbar would overlap.
+Published Blueprint catalogs are checked against the canonical dictionaries by
+the build gate; browser fixtures consume the actual public catalogs.
+
+Interaction references: [Masters of Rock standing purchase](https://www.mastersofrock.cz/en/koncerty/2027-masters-of-rock)
+uses ticket type, price and a minus/quantity/plus stepper;
+[Rock am Ring](https://www.rock-am-ring.com/en/tickets) separates admission categories
+from camping/add-ons. The map anchor is Festapp's adaptation for mixed seating
+and standing plans, not a claim that those festivals use this exact overlay.

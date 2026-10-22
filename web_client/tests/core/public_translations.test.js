@@ -48,3 +48,20 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
         assert.notEqual(tr('settings'), 'settings');
     });
 }
+
+for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+    test(`published ${locale} standing controls use the canonical catalog and plural forms`, async t => {
+        const original = {locale: LocalizationService.currentLocale, translations: LocalizationService.translations};
+        t.after(() => {LocalizationService.currentLocale = original.locale; LocalizationService.translations = original.translations;});
+        const published = JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        const canonical = JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`, import.meta.url), 'utf8'));
+        assert.deepEqual(published.FeatureBlueprint, canonical.FeatureBlueprint);
+        LocalizationService.currentLocale = locale; LocalizationService.translations = published;
+        const {BlueprintStrings} = await import('../../src/components/blueprint/blueprint_strings.js');
+        for (const count of [0,1,2,5,21]) {
+            const plural = new Intl.PluralRules(locale).select(count);
+            assert.equal(BlueprintStrings.placeCount(count), published.FeatureBlueprint.viewer[`placeCount_${plural}`].replace('{count}',count));
+        }
+        assert.notEqual(BlueprintStrings.viewerMessages.confirmQuantity, 'FeatureBlueprint.viewer.confirmQuantity');
+    });
+}

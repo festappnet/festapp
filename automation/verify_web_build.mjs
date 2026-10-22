@@ -299,6 +299,7 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
   const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
   const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
   assert.deepEqual(published.Scanner, canonical.Scanner, `published ${locale} scanner translations differ from canonical source`);
+  assert.deepEqual(published.FeatureBlueprint, canonical.FeatureBlueprint, `published ${locale} blueprint translations differ from canonical source`);
 }
 
 const siteManifest = JSON.parse(siteManifestText);

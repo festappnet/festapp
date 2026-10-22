@@ -104,6 +104,8 @@ export class BlueprintLayoutAdapter {
                 available: selectable ? available : 0,
                 quantity,
                 selectedQuantity: quantity,
+                priceLabel: typeof product?.price === 'number' && /^[A-Z]{3}$/.test(product.currency_code || '')
+                    ? formatPrice(product.price, product.currency_code, 0, LocalizationService.currentLocale) : null,
                 status: selectable ? 'available' : 'unavailable',
                 selectable,
                 tooltip: selectable ? '' : LocalizationService.tr(`FeatureBlueprint.viewer.${reason}`, {}, 'Standing places are unavailable.'),

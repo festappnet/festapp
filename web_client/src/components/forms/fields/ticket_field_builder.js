@@ -421,12 +421,6 @@ export class TicketFieldBuilder {
             
                         ticketItem.appendChild(subComp);
                     });
-                } else {
-                     const hint = document.createElement('div');
-                     hint.style.fontStyle = 'italic';
-                     hint.style.color = '#777';
-                     hint.textContent = "Ticket details";
-                     ticketItem.appendChild(hint);
                 }
                 ticketItem.updateFromSession = (currentIndex) => {
                     if (currentIndex !== undefined) index = currentIndex;

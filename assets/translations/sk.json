@@ -48,7 +48,12 @@
       "removeOne": "Odobrať jedno",
       "standingNotConfigured": "Nie je priradená vstupenka na státie.",
       "standingUnavailable": "Miesta na státie už nie sú dostupné.",
-      "standingSaleClosed": "Predaj miest na státie nie je dostupný."
+      "standingSaleClosed": "Predaj miest na státie nie je dostupný.",
+      "standing": "Státie",
+      "availableCount": "Voľných: {count}",
+      "confirmQuantity": "Potvrdiť počet",
+      "pending": "Spracováva sa",
+      "quantityRejected": "Počet sa nepodarilo potvrdiť"
     },
     "standingCapacity": "Počet miest",
     "capacitySaveHint": "Zmena sa prejaví po uložení plánku."

@@ -2,7 +2,7 @@ import {BlueprintSelector} from '../../../src/components/blueprint/blueprint_sel
 import {DbForms} from '../../../src/components/forms/db_forms.js';
 import {FormSession} from '../../../src/components/forms/form_session.js';
 import {LocalizationService} from '../../../src/services/localization_service.js';
-import translations from '../../../../assets/translations/cs.json';
+import translations from '../../../public/assets/translations/cs.json';
 LocalizationService.currentLocale='cs'; LocalizationService.translations=translations;
 const id='10000000-0000-4000-8000-000000000001';
 const product={id:9,title:'Místa ke stání',price:100,currency_code:'CZK'};

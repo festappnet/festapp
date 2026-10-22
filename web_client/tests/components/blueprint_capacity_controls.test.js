@@ -8,7 +8,7 @@ import fs from 'node:fs';
 const dom = new JSDOM('<body><main></main></body>');
 globalThis.document = dom.window.document;
 LocalizationService.currentLocale = 'cs';
-LocalizationService.translations = JSON.parse(fs.readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url)));
+LocalizationService.translations = JSON.parse(fs.readFileSync(new URL('../../public/assets/translations/cs.json',import.meta.url)));
 const id = '10000000-0000-4000-8000-000000000001';
 const layout = {...emptyLayout,nodes:[{id,kind:'capacityArea',capacity:100,label:'Místa ke stání',transform:{x:300,y:200,rotation:0},width:250,height:150}]};
 const messages={standing:'Standing',removeOne:'Remove one',addOne:'Add one',confirmQuantity:'Confirm',pending:'Loading',quantityRejected:'Rejected',availableCount:'{count} available'};
@@ -48,4 +48,21 @@ test('keyboard capacity activation is intercepted before generic below-map edito
     controls.entries.get(id).count.dispatchEvent(event);
     assert.equal(event.defaultPrevented,true);assert.equal(controls.entries.get(id).editing,false);
     controls.dispose();button.remove();
+});
+
+
+test('wheel over a quantity control reaches the map at the original cursor position', () => {
+    const content = document.querySelector('main');
+    content.innerHTML = '<div class="venue-layout-viewer"><svg></svg></div>';
+    const svg = content.querySelector('svg');
+    svg.getScreenCTM = () => null;
+    let received;
+    svg.addEventListener('wheel', event => { received = event; event.preventDefault(); });
+    const controls = new BlueprintCapacityControls(content,{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:2,available:3,selectable:true}}});
+    const event = new dom.window.WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120,clientX:100,clientY:200,ctrlKey:true});
+    controls.entries.get(id).count.dispatchEvent(event);
+    assert.ok(received, 'Map must still receive zoom gestures over controls');
+    assert.equal(received.deltaY,120); assert.equal(received.clientX,100); assert.equal(received.clientY,200); assert.equal(received.ctrlKey,true);
+    assert.equal(event.defaultPrevented,true);
+    controls.dispose(); content.innerHTML = '';
 });

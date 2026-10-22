@@ -26,11 +26,17 @@ export class BlueprintCapacityControls {
                 element.onclick = action; group.append(element); return element;
             };
             const entry = { id: node.id, node, bounds, group, editing: false, pending: false };
+            entry.heading = document.createElement('strong');
+            entry.heading.className = 'blueprint-capacity-heading';
+            entry.heading.textContent = node.label || options.messages.standing;
+            entry.details = document.createElement('span');
+            entry.details.className = 'blueprint-capacity-details';
+            group.append(entry.heading, entry.details);
             entry.minus = button('−', options.messages.removeOne, () => this.step(entry, -1));
             entry.count = button('', '', () => this.edit(entry));
             entry.count.className = 'blueprint-capacity-count';
             entry.plus = button('+', options.messages.addOne, () => this.step(entry, 1));
-            entry.confirm = button('✓', options.messages.confirmQuantity, () => this.confirm(entry));
+            entry.confirm = button(options.messages.confirmQuantity, options.messages.confirmQuantity, () => this.confirm(entry));
             entry.confirm.className = 'blueprint-capacity-confirm';
             entry.message = document.createElement('div');
             entry.message.className = 'blueprint-capacity-message';
@@ -44,7 +50,22 @@ export class BlueprintCapacityControls {
             });
             this.entries.set(node.id, entry); this.layer.append(group);
         }
-        for (const name of ['pointerdown', 'touchstart', 'mousedown', 'click', 'wheel']) this.layer.addEventListener(name, event => event.stopPropagation());
+        for (const name of ['pointerdown', 'touchstart', 'mousedown', 'click']) this.layer.addEventListener(name, event => event.stopPropagation());
+        // The overlay is a sibling of the SVG. Relay wheel gestures so zoom/pan
+        // keeps its cursor anchor even while the pointer is over a control.
+        this.layer.addEventListener('wheel', event => {
+            const svg = content.querySelector('.venue-layout-viewer > svg');
+            if (!svg) return;
+            const forwarded = new content.ownerDocument.defaultView.WheelEvent('wheel', {
+                bubbles: true, cancelable: true,
+                clientX: event.clientX, clientY: event.clientY,
+                deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: event.deltaZ, deltaMode: event.deltaMode,
+                ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
+            });
+            svg.dispatchEvent(forwarded);
+            if (forwarded.defaultPrevented) event.preventDefault();
+            event.stopPropagation();
+        }, {passive: false});
         content.append(this.layer);
         // Capture activation using the same public kernel hit test as the viewer.
         // This prevents the package's generic below-canvas quantity editor.
@@ -106,7 +127,10 @@ export class BlueprintCapacityControls {
     refresh(entry) {
         const {state, editing, pending} = entry;
         const count = editing ? entry.draft : state.quantity || 0;
-        entry.count.textContent = BlueprintStrings.placeCount(count);
+        entry.count.textContent = editing ? String(count) : BlueprintStrings.placeCount(count);
+        entry.heading.hidden = entry.details.hidden = !editing;
+        entry.details.textContent = [state.priceLabel, this.options.messages.availableCount.replace('{count}', state.available)].filter(Boolean).join(' · ');
+        entry.group.classList.toggle('has-selection', !editing && count > 0);
         entry.count.setAttribute('aria-label', `${entry.node.label || this.options.messages.standing}: ${BlueprintStrings.placeCount(count)}`);
         entry.count.setAttribute('aria-expanded', String(editing));
         entry.count.disabled = pending;
@@ -134,7 +158,12 @@ export class BlueprintCapacityControls {
             // Keep the label at the area's center clear. Put controls in its lower half.
             const inside = width >= controlWidth + 16 && height >= controlHeight * 2 + 24;
             const x = Math.max(8, Math.min(parent.width - controlWidth - 8, left + (width - controlWidth) / 2));
-            const y = inside ? top + height - controlHeight - 8 : top + height + 4;
+            let y = inside ? top + height - controlHeight - 8 : top + height + 4;
+            const zoom = this.content.querySelector('.blueprint-zoom-controls')?.getBoundingClientRect();
+            if (zoom && x + controlWidth > zoom.left - parent.left && x < zoom.right - parent.left &&
+                y + controlHeight > zoom.top - parent.top && y < zoom.bottom - parent.top && top >= controlHeight + 12) {
+                y = top - controlHeight - 4;
+            }
             entry.group.hidden = left + width < 0 || top + height < 0 || left > parent.width || top > parent.height;
             entry.group.style.left = `${x}px`;
             entry.group.style.top = `${Math.max(8, Math.min(parent.height - controlHeight - 8, y))}px`;

@@ -1766,6 +1766,8 @@ void main() {
         'commercial-table-10000000-0000-4000-8000-000000000010'));
     final areaRow = find.byKey(
         const ValueKey('commercial-area-10000000-0000-4000-8000-000000000020'));
+    expect(find.descendant(of: areaRow, matching: find.byIcon(Icons.people_outline)), findsOneWidget);
+    expect(find.descendant(of: areaRow, matching: find.text('(20)')), findsOneWidget);
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);

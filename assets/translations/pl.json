@@ -29,7 +29,12 @@
       "removeOne": "Usuń jedno",
       "standingNotConfigured": "Nie przypisano biletu na miejsce stojące.",
       "standingUnavailable": "Miejsca stojące nie są już dostępne.",
-      "standingSaleClosed": "Sprzedaż miejsc stojących jest niedostępna."
+      "standingSaleClosed": "Sprzedaż miejsc stojących jest niedostępna.",
+      "standing": "Miejsca stojące",
+      "availableCount": "Dostępnych: {count}",
+      "confirmQuantity": "Potwierdź liczbę",
+      "pending": "Przetwarzanie",
+      "quantityRejected": "Nie udało się potwierdzić liczby"
     },
     "standingCapacity": "Liczba miejsc",
     "capacitySaveHint": "Zmiana zostanie zastosowana po zapisaniu planu."

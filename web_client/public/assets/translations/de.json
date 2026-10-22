@@ -1156,5 +1156,43 @@
     "reason_offline_storage_unavailable": "Offline-Daten können nicht geöffnet werden. Internetverbindung herstellen und das Gerät erneut vorbereiten.",
     "filter_answers": "Feld suchen",
     "no_matching_answers": "Keine weiteren passenden Felder."
+  },
+  "FeatureBlueprint": {
+    "protectedCount": "Belegte Plätze: {count}.",
+    "cancelReservation": "Ausgewählte Reservierungen stornieren",
+    "assignSelectionProduct": "Gemeinsames Produkt und Preis",
+    "assignmentSaveNotice": "Die Produktzuordnung wird erst mit Speichern im Plan gespeichert.",
+    "insertGraphic": "Bild oder SVG einfügen",
+    "svgImportLimit": "Die SVG überschreitet die Größen- oder Komplexitätsgrenze.",
+    "svgExternalDependency": "Die SVG verweist auf eine externe Datei. Betten Sie die benötigte Grafik vor dem Import in die SVG ein.",
+    "svgInteractiveContent": "Skripte und interaktive SVG-Inhalte können nicht in statische Grafiken umgewandelt werden.",
+    "svgDocumentType": "DTD-Definitionen werden nicht unterstützt. Exportieren Sie die SVG ohne DTD.",
+    "svgInvalid": "Diese Datei ist keine gültige SVG.",
+    "svgEmbeddedBitmap": "Die SVG enthält ein Rasterbild. Fügen Sie es separat als Bild in den Plan ein.",
+    "svgComplexText": "Der SVG-Text verwendet eine nicht unterstützte Positionierung oder gemischte Stile. Wandeln Sie ihn vor dem Import in Pfade um.",
+    "svgUnsupportedEffect": "Dieser SVG-Effekt lässt sich noch nicht ohne Änderung der Darstellung umwandeln.",
+    "svgConversionFailed": "Die SVG konnte nicht umgewandelt werden. Ihr Plan bleibt unverändert.",
+    "blockSeat": "Platz sperren",
+    "blockSeatHint": "Gesperrte Plätze können nicht für eine neue Bestellung ausgewählt werden.",
+    "placementInvalid": "Der Plan enthält überlappende Objekte oder Objekte außerhalb der Zeichenfläche. Korrigiere die rot markierten Objekte.",
+    "seatProductRequired": "Neue Sitzplätze benötigen ein Produkt mit Preis. Weise es unter Reservierungen und Bestellungen zu.",
+    "imageUploadUncertain": "Das Upload-Ergebnis konnte nicht bestätigt werden. Prüfen Sie vor einem erneuten Versuch, ob das Bild hinzugefügt wurde.",
+    "standingRequiresProduct": "Weisen Sie für den Verkauf ein Ticketprodukt und dessen Bestandskapazität zu.",
+    "viewer": {
+      "placeCount_one": "{count} Platz",
+      "placeCount_other": "{count} Plätze",
+      "addOne": "Einen hinzufügen",
+      "removeOne": "Einen entfernen",
+      "standingNotConfigured": "Kein Stehplatzticket zugewiesen.",
+      "standingUnavailable": "Stehplätze sind nicht mehr verfügbar.",
+      "standingSaleClosed": "Stehplätze werden derzeit nicht verkauft.",
+      "standing": "Stehplätze",
+      "availableCount": "Verfügbar: {count}",
+      "confirmQuantity": "Anzahl bestätigen",
+      "pending": "Wird verarbeitet",
+      "quantityRejected": "Die Anzahl konnte nicht bestätigt werden"
+    },
+    "standingCapacity": "Anzahl der Plätze",
+    "capacitySaveHint": "Wird beim Speichern des Plans übernommen."
   }
 }

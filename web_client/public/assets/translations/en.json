@@ -1380,6 +1380,8 @@
     "catalogSaveNotice": "Catalog changes are saved immediately. Discarding the layout draft does not undo them.",
     "catalogAffectedSeats": "This shared product is assigned to {count} seats. Existing sold ticket prices are managed by the server.",
     "viewer": {
+      "placeCount_one": "{count} place",
+      "placeCount_other": "{count} places",
       "viewerLabel": "Venue layout",
       "places": "Places",
       "place": "Place",
@@ -1458,8 +1460,8 @@
     "tryLayoutDemo": "Try the demo layout",
     "blockSeats": "Block seats",
     "unblockSeats": "Unblock seats",
-    "standingCapacity": "Standing sales capacity",
-    "capacitySaveHint": "Applied when the plan is saved. Product capacity also limits availability.",
+    "standingCapacity": "Number of places",
+    "capacitySaveHint": "Applied when the plan is saved.",
     "invalidStandingCapacity": "Enter a whole number from 0 to 1,000,000.",
     "standingAvailability": "Available places: {available} of {capacity}",
     "helpTitle": "Plan controls",
@@ -1497,7 +1499,14 @@
       "empty": "No product is assigned to this seat.",
       "selection": "Seat in your current selection."
     },
-    "standingRequiresProduct": "The area capacity is ready. To sell admission, assign a ticket product and its inventory capacity."
+    "standingNoAdmissionType": "First create a ticket form for this event. It prepares the admission product type needed here.",
+    "standingPreparationRetained": "Prepared products and inventory remain saved if you close this dialog. You can manage them in Products and Inventory. Retry keeps the prepared capacity.",
+    "areaProduct": "Area product",
+    "areaProductAssigned": "Applied to the entire area",
+    "assignStandingProduct": "Assign product",
+    "standingSetupSaveHint": "Products and inventory are saved immediately. The area assignment and capacity changes take effect when you save the plan.",
+    "standingCapacityGroup": "Capacity group",
+    "standingRequiresProduct": "The area capacity is ready. Assign a product and its capacity to start selling."
   },
   "OccasionSettings": {
     "title": "Title",
