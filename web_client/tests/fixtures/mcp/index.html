@@ -5,9 +5,9 @@ LocalizationService.translations = await (await fetch('/assets/translations/cs.j
 const operations = [];
 const client = { auth: { getSession: async () => ({data:{session:{user:{email:'1+synthetic@example.test'}}}}) }, functions:{invoke:async(name,{body})=>{
     operations.push({operation:body.operation,access:body.access});
-    return {data:body.operation==='details'?{client:'Codex',applicationType:'native',occasions:[{id:99,title:'První akce'},{id:100,title:'Druhá akce'}]}:body.operation==='status'?{status:'connected'}:{resumeUrl:'https://mcp.festapp.net/connect/fixture/finish?resume='+'S'.repeat(43)}};
+    return {data:body.operation==='details'?{client:'Codex',applicationType:'native',canRequestCreate:true,units:[{id:3,title:'Skautský oddíl',canCreateOccasions:true},{id:4,title:'Kulturní spolek',canCreateOccasions:true}],occasions:[{id:99,title:'První akce',unitId:3},{id:100,title:'Druhá akce',unitId:4}]}:body.operation==='status'?{status:'connected'}:{resumeUrl:'https://mcp.festapp.net/connect/fixture/finish?resume='+'S'.repeat(43)}};
 }}};
 const popup = {opener:{},location:{replace(){}},close(){this.closed=true;}};
 const page = new McpConnectionPage(document.getElementById('consent'),{client,browser:{location:{href:location.origin+'/settings/mcp-connect?request='+'R'.repeat(43)},open(){return popup;},close(){}}});
-await page.init(); window.consentFixture={ready:true,read:()=>({state:page.state,selected:[...page.selected],operations,popupClosed:popup.closed,openerIsNull:popup.opener===null})};
+await page.init(); window.consentFixture={ready:true,read:()=>({state:page.state,selected:[...page.selected],access:page.access,operations,popupClosed:popup.closed,openerIsNull:popup.opener===null})};
 </script></html>

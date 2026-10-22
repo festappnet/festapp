@@ -8,18 +8,25 @@ registry and ordinary-user organization check.
 
 ## Delegation scope and creation
 
-Consent chooses either explicit occasion IDs or one whole organizer (`unit`).
-A whole-organizer grant includes current and future occasions in that unit;
-it does not include other organizers or the entire tenant (`organization`).
+Web consent groups occasions under organizer checkboxes. Selecting an organizer
+includes its current and future occasions and, when the OAuth request includes
+`festapp:occasions:create` and the actor has the live creation capability, also
+permits creating new hidden occasions with sales closed. The checkbox description
+states that scope before approval. Selecting individual occasions never includes
+future occasions or creation. Several organizers and individual occasions can be
+combined in one `selection` grant with explicit per-organizer creation flags.
+Existing `unit` and `occasions` grants retain their original scope, including
+native consent requests. A whole-organizer grant excludes other organizers and
+the rest of the tenant (`organization`).
 The canonical `get_operator_access_v1` projection exposes only authorized units
 and occasions visible to editors/managers. Artwork reads retain their narrower canonical permission check. It accepts no caller-supplied actor identity.
 Every operation still uses the ordinary session and canonical domain checks.
 Moving an occasion to another organizer removes it from a unit grant.
 
-Creating occasions is a separate unchecked choice. It requires all of:
-requested OAuth scope `festapp:occasions:create`, explicit whole-organizer consent,
-its `canCreateOccasions` flag and current unit-manager rights (the canonical
-unit mutation command requires a manager). Read-only clients do not advertise
+Creating occasions requires the requested OAuth scope `festapp:occasions:create`,
+explicit consent for the target organizer, its `canCreateOccasions` flag and
+current creation rights from the canonical SQL boundary. It is never inferred
+from selecting every visible child occasion. Read-only clients do not advertise
 the create tool. The existing read scope is `festapp:ticket-layouts:read`.
 `festapp_access_inspect` lists only the connection's current authorized scope.
 `festapp_occasions_create` calls `create_occasion_client_sync_v1` unchanged, with

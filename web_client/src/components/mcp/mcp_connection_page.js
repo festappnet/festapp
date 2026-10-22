@@ -30,9 +30,7 @@ export class McpConnectionPage {
         this.pause = pause;
         this.request = new URL(browser.location.href).searchParams.get('request');
         this.selected = new Set();
-        this.wholeUnit = false;
-        this.unitId = null;
-        this.allowCreate = false;
+        this.selectedUnits = new Map();
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
@@ -49,15 +47,17 @@ export class McpConnectionPage {
     }
 
     get access() {
-        return this.wholeUnit
-            ? { type: 'unit', unitId: this.unitId, canCreateOccasions: this.allowCreate }
-            : { type: 'occasions', occasionIds: [...this.selected] };
+        if (!this.selectedUnits.size) return { type: 'occasions', occasionIds: [...this.selected] };
+        return { type: 'selection', units: [...this.selectedUnits].map(([unitId, canCreateOccasions]) =>
+            ({ unitId, canCreateOccasions })), occasionIds: [...this.selected] };
     }
 
     get canApprove() {
-        if (this.wholeUnit) return (this.details?.units || []).some(u => u.id === this.unitId);
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
-        return this.selected.size > 0 && this.selected.size <= 100 && [...this.selected].every(id => ids.has(id));
+        const units = this.details?.units || [];
+        return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
+            [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
+                units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
     }
 
     dispose() { this.generation++; }
@@ -90,9 +90,11 @@ export class McpConnectionPage {
                 this.selected = new Set([...this.selected].filter(id => ids.has(id)));
                 const units = this.details.units || [];
                 if (!Array.isArray(units) || units.some(u => !Number.isSafeInteger(u.id))) throw new Error('Invalid units');
-                if (!units.some(u => u.id === this.unitId)) { this.unitId = units[0]?.id ?? null; this.allowCreate = false; }
-                if (!units.length) this.wholeUnit = false;
-                if (!this.details.canRequestCreate || !units.find(u => u.id === this.unitId)?.canCreateOccasions) this.allowCreate = false;
+                for (const [id, create] of this.selectedUnits) {
+                    const unit = units.find(u => u.id === id);
+                    if (!unit) this.selectedUnits.delete(id);
+                    else this.selectedUnits.set(id, create && this.details.canRequestCreate === true && unit.canCreateOccasions === true);
+                }
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -166,13 +168,13 @@ export class McpConnectionPage {
         if (this.state === 'consent') {
             add('h2', this.text('client', { client: this.details.client }));
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
-            add('p', this.text('scope'));
+            add('p', this.text('treeScope'));
             const fieldset = add('fieldset', '');
             fieldset.disabled = this.busy;
-            add('legend', this.text(this.wholeUnit ? 'organizer' : 'choose'), fieldset);
+            add('legend', this.text('choose'), fieldset);
             const occasions = this.details.occasions;
-            const checkbox = (title, checked, action) => {
-                const label = add('label', '', fieldset);
+            const checkbox = (title, checked, action, parent = fieldset) => {
+                const label = add('label', '', parent);
                 const input = document.createElement('input');
                 input.type = 'checkbox';
                 input.checked = checked;
@@ -182,56 +184,61 @@ export class McpConnectionPage {
                 return input;
             };
             const units = this.details.units || [];
-            if (units.length) {
-                const whole = checkbox(this.text('wholeOrganizer'), this.wholeUnit, () => {
-                    this.wholeUnit = !this.wholeUnit; this.allowCreate = false; this.render();
-                });
-                whole.dataset.wholeUnit = '';
-                add('p', this.text('wholeOrganizerHint'), fieldset);
-                if (this.wholeUnit) {
-                    const select = add('select', '', fieldset);
-                    select.setAttribute('aria-label', this.text('organizer'));
-                    select.dataset.unit = '';
-                    for (const unit of units) { const option = add('option', unit.title, select); option.value = unit.id; option.selected = unit.id === this.unitId; }
-                    select.addEventListener('change', () => { this.unitId = Number(select.value); this.allowCreate = false; this.render(); });
-                    if (this.details.canRequestCreate && units.find(u => u.id === this.unitId)?.canCreateOccasions) {
-                        const create = checkbox(this.text('allowCreate'), this.allowCreate, () => { this.allowCreate = !this.allowCreate; this.render(); });
-                        create.dataset.allowCreate = '';
-                        add('p', this.text('allowCreateHint'), fieldset);
-                    }
-                }
-            }
-            if (!this.wholeUnit && occasions.length > 100) add('p', this.text('selectionLimit'), fieldset);
-            if (!this.wholeUnit && occasions.length) {
-                const all = occasions.every(o => this.selected.has(o.id));
+            if (occasions.length > 100) add('p', this.text('selectionLimit'), fieldset);
+            if (occasions.length) {
+                const all = !this.selectedUnits.size && occasions.every(o => this.selected.has(o.id));
                 const bulk = checkbox(this.text('selectAll'), all, () => {
-                    this.selected.clear();
+                    this.selected.clear(); this.selectedUnits.clear();
                     if (!all) occasions.forEach(o => this.selected.add(o.id));
                     this.render();
                     this.container.querySelector('[data-select-all]')?.focus();
                 });
                 bulk.dataset.selectAll = '';
                 bulk.disabled = occasions.length > 100;
-                bulk.indeterminate = !all && this.selected.size > 0;
+                bulk.indeterminate = !all && (this.selected.size > 0 || this.selectedUnits.size > 0);
             }
-            const unitTitles = new Map(units.map(u => [u.id, u.title]));
-            const compare = (a, b) => a.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().localeCompare(b.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase());
-            const sorted = [...occasions].sort((a,b) => compare(unitTitles.get(a.unitId) || '', unitTitles.get(b.unitId) || '') || (a.unitId || 0) - (b.unitId || 0) || compare(a.title,b.title) || a.id - b.id);
-            let previousUnit;
-            for (const occasion of this.wholeUnit ? [] : sorted) {
-                if (occasion.unitId !== previousUnit) {
-                    previousUnit = occasion.unitId;
-                    const heading = add('h3', unitTitles.get(occasion.unitId) || `${this.text('organizer')} #${occasion.unitId}`, fieldset);
-                    heading.dataset.unitHeading = occasion.unitId;
-                }
-                const input = checkbox(occasion.title, this.selected.has(occasion.id), () => {
-                    if (input.checked) this.selected.add(occasion.id);
-                    else this.selected.delete(occasion.id);
+            const groups = new Map(units.map(u => [u.id, { unit: u, occasions: [] }]));
+            for (const occasion of occasions) {
+                if (!groups.has(occasion.unitId)) groups.set(occasion.unitId, { occasions: [] });
+                groups.get(occasion.unitId).occasions.push(occasion);
+            }
+            const title = ([id, group]) => group.unit?.title || `${this.text('organizer')}${id ? ` #${id}` : ''}`;
+            const compare = new Intl.Collator(undefined, { sensitivity: 'base' }).compare;
+            for (const [id, group] of [...groups].sort((a, b) => compare(title(a), title(b)) || (a[0] || 0) - (b[0] || 0))) {
+                const section = add('div', '', fieldset);
+                section.className = 'mcp-organizer';
+                const heading = add('h3', '', section);
+                const whole = this.selectedUnits.has(id);
+                const creates = whole ? this.selectedUnits.get(id) : this.details.canRequestCreate === true && group.unit?.canCreateOccasions === true;
+                const parent = checkbox(title([id, group]), whole, () => {
+                    if (whole) this.selectedUnits.delete(id);
+                    else {
+                        this.selectedUnits.set(id, creates);
+                        group.occasions.forEach(o => this.selected.delete(o.id));
+                    }
                     this.render();
-                    this.container.querySelector(`[data-occasion="${occasion.id}"]`)?.focus();
-                });
-                input.dataset.occasion = occasion.id;
-                input.disabled = !input.checked && this.selected.size >= 100;
+                    this.container.querySelector(`[data-unit="${id}"]`)?.focus();
+                }, heading);
+                parent.dataset.unit = id ?? '';
+                parent.disabled = !group.unit || (!whole && this.selectedUnits.size >= 100);
+                parent.indeterminate = !whole && group.occasions.some(o => this.selected.has(o.id));
+                heading.querySelector('span').dataset.unitHeading = id ?? '';
+                const hint = add('p', this.text(!group.unit ? 'individualOnlyHint' : creates ? 'organizerCreateHint' : 'organizerReadHint'), section);
+                hint.className = 'mcp-organizer-hint';
+                hint.id = `mcp-unit-hint-${id ?? 'individual'}`;
+                parent.setAttribute('aria-describedby', hint.id);
+                const children = add('div', '', section);
+                children.className = 'mcp-organizer-occasions';
+                for (const occasion of [...group.occasions].sort((a, b) => compare(a.title, b.title) || a.id - b.id)) {
+                    const input = checkbox(occasion.title, whole || this.selected.has(occasion.id), () => {
+                        if (input.checked) this.selected.add(occasion.id);
+                        else this.selected.delete(occasion.id);
+                        this.render();
+                        this.container.querySelector(`[data-occasion="${occasion.id}"]`)?.focus();
+                    }, children);
+                    input.dataset.occasion = occasion.id;
+                    input.disabled = whole || (!input.checked && this.selected.size >= 100);
+                }
             }
             add('p', this.text('duration'));
             button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
@@ -252,7 +259,7 @@ export class McpConnectionPage {
             if (this.state === 'error') button('retry', () => this.init());
         }
         const style = document.createElement('style');
-        style.textContent = `.mcp-connection{max-width:640px;margin:32px auto;padding:24px;color:var(--text-color,inherit)}.mcp-connection h1{font-size:2rem}.mcp-connection p{line-height:1.6}.mcp-connection fieldset{border:0;padding:0;margin:24px 0}.mcp-connection legend{font-weight:600;margin-bottom:12px}.mcp-connection label{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#273f65)}.mcp-connection button{min-height:44px;margin:8px 12px 8px 0;padding:10px 22px;border-radius:24px;cursor:pointer}.mcp-connection button:disabled{cursor:default}.mcp-connection a{display:block;margin-top:16px}.mcp-connection :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;
+        style.textContent = `.mcp-connection{max-width:640px;margin:32px auto;padding:24px;color:var(--text-color,inherit)}.mcp-connection h1{font-size:2rem}.mcp-organizer{margin-block:24px}.mcp-organizer h3{font-size:1.125rem;margin:0}.mcp-organizer-hint{margin:0 0 8px;padding-inline-start:34px;font-size:.875rem}.mcp-organizer-occasions{margin-inline-start:10px;padding-inline-start:24px;border-inline-start:1px solid currentColor}.mcp-connection h3 label{padding-bottom:4px}.mcp-connection p{line-height:1.6}.mcp-connection fieldset{border:0;padding:0;margin:24px 0}.mcp-connection legend{font-weight:600;margin-bottom:12px}.mcp-connection label{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#273f65)}.mcp-connection button{min-height:44px;margin:8px 12px 8px 0;padding:10px 22px;border-radius:24px;cursor:pointer}.mcp-connection button:disabled{cursor:default}.mcp-connection a{display:block;margin-top:16px}.mcp-connection :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;
         this.container.replaceChildren(style, root);
     }
 }

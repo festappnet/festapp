@@ -221,7 +221,7 @@ export class Operations {
         }
     }
     async inspect(client, id) {
-        const scope = this.owner.delegatedContext?.();
+        const scope = await this.owner.delegatedContext?.(client, id);
         const { data, error } = await client.rpc(
             scope ? 'get_delegated_ticket_layout_for_authoring_v1' : 'get_ticket_layout_for_authoring_v1',
             { p_occasion: id, ...(scope ? { p_organization: scope.organizationId, p_unit: scope.unitId } : {}) },

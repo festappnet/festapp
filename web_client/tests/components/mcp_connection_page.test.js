@@ -93,23 +93,44 @@ test('router keeps MCP consent in web client even on app-supported tenants', asy
     try { assert.equal(await RouterService.handleInitialLoad(), true); assert.equal(document.getElementById('app').hidden, true); assert.match(document.getElementById('form-page-container').textContent, /Přihlas se/); }
     finally { SupabaseService.getClient = original; }
 });
-test('unit access and creation require separate explicit choices and reset on organizer change', async () => {
+test('tree combines several organizers and single occasions; selecting children never grants future access', async () => {
     const f = fixture({invoke: body => ({data:body.operation === 'details'
-        ? {client:'Codex',units:[{id:4,title:'Organizer',canCreateOccasions:true},{id:5,title:'Other',canCreateOccasions:false}],occasions:[{id:99,title:'Event',unitId:4}],canRequestCreate:true}
+        ? {client:'Codex',units:[{id:4,title:'Organizer',canCreateOccasions:true},{id:5,title:'Other',canCreateOccasions:false}],occasions:[{id:99,title:'Event',unitId:4},{id:100,title:'Other event',unitId:5},{id:101,title:'Single',unitId:6}],canRequestCreate:true}
         : {resumeUrl:resume}})});
     await f.page.init();
-    assert.equal(f.page.allowCreate,false);
+    assert.equal(f.container.querySelector('[data-whole-unit]'),null);
     assert.equal(f.page.canApprove,false);
-    f.container.querySelector('[data-whole-unit]').click();
+    f.container.querySelector('[data-occasion="99"]').click();
+    assert.equal(f.container.querySelector('[data-unit="4"]').indeterminate,true);
+    assert.equal(f.page.selectedUnits.size,0);
+    f.container.querySelector('[data-unit="4"]').click();
+    assert.equal(f.page.selected.size,0);
+    assert.equal(f.container.querySelector('[data-occasion="99"]').checked,true);
+    assert.equal(f.container.querySelector('[data-occasion="99"]').disabled,true);
+    assert.match(f.container.textContent,/zakládání nových/);
+    f.container.querySelector('[data-unit="5"]').click();
+    f.container.querySelector('[data-occasion="101"]').click();
+    assert.equal(f.container.querySelector('[data-unit="6"]').disabled,true);
     assert.equal(f.page.canApprove,true);
-    assert.equal(f.page.allowCreate,false);
-    f.container.querySelector('[data-allow-create]').click();
-    assert.equal(f.page.allowCreate,true);
-    const select=f.container.querySelector('[data-unit]');select.value='5';select.dispatchEvent(new window.Event('change'));
-    assert.equal(f.page.allowCreate,false);
-    assert.equal(f.container.querySelector('[data-allow-create]'),null);
     await f.page.finish('approve');
-    assert.deepEqual(f.calls.at(-1).access,{type:'unit',unitId:5,canCreateOccasions:false});
+    assert.deepEqual(f.calls.at(-1).access,{type:'selection',units:[{unitId:4,canCreateOccasions:true},{unitId:5,canCreateOccasions:false}],occasionIds:[101]});
+});
+test('organizer without requested create scope remains read-only and deselection clears inherited access', async () => {
+    const f=fixture({invoke:()=>({data:{client:'Codex',units:[{id:4,title:'Organizer',canCreateOccasions:true}],occasions:[{id:99,title:'Event',unitId:4}],canRequestCreate:false}})});
+    await f.page.init();f.container.querySelector('[data-unit="4"]').click();
+    assert.deepEqual(f.page.access.units,[{unitId:4,canCreateOccasions:false}]);
+    f.container.querySelector('[data-unit="4"]').click();
+    assert.equal(f.page.canApprove,false);
+    assert.equal(f.container.querySelector('[data-occasion="99"]').checked,false);
+    assert.equal(f.container.querySelector('[data-occasion="99"]').disabled,false);
+});
+test('refresh removes lost organizer grants and cannot silently acquire creation rights',async()=>{
+    let units=[{id:4,title:'Organizer',canCreateOccasions:false}];
+    const f=fixture({invoke:()=>({data:{client:'Codex',units,occasions:[],canRequestCreate:true}})});
+    await f.page.init();f.container.querySelector('[data-unit="4"]').click();
+    units=[{id:4,title:'Organizer',canCreateOccasions:true}];await f.page.init();
+    assert.equal(f.page.access.units[0].canCreateOccasions,false);
+    units=[];await f.page.init();assert.equal(f.page.canApprove,false);
 });
 test('a list beyond the broker limit remains visible and cannot silently bulk truncate',async()=>{
     const f=fixture({occasions:Array.from({length:101},(_,i)=>({id:i+1,title:`Event ${i+1}`}))});

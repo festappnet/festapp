@@ -1,7 +1,7 @@
 import { SessionOwner } from '../auth/session.mjs';
 import { digest } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
-import { operatorAccess } from '../operations/access.mjs';
+import { operatorAccess, accessSelection, canCreateWithAccess } from '../operations/access.mjs';
 import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE } from './config.mjs';
 
 export function boundOwner(config, storage, binding, options = {}) {
@@ -19,7 +19,7 @@ export class DelegatedOwner {
         this.session = boundOwner(config, storage, grant.binding, options);
         this.profile = this.session.profile;
         this.root = storage.root;
-        this.allowedOperations = [...READ_OPERATIONS, ...(grant.access.type === 'unit' && grant.access.canCreateOccasions && token.scope?.split(' ').includes(CREATE_SCOPE) ? ['occasions.create'] : [])];
+        this.allowedOperations = [...READ_OPERATIONS, ...(canCreateWithAccess(grant.access) && token.scope?.split(' ').includes(CREATE_SCOPE) ? ['occasions.create'] : [])];
         this.authChallenge = `Bearer resource_metadata="${config.issuer}/.well-known/oauth-protected-resource/mcp", scope="${READ_SCOPE}"`;
         this.securitySchemes = [{ type: 'oauth2', scopes: [READ_SCOPE] }];
     }
@@ -37,33 +37,38 @@ export class DelegatedOwner {
         return grant;
     }
     authorizeOperation(id, args) {
-        const access = this.current().access;
+        const access = accessSelection(this.current().access);
         check(this.allowedOperations.includes(id), 'FORBIDDEN');
         if (['context.inspect', 'access.inspect'].includes(id)) return;
         if (id === 'occasions.create') {
-            check(access.type === 'unit' && access.canCreateOccasions && access.unitId === args.unitId, 'FORBIDDEN');
-        } else if (access.type === 'occasions') {
+            check(access.units.some(u => u.unitId === args.unitId && u.canCreateOccasions), 'FORBIDDEN');
+        } else if (!access.units.length) {
             check(access.occasionIds.includes(args.occasionId), 'FORBIDDEN');
         }
     }
     // Domain SQL checks the live binding atomically; this only projects the
     // consent's narrowing constraints into that same request.
-    delegatedContext() {
+    async delegatedContext(client, occasionId) {
         const access = this.current().access;
+        const selection = accessSelection(access);
+        let unitId = access.type === 'unit' ? access.unitId : null;
+        if (access.type === 'selection' && !selection.occasionIds.includes(occasionId)) {
+            // Resolve the current organizer, then bind that same organizer in
+            // the atomic SQL read so moving an occasion cannot widen a grant.
+            const live = await operatorAccess(client, this.profile, { occasionId });
+            unitId = live.occasions.find(o => o.id === occasionId)?.unitId;
+            check(selection.units.some(u => u.unitId === unitId), 'FORBIDDEN');
+        }
         return { organizationId: this.config.profile.organizationId,
-            unitId: access.type === 'unit' ? access.unitId : null };
+            unitId };
     }
     async listAccess(client) {
-        const access = this.current().access;
-        const live = await operatorAccess(client, this.config.profile,
-            access.type === 'unit' ? { unitId: access.unitId } : {});
-        if (access.type === 'occasions') return {
-            units: [], occasions: live.occasions.filter(o => access.occasionIds.includes(o.id)),
-        };
-        check(live.units.some(u => u.id === access.unitId), 'FORBIDDEN');
-        return { units: live.units.map(u => ({ ...u, canCreateOccasions:
-            u.canCreateOccasions && this.allowedOperations.includes('occasions.create') })),
-            occasions: live.occasions };
+        const access = accessSelection(this.current().access);
+        const live = await operatorAccess(client, this.config.profile);
+        const units = live.units.filter(u => access.units.some(g => g.unitId === u.id));
+        return { units: units.map(u => ({ ...u, canCreateOccasions:
+            u.canCreateOccasions && access.units.some(g => g.unitId === u.id && g.canCreateOccasions) && this.allowedOperations.includes('occasions.create') })),
+            occasions: live.occasions.filter(o => access.occasionIds.includes(o.id) || units.some(u => u.id === o.unitId)) };
     }
     async authorized(action) {
         const grant = this.current();

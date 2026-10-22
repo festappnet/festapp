@@ -3642,8 +3642,9 @@
     "login": "Přihlásit se",
     "client": "Připojuješ aplikaci {client}",
     "scope": "Připojená aplikace může číst tvou identitu, dostupné akce a vzhled vstupenek ve zvoleném rozsahu. Zakládání akcí povolíš samostatně níže.",
-    "choose": "Vyber akce, ke kterým povolíš přístup:",
-    "selectAll": "Vybrat vše",
+    "treeScope": "Připojená aplikace může číst tvou identitu, dostupné akce a vzhled vstupenek ve zvoleném rozsahu. Výběrem pořadatele zahrneš i budoucí akce a podle svých práv povolíš zakládání nových.",
+    "choose": "Vyber pořadatele nebo jednotlivé akce:",
+    "selectAll": "Vybrat všechny současné akce",
     "duration": "Přístup platí 7 dní. Dříve ho můžeš odvolat ve správě propojení Festapp.",
     "approve": "Povolit a propojit",
     "cancel": "Zrušit",
@@ -3663,7 +3664,10 @@
     "organizer": "Pořadatel",
     "allowCreate": "Povolit zakládání nových akcí",
     "allowCreateHint": "Nové akce budou skryté, se zavřeným prodejem.",
-    "selectionLimit": "Vybrat lze nejvýše 100 akcí. Vyberte jednotlivé akce, nebo výslovně povolte přístup k celému pořadateli."
+    "selectionLimit": "Vybrat lze nejvýše 100 akcí. Vyberte jednotlivé akce, nebo výslovně povolte přístup k celému pořadateli.",
+    "organizerCreateHint": "Současné i budoucí akce a zakládání nových. Nové akce budou skryté, se zavřeným prodejem.",
+    "organizerReadHint": "Současné i budoucí akce. Tento přístup neumožňuje zakládat nové akce.",
+    "individualOnlyHint": "K dispozici máš pouze výběr jednotlivých akcí."
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",
