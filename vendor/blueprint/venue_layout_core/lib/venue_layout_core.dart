@@ -27,3 +27,5 @@ export 'src/placement.dart';
 export 'src/canonical_operations.dart';
 
 export 'src/contract_schema.dart';
+
+export 'src/studio_palettes.dart';

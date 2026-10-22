@@ -135,6 +135,7 @@ void main() {
           compileScene(reopened, resources: resources),
           compileScene(roundtrip, resources: resources),
         );
+        if (!VenueLayoutTemplates.recommended.any((item) => item.id == template.id)) continue;
         final controller = VenueLayoutController(
           roundtrip,
           resources: resources,

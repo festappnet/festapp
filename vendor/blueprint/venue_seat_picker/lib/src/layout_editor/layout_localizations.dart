@@ -59,6 +59,18 @@ String _czechLayoutText(String text) {
   if (selectionResult != null) {
     return '${selectionResult[2] == 'selected' ? 'Vybraná' : 'Uvolněná'} místa: ${selectionResult[1]}';
   }
+  final sideRange = RegExp(
+    r'^Enter a whole seat count from 0 to (\d+)\.$',
+  ).firstMatch(text);
+  if (sideRange != null) {
+    return 'Zadej celý počet sedadel od 0 do ${sideRange[1]}.';
+  }
+  final sideCapacity = RegExp(
+    r'^Maximum per side: top/bottom (\d+), left/right (\d+)\.$',
+  ).firstMatch(text);
+  if (sideCapacity != null) {
+    return 'Maximum na straně: nahoře/dole ${sideCapacity[1]}, vlevo/vpravo ${sideCapacity[2]}.';
+  }
   final validValue = RegExp(r'^Enter a valid (.+)\.$').firstMatch(text);
   if (validValue != null) {
     return 'Zadej platnou hodnotu: ${_czechLayoutText(validValue[1]!)}.';
@@ -548,6 +560,18 @@ const _cs = <String, String>{
       'U tohoto stolu už není místo pro další židli.',
   'Seat rows': 'Řady sedadel',
   'Number of rows': 'Počet řad',
+  'Seats on each side': 'Sedadel na jednotlivých stranách',
+  'Top seats': 'Nahoře',
+  'Bottom seats': 'Dole',
+  'Sides follow the table rotation.': 'Strany se otáčejí společně se stolem.',
+  'Graphite': 'Grafitová',
+  'Forest': 'Lesní zelená',
+  'Blueprint blue': 'Jednobarevná modrá',
+  'Sage': 'Šalvěj',
+  'Champagne': 'Šampaňské',
+  'Cinema red': 'Kino červená',
+  'Burgundy': 'Burgundská',
+  'Midnight': 'Noční modrá',
   'Seats per row': 'Sedadel v řadě',
   'Row arrangement': 'Rozmístění řad',
   'Curvature': 'Zakřivení',

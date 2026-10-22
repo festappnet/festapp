@@ -113,6 +113,20 @@ final layoutColorPalettes = <String, LayoutAppearance>{
       },
       canvasFill: entry.value.canvasFill,
     ),
+  for (final entry in layoutStudioPalettes.entries)
+    entry.key: LayoutAppearance(
+      {
+        'fill': entry.value['surface'],
+        'stroke': entry.value['edge'],
+        'label': {'color': entry.value['ink']},
+      },
+      seats: {
+        'fill': entry.value['seat'],
+        'stroke': entry.value['edge'],
+        'label': {'color': entry.value['ink']},
+      },
+      canvasFill: entry.value['canvas'],
+    ),
 };
 
 String layoutNodeFill(

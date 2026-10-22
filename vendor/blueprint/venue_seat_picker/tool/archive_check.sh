@@ -31,7 +31,16 @@ printf '%s\n' "$WRAPPER_EXIT" >"$OUT/wrapper-publish.exit-code"
 python3 "$ROOT/tool/qa_publish_status.py" "$OUT/core-publish.log" "$OUT/wrapper-publish.log"
 python3 "$ROOT/tool/qa_archive.py" "$WORK/core-source" "$OUT/core-publish.log" "$OUT/venue_layout_core.tar.gz" "$ROOT/packages/venue_layout_core"
 python3 "$ROOT/tool/qa_archive.py" "$ROOT" "$OUT/wrapper-publish.log" "$OUT/venue_seat_picker.tar.gz"
-(cd "$ROOT/web" && npm pack --dry-run --json >"$OUT/npm-dry-run.json" && npm pack --pack-destination "$OUT" --json >"$OUT/npm-pack.json")
+(cd "$ROOT/web" && pnpm pack --dry-run --json >"$OUT/npm-dry-run.json" && pnpm pack --pack-destination "$OUT" --json >"$OUT/npm-pack.json")
+python3 - "$OUT/npm-dry-run.json" "$OUT/npm-pack.json" <<'PYNORMALIZE'
+import json,pathlib,sys
+for name in sys.argv[1:]:
+ p=pathlib.Path(name);value=json.loads(p.read_text())
+ if isinstance(value,dict):value=[value]
+ for item in value:
+  if 'filename' in item:item['filename']=pathlib.Path(item['filename']).name
+ p.write_text(json.dumps(value)+'\n')
+PYNORMALIZE
 mkdir -p "$WORK/core" "$WORK/wrapper" "$WORK/consumer/test" "$WORK/npm"
 tar -xzf "$OUT/venue_layout_core.tar.gz" -C "$WORK/core"
 tar -xzf "$OUT/venue_seat_picker.tar.gz" -C "$WORK/wrapper"
@@ -99,10 +108,10 @@ cp "$ROOT/tool/demo_server.py" "$ROOT/build/demo/server.py"
 python3 "$ROOT/tool/demo_manifest.py" "$ROOT" "$ROOT/build/demo"
 node "$ROOT/tool/qa_archive_browser.mjs" "$WORK/npm/package" "$WORK/wrapper/example/build/web" "$OUT/templates.json" "$OUT"
 python3 - "$WORK/npm/package" "$OUT" <<'PY'
-import hashlib,json,pathlib,sys
+import hashlib,json,pathlib,subprocess,sys
 r,out=map(pathlib.Path,sys.argv[1:]);required=['src/index.js','src/index.d.ts','dist/venue_layout_kernel.js','dist/manifest.json','demo/index.html','LICENSE','assets/layout_fonts/fixtures.json','assets/layout_fonts/manifest.json','assets/layout_fonts/Roboto-OFL.txt',*[f'assets/layout_fonts/Roboto-{weight}-{style}.ttf' for weight in [400,700] for style in ['normal','italic']]]
 for f in required:assert (r/f).is_file(),f
 assert 'mount' in (r/'src/index.js').read_text()
-(out/'archive-result.json').write_text(json.dumps({'passed':True,'coreSourceByteEquivalent':True,'pubSelectedCoreAndWrapper':True,'actualNpmPack':True,'cleanConsumerTemplates':len(json.loads((out/'templates.json').read_text())),'archivedExampleBuilt':True,'archivedExampleBrowser':True,'requiredNpmFiles':{f:hashlib.sha256((r/f).read_bytes()).hexdigest() for f in required}},indent=2)+'\n')
+(out/'archive-result.json').write_text(json.dumps({'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'passed':True,'coreSourceByteEquivalent':True,'pubSelectedCoreAndWrapper':True,'actualNpmPack':True,'cleanConsumerTemplates':len(json.loads((out/'templates.json').read_text())),'archivedExampleBuilt':True,'archivedExampleBrowser':True,'requiredNpmFiles':{f:hashlib.sha256((r/f).read_bytes()).hexdigest() for f in required}},indent=2)+'\n')
 PY
 printf 'Archive gate passed: actual pub/npm selections, clean consumer and extracted example browser.\n'
