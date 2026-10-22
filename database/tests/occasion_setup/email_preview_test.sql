@@ -30,6 +30,8 @@ BEGIN
  PERFORM assert_false(has_function_privilege('anon','public.get_occasion_setup_email_preview(uuid,bigint)','EXECUTE'),'Public preview is forbidden');
  PERFORM assert_false(has_function_privilege('service_role','public.get_occasion_setup_email_preview(uuid,bigint)','EXECUTE'),'Service role cannot replace user authorization');
  result:=public.get_occasion_setup_email_preview(draft,1);
+ PERFORM assert_eq((result->>'ticketsEnabled')::boolean,false,'No ticket is invented for a draft without admission fields');
+ PERFORM assert_eq(result->'sampleProducts','[]'::jsonb,'No sample product is invented');
  PERFORM assert_eq(result->>'tone','informal','Unit tone inherited');
  PERFORM assert_eq(result->>'replyTo','unit@example.invalid','Unit reply inherited');
  PERFORM assert_eq(result->'resolved'->'template'->>'subject','Unit subject','Destination template inherited');

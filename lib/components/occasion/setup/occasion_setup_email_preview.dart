@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
-import 'package:html/parser.dart' as html;
+import 'setup_email_document.dart';
 import 'occasion_setup_strings.dart';
 
 /// Returns the server-rendered subject/html for a detached current draft.
@@ -82,23 +81,6 @@ class _OccasionSetupEmailPreviewState extends State<OccasionSetupEmailPreview> {
     super.dispose();
   }
 
-  /// Render through the existing Flutter HTML renderer, with no executable
-  /// browser document, external resources, forms, or navigable links.
-  String _safePreview(String source) {
-    final document = html.parse(source);
-    for (final element in document.querySelectorAll(
-        'script,style,iframe,object,embed,form,input,button,video,audio,source,img,svg,link,meta,base')) {
-      element.remove();
-    }
-    for (final element in document.querySelectorAll('*')) {
-      element.attributes.removeWhere((key, _) =>
-          key.toString().startsWith('on') ||
-          const ['href', 'src', 'srcset', 'action', 'formaction', 'style']
-              .contains(key));
-    }
-    return document.body?.innerHtml ?? '';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -121,13 +103,11 @@ class _OccasionSetupEmailPreviewState extends State<OccasionSetupEmailPreview> {
         const SizedBox(height: 8),
         Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
                 border: Border.all(
                     color: Theme.of(context).colorScheme.outlineVariant),
                 borderRadius: BorderRadius.circular(8)),
-            child: HtmlWidget(_safePreview('${_preview!['html'] ?? ''}'),
-                onTapUrl: (_) => true)),
+            child: SetupEmailDocument(html: '${_preview!['html'] ?? ''}')),
         if (_preview!['has_custom_template'] == true)
           Padding(
               padding: const EdgeInsets.only(top: 8),

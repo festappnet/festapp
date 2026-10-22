@@ -8,13 +8,17 @@ import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart'
 import 'package:fstapp/components/ticket_layout/models/ticket_layout.dart';
 
 void main() {
-  Map<String, dynamic> draft(String kind, {num price = 0}) => {
-        'eventKind': kind,
+  Map<String, dynamic> draft(
+          {bool tickets = true, bool formEnabled = true, num price = 0}) =>
+      {
+        'formEnabled': formEnabled,
         'formDraft': {
           'title': 'Akce',
           'data': {},
           'fields': [
+            if (tickets) {'type': 'ticket'},
             {
+              'type': 'product',
               'product_type_data': {
                 'products': [
                   {'price': price}
@@ -22,60 +26,61 @@ void main() {
               }
             }
           ]
-        }
+        },
       };
   for (final app in [false, true]) {
-    for (final kind in OccasionSetupStory.kinds) {
-      test('$kind app=$app: one active path drives positions and prerequisites',
+    for (final tickets in [false, true]) {
+      test(
+          'independent tickets=$tickets app=$app: active questions have no event kind',
           () {
-        final d = draft(kind);
-        final questions = OccasionSetupStory.questions(app, data: d);
-        expect(questions.take(4).map((q) => q.key),
-            ['name', 'dates', 'kind', 'appearance']);
-        expect(questions.any((q) => q.key == 'blueprint'), kind == 'ball');
-        expect(questions.any((q) => q.key == 'ticket'), false);
-        expect(questions.any((q) => q.key == 'payments'), false);
+        final data = draft(tickets: tickets);
+        final questions = OccasionSetupStory.questions(app, data: data);
+        expect(questions.take(3).map((q) => q.key),
+            ['name', 'dates', 'appearance']);
+        expect(questions.any((q) => q.key == 'kind'), false);
+        expect(questions.any((q) => q.key == 'blueprint'), true);
+        expect(questions.any((q) => q.key == 'ticket'), true);
+        expect(OccasionSetupStory.hasTickets(data), tickets);
         for (var i = 0; i < questions.length; i++) {
           expect(
               OccasionSetupStory.index({
-                ...d,
+                ...data,
                 'step': questions[i].step,
                 'storyQuestion': questions[i].key
               }, app),
               i);
         }
         expect(
-            OccasionSetupStory.questions(app, data: draft(kind, price: 100))
+            OccasionSetupStory.questions(app,
+                    data: draft(tickets: tickets, price: 100))
                 .any((q) => q.key == 'payments'),
             true);
       });
     }
   }
-  test(
-      'legacy resume and type changes retain inactive work and invalidate review',
+  test('retired kind resumes at appearance without changing independent work',
       () {
-    final d = <String, dynamic>{
-      'title': 'Ples',
-      'step': 6,
-      'storyQuestion': 'blueprint',
+    final data = <String, dynamic>{
+      ...draft(),
+      'title': 'Akce',
+      'eventKind': 'regular',
+      'eventKindNeedsConfirmation': true,
+      'storyQuestion': 'kind',
+      'step': 1,
+      'blueprintMode': 'copy',
       'blueprintLayoutDraft': {
-        'layout': {},
-        'seatBindings': [
-          {'nodeId': 'seat'}
-        ]
-      },
-      'reviewed': true
+        'layout': {'nodes': []}
+      }
     };
-    OccasionSetupStory.normalize(d, false);
-    expect(d['eventKind'], 'ball');
-    expect(d['eventKindNeedsConfirmation'], true);
-    expect(d['reviewed'], false);
-    d['eventKind'] = 'concert';
-    OccasionSetupStory.normalize(d, false);
-    expect(d['storyQuestion'], 'kind');
-    expect(d['blueprintLayoutDraft'], isNotEmpty);
-    d['eventKind'] = 'ball';
-    expect(OccasionSetupStory.seats(d), true);
+    OccasionSetupStory.normalize(data, false);
+    expect(data.containsKey('eventKind'), false);
+    expect(data.containsKey('eventKindNeedsConfirmation'), false);
+    expect(data['storyQuestion'], 'appearance');
+    expect(data['step'], 2);
+    expect(data['blueprintMode'], 'copy');
+    expect(data['blueprintLayoutDraft'], isNotEmpty);
+    expect(OccasionSetupStory.hasTickets(data), true);
+    expect((data['formDraft'] as Map)['title'], 'Akce');
   });
   test(
       'source is an optional unnumbered introduction and never an inferred permission',
@@ -87,7 +92,7 @@ void main() {
         true);
   });
   test('unreviewed draft cannot report 100 percent', () {
-    final d = draft('regular');
+    final d = draft();
     d['completedQuestions'] =
         OccasionSetupStory.questions(AppConfig.isAppSupported, data: d)
             .map((q) => q.key)
@@ -125,7 +130,7 @@ void main() {
   test(
       'shared appearance preserves custom geometry, clears per-element fonts and round-trips gradient',
       () {
-    final d = draft('ball');
+    final d = draft();
     OccasionSetupAppearance.apply(
         d, Map.of(OccasionSetupAppearance.presets[1]));
     final layout =
@@ -146,4 +151,30 @@ void main() {
         'Russo One');
     expect(updated['fontId'], contains('russo-one'));
   });
+  test(
+      'ticket choice toggles only admission visibility, preserving products and seating',
+      () {
+    final data = draft(tickets: false);
+    data['blueprintMode'] = 'copy';
+    OccasionSetupStory.setTicketsEnabled(data, true);
+    expect(OccasionSetupStory.hasTickets(data), true);
+    final fields = (data['formDraft'] as Map)['fields'] as List;
+    final ticket =
+        fields.whereType<Map>().singleWhere((f) => f['type'] == 'ticket');
+    ticket['title'] = 'My ticket';
+    OccasionSetupStory.setTicketsEnabled(data, false);
+    expect(OccasionSetupStory.hasTickets(data), false);
+    expect(data['blueprintMode'], 'copy');
+    OccasionSetupStory.setTicketsEnabled(data, true);
+    expect(
+        fields.whereType<Map>().where((f) => f['type'] == 'ticket').length, 1);
+    expect(ticket['title'], 'My ticket');
+  });
+  test('light ticket palettes use dark text without moving geometry', () {
+    final data = draft();
+    OccasionSetupAppearance.apply(data,{...OccasionSetupAppearance.presets.first,'primary':'FFFFFF','secondary':'EEEEEE'});
+    final template = (data['ticketDraft'] as Map)['layout']['templates']['wide'];
+    expect((template['elements'] as List).where((e)=>e['binding']!='qr').every((e)=>e['style']['color']=='000000'),true);
+  });
+
 }

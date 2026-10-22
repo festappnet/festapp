@@ -1,3 +1,5 @@
+> Superseded in part on 2026-10-22: the user removed event-type selection. Form, tickets and seating are independent choices. Shared appearance and compact story navigation remain; see migration 20261022051000.
+
 # Průvodce podle typu akce a společný vzhled
 
 Datum: 2026-10-22

@@ -44,77 +44,79 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
   late Future<FormFontCatalog> _fonts = _loadFonts();
   @override
   Widget build(BuildContext context) => FutureBuilder<FormFontCatalog>(
-    future: _fonts,
-    builder: (context, snapshot) {
-      if (snapshot.hasError)
-        return TextButton(
-          onPressed: () => setState(() => _fonts = _loadFonts()),
-          child: const Text('Písmo se nepodařilo načíst. Zkusit znovu'),
-        );
-      if (!snapshot.hasData)
-        return const Center(child: CircularProgressIndicator());
-      final definition = occasionSetupPreviewDefinition(widget.draft);
-      final holder = FormHolder.fromDefinition(definition);
-      holder.controller = FormHolderController(globalKey: _key);
-      final appearance = OccasionSetupAppearance.read(widget.draft);
-      Color color(String key) =>
-          Color(int.parse('ff${appearance[key]}', radix: 16));
-      final theme = Theme.of(context);
-      return Theme(
-        data: theme.copyWith(
-          textTheme: snapshot.data!.getTextTheme(
-            appearance['fontFamily'] as String,
-            theme.textTheme,
-          ),
-        ),
-        child: Builder(
-          builder: (context) => Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color('primary'),
-              gradient: appearance['gradient'] == true
-                  ? LinearGradient(
-                      colors: [color('primary'), color('secondary')],
-                    )
-                  : null,
-              borderRadius: BorderRadius.circular(12),
+        future: _fonts,
+        builder: (context, snapshot) {
+          if (snapshot.hasError)
+            return TextButton(
+              onPressed: () => setState(() {
+                _fonts = _loadFonts();
+              }),
+              child: const Text('Písmo se nepodařilo načíst. Zkusit znovu'),
+            );
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
+          final definition = occasionSetupPreviewDefinition(widget.draft);
+          final holder = FormHolder.fromDefinition(definition);
+          holder.controller = FormHolderController(globalKey: _key);
+          final appearance = OccasionSetupAppearance.read(widget.draft);
+          Color color(String key) =>
+              Color(int.parse('ff${appearance[key]}', radix: 16));
+          final theme = Theme.of(context);
+          return Theme(
+            data: theme.copyWith(
+              textTheme: snapshot.data!.getTextTheme(
+                appearance['fontFamily'] as String,
+                theme.textTheme,
+              ),
             ),
-            child: Card(
-              child: Padding(
+            child: Builder(
+              builder: (context) => Container(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      definition.title ?? '',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      MaterialLocalizations.of(context).formatMediumDate(
-                        DateTime.parse(widget.draft['start'] as String),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    IgnorePointer(
-                      child: FormBuilder(
-                        key: _key,
-                        child: Column(
-                          children: FormHelper.getAllFormFields(
-                            context,
-                            _key,
-                            holder,
+                decoration: BoxDecoration(
+                  color: color('primary'),
+                  gradient: appearance['gradient'] == true
+                      ? LinearGradient(
+                          colors: [color('primary'), color('secondary')],
+                        )
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          definition.title ?? '',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          MaterialLocalizations.of(context).formatMediumDate(
+                            DateTime.parse(widget.draft['start'] as String),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        IgnorePointer(
+                          child: FormBuilder(
+                            key: _key,
+                            child: Column(
+                              children: FormHelper.getAllFormFields(
+                                context,
+                                _key,
+                                holder,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       );
-    },
-  );
 }

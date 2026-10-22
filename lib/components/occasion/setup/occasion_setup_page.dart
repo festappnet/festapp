@@ -1,6 +1,9 @@
 import 'occasion_setup_appearance.dart';
+import '../../fonts/form_font_catalog.dart';
+import '../../fonts/ticket_font_ids.dart';
 import 'occasion_setup_appearance_panel.dart';
 import 'occasion_setup_form_preview.dart';
+import 'occasion_setup_ticket_gallery.dart';
 
 import 'package:fstapp/router_service.dart';
 
@@ -483,8 +486,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     draft['completed'] = <int>[];
     if (sourceId == null) {
       _ensureDefaultForm(draft);
-      draft['eventKind'] = 'regular';
-      draft['eventKindNeedsConfirmation'] = false;
       OccasionSetupAppearance.apply(
         draft,
         Map<String, dynamic>.from(OccasionSetupAppearance.presets.first),
@@ -525,12 +526,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         .firstOrNull;
     if (selected is Map) _applyBlueprint(draft, selected);
     _ensureDefaultForm(draft);
-    draft['eventKind'] = selected is Map
-        ? 'ball'
-        : ticket != null && ticket['is_enabled'] != false
-            ? 'concert'
-            : 'regular';
-    draft['eventKindNeedsConfirmation'] = false;
     draft.remove('appearance');
     draft['appearance'] = {
       ...OccasionSetupAppearance.read(draft),
@@ -892,9 +887,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _blueprintReady(Map<String, dynamic> d) =>
-      !OccasionSetupStory.seats(d) ||
-      SetupBlueprintConfiguration(d).active &&
-          SetupBlueprintConfiguration(d).ready;
+      !SetupBlueprintConfiguration(d).active ||
+      SetupBlueprintConfiguration(d).ready;
 
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
@@ -930,9 +924,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
-    if (q.key == 'kind')
-      return OccasionSetupStory.kinds.contains(d['eventKind']) &&
-          d['eventKindNeedsConfirmation'] != true;
+    if (q.key == 'ticket')
+      return !OccasionSetupStory.hasTickets(d) ||
+          (d['ticketDraft'] as Map?)?['layout'] is Map;
     if (q.key == 'appearance')
       return d['appearance'] is Map &&
           OccasionSetupAppearance.valid(d['appearance'] as Map);
@@ -1526,7 +1520,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         }
       }
     }
-    if (OccasionSetupStory.seats(d) && SetupBlueprintConfiguration(d).active) {
+    if (SetupBlueprintConfiguration(d).active) {
       if (d['formEnabled'] != true || d['formDraft'] == null) {
         issues.add(
           MapEntry(
@@ -1572,7 +1566,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
     }
     for (final q in _questions.where(
-      (q) => q.key == 'kind' || q.key == 'appearance',
+      (q) => q.key == 'appearance' || q.key == 'ticket',
     )) {
       if (!_questionReady(d, q))
         issues.add(MapEntry(q.step, 'Dokonči ${_shortLabel(q.key)}.'));
@@ -2037,10 +2031,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Widget _body(Map<String, dynamic> d) {
     final questionKey = _questions[_questionIndex(d)].key;
-    if (questionKey == 'kind') return _kindSettings(d);
     if (questionKey == 'appearance') return _appearanceSettings(d);
-    if (_questions[_questionIndex(d)].key == 'ticket')
-      return _ticketSettings(d);
+    if (questionKey == 'ticket') return _ticketChoices(d);
     if (_questions[_questionIndex(d)].key == 'saleTiming')
       return OccasionSetupSaleSettings(
         data: d,
@@ -2291,13 +2283,117 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         ),
       );
 
+  Widget _ticketChoices(Map<String, dynamic> d) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Používat vstupenky'),
+            subtitle: const Text(
+                'Účastníci dostanou vstupenku s QR kódem. Vzhled převezme vybrané barvy a písmo.'),
+            value: OccasionSetupStory.hasTickets(d),
+            onChanged: (enabled) => _change((x) {
+              _inlineFormBundle = null;
+              OccasionSetupStory.setTicketsEnabled(x, enabled);
+              if (enabled && x['ticketDraft'] is! Map) {
+                OccasionSetupAppearance.apply(
+                    x, OccasionSetupAppearance.read(x));
+              }
+              _ticketFeature = null;
+              _editEpoch++;
+            }, changesConfiguration: true),
+          ),
+          if (OccasionSetupStory.hasTickets(d)) ...[
+            const SizedBox(height: 20),
+            OccasionSetupTicketGallery(
+              key: ValueKey('ticket-gallery-$_editEpoch'),
+              selectedId: d['ticketTemplateId'] as String?,
+              currentTemplate: ((d['ticketDraft'] as Map?)?['layout']
+                              as Map?)?['templates']?[
+                          _ticketDraftFeature(d).ticketType == 'named'
+                              ? 'named'
+                              : 'wide'] ==
+                      null
+                  ? null
+                  : Map<String, dynamic>.from(
+                      ((d['ticketDraft'] as Map)['layout'] as Map)['templates'][
+                          _ticketDraftFeature(d).ticketType == 'named'
+                              ? 'named'
+                              : 'wide']),
+              appearance: OccasionSetupAppearance.read(d),
+              loadResources: () async {
+                if (!await _flush())
+                  throw StateError('Koncept se nepodařilo uložit');
+                final service = TicketLayoutService()
+                    .forSetupDraft(_stored.id, _stored.unit)
+                    .withPreviewOccasion(TicketPreviewOccasion(
+                        title: d['title'] as String,
+                        startTime: DateTime.tryParse(d['start'] as String),
+                        endTime: DateTime.tryParse(d['end'] as String),
+                        placeName: d['placeName'] as String?));
+                final resources = await service.resolve(
+                    0,
+                    _ticketDraftFeature(d).ticketType == 'named'
+                        ? 'named'
+                        : 'wide',
+                    (d['ticketDraft'] as Map?)?['layout'] == null
+                        ? null
+                        : Map<String, dynamic>.from(
+                            (d['ticketDraft'] as Map)['layout']),
+                    _ticketDraftFeature(d).ticketBackground);
+                final sharedFont = legacyTicketFontIds[OccasionSetupAppearance
+                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']]];
+                if (sharedFont != null &&
+                    !resources.fonts.containsKey(sharedFont)) {
+                  resources.fonts[sharedFont] =
+                      await service.fontForSetupDraft(_stored.id, sharedFont);
+                }
+                return resources;
+              },
+              onSelected: (selection) => _change((x) {
+                final feature = Map<String, dynamic>.from(
+                    x['ticketDraft'] as Map? ??
+                        {'code': 'ticket', 'is_enabled': true});
+                feature['layout'] = {
+                  'schemaVersion': 3,
+                  'templates': {
+                    _ticketDraftFeature(x).ticketType == 'named'
+                        ? 'named'
+                        : 'wide': selection.value
+                  }
+                };
+                feature['background'] = null;
+                x['ticketDraft'] = feature;
+                x['ticketTemplateId'] = selection.key;
+                _ticketFeature = null;
+              }, changesConfiguration: true),
+            ),
+            const SizedBox(height: 20),
+            _ticketSettings(d),
+          ],
+        ],
+      );
+
   Widget _ticketSettings(Map<String, dynamic> d) {
     final feature = _ticketDraftFeature(d);
     return EditorDraftScope(
-      onChanged: () => _change(
-        (x) => x['ticketDraft'] = feature.toJson(),
-        changesConfiguration: true,
-      ),
+      onChanged: () {
+        final next = feature.toJson();
+        if (jsonEncode(TicketFeature.fromJson(
+                    Map<String, dynamic>.from(d['ticketDraft'] as Map))
+                .toJson()) ==
+            jsonEncode(next)) return;
+        _change((x) {
+          x['ticketDraft'] = next;
+          x['appearance'] = {
+            ...OccasionSetupAppearance.read(x),
+            'id': 'custom',
+            'preserveSource': true
+          };
+          x.remove('ticketTemplateId');
+          _editEpoch++;
+        }, changesConfiguration: true);
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2312,6 +2408,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ),
               productEditing: false,
               showScanningSettings: false,
+              showPreview: false,
               previewOccasion: TicketPreviewOccasion(
                 title: d['title'] as String,
                 startTime: DateTime.tryParse(d['start'] as String),
@@ -2439,8 +2536,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         'source': 'Kopie',
         'name': 'Název',
         'dates': 'Termín',
-        'kind': 'Typ',
         'appearance': 'Vzhled',
+        'ticket': 'Vstupenky',
         'link': 'Odkaz',
         'content': 'Obsah',
         'form': 'Formulář',
@@ -2457,64 +2554,34 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         'review': 'Kontrola',
       }[key] ??
       key;
-  String _kindLabel(Map<String, dynamic> d) => const {
-        'regular': 'Běžná akce · přihlášení přes formulář',
-        'concert': 'Koncert · vstupenky bez výběru míst',
-        'ball': 'Ples · vstupenky a rezervace míst',
-      }[OccasionSetupStory.kind(d)]!;
+  Future<FormFontCatalog> _loadAppearanceFonts() async {
+    final catalog = await FormFontCatalog.load();
+    for (final family in OccasionSetupAppearance.fonts.keys) {
+      await catalog.ensureFamily(family);
+    }
+    return catalog;
+  }
 
-  Widget _kindSettings(Map<String, dynamic> d) => Column(
-        children: [
-          for (final kind in OccasionSetupStory.kinds)
-            RadioListTile<String>(
-              value: kind,
-              groupValue: d['eventKindNeedsConfirmation'] == true
-                  ? null
-                  : d['eventKind'] as String?,
-              title: Text(
-                const {
-                  'regular': 'Běžná akce',
-                  'concert': 'Koncert',
-                  'ball': 'Ples',
-                }[kind]!,
-              ),
-              subtitle: Text(
-                const {
-                  'regular': 'Přihlášení účastníků přes formulář.',
-                  'concert': 'Vstupenky bez výběru konkrétního místa.',
-                  'ball': 'Vstupenky s rezervací konkrétních míst v sále.',
-                }[kind]!,
-              ),
-              onChanged: (value) {
-                _change((x) {
-                  x['eventKind'] = value;
-                  x['formEnabled'] = true;
-                  if (value != 'regular' && x['ticketDraft'] is! Map) {
-                    if (OccasionSetupAppearance.read(x)['preserveSource'] == true) {
-                      x['ticketDraft'] = {'code': 'ticket', 'is_enabled': true};
-                    } else {
-                      OccasionSetupAppearance.apply(x, OccasionSetupAppearance.read(x));
-                    }
-                  }
-                  x['eventKindNeedsConfirmation'] = false;
-                  x['pathNotice'] = true;
-                  _inlineFormBundle = null;
-                  _formEpoch++;
-                  _inlineFormBundle = null;
-                }, changesConfiguration: true);
-              },
-            ),
-          if (d['pathNotice'] == true)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text(
-                'Tok odpovídá vybranému typu. Neaktivní nastavení zůstává v konceptu a při vytvoření se nepoužije.',
-              ),
-            ),
-        ],
+  late Future<FormFontCatalog> _appearanceFonts = _loadAppearanceFonts();
+
+  Widget _appearanceSettings(Map<String, dynamic> d) =>
+      FutureBuilder<FormFontCatalog>(
+        future: _appearanceFonts,
+        builder: (context, snapshot) {
+          if (snapshot.hasError)
+            return TextButton(
+                onPressed: () => setState(() {
+                      _appearanceFonts = _loadAppearanceFonts();
+                    }),
+                child: const Text('Písma se nepodařilo načíst. Zkusit znovu'));
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
+          return _loadedAppearanceSettings(d, snapshot.data!);
+        },
       );
 
-  Widget _appearanceSettings(Map<String, dynamic> d) {
+  Widget _loadedAppearanceSettings(
+      Map<String, dynamic> d, FormFontCatalog catalog) {
     final a = OccasionSetupAppearance.read(d);
     Color color(dynamic hex) => Color(int.parse('ff$hex', radix: 16));
     String hex(Color c) =>
@@ -2559,6 +2626,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           OccasionSetupAppearance.presets.firstWhere((p) => p['id'] == id),
         ),
       ),
+      fontStyle: (family, base) => catalog.families.contains(family)
+          ? catalog
+              .getTextTheme(family, TextTheme(bodyMedium: base))
+              .bodyMedium!
+          : base.copyWith(fontFamily: family),
       fontFamily: a['fontFamily'] as String,
       fontFamilies: {
         ...OccasionSetupAppearance.fonts.keys,
@@ -2575,8 +2647,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         key: ValueKey('form-preview-$_editEpoch'),
         draft: d,
       ),
-      ticketPreview:
-          OccasionSetupStory.hasTickets(d) ? _ticketSettings(d) : null,
     );
   }
 
@@ -2586,7 +2656,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final question = _questions[index];
     final isReview = question.key == 'review';
     final reviewReady = isReview && _reviewIssues(d).isEmpty;
-    final isEditor = question.key == 'form' || question.key == 'appearance';
+    final isEditor = question.key == 'form' ||
+        question.key == 'appearance' ||
+        question.key == 'ticket';
     final numbered = _questions.where((q) => !q.optional).toList();
     return OccasionSetupStoryShell(
       questionKeys: [for (final q in _questions) q.key],
@@ -2600,7 +2672,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           [
             'name',
             'dates',
-            'kind',
             'appearance',
             'link',
             'source',
@@ -2619,7 +2690,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       },
       visitedKeys:
           (d['visitedQuestions'] as List? ?? []).cast<String>().toSet(),
-      contextLabel: _kindLabel(d),
       readiness: OccasionSetupStrings.readiness(_readiness(d)),
       introductionAction:
           (_sources.isNotEmpty || _loadingSources || _sourceError != null)
@@ -2637,10 +2707,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               : null,
       questionTitles: [
         for (final item in _questions)
-          item.key == 'kind'
-              ? 'Jaký typ akce připravuješ?'
-              : item.key == 'appearance'
-                  ? 'Jak má akce vypadat?'
+          item.key == 'appearance'
+              ? 'Jak má akce vypadat?'
+              : item.key == 'ticket'
+                  ? 'Budou účastníci potřebovat vstupenku?'
                   : item.key == 'team'
                       ? OccasionTeamInvitationStrings.text('question')
                       : item.key == 'saleTiming'
@@ -2676,7 +2746,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           ? null
           : () => _jump(_questions[index - 1].key),
       onQuestionSelected: _presentationUploading ? null : _jump,
-      maxContentWidth: question.key == 'appearance'
+      maxContentWidth: question.key == 'appearance' || question.key == 'ticket'
           ? 1120
           : step == 3
               ? StylesConfig.formMaxWidth

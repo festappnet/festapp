@@ -8,41 +8,19 @@ class OccasionSetupQuestion {
 }
 
 class OccasionSetupStory {
-  static const kinds = ['regular', 'concert', 'ball'];
-  static String kind(Map<String, dynamic> data) =>
-      data['eventKind'] as String? ??
-      ((data['blueprintLayoutDraft'] is Map)
-          ? 'ball'
-          : hasTickets(data)
-          ? 'concert'
-          : 'regular');
-  static bool seats(Map<String, dynamic> data) => kind(data) == 'ball';
   static void normalize(Map<String, dynamic> data, bool appSupported) {
-    if (data['eventKind'] == null) {
-      data['eventKind'] = kind(data);
-      data['eventKindNeedsConfirmation'] = true;
-      data['reviewed'] = false;
-      data['reviewConfirmed'] = false;
+    data.remove('eventKind');
+    data.remove('eventKindNeedsConfirmation');
+    if (data['storyQuestion'] == 'kind') {
+      data['storyQuestion'] = 'appearance';
+      data['step'] = 2;
     }
     if (data['storyQuestion'] == null && data['step'] == 0) {
       data['storyQuestion'] = data['sourceId'] != null ? 'source' : 'name';
       data['step'] = data['sourceId'] != null ? 0 : 1;
     }
-    if (data['eventKind'] != null) data['formEnabled'] = true;
-    if (data['storyQuestion'] == 'ticket') {
-      data['storyQuestion'] = 'appearance';
-      data['step'] = 2;
-    }
     if (data['storyQuestion'] == 'start' || data['storyQuestion'] == 'end')
       data['storyQuestion'] = 'dates';
-    final key = data['storyQuestion'];
-    if (key != null &&
-        key != 'source' &&
-        !questions(appSupported, data: data).any((q) => q.key == key)) {
-      data['storyQuestion'] = 'kind';
-      data['step'] = 1;
-      data['pathNotice'] = true;
-    }
     if (data['formDraft'] is Map)
       (data['formDraft'] as Map)['title'] = data['title'] ?? '';
   }
@@ -54,25 +32,43 @@ class OccasionSetupStory {
     final form = data['formDraft'];
     if (!formEnabled(data) || form is! Map) return const [];
     return (form['fields'] as List? ?? []).whereType<Map>().where(
-      (field) => field['is_hidden'] != true &&
-          !(data['eventKind'] == 'regular' && (field['type'] == 'ticket' || field['type'] == 'spot')) &&
-          !(data['eventKind'] == 'concert' && field['type'] == 'spot'),
-    );
+          (field) => field['is_hidden'] != true,
+        );
   }
 
-  static bool hasTickets(Map<String, dynamic> data) => data['eventKind'] != null
-      ? data['eventKind'] != 'regular'
-      : _visibleFields(data).any((field) => field['type'] == 'ticket');
+  static bool hasTickets(Map<String, dynamic> data) =>
+      _visibleFields(data).any((field) => field['type'] == 'ticket');
+
+  static void setTicketsEnabled(Map<String, dynamic> data, bool enabled) {
+    final form = data['formDraft'] as Map;
+    final fields = List<dynamic>.from(form['fields'] as List? ?? []);
+    final tickets =
+        fields.whereType<Map>().where((f) => f['type'] == 'ticket').toList();
+    if (tickets.isEmpty && enabled) {
+      fields.add(<String, dynamic>{
+        'type': 'ticket',
+        'is_ticket_field': true,
+        'is_required': true,
+        'is_hidden': false,
+        'order': -2
+      });
+    } else {
+      for (final field in tickets) {
+        field['is_hidden'] = !enabled;
+      }
+    }
+    form['fields'] = fields;
+  }
 
   static bool hasPaidProducts(Map<String, dynamic> data) =>
       _visibleFields(data).any((field) {
         final type = field['product_type_data'];
         if (type is! Map) return false;
         return (type['products'] as List? ?? []).whereType<Map>().any(
-          (product) =>
-              product['is_hidden'] != true &&
-              (num.tryParse('${product['price']}') ?? 0) > 0,
-        );
+              (product) =>
+                  product['is_hidden'] != true &&
+                  (num.tryParse('${product['price']}') ?? 0) > 0,
+            );
       });
 
   static Set<String> paymentCurrencies(Map<String, dynamic> data) {
@@ -119,9 +115,8 @@ class OccasionSetupStory {
     for (final wave in waves) {
       final time = DateTime.tryParse(wave['change_time'] as String? ?? '');
       if (time == null || !time.isAfter(now)) issues.add('pricingExpired');
-      final targets = (wave['targets'] as List? ?? [])
-          .whereType<Map>()
-          .toList();
+      final targets =
+          (wave['targets'] as List? ?? []).whereType<Map>().toList();
       if (targets.isEmpty) issues.add('pricingIncomplete');
       if (targets.any(
         (target) =>
@@ -136,10 +131,11 @@ class OccasionSetupStory {
   static Set<int> applicableSteps(
     Map<String, dynamic> data,
     bool appSupported,
-  ) => questions(appSupported, data: data)
-      .where((question) => !question.optional)
-      .map((question) => question.step)
-      .toSet();
+  ) =>
+      questions(appSupported, data: data)
+          .where((question) => !question.optional)
+          .map((question) => question.step)
+          .toSet();
 
   static List<OccasionSetupQuestion> questions(
     bool appSupported, {
@@ -155,8 +151,8 @@ class OccasionSetupStory {
         const OccasionSetupQuestion(0, 'source', optional: true),
       const OccasionSetupQuestion(1, 'name'),
       const OccasionSetupQuestion(1, 'dates'),
-      const OccasionSetupQuestion(1, 'kind'),
       const OccasionSetupQuestion(2, 'appearance'),
+      if (form) const OccasionSetupQuestion(2, 'ticket'),
       if (appSupported) const OccasionSetupQuestion(1, 'presentation'),
       if (appSupported) const OccasionSetupQuestion(1, 'link'),
       if (appSupported) const OccasionSetupQuestion(2, 'content'),
@@ -166,9 +162,7 @@ class OccasionSetupStory {
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'payments'),
       if (paid) OccasionSetupQuestion(appSupported ? 3 : 4, 'paymentTiming'),
       if (form) const OccasionSetupQuestion(3, 'communication'),
-      if (form && (data == null || seats(data)))
-        OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
-
+      if (form) OccasionSetupQuestion(appSupported ? 4 : 6, 'blueprint'),
       const OccasionSetupQuestion(5, 'team', optional: true),
       if (!organizationVerified)
         const OccasionSetupQuestion(5, 'verification', optional: true),
@@ -198,8 +192,8 @@ class OccasionSetupStory {
     // always carry formEnabled/formDraft and use the dependent journey.
     final context =
         data.containsKey('formEnabled') || data.containsKey('formDraft')
-        ? data
-        : null;
+            ? data
+            : null;
     final pages = questions(
       appSupported,
       data: context,
@@ -209,6 +203,7 @@ class OccasionSetupStory {
     final savedKey = switch (data['storyQuestion']) {
       'presentation' when !appSupported => 'form',
       'scanner' => 'team',
+      'kind' => 'appearance',
       final value => value,
     };
     final key = savedKey == 'start' || savedKey == 'end' ? 'dates' : savedKey;
@@ -217,12 +212,11 @@ class OccasionSetupStory {
           p.key == key &&
           (p.step == data['step'] ||
               data['storyQuestion'] == 'scanner' ||
-              data['storyQuestion'] == 'presentation'),
+              data['storyQuestion'] == 'presentation' ||
+              data['storyQuestion'] == 'kind'),
     );
     if (exact >= 0) return exact;
     if (key == 'verification' && organizationVerified) return pages.length - 1;
-    if (key != null && key != 'source' && !pages.any((q) => q.key == key))
-      return pages.indexWhere((q) => q.key == 'kind');
     if (data['step'] == 5) return pages.length - 1;
     final first = pages.indexWhere((p) => p.step == data['step']);
     if (first >= 0) return first;

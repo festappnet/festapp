@@ -1,3 +1,5 @@
+> Superseded in part on 2026-10-22: the user removed event-type selection. Form, tickets and seating are independent choices. Shared appearance and compact story navigation remain; see migration 20261022051000.
+
 # Occasion setup types and appearance - integration verification
 
 Implemented on authoritative main `56a56e506a11fccbbc4c62938455c9d53a36caab`, retaining current venue-layout, bank membership, invitation, pricing and communication behavior. The older dirty development checkout remains untouched.

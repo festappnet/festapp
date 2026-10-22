@@ -1,3 +1,5 @@
+> Superseded in part on 2026-10-22: the user removed event-type selection. Form, tickets and seating are independent choices. Shared appearance and compact story navigation remain; see migration 20261022051000.
+
 # Implementuj: typy akcí, společný vzhled a klikací navigaci
 
 Pracuj v `/Users/miakh/source/festapp`. Nejdřív přečti `AGENTS.md`, `CLAUDE.md`, `docs/architecture/ai_context.md` a celý autoritativní plán:
