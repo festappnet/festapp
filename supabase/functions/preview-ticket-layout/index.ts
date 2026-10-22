@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../_shared/supabaseUtil.ts';
 import { loadLayoutResources } from '../_shared/ticketGeneration.ts';
 import { handlePreview } from './handler.ts';
 import { loadPreviewProducts } from './products.ts';
+import {draftPreviewProducts} from './draftProducts.ts';
 Deno.serve(req=>handlePreview(req,{
   authorizeSetupDraft:async(header,draftId,bytes)=>{
     const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});
@@ -16,15 +17,8 @@ Deno.serve(req=>handlePreview(req,{
     const {data:row,error}=await client.rpc('get_occasion_setup_draft',{p_id:draftId});
     if(error||!row?.data||row.data.finalizedOccasion)throw new Error('Draft access denied');
     const d=row.data;
-    const types=new Map(),products=new Map();
-    for(const field of d.formDraft?.fields??[]){
-      const t=field.product_type_data;if(!t||!Number.isSafeInteger(t.id))continue;
-      const example=(t.products??[]).find((p:any)=>!p.is_hidden);
-      types.set(t.id,{id:t.id,occasion:0,title:t.title??field.title??'',offered:!field.is_hidden,referenced:false,admission:t.type==='spot',hasVisibleProducts:!!example,example:example?{id:example.id,value:example.title,price:example.price,currency_code:example.currency_code,currency_symbol:example.currency_code}:null});
-      for(const p of t.products??[])products.set(p.id,{...p,product_type:t.id});
-    }
     return {occasion:{id:0,title:d.title,start_time:d.start,end_time:d.end,
-      data:{place_name:d.placeName},features:[{...d.ticketDraft,code:'ticket'}]},products:{types,products}};
+      data:{place_name:d.placeName},features:[{...d.ticketDraft,code:'ticket'}]},products:draftPreviewProducts(d)};
   },
   authorize:async(header,occasionId,bytes,readOnly=false,resourceMode)=>{
     const client=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:header}},auth:{persistSession:false}});

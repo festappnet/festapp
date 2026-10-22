@@ -11,25 +11,29 @@ export function fitText(text:string,e:Element,m:FontMetrics) {
   const inset=textInsets(e,m);
   const width=(s:string,size:number)=> (s.length?(inset.left+inset.right)*size:0)+Array.from(s).reduce((n,c)=>n+(m.advances[c]??m.advances['?'])*size,0);
   const wrap=(size:number)=>{
-    const lines:string[]=[];let line='';
-    for(const c of Array.from(text)) {
-      if(c==='\n') { lines.push(line);line='';continue; }
-      if(width(line+c,size)>e.box.width && line) {
-        const split=line.lastIndexOf(' ');
-        if(split>0) {lines.push(line.slice(0,split));line=line.slice(split+1)+c;}
-        else {lines.push(line);line=c;}
-      } else line+=c;
+    const lines:string[]=[], paragraphs=text.split('\n');
+    for(let i=0;i<paragraphs.length;i++) {
+      let line='';
+      for(const token of paragraphs[i].match(/[^ ]+| +/g)??[]) {
+        if(token.startsWith(' ')){line+=token;continue;}
+        if(line.trim() && width(line+token,size)>e.box.width) {
+          lines.push(line.trimEnd());line=token;
+        } else line+=token;
+      }
+      if(line||i<paragraphs.length-1)lines.push(line.trimEnd());
     }
-    if(line)lines.push(line.trimEnd());return lines;
+    return lines;
   };
   let size=e.style.fontSize, lines=wrap(size);
   const fits=()=>lines.length<=e.style.maxLines && (!lines.length || ((lines.length-1)*1.2+m.ascent-m.descent)*size<=e.box.height) && lines.every(l=>width(l,size)<=e.box.width+.001);
-  while(!fits() && size>e.style.minFontSize) {size=Math.max(e.style.minFontSize,size-.5);lines=wrap(size);}
+  // A title's minimum is a preferred size, never a reason to cut its words.
+  const minimum=e.binding==='occasionTitle'?Math.min(e.style.minFontSize,.1):e.style.minFontSize;
+  while(!fits() && size>minimum) {size=Math.max(minimum,size-.5);lines=wrap(size);}
   const overflow=!fits();
   if(overflow && e.binding==='ticketSymbol') throw new Error('Ticket symbol does not fit');
   if(overflow) {
     lines=lines.slice(0,Math.max(0,Math.min(e.style.maxLines,Math.floor((e.box.height/size-m.ascent+m.descent)/1.2)+1)));
-    if(lines.length && width('…',size)<=e.box.width) {let last=lines.pop()||'';while(last && width(last+'…',size)>e.box.width)last=Array.from(last).slice(0,-1).join('');lines.push(last+'…');} else lines=[];
+    if(lines.length && width('…',size)<=e.box.width) {lines=lines.map((line,i)=>{if(i<lines.length-1&&width(line,size)<=e.box.width)return line;while(line&&width(line+'…',size)>e.box.width)line=Array.from(line).slice(0,-1).join('');return line+'…';});} else lines=[];
   }
   return {size,lines,overflow,replaced,widths:lines.map(l=>width(l,size))};
 }

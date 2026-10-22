@@ -7,6 +7,75 @@ import '../../ticket_layout/models/ticket_layout.dart';
 
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
+  static const ticketCompositions = {
+    'silk_light': 'Hedvábí - světlé',
+    'silk_dark': 'Hedvábí - tmavé',
+  };
+  static const themedArtwork = {
+    'concert_stub',
+    'festival_poster',
+    'club_panorama',
+    'theatre_program',
+    'gallery_square',
+    'gala_invitation',
+    'boarding_pass',
+    'cinema_strip',
+    'sports_arena',
+    'festival_badge',
+    'workshop_card',
+  };
+  static String? ticketBackground(String key, Map appearance) {
+    const root = 'https://img.festapp.net/ticket-presets/v1/';
+    if (key == 'silk_light') return '${root}style-silk-v1.png';
+    if (key == 'silk_dark') return '${root}style-silk-dark-v1.png';
+    if (themedArtwork.contains(key) &&
+        presets.any((p) => p['id'] == appearance['id'])) {
+      return '${root}theme-${appearance['id']}-${key.replaceAll('_', '-')}-v1.png';
+    }
+    return null;
+  }
+
+  // Same luminance-preserving palette as ticketThemePalette.js. Recoloring ink
+  // and paper together preserves each original design's contrast and structure.
+  static String themeColor(String hex, Map appearance) {
+    List<double> channels(String value) => [0, 2, 4]
+        .map((i) => int.parse(value.substring(i, i + 2), radix: 16).toDouble())
+        .toList();
+    double luminance(List<double> rgb) {
+      final linear = rgb.map((v) {
+        final c = v / 255;
+        return c <= .04045
+            ? c / 12.92
+            : math.pow((c + .055) / 1.055, 2.4).toDouble();
+      }).toList();
+      return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    }
+
+    final source = channels(hex), desired = luminance(source);
+    if (source.reduce(math.max) - source.reduce(math.min) < 8 &&
+        (desired > .94 || desired < .002)) return hex.toUpperCase();
+    final warm = source[0] > source[1] * 1.03 && source[0] > source[2] * 1.12;
+    final target = channels(appearance[warm ? 'secondary' : 'primary']),
+        end = luminance(target) < desired ? 255.0 : 0.0;
+    var low = 0.0, high = 1.0;
+    for (var i = 0; i < 24; i++) {
+      final blend = (low + high) / 2,
+          rgb = target.map((c) => c + (end - c) * blend).toList();
+      if ((luminance(rgb) < desired) == (end == 255)) {
+        low = blend;
+      } else {
+        high = blend;
+      }
+    }
+    return target
+        .map((c) => (c + (end - c) * (low + high) / 2)
+            .round()
+            .toRadixString(16)
+            .padLeft(2, '0'))
+        .join()
+        .toUpperCase();
+  }
+
   static const fonts = {
     'Roboto': 'roboto',
     'Roboto Slab': 'robotoSlab',
@@ -125,18 +194,50 @@ class OccasionSetupAppearance {
             'templates': {'wide': _template()},
           };
     for (final entry in (layout['templates'] as Map).entries.toList()) {
-      layout['templates'][entry.key] =
-          styledTemplate(entry.value as Map, appearance);
+      layout['templates'][entry.key] = styledTemplate(
+          data['ticketTemplateSource'] is Map
+              ? data['ticketTemplateSource'] as Map
+              : entry.value as Map,
+          appearance,
+          decorated: data['ticketTemplateId'] != null,
+          composition: data['ticketTemplateId'] as String?);
     }
+    final background =
+        ticketBackground(data['ticketTemplateId'] as String? ?? '', appearance);
+    if (background != null) feature['background'] = background;
     feature['layout'] = layout;
     data['ticketDraft'] = feature;
   }
 
-  static Map<String, dynamic> styledTemplate(Map raw, Map appearance) {
+  static Map<String, dynamic> styledTemplate(Map raw, Map appearance,
+      {bool decorated = false, String? composition}) {
     final t = Map<String, dynamic>.from(jsonDecode(jsonEncode(raw)));
     final fontId = legacyTicketFontIds[fonts[appearance['fontFamily']]];
     if (fontId == null) return t;
-    final colors = [appearance['primary'], appearance['secondary']];
+    final colors = <String>[appearance['primary'], appearance['secondary']];
+    if (decorated) {
+      String color(String hex) => themeColor(hex, appearance);
+      t['fontId'] = fontId;
+      if (t['canvasColor'] != null && t['canvasColor'] != 'transparent')
+        t['canvasColor'] = color(t['canvasColor']);
+      if (t['canvasGradient'] is List)
+        t['canvasGradient'] = (t['canvasGradient'] as List)
+            .map((v) => color(v as String))
+            .toList();
+      if (t['qrAppearance'] is Map) t['qrAppearance']['background'] = 'FFFFFF';
+      for (final e in (t['elements'] as List).cast<Map>()) {
+        (e['style'] as Map).remove('fontId');
+        e['style']['color'] = e['binding'] == 'qr'
+            ? '000000'
+            : themeColor(e['style']['color'],
+                {'primary': '222222', 'secondary': '222222'});
+        if (['silk_light', 'ball_silk'].contains(composition) &&
+            e['binding'] != 'qr') e['style']['color'] = '222222';
+        if (composition == 'silk_dark' && e['binding'] != 'qr')
+          e['style']['color'] = 'F5F5F5';
+      }
+      return t;
+    }
     final luminance = colors
         .take(appearance['gradient'] == true ? 2 : 1)
         .map((hex) => Color(int.parse('ff$hex', radix: 16)).computeLuminance())
@@ -147,7 +248,7 @@ class OccasionSetupAppearance {
         luminance.map((l) => (l + .05) / .05).reduce(math.min);
     final foreground = blackContrast > whiteContrast ? '000000' : 'FFFFFF';
     t['fontId'] = fontId;
-    t['canvasColor'] = appearance['primary'];
+    t['canvasColor'] = colors.first;
     t['canvasOpacity'] = 1;
     if (appearance['gradient'] == true) {
       t['canvasGradient'] = colors;

@@ -797,6 +797,8 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "style_silk_light": "Hodváb - svetlý",
+    "style_silk_dark": "Hodváb - tmavý",
     "style_concert_stub": "Koncert · kontrolný ústrižok",
     "style_ball_silk": "Ples · hodvábna pozvánka",
     "style_festival_poster": "Festival · malý plagát",

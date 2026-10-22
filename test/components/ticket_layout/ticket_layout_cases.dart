@@ -186,7 +186,7 @@ void main() {
       await File('$dir/${item['name']}-canvas.png').writeAsBytes(png!.buffer.asUint8List());
       image.dispose();picture.dispose();c.dispose();r.dispose();
     }
-    expect(cases.length,20);
+    expect(cases.length, (await TicketPreviewAssets.shared.manifest)['presets'].length + 2);
     });
   },skip:Platform.environment['TICKET_PREVIEW_EVIDENCE_DIR']==null);
 

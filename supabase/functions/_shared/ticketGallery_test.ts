@@ -41,7 +41,7 @@ Deno.test('gallery resources round trip and render all designs in both storage s
     }
   }
   assertEquals(sizes.size,12,'Event types must have distinct physical formats');
-  assert(qrInks.size>=6,'QR palettes must vary with the designs');
+  assertEquals([...qrInks],['000000'],'QR remains black on white across designs');
   assert((await galleryBackground('https://img.festapp.net/ticket-presets/v1/aurora-v1.png'))!.length>0,'Older selected artwork remains resolvable');
   assertEquals(await galleryBackground('https://img.festapp.net/ticket-presets/v1/../../private'),undefined);
   assertEquals(await galleryBackground('https://other.invalid/silk-ivory-v1.jpg'),undefined);

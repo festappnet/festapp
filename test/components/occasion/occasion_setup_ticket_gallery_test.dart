@@ -65,7 +65,7 @@ void main() {
     final template = TicketTemplate.fromJson(fixture['template']);
     final metrics = TicketFontMetrics.fromJson(fixture['metrics']);
     var attempts = 0;
-    MapEntry<String, Map<String, dynamic>>? choice;
+    OccasionSetupTicketChoice? choice;
     await tester.pumpWidget(MaterialApp(
         home: Scaffold(
             body: SingleChildScrollView(

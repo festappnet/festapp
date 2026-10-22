@@ -2667,6 +2667,8 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "style_silk_light": "Silk - light",
+    "style_silk_dark": "Silk - dark",
     "style_concert_stub": "Concert · admission stub",
     "style_ball_silk": "Ball · silk invitation",
     "style_festival_poster": "Festival · mini poster",

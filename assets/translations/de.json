@@ -777,6 +777,8 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "style_silk_light": "Seide - hell",
+    "style_silk_dark": "Seide - dunkel",
     "style_concert_stub": "Konzert · Kontrollabschnitt",
     "style_ball_silk": "Ball · Seidene Einladung",
     "style_festival_poster": "Festival · Miniplakat",

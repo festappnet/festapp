@@ -2669,6 +2669,8 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "style_silk_light": "Hedvábí - světlé",
+    "style_silk_dark": "Hedvábí - tmavé",
     "style_concert_stub": "Koncert · kontrolní útržek",
     "style_ball_silk": "Ples · hedvábná pozvánka",
     "style_festival_poster": "Festival · malý plakát",

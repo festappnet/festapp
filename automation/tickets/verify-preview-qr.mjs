@@ -10,7 +10,7 @@ const cases=JSON.parse(readFileSync(join(out,'contexts.json'),'utf8'));
 const temp=mkdtempSync(join(tmpdir(),'ticket-qr-'));
 const proof=[];
 try{
- for(const item of cases)for(const kind of ['canvas','pdf']){
+ for(const item of cases)for(const kind of process.argv.includes('--pdf-only')?['pdf']:['canvas','pdf']){
   const file=join(out,`${item.name}-${kind}.png`),bmp=join(temp,'image.bmp');
   execFileSync('sips',['-s','format','bmp',file,'--out',bmp],{stdio:'ignore'});
   const b=readFileSync(bmp),offset=b.readUInt32LE(10),width=b.readInt32LE(18),signedHeight=b.readInt32LE(22),height=Math.abs(signedHeight),bits=b.readUInt16LE(28);

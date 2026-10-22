@@ -2374,9 +2374,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : 'wide': selection.value
                   }
                 };
-                feature['background'] = null;
+                feature['background'] = selection.background;
                 x['ticketDraft'] = feature;
                 x['ticketTemplateId'] = selection.key;
+                x['ticketTemplateSource'] = selection.source;
                 _ticketFeature = null;
               }, changesConfiguration: true),
             ),
@@ -2403,6 +2404,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'preserveSource': true
           };
           x.remove('ticketTemplateId');
+          x.remove('ticketTemplateSource');
           _editEpoch++;
         }, changesConfiguration: true);
       },
