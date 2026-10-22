@@ -72,6 +72,25 @@ BEGIN
  result:=public.get_occasion_setup_email_preview(draft,1);
  PERFORM assert_eq(result->'resolved'->'template'->>'subject','Unit subject','Source inheritance does not override destination');
  EXECUTE 'RESET ROLE';
+ PERFORM assert_eq(jsonb_array_length(result->'emailTemplates'),5,'All five standard templates are available');
+ UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('emailTemplateOverrides',
+  jsonb_build_object('TICKET_ORDER_CONFIRMATION',jsonb_build_object('subject','Draft subject {{occasionTitle}}','html','<p>Draft body</p>'))) WHERE id=draft;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ result:=public.get_occasion_setup_email_preview(draft,1);
+ PERFORM assert_eq(result#>>'{resolved,template,subject}','Draft subject {{occasionTitle}}','Draft edits override inherited content');
+ PERFORM assert_eq(result#>>'{emailTemplates,0,template,html}','<p>Draft body</p>','Catalog and preview use the same draft edit');
+ PERFORM assert_true((result#>>'{emailTemplates,0,customized}')::boolean,'Draft override is identified');
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_eq((SELECT subject FROM public.email_templates WHERE unit=target AND occasion IS NULL AND code='TICKET_ORDER_CONFIRMATION'),'Unit subject','Draft edits never update shared unit templates');
+ UPDATE public.occasion_setup_drafts SET data=data||'{"emailTemplateOverrides":{"AUTH_EMAIL":{"subject":"x","html":"x"}}}'::jsonb WHERE id=draft;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ BEGIN PERFORM public.get_occasion_setup_email_preview(draft,1); RAISE EXCEPTION 'Unrelated template code accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ UPDATE public.occasion_setup_drafts SET data=data||'{"emailTemplateOverrides":{"TICKET_ORDER_CONFIRMATION":{"subject":"x","html":"x","unit":999}}}'::jsonb WHERE id=draft;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ BEGIN PERFORM public.get_occasion_setup_email_preview(draft,1); RAISE EXCEPTION 'Foreign template hierarchy accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ EXECUTE 'RESET ROLE';
+ UPDATE public.occasion_setup_drafts SET data=data-'emailTemplateOverrides' WHERE id=draft;
  UPDATE public.occasion_setup_drafts SET data=data||'{"communicationTone":"bad"}'::jsonb WHERE id=draft;
  EXECUTE 'SET LOCAL ROLE authenticated';
  BEGIN PERFORM public.get_occasion_setup_email_preview(draft,1); RAISE EXCEPTION 'Bad tone accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;

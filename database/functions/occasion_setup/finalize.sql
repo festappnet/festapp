@@ -45,6 +45,7 @@ BEGIN
    sale_start:=clock_timestamp();
   END IF;
  END IF;
+ PERFORM public.validate_setup_email_templates_internal(payload->'emailTemplateOverrides');
  communication_new:=payload ? 'communicationTone';
  IF communication_new THEN
   IF coalesce(payload->>'communicationTone','') NOT IN ('inherit','formal','informal')
@@ -313,6 +314,13 @@ BEGIN
   SELECT new_id,d.unit,d.organization,code,title,subject,html FROM public.email_templates WHERE occasion=source_id;
  END IF;
  PERFORM public.admit_occasion_copy_v1(new_id,d.unit,d.organization,policies->'occasion.copy');
+ -- Draft edits override copied/inherited content only on the newly created occasion.
+ FOR pt IN SELECT jsonb_build_object('code',key,'content',value)
+  FROM jsonb_each(coalesce(payload->'emailTemplateOverrides','{}')) LOOP
+  DELETE FROM public.email_templates WHERE occasion=new_id AND code=pt->>'code';
+  INSERT INTO public.email_templates(occasion,unit,organization,code,subject,html)
+  VALUES(new_id,d.unit,d.organization,pt->>'code',pt#>>'{content,subject}',pt#>>'{content,html}');
+ END LOOP;
  INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
  VALUES('occasion','occasion',new_id,new_id::text,1);
  INSERT INTO public.client_commits(unit,actor_id,actor_kind,source,change_class)

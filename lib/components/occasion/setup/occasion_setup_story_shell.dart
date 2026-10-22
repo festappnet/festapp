@@ -23,6 +23,8 @@ class OccasionSetupStoryShell extends StatefulWidget {
     this.completedKeys = const {},
     this.visitedKeys = const {},
     this.onQuestionSelected,
+    this.onNext,
+    this.nextLabel = 'Pokračovat',
     this.allQuestionsLabel = 'Všechny otázky',
     this.visitedLabel = 'Rozpracováno',
     this.contextLabel,
@@ -57,6 +59,8 @@ class OccasionSetupStoryShell extends StatefulWidget {
   final String backLabel;
   final VoidCallback? onLeave;
   final VoidCallback? onBack;
+  final VoidCallback? onNext;
+  final String nextLabel;
   final Widget child;
   final Widget? primaryAction;
   final Widget? error;
@@ -248,49 +252,57 @@ class _OccasionSetupStoryShellState extends State<OccasionSetupStoryShell> {
     final colors = theme.colorScheme;
     return SafeArea(
       child: Column(children: [
-        Center(
-            child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 960),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 12, 0),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Tooltip(
-                                  message: widget.eventTitle,
-                                  child: Text(widget.eventTitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleSmall),
-                                ),
-                                if (widget.contextLabel != null)
-                                  Text(widget.contextLabel!,
-                                      style: theme.textTheme.bodySmall),
-                                Text(widget.status,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                        color: colors.onSurfaceVariant)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            tooltip: widget.leaveLabel,
-                            onPressed: widget.onLeave,
-                            constraints: const BoxConstraints(
-                                minWidth: 48, minHeight: 48),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ]),
-                        if (widget.introductionAction != null)
-                          widget.introductionAction!,
-                      ]),
-                ))),
-        _navigation(context),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 12, 0),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Tooltip(
+                      message: widget.eventTitle,
+                      child: Text(widget.eventTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall),
+                    ),
+                    if (widget.contextLabel != null)
+                      Text(widget.contextLabel!,
+                          style: theme.textTheme.bodySmall),
+                    Text(widget.status,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: colors.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: widget.leaveLabel,
+                onPressed: widget.onLeave,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: const Icon(Icons.close),
+              ),
+            ]),
+            if (widget.introductionAction != null) widget.introductionAction!,
+          ]),
+        ),
+        Row(children: [
+          IconButton(
+            key: const ValueKey('story-previous-arrow'),
+            tooltip: widget.backLabel,
+            onPressed: widget.onBack,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(child: _navigation(context)),
+          IconButton(
+            key: const ValueKey('story-next-arrow'),
+            tooltip: widget.nextLabel,
+            onPressed: widget.onNext,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ]),
 
         if (widget.error != null)
           Padding(

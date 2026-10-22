@@ -27,6 +27,8 @@ class EmailTemplateSettingsPage extends StatefulWidget {
   final EmailTemplatesResponse emailTemplatesResponse;
   final Future<EmailAuthoringContext> Function()? authoringContextLoader;
   final Future<EmailPreviewExamples> Function()? previewExamplesLoader;
+  final Future<void> Function(EmailTemplateModel)? saveTemplate;
+  final Future<void> Function()? resetTemplate;
 
   const EmailTemplateSettingsPage({
     super.key,
@@ -34,6 +36,8 @@ class EmailTemplateSettingsPage extends StatefulWidget {
     required this.emailTemplatesResponse,
     this.authoringContextLoader,
     this.previewExamplesLoader,
+    this.saveTemplate,
+    this.resetTemplate,
   });
 
   @override
@@ -388,11 +392,13 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                 )));
   }
 
-  bool get _canEdit => widget.emailTemplatesResponse.occasion != null
-      ? RightsService.hasCapability(
-          AuthorizationCapabilities.emailTemplatesOccasionWrite)
-      : RightsService.hasCapability(
-          AuthorizationCapabilities.emailTemplatesUnitWrite);
+  bool get _canEdit =>
+      widget.saveTemplate != null ||
+      (widget.emailTemplatesResponse.occasion != null
+          ? RightsService.hasCapability(
+              AuthorizationCapabilities.emailTemplatesOccasionWrite)
+          : RightsService.hasCapability(
+              AuthorizationCapabilities.emailTemplatesUnitWrite));
   @override
   Widget build(BuildContext context) => HtmlEditingScope(
       coordinator: _htmlSave, child: _buildHtmlParent(context));
@@ -524,7 +530,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       widget.template.organization =
           widget.emailTemplatesResponse.organization.id;
 
-      await DbEmailTemplates.updateEmailTemplate(widget.template);
+      await (widget.saveTemplate?.call(widget.template) ??
+          DbEmailTemplates.updateEmailTemplate(widget.template));
       _htmlSave.markSaved();
       ToastHelper.Show(
           context, "${CommonStrings.saved}: ${widget.template.subject ?? ''}");
@@ -708,13 +715,15 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       actions: [
         AppDialogActions(
           leading: _canEdit &&
-                  ((widget.template.occasion != null &&
-                          widget.template.occasion ==
-                              widget.emailTemplatesResponse.occasion?.id) ||
-                      (widget.template.unit != null &&
-                          widget.template.unit ==
-                              widget.emailTemplatesResponse.unit.id &&
-                          widget.emailTemplatesResponse.occasion == null))
+                  (widget.saveTemplate != null
+                      ? widget.resetTemplate != null
+                      : ((widget.template.occasion != null &&
+                              widget.template.occasion ==
+                                  widget.emailTemplatesResponse.occasion?.id) ||
+                          (widget.template.unit != null &&
+                              widget.template.unit ==
+                                  widget.emailTemplatesResponse.unit.id &&
+                              widget.emailTemplatesResponse.occasion == null)))
               ? TextButton(
                   onPressed: () async {
                     final confirmed = await DialogHelper.showConfirmationDialog(
@@ -726,13 +735,16 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                     );
 
                     if (confirmed == true) {
-                      await DbEmailTemplates.deleteEntityEmailTemplate(
-                        occasionId: widget.emailTemplatesResponse.occasion?.id,
-                        unitId: widget.emailTemplatesResponse.occasion == null
-                            ? widget.emailTemplatesResponse.unit.id
-                            : null,
-                        code: widget.template.code!,
-                      );
+                      await (widget.resetTemplate?.call() ??
+                          DbEmailTemplates.deleteEntityEmailTemplate(
+                            occasionId:
+                                widget.emailTemplatesResponse.occasion?.id,
+                            unitId:
+                                widget.emailTemplatesResponse.occasion == null
+                                    ? widget.emailTemplatesResponse.unit.id
+                                    : null,
+                            code: widget.template.code!,
+                          ));
 
                       if (context.mounted) {
                         Navigator.of(context).pop();

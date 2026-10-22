@@ -73,6 +73,7 @@ void main() {
                 backLabel: 'Zpět',
                 onLeave: () => leaves++,
                 onBack: () {},
+                onNext: () => advances++,
                 primaryAction: FilledButton(
                   onPressed: () => advances++,
                   style:
@@ -93,7 +94,12 @@ void main() {
           lessThan(variant.size.height - 24));
       await tester.tap(find.text('Pokračovat'));
       await tester.tap(find.byTooltip('Odejít'));
-      expect(advances, 1);
+      await tester.tap(find.byKey(const ValueKey('story-next-arrow')));
+      expect(advances, 2);
+      expect(tester.getTopRight(find.byTooltip('Odejít')).dx,
+          greaterThan(variant.size.width - 70));
+      expect(tester.getTopLeft(find.text('Koncept · Podzimní slavnost')).dx,
+          lessThan(40));
       expect(leaves, 1);
 
       const screenshotDir = String.fromEnvironment('STORY_SCREENSHOT_DIR');

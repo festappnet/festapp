@@ -35,12 +35,13 @@ export function previewOrder(title: string, tone: string, configuration?: {ticke
 }
 
 export async function renderDraftPreview(context: any) {
+  const order = previewOrder(context.title, context.tone, context);
   const prepared = await renderEmail({
     to: "preview@example.invalid",
     context: { organization: 0 }, // Resolver below owns the already-authorized hierarchy.
     templateCode: "TICKET_ORDER_CONFIRMATION",
     substitutions: {...defaults, ...confirmationSubstitutions(
-      previewOrder(context.title, context.tone, context),
+      order,
     )},
     replyTo: context.replyTo ?? undefined,
   }, () => Promise.resolve(context.resolved));
@@ -50,5 +51,22 @@ export async function renderDraftPreview(context: any) {
     replyTo: prepared.replyTo,
     revision: context.revision,
     has_custom_template: context.has_custom_template,
+    emailTemplates: context.emailTemplates,
+    emailScope: context.emailScope,
+    authoringContext: {
+      senderAddress: prepared.from,
+      wrapperHtml: context.resolved?.wrapper?.html,
+      paymentAccounts: context.paymentInfo ? [{
+        accountNumber: context.paymentInfo.account_number_human_readable || context.paymentInfo.account_number,
+        iban: context.paymentInfo.account_number,
+        currencies: [context.sampleProducts?.[0]?.currency_code ?? 'CZK'],
+      }] : [],
+    },
+    previewContext: {
+      title: context.title,
+      deadline: order.payment_info.deadline,
+      products: context.sampleProducts ?? [],
+      ticketsEnabled: context.ticketsEnabled,
+    },
   };
 }
