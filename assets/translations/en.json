@@ -3671,7 +3671,19 @@
     "ordersRead": "Read orders, contact details and ticket counts",
     "ordersWrite": "Edit order details and products, and cancel orders",
     "paymentsWrite": "Record manual payments and mark orders paid",
-    "ticketsSend": "Email tickets to customers"
+    "ticketsSend": "Email tickets to customers",
+    "chooseScope": "Choosing an organizer includes its current and future events. Expand an organizer to choose individual events.",
+    "showOccasions": "Show events ({count})",
+    "hideOccasions": "Hide events ({count})",
+    "accessSummary": "What this connection allows",
+    "sameRights": "Within your selection, the application can use the following features. Your current user rights always apply.",
+    "baseAccess": "Read your identity, available events and ticket artwork",
+    "sensitiveActionsHint": "Before cancelling orders, changing payments or sending tickets, the application should verify your specific instruction.",
+    "selectionSummary": "Selected organizers: {organizers}. Individual events: {occasions}.",
+    "wholeOrganizerSelected": "Entire organizer",
+    "groupSelection": "Selected events: {selected} of {count}",
+    "inheritedSelectionHint": "Included through the organizer. Deselect the organizer to choose individual events.",
+    "selectionRequired": "Select at least one organizer or event."
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

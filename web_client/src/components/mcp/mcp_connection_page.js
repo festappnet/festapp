@@ -17,7 +17,7 @@ export function mcpResumeUrl(value) {
     return url.href;
 }
 
-/** Tenant-owned consent; all permissions and minting stay in mcp-session-exchange. */
+/** Tenant-owned consent; the issuer verifies membership and permissions before minting. */
 export class McpConnectionPage {
     constructor(container, { client = SupabaseService.getClient(), browser = window,
         resume = mcpResumeUrl, login = async () => {
@@ -34,6 +34,7 @@ export class McpConnectionPage {
         this.selected = new Set();
         this.selectedUnits = new Map();
         this.selectedPermissions = new Set();
+        this.expandedUnits = new Map();
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
@@ -101,8 +102,10 @@ export class McpConnectionPage {
                 }
                 const permissions = this.details.requestedPermissions ?? [];
                 if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(orderPermissions, p))) throw new Error('Invalid permissions');
-                this.selectedPermissions = new Set([...this.selectedPermissions].filter(p => permissions.includes(p)));
-                if (!this.selectedPermissions.has('festapp:orders:read')) this.selectedPermissions.clear();
+                if (permissions.length && !permissions.includes('festapp:orders:read')) throw new Error('Invalid permissions');
+                // The displayed capability summary and single approval cover exactly
+                // these requested scopes. Existing issued grants are never changed.
+                this.selectedPermissions = new Set(permissions);
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -176,7 +179,7 @@ export class McpConnectionPage {
         if (this.state === 'consent') {
             add('h2', this.text('client', { client: this.details.client }));
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
-            add('p', this.text('treeScope'));
+            add('p', this.text('chooseScope'));
             const fieldset = add('fieldset', '');
             fieldset.disabled = this.busy;
             add('legend', this.text('choose'), fieldset);
@@ -215,7 +218,9 @@ export class McpConnectionPage {
             for (const [id, group] of [...groups].sort((a, b) => compare(title(a), title(b)) || (a[0] || 0) - (b[0] || 0))) {
                 const section = add('div', '', fieldset);
                 section.className = 'mcp-organizer';
-                const heading = add('h3', '', section);
+                const header = add('div', '', section);
+                header.className = 'mcp-organizer-header';
+                const heading = add('h3', '', header);
                 const whole = this.selectedUnits.has(id);
                 const creates = whole ? this.selectedUnits.get(id) : this.details.canRequestCreate === true && group.unit?.canCreateOccasions === true;
                 const parent = checkbox(title([id, group]), whole, () => {
@@ -231,12 +236,33 @@ export class McpConnectionPage {
                 parent.disabled = !group.unit || (!whole && this.selectedUnits.size >= 100);
                 parent.indeterminate = !whole && group.occasions.some(o => this.selected.has(o.id));
                 heading.querySelector('span').dataset.unitHeading = id ?? '';
+                const selectedCount = group.occasions.filter(o => this.selected.has(o.id)).length;
+                const status = add('p', this.text(whole ? 'wholeOrganizerSelected' : 'groupSelection', { selected: selectedCount, count: group.occasions.length }), section);
+                status.className = 'mcp-organizer-hint';
                 const hint = add('p', this.text(!group.unit ? 'individualOnlyHint' : creates ? 'organizerCreateHint' : 'organizerReadHint'), section);
                 hint.className = 'mcp-organizer-hint';
                 hint.id = `mcp-unit-hint-${id ?? 'individual'}`;
                 parent.setAttribute('aria-describedby', hint.id);
+                const key = String(id ?? 'individual');
+                if (!this.expandedUnits.has(key)) this.expandedUnits.set(key, groups.size <= 2);
+                const expanded = this.expandedUnits.get(key);
+                const toggle = add('button', this.text(expanded ? 'hideOccasions' : 'showOccasions', { count: group.occasions.length }), header);
+                toggle.type = 'button';
+                toggle.className = 'mcp-organizer-toggle';
+                toggle.dataset.unitToggle = key;
+                toggle.setAttribute('aria-expanded', String(expanded));
+                toggle.setAttribute('aria-controls', `mcp-unit-events-${key}`);
+                toggle.setAttribute('aria-label', `${toggle.textContent}: ${title([id, group])}`);
+                toggle.addEventListener('click', () => {
+                    this.expandedUnits.set(key, !expanded);
+                    this.render();
+                    this.container.querySelector(`[data-unit-toggle="${key}"]`)?.focus();
+                });
                 const children = add('div', '', section);
+                children.id = `mcp-unit-events-${key}`;
+                children.hidden = !expanded;
                 children.className = 'mcp-organizer-occasions';
+                if (whole) add('p', this.text('inheritedSelectionHint'), children);
                 for (const occasion of [...group.occasions].sort((a, b) => compare(a.title, b.title) || a.id - b.id)) {
                     const input = checkbox(occasion.title, whole || this.selected.has(occasion.id), () => {
                         if (input.checked) this.selected.add(occasion.id);
@@ -248,26 +274,18 @@ export class McpConnectionPage {
                     input.disabled = whole || (!input.checked && this.selected.size >= 100);
                 }
             }
-            const permissions = this.details.requestedPermissions || [];
-            if (permissions.length) {
-                const permissionFields = add('fieldset', '');
-                permissionFields.disabled = this.busy;
-                add('legend', this.text('orderPermissions'), permissionFields);
-                add('p', this.text('orderPermissionsHint'), permissionFields);
-                for (const scope of permissions) {
-                    const input = checkbox(this.text(orderPermissions[scope]), this.selectedPermissions.has(scope), () => {
-                        if (input.checked) {
-                            this.selectedPermissions.add('festapp:orders:read');
-                            this.selectedPermissions.add(scope);
-                        } else if (scope === 'festapp:orders:read') this.selectedPermissions.clear();
-                        else this.selectedPermissions.delete(scope);
-                        this.render();
-                        this.container.querySelector(`[data-permission="${scope}"]`)?.focus();
-                    }, permissionFields);
-                    input.dataset.permission = scope;
-                    input.disabled = scope !== 'festapp:orders:read' && !permissions.includes('festapp:orders:read');
-                }
+            const summary = add('section', '');
+            summary.className = 'mcp-access-summary';
+            add('h2', this.text('accessSummary'), summary);
+            add('p', this.text('sameRights'), summary);
+            const capabilities = add('ul', '', summary);
+            add('li', this.text('baseAccess'), capabilities);
+            for (const scope of this.selectedPermissions) add('li', this.text(orderPermissions[scope]), capabilities);
+            if ([...this.selectedPermissions].some(scope => scope !== 'festapp:orders:read')) {
+                add('p', this.text('sensitiveActionsHint'), summary);
             }
+            const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
+            selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration'));
             button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
             button('cancel', () => this.finish('cancel'));
@@ -287,7 +305,7 @@ export class McpConnectionPage {
             if (this.state === 'error') button('retry', () => this.init());
         }
         const style = document.createElement('style');
-        style.textContent = `.mcp-connection{max-width:640px;margin:32px auto;padding:24px;color:var(--text-color,inherit)}.mcp-connection h1{font-size:2rem}.mcp-organizer{margin-block:24px}.mcp-organizer h3{font-size:1.125rem;margin:0}.mcp-organizer-hint{margin:0 0 8px;padding-inline-start:34px;font-size:.875rem}.mcp-organizer-occasions{margin-inline-start:10px;padding-inline-start:24px;border-inline-start:1px solid currentColor}.mcp-connection h3 label{padding-bottom:4px}.mcp-connection p{line-height:1.6}.mcp-connection fieldset{border:0;padding:0;margin:24px 0}.mcp-connection legend{font-weight:600;margin-bottom:12px}.mcp-connection label{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#273f65)}.mcp-connection button{min-height:44px;margin:8px 12px 8px 0;padding:10px 22px;border-radius:24px;cursor:pointer}.mcp-connection button:disabled{cursor:default}.mcp-connection a{display:block;margin-top:16px}.mcp-connection :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;
+        style.textContent = `.mcp-connection{max-width:640px;margin:32px auto;padding:24px;color:var(--text-color,inherit)}.mcp-connection h1{font-size:2rem}.mcp-organizer{margin-block:24px}.mcp-organizer h3{font-size:1.125rem;margin:0;flex:1;min-width:0}.mcp-organizer-header{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}.mcp-organizer-header .mcp-organizer-toggle{font:inherit;font-size:.875rem;margin:0;padding:8px 12px;background:transparent;color:inherit;border:1px solid currentColor;border-radius:8px}.mcp-access-summary{margin-block:24px;padding-block:16px;border-block:1px solid currentColor}.mcp-access-summary h2{font-size:1.125rem;margin:0}.mcp-access-summary ul{padding-inline-start:24px;line-height:1.6}.mcp-selection-summary{font-weight:600}.mcp-organizer label span{overflow-wrap:anywhere}.mcp-organizer-hint{margin:0 0 8px;padding-inline-start:34px;font-size:.875rem}.mcp-organizer-occasions{margin-inline-start:10px;padding-inline-start:24px;border-inline-start:1px solid currentColor}.mcp-connection h3 label{padding-bottom:4px}.mcp-connection p{line-height:1.6}.mcp-connection fieldset{border:0;padding:0;margin:24px 0}.mcp-connection legend{font-weight:600;margin-bottom:12px}.mcp-connection label{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer}.mcp-connection input{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#273f65)}.mcp-connection button{min-height:44px;margin:8px 12px 8px 0;padding:10px 22px;border-radius:24px;cursor:pointer}.mcp-connection button:disabled{cursor:default}.mcp-connection a{display:block;margin-top:16px}.mcp-connection :focus-visible{outline:3px solid var(--primary-color,#273f65);outline-offset:3px}`;
         this.container.replaceChildren(style, root);
     }
 }

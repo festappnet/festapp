@@ -185,17 +185,46 @@ test('overlapping router imports mount only the latest consent instance',async()
 });
 
 
-test('order permissions start unchecked, include reading for mutations and reset safely on refresh',async()=>{
+test('one informed approval includes exactly the displayed requested capabilities',async()=>{
  const permissions=['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send'];
  const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
- await f.page.init();f.page.selected.add(99);f.page.render();
- assert.equal(f.page.selectedPermissions.size,0);
- f.container.querySelector('[data-permission="festapp:payments:write"]').click();
- assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read','festapp:payments:write']);
+ await f.page.init();
+ assert.equal(f.page.canApprove,false);
+ assert.equal(f.container.querySelector('[data-permission]'),null);
  assert.match(f.container.textContent,/kontaktní údaje/);
- f.container.querySelector('[data-permission="festapp:orders:read"]').click();assert.equal(f.page.selectedPermissions.size,0);
- f.page.selectedPermissions.add('festapp:orders:write');permissions.length=0;await f.page.init();assert.equal(f.page.selectedPermissions.size,0);
- permissions.push('festapp:orders:read','festapp:payments:write');await f.page.init();
- f.container.querySelector('[data-permission="festapp:payments:write"]').click();
- await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,['festapp:orders:read','festapp:payments:write']);
+ assert.match(f.container.textContent,/ruční platby/);
+ assert.match(f.container.textContent,/e-mailem/);
+ assert.match(f.container.textContent,/Vyberte alespoň/);
+ f.container.querySelector('[data-occasion="99"]').click();
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions});
+});
+test('a narrow OAuth request stays narrow and invalid scope dependencies fail closed',async()=>{
+ let requestedPermissions=['festapp:orders:read'];
+ const f=fixture({invoke:()=>({data:{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions}})});
+ await f.page.init();assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read']);
+ assert.doesNotMatch(f.container.textContent,/Zapisovat ruční platby|Odesílat zákazníkům|Před rušením/);
+ requestedPermissions=[];await f.page.init();assert.equal(f.page.selectedPermissions.size,0);
+ requestedPermissions=['festapp:payments:write'];await f.page.init();assert.equal(f.page.state,'error');
+});
+test('organizers start collapsed above two groups; disclosure preserves selection and focus',async()=>{
+ for(const count of [1,2,3]){
+  const units=Array.from({length:count},(_,i)=>({id:i+1,title:`Organizer ${i+1}`,canCreateOccasions:true}));
+  const f=fixture({invoke:()=>({data:{client:'Codex',units,occasions:units.map(u=>({id:u.id,title:'Event',unitId:u.id})),canRequestCreate:true}})});
+  await f.page.init();
+  assert.equal(f.container.querySelector('[data-unit-toggle="1"]').getAttribute('aria-expanded'),String(count<=2));
+  assert.equal(f.container.querySelector('#mcp-unit-events-1').hidden,count>2);
+  const initial=count<=2;
+  f.container.querySelector('[data-unit-toggle="1"]').click();
+  assert.equal(document.activeElement.dataset.unitToggle,'1');
+  assert.equal(f.page.selected.size+f.page.selectedUnits.size,0);
+  f.container.querySelector('[data-unit="1"]').click();
+  assert.equal(f.container.querySelector('[data-unit-toggle="1"]').getAttribute('aria-expanded'),String(!initial));
+  assert.match(f.container.textContent,/Celý pořadatel/);
+  f.container.querySelector('[data-unit="1"]').click();
+  f.container.querySelector('[data-occasion="1"]').click();
+  assert.equal(f.page.selectedUnits.size,0);
+  assert.equal(f.container.querySelector('[data-unit="1"]').indeterminate,true);
+  assert.match(f.container.textContent,/Vybrané akce: 1 z 1/);
+ }
 });

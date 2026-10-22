@@ -1396,6 +1396,18 @@
     "ordersRead": "Čítať objednávky, kontaktné údaje a počty vstupeniek",
     "ordersWrite": "Meniť údaje a položky objednávok a stornovať ich",
     "paymentsWrite": "Zapisovať ručné platby a označovať objednávky ako zaplatené",
-    "ticketsSend": "Odosielať zákazníkom vstupenky e-mailom"
+    "ticketsSend": "Odosielať zákazníkom vstupenky e-mailom",
+    "chooseScope": "Výber organizátora zahŕňa jeho súčasné aj budúce akcie. Jednotlivé akcie môžete vybrať po rozbalení.",
+    "showOccasions": "Zobraziť akcie ({count})",
+    "hideOccasions": "Skryť akcie ({count})",
+    "accessSummary": "Čo prepojenie umožní",
+    "sameRights": "Vo vybranom rozsahu môže aplikácia používať nasledujúce funkcie. Vždy ju obmedzujú Vaše aktuálne používateľské práva.",
+    "baseAccess": "Čítať identitu, dostupné akcie a vzhľad vstupeniek",
+    "sensitiveActionsHint": "Pred rušením objednávok, zmenami platieb alebo odoslaním vstupeniek si má aplikácia overiť Váš konkrétny pokyn.",
+    "selectionSummary": "Vybraní organizátori: {organizers}. Jednotlivé akcie: {occasions}.",
+    "wholeOrganizerSelected": "Celý organizátor",
+    "groupSelection": "Vybrané akcie: {selected} z {count}",
+    "inheritedSelectionHint": "Zahrnuté výberom organizátora. Pre výber jednotlivých akcií zrušte výber organizátora.",
+    "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu."
   }
 }
