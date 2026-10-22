@@ -41,3 +41,11 @@ uses ticket type, price and a minus/quantity/plus stepper;
 [Rock am Ring](https://www.rock-am-ring.com/en/tickets) separates admission categories
 from camping/add-ons. The map anchor is Festapp's adaptation for mixed seating
 and standing plans, not a claim that those festivals use this exact overlay.
+
+An empty standing selection shows a localized “Choose quantity” action without
+a zero count, including its accessible name. Opening the editor proposes one
+as a draft only; cancelling or confirming a release restores the empty action.
+This follows the action-first initial offer seen in [Sziget's ticket shop](https://szigetfestival.com/en/tickets).
+[Primavera Sound's AccessTicket shop](https://primavera-sound-barcelona-2027.webstore.acst.app/)
+separates ticket-category selection from its Amount section; proceeding there
+requires login, so its authenticated checkout was not evaluated.

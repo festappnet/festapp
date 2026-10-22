@@ -11,7 +11,7 @@ const data={layout:{schemaVersion:2,symbolSetVersion:1,canvas:{x:0,y:0,width:800
 DbForms.getBlueprint=async()=>data;
 const model={key:'fixture',secret:'fixture',blueprint:1,visibleFields:[],relatedFields:[{type:'ticket',data:{max_tickets:100}}]};
 window.session=new FormSession(model);
-window.session.setAreaQuantity(binding,2,96,product);
+if (!new URLSearchParams(location.search).has('empty')) window.session.setAreaQuantity(binding,2,96,product);
 window.selector=new BlueprintSelector();
 await window.selector.open(window.session);
 window.fixtureReady=true;

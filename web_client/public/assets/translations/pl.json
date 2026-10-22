@@ -1192,7 +1192,8 @@
       "availableCount": "Dostępnych: {count}",
       "confirmQuantity": "Potwierdź liczbę",
       "pending": "Przetwarzanie",
-      "quantityRejected": "Nie udało się potwierdzić liczby"
+      "quantityRejected": "Nie udało się potwierdzić liczby",
+      "chooseQuantity": "Wybierz liczbę"
     },
     "standingCapacity": "Liczba miejsc",
     "capacitySaveHint": "Zmiana zostanie zastosowana po zapisaniu planu."

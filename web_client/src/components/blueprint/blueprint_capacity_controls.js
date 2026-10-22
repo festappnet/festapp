@@ -127,11 +127,12 @@ export class BlueprintCapacityControls {
     refresh(entry) {
         const {state, editing, pending} = entry;
         const count = editing ? entry.draft : state.quantity || 0;
-        entry.count.textContent = editing ? String(count) : BlueprintStrings.placeCount(count);
+        const summary = count > 0 ? BlueprintStrings.placeCount(count) : BlueprintStrings.chooseQuantity;
+        entry.count.textContent = editing ? String(count) : summary;
         entry.heading.hidden = entry.details.hidden = !editing;
         entry.details.textContent = [state.priceLabel, this.options.messages.availableCount.replace('{count}', state.available)].filter(Boolean).join(' · ');
         entry.group.classList.toggle('has-selection', !editing && count > 0);
-        entry.count.setAttribute('aria-label', `${entry.node.label || this.options.messages.standing}: ${BlueprintStrings.placeCount(count)}`);
+        entry.count.setAttribute('aria-label', `${entry.node.label || this.options.messages.standing}: ${editing ? BlueprintStrings.placeCount(count) : summary}`);
         entry.count.setAttribute('aria-expanded', String(editing));
         entry.count.disabled = pending;
         entry.group.setAttribute('aria-busy', String(pending));

@@ -1408,7 +1408,8 @@
       "removeOne": "Remove one",
       "standingNotConfigured": "Standing admission is not configured yet.",
       "standingUnavailable": "Standing places are no longer available.",
-      "standingSaleClosed": "Standing admission is not on sale."
+      "standingSaleClosed": "Standing admission is not on sale.",
+      "chooseQuantity": "Choose quantity"
     },
     "demoGeometryNotice": "Demo layout. Edits and saves apply only within this demonstration. Orders, reservations and the catalog are unchanged.",
     "seatStates": {

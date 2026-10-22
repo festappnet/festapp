@@ -62,6 +62,8 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
             const plural = new Intl.PluralRules(locale).select(count);
             assert.equal(BlueprintStrings.placeCount(count), published.FeatureBlueprint.viewer[`placeCount_${plural}`].replace('{count}',count));
         }
+        assert.equal(BlueprintStrings.chooseQuantity, published.FeatureBlueprint.viewer.chooseQuantity);
+        assert.ok(BlueprintStrings.chooseQuantity);
         assert.notEqual(BlueprintStrings.viewerMessages.confirmQuantity, 'FeatureBlueprint.viewer.confirmQuantity');
     });
 }

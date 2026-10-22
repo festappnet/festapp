@@ -844,7 +844,8 @@
       "availableCount": "Доступно: {count}",
       "confirmQuantity": "Підтвердити кількість",
       "pending": "Обробка",
-      "quantityRejected": "Не вдалося підтвердити кількість"
+      "quantityRejected": "Не вдалося підтвердити кількість",
+      "chooseQuantity": "Вибрати кількість"
     },
     "standingCapacity": "Кількість місць",
     "capacitySaveHint": "Зміни застосуються після збереження плану."

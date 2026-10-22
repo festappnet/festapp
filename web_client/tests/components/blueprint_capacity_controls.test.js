@@ -66,3 +66,21 @@ test('wheel over a quantity control reaches the map at the original cursor posit
     assert.equal(event.defaultPrevented,true);
     controls.dispose(); content.innerHTML = '';
 });
+
+
+test('empty selection offers an action, starts with a draft of one and restores the action after release', async () => {
+    const controls = new BlueprintCapacityControls(document.querySelector('main'),{document:layout,resources:{},messages,capacityPresentation:{[id]:{quantity:0,available:3,selectable:true}},onQuantityRequested:async()=>({accepted:true})});
+    const entry = controls.entries.get(id);
+    assert.equal(entry.count.textContent,'Vybrat počet');
+    assert.doesNotMatch(entry.count.getAttribute('aria-label'),/0/);
+    entry.count.click();
+    assert.equal(entry.count.textContent,'1');
+    assert.equal(entry.state.quantity,0,'Opening the editor must not select or buy a ticket');
+    await controls.confirm(entry);
+    assert.equal(entry.count.textContent,'1 místo');
+    entry.count.click(); entry.minus.click();
+    await controls.confirm(entry);
+    assert.equal(entry.count.textContent,'Vybrat počet');
+    assert.equal(entry.group.classList.contains('has-selection'),false);
+    controls.dispose();
+});

@@ -32,7 +32,8 @@
       "availableCount": "Verfügbar: {count}",
       "confirmQuantity": "Anzahl bestätigen",
       "pending": "Wird verarbeitet",
-      "quantityRejected": "Die Anzahl konnte nicht bestätigt werden"
+      "quantityRejected": "Die Anzahl konnte nicht bestätigt werden",
+      "chooseQuantity": "Anzahl wählen"
     },
     "standingCapacity": "Anzahl der Plätze",
     "capacitySaveHint": "Wird beim Speichern des Plans übernommen."

@@ -1,6 +1,7 @@
 import { LocalizationService } from '../../services/localization_service.js';
 
 export class BlueprintStrings {
+    static get chooseQuantity() { return LocalizationService.tr('FeatureBlueprint.viewer.chooseQuantity', {}, 'Choose quantity'); }
     static placeCount(count) {
         const plural = new Intl.PluralRules(LocalizationService.currentLocale).select(count);
         return LocalizationService.tr(`FeatureBlueprint.viewer.placeCount_${plural}`, {count}, `${count} places`);

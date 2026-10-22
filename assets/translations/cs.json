@@ -1409,7 +1409,8 @@
       "removeOne": "Odebrat jedno",
       "standingNotConfigured": "Stání ještě není v prodeji - není přiřazená vstupenka.",
       "standingUnavailable": "Místa ke stání již nejsou dostupná.",
-      "standingSaleClosed": "Prodej míst ke stání není dostupný."
+      "standingSaleClosed": "Prodej míst ke stání není dostupný.",
+      "chooseQuantity": "Vybrat počet"
     },
     "demoGeometryNotice": "Ukázkový plánek. Úpravy a uložení platí jen v této ukázce. Objednávky, rezervace a katalog se nemění.",
     "seatStates": {
