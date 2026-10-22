@@ -1363,6 +1363,12 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer.",
     "organizerCreateHint": "Aktuelle und zukünftige Veranstaltungen sowie das Erstellen neuer Veranstaltungen. Neue Veranstaltungen sind verborgen und der Verkauf ist geschlossen.",
     "organizerReadHint": "Aktuelle und zukünftige Veranstaltungen. Das Erstellen neuer Veranstaltungen ist nicht enthalten.",
-    "individualOnlyHint": "Nur einzelne Veranstaltungen können ausgewählt werden."
+    "individualOnlyHint": "Nur einzelne Veranstaltungen können ausgewählt werden.",
+    "orderPermissions": "Berechtigungen für Bestellungen",
+    "orderPermissionsHint": "Gilt nur für ausgewählte Veranstalter und Veranstaltungen. Bearbeitung, Zahlungen und Versand umfassen auch das Lesen von Bestellungen.",
+    "ordersRead": "Bestellungen, Kontaktdaten und Ticketanzahl lesen",
+    "ordersWrite": "Bestelldaten und Produkte ändern und Bestellungen stornieren",
+    "paymentsWrite": "Manuelle Zahlungen erfassen und Bestellungen als bezahlt markieren",
+    "ticketsSend": "Tickets per E-Mail an Kunden senden"
   }
 }

@@ -67,3 +67,8 @@ Deno.test("explicit organizer selection reaches the broker unchanged and uses on
   assertEquals((await f.request()).status, 200);
   assert(f.calls.includes("prepare"));
 });
+
+Deno.test("versioned consent reaches the issuer unchanged without adding exchange authority", async () => {
+  const f = fixture({ access: { consentVersion: 2, selection: { type: "occasions", occasionIds: [7] }, permissions: ["festapp:orders:read", "festapp:payments:write"] } });
+  assertEquals((await f.request()).status, 200);
+});

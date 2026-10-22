@@ -1365,6 +1365,12 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer.",
     "organizerCreateHint": "Obecne i przyszłe wydarzenia oraz tworzenie nowych. Nowe wydarzenia będą ukryte, ze sprzedażą zamkniętą.",
     "organizerReadHint": "Obecne i przyszłe wydarzenia. Ten dostęp nie obejmuje tworzenia nowych wydarzeń.",
-    "individualOnlyHint": "Można wybrać tylko poszczególne wydarzenia."
+    "individualOnlyHint": "Można wybrać tylko poszczególne wydarzenia.",
+    "orderPermissions": "Uprawnienia do zamówień",
+    "orderPermissionsHint": "Dotyczy tylko wybranych organizatorów i wydarzeń. Edycja, płatności i wysyłka obejmują też odczyt zamówień.",
+    "ordersRead": "Odczytywać zamówienia, dane kontaktowe i liczbę biletów",
+    "ordersWrite": "Zmieniać dane i produkty oraz anulować zamówienia",
+    "paymentsWrite": "Rejestrować płatności ręczne i oznaczać zamówienia jako opłacone",
+    "ticketsSend": "Wysyłać bilety klientom e-mailem"
   }
 }

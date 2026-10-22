@@ -2,6 +2,8 @@ import { AppConfig } from '../../app_config.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 
+const orderPermissions = { 'festapp:orders:read': 'ordersRead', 'festapp:orders:write': 'ordersWrite', 'festapp:payments:write': 'paymentsWrite', 'festapp:tickets:send': 'ticketsSend' };
+
 export const MCP_CONNECTION_PATH = '/settings/mcp-connect';
 
 export function mcpResumeUrl(value) {
@@ -31,6 +33,7 @@ export class McpConnectionPage {
         this.request = new URL(browser.location.href).searchParams.get('request');
         this.selected = new Set();
         this.selectedUnits = new Map();
+        this.selectedPermissions = new Set();
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
@@ -40,7 +43,7 @@ export class McpConnectionPage {
 
     async call(operation) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.access } : {}) },
+            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.selectedPermissions.size ? { consentVersion: 2, selection: this.access, permissions: [...this.selectedPermissions] } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -55,6 +58,7 @@ export class McpConnectionPage {
     get canApprove() {
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
+        if ([...this.selectedPermissions].some(p => !this.details?.requestedPermissions?.includes(p))) return false;
         return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
             [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
                 units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
@@ -95,6 +99,10 @@ export class McpConnectionPage {
                     if (!unit) this.selectedUnits.delete(id);
                     else this.selectedUnits.set(id, create && this.details.canRequestCreate === true && unit.canCreateOccasions === true);
                 }
+                const permissions = this.details.requestedPermissions ?? [];
+                if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(orderPermissions, p))) throw new Error('Invalid permissions');
+                this.selectedPermissions = new Set([...this.selectedPermissions].filter(p => permissions.includes(p)));
+                if (!this.selectedPermissions.has('festapp:orders:read')) this.selectedPermissions.clear();
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
@@ -238,6 +246,26 @@ export class McpConnectionPage {
                     }, children);
                     input.dataset.occasion = occasion.id;
                     input.disabled = whole || (!input.checked && this.selected.size >= 100);
+                }
+            }
+            const permissions = this.details.requestedPermissions || [];
+            if (permissions.length) {
+                const permissionFields = add('fieldset', '');
+                permissionFields.disabled = this.busy;
+                add('legend', this.text('orderPermissions'), permissionFields);
+                add('p', this.text('orderPermissionsHint'), permissionFields);
+                for (const scope of permissions) {
+                    const input = checkbox(this.text(orderPermissions[scope]), this.selectedPermissions.has(scope), () => {
+                        if (input.checked) {
+                            this.selectedPermissions.add('festapp:orders:read');
+                            this.selectedPermissions.add(scope);
+                        } else if (scope === 'festapp:orders:read') this.selectedPermissions.clear();
+                        else this.selectedPermissions.delete(scope);
+                        this.render();
+                        this.container.querySelector(`[data-permission="${scope}"]`)?.focus();
+                    }, permissionFields);
+                    input.dataset.permission = scope;
+                    input.disabled = scope !== 'festapp:orders:read' && !permissions.includes('festapp:orders:read');
                 }
             }
             add('p', this.text('duration'));

@@ -183,3 +183,19 @@ test('overlapping router imports mount only the latest consent instance',async()
   assert.equal(sessions,1);
  } finally {RouterService.disposeMcpPage();SupabaseService.getClient=original;}
 });
+
+
+test('order permissions start unchecked, include reading for mutations and reset safely on refresh',async()=>{
+ const permissions=['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();f.page.selected.add(99);f.page.render();
+ assert.equal(f.page.selectedPermissions.size,0);
+ f.container.querySelector('[data-permission="festapp:payments:write"]').click();
+ assert.deepEqual([...f.page.selectedPermissions],['festapp:orders:read','festapp:payments:write']);
+ assert.match(f.container.textContent,/kontaktní údaje/);
+ f.container.querySelector('[data-permission="festapp:orders:read"]').click();assert.equal(f.page.selectedPermissions.size,0);
+ f.page.selectedPermissions.add('festapp:orders:write');permissions.length=0;await f.page.init();assert.equal(f.page.selectedPermissions.size,0);
+ permissions.push('festapp:orders:read','festapp:payments:write');await f.page.init();
+ f.container.querySelector('[data-permission="festapp:payments:write"]').click();
+ await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,['festapp:orders:read','festapp:payments:write']);
+});

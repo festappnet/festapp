@@ -62,11 +62,20 @@ try {
     await browser('snapshot','-i');
     assert.deepEqual(await evaluate('consentFixture.read().access'),{type:'selection',units:[{unitId:3,canCreateOccasions:true},{unitId:4,canCreateOccasions:true}],occasionIds:[]});
     assert.equal(await evaluate('[...document.querySelectorAll("[data-occasion]")].every(i=>i.checked && i.disabled)'),true);
+    assert.equal(await evaluate('[...document.querySelectorAll("[data-permission]")].every(i=>!i.checked)'),true);
+    await browser('click','input[data-permission="festapp:orders:write"]');
+    await browser('snapshot','-i');
+    assert.equal(await evaluate(`document.querySelector('[data-permission="festapp:orders:read"]').checked`),true);
+    await browser('click','input[data-permission="festapp:payments:write"]');
+    await browser('snapshot','-i');
+    await browser('click','input[data-permission="festapp:tickets:send"]');
+    await browser('snapshot','-i');
     await browser('screenshot','/private/tmp/festapp-mcp-tree-mobile.png');
     await browser('set','viewport','1280','1000');
     await browser('screenshot','/private/tmp/festapp-mcp-tree-desktop.png');
     await browser('find','role','button','click','--name','Povolit a propojit');
     await browser('wait','--fn','window.consentFixture.read().state === "connected"');
-    assert.equal(await evaluate('consentFixture.read().operations[1].access.units.length'),2);
+    assert.equal(await evaluate('consentFixture.read().operations[1].access.selection.units.length'),2);
+    assert.deepEqual(await evaluate('consentFixture.read().operations[1].access.permissions'),['festapp:orders:read','festapp:orders:write','festapp:payments:write','festapp:tickets:send']);
     console.log('mcp-consent-browser: pass (tree consent, multiple organizers, mobile/dark, synthetic auth/broker)');
 } finally { await browser('close').catch(()=>{}); await server?.close(); await rm(temporary,{recursive:true,force:true}); }

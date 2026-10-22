@@ -3593,7 +3593,13 @@
     "selectionLimit": "Select up to 100 events individually, or explicitly allow access to the whole organizer.",
     "organizerCreateHint": "Current and future occasions, including creating new ones. New occasions will be hidden, with sales closed.",
     "organizerReadHint": "Current and future occasions. Creating new occasions is not included in this access.",
-    "individualOnlyHint": "Only individual occasions are available for selection."
+    "individualOnlyHint": "Only individual occasions are available for selection.",
+    "orderPermissions": "Order permissions",
+    "orderPermissionsHint": "Applies only to selected organizers and occasions. Editing, payments and sending also include reading orders.",
+    "ordersRead": "Read orders, contact details and ticket counts",
+    "ordersWrite": "Edit order details and products, and cancel orders",
+    "paymentsWrite": "Record manual payments and mark orders paid",
+    "ticketsSend": "Email tickets to customers"
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

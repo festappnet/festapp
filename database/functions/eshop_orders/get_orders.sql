@@ -157,7 +157,7 @@ BEGIN
               OR EXISTS(SELECT 1 FROM eshop.waitlist_offers WHERE order_id=o.id)
               THEN o.waitlist_summary END,
             'isActive',(o.waitlist_summary->>'isActive')::boolean,
-            'allowedActions',(o.waitlist_summary->'allowedActions') - CASE WHEN EXISTS(SELECT 1 FROM eshop.payment_info card WHERE card.id=o.payment_info AND card.payment_method='stripe') THEN ARRAY['cancel','paid']::text[] ELSE ARRAY[]::text[] END,
+            'allowedActions',public.get_order_allowed_actions_internal_v1(o.id,o.waitlist_summary),
             'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),

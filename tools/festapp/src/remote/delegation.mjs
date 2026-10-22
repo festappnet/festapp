@@ -2,7 +2,7 @@ import { SessionOwner } from '../auth/session.mjs';
 import { digest } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
 import { operatorAccess, accessSelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE } from './config.mjs';
+import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE, ORDER_PERMISSIONS, orderScopesFor } from './config.mjs';
 
 export function boundOwner(config, storage, binding, options = {}) {
     return new SessionOwner(Object.freeze({ ...config.profile, binding }), {
@@ -20,11 +20,14 @@ export class DelegatedOwner {
         this.profile = this.session.profile;
         this.root = storage.root;
         this.allowedOperations = [...READ_OPERATIONS, ...(canCreateWithAccess(grant.access) && token.scope?.split(' ').includes(CREATE_SCOPE) ? ['occasions.create'] : [])];
+        for (const operations of Object.values(ORDER_PERMISSIONS)) for (const operation of operations) {
+            if (orderScopesFor(operation).every(scope => grant.permissions?.includes(scope) && token.scope?.split(' ').includes(scope))) this.allowedOperations.push(operation);
+        }
         this.authChallenge = `Bearer resource_metadata="${config.issuer}/.well-known/oauth-protected-resource/mcp", scope="${READ_SCOPE}"`;
         this.securitySchemes = [{ type: 'oauth2', scopes: [READ_SCOPE] }];
     }
     securitySchemesFor(id) {
-        return [{ type: 'oauth2', scopes: id === 'occasions.create' ? [READ_SCOPE, CREATE_SCOPE] : [READ_SCOPE] }];
+        return [{ type: 'oauth2', scopes: id === 'occasions.create' ? [READ_SCOPE, CREATE_SCOPE] : [READ_SCOPE, ...orderScopesFor(id)] }];
     }
     current() {
         const t = this.token;
