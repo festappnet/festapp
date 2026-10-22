@@ -10,6 +10,18 @@
         ],
         "components": [
           {
+            "/": "/stripe/pay"
+          },
+          {
+            "/": "/stripe/return"
+          },
+          {
+            "/": "/app/stripe/pay"
+          },
+          {
+            "/": "/app/stripe/return"
+          },
+          {
             "/": "/app/google-auth"
           },
           {

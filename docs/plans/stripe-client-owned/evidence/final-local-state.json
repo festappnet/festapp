@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-21",
+  "sandboxOnly": true,
+  "newSalesDisabledAtHandoff": true,
+  "supportedSurfacesRestoredTo": [
+    "web"
+  ],
+  "productionEmbedAndNativeEnabled": false,
+  "recoveryAfterDisableCompleted": true,
+  "noUnpaidOpenCheckoutRemaining": true,
+  "orders": [
+    {
+      "order": 2,
+      "amount": 123.45,
+      "status": "partially_refunded",
+      "received": "123.45",
+      "returned": "23.45",
+      "admission": "valid",
+      "orderState": "sent"
+    },
+    {
+      "order": 1,
+      "amount": 123.45,
+      "status": "refunded",
+      "received": "123.45",
+      "returned": "123.45",
+      "admission": "hold",
+      "orderState": "storno"
+    },
+    {
+      "order": 3,
+      "amount": 123.45,
+      "status": "expired",
+      "received": "0.00",
+      "returned": "0.00",
+      "admission": "pending",
+      "orderState": "expired"
+    },
+    {
+      "order": 9,
+      "amount": 98.76,
+      "status": "paid",
+      "received": "98.76",
+      "returned": "0.00",
+      "admission": "valid",
+      "orderState": "sent"
+    },
+    {
+      "order": 12,
+      "amount": 156.78,
+      "status": "expired",
+      "received": "0.00",
+      "returned": "0.00",
+      "admission": "pending",
+      "orderState": "expired"
+    },
+    {
+      "order": 10,
+      "amount": 197.52,
+      "status": "partially_refunded",
+      "received": "197.52",
+      "returned": "98.76",
+      "admission": "valid",
+      "orderState": "sent"
+    },
+    {
+      "order": 11,
+      "amount": 156.78,
+      "status": "expired",
+      "received": "0.00",
+      "returned": "0.00",
+      "admission": "pending",
+      "orderState": "expired"
+    }
+  ],
+  "ownedTestServicesStopped": true
+}

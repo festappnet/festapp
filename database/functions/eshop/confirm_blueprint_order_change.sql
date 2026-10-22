@@ -34,6 +34,11 @@ BEGIN
 
   -- 1. Analyze impacts
   v_analysis := public.analyze_new_order_spots(p_spot_ids);
+  IF p_input_data->>'payment_method'='stripe' OR EXISTS(
+    SELECT 1 FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
+    JOIN eshop.orders o ON o.id=x."order" JOIN eshop.payment_info pi ON pi.id=o.payment_info
+    WHERE s.id=ANY(p_spot_ids) AND pi.payment_method='stripe') THEN
+    RAISE EXCEPTION 'STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
 
   -- 2. Extract Ticket IDs for Storno
   SELECT ARRAY_AGG((elem->>'ticket_id')::BIGINT)

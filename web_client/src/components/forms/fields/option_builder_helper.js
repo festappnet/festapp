@@ -88,7 +88,7 @@ export class OptionBuilderHelper {
 
         let labelContent = html`<span>${opt.title || ''}</span>`;
         if (opt.price) {
-            const priceDisplay = formatPrice(opt.price, currency, 0, 'cs-CZ');
+            const priceDisplay = formatPrice(opt.price, currency, Number.isInteger(Number(opt.price)) ? 0 : 2, LocalizationService.currentLocale);
             labelContent = html`${labelContent}<span class="option-price">+ ${priceDisplay}</span>`;
         }
         if (opt.isAvailable === false && formModel?.registrationMode !== 'waitlist') labelContent = html`${labelContent} (${WaitlistStrings.text('PRODUCT_CAPACITY_EXCEEDED')})`;

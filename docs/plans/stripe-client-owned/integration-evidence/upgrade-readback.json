@@ -1,0 +1,673 @@
+{
+  "functions": [
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "4c8a3f6481cd008896087781ae0b3e55",
+      "definer": true,
+      "signature": "apply_transaction_pairing(bigint,bigint,text,text,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b35cf389e5bcd9643fc4f7981de5b3c5",
+      "definer": false,
+      "signature": "assert_stripe_form_payable_internal(bigint,uuid,text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b5987d92420043daa3a43eed0926c76b",
+      "definer": true,
+      "signature": "attach_stripe_handoff_internal(bigint,uuid,text,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "f6e33064200d64c33859a97c018c7805",
+      "definer": false,
+      "signature": "attach_stripe_order_pay_source_internal(bigint,uuid,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b208fe4fa178946bbe08370c8b1fbcc1",
+      "definer": true,
+      "signature": "authorize_stripe_capability_internal(text,text,bigint,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "8fc839d2936cb440720c39b828253fb7",
+      "definer": true,
+      "signature": "begin_stripe_connection_flow(bigint,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "02c59b1858e7ec9dac1dc2393f7d9cec",
+      "definer": true,
+      "signature": "begin_stripe_disconnect(bigint,boolean,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "507369f4e6d82cfc42de54f4ac97d635",
+      "definer": true,
+      "signature": "checkpoint_stripe_session_lookup_internal(uuid,uuid,text,text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "6253a4cf3d6064208bc21dcd2ace6f83",
+      "definer": false,
+      "signature": "check_stripe_unit_manager_internal(bigint,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "9b57512d582a7c6c33745dc390290d76",
+      "definer": true,
+      "signature": "claim_stripe_checkout_internal(text,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b6bb5bb7be338149ec2fc8ec07637563",
+      "definer": true,
+      "signature": "claim_stripe_connection_flow_internal(text,uuid,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "263ae13640f074a843f392e2fd119edd",
+      "definer": true,
+      "signature": "claim_stripe_connection_status_internal(text,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "30a1968cbfe4edbf81a4fc19023bed51",
+      "definer": true,
+      "signature": "claim_stripe_disconnect_internal(uuid,uuid,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "f31e049a0bffdaa073a3f49bafd7efe9",
+      "definer": true,
+      "signature": "claim_stripe_sync_internal(text,boolean,uuid,text,text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "245557f011b3856e26cda84af1373825",
+      "definer": true,
+      "signature": "commit_stripe_checkout_session_internal(uuid,uuid,text,text,bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "d6b5838a9e991aacab668cce1797ccc3",
+      "definer": true,
+      "signature": "commit_stripe_connection_status_internal(uuid,uuid,jsonb,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "9aec7c64a20ea93d68426bbf3a1459c1",
+      "definer": true,
+      "signature": "complete_stripe_connection_flow_internal(uuid,uuid,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "f33b2472c00701a043b5e823e630470d",
+      "definer": false,
+      "signature": "create_stripe_order_attempt_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b701aadac67f1ef42c8b2f09aaaba8f8",
+      "definer": true,
+      "signature": "decide_stripe_partial_refund_client_sync_v1(bigint,text,bigint[],text,bigint,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "22f13a61631cf944b70368cda2d088fa",
+      "definer": true,
+      "signature": "fail_stripe_checkout_internal(uuid,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "fe4b4d80e854fbeb8df81897380667c3",
+      "definer": true,
+      "signature": "fail_stripe_connection_status_internal(uuid,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "b2ebd9bfd39e3f0c183334ff06388ef8",
+      "definer": true,
+      "signature": "fail_stripe_reconciliation_internal(uuid,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "bf2d2667e52bf8f7315f3c395ed8571f",
+      "definer": false,
+      "signature": "finalize_ticket_order_internal_v1(bigint,jsonb,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "6b8f184fa7f3e9161331667b6b3616df",
+      "definer": true,
+      "signature": "finish_stripe_connection_flow_error_internal(uuid,uuid,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "469ba7a80b16a7ad5dceafd4aeddf81e",
+      "definer": true,
+      "signature": "finish_stripe_disconnect_internal(uuid,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "ad6f044bcf85fa695079ec9e7f911b7a",
+      "definer": true,
+      "signature": "get_form_by_link(text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "822e52b8bb2a79882efe9b5b8a4a8c0d",
+      "definer": true,
+      "signature": "get_form_stripe_recipient(bigint,bigint,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "f178b0abf1399d5d8ad7d01613a28332",
+      "definer": true,
+      "signature": "get_order_history(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "5a323a3b809bb58de659f6080164cfad",
+      "definer": true,
+      "signature": "get_orders(text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "ed63a9362e065c290bd2e12452896077",
+      "definer": true,
+      "signature": "get_orders(text,text,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "69cdc3104ffe4b41e84872fa9d7e9fc3",
+      "definer": true,
+      "signature": "get_recoverable_stripe_attempts_internal(boolean,integer)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "a53c4b19ecc2fee269949fc1310a0556",
+      "definer": true,
+      "signature": "get_recoverable_stripe_connections_internal(boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "0b6d12e275bfd0cc2726aae05ef4c686",
+      "definer": true,
+      "signature": "get_report_ws(text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "bcb1f84a1496853d722c2033a6c1340f",
+      "definer": true,
+      "signature": "get_stripe_disconnect_impact(bigint,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "d45ab1c52c01a9b61c91527c0ceeac9f",
+      "definer": true,
+      "signature": "get_stripe_order_admin_detail(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "279a3ed3568c74e81bd1cb870d33d342",
+      "definer": true,
+      "signature": "get_stripe_order_pay_source_internal(bigint,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "afd0265a0e306f2b7d32b07f4a25e2c4",
+      "definer": true,
+      "signature": "get_stripe_unit_connection(bigint,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "29e4d20283c98dc38ab0d515d3be0cf0",
+      "definer": true,
+      "signature": "ingest_stripe_payment_internal(uuid,uuid,jsonb,jsonb)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "3ed38f99a579a107b548e037118fd48c",
+      "definer": true,
+      "signature": "issue_stripe_capability_internal(bigint,text,timestamp with time zone,uuid)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "27fa926cc9cbe690f377ba041692588f",
+      "definer": false,
+      "signature": "mark_order_and_tickets_paid_internal_v1(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "cd3c012b8aa88ca9fff7062f98705f1a",
+      "definer": true,
+      "signature": "purge_expired_stripe_sources_internal(integer)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "4a04bba6dd48cfdf2ba55a80cf168974",
+      "definer": true,
+      "signature": "read_stripe_handoff_internal(text,boolean,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "3a820697506fc2e0f3b392a637faa239",
+      "definer": true,
+      "signature": "read_stripe_pay_status_internal(text,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "caaed0cc051762710513e0be24d4f5be",
+      "definer": true,
+      "signature": "read_stripe_return_internal(text,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "033653066d79d351b1228e47689bc8ca",
+      "definer": true,
+      "signature": "request_stripe_reconciliation(text)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{supabase_admin=X/supabase_admin,postgres=X/supabase_admin}",
+      "owner": "supabase_admin",
+      "bodyMd5": "aefbcffa7cbe4c7fb5439085c2be57c5",
+      "definer": false,
+      "signature": "scanner_admit_ticket_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{supabase_admin=X/supabase_admin,postgres=X/supabase_admin}",
+      "owner": "supabase_admin",
+      "bodyMd5": "18ffc7061c5b34aa8aaa48357aaaa031",
+      "definer": false,
+      "signature": "scanner_ticket_projection_internal(bigint,jsonb,bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "389f5a57331d1331e2b91cbf3af53383",
+      "definer": true,
+      "signature": "set_stripe_unit_paused(bigint,boolean,boolean)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "33be201132554712ac496ae07ff1c50e",
+      "definer": false,
+      "signature": "stripe_form_compatibility_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "a8f76c9b52c9dfd32c82561c29a60c7b",
+      "definer": false,
+      "signature": "stripe_order_payment_projection_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "d1934f0094ba8533358296ecf6c8904c",
+      "definer": false,
+      "signature": "stripe_ticket_admission_allowed_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{postgres=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "75486b763f42761afadfbb17a64359e6",
+      "definer": false,
+      "signature": "stripe_ticket_requires_online_internal(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    },
+    {
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "owner": "postgres",
+      "bodyMd5": "78a9bb79dd242d04198176c3562f3d00",
+      "definer": false,
+      "signature": "update_order_and_tickets_to_paid(bigint)",
+      "configuration": [
+        "search_path=public, extensions"
+      ]
+    }
+  ],
+  "migrationHead": "20261022180000",
+  "privateTables": [
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_admission_decisions",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_capabilities",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_checkout_attempts",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_connection_audit",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_connection_flows",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_connections",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_disconnect_intents",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_disputes",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_event_inbox",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_payment_link_sources",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_payment_movements",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    },
+    {
+      "rls": true,
+      "owner": "postgres",
+      "table": "stripe_runtime_policy",
+      "clientGrants": false,
+      "clientPolicies": 0,
+      "persistentTriggers": 0
+    }
+  ],
+  "reservedRoots": [
+    "resetPassword",
+    "forgotPassword",
+    "reset-password",
+    "forgot-password",
+    "login",
+    "signup",
+    "settings",
+    "install",
+    "unit",
+    "admin",
+    "form",
+    "order",
+    "scan",
+    "transfer",
+    "app",
+    "privacy",
+    "terms",
+    "support",
+    "delete-account",
+    "google-auth",
+    "stripe",
+    "assets",
+    "icons",
+    "flutter",
+    "index.html",
+    "flutter.html",
+    "favicon.ico",
+    "manifest.json",
+    "robots.txt",
+    "version.json",
+    "backend-activation.json"
+  ],
+  "schedulerEnabled": false,
+  "stripeMigrations": [
+    "20261022160000",
+    "20261022170000",
+    "20261022180000"
+  ],
+  "enabledStripePolicies": 0
+}

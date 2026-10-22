@@ -332,3 +332,20 @@ verify_jwt = false
 
 [functions.occasion-setup-email-preview]
 verify_jwt = true
+
+[functions.stripe-connect]
+verify_jwt = true
+[functions.stripe-connect-callback]
+verify_jwt = true
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.stripe-return]
+verify_jwt = false
+
+[functions.stripe-reconcile]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

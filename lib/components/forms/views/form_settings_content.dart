@@ -1,3 +1,7 @@
+import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
+import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import '../payment_method_strings.dart';
+import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'form_variable_symbol_settings.dart';
 
@@ -41,6 +45,9 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
+  // Preview fixtures can opt in; normal application builds keep the feature hidden.
+  final bool showCardPayments;
+  final Future<Map<String, dynamic>?> Function(int, int)? loadStripeRecipient;
   final ValueListenable<({int accountId, int revision})>? bankConnectionChanges;
   final Future<FormEditBundle?> Function(String)? loadBundle;
   final Future<void> Function(FormEditorDraft)? saveForm;
@@ -49,6 +56,8 @@ class FormSettingsContent extends StatefulWidget {
   const FormSettingsContent({
     super.key,
     this.formLink,
+    this.showCardPayments = StripeFeature.visible,
+    this.loadStripeRecipient,
     this.bankConnectionChanges,
     this.onActionCompleted,
     this.onDataUpdated,
@@ -65,6 +74,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   bool _deadlineInherited = true;
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
+        _bankEnabled,
+        _stripeConnectionId,
         _titleController.text,
         _linkController.text,
         _deadlineDaysController.text,
@@ -104,6 +115,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
   String _communicationTone = 'inherit';
+
+  bool _bankEnabled = true,
+      _stripeRecipientFailed = false,
+      _stripeRecipientLoaded = false,
+      _stripeRecipientLoading = false;
+  String? _stripeConnectionId;
+  Map<String, dynamic>? _stripeRecipient;
+  int _stripeReadGeneration = 0;
 
   String get _unitTone =>
       RightsService.currentUnit()?.data?[Tb.units.data_communication_tone] ==
@@ -203,6 +222,20 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     if (bundle != null) {
       _form = bundle.form;
+      final payments = _form!.definition.data?['payments'];
+      _bankEnabled = payments is! Map || payments['bankEnabled'] != false;
+      _stripeConnectionId =
+          payments is Map && payments['stripeConnectionId'] is String
+              ? payments['stripeConnectionId']
+              : null;
+      _stripeReadGeneration++;
+      _stripeRecipient = null;
+      _stripeRecipientFailed = false;
+      _stripeRecipientLoaded = false;
+      _stripeRecipientLoading = false;
+      if (widget.showCardPayments && _stripeConnectionId != null)
+        _loadStripeRecipient();
+
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
       _linkController.text = _form!.definition.link ?? '';
@@ -327,6 +360,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormDefinition.metaType: _paymentMessageType,
     };
 
+    if (metadata.containsKey('payments') ||
+        !_bankEnabled ||
+        _stripeConnectionId != null) {
+      metadata['payments'] = {
+        'bankEnabled': _bankEnabled,
+        if (_stripeConnectionId != null)
+          'stripeConnectionId': _stripeConnectionId
+      };
+    }
+
     if (_communicationTone == 'inherit') {
       metadata.remove(FormMetadata.metaCommunicationTone);
     } else {
@@ -378,6 +421,14 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _form?.definition = _form!.definition.copyWith(link: _savedLink);
       if (!mounted) return;
       var errorMessage = e.toString().replaceFirst("Exception: ", "");
+      if (errorMessage.contains('STRIPE_RECIPIENT_UNAVAILABLE'))
+        errorMessage = PaymentMethodStrings.reason('recipient_changed');
+      final stripeReason =
+          RegExp(r'STRIPE_CONFIGURATION_UNSUPPORTED:\s*([a-z_]+)')
+              .firstMatch(errorMessage)
+              ?.group(1);
+      if (stripeReason != null)
+        errorMessage = PaymentMethodStrings.reason(stripeReason);
       for (final code in [
         'CAPACITY_BELOW_COMMITTED',
         'WAITLIST_HAS_ACTIVE_ENTRIES',
@@ -642,6 +693,152 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     );
   }
 
+  Future<void> _loadStripeRecipient() async {
+    final generation = ++_stripeReadGeneration;
+    final unit = _form?.occasionModel?.unit,
+        occasion = _form?.definition.occasionId;
+    if (unit == null || occasion == null) return;
+    setState(() => _stripeRecipientLoading = true);
+    try {
+      final value = await (widget.loadStripeRecipient?.call(unit, occasion) ??
+          const SupabaseStripeConnectionApi().formRecipient(unit, occasion));
+      if (mounted && generation == _stripeReadGeneration)
+        setState(() {
+          _stripeRecipient = value;
+          _stripeRecipientLoaded = true;
+          _stripeRecipientFailed = false;
+        });
+    } catch (_) {
+      if (mounted && generation == _stripeReadGeneration)
+        setState(() {
+          _stripeRecipientFailed = true;
+          _stripeRecipientLoaded = true;
+        });
+    } finally {
+      if (mounted && generation == _stripeReadGeneration)
+        setState(() => _stripeRecipientLoading = false);
+    }
+  }
+
+  String? get _draftCardCompatibility {
+    if (_stripeRecipient?['unsupportedReason'] is String)
+      return _stripeRecipient!['unsupportedReason'];
+    final products = _form!.relatedFields
+        .where((field) => field.definition.isHidden != true)
+        .expand((field) =>
+            field.definition.productType?.products ?? <ProductModel>[])
+        .where((product) => product.isHidden != true)
+        .toList();
+    final currencies = products.map((product) => product.currencyCode).toSet();
+    if (currencies.length != 1 ||
+        !{'CZK', 'EUR', 'PLN', 'USD', 'GBP'}.contains(currencies.single))
+      return 'currency_unsupported';
+    if (products.any((product) =>
+        product.data?['deposit'] is Map &&
+        (num.tryParse(product.data!['deposit']['amount'].toString()) ?? 0) > 0))
+      return 'deposit_unsupported';
+    if (products.any((product) =>
+        product.data?['meta_surcharge'] is Map &&
+        (product.data!['meta_surcharge'] as Map).isNotEmpty))
+      return 'surcharge_unsupported';
+    return null;
+  }
+
+  Widget _buildPaymentMethods(BuildContext context) {
+    final recipient = _stripeRecipient;
+    final String? candidate = recipient?['connectionId'] is String
+        ? recipient!['connectionId']
+        : null;
+    final unit = _form?.occasionModel?.unit;
+    final canConnect = unit != null &&
+        unit == RightsService.currentUnit()?.id &&
+        StripeFeature.canManage;
+    final cardEnabled = _stripeConnectionId != null;
+    final compatibility = _draftCardCompatibility;
+    final canSelect = recipient?['modelVerified'] == true &&
+        {'connected', 'restricted'}.contains(recipient?['state']) &&
+        candidate != null &&
+        compatibility == null;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text(PaymentMethodStrings.text('title'),
+          style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 12),
+      PaymentMethodCards(
+        value: cardEnabled
+            ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.stripe)
+            : (_bankEnabled ? FormPaymentMethod.bank : null),
+        canSelectStripe: cardEnabled || canSelect,
+        onChanged: (method) => setState(() {
+          _bankEnabled = method != FormPaymentMethod.stripe;
+          // Keep an explicitly configured recipient, including stale ones,
+          // until the editor chooses its replacement below.
+          _stripeConnectionId = method == FormPaymentMethod.bank
+              ? null
+              : (_stripeConnectionId ?? candidate);
+        }),
+      ),
+      const SizedBox(height: 16),
+      if (!_bankEnabled && !cardEnabled)
+        Text(PaymentMethodStrings.text('noMethodSelected')),
+      if (_bankEnabled) ...[
+        Text(PaymentMethodStrings.text('bank'),
+            style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        _buildUsedBankAccounts(context),
+        const SizedBox(height: 16),
+      ],
+      Text(PaymentMethodStrings.text('stripe'),
+          style: Theme.of(context).textTheme.titleSmall),
+      const SizedBox(height: 8),
+      if (_stripeRecipientLoading) const LinearProgressIndicator(),
+      if (!_stripeRecipientLoaded || _stripeRecipientFailed)
+        TextButton(
+            onPressed: _stripeRecipientLoading ? null : _loadStripeRecipient,
+            child: Text(PaymentMethodStrings.text('checkAccount'))),
+      if (_stripeRecipientFailed)
+        Text(PaymentMethodStrings.reason('unavailable'))
+      else if (recipient == null && _stripeRecipientLoaded)
+        Text(PaymentMethodStrings.reason('not_configured')),
+      if (compatibility != null)
+        Text(PaymentMethodStrings.reason(compatibility)),
+      if (cardEnabled &&
+          _stripeRecipientLoaded &&
+          (recipient == null || candidate != _stripeConnectionId))
+        Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
+      if (recipient != null) ...[
+        if (recipient['modelVerified'] != true)
+          Text(PaymentMethodStrings.reason('model_unverified')),
+        if (recipient['name'] is String)
+          Text(!cardEnabled || candidate != _stripeConnectionId
+              ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
+              : PaymentMethodStrings.recipient(recipient['name'])),
+        if (recipient['paused'] == true)
+          Text(PaymentMethodStrings.reason('paused')),
+        if (recipient['chargesEnabled'] != true ||
+            recipient['cardPaymentsActive'] != true)
+          Text(PaymentMethodStrings.reason('stripe_restricted')),
+        if (cardEnabled && candidate != _stripeConnectionId) ...[
+          Text(PaymentMethodStrings.reason('recipient_changed')),
+          TextButton(
+              onPressed: canSelect
+                  ? () => setState(() => _stripeConnectionId = candidate)
+                  : null,
+              child: Text(PaymentMethodStrings.text('selectRecipient'))),
+        ],
+      ],
+      if (cardEnabled) ...[
+        Text(PaymentMethodStrings.text('fullAmount')),
+        Text(PaymentMethodStrings.reservation(1860))
+      ],
+      if (canConnect)
+        TextButton(
+            onPressed: () => pushRootPath(
+                context.router.root, '/unit/$unit/edit/card-payments'),
+            child: Text(PaymentMethodStrings.text('setupStripe'))),
+      const SizedBox(height: 16),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) => NavigationDraftBoundary(
         isDirty: () => _hasChanges,
@@ -842,7 +1039,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         .titleLarge,
                                   ),
                                   const SizedBox(height: 24),
-                                  _buildUsedBankAccounts(innerContext),
+                                  (widget.showCardPayments
+                                      ? _buildPaymentMethods(innerContext)
+                                      : _buildUsedBankAccounts(innerContext)),
                                   const SizedBox(height: 16),
                                   FormVariableSymbolSettings(
                                     value: {

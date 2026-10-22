@@ -4,6 +4,23 @@ import 'package:fstapp/router_service.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 
 void main() {
+  test('Stripe login continuation permits only its sanitized internal callback',
+      () {
+    expect(
+        RouterService.isStripeConnectionReturnPath('/stripe/connect/callback'),
+        isTrue);
+    for (final path in [
+      null,
+      '/',
+      '/unit/1/edit',
+      '//other.test/stripe/connect/callback',
+      'https://other.test/stripe/connect/callback',
+      '/stripe/connect/callback?code=private',
+      '/stripe/connect/callback#state=private'
+    ]) {
+      expect(RouterService.isStripeConnectionReturnPath(path), isFalse);
+    }
+  });
   test('Google continuation retains internal tab and calendar query only', () {
     const target =
         '/event-a/reservations/forms/second/responses?day=2026-10-03&preview-day=2026-10-10&filter=latest';

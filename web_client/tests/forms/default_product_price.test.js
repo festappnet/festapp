@@ -46,3 +46,17 @@ for (const maxTickets of [1, 3]) {
     });
   }
 }
+test('card product options, recap rows and floating total retain exact fractional prices',async()=>{
+ const {OptionBuilderHelper}=await import('../../src/components/forms/fields/option_builder_helper.js');
+ const {FieldPreviewFactory}=await import('../../src/components/forms/previews/field_preview_factory.js');
+ const option={id:20,title:'Admission',price:123.45,currency:'CZK'};
+ const model={payments:{configured:{stripe:true}}};
+ const row=OptionBuilderHelper.buildOptionWrapper({id:2,type:'product_type'},option,model,'radio',true);
+ assert.match(row.textContent,/123[,.]45/);
+ assert.match(FieldPreviewFactory.format({type:'product_type',options:[option]},20,{currency:'CZK',cardPricing:true}).price,/123[,.]45/);
+ document.body.innerHTML='';
+ const session=new dom.window.EventTarget();session.formModel=model;
+ const widget=new PriceWidget(session,document.body);
+ session.dispatchEvent(new dom.window.CustomEvent('state-changed',{detail:{totalPrice:123.45,totalItems:1,currency:'CZK',metaSurchargeSums:[]}}));
+ assert.match(document.body.textContent,/123[,.]45/);widget.destroy();
+});
