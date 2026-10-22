@@ -59,7 +59,7 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
       _timer?.cancel();
       _timer = null;
     } else {
-      // One clock owns both the card treatment and its sale status.
+      // Refresh the sale status as its time window changes.
       _timer ??= Timer.periodic(const Duration(seconds: 30), (_) {
         if (mounted) setState(() {});
       });
@@ -104,22 +104,14 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
     final isPast = occasionEnd != null && !now.isBefore(occasionEnd);
     final saleStatus = OccasionSaleStatus.resolve(occasion.saleForms,
         now: now, occasionEnd: occasionEnd);
-    final inactive = isPast ||
-        saleStatus != null &&
-            saleStatus.state != OccasionSaleState.selling &&
-            saleStatus.state != OccasionSaleState.waitlist;
     final showSaleBadge =
         !isPast && OccasionSaleBadge.isVisible(saleStatus, now);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final onSurfaceColor = theme.colorScheme.onSurface;
 
-    final baseCardColor = widget.backgroundColor ??
+    final cardColor = widget.backgroundColor ??
         (isDarkMode ? Colors.grey[850]! : theme.cardColor);
-    final cardColor = inactive
-        ? Color.alphaBlend(
-            theme.scaffoldBackgroundColor.withOpacity(0.35), baseCardColor)
-        : baseCardColor;
 
     // Use a glowing primary color border for present events, otherwise a standard border.
     final borderColor = widget.isPresent
@@ -174,7 +166,7 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                   Expanded(
                     child: Opacity(
                       key: const ValueKey('occasion-sale-content'),
-                      opacity: inactive ? 0.62 : 1,
+                      opacity: 1,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,

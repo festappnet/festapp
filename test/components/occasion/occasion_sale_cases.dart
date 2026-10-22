@@ -712,15 +712,15 @@ void main() {
                       height: 110,
                       child: OccasionEditCard(
                           occasion: occasion, onTap: () => opened++)))));
-      final inactive = state != null &&
-          state != OccasionSaleState.selling &&
-          state != OccasionSaleState.waitlist;
       expect(
           tester
               .widget<Opacity>(
                   find.byKey(const ValueKey('occasion-sale-content')))
               .opacity,
-          inactive ? lessThan(1.0) : equals(1.0));
+          equals(1.0));
+      final cardContext = tester.element(find.byType(OccasionEditCard));
+      expect(tester.widget<Card>(find.byType(Card)).color,
+          Theme.of(cardContext).cardColor);
       if (state == OccasionSaleState.waitlist) {
         expect(find.text('Náhradníci 1/2'), findsOneWidget);
         final info = tester.widget<Semantics>(find
