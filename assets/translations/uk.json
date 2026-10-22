@@ -1891,7 +1891,7 @@
     "paused": "Призупинено",
     "ended": "Продаж завершено",
     "finished": "Подія завершена",
-    "shortStartsIn": "Починається через {duration}",
+    "shortStartsIn": "Продаж через {duration}",
     "startsIn": "Продаж почнеться через {duration}",
     "endsIn": "Продаж закінчиться через {duration}",
     "startsSoon": "Продаж почнеться протягом хвилини",
@@ -1949,6 +1949,7 @@
     "seatSelection": "Вибір місць",
     "previousQuestion": "Попереднє запитання",
     "ticketing": {
+      "shortStartsIn": "Продаж через {duration}",
       "scheduled": "Попередній продаж заплановано",
       "selling": "У попереднього продажу",
       "soldOut": "Розпродано",
@@ -1982,6 +1983,7 @@
       "question": "Коли починається попередній продаж?"
     },
     "registration": {
+      "shortStartsIn": "Реєстрація через {duration}",
       "scheduled": "Реєстрація заплановано",
       "selling": "У реєстрації",
       "soldOut": "Розпродано",

@@ -3791,8 +3791,9 @@
     "retrySender": "Reload sender address",
     "seatSelection": "Seat selection",
     "previousQuestion": "Previous question",
-    "shortStartsIn": "Starts in {duration}",
+    "shortStartsIn": "Sales in {duration}",
     "ticketing": {
+      "shortStartsIn": "Sales in {duration}",
       "scheduled": "Ticket sale scheduled",
       "selling": "On ticket sale",
       "soldOut": "Sold out",
@@ -3826,6 +3827,7 @@
       "question": "When should ticket sales start?"
     },
     "registration": {
+      "shortStartsIn": "Registration in {duration}",
       "scheduled": "Registration scheduled",
       "selling": "On registration",
       "soldOut": "Sold out",

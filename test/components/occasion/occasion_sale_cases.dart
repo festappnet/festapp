@@ -774,7 +774,7 @@ void main() {
                             height: 110 + (scale - 1) * 64,
                             child: OccasionEditCard(
                                 occasion: occasion, onTap: () {}))))));
-        final label = find.text('Začíná za 3 dny');
+        final label = find.text('Prodej za 3 dny');
         expect(label, findsOneWidget);
         final date = find.byKey(const ValueKey('occasion-card-date'));
         expect(
@@ -878,10 +878,10 @@ void main() {
                             ))),
                   )));
       await tester.pumpAndSettle();
-      expect(find.text('Začíná za 2 dny'), findsOneWidget);
+      expect(find.text('Prodej za 2 dny'), findsOneWidget);
       expect(find.text('Proběhlo'), findsNothing);
       expect(find.byType(OccasionSaleBadge), findsNWidgets(2));
-      for (final label in ['Pozastaveno', 'Začíná za 2 dny']) {
+      for (final label in ['Pozastaveno', 'Prodej za 2 dny']) {
         expect(
             (tester.renderObject(find.text(label)) as RenderParagraph)
                 .didExceedMaxLines,

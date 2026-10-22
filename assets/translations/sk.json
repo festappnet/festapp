@@ -1745,7 +1745,7 @@
     "paused": "Pozastavené",
     "ended": "Ukončené",
     "finished": "Uskutočnené",
-    "shortStartsIn": "Začína o {duration}",
+    "shortStartsIn": "Predaj o {duration}",
     "startsIn": "Predaj začína o {duration}",
     "endsIn": "Predaj končí o {duration}",
     "startsSoon": "Predaj začne do minúty",
@@ -1803,6 +1803,7 @@
     "seatSelection": "Výber miest",
     "previousQuestion": "Predchádzajúca otázka",
     "ticketing": {
+      "shortStartsIn": "Predaj o {duration}",
       "scheduled": "Predpredaj naplánovaný",
       "selling": "V predpredaji",
       "soldOut": "Vypredané",
@@ -1836,6 +1837,7 @@
       "question": "Kedy sa má začať predpredaj?"
     },
     "registration": {
+      "shortStartsIn": "Registrácia o {duration}",
       "scheduled": "Prihlasovanie naplánovaný",
       "selling": "V prihlasovaniei",
       "soldOut": "Vypredané",

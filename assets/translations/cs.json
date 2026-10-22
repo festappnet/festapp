@@ -3793,8 +3793,9 @@
     "retrySender": "Znovu načíst adresu odesílatele",
     "seatSelection": "Výběr míst",
     "previousQuestion": "Předchozí otázka",
-    "shortStartsIn": "Začíná za {duration}",
+    "shortStartsIn": "Prodej za {duration}",
     "ticketing": {
+      "shortStartsIn": "Prodej za {duration}",
       "scheduled": "Předprodej naplánován",
       "selling": "V předprodeji",
       "soldOut": "Vyprodáno",
@@ -3828,6 +3829,7 @@
       "question": "Kdy má předprodej začít?"
     },
     "registration": {
+      "shortStartsIn": "Registrace za {duration}",
       "scheduled": "Přihlašování naplánováno",
       "selling": "Přihlašování probíhá",
       "soldOut": "Kapacita naplněna",
