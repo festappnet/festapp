@@ -10,14 +10,14 @@ function initHeroSketch(root, win, preference) {
   let disposed = false;
   function compose() {
     svg.setAttribute('viewBox', compact.matches ? '0 0 350 650' : '0 0 1200 650');
-    svg.setAttribute('preserveAspectRatio', compact.matches ? 'xMidYMid meet' : 'xMidYMid slice');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     lanes = ['left', 'right'].map((side, laneIndex) =>
       [...svg.querySelectorAll(`[data-sketch-side="${side}"]`)].map((element, motifIndex) => {
         const transform = compact.matches
           ? laneIndex === 0
-            ? motifIndex % 2 === 0 ? 'translate(-110 -95) scale(1.04)' : 'translate(178 -105) scale(1.02)'
-            : motifIndex % 2 === 0 ? 'translate(174 400) scale(1.04)' : 'translate(-140 400) scale(1.04)'
-          : laneIndex === 0 ? 'translate(-15 55) scale(1.05)' : 'translate(900 25) scale(1.05)';
+            ? motifIndex % 2 === 0 ? 'translate(12 0) scale(.62)' : 'translate(152 0) scale(.62)'
+            : motifIndex % 2 === 0 ? 'translate(152 410) scale(.62)' : 'translate(12 410) scale(.62)'
+          : laneIndex === 0 ? 'translate(30 60) scale(.88)' : 'translate(900 60) scale(.88)';
         element.setAttribute('transform', transform);
         element.dataset.sketchCorner = laneIndex === 0 ? motifIndex % 2 === 0 ? 'top-left' : 'top-right' : motifIndex % 2 === 0 ? 'bottom-right' : 'bottom-left';
         let total = 0;
