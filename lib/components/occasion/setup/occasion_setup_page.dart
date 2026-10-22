@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
 import '../../fonts/ticket_font_ids.dart';
@@ -856,6 +857,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         return true;
       case 3:
         if (d['formEnabled'] == false) return true;
+        if (!OccasionSetupStory.productPricesValid(d)) return false;
         if (includeCommunication && !communicationDraftValid(d)) return false;
         if (_formLinkAvailable == false ||
             (includePricing &&
@@ -1470,6 +1472,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(const MapEntry(1, 'Začátek a konec události nejsou platné.'));
     }
     if (d['formEnabled'] == true) {
+      if (!OccasionSetupStory.productPricesValid(d))
+        issues.add(MapEntry(3, OrdersStrings.priceValidationInvalid));
       if (!OccasionSetupSales.valid(d, DateTime.now()))
         issues.add(MapEntry(3, OccasionSetupSales.text(d, 'invalidTiming')));
       if (!communicationDraftValid(d))
@@ -2245,6 +2249,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 child: Text(OccasionSetupStrings.story('undoCopy')),
               ),
             if (formBundle != null) ...[
+              if (!OccasionSetupStory.productPricesValid(d))
+                Text(OrdersStrings.priceValidationInvalid,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 18),
               FormEditorContent.prototype(
                 key: ValueKey('${d['id']}-inline-form-$_formEpoch'),

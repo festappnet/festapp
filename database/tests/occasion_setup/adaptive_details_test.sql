@@ -29,6 +29,9 @@ BEGIN
  d:=public.save_occasion_setup_draft(draft,(d->>'revision')::bigint,payload,1);
  suggestion:=public.suggest_occasion_setup_form_link(draft,'Žluťoučký ples',NULL);
  PERFORM assert_eq(suggestion->>'suggestion','zlutoucky_ples_2090','Title normalization and event year');
+ PERFORM assert_eq(public.suggest_occasion_setup_form_link(draft,'QA Wizard - běžný průchod 2026-10-22',NULL)->>'suggestion','qa_wizard_bezny_pruchod_2026_10_22','Mixed separators become valid slug boundaries');
+ PERFORM assert_eq(public.suggest_occasion_setup_form_link(draft,'---',NULL)->>'suggestion','akce_2090','Punctuation-only title gets a valid fallback');
+ PERFORM assert_true((public.suggest_occasion_setup_form_link(draft,repeat('a',63)||' - konec',NULL)->>'suggestion') ~ '^[a-z0-9]+([-_][a-z0-9]+)*$','Truncation preserves valid boundaries');
  EXECUTE 'RESET ROLE';
  SELECT count(*) INTO count_before FROM public.form_link_reservations;
  -- Deleted historical URLs remain unavailable.
