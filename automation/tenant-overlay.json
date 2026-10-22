@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "0859506d613b31602190e866a6dd6b8d8d6dee6c",
+  "release": {
+    "version": "0.20.332+826",
+    "note": "Hidden Stripe unit discovery for unit 8"
+  }
+}
