@@ -1,6 +1,7 @@
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
+import '../../fonts/ticket_font_ids.dart';
 import 'occasion_setup_appearance_panel.dart';
 import 'occasion_setup_form_preview.dart';
 import 'occasion_setup_ticket_gallery.dart';
@@ -2352,8 +2353,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : Map<String, dynamic>.from(
                             (d['ticketDraft'] as Map)['layout']),
                     _ticketDraftFeature(d).ticketBackground);
-                final sharedFont = OccasionSetupAppearance
-                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
+                final sharedFont = legacyTicketFontIds[OccasionSetupAppearance
+                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']]];
                 if (sharedFont != null &&
                     !resources.fonts.containsKey(sharedFont)) {
                   resources.fonts[sharedFont] =
@@ -2373,10 +2374,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : 'wide': selection.value
                   }
                 };
-                feature['background'] = selection.background;
+                feature['background'] = null;
                 x['ticketDraft'] = feature;
                 x['ticketTemplateId'] = selection.key;
-                x['ticketTemplateSource'] = selection.source;
                 _ticketFeature = null;
               }, changesConfiguration: true),
             ),
@@ -2403,7 +2403,6 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'preserveSource': true
           };
           x.remove('ticketTemplateId');
-          x.remove('ticketTemplateSource');
           _editEpoch++;
         }, changesConfiguration: true);
       },
