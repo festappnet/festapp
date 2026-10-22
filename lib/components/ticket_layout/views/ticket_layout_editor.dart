@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cross_file/cross_file.dart';
 import '../../_shared/editor_file_drop_region.dart';
 import '../../_shared/editor_file_drop_strings.dart';
@@ -144,6 +146,8 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     controller.document = controller.prepareDocument!(controller.document);
     _lastArtworkKey = controller.artworkKey;
     controller.addListener(_refreshArtwork);
+    RightsService.occasionLinkModelNotifier.addListener(_checkResourceIdentity);
+    try {_authChanges=Supabase.instance.client.auth.onAuthStateChange.listen((_)=>_checkResourceIdentity());} catch (_) {}
     if (widget.showTemplatePicker) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) chooseStyle();
@@ -156,8 +160,19 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     setState(() => _lastArtworkKey = controller.artworkKey);
   }
 
+  StreamSubscription? _authChanges;
+  void _checkResourceIdentity() {
+    if(!mounted || resources.isValid) return;
+    final route = ModalRoute.of(context);
+    if(route != null) {
+      Navigator.of(context).popUntil((r)=>r==route);
+      Navigator.of(context).pop();
+    }
+  }
   @override
   void dispose() {
+    RightsService.occasionLinkModelNotifier.removeListener(_checkResourceIdentity);
+    _authChanges?.cancel();
     FocusManager.instance.removeEarlyKeyEventHandler(_globalHistoryKey);
     fontGeneration++;
     controller.dispose();
@@ -454,84 +469,120 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final presets = resources.presets.isEmpty
         ? {'classic': resources.preset}
         : resources.presets;
-    final previews = presets.map((key, value) => MapEntry(
+    final previews = presets.map(
+      (key, value) => MapEntry(
         key,
-        TicketLayoutController(value,
-            artworkKey: resources.artworks.containsKey(key) ? key : null)));
+        TicketLayoutController(
+          value,
+          artworkKey: resources.artworks.containsKey(key) ? key : null,
+        ),
+      ),
+    );
     String? selected;
     try {
       selected = await showDialog<String>(
-          context: editorContext,
-          builder: (context) => AppAlertDialog(
-                  onClose: () => Navigator.pop(context),
-                  title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(TicketLayoutStrings.styles),
-                        if (controller.document.elements
-                            .any((e) => e.binding == 'productType'))
-                          Text(
-                              TicketLayoutStrings.replacementProducts
-                                  .replaceAll(
-                                      '{count}',
-                                      controller.document.elements
-                                          .where(
-                                              (e) => e.binding == 'productType')
-                                          .length
-                                          .toString()),
-                              style: Theme.of(context).textTheme.bodyMedium)
-                      ]),
-                  content: SizedBox(
-                      width: 960,
-                      height: math.min(
-                          620, MediaQuery.sizeOf(context).height * .75),
-                      child: GridView.extent(
-                          maxCrossAxisExtent:
-                              MediaQuery.sizeOf(context).width < 600
-                                  ? 500
-                                  : 360,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 1.05,
-                          children: previews.entries
-                              .map((entry) => Card(
-                                  clipBehavior: Clip.antiAlias,
-                                  child: InkWell(
-                                      onTap: () =>
-                                          Navigator.pop(context, entry.key),
-                                      child: Column(children: [
-                                        Expanded(
-                                            child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(12),
-                                                child: FittedBox(
-                                                    child: CustomPaint(
-                                                        size: entry.value
-                                                            .document.area.size,
-                                                        painter: TicketLayoutPainter(
-                                                            entry.value,
-                                                            resources,
-                                                            resources.previewData(
-                                                                entry.value
-                                                                    .document,
-                                                                scenario),
-                                                            cropToTicket:
-                                                                true))))),
-                                        Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: Text(
-                                                resources.artworks[entry.key]
-                                                        ?.label ??
-                                                    TicketLayoutStrings.binding(
-                                                        'style_${entry.key}'),
-                                                textAlign: TextAlign.center))
-                                      ]))))
-                              .toList())),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(TicketLayoutStrings.cancel))
-                  ]));
+        context: editorContext,
+        builder: (context) => AppAlertDialog(
+          onClose: () => Navigator.pop(context),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(TicketLayoutStrings.styles),
+              if (controller.document.elements.any(
+                (e) => e.binding == 'productType',
+              ))
+                Text(
+                  TicketLayoutStrings.replacementProducts.replaceAll(
+                    '{count}',
+                    controller.document.elements
+                        .where((e) => e.binding == 'productType')
+                        .length
+                        .toString(),
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+            ],
+          ),
+          content: SizedBox(
+            width: 960,
+            height: math.min(620, MediaQuery.sizeOf(context).height * .75),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent:
+                    MediaQuery.sizeOf(context).width < 600 ? 500 : 360,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.05,
+              ),
+              cacheExtent: 0,
+              itemCount: previews.length,
+              itemBuilder: (context, index) {
+                final entry = previews.entries.elementAt(index);
+                return FutureBuilder<void>(
+                  future: resources.prepareStyle(entry.key),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError)
+                      return Card(
+                        child: Center(
+                          child: Text(TicketLayoutStrings.missingBackground),
+                        ),
+                      );
+                    if (snapshot.connectionState != ConnectionState.done)
+                      return const Card(
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context, entry.key),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: FittedBox(
+                                  child: CustomPaint(
+                                    size: entry.value.document.area.size,
+                                    painter: TicketLayoutPainter(
+                                      entry.value,
+                                      resources,
+                                      resources.previewData(
+                                        entry.value.document,
+                                        scenario,
+                                      ),
+                                      cropToTicket: true,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Text(
+                                resources.artworks[entry.key]?.label ??
+                                    TicketLayoutStrings.binding(
+                                      'style_${entry.key}',
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(TicketLayoutStrings.cancel),
+            ),
+          ],
+        ),
+      );
     } finally {
       for (final controller in previews.values) {
         controller.dispose();
@@ -539,11 +590,13 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     }
     if (selected != null && mounted) {
       setState(() => propertyDefaults = presets[selected!]!);
-      controller.replace(presets[selected]!,
-          artworkKey:
-              resources.artworks.containsKey(selected) ? selected : null);
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => canvas.currentState?.fit());
+      controller.replace(
+        presets[selected]!,
+        artworkKey: resources.artworks.containsKey(selected) ? selected : null,
+      );
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => canvas.currentState?.fit(),
+      );
     }
   }
 

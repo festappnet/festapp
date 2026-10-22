@@ -12,7 +12,7 @@ export const galleryBackgrounds: Record<string, string | null> = {
   festival_badge: `${root}festival-badge-v3.png`, workshop_card: `${root}workshop-card-v3.png`,
 };
 // Retain already selected v1 sources when a draft is reopened.
-const backgroundFiles = new Set(['silk-ivory-v1.jpg','aurora-v1.png','midnight-v1.png','coral-v1.png',
+export const backgroundFiles = new Set(['silk-ivory-v1.jpg','aurora-v1.png','midnight-v1.png','coral-v1.png',
   ...['concert-stub','festival-poster','club-panorama','theatre-program','gallery-square','boarding-pass'].map(name=>`${name}-v2.png`),
   ...Object.values(galleryBackgrounds).filter((url):url is string=>url!==null).map(url=>url.slice(root.length))]);
 const font = (family: string) => {

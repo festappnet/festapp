@@ -22,7 +22,7 @@ function setup(shared=new Map<string,Uint8Array>()) {
 }
 Deno.test('20 concurrent selections deduplicate, 100 renders stay warm, restart reads persistent bytes',async()=>{
   const s=setup();const fonts=await Promise.all(Array.from({length:20},()=>s.resolver.resolve(assets[0].id)));
-  assertEquals([s.counts.fetch,s.counts.create,s.counts.inspect],[1,1,1]);
+  assertEquals([s.counts.fetch,s.counts.create,s.counts.inspect],[1,2,1]);
   const t=preset('named');t.fontId=assets[0].id;
   const resource=fonts[0];
   const render=await prepareTicketRenderer({id:7,features:[{code:'ticket',ticket_type:'named',layout:{schemaVersion:3,templates:{named:t}}}]},{},{},{
@@ -30,16 +30,16 @@ Deno.test('20 concurrent selections deduplicate, 100 renders stay warm, restart 
   });
   for(let i=0;i<100;i++){await s.resolver.resolve(resource.id);await render({ticket_symbol:'12341A2C3E'});}
   assertEquals(s.counts.fetch,1);
-  const cold=setup(s.shared);assertEquals(await digest((await cold.resolver.resolve(resource.id)).bytes),await digest(resource.bytes));assertEquals([cold.counts.fetch,cold.counts.read],[0,1]);
+  const cold=setup(s.shared);assertEquals(await digest((await cold.resolver.resolve(resource.id)).bytes),await digest(resource.bytes));assertEquals([cold.counts.fetch,cold.counts.read,cold.counts.inspect],[0,2,0]);
   fonts[0].bytes.fill(0);assertEquals(await digest((await s.resolver.resolve(resource.id)).bytes),assets[0].sha256);
 });
 Deno.test('isolate create conflict verifies the winner, LRU evicts, failures retry after bounded backoff',async()=>{
   const store=new Map<string,Uint8Array>();const a=setup(store),b=setup(store);
   const result=await Promise.all([a.resolver.resolve(assets[0].id),b.resolver.resolve(assets[0].id)]);
-  assertEquals(await digest(result[0].bytes),await digest(result[1].bytes));assertEquals(store.size,1);
+  assertEquals(await digest(result[0].bytes),await digest(result[1].bytes));assertEquals(store.size,2);
   const s=setup();const resolver=new TicketFontResolver(s.deps,{count:1,bytes:24000000,parallel:1,timeout:8000,cap:8388608});
   await Promise.all(assets.map(a=>resolver.resolve(a.id)));assertEquals(s.counts.maximum,1);
-  const before=s.counts.read;await resolver.resolve(assets[0].id);assertEquals(s.counts.read,before+1);assertEquals(s.counts.fetch,3);
+  const before=s.counts.read;await resolver.resolve(assets[0].id);assertEquals(s.counts.read,before+2);assertEquals(s.counts.fetch,3);
   const failed=setup();failed.deps.fetch=async()=>{failed.counts.fetch++;throw Error('offline');};
   await assertRejects(()=>failed.resolver.resolve(assets[0].id),TicketFontError,'font_provider');
   await assertRejects(()=>failed.resolver.resolve(assets[0].id),TicketFontError,'font_retry_backoff');assertEquals(failed.counts.fetch,1);
@@ -106,7 +106,7 @@ Deno.test('default global concurrency is four and byte-budget eviction uses pers
  s.deps.fetch=async url=>{active++;maximum=Math.max(maximum,active);await new Promise(r=>setTimeout(r,2));active--;return new Response(data.get(String(url).split('/').at(-1)!.split('.')[0])!.slice().buffer);};
  const resolver=new TicketFontResolver(s.deps);await Promise.all([...metadata.keys()].map(id=>resolver.resolve(id)));assertEquals(maximum,4);
  const bounded=new TicketFontResolver(s.deps,{count:32,bytes:70,parallel:4,timeout:8000,cap:8388608});
- const ids=[...metadata.keys()];await bounded.resolve(ids[0]);await bounded.resolve(ids[1]);const reads=s.counts.read;await bounded.resolve(ids[0]);assertEquals(s.counts.read,reads+1);
+ const ids=[...metadata.keys()];await bounded.resolve(ids[0]);await bounded.resolve(ids[1]);const reads=s.counts.read;await bounded.resolve(ids[0]);assertEquals(s.counts.read,reads+2);
 });
 Deno.test('persistent writes are awaited; write errors and corrupt race winners fail closed',async()=>{
  const s=setup();let release!:()=>void;const gate=new Promise<void>(r=>release=r);let done=false;
@@ -120,4 +120,25 @@ Deno.test('new variable fonts cannot bypass the historical bundled exception',as
  const bytes=await Deno.readFile('test/fixtures/ticket_fonts/Roboto-Slab-variable.ttf');const hash=await digest(bytes);const id=`gf:${hash}`;
  const s=setup();delete s.deps.inspect;s.deps.lookup=async()=>({...assets[1],id,sha256:hash,byteLength:bytes.length});s.deps.fetch=async()=>new Response(bytes.slice().buffer);
  await assertRejects(()=>s.resolver.resolve(id),TicketFontError,'font_unsupported');assertEquals(s.counts.create,0);
+});
+Deno.test('missing sidecar prepares once, restart forbids inspection, corrupt sidecar fails closed',async()=>{
+ const s=setup();await s.resolver.resolve(assets[0].id);
+ const cold=setup(s.shared);cold.deps.inspect=()=>{throw Error('cold parsing forbidden');};
+ await cold.resolver.resolve(assets[0].id);assertEquals(cold.counts.create,0);
+ const key=`sha256/${assets[0].sha256}.metrics-v1.json`;
+ cold.shared.set(key,new TextEncoder().encode('{}'));
+ await assertRejects(()=>new TicketFontResolver(cold.deps).resolve(assets[0].id),TicketFontError,'font_prepared_integrity');
+ s.shared.delete(key);const historical=setup(s.shared);await Promise.all([historical.resolver.resolve(assets[0].id),historical.resolver.resolve(assets[0].id)]);assertEquals(historical.counts.inspect,1);assertEquals(historical.counts.create,1);
+});
+Deno.test('all build-prepared fonts remain cold-readable without inspection or PDF probing',async()=>{
+ const manifest=JSON.parse(await Deno.readTextFile('supabase/functions/_shared/ticket-assets/preview-manifest.json'));
+ const {preparedFont}=await import('./ticketPreparedFont.ts');
+ for(const entry of Object.entries(manifest.fonts) as [string,any][]){
+  const [id,a]=entry;
+  const resolver=new TicketFontResolver({store:{read:()=>{throw Error('private read forbidden');},create:()=>{throw Error('import forbidden');}},fetch:()=>{throw Error('network forbidden');},
+   bundled:()=>Deno.readFile('supabase/functions/_shared/ticket-assets/'+a.file),
+   prepared:async()=>new TextEncoder().encode(JSON.stringify({...await preparedFont(a.sha256,a.metrics),metricsDigest:a.metricsDigest})),
+   inspect:()=>{throw Error('font parsing/PDF probe forbidden');}});
+  const result=await resolver.resolve(id);assertEquals(await digest(result.bytes),a.sha256);assertEquals(result.metrics,a.metrics);
+ }
 });

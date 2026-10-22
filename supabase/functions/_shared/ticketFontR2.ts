@@ -8,7 +8,7 @@ export function createTicketFontR2Store(secret: () => string | undefined, reques
   const target = new URL(endpoint);
   if ((target.protocol !== 'https:' && !(target.protocol === 'http:' && ['127.0.0.1', 'localhost', 'host.lima.internal', 'host.docker.internal'].includes(target.hostname))) || target.username || target.password || target.search || target.hash || !target.pathname.endsWith('/service/ticket-fonts/')) throw new TicketFontError('font_storage_config');
   async function send(key: string, bytes?: Uint8Array): Promise<Response> {
-    if (!/^sha256\/[a-f0-9]{64}\.(ttf|woff)$/.test(key)) throw new TicketFontError('font_storage_key');
+    if (!/^sha256\/[a-f0-9]{64}\.(ttf|woff|metrics-v1\.json)$/.test(key)) throw new TicketFontError('font_storage_key');
     const token = secret();
     if (!token || token.length < 32) throw new TicketFontError('font_storage_config');
     const headers: Record<string, string> = { Authorization: `Bearer ${token}` };

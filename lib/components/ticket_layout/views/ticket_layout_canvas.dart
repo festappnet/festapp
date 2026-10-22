@@ -798,6 +798,7 @@ class TicketLayoutPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (!resources.isValid) return;
     final doc = controller.document;
     canvas.save();
     if (cropToTicket) {

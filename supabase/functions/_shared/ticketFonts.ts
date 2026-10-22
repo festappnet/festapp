@@ -1,3 +1,4 @@
+import {preparedFont, readPreparedFont} from './ticketPreparedFont.ts';
 import * as fontkit from 'npm:fontkit';
 import { PDFDocument } from 'npm:pdf-lib';
 import catalog from './ticket-assets/font-catalog.json' with {type:'json'};
@@ -44,6 +45,7 @@ export function fontMetrics(bytes:Uint8Array):FontMetrics {
 export interface FontStore {read(key:string):Promise<Uint8Array|null>; create(key:string,bytes:Uint8Array):Promise<boolean>}
 export interface FontDependencies {
   store:FontStore; fetch:typeof fetch; bundled(asset:FontAsset):Promise<Uint8Array|null>;
+  prepared?:(asset:FontAsset)=>Promise<Uint8Array|null>;
   lookup?(id:string):Promise<FontAsset|null>; now?:()=>number;
   inspect?:(bytes:Uint8Array,asset:FontAsset)=>Promise<FontMetrics>;
   event?:(event:{id:string;source:string;bytes:number;duration:number})=>void;
@@ -72,10 +74,13 @@ export class TicketFontResolver {
     }
     const font=await promise;return {...font,bytes:font.bytes.slice()};
   }
-  private async validate(bytes:Uint8Array,a:FontAsset):Promise<FontMetrics>{
+  private async integrity(bytes:Uint8Array,a:FontAsset):Promise<void>{
     if(bytes.length>this.limits.cap||bytes.length!==a.byteLength||await digest(bytes)!==a.sha256)throw new TicketFontError('font_integrity');
     const sig=String.fromCharCode(...bytes.slice(0,4));
     if(!(sig==='OTTO'||sig==='wOFF'||bytes[0]===0&&bytes[1]===1&&bytes[2]===0&&bytes[3]===0))throw new TicketFontError('font_format');
+  }
+  private async validate(bytes:Uint8Array,a:FontAsset):Promise<FontMetrics>{
+    await this.integrity(bytes,a);
     if(this.deps.inspect)return this.deps.inspect(bytes,a);
     try{
       const parsed=fontkit.create(bytes);
@@ -83,15 +88,40 @@ export class TicketFontResolver {
       const metrics=fontMetrics(bytes);const doc=await PDFDocument.create();doc.registerFontkit(fontkit);await doc.embedFont(bytes);await doc.save();return metrics;
     }catch{throw new TicketFontError('font_unsupported');}
   }
+  private async metrics(bytes:Uint8Array,a:FontAsset,bundled:boolean,imported?:FontMetrics):Promise<FontMetrics>{
+    await this.integrity(bytes,a);
+    const key=`sha256/${a.sha256}.metrics-v1.json`;
+    const saved=bundled?await this.deps.prepared?.(a):await this.deps.store.read(key);
+    if(saved){
+      try{return (await readPreparedFont(saved,a.sha256)).metrics;}catch{throw new TicketFontError('font_prepared_integrity');}
+    }
+    // Only a trusted first import prepares resources. Bundled production reads
+    // always supply a build manifest and fail closed if it is incomplete.
+    if(bundled&&this.deps.prepared)throw new TicketFontError('font_prepared_missing');
+    const metrics=imported??await this.validate(bytes,a);
+    if(!bundled){
+      const content=new TextEncoder().encode(JSON.stringify(await preparedFont(a.sha256,metrics)));
+      if(!await this.deps.store.create(key,content)){
+        const winner=await this.deps.store.read(key);
+        if(!winner)throw new TicketFontError('font_storage_conflict');
+        try{
+          const verified=await readPreparedFont(winner,a.sha256);
+          if(verified.metricsDigest!==(await preparedFont(a.sha256,metrics)).metricsDigest)throw new Error();
+          return verified.metrics;
+        }catch{throw new TicketFontError('font_prepared_integrity');}
+      }
+    }
+    return metrics;
+  }
   private async load(id:string):Promise<TicketFont>{
     const now=this.deps.now??Date.now;const start=now();
     const a=fontCatalog.find(f=>f.id===id)??await this.deps.lookup?.(id);
     if(!a||a.id!==id||! /^[a-f0-9]{64}$/.test(a.sha256)||a.byteLength<1||a.byteLength>this.limits.cap||!['ttf','woff'].includes(a.extension))throw new TicketFontError('font_unknown');
     if(a.source==='google'&&(id!==`gf:${a.sha256}`||a.extension!=='ttf'))throw new TicketFontError('font_unknown');
     let source='bundled';let bytes=await this.deps.bundled(a);let metrics:FontMetrics;
-    if(bytes){metrics=await this.validate(bytes,a);}else{
+    if(bytes){metrics=await this.metrics(bytes,a,true);}else{
       const key=`sha256/${a.sha256}.${a.extension}`;bytes=await this.deps.store.read(key);source='storage';
-      if(bytes){metrics=await this.validate(bytes,a);}else{
+      if(bytes){metrics=await this.metrics(bytes,a,false);}else{
         if(a.source!=='google')throw new TicketFontError('font_asset_missing');source='provider';
         const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),this.limits.timeout);
         try{
@@ -102,8 +132,9 @@ export class TicketFontResolver {
           while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>this.limits.cap){await reader.cancel();throw new TicketFontError('font_size');}chunks.push(value);}
           bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
         }catch(e){if(e instanceof TicketFontError)throw e;throw new TicketFontError(controller.signal.aborted?'font_timeout':'font_provider');}finally{clearTimeout(timer);}
-        metrics=await this.validate(bytes,a);
-        if(!await this.deps.store.create(key,bytes)){const winner=await this.deps.store.read(key);if(!winner)throw new TicketFontError('font_storage_conflict');metrics=await this.validate(winner,a);bytes=winner;}
+        const imported=await this.validate(bytes,a);
+        if(!await this.deps.store.create(key,bytes)){const winner=await this.deps.store.read(key);if(!winner)throw new TicketFontError('font_storage_conflict');await this.integrity(winner,a);bytes=winner;}
+        metrics=await this.metrics(bytes,a,false,imported);
       }
     }
     this.deps.event?.({id,source,bytes:bytes.length,duration:now()-start});

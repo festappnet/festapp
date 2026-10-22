@@ -2337,7 +2337,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 if (!await _flush())
                   throw StateError('Koncept se nepodařilo uložit');
                 final service = TicketLayoutService()
-                    .forSetupDraft(_stored.id, _stored.unit)
+                    .forSetupDraft(_stored.id, _stored.unit, revision: _stored.revision)
                     .withPreviewOccasion(TicketPreviewOccasion(
                         title: d['title'] as String,
                         startTime: DateTime.tryParse(d['start'] as String),
@@ -2417,6 +2417,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               service: TicketLayoutService().forSetupDraft(
                 _stored.id,
                 _stored.unit,
+                revision: _stored.revision,
               ),
               productEditing: false,
               showScanningSettings: false,

@@ -1,4 +1,8 @@
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:fstapp/components/images/image_control_client.dart';
+import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
 import '../../support/editor_file_drop.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:cross_file/cross_file.dart';
@@ -132,6 +136,92 @@ class BackgroundDropService extends FakeService {
 }
 
 void main() {
+  test('private image reads keep credentials on the configured Worker origin', () async {
+    final requests=<http.Request>[];
+    final client=ImageControlClient(endpoint:'https://image-api.festapp.net',projectId:'default',httpClient:MockClient((r) async {
+      requests.add(r);return http.Response.bytes([1,2,3],200);
+    }));
+    await client.download('https://image-api.festapp.net/private/test?projectId=default',accessToken:'synthetic-token');
+    expect(requests.single.headers['Authorization'],'Bearer synthetic-token');
+    expect(requests.single.followRedirects,false);
+    await client.download('https://img.festapp.net/images/test.jpg',accessToken:'synthetic-token');
+    expect(requests.last.headers['Authorization'],null);
+    await expectLater(client.download('https://other.invalid/private/test',accessToken:'synthetic-token'),throwsFormatException);
+    expect(requests.length,2);
+  });
+  test('unsupported metadata never retries legacy resolve; late identity changes fail closed', () async {
+    var calls=0;
+    final unsupported=TicketLayoutService(transport:(body) async {calls++;return {};});
+    await expectLater(unsupported.resolve(7,'wide',null,null),throwsFormatException);
+    expect(calls,1);
+    final old=RightsService.occasionLinkModelNotifier.value;
+    addTearDown(()=>RightsService.occasionLinkModelNotifier.value=old);
+    final pending=Completer<Map<String,dynamic>>();
+    final service=TicketLayoutService(transport:(_) =>pending.future);
+    final result=service.resolve(7,'wide',null,null);
+    RightsService.occasionLinkModelNotifier.value=OccasionLinkModel.fromJson({'capabilities':{'ticket_layouts.read':true}});
+    // Returning to the same scope must not revive an earlier request.
+    RightsService.occasionLinkModelNotifier.value=old;
+    pending.complete({'resourceProtocol':3});
+    await expectLater(result,throwsStateError);
+    RightsService.occasionLinkModelNotifier.value=old;
+  });
+
+  testWidgets('local preview raster evidence uses production canvas and exact generated resources', (tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() async {
+    final dir=Platform.environment['TICKET_PREVIEW_EVIDENCE_DIR'];
+    if(dir==null) return;
+    final cases=jsonDecode(File('$dir/contexts.json').readAsStringSync()) as List;
+    for(final item in cases) {
+      final service=TicketLayoutService(transport:(body) async=>Map<String,dynamic>.from(item['reply']));
+      final r=await service.resolve(7,'wide',null,null);
+      final c=TicketLayoutController(r.template);
+      final recorder=ui.PictureRecorder();
+      final painter=TicketLayoutPainter(c,r,r.previewData(r.template,item['scenario']));
+      painter.paint(Canvas(recorder),r.template.page);
+      final picture=recorder.endRecording();
+      final image=await picture.toImage(r.template.page.width.ceil(),r.template.page.height.ceil());
+      final png=await image.toByteData(format:ui.ImageByteFormat.png);
+      await File('$dir/${item['name']}-canvas.png').writeAsBytes(png!.buffer.asUint8List());
+      image.dispose();picture.dispose();c.dispose();r.dispose();
+    }
+    expect(cases.length,20);
+    });
+  },skip:Platform.environment['TICKET_PREVIEW_EVIDENCE_DIR']==null);
+
+  test('metadata transport loads active resources only and gallery stays local', () async {
+    final calls=<Map<String,dynamic>>[];
+    final base=document();
+    final service=TicketLayoutService(transport:(body) async {
+      calls.add(body);
+      expect(body['mode'],'resolve');
+      expect(body['resourceProtocol'],3);
+      return {'resourceProtocol':3,'template':base.toJson(),'preset':base.toJson(),
+        'fontIds':[legacyTicketFontIds[base.font]],'scenarios':fixture['scenarios'],
+        'catalog':[],'backgroundUrl':null,'logoUrl':null};
+    });
+    final parallel=await Future.wait([service.resolve(7,'wide',null,null),service.resolve(7,'wide',null,null)]);
+    final r=parallel.first;parallel.last.dispose();
+    expect(r.artworks.values.every((a)=>a.image==null),true);
+    expect(r.fonts.length,1);
+    final manifest=await TicketPreviewAssets.shared.manifest;
+    expect(r.presets.keys,(manifest['presets'] as Map).keys);
+    await r.prepareStyle('concert_stub');
+    final image=r.artworks['concert_stub']!.image;
+    expect(image,isNotNull);
+    final same=await TicketPreviewAssets.shared.image(r.artworks['concert_stub']!.background!);
+    expect(same!.isCloneOf(image!),true);same.dispose();
+    await r.prepareStyle('concert_stub');
+    expect(identical(image,r.artworks['concert_stub']!.image),true);
+    expect(calls.length,1);
+    final clone=r.clone();
+    r.dispose();
+    expect(clone.artworks['concert_stub']!.image!.width,greaterThan(0));
+    clone.dispose();
+    expect(clone.isValid,false);
+  });
+
   test('draft ticket preview context scopes resolve and PDF but not catalog or saved previews', () async {
     final calls = <Map<String, dynamic>>[];
     final service = TicketLayoutService(transport: (body) async {
@@ -923,7 +1013,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   test(
-      'shared Dart registration reuses bytes for A/B/A across service instances',
+      'private font access is reauthorized across service instances',
       () async {
     // These real fixture faces belong only to this registration scenario.
     // Roboto is also loaded by blueprint groups, so it is not a cold-cache input.
@@ -952,10 +1042,10 @@ void main() {
         second = TicketLayoutService(transport: transport);
     final a = assets.keys.first, b = assets.keys.last;
     final concurrent = await Future.wait([first.font(1, a), second.font(1, a)]);
-    expect(identical(concurrent[0], concurrent[1]), true);
+    expect(identical(concurrent[0], concurrent[1]), false);
     await first.font(1, b);
-    expect(identical(await first.font(1, a), concurrent[0]), true);
-    expect(calls, [a, b]);
+    expect(identical(await first.font(1, a), concurrent[0]), false);
+    expect(calls, [a, a, b, a]);
     expect(concurrent[0].loaderName, 'TicketFont_${a.split(':').last}');
   });
 
@@ -1367,7 +1457,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TicketLayoutEditor), findsNothing,
         reason: 'system back closes a clean editor');
-    expect(service.resolveCalls, 2,
+    expect(service.resolveCalls, 1,
         reason: 'cancel does not reload the thumbnail');
     expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -1390,7 +1480,7 @@ void main() {
     Navigator.of(tester.element(find.byType(TicketLayoutEditor)))
         .pop(TicketLayoutResult(changed, null));
     await tester.pumpAndSettle();
-    expect(service.resolveCalls, 4);
+    expect(service.resolveCalls, 2);
     expect(tester.widget<FilledButton>(edit).onPressed, isNotNull,
         reason: 'thumbnail refresh must not block editing');
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -2070,6 +2160,11 @@ void main() {
     controller.dispose();
   });
   setUpAll(() async {
+    await TicketPreviewAssets.shared.manifest;
+    if(Platform.environment['TICKET_PREVIEW_EVIDENCE_DIR']!=null) {
+      final m=await TicketPreviewAssets.shared.manifest;
+      for(final id in (m['fonts'] as Map).keys) await TicketLayoutService().font(7,id);
+    }
     // Load the same catalog used by the app. An uninitialized translator returns
     // raw keys and floods otherwise passing widget tests with missing-key warnings.
     _environment = WidgetEnvironmentFixture(
@@ -2098,7 +2193,20 @@ void main() {
       for (final entry in (layout['templates'] as Map).entries) {
         final d = TicketTemplate.fromJson(entry.value);
         expect(d.validate(entry.key), isEmpty);
-        expect(d.toJson(), entry.value);
+        final expected=copyTicketJson((entry.value as Map).cast<String,dynamic>());
+        // Flutter Rect stores coordinates as Float32. Preserve the contract's
+        // exact fields/text while allowing sub-millipoint round-trip rounding.
+        void rect(Map box, double tolerance) {
+          for(final field in ['x','y','width','height']) {
+            box[field]=closeTo((box[field] as num).toDouble(),tolerance);
+          }
+        }
+        rect(expected['ticketArea'] as Map,.001);
+        for(final element in (expected['elements'] as List).cast<Map>()) {
+          rect(element['box'] as Map,.001);
+        }
+        if(expected['backgroundCrop'] != null) rect(expected['backgroundCrop'] as Map,.000001);
+        expect(d.toJson(), expected);
       }
     }
     final allowed = (jsonDecode(

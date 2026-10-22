@@ -73,6 +73,13 @@ class DbImages {
         .deleteLinks([imageUrl], token);
   }
 
+  static Future<Uint8List> downloadImage(String imageUrl) => ImageControlClient(
+        endpoint: AppConfig.imageApiUrl,
+        projectId: AppConfig.imageProjectId,
+        httpClient: _httpClient,
+      ).download(imageUrl,
+          accessToken: _supabase.auth.currentSession?.accessToken);
+
   static Future<String> createCopyOfImage(
       String imageUrl, int? occasion, int? unit) async {
     // Copies and uploads share the canonical Worker writer.

@@ -1,3 +1,6 @@
+import 'package:fstapp/components/occasion/setup/occasion_setup_ticket_gallery.dart';
+import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -75,11 +78,46 @@ Map<String, dynamic> candidate() => {
 void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
-  setUpAll(() => environment = WidgetEnvironmentFixture(
+  late TicketLayoutResources galleryResources;
+  var galleryContextCalls=0;
+  setUpAll(() async {
+    final manifest=await TicketPreviewAssets.shared.manifest;
+    for(final id in (manifest['fonts'] as Map).keys) await TicketLayoutService().font(7,id);
+    final template=(manifest['presets'] as Map)['classic'];
+    final fixture=jsonDecode(File('test/fixtures/ticket_layout/resolve.json').readAsStringSync());
+    final service=TicketLayoutService(transport:(body) async {
+      galleryContextCalls++;expect(body['resourceProtocol'],3);
+      return {'resourceProtocol':3,'template':template,'preset':template,
+        'fontIds':[template['fontId']],'scenarios':fixture['scenarios'],
+        'catalog':[],'backgroundUrl':null,'logoUrl':null};
+    });
+    galleryResources=await service.resolve(7,'wide',null,null);
+    for(final id in (manifest['fonts'] as Map).keys) galleryResources.fonts[id]=await service.font(7,id);
+    environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
       translations:
           jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-              as Map<String, dynamic>));
+              as Map<String, dynamic>);
+  });
+
+  testWidgetsWithEnvironment(() => environment,
+      'setup ticket gallery uses local fonts and presets after one metadata request', (tester) async {
+    MapEntry<String,Map<String,dynamic>>? selected;
+    TicketLayoutResources? loaded;
+    await environment.pumpWidget(tester, MaterialApp(home:Scaffold(body:SingleChildScrollView(
+      child:OccasionSetupTicketGallery(
+        appearance:const {'id':'custom','preserveSource':true},
+        loadResources:() async => loaded=galleryResources.clone(),
+        onSelected:(value)=>selected=value)))));
+    await tester.pumpAndSettle();
+    final card=find.byKey(const ValueKey('setup-ticket-template-concert_stub'));
+    await tester.ensureVisible(card);await tester.tap(card);await tester.pumpAndSettle();
+    expect(selected!.key,'concert_stub');expect(galleryContextCalls,1);
+    expect(loaded!.artworks.values.every((a)=>a.image==null),true);
+    expect(tester.takeException(),null);
+  });
+
+  tearDownAll(()=>galleryResources.dispose());
 
   test('form replacement requires explicit product and ticket-group choices',
       () {

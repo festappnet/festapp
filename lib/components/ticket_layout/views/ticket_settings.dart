@@ -1,3 +1,4 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
@@ -56,12 +57,15 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void didUpdateWidget(covariant TicketSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (jsonEncode(oldWidget.previewOccasion?.toJson()) !=
-        jsonEncode(widget.previewOccasion?.toJson())) {
-      if (widget.showPreview) refresh();
-    }
+    if(widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey) refresh();
   }
 
+  Future<void>? _loading;
+  String? _thumbnailKey;
+  String get _contextKey => jsonEncode([TicketLayoutService.identityKey(),
+    widget.occasionId, widget.service.setupDraftId, widget.service.setupRevision, type,widget.feature.layout,
+    widget.feature.ticketBackground,widget.previewOccasion?.toJson(),widget.readOnly,
+    widget.borrowResourcesOnly,RightsService.currentOccasion()?.aggregateVersion]);
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
   bool busy = false;
@@ -74,6 +78,8 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
+    try {_authChanges=Supabase.instance.client.auth.onAuthStateChange.listen((_)=>_contextChanged());} catch (_) {}
     if (widget.showPreview)
       WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
   }
@@ -81,12 +87,23 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void dispose() {
     generation++;
+    RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
+    _authChanges?.cancel();
     thumbnail?.dispose();
     thumbnailController?.dispose();
     super.dispose();
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh() {
+    if(_loading != null) return _loading!;
+    final key=_contextKey;
+    return _loading = _refreshPreview().whenComplete(() {
+      _loading=null;
+      if(mounted && widget.showPreview && key != _contextKey) unawaited(refresh());
+    });
+  }
+  Future<void> _refreshPreview() async {
+    final key = _contextKey;
     final request = ++generation;
     if (unsupported) return;
     await ExceptionHandler.guard(context, futureFunction: () async {
@@ -94,13 +111,14 @@ class _TicketSettingsState extends State<TicketSettings> {
           widget.feature.layout, widget.feature.ticketBackground,
           borrowResourcesOnly: widget.borrowResourcesOnly,
           readOnly: widget.readOnly);
-      if (!mounted || request != generation) {
+      if (!mounted || request != generation || key != _contextKey) {
         next.dispose();
         return;
       }
       final old = thumbnail, oldController = thumbnailController;
       setState(() {
         thumbnail = next;
+        _thumbnailKey = key;
         thumbnailController = TicketLayoutController(next.template);
       });
       old?.dispose();
@@ -108,6 +126,15 @@ class _TicketSettingsState extends State<TicketSettings> {
     });
   }
 
+  StreamSubscription? _authChanges;
+  void _contextChanged() {
+    if(!mounted || thumbnail == null) return;
+    if(!thumbnail!.isValid) {
+      generation++;
+      setState(() {thumbnail?.dispose();thumbnail=null;_thumbnailKey=null;});
+    }
+    if(widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey) unawaited(refresh());
+  }
   bool _editorOpen = false;
   bool _restoredPanel = false;
   @override
@@ -136,9 +163,10 @@ class _TicketSettingsState extends State<TicketSettings> {
     _refresh(() => busy = true);
     try {
       await ExceptionHandler.guard(context, futureFunction: () async {
-        final r = await service.resolve(widget.occasionId, type,
-            widget.feature.layout, widget.feature.ticketBackground,
-            borrowResourcesOnly: widget.borrowResourcesOnly);
+        if(_loading != null) await _loading;
+        if(thumbnail == null || _thumbnailKey != _contextKey) await refresh();
+        if(thumbnail == null || _thumbnailKey != _contextKey) return;
+        final r = thumbnail!.clone();
         if (!mounted) {
           r.dispose();
           return;
@@ -214,6 +242,7 @@ class _TicketSettingsState extends State<TicketSettings> {
       });
     } finally {
       _editorOpen = false;
+      if(mounted && widget.showPreview && _thumbnailKey != _contextKey) unawaited(refresh());
       final root =
           context.findAncestorWidgetOfExactType<RouterScope>()?.controller.root;
       if (root != null && mounted)

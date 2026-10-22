@@ -1,8 +1,9 @@
+import {readPreparedFont} from '../../../supabase/functions/_shared/ticketPreparedFont';
 import type { Env } from './types';
 import { equalServiceSecret } from './service-auth';
 
 const MAX_BYTES = 8 * 1024 * 1024;
-const KEY = /^sha256\/([a-f0-9]{64})\.(ttf|woff)$/;
+const KEY = /^sha256\/([a-f0-9]{64})\.(ttf|woff|metrics-v1\.json)$/;
 
 /** Dedicated server-to-server capability: immutable font read/create only.
  * No browser/User JWT, list, delete, arbitrary key or public bucket access.
@@ -46,7 +47,13 @@ export async function handleTicketFonts(request: Request, env: Env): Promise<Res
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
   const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), b => b.toString(16).padStart(2, '0')).join('');
-  if (hash !== match[1]) return reply(422);
+  if(match[2]==='metrics-v1.json'){
+    try {await readPreparedFont(bytes,match[1]);}catch{return reply(422);}
+    // A sidecar can only attest an already published immutable font.
+    const font=await env.IMAGES_PRIVATE_BUCKET.head(`ticket-fonts/sha256/${match[1]}.ttf`)
+      ??await env.IMAGES_PRIVATE_BUCKET.head(`ticket-fonts/sha256/${match[1]}.woff`);
+    if(!font)return reply(409);
+  }else if (hash !== match[1]) return reply(422);
   const created = await env.IMAGES_PRIVATE_BUCKET.put(storageKey, bytes, {
     onlyIf: { etagDoesNotMatch: '*' },
     httpMetadata: { contentType: 'application/octet-stream' },

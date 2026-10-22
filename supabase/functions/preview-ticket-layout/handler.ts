@@ -1,10 +1,10 @@
-import {prepareLayoutTextResources} from '../_shared/layoutTextResources.ts';
+import type {prepareLayoutTextResources} from '../_shared/layoutTextResources.ts';
 import { documentLimits, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { AuthError } from '../_shared/authError.ts';
 import QRCode from 'npm:qrcode';
 import { Buffer } from 'node:buffer';
 import { PDFDocument } from 'npm:pdf-lib';
-import { parseLayout, preset, ticketPresets, TicketType } from '../_shared/ticketLayout.ts';
+import { parseLayout, preset, ticketPresets, defaultTicketTemplate, effectiveFontId, TicketType } from '../_shared/ticketLayout.ts';
 import {ticketGallery, galleryBackgrounds, galleryBackground} from '../_shared/ticketGallery.ts';
 import { sampleData, type ProductCatalog, validateProductReferences } from '../_shared/ticketRenderData.ts';
 import { loadLayoutResources, generateTicketPdf, resolveTicketTemplate } from '../_shared/ticketGeneration.ts';
@@ -49,8 +49,9 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       ? typeof setupDraftId==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(setupDraftId)&&occasionId===undefined&&['layout-text','font','resolve','pdf','catalog'].includes(mode)&&!('borrowResourcesOnly' in body)&&body.readOnly!==true
       : Number.isSafeInteger(occasionId)&&occasionId>0;
     if(!validContext||!['resolve','pdf','font','catalog','layout-text'].includes(mode)||(!['font','catalog','layout-text'].includes(mode)&&!['wide','named'].includes(type))||!['normal','long','missing'].includes(scenario)||'requestSecret' in body || 'ticketId' in body) return reply(400,{error:'Invalid preview request'});
-    if(setup&&['resolve','pdf','catalog'].includes(mode)&&Object.keys(body).some(k=>!['setupDraftId','mode','type','scenario','fontProtocol','layout','background','previewOccasion'].includes(k)))return reply(400,{error:'Invalid draft preview request'});
+    if(setup&&['resolve','pdf','catalog'].includes(mode)&&Object.keys(body).some(k=>!['setupDraftId','mode','type','scenario','fontProtocol','resourceProtocol','layout','background','previewOccasion'].includes(k)))return reply(400,{error:'Invalid draft preview request'});
     if(setup&&['font','layout-text'].includes(mode)&&('layout' in body||'background' in body))return reply(400,{error:'Invalid draft resource request'});
+    if(mode==='resolve'&&body.resourceProtocol!==undefined&&body.resourceProtocol!==3)return reply(400,{error:'ticket_resource_protocol_unsupported'});
     const readOnly=body.readOnly===true;
     if ('previewOccasion' in body && (readOnly || !['resolve','pdf'].includes(mode) || !validPreviewOccasion(body.previewOccasion))) return reply(400,{error:'Invalid draft preview context'});
     if(readOnly&&(mode!=='resolve'||'layout' in body||'background' in body||'borrowResourcesOnly' in body))return reply(400,{error:'Saved preview does not accept edits'});
@@ -66,6 +67,7 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     };
     if(mode==='layout-text'){
       if(body.resourceProtocol!==2||!deps.font||!deps.registerLayoutTextResources||Object.keys(body).some(k=>!['occasionId','setupDraftId','mode','resourceProtocol','batch'].includes(k)))return reply(400,{error:'layout_text_request'});
+      const {prepareLayoutTextResources}=await import('../_shared/layoutTextResources.ts');
       const resources=await prepareLayoutTextResources(body.batch,deps.font);
       const response=boundedReply(200,resources);
       await deps.registerLayoutTextResources(setup?{setupDraftId}:{occasionId},resources);
@@ -99,6 +101,25 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
     if(body.fontProtocol!==2)return reply(400,{error:'ticket_font_protocol_unsupported'});
     if(layout)feature.layout=layout;
     if(layout&&!catalogError)for(const template of Object.values(layout.templates))validateProductReferences(template,products);
+    const previewOccasion=body.previewOccasion===undefined?occasion:{
+      ...occasion,
+      title:body.previewOccasion.title,
+      start_time:body.previewOccasion.start_time??null,
+      end_time:body.previewOccasion.end_time??null,
+      data:{...occasion.data,place_name:body.previewOccasion.data?.place_name??null},
+    };
+    // Protocol 3 is metadata-only. In particular, do not enter the legacy
+    // resource/gallery/PDF path, even on a cold worker or a missing asset.
+    if(mode==='resolve'&&body.resourceProtocol===3){
+      if(!layout&&feature.background)return reply(400,{error:'ticket_layout_migration_required'});
+      const initial=defaultTicketTemplate(type as TicketType);
+      if(/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??''))for(const e of initial.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
+      const template=layout?.templates[type as TicketType]??initial;
+      const fontIds=[...new Set([effectiveFontId(template),...template.elements.filter(e=>e.visible&&!['qr','logo'].includes(e.binding)).map(e=>effectiveFontId(template,e))])];
+      return boundedReply(200,{resourceProtocol:3,template,preset:template,galleryColor:/^[0-9A-Fa-f]{6}$/.test(feature.darkColor??'')?feature.darkColor:null,fontIds,catalogError,catalog:[...products.types.values()],backgroundUrl:layout?.templates[type as TicketType]||type==='wide'?feature.background??null:null,logoUrl:occasion.data?.logo??null,
+        scenarios:Object.fromEntries(['normal','long','missing'].map(s=>[s,sampleData(s,previewOccasion,products)]))});
+    }
+    // External compatibility boundary for already distributed clients only.
     const resources=await deps.resources(occasion,feature,{allowMissingBackground:mode==='resolve'&&!readOnly});
     let template=layout?.templates[type as TicketType];
     let width=1600,height=900;
@@ -111,13 +132,6 @@ export async function handlePreview(req:Request,deps:PreviewDependencies):Promis
       for(const t of colored)for(const e of t.elements)if(e.binding!=='qr')e.style.color=feature.darkColor;
     }
     template??=initial;
-    const previewOccasion=body.previewOccasion===undefined?occasion:{
-      ...occasion,
-      title:body.previewOccasion.title,
-      start_time:body.previewOccasion.start_time??null,
-      end_time:body.previewOccasion.end_time??null,
-      data:{...occasion.data,place_name:body.previewOccasion.data?.place_name??null},
-    };
     const data=sampleData(scenario,previewOccasion,catalogError?undefined:products,template);
     const qr=QRCode.create(data[template.elements.find(e=>e.binding==='qr')!.id]!,{errorCorrectionLevel:'M'}).modules;
     const presetArtwork:Record<string,{background:string|null;image:string|null}>={};

@@ -130,8 +130,19 @@ boundaries is a blanket permission to disable authentication on another route.
 
 The pinned router includes the complete `ticket-assets` tree in worker static
 files, including gallery backgrounds and gallery fonts. `preview-ticket-layout`
-and `process-email-queue` use bounded 20 s soft / 30 s hard CPU budgets for cold
-font loading and PDF work; other routes retain the runtime defaults.
+and `process-email-queue` retain bounded 20 s soft / 30 s hard CPU budgets;
+other routes retain the runtime defaults. The preview allowance is intentionally
+retained by the user's 2026-10-22 instruction.
+
+New ticket clients opt into `resourceProtocol: 3` for authorized metadata-only
+resolve. This path loads no font/image bytes, gallery, QR matrix or PDF and
+imports the shaping engine only for explicit `layout-text` requests. Existing
+released clients retain their binary resolve protocol. Built-in font metrics
+come from the generated, checked preview manifest. The existing private font
+R2 transport accepts immutable `.metrics-v1.json` sidecars only from its trusted
+service capability, after the font bytes exist. Read/hash/shape/version checks
+fail closed; there is no public font bucket or browser sidecar writer. Deploy
+the extended private Worker and Functions before a protocol-3 client.
 
 Canonical production uses the reviewed self-hosted Function bundle, not
 `supabase functions deploy` to a cloud project.

@@ -343,3 +343,33 @@ Deno.test('gallery supplies independent artwork, bundled font metrics and preser
   assertEquals(result.presets.ball_silk.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'222A31');
   assertEquals(result.presets.club_panorama.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'F5F4EF');
 });
+Deno.test('protocol 3 cold and repeated resolves never enter font/image/PDF resources',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('resource loader forbidden');};s.deps.font=()=>{throw Error('font parser forbidden');};
+ for(let i=0;i<10;i++){
+  const response=await handlePreview(req({...body,resourceProtocol:3}),s.deps);
+  assertEquals(response.status,200);const result=await response.json();
+  assertEquals(result.resourceProtocol,3);assertEquals(result.fontIds,[futuraId]);
+  for(const key of ['fonts','font','metrics','background','logo','presets','presetArtwork','qrMatrix'])assertEquals(result[key],undefined);
+  assert(result.scenarios.normal.qr.startsWith('festapp-preview:'));
+ }
+ assertEquals(s.counts(),[10,0,10]);
+ const denied=setup(false);assertEquals((await handlePreview(req({...body,resourceProtocol:3}),denied.deps)).status,403);assertEquals(denied.counts(),[0,0,0]);
+ assertEquals((await handlePreview(req({...body,resourceProtocol:99}),s.deps)).status,400);
+});
+Deno.test('protocol 3 retains read-only and setup scope and draft synthetic text',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('forbidden resources');};
+ const saved=await handlePreview(req({...body,resourceProtocol:3,readOnly:true}),s.deps);assertEquals(saved.status,200);
+ const id='00000000-0000-0000-0000-000000000007';
+ s.deps.authorizeSetupDraft=async()=>admission;
+ s.deps.setupDraft=async()=>({occasion:{title:'Draft',features:[]},products:{types:new Map(),products:new Map()}});
+ const input={setupDraftId:id,mode:'resolve',type:'wide',fontProtocol:2,resourceProtocol:3,previewOccasion:{title:'Český návrh'}};
+ const result=await handlePreview(req(input),s.deps);assertEquals(result.status,200);assertEquals((await result.json()).scenarios.normal.occasionTitle,'Český návrh');
+ assertEquals((await handlePreview(req({...input,occasionId:7}),s.deps)).status,400);
+});
+Deno.test('metadata retains a saved template and ignores inactive named background',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('resource loader forbidden');};
+ const wide=preset('wide');
+ s.deps.occasion=async()=>({id:7,features:[{code:'ticket',ticket_type:'named',layout:{schemaVersion:3,templates:{wide}},background:'https://img.festapp.net/images/old-wide.png'}]});
+ const result=await handlePreview(req({...body,resourceProtocol:3}),s.deps);assertEquals(result.status,200);const j=await result.json();assertEquals(j.backgroundUrl,null);
+ const saved=await handlePreview(req({...body,type:'wide',resourceProtocol:3}),s.deps);const current=await saved.json();assertEquals(current.preset,wide);assertEquals(current.template,wide);assertEquals(current.backgroundUrl,'https://img.festapp.net/images/old-wide.png');
+});

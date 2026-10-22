@@ -13,6 +13,8 @@ BUILD_WEB_DIR="$PROJECT_ROOT/build/web"
 WEB_CLIENT_DIST_DIR="$PROJECT_ROOT/web_client/dist"
 cd "$PROJECT_ROOT"
 
+deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check
+
 # Every production build must reach the image service using this tenant's
 # actual domain and project, before compiling another unusable application.
 node automation/verify_image_service.mjs

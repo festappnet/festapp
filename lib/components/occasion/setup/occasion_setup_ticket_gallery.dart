@@ -39,16 +39,19 @@ class _OccasionSetupTicketGalleryState
       resources.dispose();
       throw StateError('Gallery closed');
     }
-    // Borrow immutable fonts/logo; original resources retain ownership.
+    // Each resource owner retains its own image handles.
+    _styledResources?.dispose();
     _styledResources = TicketLayoutResources(
         template: resources.template,
+        identity: resources.identity,
+        loadFonts: resources.loadFonts,
         preset: resources.preset,
         presets: resources.presets,
         scenarios: resources.scenarios,
         metrics: resources.metrics,
         fonts: resources.fonts,
         catalog: resources.catalog,
-        logo: resources.logo,
+        logo: resources.logo?.clone(),
         qrSize: resources.qrSize,
         qrModules: resources.qrModules);
     _resources?.dispose();
@@ -59,6 +62,8 @@ class _OccasionSetupTicketGalleryState
   @override
   void dispose() {
     _resources?.dispose();
+    _styledResources?.dispose();
+    for(final controller in _controllers.values) controller.dispose();
     super.dispose();
   }
 
@@ -105,6 +110,7 @@ class _OccasionSetupTicketGalleryState
                   ]));
         },
       );
+  final _controllers = <String,TicketLayoutController>{};
   Widget _card(BuildContext context, TicketLayoutResources resources,
       MapEntry<String, TicketTemplate> entry, double width,
       {bool current = false}) {
@@ -112,7 +118,11 @@ class _OccasionSetupTicketGalleryState
         ? entry.value.toJson()
         : OccasionSetupAppearance.styledTemplate(
             entry.value.toJson(), widget.appearance);
-    final controller = TicketLayoutController(TicketTemplate.fromJson(raw));
+    final previous=_controllers[entry.key];
+    final template=TicketTemplate.fromJson(raw);
+    final controller=previous != null && previous.document == template ? previous : TicketLayoutController(template);
+    if(previous != controller) previous?.dispose();
+    _controllers[entry.key]=controller;
     final selected = current || widget.selectedId == entry.key;
     final label = current
         ? 'Aktuální vstupenka'
@@ -141,8 +151,12 @@ class _OccasionSetupTicketGalleryState
                   children: [
                     SizedBox(
                         height: 180,
-                        child: FittedBox(
-                            child: CustomPaint(
+                        child: FutureBuilder<void>(
+                          future: (current ? resources : _styledResources!).prepareTemplate(controller.document),
+                          builder:(context,snapshot) {
+                            if(snapshot.hasError) return const Text('Písmo náhledu se nepodařilo načíst.');
+                            if(snapshot.connectionState != ConnectionState.done) return const Center(child:CircularProgressIndicator());
+                            return FittedBox(child: CustomPaint(
                           size: controller.document.area.size,
                           painter: TicketLayoutPainter(
                               controller,
@@ -150,7 +164,8 @@ class _OccasionSetupTicketGalleryState
                               resources.previewData(
                                   controller.document, 'normal'),
                               cropToTicket: true),
-                        ))),
+                        ));}),
+                    ),
                     const SizedBox(height: 12),
                     Row(children: [
                       Expanded(child: Text(label)),

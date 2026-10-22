@@ -2,9 +2,27 @@
 
 The editor paints the bitmap background, logo, QR modules and all text locally
 in Flutter. Drag, resize, font changes, zoom, undo, cancel and Apply do not
-request or render PDF. `preview-ticket-layout` in `resolve` mode supplies the
-server-owned preset, synthetic scenarios, font bytes/advance metrics and QR
-matrix. Images are decoded once when their source changes.
+request or render PDF. `preview-ticket-layout` resolve with `resourceProtocol: 3`
+supplies only the authorized template, synthetic scenarios, product catalog,
+font identities and active image references. It never loads gallery resources,
+parses fonts, shapes text or generates PDF. Flutter creates the synthetic QR
+locally with correction level M. Unsupported resource protocols fail explicitly;
+new clients never retry the legacy binary resolve.
+
+`automation/tickets/generate-preview-assets.ts` generates the shared
+`ticket-assets/preview-manifest.json` from the PDF presets, exact font bytes and
+retained artwork versions. Run it with `--check` to verify drift; CI and the web
+build enforce this check. Flutter bundles the same assets for web and native.
+The gallery starts loading only when opened, and loads visible editor cards.
+`TicketPreviewAssets` verifies digests and owns a public image LRU capped at
+24 MiB and 16 images; each session owns disposable clones. Settings and editor
+reuse one authorized context. In-flight resolves deduplicate per context,
+identity, scope and revision; metadata is never an authorization grant.
+
+Private fonts are authorized on each missing-resource request and are absent
+from the global public registration cache. Identity/capability changes discard
+session references and late results. Private images use the existing image
+Worker with the user's JWT, no redirects and no public URL conversion.
 
 `ticketGeneration.ts` resolves saved layout data and resources; `drawLayoutTicket`
 (in `generateTicket.ts`) is the sole PDF renderer. Download, email and PDF preview
@@ -15,7 +33,14 @@ rejects legacy artwork configurations awaiting materialization. Saved layouts
 and ordered product snapshots remain authoritative.
 
 Bundled fonts (`futura`, `robotoSlab`, `roboto`, `russoOne`) are selected once per
-ticket. The server supplies the same font bytes and metrics to Flutter and PDF.
+ticket. The generated manifest supplies their exact bytes and metrics to Flutter and PDF.
+Build generation performs the PDF embedding probe. Other registered fonts use
+the existing private R2 namespace: a trusted first import publishes immutable
+bytes followed by a versioned, digest-checked metrics sidecar. Ordinary reads,
+including after worker restart, reuse this prepared resource without parsing
+or PDF probing. Corrupt resources fail closed. `font` and explicit `layout-text`
+retain their authorization; the old binary resolve survives only as an external
+compatibility boundary for released clients.
 Templates can store `flow` element IDs and `flowStep` to compact missing detail rows;
 all ordinary presets retain fixed positions. QR contrast compares both colors.
 
@@ -90,7 +115,7 @@ Do not apply unrelated pending migrations or deploy other tenant branches.
 
 ## Style choices and alignment
 
-Resolve includes classic, compact and event-title layouts, plus a portrait
+The generated local catalog includes classic, compact and event-title layouts, plus a portrait
 layout with a ticket-sized PDF. The portrait choice clears the bitmap. The gallery renders
 local thumbnails with the same font, event data and images as the canvas.
 Selecting one copies geometry into the draft and is a single undo step; no PDF
@@ -393,7 +418,7 @@ twelve use ticket-sized pages, independently of the legacy storage slot.
 Their immutable `https://img.festapp.net/ticket-presets/v1/` identities resolve
 from bundled bytes in `ticket-assets/backgrounds`, including when a saved ticket
 is rendered for email or download. No upload or external image host is needed.
-`presetArtwork` supplies each gallery entry's source and decoded preview bytes;
+`preview-manifest.json` maps each entry to its local source bytes and digest;
 the selected source is saved through the ordinary background field. The two
 curated Google Fonts are bundled with licenses and verified against the canonical
 font catalog hashes. Regenerate procedural gradients with
@@ -406,3 +431,10 @@ The gallery opens directly from disk and includes source references and QR
 palettes. Each design pairs its QR ink with an opaque, contrasting backing and
 a four-module quiet zone; the existing validators own print constraints. Its graphic
 perforation marks do not request physical finishing from a printer.
+
+
+The local resource cutover and remaining release gates are recorded in
+[`ticket-preview-local-resources-RESULT-2026-10-22.md`](../../../docs/plans/ticket-preview-local-resources-RESULT-2026-10-22.md).
+The higher preview CPU budget remains intentionally enabled by the user's
+2026-10-22 instruction. The email worker budget and recursive runtime assets
+remain unchanged.
