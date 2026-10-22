@@ -4,7 +4,7 @@ import 'scout_hall.dart';
 import 'cinema_hall.dart';
 import 'scout_balcony_hall.dart';
 import 'reference_templates.dart';
-import 'approved_round_ball.dart';
+import 'selected_studio_documents.dart';
 
 /// An editable layout preset. Every creation allocates fresh identities.
 class LayoutTemplate {
@@ -121,9 +121,9 @@ VenueLayoutDocument localizeLayoutDefaultLabels(
 
 /// Version 1 of the package-owned geometric template library.
 abstract final class VenueLayoutTemplates {
-  static const version = 9;
-  static const defaultId = 'reference-belvedere';
-  static final List<LayoutTemplate> all = List.unmodifiable([
+  static const version = 10;
+  static const defaultId = 'blank';
+  static final List<LayoutTemplate> _catalog = List.unmodifiable([
     for (final spec in referenceTemplateSpecs)
       LayoutTemplate(
         spec.id,
@@ -139,7 +139,23 @@ abstract final class VenueLayoutTemplates {
       'Dvanáct kulatých stolů po osmi místech a pódium',
       96,
       0,
-      approvedRoundBall,
+      () => selectedStudioTemplate('studio-tables'),
+    ),
+    LayoutTemplate(
+      'studio-gala',
+      'Zahradní gala',
+      'Kulaté stoly kolem parketu, lounge a bar',
+      96,
+      0,
+      () => selectedStudioTemplate('studio-gala'),
+    ),
+    LayoutTemplate(
+      'studio-arena',
+      'Koncert ze všech stran',
+      'Čtyři obloukové sektory kolem centrálního pódia',
+      96,
+      0,
+      () => selectedStudioTemplate('studio-arena'),
     ),
     LayoutTemplate(
       'scout-ball-182',
@@ -265,18 +281,30 @@ abstract final class VenueLayoutTemplates {
       () => _Seed().finish(),
     ),
   ]);
-  static final List<LayoutTemplate> recommended = List.unmodifiable([
-    for (final id in [
-      'reference-belvedere',
-      'reference-lipoltice',
-      'reference-brandys',
-      'reference-lucerna',
-      'studio-tables',
-      'blank',
-    ])
-      byId(id),
+
+  /// User-approved creation catalogue, shared by every picker.
+  static const selectedIds = [
+    'blank',
+    'scout-ball-182',
+    'scout-ball-balcony-249',
+    'bus',
+    'double-decker',
+    'train',
+    'studio-tables',
+    'studio-gala',
+    'reference-lipoltice',
+    'reference-belvedere',
+    'auditorium',
+    'cinema-galaxy',
+    'reference-brandys',
+    'studio-arena',
+    'reference-lucerna',
+  ];
+  static final List<LayoutTemplate> all = List.unmodifiable([
+    for (final id in selectedIds) byId(id),
   ]);
-  static LayoutTemplate byId(String id) => all.firstWhere(
+  static final List<LayoutTemplate> recommended = all;
+  static LayoutTemplate byId(String id) => _catalog.firstWhere(
     (t) => t.id == id,
     orElse: () =>
         throw ArgumentError.value(id, 'id', 'Unknown layout template'),

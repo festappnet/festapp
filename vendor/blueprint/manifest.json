@@ -2,9 +2,9 @@
   "documentVersion": 2,
   "resourceProtocol": 2,
   "archives": {
-    "venue_layout_core.tar.gz": "bdb47f2b614f9f48dfed0fd93c406fd6b80da78a0b92ae5efcac8696a2e3ebf4",
-    "venue_seat_picker.tar.gz": "f6dafe21f5fdec9450dbbf30606b498b91888fb1b54c5e2ad795605ba62e1846",
-    "festapp-venue-layout-0.3.5-9d4940ac75e1.tgz": "9d4940ac75e12f44d72109973675abbef06487c42077f5b029a184b0b6ed20dc"
+    "venue_layout_core.tar.gz": "d095167c82c35847549df7d60e98043954c2f274c5f50e76900dccd0d6e7f294",
+    "venue_seat_picker.tar.gz": "40f79afbc0d69a78a1d441b8cdcac55f7d37d3698ce28a04e6de9134852ea69b",
+    "festapp-venue-layout-0.3.5-cf8a064e84d9.tgz": "cf8a064e84d93becefc0c41ff0a02ff49e239ffc6fa8196694709f69a64960fb"
   },
   "files": {
     "venue_layout_core/CHANGELOG.md": "3382515bd5e3e7b9e4a3de36bb77cdb019480d38866b4d807e2204637ca996a9",
@@ -103,7 +103,7 @@
     "venue_seat_picker/assets/layout_fonts/Roboto-Slab-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "venue_seat_picker/assets/layout_fonts/Roboto-Slab.ttf": "0cde4b95c95fe0bd4090d396d48c3db57ff1d666fcb20907ecb713816e630e30",
     "venue_seat_picker/assets/layout_fonts/Roboto.ttf": "7f3ec5073a282c666c9a0063573345841229caf50ed34d33017e20d441bf5caf",
-    "venue_seat_picker/assets/layout_fonts/fixtures.json": "cc91489cf03fe82e653670b895a21473c919c4febb480d70b0a4e957b0639068",
+    "venue_seat_picker/assets/layout_fonts/fixtures.json": "d92619359e31da7c24fc06e6259533977dbf48b899dc63a5332b24f93c53860b",
     "venue_seat_picker/assets/layout_fonts/manifest.json": "8063a7de961f6f4f05661c342286fe896993de6b2b78385701b2a3eff1ad90f6",
     "venue_seat_picker/doc/backend-integration.md": "e7415ef22d5a13f30805d4f91d1a40e9df8c3f3318a4251b3beae18cc094c414",
     "venue_seat_picker/doc/blueprint-v2/AUDIT-2026-10-18.md": "acf7c121eae6f262d62d2eb2b13807f9812242d2daaac4d13e6ef57b6304d5af",
@@ -191,7 +191,7 @@
     "venue_seat_picker/lib/src/model/venue_seat_document.dart": "56ae834925656cdfd97947b839441dfaa112fda1166aeb7ba81973963785f877",
     "venue_seat_picker/lib/src/templates/approved_round_ball.dart": "8013dc34d68b2604137c56b4f948d90e2b06a62b234627f52b938a9cf99634db",
     "venue_seat_picker/lib/src/templates/cinema_hall.dart": "97d1b9bdb1eea5855e43661e2424340df831c1a984b57ca374de850f953ba9a6",
-    "venue_seat_picker/lib/src/templates/layout_templates.dart": "61e047f696cfa957917884f001409ce42c175d43d3fcfef36810a9a94829d4f5",
+    "venue_seat_picker/lib/src/templates/layout_templates.dart": "98208449e0a602a8e8b0c44aac3495a18a43ba96a984ecc6aa34ae2be86fdb1c",
     "venue_seat_picker/lib/src/templates/reference_geometry.dart": "412f1957333349ed0104355d583dd097de89462df3e60cfc6edfb2ca973cf9ff",
     "venue_seat_picker/lib/src/templates/reference_hall_seating.dart": "508a4e80addef235b2e2b08e82cb87a2b287d6e11208e72ec44edac84e67ebfd",
     "venue_seat_picker/lib/src/templates/reference_templates.dart": "fd9ee3b170602f1826e833cb0bbb8bc95deea69df960b141e1576752df0cc7cc",
@@ -199,6 +199,7 @@
     "venue_seat_picker/lib/src/templates/scout_balcony_reference_data.dart": "9681d41dad6c0b75d11583b8a9f9fe178f743231485f3b1fd073017a23b93bae",
     "venue_seat_picker/lib/src/templates/scout_hall.dart": "ceacc5b41b0459ffe1030dac520ae985c492a3dacf3fbddac915e8a5f735fdff",
     "venue_seat_picker/lib/src/templates/scout_reference_data.dart": "d6d902ad23c2596c954c8520d71fe023f1025c21b9efc4509bd7689ccac82e1a",
+    "venue_seat_picker/lib/src/templates/selected_studio_documents.dart": "c2bf59c63483f9eaf4e4d54732383585cc3dbbbfd7248db14a0e32b34afca9d4",
     "venue_seat_picker/lib/src/widgets/venue_seat_editor.dart": "1bc683bac0c3327192664dd832ad225fd0856733cc9581a31e722e7783bb5638",
     "venue_seat_picker/lib/src/widgets/venue_seat_marker.dart": "c2ca182a94a33a725041ffed7b3bdb35872d6ea53d558ad57c562252991ab795",
     "venue_seat_picker/lib/src/widgets/venue_seat_picker.dart": "bca56f1bbb65558d9a5d0411c1915170fa46e87176d31679aec594ca22abbdde",
@@ -218,7 +219,7 @@
     "venue_seat_picker/test/layout/qa_raster_test.dart": "0d825762165235b07d64fec82c4ba723888486f40a731d8d26a4ffd2ecb0d363",
     "venue_seat_picker/test/layout/reservation_identity_test.dart": "32a797a9eaf3054d34a96628fd579077bc50bc4638d9bbec8b414b2d95150266",
     "venue_seat_picker/test/layout_appearance_drop_test.dart": "79bda072bcc706abd2bc6db73505d6773fe0d6b7ec4f31c21da3e528861ee40a",
-    "venue_seat_picker/test/layout_approved_templates_test.dart": "f96e78eb1e3c093e8717853d5df78dad8f6036582615cee9dd9b4677499a2438",
+    "venue_seat_picker/test/layout_approved_templates_test.dart": "35188b68ff6395b089e0cc80f1029c23e7a5d7eb867d55d7e54c5669077bedc0",
     "venue_seat_picker/test/layout_background_selection_test.dart": "6d4c2c8ae2617a8a0c9380906b449b36e85e8b4735001be8456ba9afc920e031",
     "venue_seat_picker/test/layout_bar_editor_test.dart": "8887d2193f0e6a78d3fce79eda5b1e5629858822f4ff5f9babdd39adcd6d7323",
     "venue_seat_picker/test/layout_canvas_edit_test.dart": "e8e5e64153b483c01fa45e18a705499ede0741a524d53006ba1a5e1f7849ae5e",
@@ -318,7 +319,7 @@
     "venue_seat_picker/tool/kit_run.py": "6469183b04317d474b00c5ecee79277149712c0fe140657ecb54168ca0ffec8d",
     "venue_seat_picker/tool/prepare_canonical_font_fixtures.ts": "a5afebd5e9b18e85ad4b3daf0ff05657c4d44ca8143bf5de6531f9a5a480e059",
     "venue_seat_picker/tool/qa_archive.py": "602a1180556b82ec8a9125d8700a052344ede9f6113593e6825da22430cd6431",
-    "venue_seat_picker/tool/qa_archive_browser.mjs": "b9f070775d24efcfa405df5bcffb3d3eb86e093e5f064f235d08d28fc07c5b66",
+    "venue_seat_picker/tool/qa_archive_browser.mjs": "32b63a70492d9765c6947130f569bda6756570db6ff09a5533d410b9096e42e8",
     "venue_seat_picker/tool/qa_browser.mjs": "0919f3ebe070223bb26cb7c136606f2b1ebc08641a0651adc0a8b666c48ac0b8",
     "venue_seat_picker/tool/qa_consumer_test.dart": "5ba8d4d97117f41a8061c62e2f0bf65945a5bcc1848e1075b571ec48c2c1988c",
     "venue_seat_picker/tool/qa_frame_timing.mjs": "1ecb909f407c53d3842d0629094b04c07f1034cda3d3903c2c4a7b27dd3bb1c4",
@@ -327,6 +328,7 @@
     "venue_seat_picker/tool/qa_raster.mjs": "f802a3d7869e91b91f0706e603f3fe8375de4ccedee620a8dc9d7bdf9bc61d04",
     "venue_seat_picker/tool/report_demo.py": "2fc6604817784416c4714623a4209a65e969eac22e26961b5af25d49ad68a4b6"
   },
-  "sourceCommit": "9686abfc1debeddf1a848586942baaf58c023097",
-  "archiveGateReceiptSha256": "7632d7d66732a247b4d17af4c36beedd2463c1ecdb8ea960647f3cc4f19fa25b"
+  "restoredSnapshotCommit": "e069a11b7fcd9f566219c76180dc5565054ac2a6",
+  "sourceCommit": "a568673789f6e6561d0a5ba2a540a9f2a507dd84",
+  "archiveGateReceiptSha256": "b8195682304a82a4c9d2f186cbc385e4557ce6c3a93c9b1f91fca48e542b0f7e"
 }

@@ -5,13 +5,24 @@ import 'package:venue_seat_picker/venue_seat_picker.dart';
 void main() {
   test('recommended picker contains only approved plans plus blank', () {
     expect(VenueLayoutTemplates.recommended.map((t) => t.id), [
-      'reference-belvedere',
-      'reference-lipoltice',
-      'reference-brandys',
-      'reference-lucerna',
-      'studio-tables',
       'blank',
+      'scout-ball-182',
+      'scout-ball-balcony-249',
+      'bus',
+      'double-decker',
+      'train',
+      'studio-tables',
+      'studio-gala',
+      'reference-lipoltice',
+      'reference-belvedere',
+      'auditorium',
+      'cinema-galaxy',
+      'reference-brandys',
+      'studio-arena',
+      'reference-lucerna',
     ]);
+    expect(VenueLayoutTemplates.all, same(VenueLayoutTemplates.recommended));
+    expect(VenueLayoutTemplates.defaultId, 'blank');
     expect(VenueLayoutTemplates.byId('scout-ball-182').seatCount, 182);
     expect(VenueLayoutTemplates.byId('bus').seatCount, 45);
   });
@@ -22,6 +33,8 @@ void main() {
       'reference-brandys': 265,
       'reference-lucerna': 1066,
       'studio-tables': 96,
+      'studio-gala': 96,
+      'studio-arena': 96,
     };
     for (final entry in counts.entries) {
       final first = VenueLayoutTemplates.create(entry.key);
