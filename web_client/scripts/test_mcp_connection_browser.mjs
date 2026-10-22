@@ -48,14 +48,15 @@ try {
     assert.equal(await evaluate('consentFixture.read().openerIsNull'),true);
     assert.equal(await evaluate('consentFixture.read().popupClosed'),true);
     assert.equal(await evaluate('performance.getEntriesByType("resource").some(r=>/flutter|main\\.dart|canvaskit/.test(r.name))'),false);
-    await browser('open',fixtureUrl);
-    await browser('wait','--fn','window.consentFixture?.ready === true');
+    await browser('open',fixtureUrl+'?tree=1');
+    await browser('wait','--fn','window.consentFixture?.ready === true && window.consentFixture.read().state === "consent"');
     await browser('set','viewport','320','900');
     await browser('eval',"document.body.style.cssText='margin:0;background:#222629;color:#f3f3f3;font:16px system-ui'");
     await browser('snapshot','-i');
     assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,'tree fits mobile viewport');
     assert.equal(await evaluate('document.querySelector("[data-whole-unit]") === null'),true);
     await browser('click','input[data-unit="3"]');
+    await browser('wait','--fn','window.consentFixture.read().access.units?.some(u=>u.unitId === 3)');
     await browser('snapshot','-i');
     await browser('click','input[data-unit="4"]');
     await browser('snapshot','-i');
