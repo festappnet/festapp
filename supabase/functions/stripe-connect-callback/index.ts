@@ -1,3 +1,4 @@
+import { stripeUnavailableResponse } from "../_shared/stripe/unavailable.ts";
 // Stripe redirects to the configured tenant route. That route removes the
 // authorization code from history, authenticates the same Festapp user, then
 // POSTs it here. A state nonce alone never authorizes account ownership.
@@ -11,12 +12,6 @@ Deno.serve(async (request) => {
       true,
     );
   } catch {
-    return Response.json({ error: "stripe_not_configured" }, {
-      status: 503,
-      headers: {
-        "Cache-Control": "no-store",
-        "Referrer-Policy": "no-referrer",
-      },
-    });
+    return stripeUnavailableResponse(request);
   }
 });

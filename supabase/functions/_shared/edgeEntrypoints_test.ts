@@ -446,3 +446,21 @@ Deno.test("stripe-reconcile registers and rejects non-POST requests before runti
   const response = await handler(new Request("https://edge-test.invalid"));
   assertEquals(response.status, 405);
 });
+
+for (const name of ["stripe-connect", "stripe-connect-callback"]) {
+  Deno.test(`${name} exposes unconfigured state to the browser after preflight`, async () => {
+    const handler = await loadHandler(name);
+    const preflight = await handler(new Request("https://edge-test.invalid", {
+      method: "OPTIONS", headers: {origin: "https://app.example.invalid"},
+    }));
+    assertEquals(preflight.status, 204);
+    assertEquals(preflight.headers.get("access-control-allow-origin"), "*");
+    const response = await handler(new Request("https://edge-test.invalid", {
+      method: "POST", body: "{}", headers: {origin: "https://app.example.invalid"},
+    }));
+    assertEquals(response.status, 503);
+    assertEquals(response.headers.get("access-control-allow-origin"), "*");
+    assertEquals(response.headers.get("cache-control"), "no-store");
+    assertEquals((await response.json()).error, "stripe_not_configured");
+  });
+}

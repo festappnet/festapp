@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
@@ -11,6 +14,7 @@ class FakeConnectionApi implements StripeConnectionApi {
   final calls = <int>[];
   Map<String, dynamic>? connection;
   Completer<Map<String, dynamic>?>? pending;
+  Object? statusError;
   int starts = 0;
   int disconnections = 0;
   int openAttempts = 0;
@@ -40,6 +44,7 @@ class FakeConnectionApi implements StripeConnectionApi {
   @override
   Future<Map<String, dynamic>?> status(int unitId) {
     calls.add(unitId);
+    if (statusError != null) return Future.error(statusError!);
     return pending?.future ?? Future.value(connection);
   }
 
@@ -69,7 +74,7 @@ void main() {
   });
   WidgetEnvironmentFixture environment() => WidgetEnvironmentFixture(
       locale: const Locale('cs'), translations: catalog);
-  Widget page(FakeConnectionApi api,
+  Widget page(StripeConnectionApi api,
           {bool canManage = true,
           bool connectSupported = true,
           int unit = 1,
@@ -82,6 +87,46 @@ void main() {
                   connectSupported: connectSupported,
                   api: api,
                   openExternal: open)));
+  test(
+      'HTTP adapter preserves explicit missing configuration and other failures',
+      () async {
+    var status = 503;
+    final client = SupabaseClient('https://fixture.invalid', 'fixture',
+        httpClient: MockClient((request) async {
+      expect(request.url.path, '/functions/v1/stripe-connect');
+      expect(jsonDecode(request.body), {'unitId': 8, 'action': 'status'});
+      return http.Response('{"error":"stripe_not_configured"}', status,
+          headers: {'content-type': 'application/json'});
+    }));
+    addTearDown(client.dispose);
+    final api = SupabaseStripeConnectionApi(client: client);
+    await expectLater(
+        api.status(8), throwsA(isA<StripeNotConfiguredException>()));
+    status = 401;
+    await expectLater(api.status(8), throwsA(isA<FunctionException>()));
+  });
+  testWidgets(
+      'unconfigured overview explains setup and can recover after reload',
+      (tester) async {
+    final api = FakeConnectionApi()
+      ..statusError = const StripeNotConfiguredException();
+    final env = environment();
+    await env.pumpWidget(tester, page(api, unit: 8));
+    await tester.pumpAndSettle();
+    expect(find.text(catalog['CardPaymentConnection']['notConfigured']),
+        findsOneWidget);
+    expect(
+        find.text(catalog['CardPaymentConnection']['unknown']), findsNothing);
+    final connect = find.widgetWithText(
+        FilledButton, catalog['CardPaymentConnection']['connect']);
+    expect(tester.widget<FilledButton>(connect).onPressed, isNull);
+    api.statusError = null;
+    await tester.tap(find.text(catalog['CardPaymentConnection']['reload']));
+    await tester.pumpAndSettle();
+    expect(find.text(catalog['CardPaymentConnection']['notConfigured']),
+        findsNothing);
+    expect(tester.widget<FilledButton>(connect).onPressed, isNotNull);
+  });
   testWidgets('native Connect is unavailable without starting an OAuth flow',
       (tester) async {
     final api = FakeConnectionApi();

@@ -46,6 +46,7 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
   bool _loading = true,
       _busy = false,
       _failed = false,
+      _configurationRequired = false,
       _pending = false,
       _confirming = false;
   int _generation = 0;
@@ -90,11 +91,19 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
     setState(() {
       _loading = true;
       _failed = false;
+      _configurationRequired = false;
     });
     try {
       final value = await widget.api.status(widget.unitId);
       if (mounted && generation == _generation) {
         setState(() => _connection = value);
+      }
+    } on StripeNotConfiguredException {
+      if (mounted && generation == _generation) {
+        setState(() {
+          _configurationRequired = true;
+          _connection = null;
+        });
       }
     } catch (_) {
       if (mounted && generation == _generation) setState(() => _failed = true);
@@ -111,6 +120,14 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
     setState(() => _busy = true);
     try {
       await operation();
+    } on StripeNotConfiguredException {
+      if (mounted && widget.unitId == unit) {
+        setState(() {
+          _configurationRequired = true;
+          _connection = null;
+          _failed = false;
+        });
+      }
     } catch (_) {
       if (mounted && widget.unitId == unit) setState(() => _failed = true);
     } finally {
@@ -249,6 +266,10 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
                             if (_loading) const LinearProgressIndicator(),
                             if (_busy && !_loading && !_confirming)
                               const LinearProgressIndicator(),
+                            if (_configurationRequired)
+                              Semantics(
+                                  liveRegion: true,
+                                  child: line(text('notConfigured'))),
                             if (_failed)
                               Semantics(
                                   liveRegion: true,
@@ -321,7 +342,9 @@ class _UnitCardPaymentsViewState extends State<UnitCardPaymentsView>
                                     child: Text(text('disconnect'))),
                             ] else if (!_loading && !_failed)
                               FilledButton(
-                                  onPressed: _busy || !widget.connectSupported
+                                  onPressed: _busy ||
+                                          _configurationRequired ||
+                                          !widget.connectSupported
                                       ? null
                                       : () => _connect(),
                                   child: Text(text('connect'))),
