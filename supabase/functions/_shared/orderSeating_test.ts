@@ -16,3 +16,14 @@ Deno.test('seating escapes labels and supports ungrouped seats and ordinary prod
   assertStringIncludes(html,'Lunch');
   assertEquals(html.includes('undefined'),false);
 });
+
+for (const lang of ['cs', 'en'] as const) {
+  Deno.test(`order email ${lang} identifies standing by the actual area name`, () => {
+    const html = generateFullOrder({}, [{ticket_symbol:'TEST',products:[{title:'Místo',type_title:'Místo',price:500,currency_code:'CZK',is_standing:true,standing_area_title:'Parket <VIP>'}]}], [], lang);
+    assertStringIncludes(html, `${lang === 'cs' ? 'Stání' : 'Standing'}: Parket &lt;VIP&gt;`);
+    assertEquals(html.includes('Parket <VIP>'),false);
+    assertEquals(html.includes('undefined'),false);
+    assertStringIncludes(html,'Místo');
+    assertStringIncludes(html,'500');
+  });
+}

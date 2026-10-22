@@ -3403,7 +3403,8 @@
     "changedTo": "Now",
     "confirmation_sent": "Confirmation sent",
     "waitlist_entered": "Added to the waiting list",
-    "withinDeadline": "Within the payment deadline"
+    "withinDeadline": "Within the payment deadline",
+    "standing": "Standing"
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

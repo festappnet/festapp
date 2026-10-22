@@ -23,6 +23,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             itemNote: "Poznámka",
             table: "Stůl",
             seat: "Místo",
+            standing: "Stání",
             totalPrice: "Celková cena",
         },
         en: {
@@ -36,6 +37,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             itemNote: "Note",
             table: "Table",
             seat: "Seat",
+            standing: "Standing",
             totalPrice: "Total Price",
         }
     }[lang];
@@ -102,7 +104,8 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
                 .filter(([, value]) => value != null && String(value).trim() !== '')
                 .map(([label, value]) => `${label}: ${escape(value)}`).join(' · ');
-            const seatingHtml = seating ? `<div style="margin-top: 4px; font-weight: 600;">${seating}</div>` : '';
+            const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escape).join(': ') : seating;
+            const seatingHtml = admission ? `<div style="margin-top: 4px; font-weight: 600;">${admission}</div>` : '';
 
             const rowStyle = 'style="border-bottom: 1px solid #e2e8f0;"';
 
