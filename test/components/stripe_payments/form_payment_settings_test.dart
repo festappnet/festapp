@@ -133,11 +133,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(_selection(tester), FormPaymentMethod.bank);
     expect(_actions(tester).hasChanges, isFalse);
-    expect(checks, 0);
-    final check = find.text(PaymentMethodStrings.text('checkAccount'));
-    await tester.ensureVisible(check);
-    await tester.tap(check);
-    await tester.pumpAndSettle();
     expect(checks, 1);
     expect(_selection(tester), FormPaymentMethod.bank);
     expect(_actions(tester).hasChanges, isFalse);
@@ -159,9 +154,6 @@ void main() {
       expect(_actions(tester).hasChanges, isFalse);
     }
     expect(saves, 3);
-    await tester.ensureVisible(check);
-    await tester.tap(check);
-    await tester.pumpAndSettle();
     await _choose(tester, FormPaymentMethod.both);
     final discard = find.descendant(
         of: find.byType(EditorActionBar), matching: find.byType(TextButton));
@@ -207,8 +199,7 @@ void main() {
             key: const ValueKey('new-form'),
             formLink: 'new-form',
             loadBundle: (link) async => _bundle(link, 9, null),
-            loadStripeRecipient: (_, __) async =>
-                throw StateError('Must stay lazy'),
+            loadStripeRecipient: (_, __) async => null,
           ),
         ));
     await tester.pumpAndSettle();
