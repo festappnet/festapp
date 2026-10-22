@@ -194,10 +194,12 @@
         "description": "Začněte existující šablonou a upravte ji podle své akce.",
         "items": [
           {
-            "title": "Plesový sál",
-            "description": "Ukázka sestavení: 17 stolů a 142 míst.",
-            "image": "/organizers-media/layout-scout.jpg",
-            "alt": "Skutečný sestavený plánek s modrými stoly, navy židlemi a písmem Futura"
+            "title": "Lipoltice",
+            "description": "186 míst u stolů, taneční parket a oddělené části sálu.",
+            "image": "/organizers-media/layout-lipoltice-wood.svg",
+            "alt": "Skutečná šablona sálu Lipoltice se 186 místy, dřevěnými stoly a tanečním parketem.",
+            "width": 2868,
+            "height": 2660
           },
           {
             "title": "Kino",
