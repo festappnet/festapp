@@ -1,5 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class StripeNotConfiguredException implements Exception {
+  const StripeNotConfiguredException();
+}
+
 abstract interface class StripeConnectionApi {
   Future<Map<String, dynamic>?> status(int unitId);
   Future<Uri> start(int unitId, {bool replace = false});
@@ -10,7 +14,8 @@ abstract interface class StripeConnectionApi {
 }
 
 class SupabaseStripeConnectionApi implements StripeConnectionApi {
-  const SupabaseStripeConnectionApi();
+  const SupabaseStripeConnectionApi({this.client});
+  final SupabaseClient? client;
   Future<Map<String, dynamic>?> formRecipient(
       int unitId, int occasionId) async {
     final value = await _invoke('stripe-connect',
@@ -20,8 +25,19 @@ class SupabaseStripeConnectionApi implements StripeConnectionApi {
 
   Future<dynamic> _invoke(String name, Map<String, dynamic> body,
       {bool acceptPending = false}) async {
-    final response =
-        await Supabase.instance.client.functions.invoke(name, body: body);
+    late final FunctionResponse response;
+    try {
+      response = await (client ?? Supabase.instance.client)
+          .functions
+          .invoke(name, body: body);
+    } on FunctionException catch (error) {
+      if (error.status == 503 &&
+          error.details is Map &&
+          error.details['error'] == 'stripe_not_configured') {
+        throw const StripeNotConfiguredException();
+      }
+      rethrow;
+    }
     if (response.status != 200 && !(acceptPending && response.status == 202)) {
       throw StateError('stripe_connection_unavailable');
     }
