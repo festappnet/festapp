@@ -24,11 +24,12 @@ Deno.test('preset and custom palettes share one persistent artwork path and rend
  const {themedTicketBackground,ticketThemeColor}=await import('./ticketTheme.ts');
  const {PNG}=await import('npm:pngjs@5.0.0');
  const {Buffer}=await import('node:buffer');
+ const {ticketArtworkColor,ticketArtworkRoles}=await import('./ticketThemePalette.js');
  const proofs=[];
  for(const [primary,secondary] of [['14284B','A87F28'],['198A61','DE5734']]) {
-  for(const key of ['concert_stub','club_panorama']) {
+  for(const key of ['concert_stub','club_panorama','cinema_strip','gala_invitation','theatre_program','boarding_pass']) {
    const url=themedTicketBackground(key,primary,secondary,galleryBackgrounds[key])!;
-   assert(url.includes(`/palette-${primary}-${secondary}-${key}-v1.png`));
+   assert(url.includes(`/palette-${primary}-${secondary}-${key}-v2.png`));
    const bytes=(await galleryBackground(url))!;
    const png=PNG.sync.read(Buffer.from(bytes));
    const original=PNG.sync.read(Buffer.from((await galleryBackground(galleryBackgrounds[key]!))!));
@@ -37,7 +38,7 @@ Deno.test('preset and custom palettes share one persistent artwork path and rend
    for(let i=0;i<original.data.length;i+=4){
     const rgb=(original.data[i]<<16)|(original.data[i+1]<<8)|original.data[i+2];
     if(checked.has(rgb))continue;checked.add(rgb);
-    assertEquals(Buffer.from(png.data.subarray(i,i+3)).toString('hex').toUpperCase(),ticketThemeColor(rgb.toString(16).padStart(6,'0'),primary,secondary));
+    assertEquals(Buffer.from(png.data.subarray(i,i+3)).toString('hex').toUpperCase(),ticketArtworkColor(rgb.toString(16).padStart(6,'0'),primary,secondary,ticketArtworkRoles[key]));
    }
    const rgbaSha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',png.data))).map(x=>x.toString(16).padStart(2,'0')).join('');
    proofs.push({key,primary,secondary,url,width:png.width,height:png.height,rgbaSha});
@@ -48,4 +49,14 @@ Deno.test('preset and custom palettes share one persistent artwork path and rend
  for(const bad of ['https://img.festapp.net/ticket-presets/v1/palette-198A61-DE5734-unknown-v1.png','https://img.festapp.net/ticket-presets/v1/palette-not-a-palette.png']) {
   let denied=false;try{await galleryBackground(bad);}catch{denied=true;}assert(denied);
  }
+});
+
+Deno.test('cinema dominant panel follows primary ink instead of its original warm hue', async () => {
+ const {galleryBackground}=await import('./ticketGallery.ts');
+ const {PNG}=await import('npm:pngjs@5.0.0');
+ const {Buffer}=await import('node:buffer');
+ const {ticketThemeColor}=await import('./ticketTheme.ts');
+ const png=PNG.sync.read(Buffer.from((await galleryBackground('https://img.festapp.net/ticket-presets/v1/palette-198A61-DE5734-cinema_strip-v2.png'))!));
+ const offset=(Math.round(25*8)*png.width+Math.round(80*8))*4;
+ assertEquals(Buffer.from(png.data.subarray(offset,offset+3)).toString('hex').toUpperCase(),ticketThemeColor('211F1A','198A61','198A61'));
 });

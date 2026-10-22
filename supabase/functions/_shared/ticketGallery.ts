@@ -1,5 +1,5 @@
 import { ticketPresets, validateLayout, type Template, type Element, type Binding } from './ticketLayout.ts';
-import {themedTicketArtwork,ticketThemePalettes,ticketThemeColor} from './ticketThemePalette.js';
+import {themedTicketArtwork,ticketThemePalettes,ticketThemeColor,ticketArtworkColor,ticketArtworkRoles} from './ticketThemePalette.js';
 import { fontCatalog } from './ticketFonts.ts';
 import { PNG } from 'npm:pngjs@5.0.0';
 import { Buffer } from 'node:buffer';
@@ -29,7 +29,7 @@ export const galleryFontIds = [font('Playfair Display'), font('Manrope'),font('R
 const paletteArtworkCache = new Map<string, Uint8Array>();
 export async function galleryBackground(url: string): Promise<Uint8Array | undefined> {
   if (url.startsWith(root+'palette-')) {
-    const match = /^palette-([A-Fa-f0-9]{6})-([A-Fa-f0-9]{6})-([a-z_]{1,32})-v1[.]png$/.exec(url.slice(root.length));
+    const match = /^palette-([A-Fa-f0-9]{6})-([A-Fa-f0-9]{6})-([a-z_]{1,32})-v([12])[.]png$/.exec(url.slice(root.length));
     if (!match || !themedTicketArtwork.includes(match[3].replaceAll('_','-'))) throw new Error('Ticket palette artwork');
     const hit = paletteArtworkCache.get(url); if(hit) return hit;
     const png = PNG.sync.read(Buffer.from((await galleryBackground(galleryBackgrounds[match[3]]!))!));
@@ -37,7 +37,7 @@ export async function galleryBackground(url: string): Promise<Uint8Array | undef
     for(let i=0;i<png.data.length;i+=4) {
       const rgb=(png.data[i]<<16)|(png.data[i+1]<<8)|png.data[i+2];
       let target=colors.get(rgb);
-      if(target===undefined){target=parseInt(ticketThemeColor(rgb.toString(16).padStart(6,'0'),match[1],match[2]),16);colors.set(rgb,target);}
+      if(target===undefined){target=parseInt(match[4]==='2'?ticketArtworkColor(rgb.toString(16).padStart(6,'0'),match[1],match[2],ticketArtworkRoles[match[3]]):ticketThemeColor(rgb.toString(16).padStart(6,'0'),match[1],match[2]),16);colors.set(rgb,target);}
       png.data[i]=target>>16;png.data[i+1]=(target>>8)&255;png.data[i+2]=target&255;
     }
     const result=new Uint8Array(PNG.sync.write(png));

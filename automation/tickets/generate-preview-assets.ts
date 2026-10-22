@@ -1,6 +1,6 @@
 // deno run --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write automation/tickets/generate-preview-assets.ts [--check]
 import {ticketGallery, galleryBackgrounds, backgroundFiles, galleryFontIds} from '../../supabase/functions/_shared/ticketGallery.ts';
-import {ticketThemeColor,ticketThemePalettes} from '../../supabase/functions/_shared/ticketThemePalette.js';
+import {ticketThemeColor,ticketThemePalettes,ticketArtworkRoles} from '../../supabase/functions/_shared/ticketThemePalette.js';
 import {fontCatalog, TicketFontResolver, digest} from '../../supabase/functions/_shared/ticketFonts.ts';
 const root=new URL('../../supabase/functions/_shared/ticket-assets/',import.meta.url);
 const output=new URL('preview-manifest.json',root);
@@ -20,7 +20,7 @@ for(const name of [...backgroundFiles].sort()){
 const presets=ticketGallery();
 const colors=[...new Set(Object.values(presets).flatMap(t=>[t.canvasColor,...(t.canvasGradient??[]),t.qrAppearance?.background,...t.elements.map(e=>e.style.color)]).filter((c):c is string=>!!c&&c!=='transparent'))].sort();
 const themeColorVectors=Object.entries(ticketThemePalettes).flatMap(([style,[primary,secondary]])=>colors.map(source=>[style,source,ticketThemeColor(source,primary,secondary)]));
-const payload={schema:1,generator:1,fonts,artwork,presets,backgrounds:galleryBackgrounds,themeColorVectors};
+const payload={schema:1,generator:1,fonts,artwork,presets,backgrounds:galleryBackgrounds,themeColorVectors,artworkRoles:ticketArtworkRoles};
 const manifest={...payload,sha256:await digest(new TextEncoder().encode(JSON.stringify(payload)))};
 const content=JSON.stringify(manifest)+'\n';
 if(check){if(await Deno.readTextFile(output)!==content)throw new Error('Preview assets drift: run generate-preview-assets.ts');}

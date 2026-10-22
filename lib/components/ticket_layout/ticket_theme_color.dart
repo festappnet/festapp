@@ -38,3 +38,28 @@ String ticketThemeColor(String hex, String primary, String secondary) {
       .join()
       .toUpperCase();
 }
+
+String ticketArtworkColor(
+    String hex, String primary, String secondary, Map roles) {
+  final rgb = [0, 2, 4]
+      .map((i) => int.parse(hex.substring(i, i + 2), radix: 16))
+      .toList();
+  var ink = primary;
+  var nearest = double.infinity;
+  for (final entry in roles.entries) {
+    for (final source in entry.value as List) {
+      var distance = 0.0;
+      for (var i = 0; i < 3; i++) {
+        final delta = rgb[i] -
+            int.parse((source as String).substring(i * 2, i * 2 + 2),
+                radix: 16);
+        distance += delta * delta;
+      }
+      if (distance < nearest) {
+        nearest = distance;
+        ink = entry.key == 'primary' ? primary : secondary;
+      }
+    }
+  }
+  return ticketThemeColor(hex, ink, ink);
+}

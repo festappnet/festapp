@@ -32,7 +32,7 @@ class OccasionSetupAppearance {
       final secondary = appearance['gradient'] == true
           ? appearance['secondary']
           : appearance['primary'];
-      return '${root}palette-${appearance['primary']}-${secondary}-$key-v1.png';
+      return '${root}palette-${appearance['primary']}-${secondary}-$key-v2.png';
     }
     return null;
   }

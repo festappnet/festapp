@@ -83,7 +83,7 @@ class TicketPreviewAssets {
   }
 
   RegExpMatch? _palette(String url) => RegExp(
-          r'^https://img\.festapp\.net/ticket-presets/v1/palette-([A-Fa-f0-9]{6})-([A-Fa-f0-9]{6})-([a-z_]{1,32})-v1\.png' +
+          r'^https://img\.festapp\.net/ticket-presets/v1/palette-([A-Fa-f0-9]{6})-([A-Fa-f0-9]{6})-([a-z_]{1,32})-v([12])\.png' +
               r'$')
       .firstMatch(url);
   Future<void> _decode(String url) async {
@@ -105,14 +105,23 @@ class TicketPreviewAssets {
             format: ui.ImageByteFormat.rawStraightRgba))!;
         final pixels =
             raw.buffer.asUint8List(raw.offsetInBytes, raw.lengthInBytes);
+        final roles = (await manifest)['artworkRoles'][custom.group(3)] as Map?;
+        if (custom.group(4) == '2' && roles == null)
+          throw const FormatException('Artwork roles');
         final colors = <int, int>{};
         for (var i = 0; i < pixels.length; i += 4) {
           final rgb = (pixels[i] << 16) | (pixels[i + 1] << 8) | pixels[i + 2];
           final target = colors.putIfAbsent(
               rgb,
               () => int.parse(
-                  ticketThemeColor(rgb.toRadixString(16).padLeft(6, '0'),
-                      custom.group(1)!, custom.group(2)!),
+                  custom.group(4) == '2'
+                      ? ticketArtworkColor(
+                          rgb.toRadixString(16).padLeft(6, '0'),
+                          custom.group(1)!,
+                          custom.group(2)!,
+                          roles!)
+                      : ticketThemeColor(rgb.toRadixString(16).padLeft(6, '0'),
+                          custom.group(1)!, custom.group(2)!),
                   radix: 16));
           pixels[i] = target >> 16;
           pixels[i + 1] = (target >> 8) & 255;
