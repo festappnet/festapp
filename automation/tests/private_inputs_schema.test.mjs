@@ -8,6 +8,14 @@ const schema = JSON.parse(readFileSync(
 ));
 
 const consumedPrivateInputs = [
+  "STRIPE_MODE",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_PLATFORM_ACCOUNT_ID",
+  "STRIPE_API_VERSION",
+  "STRIPE_ALLOWED_ORIGINS",
+  "STRIPE_CONNECT_CLIENT_ID",
+  "STRIPE_CONNECT_CALLBACK_URL",
+  "STRIPE_WEBHOOK_SECRETS",
   "EMAIL_PAYLOAD_KEY",
   "EMAIL_SNS_TOPIC_ARN",
   "EMAIL_SES_ACCOUNT_ID",
@@ -88,12 +96,13 @@ test("required environment names are derived from their consumers", () => {
     "../release/fastlane/Fastfile",
     "../release/play_release_readback.rb",
     "../hetzner-supabase/runtime/docker-compose.email.yml",
+    "../hetzner-supabase/runtime/docker-compose.festapp.yml",
   ];
   const consumerText = consumerFiles.map((path) =>
     readFileSync(new URL(path, import.meta.url), "utf8")
   ).join("\n");
   const referenced = new Set([
-    ...consumerText.matchAll(/\$\{((?:EMAIL_|AUTH_EMAIL_)[A-Z0-9_]*|APP_LINKS_ORGANIZATION_ID)(?::[?+-][^}]*)?\}/g),
+    ...consumerText.matchAll(/\$\{((?:EMAIL_|AUTH_EMAIL_|STRIPE_)[A-Z0-9_]*|APP_LINKS_ORGANIZATION_ID)(?::[?+-][^}]*)?\}/g),
     ...consumerText.matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g),
     ...consumerText.matchAll(/ENV(?:\.fetch)?\(['"]([A-Z][A-Z0-9_]*)['"]\)?/g),
     ...consumerText.matchAll(/^:\s*"\$\{([A-Z][A-Z0-9_]*)[:}]/gm),
