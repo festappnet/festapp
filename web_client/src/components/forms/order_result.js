@@ -80,7 +80,9 @@ export class OrderResult {
             // Generic Error
             const code = (resultData && resultData.code) || 0;
             title = PublicOrderStrings.orderFailed;
-            subtitle = resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode, tone) : PublicOrderStrings.orderError(code);
+            subtitle = ['reservation_state_unknown', 'reservation_expired', 'reservation_changed'].includes(resultData?.errorCode)
+                ? PublicOrderStrings.text(`PublicOrder.${resultData.errorCode}`, tone)
+                : resultData?.errorCode ? WaitlistStrings.text(resultData.errorCode, tone) : PublicOrderStrings.orderError(code);
             icon = 'error';
             colorClass = 'error-color';
         }

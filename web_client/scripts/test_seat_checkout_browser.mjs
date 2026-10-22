@@ -23,6 +23,7 @@ let server;
 let fixture;
 let checkout;
 const calls = [];
+const offlineRecovery = process.argv.includes('--offline-recovery');
 async function browser(...args) {
     const { stdout } = await execute('agent-browser', ['--config', config, '--headed', 'false',
         '--session', session, '--allowed-domains', '127.0.0.1', '--json', ...args], { timeout: 30000, env: { ...process.env, AGENT_BROWSER_CONFIG: config, AGENT_BROWSER_PLUGINS: '[]', AGENT_BROWSER_DEFAULT_TIMEOUT: '8000' } });
@@ -137,6 +138,19 @@ try {
     assert.equal((await db.query('SELECT secret IS NOT NULL AS reserved FROM eshop.spots WHERE id=$1', [fixture.seat])).rows[0].reserved,
         true, 'The map click must reserve the actual SQL seat');
     assert.equal((await browser('eval',viewport)).result,beforeClick,'Confirmed selection must retain camera and viewport');
+    if (offlineRecovery) {
+        await browser('set', 'offline', 'on');
+        // The selection marker covers the seat group after selection. Dispatch
+        // a real pointer gesture at its center, as a buyer would tap it.
+        const point = (await browser('eval', `(() => {const r=document.querySelector(${JSON.stringify(seatSelector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`)).result;
+        await browser('mouse', 'move', String(point.x), String(point.y));
+        await browser('mouse', 'down');
+        await browser('mouse', 'up');
+        await browser('wait', '--fn', "!document.querySelector('.blueprint-btn-confirm').disabled");
+        // Connectivity returns before checkout. The lost release must not be
+        // replayed: a fresh read should confirm the original SQL hold instead.
+        await browser('set', 'offline', 'off');
+    }
     await browser('click', '.blueprint-btn-confirm');
     await browser('wait', '--fn', '!document.querySelector(".blueprint-modal-container")');
     await browser('snapshot', '-i');
@@ -152,6 +166,11 @@ try {
     assert.equal(Number(checkout.payload.ticket[0].spot), fixture.seat);
     assert.ok(calls.includes('select_spot'), 'Seat selection must invoke SQL');
     assert.equal(calls.filter(name => name === 'send-ticket-order').length, 1);
+    if (offlineRecovery) {
+        assert.equal(calls.filter(name => name === 'select_spot').length, 1, 'Never replay an uncertain release');
+        assert.equal(calls.filter(name => name === 'get_blueprint').length, 2, 'Checkout must reread the authoritative hold');
+        assert.ok(checkout.payload.fields.some(field => Object.values(field).includes('regression@example.invalid')), 'Keep the entered email');
+    }
     const bound = (await db.query(`SELECT x."order" AS order_id, t.state, t.ticket_symbol
         FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
         JOIN eshop.tickets t ON t.id=x.ticket WHERE s.id=$1`, [fixture.seat])).rows[0];
@@ -159,6 +178,7 @@ try {
     assert.equal(bound.state, 'ordered');
     assert.ok(bound.ticket_symbol);
     console.log('PASS: real map click -> SQL reservation -> preview -> order -> selected seat bound to ticket');
+    if (offlineRecovery) console.log('PASS: offline seat release -> reconnect -> authoritative recovery -> one successful order, original seat and answers retained');
 } catch (error) {
     console.error('SQL calls:', calls, 'checkout:', checkout?.result?.code);
     console.error('Browser console:', await browser('console').catch(() => null));

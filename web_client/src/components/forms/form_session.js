@@ -565,11 +565,25 @@ export class FormSession extends EventTarget {
         // A new operation can join while the previous queue settles.
         let queue;
         do { queue = this._spotQueue; await queue; } while (queue !== this._spotQueue);
-        if (this._reservationUnresolved) throw new Error('reservation_state_unknown');
-        if (this.reservationExpiresAt && Date.parse(this.reservationExpiresAt) <= Date.now() &&
-            this.state.tickets.some(ticket => ticket.spot)) {
-            if (!this.recoverReservations) throw new Error('reservation_expired');
-            await this.recoverReservations();
+        const seats = () => this.state.tickets.filter(ticket => ticket.spot).map(ticket => String(ticket.spot)).sort();
+        const expired = () => this.reservationExpiresAt && Date.parse(this.reservationExpiresAt) <= Date.now() && seats().length > 0;
+        if (this._reservationUnresolved || expired()) {
+            if (!this.recoverReservations) throw new Error(this._reservationUnresolved ? 'reservation_state_unknown' : 'reservation_expired');
+            const reviewedSeats = JSON.stringify(seats());
+            // Retry only the authoritative read. A lost write response must never
+            // cause us to replay a hold/release or submit an unverified selection.
+            const recovery = this._spotQueue.then(() => this.recoverReservations());
+            this._spotQueue = recovery.catch(() => {});
+            try {
+                await recovery;
+            } catch {
+                this._reservationUnresolved = true;
+                throw new Error('reservation_state_unknown');
+            }
+            do { queue = this._spotQueue; await queue; } while (queue !== this._spotQueue);
+            if (this._reservationUnresolved) throw new Error('reservation_state_unknown');
+            if (reviewedSeats !== JSON.stringify(seats())) throw new Error('reservation_changed');
+            if (expired()) throw new Error('reservation_expired');
         }
     }
 
