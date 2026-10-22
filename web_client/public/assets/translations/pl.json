@@ -936,7 +936,8 @@
     "changedTo": "Teraz",
     "confirmation_sent": "Potwierdzenie wysłane",
     "waitlist_entered": "Dodano do listy oczekujących",
-    "withinDeadline": "W terminie płatności"
+    "withinDeadline": "W terminie płatności",
+    "standing": "Miejsce stojące"
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

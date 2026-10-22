@@ -1,5 +1,5 @@
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb;
+DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; view_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seating test') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO unit_id;
@@ -31,4 +31,33 @@ BEGIN
  UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;
  PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result),result,'Released seats retain historical snapshot');
  PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,original),original,'Absent historical metadata is not invented');
+ -- Standing is identified by the actual allocated inventory context and the
+ -- order form's blueprint, never by the generic product name.
+ INSERT INTO public.inventory_pools(occasion,title,type,sellable_capacity) VALUES(occ,'Standing','generic',2) RETURNING id INTO pool_id;
+ INSERT INTO public.inventory_contexts(inventory_pool,title) VALUES(pool_id,'Standing') RETURNING id INTO context_id;
+ INSERT INTO public.forms(occasion,blueprint,title,link,is_open,type) VALUES(occ,bp,'Standing test','standing-test-'||gen_random_uuid(),true,'ticket') RETURNING id INTO fid;
+ UPDATE eshop.orders SET form=fid WHERE id=ord;
+ UPDATE eshop.blueprints SET layout=jsonb_build_object('nodes',jsonb_build_array(jsonb_build_object('id',area_id,'kind','capacityArea','label','Parket VIP'))) WHERE id=bp;
+ INSERT INTO eshop.blueprint_area_bindings(blueprint,node_id,inventory_context,product) VALUES(bp,area_id,context_id,prod);
+ UPDATE eshop.spots SET blueprint=NULL,title=NULL,inventory_context=context_id,order_product_ticket=opt WHERE id=seat;
+ result:=public.order_tickets_with_seating_internal(ord,original);
+ PERFORM assert_eq(result#>>'{0,products,0,standing_area_title}','Parket VIP','Allocated standing resolves its actual area name');
+ PERFORM assert_eq(result#>>'{0,products,0,is_standing}','true','Standing classification is explicit');
+ PERFORM assert_true(result#>>'{0,products,0,spot_title}' IS NULL,'Standing must not invent a seat number');
+ PERFORM assert_eq(result#>>'{0,products,0,title}','Místo','Product title is preserved');
+ PERFORM assert_eq(result#>>'{0,products,0,price}','450','Standing price is preserved');
+ UPDATE eshop.orders SET data=jsonb_build_object('tickets',original) WHERE id=ord;
+ INSERT INTO eshop.waitlist_capabilities(token_hash,organization_id,form_id,order_id,kind,expires_at)
+ VALUES(encode(extensions.digest(view_token,'sha256'),'hex'),org,fid,ord,'order_view',now()+interval '1 day');
+ overview:=public.get_customer_order_overview(view_token,ord);
+ PERFORM assert_eq(overview->>'code','200','Standing order view retains capability access');
+ PERFORM assert_eq(overview#>>'{orders,0,items,0,standingAreaTitle}','Parket VIP','Public order projection includes area name');
+ PERFORM assert_eq(overview#>>'{orders,0,items,0,isStanding}','true','Public order projection classifies standing');
+ PERFORM assert_eq(public.get_customer_order_overview(repeat('0',64),ord)->>'code','403','Invalid capability still denied');
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(other_ord,original),original,'Foreign order cannot resolve standing metadata');
+ UPDATE public.forms SET blueprint=NULL WHERE id=fid;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,original),original,'Unrelated form blueprint cannot identify standing');
+ UPDATE public.forms SET blueprint=bp WHERE id=fid;
+ UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;
+ PERFORM assert_eq(public.order_tickets_with_seating_internal(ord,result),result,'Released standing preserves its historical name when present');
 END $$;

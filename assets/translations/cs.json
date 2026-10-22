@@ -3405,7 +3405,8 @@
     "changedTo": "Nově",
     "confirmation_sent": "Potvrzení odesláno",
     "waitlist_entered": "Zařazeno na čekací listinu",
-    "withinDeadline": "V termínu úhrady"
+    "withinDeadline": "V termínu úhrady",
+    "standing": "Stání"
   },
   "Scanner": {
     "manual_once": "Po potvrzení pokračujete opět kamerou.",

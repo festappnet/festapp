@@ -942,7 +942,8 @@
     "changedTo": "Po zmene",
     "confirmation_sent": "Potvrdenie odoslané",
     "waitlist_entered": "Zaradené na čakaciu listinu",
-    "withinDeadline": "V termíne úhrady"
+    "withinDeadline": "V termíne úhrady",
+    "standing": "Státie"
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

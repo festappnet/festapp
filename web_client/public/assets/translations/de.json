@@ -936,7 +936,8 @@
     "changedTo": "Jetzt",
     "confirmation_sent": "Bestätigung versendet",
     "waitlist_entered": "Zur Warteliste hinzugefügt",
-    "withinDeadline": "Innerhalb der Zahlungsfrist"
+    "withinDeadline": "Innerhalb der Zahlungsfrist",
+    "standing": "Stehplatz"
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",

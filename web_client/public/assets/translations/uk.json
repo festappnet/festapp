@@ -1149,7 +1149,8 @@
     "changedTo": "Тепер",
     "confirmation_sent": "Підтвердження надіслано",
     "waitlist_entered": "Додано до списку очікування",
-    "withinDeadline": "У межах терміну оплати"
+    "withinDeadline": "У межах терміну оплати",
+    "standing": "Стояче місце"
   },
   "Scanner": {
     "manual_once": "After confirmation, continue with the camera.",
