@@ -31,10 +31,11 @@ for (const [name, colors] of Object.entries(palettes)) {
 }
 
 // Code-native graphic furniture, with no event text baked into the artwork.
-function graphic(name, w, h, base, paint) {
+function graphic(name, w, h, base, paint, version='v3') {
+  const colorCache=new Map();
   const scale=8, width=Math.round(w*scale),height=Math.round(h*scale);
   const pixels=Buffer.alloc((width*3+1)*height);
-  const rgb=hex=>[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));
+  const rgb=hex=>{if(!colorCache.has(hex)){const value=hex;colorCache.set(hex,[0,2,4].map(i=>parseInt(value.slice(i,i+2),16)));}return colorCache.get(hex);};
   const put=(x,y,color)=>{if(x<0||y<0||x>=width||y>=height)return;const offset=y*(width*3+1)+1+x*3;for(let c=0;c<3;c++)pixels[offset+c]=color[c];};
   const rect=(x,y,rw,rh,hex)=>{const c=rgb(hex);for(let py=Math.max(0,Math.round(y*scale));py<Math.min(height,Math.round((y+rh)*scale));py++)for(let px=Math.max(0,Math.round(x*scale));px<Math.min(width,Math.round((x+rw)*scale));px++)put(px,py,c);};
   const line=(x,y,length,hex,vertical=false,dashed=false)=>{for(let d=0;d<length;d+=.125)if(!dashed||Math.floor(d/1.5)%2===0)rect(x+(vertical?0:d),y+(vertical?d:0),vertical?.15:.125,vertical?.125:.15,hex);};
@@ -43,7 +44,7 @@ function graphic(name, w, h, base, paint) {
   const glow=(cx,cy,r,hex)=>{const c=rgb(hex);for(let y=0;y<height;y++)for(let x=0;x<width;x++){const a=Math.exp(-((x/scale-cx)**2+(y/scale-cy)**2)/(r*r))*.7;const offset=y*(width*3+1)+1+x*3;for(let k=0;k<3;k++)pixels[offset+k]=Math.round(pixels[offset+k]*(1-a)+c[k]*a);}};
   rect(0,0,w,h,base);paint({rect,line,ring,disc,glow});
   const header=Buffer.alloc(13);header.writeUInt32BE(width);header.writeUInt32BE(height,4);header[8]=8;header[9]=2;
-  writeFileSync(new URL(`${name}-v3.png`,destination),Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(pixels,{level:9})),chunk('IEND',Buffer.alloc(0))]));
+  writeFileSync(new URL(`${name}-${version}.png`,destination),Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(pixels,{level:9})),chunk('IEND',Buffer.alloc(0))]));
 }
 graphic('concert-stub',180,65,'FFFBF3',({rect,line})=>{
  rect(129,0,51,65,'EDE8DE');rect(0,0,129,2,'9F3027');rect(0,0,17,65,'9F3027');
@@ -94,3 +95,7 @@ graphic('workshop-card',148,105,'FCFBF5',({rect,line})=>{
  rect(99,0,49,105,'E2EBDD');rect(10,29,14,2,'294D3B');line(10,73,83,'A6B7A0');
  line(103,34,36,'8AA184');line(103,98,36,'8AA184');
 });
+
+
+// Action palettes are applied at render time by the shared ticket theme contract.
+// Previously published theme-* images remain immutable saved-layout resources.

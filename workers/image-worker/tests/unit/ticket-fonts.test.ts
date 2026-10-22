@@ -51,3 +51,20 @@ describe('service-only immutable font namespace', () => {
     expect(put).not.toHaveBeenCalled();
   });
 });
+
+it('publishes validated prepared metrics only after immutable bytes exist', async () => {
+  const {preparedFont} = await import('../../../../supabase/functions/_shared/ticketPreparedFont');
+  const sidecar = new TextEncoder().encode(JSON.stringify(await preparedFont(hash,{advances:{'?':1,'ě':.4},ascent:.9,descent:-.2})));
+  const head=vi.fn().mockResolvedValue({});
+  const scoped={...env,IMAGES_PRIVATE_BUCKET:{get,put,head}} as unknown as Env;
+  const path=url.replace('.ttf','.metrics-v1.json');
+  const write=(body:Uint8Array,token=secret)=>new Request(path,{method:'PUT',headers:{Authorization:`Bearer ${token}`,'Content-Length':String(body.length)},body});
+  put.mockResolvedValueOnce({}).mockResolvedValueOnce(null);
+  expect((await handleTicketFonts(write(sidecar),scoped)).status).toBe(201);
+  expect((await handleTicketFonts(write(sidecar),scoped)).status).toBe(409);
+  expect((await handleTicketFonts(write(sidecar,'user-jwt'),scoped)).status).toBe(401);
+  head.mockResolvedValue(null);
+  expect((await handleTicketFonts(write(sidecar),scoped)).status).toBe(409);
+  expect((await handleTicketFonts(write(new TextEncoder().encode('{}')),scoped)).status).toBe(422);
+  expect(get).not.toHaveBeenCalled();
+});

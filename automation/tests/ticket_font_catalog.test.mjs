@@ -28,7 +28,8 @@ test('face extraction retains every actual regular, bold, italic and bold-italic
 test('staged function bundle proof includes catalog and all three bundled defaults',async()=>{
  const {execFileSync}=await import('node:child_process');
  const proof=JSON.parse(execFileSync('python3',['automation/hetzner-supabase/runtime/ticket-font-asset-proof.py','supabase/functions/_shared/ticket-assets'],{encoding:'utf8'}));
- assert.deepEqual(Object.keys(proof).sort(),['font-catalog.json','font.ttf','roboto-slab.ttf','roboto.ttf','russo-one.ttf']);
+ const manifest=JSON.parse(readFileSync('supabase/functions/_shared/ticket-assets/preview-manifest.json','utf8'));
+ assert.deepEqual(Object.keys(proof).sort(),['font-catalog.json','preview-manifest.json',...Object.values(manifest.fonts).map(a=>a.file),...Object.values(manifest.artwork).map(a=>a.file)].sort());
  for(const item of Object.values(proof))assert.ok(item.bytes>0&&item.sha256.length===64);
  const builder=readFileSync('automation/hetzner-supabase/runtime/build-production-function-bundle.sh','utf8');
  assert.match(builder,/ticket-font-asset-proof.py/);assert.match(builder,/ticket_font_assets:\$ticket_font_assets/);

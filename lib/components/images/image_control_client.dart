@@ -120,7 +120,7 @@ class ImageControlClient {
       throw Exception('Image delete incomplete: ${response.body}');
   }
 
-  Future<Uint8List> download(String url) async {
+  Future<Uint8List> download(String url, {String? accessToken}) async {
     final uri = Uri.parse(url);
     if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
       throw const FormatException('Invalid image URL');
@@ -128,14 +128,26 @@ class ImageControlClient {
     // Client memory bound matches the upload protocol's 20 MB input envelope.
     // The Worker independently enforces actual bytes and central SQL budgets.
     const maxInputBytes = ImageUploadLimits.maxInputBytes;
-    final response = await httpClient
-        .send(http.Request('GET', uri))
-        .timeout(const Duration(seconds: 30));
+    final request = http.Request('GET', uri);
+    if (uri.path.startsWith('/private/')) {
+      final control = Uri.parse(endpoint);
+      if (uri.host != control.host ||
+          uri.scheme != control.scheme || uri.port != control.port ||
+          accessToken == null) {
+        throw const FormatException('Private image authorization required');
+      }
+      request.followRedirects = false;
+      request.headers['Authorization'] = 'Bearer $accessToken';
+    }
+    final response =
+        await httpClient.send(request).timeout(const Duration(seconds: 30));
     if (response.statusCode != 200) {
-      throw Exception('Image download failed: ${response.statusCode}');
+      throw ImageDownloadException(response.statusCode);
     }
     final bytes = BytesBuilder(copy: false);
-    await for (final chunk in response.stream.timeout(const Duration(seconds: 30))) {
+    await for (final chunk in response.stream.timeout(
+      const Duration(seconds: 30),
+    )) {
       if (bytes.length + chunk.length > maxInputBytes) {
         throw const FormatException('Image exceeds the upload input limit');
       }
@@ -158,4 +170,9 @@ class ImageUploadRejected implements Exception {
   final int status;
   @override
   String toString() => 'Image upload rejected ($status)';
+}
+
+class ImageDownloadException implements Exception {
+  final int status;
+  const ImageDownloadException(this.status);
 }

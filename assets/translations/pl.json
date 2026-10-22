@@ -779,6 +779,8 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "style_silk_light": "Jedwab - jasny",
+    "style_silk_dark": "Jedwab - ciemny",
     "style_concert_stub": "Koncert · odcinek kontrolny",
     "style_ball_silk": "Bal · jedwabne zaproszenie",
     "style_festival_poster": "Festiwal · mały plakat",

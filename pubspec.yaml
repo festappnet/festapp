@@ -161,7 +161,9 @@ flutter:
           weight: 700
   assets:
     - assets/email_templates/preview_examples.json
-    - supabase/functions/_shared/ticket-assets/font-catalog.json
+    - supabase/functions/_shared/ticket-assets/
+    - supabase/functions/_shared/ticket-assets/backgrounds/
+    - supabase/functions/_shared/ticket-assets/gallery-fonts/
     - assets/icons/
     - assets/translations/
     - packages/timezone/data/latest.tzf

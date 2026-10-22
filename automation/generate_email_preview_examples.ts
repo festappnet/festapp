@@ -498,7 +498,10 @@ const destination = new URL(
   "assets/email_templates/preview_examples.json",
   root,
 );
+const runtimeDestination = new URL('supabase/functions/_shared/emailPreviewDefaults.json', root);
+const runtimeDefaults = JSON.stringify(scalar) + '\n';
 if (Deno.args.includes("--check")) {
+  if (await Deno.readTextFile(runtimeDestination) !== runtimeDefaults) throw new Error('Runtime email preview defaults are stale');
   if (await Deno.readTextFile(destination) !== output) {
     throw new Error(
       "Email preview examples are stale; regenerate with documented command",
@@ -509,6 +512,7 @@ if (Deno.args.includes("--check")) {
   }
   console.log(`Email preview examples fresh (${records.length} scenarios)`);
 } else {
+  await Deno.writeTextFile(runtimeDestination, runtimeDefaults);
   await Deno.writeTextFile(destination, output);
   await Deno.writeTextFile(referenceDestination, referenceHtml);
   console.log(`Generated ${records.length} email preview scenarios`);

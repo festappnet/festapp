@@ -2,6 +2,7 @@ import { previewOrder, renderDraftPreview } from "./content.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
 import { previewHandler } from "./handler.ts";
+import defaults from "../_shared/emailPreviewDefaults.json" with {type:"json"};
 
 function assert(value: unknown, message = "assertion failed"): asserts value {
   if (!value) throw new Error(message);
@@ -29,9 +30,9 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
   const sent = await renderEmail({
     context: { organization: 1 },
     to: "recipient@example.invalid",
-    substitutions: confirmationSubstitutions(
+    substitutions: {...defaults, ...confirmationSubstitutions(
       previewOrder(context.title, context.tone, context),
-    ),
+    )},
     replyTo: context.replyTo,
   }, () => Promise.resolve(resolved));
   assert(preview.html === sent.html && preview.subject === sent.subject);
@@ -58,7 +59,7 @@ Deno.test("formal/informal only changes generated content, preserving custom sta
 Deno.test("pure confirmation retains zero order and deposit semantics", () => {
   const order: any = previewOrder("Test", "informal");
   order.payment_info.amount = 0;
-  assert(confirmationSubstitutions(order).variableSymbol === "0000000000");
+  assert(confirmationSubstitutions(order).variableSymbol === defaults.variableSymbol);
   order.payment_info.amount = 1000;
   order.payment_info.deposit_amount = 500;
   order.occasion.features = [{ code: "deposit", deposit_deadline: "on_site" }];
@@ -121,11 +122,30 @@ Deno.test("preview reflects configured ticket/product content and retains author
     sampleProducts: [{title:"Balcony",price:250,currency_code:"CZK"}],
     resolved:{template:{id:2,subject:"{{occasionTitle}}",html:'<style>h1{color:red}</style><h1 style="font-family:serif">{{occasionTitle}}</h1>{{fullOrder}}'},wrapper:{html:'<html><body style="background:white">{{content}}</body></html>'}} };
   const result = await renderDraftPreview(context);
-  const sent = await renderEmail({to:"sample@example.invalid",context:{organization:1},substitutions:confirmationSubstitutions(previewOrder(context.title,context.tone,context))},async()=>context.resolved);
+  const sent = await renderEmail({to:"sample@example.invalid",context:{organization:1},substitutions:{...defaults,...confirmationSubstitutions(previewOrder(context.title,context.tone,context))}},async()=>context.resolved);
   assert(result.html === sent.html);
   assert(result.html.includes('<style>h1{color:red}</style>'));
   assert(result.html.includes('font-family:serif'));
   assert(result.html.includes('Balcony'));
   assert(previewOrder(context.title,context.tone,context).payment_info.amount===250);
   assert(previewOrder(context.title,context.tone,context).occasion.features[0].code==='ticket');
+});
+
+Deno.test('shared preview defaults and configured bank details render in full', async () => {
+  const sample = previewOrder('Moje akce','formal',{
+    sampleProducts:[{title:'Vstupné',price:725,currency_code:'CZK'}],
+    paymentInfo:{account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800'},
+    deadlineDurationSeconds:3*86400,
+  },new Date('2026-10-22T12:00:00Z'));
+  assert(sample.payment_info.deadline==='2026-10-25T12:00:00.000Z');
+  const values=confirmationSubstitutions(sample);
+  assert(values.accountNumber==='19-2000145399/0800');
+  assert(values.iban==='CZ65 0800 0000 1920 0014 5399');
+  assert(values.variableSymbol===defaults.variableSymbol);
+  assert(sample.payment_info.amount===725);
+  const result=await renderDraftPreview({...context,paymentInfo:sample.payment_info,
+    resolved:{template:{subject:'{{appName}} - {{occasionTitle}}',html:'{{accountNumber}} {{iban}} {{name}}'},wrapper:{html:'{{content}}'}}});
+  assert(result.subject===defaults.appName+' - '+context.title);
+  assert(result.html.includes('19-2000145399/0800')&&result.html.replace(/<[^>]*>/g,'').includes('CZ65 0800 0000 1920 0014 5399'));
+  assert(result.html.includes(defaults.name));
 });

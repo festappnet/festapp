@@ -38,3 +38,17 @@ test('existing top-level-only assets are upgraded for gallery fonts and artwork'
   assert.match(fs.readFileSync(file,'utf8'),/ticket-assets\/\*\*\/\*/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('preview manifest proves gallery versions and rejects mutated bytes',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'preview-manifest-'));
+ const root=new URL('../../supabase/functions/_shared/ticket-assets/',import.meta.url);
+ const proof=new URL('../hetzner-supabase/runtime/ticket-font-asset-proof.py',import.meta.url).pathname;
+ try{
+  fs.cpSync(root,dir,{recursive:true});
+  const result=spawnSync('python3',[proof,dir],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);
+  const files=JSON.parse(result.stdout);assert.ok(files['preview-manifest.json']);assert.ok(files['backgrounds/concert-stub-v2.png']);assert.ok(files['backgrounds/concert-stub-v3.png']);
+  fs.appendFileSync(path.join(dir,'backgrounds/concert-stub-v3.png'),'mutation');
+  assert.notEqual(spawnSync('python3',[proof,dir]).status,0);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

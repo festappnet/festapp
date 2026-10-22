@@ -2,6 +2,7 @@ import type {PDFDict as PDFDictType, PDFRawStream as PDFRawStreamType} from 'npm
 import {futuraId,fontMetrics} from '../_shared/ticketFonts.ts';
 import {assertEquals,assert} from 'jsr:@std/assert@1';
 import {handlePreview,type PreviewDependencies} from './handler.ts';
+import {draftPreviewProducts} from './draftProducts.ts';
 import {preset} from '../_shared/ticketLayout.ts';
 import {sampleData, type PreviewProduct} from '../_shared/ticketRenderData.ts';
 import {formatCurrency} from '../_shared/utilities.ts';
@@ -27,7 +28,7 @@ Deno.test('preview bounds input and rejects secrets, real IDs and unapproved ima
 Deno.test('resolve returns style choices and uses known occasion details in every scenario',async()=>{
   const s=setup();s.deps.occasion=async()=>({id:7,title:'Festival v naší obci',start_time:'2026-11-07T18:00:00Z',end_time:'2026-11-07T23:00:00Z',data:{place_name:'Sokolovna'},features:[]});
   const result=await (await handlePreview(req(),s.deps)).json();
-  assertEquals(Object.keys(result.presets),['classic','compact','event','portrait','portrait_compact','portrait_event','concert_stub','ball_silk','festival_poster','club_panorama','theatre_program','gallery_square','gala_invitation','boarding_pass','cinema_strip','sports_arena','festival_badge','workshop_card']);
+  assertEquals(Object.keys(result.presets),['portrait','silk_light','silk_dark','concert_stub','ball_silk','festival_poster','club_panorama','theatre_program','gallery_square','gala_invitation','boarding_pass','cinema_strip','sports_arena','festival_badge','workshop_card']);
   for(const scenario of Object.values(result.scenarios) as any[]) {assertEquals(scenario.occasionTitle,'Festival v naší obci');assert(scenario.occasionDatePlace.includes('Sokolovna'));assert(scenario.occasionDatePlace.includes('11. 2026'));assertEquals(scenario.qr,'festapp-preview:X3827K6M8R');}
 });
 Deno.test('image-backed presets inherit existing text color without weakening QR colors',async()=>{
@@ -60,7 +61,7 @@ Deno.test('legacy type does not restrict gallery, background selection or saved 
     const response=await handlePreview(req({...body,type}),s.deps);
     const result=await response.json();results.push(result);
     assertEquals(result.template.font,undefined);
-    const template=result.presets.compact;
+    const template=preset('wide'); // Previously saved basic layouts remain valid.
     const background='https://img.festapp.net/custom-ticket.png';
     let received:any;
     s.deps.resources=async(_occasion,feature)=>{received=feature;return {font,metrics,fonts:{[futuraId]:{id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400}}};};
@@ -95,13 +96,13 @@ Deno.test('portrait artwork cannot turn landscape gallery templates into portrai
  const background=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAIAAAAGCAIAAABmRdhlAAAADklEQVR4nGP4DwYMhCkA8VQj3S7lL6QAAAAASUVORK5CYII='),c=>c.charCodeAt(0));
  s.deps.resources=async()=>({font,metrics,background});
  const withImage=await (await handlePreview(req({...body,type:'wide'}),s.deps)).json();
- for(const key of ['classic','compact','event']) {
+ for(const key of ['concert_stub','club_panorama','boarding_pass']) {
    const t=withImage.presets[key];
    assert(t.ticketArea.width>t.ticketArea.height,`${key} must stay landscape`);
    assertEquals(t,blank.presets[key]);
-   assertEquals(t.page,{width:595.28,height:841.89});
+   assertEquals(t.page,blank.presets[key].page);
  }
- for(const key of ['portrait','portrait_compact','portrait_event']) {
+ for(const key of ['portrait']) {
    const t=withImage.presets[key];assert(t.ticketArea.height>t.ticketArea.width);
  }
  assertEquals(withImage.background,btoa(String.fromCharCode(...background)));
@@ -317,9 +318,10 @@ Deno.test('canonical layout text admits scope before fonts, bounds output before
 Deno.test('first occasion resolves and renders a ticket from an authorized setup draft without reading any source occasion',async()=>{
  const s=setup();let drafts=0;
  s.deps.authorizeSetupDraft=async()=>admission;
- s.deps.setupDraft=async()=>{drafts++;return {occasion:{id:0,title:'First event',features:[],data:{}},products:{types:new Map(),products:new Map()}};};
+ s.deps.setupDraft=async()=>{drafts++;return {occasion:{id:0,title:'Můj vlastní ples',start_time:'2026-11-07T18:00:00Z',features:[],data:{place_name:'Obecní sál'}},products:draftPreviewProducts({formDraft:{fields:[{product_type_data:{id:-1,type:'spot',products:[{id:-2,title:'Vstupné',price:725,currency_code:'CZK'}]}}]}})};};
  const request={setupDraftId:'00000000-0000-4000-8000-000000000001',type:'wide',mode:'resolve',fontProtocol:2};
  const response=await handlePreview(req(request),s.deps);assertEquals(response.status,200);const resolved=await response.json();assert(resolved.template.elements.length>0);
+ assertEquals(resolved.scenarios.normal.occasionTitle,'Můj vlastní ples');assert(resolved.scenarios.normal.occasionDatePlace.includes('Obecní sál'));assertEquals(resolved.catalog[0].example.price,725);assertEquals(resolved.data.price,'Cena: 725\u00a0Kč');
  const pdf=await handlePreview(req({...request,mode:'pdf'}),s.deps);assertEquals(pdf.status,200);assert(atob((await pdf.json()).file).startsWith('%PDF'));
  assertEquals(s.counts(),[0,2,0]);assertEquals(drafts,2);
  s.deps.authorizeSetupDraft=async()=>false;
@@ -340,6 +342,38 @@ Deno.test('gallery supplies independent artwork, bundled font metrics and preser
     assertEquals(result.presetArtwork[key].background,url);
     assertEquals(result.presetArtwork[key].image!==null,url!==null);
   }
-  assertEquals(result.presets.ball_silk.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'222A31');
-  assertEquals(result.presets.club_panorama.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'F5F4EF');
+  assertEquals(result.presets.ball_silk.elements.find((e:any)=>e.binding==='occasionTitle').style.color,'222222');
+  const clubInk=result.presets.club_panorama.elements.find((e:any)=>e.binding==='occasionTitle').style.color;
+  assert(/^([0-9A-F]{2})\1\1$/.test(clubInk));
+  assert(Number.parseInt(clubInk.slice(0,2),16)>220,'Light text stays readable on the dark artwork');
+});
+Deno.test('protocol 3 cold and repeated resolves never enter font/image/PDF resources',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('resource loader forbidden');};s.deps.font=()=>{throw Error('font parser forbidden');};
+ for(let i=0;i<10;i++){
+  const response=await handlePreview(req({...body,resourceProtocol:3}),s.deps);
+  assertEquals(response.status,200);const result=await response.json();
+  assertEquals(result.resourceProtocol,3);assertEquals(result.fontIds,[futuraId]);
+  for(const key of ['fonts','font','metrics','background','logo','presets','presetArtwork','qrMatrix'])assertEquals(result[key],undefined);
+  assert(result.scenarios.normal.qr.startsWith('festapp-preview:'));
+ }
+ assertEquals(s.counts(),[10,0,10]);
+ const denied=setup(false);assertEquals((await handlePreview(req({...body,resourceProtocol:3}),denied.deps)).status,403);assertEquals(denied.counts(),[0,0,0]);
+ assertEquals((await handlePreview(req({...body,resourceProtocol:99}),s.deps)).status,400);
+});
+Deno.test('protocol 3 retains read-only and setup scope and draft synthetic text',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('forbidden resources');};
+ const saved=await handlePreview(req({...body,resourceProtocol:3,readOnly:true}),s.deps);assertEquals(saved.status,200);
+ const id='00000000-0000-0000-0000-000000000007';
+ s.deps.authorizeSetupDraft=async()=>admission;
+ s.deps.setupDraft=async()=>({occasion:{title:'Draft',features:[]},products:{types:new Map(),products:new Map()}});
+ const input={setupDraftId:id,mode:'resolve',type:'wide',fontProtocol:2,resourceProtocol:3,previewOccasion:{title:'Český návrh'}};
+ const result=await handlePreview(req(input),s.deps);assertEquals(result.status,200);assertEquals((await result.json()).scenarios.normal.occasionTitle,'Český návrh');
+ assertEquals((await handlePreview(req({...input,occasionId:7}),s.deps)).status,400);
+});
+Deno.test('metadata retains a saved template and ignores inactive named background',async()=>{
+ const s=setup();s.deps.resources=()=>{throw Error('resource loader forbidden');};
+ const wide=preset('wide');
+ s.deps.occasion=async()=>({id:7,features:[{code:'ticket',ticket_type:'named',layout:{schemaVersion:3,templates:{wide}},background:'https://img.festapp.net/images/old-wide.png'}]});
+ const result=await handlePreview(req({...body,resourceProtocol:3}),s.deps);assertEquals(result.status,200);const j=await result.json();assertEquals(j.backgroundUrl,null);
+ const saved=await handlePreview(req({...body,type:'wide',resourceProtocol:3}),s.deps);const current=await saved.json();assertEquals(current.preset,wide);assertEquals(current.template,wide);assertEquals(current.backgroundUrl,'https://img.festapp.net/images/old-wide.png');
 });

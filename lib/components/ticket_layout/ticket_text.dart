@@ -50,29 +50,25 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
           : '?')
       .join();
   List<String> wrap(double size) {
-    final lines = <String>[];
-    var line = '';
-    for (final rune in text.runes) {
-      final c = String.fromCharCode(rune);
-      if (c == '\n') {
-        lines.add(line);
-        line = '';
-        continue;
-      }
-      if (width(line + c, size) > e.box.width && line.isNotEmpty) {
-        final split = line.lastIndexOf(' ');
-        if (split > 0) {
-          lines.add(line.substring(0, split));
-          line = line.substring(split + 1) + c;
-        } else {
-          lines.add(line);
-          line = c;
+    final lines = <String>[], paragraphs = text.split('\n');
+    for (var i = 0; i < paragraphs.length; i++) {
+      var line = '';
+      for (final match in RegExp(r'[^ ]+| +').allMatches(paragraphs[i])) {
+        final token = match.group(0)!;
+        if (token.startsWith(' ')) {
+          line += token;
+          continue;
         }
-      } else {
-        line += c;
+        if (line.trim().isNotEmpty && width(line + token, size) > e.box.width) {
+          lines.add(line.trimRight());
+          line = token;
+        } else {
+          line += token;
+        }
       }
+      if (line.isNotEmpty || i < paragraphs.length - 1)
+        lines.add(line.trimRight());
     }
-    if (line.isNotEmpty) lines.add(line.trimRight());
     return lines;
   }
 
@@ -83,8 +79,12 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
           ((lines.length - 1) * 1.2 + m.ascent - m.descent) * size <=
               e.box.height) &&
       lines.every((l) => width(l, size) <= e.box.width + .001);
-  while (!fits() && size > e.minFontSize) {
-    size = math.max(e.minFontSize, size - .5);
+  // Match the PDF: preserve complete titles even below the preferred minimum.
+  final minimum = e.binding == 'occasionTitle'
+      ? math.min(e.minFontSize, .1)
+      : e.minFontSize;
+  while (!fits() && size > minimum) {
+    size = math.max(minimum, size - .5);
     lines = wrap(size);
   }
   final overflow = !fits();
@@ -103,11 +103,19 @@ TicketTextFit fitTicketText(String text, TicketElement e, TicketFontMetrics m) {
     if (lines.isEmpty || width('…', size) > e.box.width) {
       lines = [];
     } else {
-      var last = lines.removeLast();
-      while (last.isNotEmpty && width('$last…', size) > e.box.width) {
-        last = String.fromCharCodes(last.runes.take(last.runes.length - 1));
-      }
-      lines.add('$last…');
+      lines = [
+        for (var i = 0; i < lines.length; i++)
+          (() {
+            var line = lines[i];
+            if (i < lines.length - 1 && width(line, size) <= e.box.width)
+              return line;
+            while (line.isNotEmpty && width('$line…', size) > e.box.width) {
+              line =
+                  String.fromCharCodes(line.runes.take(line.runes.length - 1));
+            }
+            return '$line…';
+          })()
+      ];
     }
   }
   return TicketTextFit(size, lines, lines.map((l) => width(l, size)).toList(),

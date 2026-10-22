@@ -19,4 +19,18 @@ for asset in catalog['fonts']:
     if digest != asset['sha256'] or len(data) != asset['byteLength']:
         raise ValueError('Ticket asset integrity: ' + name)
     proof[name] = {'sha256': digest, 'bytes': len(data)}
+manifest_bytes = (root / 'preview-manifest.json').read_bytes()
+manifest = json.loads(manifest_bytes)
+payload = manifest_bytes.decode().strip().rsplit(',"sha256":', 1)[0] + '}'
+if hashlib.sha256(payload.encode()).hexdigest() != manifest['sha256']:
+    raise ValueError('Preview manifest integrity')
+proof['preview-manifest.json'] = {'sha256': hashlib.sha256(manifest_bytes).hexdigest(), 'bytes': len(manifest_bytes)}
+for asset in [*manifest['fonts'].values(), *manifest['artwork'].values()]:
+    name = asset['file']
+    if '..' in pathlib.PurePosixPath(name).parts or pathlib.PurePosixPath(name).is_absolute():
+        raise ValueError('Unbounded preview asset path')
+    data = (root / name).read_bytes()
+    if hashlib.sha256(data).hexdigest() != asset['sha256'] or len(data) != asset['byteLength']:
+        raise ValueError('Preview asset integrity: ' + name)
+    proof[name] = {'sha256': asset['sha256'], 'bytes': len(data)}
 print(json.dumps(proof, sort_keys=True))

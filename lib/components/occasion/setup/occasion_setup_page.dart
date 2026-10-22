@@ -1,7 +1,6 @@
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
-import '../../fonts/ticket_font_ids.dart';
 import 'occasion_setup_appearance_panel.dart';
 import 'occasion_setup_form_preview.dart';
 import 'occasion_setup_ticket_gallery.dart';
@@ -2337,7 +2336,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 if (!await _flush())
                   throw StateError('Koncept se nepodařilo uložit');
                 final service = TicketLayoutService()
-                    .forSetupDraft(_stored.id, _stored.unit)
+                    .forSetupDraft(_stored.id, _stored.unit, revision: _stored.revision)
                     .withPreviewOccasion(TicketPreviewOccasion(
                         title: d['title'] as String,
                         startTime: DateTime.tryParse(d['start'] as String),
@@ -2353,8 +2352,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : Map<String, dynamic>.from(
                             (d['ticketDraft'] as Map)['layout']),
                     _ticketDraftFeature(d).ticketBackground);
-                final sharedFont = legacyTicketFontIds[OccasionSetupAppearance
-                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']]];
+                final sharedFont = OccasionSetupAppearance
+                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
                 if (sharedFont != null &&
                     !resources.fonts.containsKey(sharedFont)) {
                   resources.fonts[sharedFont] =
@@ -2374,9 +2373,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                         : 'wide': selection.value
                   }
                 };
-                feature['background'] = null;
+                feature['background'] = selection.background;
                 x['ticketDraft'] = feature;
                 x['ticketTemplateId'] = selection.key;
+                x['ticketTemplateSource'] = selection.source;
                 _ticketFeature = null;
               }, changesConfiguration: true),
             ),
@@ -2403,6 +2403,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'preserveSource': true
           };
           x.remove('ticketTemplateId');
+          x.remove('ticketTemplateSource');
           _editEpoch++;
         }, changesConfiguration: true);
       },
@@ -2417,6 +2418,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               service: TicketLayoutService().forSetupDraft(
                 _stored.id,
                 _stored.unit,
+                revision: _stored.revision,
               ),
               productEditing: false,
               showScanningSettings: false,

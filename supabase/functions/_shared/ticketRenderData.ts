@@ -14,11 +14,11 @@ export const sampleQr='festapp-preview:'+sampleSymbol;
 const text=(v:unknown):string|null=>typeof v==='string'&&v.trim()?v.trim().slice(0,2048):null;
 export function productValue(p:PreviewProduct):string|null {return text(p.short_title)??text(p.data?.short_title)??text(p.title);}
 export function formatProduct(label:string,value:string|null):string|null {return value?(label.trim()?label.trim()+': '+value:value):null;}
-export function indexProductCatalog(raw:any,occasionId:number):ProductCatalog {
+export function indexProductCatalog(raw:any,occasionId:number,allowDraftIds=false):ProductCatalog {
   if(!raw||!Array.isArray(raw.product_types)||!Array.isArray(raw.products))throw new Error('ticket_catalog_invalid');
   const products=new Map<number,PreviewProduct>();
   const types=new Map<number,CatalogType>(raw.product_types.map((t:any)=> {
-    if(!Number.isSafeInteger(t.id)||t.id<=0||t.occasion!==occasionId)throw new Error('ticket_catalog_cross_occasion');
+    if(!Number.isSafeInteger(t.id)||t.id===0||(!allowDraftIds&&t.id<0)||t.occasion!==occasionId)throw new Error('ticket_catalog_cross_occasion');
     return [t.id,{id:t.id,occasion:t.occasion,title:text(t.title)??text(t.forms?.[0]?.fieldTitle)??'Skupina produktů',admission:t.admission===true,offered:t.offered===true,referenced:t.referenced===true,forms:t.forms??[],hasVisibleProducts:false,example:null}];
   }));
   for(const p of [...raw.products].sort((a,b)=>(a.order??0)-(b.order??0)||a.id-b.id)) {

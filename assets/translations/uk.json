@@ -1050,6 +1050,8 @@
     "askManagerForPaymentAccount": "Щоб приймати платежі, попросіть адміністратора організації додати рахунок для зазначених валют."
   },
   "TicketLayout": {
+    "style_silk_light": "Шовк - світлий",
+    "style_silk_dark": "Шовк - темний",
     "style_concert_stub": "Концерт · контрольний відрив",
     "style_ball_silk": "Бал · шовкове запрошення",
     "style_festival_poster": "Фестиваль · мініафіша",
