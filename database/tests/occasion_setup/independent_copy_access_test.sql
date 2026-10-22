@@ -29,6 +29,9 @@ BEGIN
  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
  VALUES(org,target_unit,'Authorized same-tenant source',gen_random_uuid()::text,now(),now()+interval '1 day')
  RETURNING id INTO allowed_source;
+ INSERT INTO eshop.blueprints(occasion,organization,title,objects)
+ SELECT id,organization,'Independent source fixture','[]'::jsonb FROM public.occasions
+ WHERE id IN(private_source,foreign_source,allowed_source);
  INSERT INTO public.occasion_setup_drafts(id,unit,organization,author,data)
  VALUES(draft_id,target_unit,org,actor,'{}');
  SELECT count(*) INTO occasions_before FROM public.occasions;
@@ -42,12 +45,19 @@ BEGIN
   RAISE EXCEPTION 'Independent source fixture has incorrect access predicates';
  END IF;
  EXECUTE 'RESET ROLE';
- FOREACH source_key IN ARRAY ARRAY['formSourceOccasionId','blueprintSourceOccasionId'] LOOP
+ FOREACH source_key IN ARRAY ARRAY['formSourceOccasionId','blueprintSourceOccasionId','blueprintSourceId'] LOOP
   FOREACH source_id IN ARRAY ARRAY[private_source,foreign_source,allowed_source] LOOP
    v_command_id:=gen_random_uuid();
    -- Missing review deliberately stops an authorized control immediately after
    -- source checks, proving rejection happens before any materialization.
-   payload:=jsonb_build_object('formEnabled',false,'blueprintMode','none',source_key,source_id);
+   payload:=jsonb_build_object('formEnabled',false,
+     'blueprintMode',CASE WHEN source_key='blueprintSourceId' THEN 'copy' ELSE 'none' END,
+     source_key,CASE WHEN source_key='blueprintSourceId' THEN
+       (SELECT id FROM eshop.blueprints WHERE occasion=source_id LIMIT 1) ELSE source_id END);
+   -- A client-provided allowed scope must not override the selected stored plan.
+   IF source_key='blueprintSourceId' THEN
+    payload:=payload||jsonb_build_object('blueprintSourceOccasionId',allowed_source);
+   END IF;
    UPDATE public.occasion_setup_drafts SET data=payload WHERE id=draft_id;
    expected_message:=CASE WHEN source_id=allowed_source THEN 'Draft review required' ELSE 'Configuration source denied' END;
    EXECUTE 'SET LOCAL ROLE authenticated';

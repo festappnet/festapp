@@ -10,7 +10,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  sale_mode text; sale_start timestamptz; sale_end timestamptz;
- blueprint_mode text; blueprint_id bigint; v_commit public.client_commits%ROWTYPE;
+ blueprint_mode text; blueprint_id bigint; blueprint_source bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
  IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(d.unit) THEN
@@ -66,6 +66,20 @@ BEGIN
   IF configuration_source IS NOT NULL AND (NOT public.can_copy_occasion_source(configuration_source) OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=configuration_source AND organization=d.organization)) THEN
    RAISE insufficient_privilege USING MESSAGE='Configuration source denied'; END IF;
  END LOOP;
+ -- A plan can be selected independently of the event/form copy. Resolve its
+ -- resource scope from the stored plan, rather than the overall copy source.
+ IF blueprint_mode='copy' THEN
+  IF nullif(payload->>'blueprintSourceId','') IS NOT NULL THEN
+   SELECT occasion INTO blueprint_source FROM eshop.blueprints WHERE id=(payload->>'blueprintSourceId')::bigint;
+   IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='Blueprint source missing'; END IF;
+  ELSE
+   blueprint_source:=coalesce(nullif(payload->>'blueprintSourceOccasionId','')::bigint,
+     nullif(payload->>'formSourceOccasionId','')::bigint,source_id);
+  END IF;
+  IF blueprint_source IS NOT NULL AND (NOT public.can_copy_occasion_source(blueprint_source)
+    OR NOT EXISTS(SELECT 1 FROM public.occasions WHERE id=blueprint_source AND organization=d.organization)) THEN
+   RAISE insufficient_privilege USING MESSAGE='Configuration source denied'; END IF;
+ END IF;
  IF nullif(btrim(payload->>'title'),'') IS NULL OR (payload->>'reviewConfirmed')::boolean IS DISTINCT FROM true THEN
   RAISE invalid_parameter_value USING MESSAGE='Draft review required'; END IF;
  IF (payload->>'end')::timestamptz < (payload->>'start')::timestamptz THEN
@@ -249,7 +263,7 @@ BEGIN
    IF payload#>>'{blueprintLayoutDraft,layout,schemaVersion}'='2' THEN
     PERFORM public.copy_blueprint_text_resources_internal(NULL,d.id,new_id,payload#>'{blueprintLayoutDraft,layout}');
    END IF;
-   blueprint_id:=public.materialize_setup_blueprint_layout_internal(payload->'blueprintLayoutDraft',product_map,source_id,new_id,d.unit);
+   blueprint_id:=public.materialize_setup_blueprint_layout_internal(payload->'blueprintLayoutDraft',product_map,blueprint_source,new_id,d.unit);
    UPDATE public.forms SET blueprint=blueprint_id WHERE id=form_id;
    features:=features||'[{"code":"blueprint","is_enabled":true}]';
   ELSE
