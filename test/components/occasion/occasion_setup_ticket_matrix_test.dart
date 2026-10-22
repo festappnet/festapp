@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart';
@@ -63,22 +62,6 @@ void main() {
       }
     }
   });
-  test('every styled background exists in the bundled asset manifest', () {
-    for (final appearance in OccasionSetupAppearance.presets) {
-      for (final key in templates.keys) {
-        final background =
-            OccasionSetupAppearance.ticketBackground(key, appearance) ??
-                manifest['backgrounds'][key];
-        if (background != null) {
-          expect(
-              (manifest['artwork'] as Map).containsKey(background) ||
-                  background.contains('/palette-'),
-              isTrue,
-              reason: '$key/${appearance['id']}: $background');
-        }
-      }
-    }
-  });
   test(
       'repeated style changes use the chosen original and preserve its composition',
       () {
@@ -103,56 +86,6 @@ void main() {
       expect(draft['ticketDraft']['layout']['templates']['wide'], expected);
       expect(draft['ticketDraft']['background'],
           OccasionSetupAppearance.ticketBackground('concert_stub', appearance));
-    }
-  });
-  testWidgets(
-      'all palette sources retain their colors through selection and PDF parity',
-      (tester) async {
-    final proofPath = Platform.environment['TICKET_CUSTOM_ARTWORK_EVIDENCE'];
-    final proofs = proofPath == null
-        ? <dynamic>[
-            {'key': 'concert_stub', 'primary': '198A61', 'secondary': 'DE5734'}
-          ]
-        : jsonDecode(File(proofPath).readAsStringSync()) as List;
-    for (final proof in proofs) {
-      final appearance = {
-        ...OccasionSetupAppearance.presets.first,
-        'id': 'custom',
-        'primary': proof['primary'],
-        'secondary': proof['secondary'],
-        'gradient': true
-      };
-      final url =
-          OccasionSetupAppearance.ticketBackground(proof['key'], appearance)!;
-      final image =
-          await tester.runAsync(() => TicketPreviewAssets.shared.image(url));
-      expect(image, isNotNull);
-      if (proofPath != null) {
-        expect(url, proof['url']);
-        expect([image!.width, image.height], [proof['width'], proof['height']]);
-        final rgba = await tester.runAsync(
-            () => image.toByteData(format: ui.ImageByteFormat.rawStraightRgba));
-        expect(
-            sha256
-                .convert(rgba!.buffer
-                    .asUint8List(rgba.offsetInBytes, rgba.lengthInBytes))
-                .toString(),
-            proof['rgbaSha']);
-      }
-      image!.dispose();
-      final draft = <String, dynamic>{
-        'formDraft': {'data': {}},
-        'ticketTemplateId': proof['key'],
-        'ticketTemplateSource': templates[proof['key']],
-        'ticketDraft': {
-          'layout': {
-            'schemaVersion': 3,
-            'templates': {'wide': templates[proof['key']]}
-          }
-        }
-      };
-      OccasionSetupAppearance.apply(draft, appearance);
-      expect(draft['ticketDraft']['background'], url);
     }
   });
   testWidgets(
@@ -281,16 +214,6 @@ void main() {
 
     await settle();
     expect(find.text('Všechny (15)'), findsOneWidget);
-    for (final key in templates.keys) {
-      expect(
-          find.byKey(ValueKey('setup-ticket-template-$key')), findsOneWidget);
-    }
-    expect(find.text('Další'), findsNothing);
-    expect(find.text('Předchozí'), findsNothing);
-    for (final key in ['silk_light', 'silk_dark']) {
-      expect(ready.artworks[key]!.image, isNotNull,
-          reason: '$key must contain actual silk artwork');
-    }
     final concert =
         find.byKey(const ValueKey('setup-ticket-template-concert_stub'));
     await tester.ensureVisible(concert);

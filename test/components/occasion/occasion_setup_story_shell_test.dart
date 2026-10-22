@@ -12,9 +12,7 @@ void main() {
     final font = FontLoader('Futura')
       ..addFont(rootBundle.load('fonts/Futura PT Book.ttf'));
     await font.load();
-    await (FontLoader('MaterialIcons')
-          ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
-        .load();
+    await (FontLoader('MaterialIcons')..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
   });
   for (final variant in [
     (name: 'mobile', size: const Size(375, 812), scale: 1.0, dark: false),
@@ -156,18 +154,18 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('story-target-start')));
     expect(selected, ['start']);
     // Request the Material button's actual focus node, then activate by Space.
-    final labelContext = tester.element(find
-        .descendant(
-            of: find.byKey(const ValueKey('story-target-source')),
-            matching: find.byType(Icon))
-        .first);
+    final labelContext =
+        tester.element(find.descendant(of: find.byKey(const ValueKey('story-target-source')), matching: find.byType(Icon)).first);
     Focus.of(labelContext).requestFocus();
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
     expect(selected.last, 'source');
-    expect(find.text('Otázky'), findsNothing);
-    expect(find.byType(PopupMenuButton<String>), findsNothing);
+    await tester.tap(find.byTooltip('Všechny otázky'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2 Name · Current'));
+    await tester.pumpAndSettle();
+    expect(selected.last, 'name');
     semantics.dispose();
   });
   testWidgets('optional targets do not consume question numbers',
@@ -204,7 +202,16 @@ void main() {
     }
     expect(find.text('1 Source'), findsNothing);
     expect(find.text('4 Verification'), findsNothing);
-    expect(find.byType(PopupMenuButton<String>), findsNothing);
+    await tester.tap(find.byTooltip('Všechny otázky'));
+    await tester.pumpAndSettle();
+    for (final label in [
+      'Source · Upcoming',
+      '1 Name · Current',
+      '4 Appearance · Upcoming',
+      'Verification · Upcoming'
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
   });
   for (final width in [320.0, 375.0, 812.0, 1440.0]) {
     testWidgets(
@@ -259,8 +266,11 @@ void main() {
                 w.scrollDirection == Axis.horizontal),
             findsNothing);
       }
-      expect(find.text('Otázky'), findsNothing);
-      expect(find.text('Basics'), findsNothing);
+      await tester.tap(find.byTooltip('Všechny otázky'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('1 Step 0 · Upcoming'));
+      await tester.pumpAndSettle();
+      expect(selected.last, 'key-0');
     });
   }
 }

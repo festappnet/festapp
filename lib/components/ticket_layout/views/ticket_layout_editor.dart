@@ -15,7 +15,6 @@ import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/components/navigation/root_route_navigation.dart';
 import 'package:fstapp/components/navigation/routed_day_tabs.dart';
 import 'ticket_canvas_color_dialog.dart';
-import '../ticket_template_order.dart';
 import '../../_shared/common_strings.dart';
 import 'dart:convert';
 import '../../fonts/font_family_picker.dart';
@@ -470,9 +469,7 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     final presets = resources.presets.isEmpty
         ? {'classic': resources.preset}
         : resources.presets;
-    final orderedPresets = presets.entries.toList()
-      ..sort((a, b) => compareTicketTemplateKeys(a.key, b.key));
-    final previews = Map.fromEntries(orderedPresets).map(
+    final previews = presets.map(
       (key, value) => MapEntry(
         key,
         TicketLayoutController(

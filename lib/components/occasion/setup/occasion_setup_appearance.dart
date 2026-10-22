@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 
+import '../../fonts/ticket_font_ids.dart';
 import '../../ticket_layout/models/ticket_layout.dart';
-import '../../ticket_layout/ticket_theme_color.dart';
 
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
@@ -26,43 +26,60 @@ class OccasionSetupAppearance {
   };
   static String? ticketBackground(String key, Map appearance) {
     const root = 'https://img.festapp.net/ticket-presets/v1/';
-    if (key == 'silk_light') return '${root}style-silk-v2.png';
-    if (key == 'silk_dark') return '${root}style-silk-dark-v2.png';
-    if (themedArtwork.contains(key)) {
-      final secondary = appearance['gradient'] == true
-          ? appearance['secondary']
-          : appearance['primary'];
-      return '${root}palette-${appearance['primary']}-${secondary}-$key-v2.png';
+    if (key == 'silk_light') return '${root}style-silk-v1.png';
+    if (key == 'silk_dark') return '${root}style-silk-dark-v1.png';
+    if (themedArtwork.contains(key) &&
+        presets.any((p) => p['id'] == appearance['id'])) {
+      return '${root}theme-${appearance['id']}-${key.replaceAll('_', '-')}-v1.png';
     }
     return null;
   }
 
   // Same luminance-preserving palette as ticketThemePalette.js. Recoloring ink
   // and paper together preserves each original design's contrast and structure.
-  static String themeColor(String hex, Map appearance) =>
-      ticketThemeColor(hex, appearance['primary'], appearance['secondary']);
+  static String themeColor(String hex, Map appearance) {
+    List<double> channels(String value) => [0, 2, 4]
+        .map((i) => int.parse(value.substring(i, i + 2), radix: 16).toDouble())
+        .toList();
+    double luminance(List<double> rgb) {
+      final linear = rgb.map((v) {
+        final c = v / 255;
+        return c <= .04045
+            ? c / 12.92
+            : math.pow((c + .055) / 1.055, 2.4).toDouble();
+      }).toList();
+      return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    }
+
+    final source = channels(hex), desired = luminance(source);
+    if (source.reduce(math.max) - source.reduce(math.min) < 8 &&
+        (desired > .94 || desired < .002)) return hex.toUpperCase();
+    final warm = source[0] > source[1] * 1.03 && source[0] > source[2] * 1.12;
+    final target = channels(appearance[warm ? 'secondary' : 'primary']),
+        end = luminance(target) < desired ? 255.0 : 0.0;
+    var low = 0.0, high = 1.0;
+    for (var i = 0; i < 24; i++) {
+      final blend = (low + high) / 2,
+          rgb = target.map((c) => c + (end - c) * blend).toList();
+      if ((luminance(rgb) < desired) == (end == 255)) {
+        low = blend;
+      } else {
+        high = blend;
+      }
+    }
+    return target
+        .map((c) => (c + (end - c) * (low + high) / 2)
+            .round()
+            .toRadixString(16)
+            .padLeft(2, '0'))
+        .join()
+        .toUpperCase();
+  }
 
   static const fonts = {
-    'Roboto':
-        'builtin:roboto-unpacked:24438383f80387edbbd3a199d7b257258db7003f5b291a7d3fb6fa89483ae57f',
-    'Roboto Slab':
-        'builtin:roboto-slab-static:b93b5ad2eada842f450bff812f180ac517c82916c9d0dda446322e8d275b4f09',
-    'Russo One':
-        'builtin:russo-one-unpacked:54b087e1ffbcfe8837d59e8cbda823e5690cbb8101afe23b31f3a6c70b6dad6b',
-    'Open Sans':
-        'gf:5af20f022c70222f0e960f45a033366eb2582c982031a715f9cafc05acbc51a5',
-    'Lato':
-        'gf:5ced1045820caaac87af3f61ded09bacc90881f158d04c59dcce436fd02ad368',
-    'Montserrat':
-        'gf:7ec20755dbe4985c2505b42bbdfcf2456dd0f2acd8801d9725b2c82c9f9b6433',
-    'Oswald':
-        'gf:7db4b9ec4ca16025a7c9285c80407f59d9b9316377dd90713741c4db69b729b6',
-    'Poppins':
-        'gf:2dd6eb23c4972b346197d272c4e2479b89ed240ece4d2b0e0cd89f0c1caa2710',
-    'Inter':
-        'gf:15b294b67f2f8bbc04d990023ef4aec66502b87dc9040d84abe5f896ccb693de',
-    'Playfair Display':
-        'gf:775cd3f92411b97cc374e0d8909c5caf3713508120866dc62b08f7a20213ba6d',
+    'Roboto': 'roboto',
+    'Roboto Slab': 'robotoSlab',
+    'Russo One': 'russoOne',
   };
   static const presets = [
     {
@@ -101,8 +118,8 @@ class OccasionSetupAppearance {
       'id': 'soft',
       'label': 'Jemný',
       'primary': '885268',
-      'secondary': 'B89A68',
-      'gradient': true,
+      'secondary': '885268',
+      'gradient': false,
       'fontFamily': 'Roboto Slab',
     },
     {
@@ -195,7 +212,7 @@ class OccasionSetupAppearance {
   static Map<String, dynamic> styledTemplate(Map raw, Map appearance,
       {bool decorated = false, String? composition}) {
     final t = Map<String, dynamic>.from(jsonDecode(jsonEncode(raw)));
-    final fontId = fonts[appearance['fontFamily']];
+    final fontId = legacyTicketFontIds[fonts[appearance['fontFamily']]];
     if (fontId == null) return t;
     final colors = <String>[appearance['primary'], appearance['secondary']];
     if (decorated) {
