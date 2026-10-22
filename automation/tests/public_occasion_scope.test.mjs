@@ -16,7 +16,7 @@ const disabled = [
 ];
 const preserved = [
   '/organizationEdit', '/organizationEdit/3', '/organizationEdit/3/',
-  '/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
+  '/', '/events', '/events/', '/order', '/pro-poradatele', '/pro-poradatele/', '/form/demo', '/form/event', '/login', '/unit/2/edit', '/admin',
   '/demo/reservations/orders/current',
   '/demo/check/42',
   '/google-auth', '/app/google-auth', '/resetPassword',
@@ -30,11 +30,11 @@ const template = script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1];
 const stamp = script.match(/python3 - build\/web\/_worker\.js automation\/project\.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
 const projectRoot = new URL('../../', import.meta.url).pathname;
 
-async function workerFor(supported, dir) {
+async function workerFor(supported, dir, origin = 'https://tenant.invalid') {
   const file = path.join(dir, 'worker.js');
   const config = path.join(dir, 'project.conf');
   writeFileSync(file, template);
-  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=https://tenant.invalid\n`);
+  writeFileSync(config, `IS_APP_SUPPORTED=${supported}\nFORCE_OCCASION_LINK=\nAPP_NAME=Fixture\nWEB_LINK=${origin}\n`);
   const stamped = spawnSync('python3', ['-', file, config], {
     input: stamp, encoding: 'utf8', cwd: projectRoot,
   });
@@ -74,12 +74,35 @@ test('stamped hosting worker redirects disabled screens before loading Flutter',
       assert.notEqual(response.status, 302, pathname);
     }
     const supported = await workerFor(true, dir);
-    for (const pathname of ['/demo/event', '/demo/admin/info/information']) {
+    for (const pathname of ['/demo/admin/info/information']) {
       const response = await supported.fetch(new Request('https://fixture.invalid' + pathname), { ASSETS: assets });
       assert.equal(response.status, 200, pathname);
       assert.equal(await response.text(), '/flutter');
     }
+    // Public event SSR needs backend configuration; it must fail closed rather
+    // than falsely render a successful Flutter document when it is missing.
+    const unavailable = await supported.fetch(new Request('https://fixture.invalid/demo/event'), { ASSETS: assets });
+    assert.equal(unavailable.status, 503);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ticket-only marketing tenant keeps its catalog accessible', async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'festapp-marketing-catalog-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const worker = await workerFor(false, dir, 'https://vstupenky.online');
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ occasions: [] }));
+  const env = {
+    SUPABASE_URL: 'https://api.invalid', SUPABASE_ANON_KEY: 'fixture',
+    ASSETS: { fetch: async request => new Response(new URL(request.url).pathname === '/organizers-page'
+      ? '<h1>Marketing</h1>' : '<div id="events-grid"></div>') },
+  };
+  const home = await worker.fetch(new Request('https://vstupenky.online/'), env);
+  assert.equal(home.status, 200);
+  assert.match(await home.text(), /Marketing/);
+  const catalog = await worker.fetch(new Request('https://vstupenky.online/events'), env);
+  assert.equal(catalog.status, 200);
+  assert.equal(catalog.headers.get('location'), null);
+  assert.match(await catalog.text(), /data-server-catalog="ready"/);
 });
 
 test('disabled PWA redirects public navigation offline before reading any cached Flutter shell', async () => {
