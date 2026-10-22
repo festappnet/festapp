@@ -2267,6 +2267,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 ),
                 onPrototypeSave: (saved) => _change((x) {
                   x['formDraft'] = serializeDraftForm(saved.form);
+                  if (SetupBlueprintConfiguration(x).active &&
+                      !saved.form.usesSeatSelection) {
+                    SetupBlueprintConfiguration(x).clear();
+                  }
                 }, changesConfiguration: true),
               ),
             ],

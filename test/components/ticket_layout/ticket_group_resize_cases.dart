@@ -10,6 +10,30 @@ void main() {
       File('test/fixtures/ticket_layout/resolve.json')
           .readAsStringSync())['template']);
 
+  test('decimal gallery QR boxes stay square through repeated JSON roundtrips',
+      () {
+    final raw =
+        fixture().elements.firstWhere((e) => e.binding == 'qr').toJson();
+    raw['box'] = {
+      'x': 445.0393700787402,
+      'y': 119.05511811023622,
+      'width': 79.37007874015745,
+      'height': 79.3700787401575
+    };
+    var element = TicketElement.fromJson(raw);
+    final canonical = element.toJson();
+    for (var i = 0; i < 5; i++) {
+      expect(element.box.width, element.box.height);
+      expect(
+          element.toJson()['box']['width'], element.toJson()['box']['height']);
+      element = TicketElement.fromJson(element.toJson());
+      expect(element.toJson(), canonical);
+    }
+    raw['box']['height'] = 85.0;
+    final nonsquare = TicketElement.fromJson(raw);
+    expect(nonsquare.box.width, isNot(nonsquare.box.height));
+  });
+
   test('group scaling changes boxes, spacing and fonts in one undo step', () {
     final c = TicketLayoutController(fixture());
     addTearDown(c.dispose);

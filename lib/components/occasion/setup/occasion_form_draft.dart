@@ -1,5 +1,6 @@
 // Form editor adapter for database-backed occasion setup drafts.
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import '../../features/feature.dart';
 import '../../features/feature_constants.dart';
 import '../occasion_model.dart';
@@ -12,6 +13,59 @@ import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 Map<String, dynamic> serializeDraftForm(FormEditorDraft form) {
+  final types = form.relatedFields
+      .map((field) => field.definition.productType)
+      .whereType<ProductTypeModel>();
+  final usedIds = <int>{
+    for (final type in types)
+      if (type.id != null) type.id!,
+    for (final product
+        in types.expand((type) => type.products ?? <ProductModel>[]))
+      if (product.id != null) product.id!,
+  };
+  int nextId() {
+    int id;
+    do {
+      // Stay exact in JavaScript JSON, without reusing a removed row's ID on
+      // reload and accidentally adopting its pending price/ticket references.
+      id = -int.parse(const Uuid().v4().replaceAll('-', '').substring(0, 13),
+          radix: 16);
+    } while (id == 0 || !usedIds.add(id));
+    return id;
+  }
+
+  // New editor rows need stable local identities before other draft settings
+  // (price waves, seating and ticket references) can point to them.
+  for (final field in form.relatedFields) {
+    final type = field.definition.productType;
+    if (type == null) continue;
+    final localTypeId = type.id ?? nextId();
+    final currency = type.products
+            ?.map((product) => product.currencyCode)
+            .whereType<String>()
+            .where((code) => code.isNotEmpty)
+            .firstOrNull ??
+        'CZK';
+    field.definition = field.definition.copyWith(
+        productType: ProductTypeModel(
+      id: localTypeId,
+      aggregateVersion: type.aggregateVersion,
+      title: type.title,
+      description: type.description,
+      type: type.type,
+      data: type.data,
+      occasion: type.occasion,
+      products: [
+        for (final product in type.products ?? <ProductModel>[])
+          product.copyWith(
+              id: product.id ?? nextId(),
+              productTypeId: localTypeId,
+              currencyCode: (product.currencyCode ?? '').isEmpty
+                  ? currency
+                  : product.currencyCode)
+      ],
+    ));
+  }
   final data = form.toJson();
   data['fields'] = form.relatedFields.map((field) {
     final fieldData = field.toJson();

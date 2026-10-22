@@ -3,8 +3,71 @@ import 'package:fstapp/components/occasion/setup/occasion_form_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/occasion/setup/blueprint_setup_layout_draft.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_pricing.dart';
 
 void main() {
+  test('new products keep local identities across saves and price wave edits',
+      () async {
+    final form = draftFormBundle({
+      'fields': [
+        {
+          'type': 'product_type',
+          'product_type_data': {
+            'id': 12,
+            'type': 'spot',
+            'products': [
+              {
+                'id': 145,
+                'title': 'Copied',
+                'price': 200,
+                'currency_code': 'EUR'
+              },
+              {'id': -3, 'title': 'Existing draft', 'price': 100},
+              {'title': 'Student', 'price': 50, 'currency_code': ''},
+            ]
+          }
+        },
+        {
+          'type': 'product_type',
+          'product_type_data': {
+            'type': 'product',
+            'products': [
+              {'title': 'New type', 'price': 10}
+            ]
+          }
+        }
+      ]
+    }).form;
+    final first = serializeDraftForm(form);
+    expect(serializeDraftForm(form), first);
+    final bundle = draftFormBundle(first);
+    expect(serializeDraftForm(bundle.form), first);
+    final ids = bundle.products.map((p) => p.id).toList();
+    expect(ids.take(2), [145, -3]);
+    expect(ids.toSet(), hasLength(4));
+    expect(ids.skip(2), everyElement(isNegative));
+    expect(bundle.productTypes.first.id, 12);
+    expect(bundle.productTypes.last.id, isNegative);
+    expect(bundle.products[2].currencyCode, 'EUR');
+    expect(bundle.products.last.currencyCode, 'CZK');
+    final data = <String, dynamic>{'formDraft': first};
+    final actions = OccasionSetupPriceWaveDraft(data, data.addAll);
+    final wave =
+        await actions.create(DateTime.now().add(const Duration(days: 1)));
+    await actions.saveTarget(wave, bundle.products[2], 80, true);
+    expect((data['priceWaves'] as List).single['targets'], [
+      {'product': ids[2], 'price': 80.0, 'is_hidden': true}
+    ]);
+    expect(actions.bundle().products[2].priceChanges.single.price, 80);
+    final edited = jsonDecode(jsonEncode(first)) as Map<String, dynamic>;
+    final products =
+        edited['fields'][0]['product_type_data']['products'] as List;
+    products.removeAt(2);
+    products.add({'title': 'Replacement', 'price': 40});
+    final replacement =
+        draftFormBundle(serializeDraftForm(draftFormBundle(edited).form));
+    expect(replacement.products.map((p) => p.id), isNot(contains(ids[2])));
+  });
   test('normalized seat field opens form bundle without a JSON save roundtrip',
       () {
     final data = jsonDecode('''{
