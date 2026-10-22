@@ -14,7 +14,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web_client/index.html', import.meta.url), join(root, 'web_client/index.html'));
   const config = join(root, 'automation/project.conf');
-  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\n');
+  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nTHEME_SEED_3=#4465a6\n');
   const render = () => {
     const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
@@ -30,8 +30,6 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(head.includes(`name="description" content="${seo.description}"`));
   assert.equal((head.match(/rel="canonical"/g) || []).length, 1);
   assert.ok(head.includes('max-image-preview:large'));
-  assert.ok(head.includes('FESTAPP_CLIENT_VERSION'));
-  assert.ok(head.includes('FESTAPP_REPORT_VERSION'));
   assert.ok(head.includes('https://vstupenky.online/organizers-media/organizers-social.png'));
   assert.ok(head.includes('og:image:width" content="1200"'));
   assert.ok(head.includes('name="twitter:card" content="summary_large_image"'));
@@ -50,9 +48,6 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(html.includes('href="/login"'));
   assert.ok(html.includes('info@vstupenky.online'));
   assert.ok(html.includes('https://cal.com/michael-bujnovsky-5srszz/ukazka'));
-  assert.equal((html.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
-  assert.ok(html.includes('10a70df3585344258adf7bb3b6611a84'));
-  assert.equal((catalog.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
   assert.ok(!html.includes('internalSources'));
   assert.ok(!html.includes('&amp;amp;'));
   assert.ok(!html.includes('{{'));
@@ -67,8 +62,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.equal(build.status, 0, build.stderr);
   const bundled = readFileSync(bundleOutput, 'utf8');
   assert.ok(bundled.includes('href="/web-assets/index-fixture.css"'));
-  assert.ok(bundled.includes('https://fonts.googleapis.com/icon?family=Material+Icons'));
-  assert.ok(!bundled.includes('css2?family=Roboto'));
+  assert.ok(!bundled.includes('fonts.googleapis.com'));
   assert.equal(readFileSync(output, 'utf8'), html, 'compiled theme must not alter the deterministic source leaf');
 
   const contentPath = join(root, 'automation/release/organizers/content.json');
@@ -85,7 +79,6 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
 
   writeFileSync(config, 'DOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);
-  assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('cloudflareinsights.com'));
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
 });
 

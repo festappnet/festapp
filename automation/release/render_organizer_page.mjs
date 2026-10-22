@@ -11,12 +11,7 @@ const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '')
 const enabled = value('DOMAIN') === 'vstupenky.online';
 const contentData = enabled ? JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers/content.json'), 'utf8')) : null;
 const seo = contentData?.publicProjection?.seo;
-const analytics = contentData?.publicProjection?.analytics;
-if (analytics && (analytics.provider !== 'cloudflare' || !/^[a-f0-9]{32}$/.test(analytics.token))) throw new Error('Invalid public Cloudflare analytics identity');
-const beaconTag = analytics ? `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({token:analytics.token,spa:true})}'></script>` : '';
-const withAnalytics = html => html.replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["'][^>]*>[\s\S]*?<\/script>/gi, '').replace('</body>', () => beaconTag + '</body>');
 const jsonScript = value => JSON.stringify(value).replace(/</g, '\\u003c');
-const versionReport = value('VERSION') ? `<script>(()=>{const version=${jsonScript(value('VERSION'))};const report=()=>{try{navigator.serviceWorker?.controller?.postMessage({type:'FESTAPP_CLIENT_VERSION',version});}catch{}};try{navigator.serviceWorker?.addEventListener('controllerchange',report);navigator.serviceWorker?.addEventListener('message',event=>{if(event.data?.type==='FESTAPP_REPORT_VERSION')report();});}catch{}report();})();</script>` : '';
 const outputArg = process.argv.indexOf('--output');
 const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
 const index = path.join(root, 'web_client/index.html');
@@ -36,7 +31,7 @@ if (fs.existsSync(index)) {
         '@context':'https://schema.org', '@type':'WebSite', name:seo.siteName, url:new URL('/', value('WEB_LINK')).href,
       })}</script>`);
   }
-  fs.writeFileSync(index, withAnalytics(catalog));
+  fs.writeFileSync(index, catalog);
 }
 if (!enabled) {
   fs.rmSync(target, { force: true });
@@ -89,12 +84,12 @@ if (builtIndexArg >= 0) {
   entryScript = `<script type="module" src="/${escape(entry.file)}"></script>`;
   const builtIndex = fs.readFileSync(path.resolve(process.argv[builtIndexArg + 1]), 'utf8');
   themeLinks = (builtIndex.match(/<link[^>]*rel="stylesheet"[^>]*>/g) || [])
-    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag) || tag.includes('https://fonts.googleapis.com/icon?family=Material+Icons')).join('');
+    .filter(tag => /href="\/web-assets\/[^"]+\.css"/.test(tag)).join('');
   if (!themeLinks) throw new Error('Built organizer page needs the existing Vite theme stylesheet');
 }
 const html = `<!doctype html><html lang="cs"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer"><meta name="color-scheme" content="light">
 <title>${escape(title)}</title><meta name="description" content="${escape(description)}">
 <meta name="robots" content="index,follow,max-image-preview:large"><link rel="canonical" href="${canonical}">
 <meta property="og:type" content="website"><meta property="og:locale" content="cs_CZ"><meta property="og:site_name" content="${escape(seo.siteName)}">
@@ -102,7 +97,7 @@ const html = `<!doctype html><html lang="cs"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${versionReport}${themeLinks}<style>:root{--primary-color:${primary}}${css}</style><noscript><style>.auth-pending .header-signin{visibility:visible}</style></noscript></head><body data-page="organizers">${content}${entryScript}${beaconTag}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${themeLinks}<style>:root{--primary-color:${primary}}${css}</style></head><body>${content}${entryScript}</body></html>\n`;
 
 fs.mkdirSync(path.dirname(target), { recursive: true });
 fs.writeFileSync(target, html);
