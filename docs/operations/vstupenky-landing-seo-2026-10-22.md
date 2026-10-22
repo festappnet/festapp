@@ -234,3 +234,30 @@ migrací `setup_email_preview_payment_context`. SEO má proto vlastní ověřen�
 volnou verzi 20261022225500. Historicky pojmenovaný hostname/databáze obsahující
 „rehearsal“ není důvod měnit cíl: potvrzený runtime veřejný origin je
 api.festapp.net a odpovídá aktivaci tenant festapptickets, generation 1, org 3.
+
+
+### Cloudflare Web Analytics podle reference Plesy
+
+Uživatel požaduje stejné Web Analytics jako plesy.vstupenky.online. Její veřejný
+beacon používá token `10a70df3585344258adf7bb3b6611a84` a `spa: true`.
+Původní živá hlavní doména neměla beacon v HTML ani Pages-level analytics
+binding. Existující OAuth nestačí na inventář samostatných RUM webů, proto se
+nevytváří další měřicí identita ani nemění Cloudflare nastavení.
+
+V odděleném headless prohlížeči byl otestován skutečný referenční skript na
+vstupenky.online: načtení skriptu 200, preflight 200 a skutečné odeslání RUM
+204 s Access-Control-Allow-Origin přesně https://vstupenky.online. Payload
+obsahoval hostname vstupenky.online a existující referenční token. Tím je
+ověřeno, že tato identita přijímá i hlavní doménu. Místní DNS blokuje doménu
+měřicího skriptu; pouze ověřovací Chrome použil adresu potvrzenou veřejným
+Cloudflare DNS. Systémové DNS ani uživatelův prohlížeč se neměnily.
+
+Renderer vkládá stejný explicitní beacon právě jednou do nové homepage a
+veřejného katalogu vstupenky.online. Ostatní tenanty ho nedostanou. CSP generátor
+povoluje přesný původ static.cloudflareinsights.com jen v profilech dokumentů,
+které tento skript skutečně obsahují; ostatní profily se nerozšiřují. Soukromé
+aplikace a callback dokumenty se nemění. Kontrola doložila přijetí telemetry,
+nikoli načtení dashboardových statistik.
+
+Podklad: [Cloudflare Web Analytics FAQ](https://developers.cloudflare.com/web-analytics/faq/)
+popisuje vazbu veřejného site tokenu na hostname a použití pro subdomény.

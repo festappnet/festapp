@@ -226,10 +226,20 @@ cmp "$TMP_ROOT/web/loading-logo.svg" "$TMP_ROOT/web_client/public/brand-logo.svg
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta name="description" content="Test application description.">'
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta property="og:title" content="Test App Name">'
 assert_contains "$TMP_ROOT/web_client/index.html" '<meta property="twitter:description" content="Test application description.">'
-assert_contains "$TMP_ROOT/web_client/index.html" '"name": "Test App Name"'
 assert_contains "$TMP_ROOT/web_client/index.html" '<link rel="canonical" href="https://test.example.com/">'
-assert_contains "$TMP_ROOT/web_client/index.html" '"url": "https://test.example.com/"'
-assert_contains "$TMP_ROOT/web_client/index.html" '"target": "https://test.example.com/?q={search_term_string}"'
+python3 - "$TMP_ROOT/web_client/index.html" <<'VERIFY_WEBSITE_SCHEMA'
+import json
+import pathlib
+import re
+import sys
+source = pathlib.Path(sys.argv[1]).read_text()
+schema = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', source, re.S).group(1))
+assert schema['@type'] == 'WebSite'
+assert schema['name'] == 'Test App Name'
+assert schema['url'] == 'https://test.example.com/'
+if 'potentialAction' in schema:
+    assert schema['potentialAction']['target'] == 'https://test.example.com/?q={search_term_string}'
+VERIFY_WEBSITE_SCHEMA
 assert_contains "$TMP_ROOT/web_client/index.html" 'https://test.example.com/android-chrome-512x512.png'
 assert_missing "$TMP_ROOT/web_client/index.html" 'Festapp - Vstupenky.online'
 

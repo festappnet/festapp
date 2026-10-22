@@ -36,8 +36,9 @@ The player assigns a video source only when playback is requested. It starts
 one settled, visible clip, preserves deliberate pauses and completion, and
 requires a manual start for reduced motion or Save-Data. Failed media keeps
 its poster and offers retry/download. With JavaScript disabled the document,
-posters, CTA, catalog, references and FAQ remain usable. No browser analytics
-are added.
+posters, CTA, catalog, references and FAQ remain usable. Cloudflare Web Analytics uses the same explicit public beacon as the Plesy site,
+only for the vstupenky.online homepage and public catalogue. Other tenant builds
+do not receive this beacon; callback and private app documents are unchanged.
 
 Media provenance, checks and local-only limitations are recorded in
 `docs/plans/vstupenky-landing-evidence-2026-10-22/`. The order overview shows
