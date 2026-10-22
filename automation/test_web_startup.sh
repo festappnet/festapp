@@ -14,6 +14,9 @@ node --test \
   tests/core/auth_bridge.test.js \
   tests/core/public_translations.test.js \
   tests/core/release_entry.test.js \
+  tests/core/marketing_account.test.js \
+  tests/components/user_header_initial_context.test.js \
+  tests/components/user_header_auth_refresh.test.js \
   tests/components/db_orders_command_identity.test.js \
   tests/components/user_header_create_event.test.js \
   tests/components/user_header_admin_navigation.test.js \
