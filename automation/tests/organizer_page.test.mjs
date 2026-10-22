@@ -48,6 +48,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(html.includes('href="/login"'));
   assert.ok(html.includes('info@vstupenky.online'));
   assert.ok(html.includes('https://cal.com/michael-bujnovsky-5srszz/ukazka'));
+  assert.equal((html.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
+  assert.ok(html.includes('10a70df3585344258adf7bb3b6611a84'));
+  assert.equal((catalog.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
   assert.ok(!html.includes('internalSources'));
   assert.ok(!html.includes('&amp;amp;'));
   assert.ok(!html.includes('{{'));
@@ -79,6 +82,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
 
   writeFileSync(config, 'DOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);
+  assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('cloudflareinsights.com'));
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
 });
 

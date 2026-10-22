@@ -35,7 +35,7 @@ export async function generateManifest(dir, target = 'cloudflare') {
     const html = await readFile(path.join(dir, file), 'utf8');
     const hashes = inlineHashes(html);
     documents[file] = { profile, sha256: createHash('sha256').update(html).digest('hex'), hashes };
-    profiles[profile] = { policy: scriptPolicy(profile, hashes) };
+    profiles[profile] = { policy: scriptPolicy(profile, hashes, /<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js["']/i.test(html)) };
   }
   for (const [profile, file] of Object.entries(entries)) await add(file, profile);
   // Legal/static documents are also served by ASSETS and must not escape CSP.

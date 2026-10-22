@@ -53,3 +53,16 @@ test('tenants without the optional organizer document retain CSP for every shipp
   await rm(path.join(dir,'auth_bridge'));
   await assert.rejects(generateManifest(dir), {code:'ENOENT'});
 });
+
+
+test('analytics is allowed only in document profiles that actually embed the explicit beacon', async t => {
+ const dir=await mkdtemp(path.join(tmpdir(),'festapp-csp-analytics-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ for (const file of ['webclient','flutter','auth_bridge']) await writeFile(path.join(dir,file),'<html><body>app</body></html>');
+ await writeFile(path.join(dir,'organizers-page'),`<html><body><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{}'></script></body></html>`);
+ const manifest=await generateManifest(dir);
+ assert.match(manifest.profiles.organizers.policy,/https:\/\/static\.cloudflareinsights\.com/);
+ for(const profile of ['webclient','flutter','auth_bridge','none']) assert.doesNotMatch(manifest.profiles[profile].policy,/cloudflareinsights/);
+ await writeFile(path.join(dir,'csp-manifest.json'),JSON.stringify(manifest));
+ await verifyManifest(dir);
+});
