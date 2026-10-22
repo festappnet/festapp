@@ -114,8 +114,13 @@ explicitly approved permissions:
 | `festapp:tickets:send` | `orders.send_tickets` |
 
 Editing, payment and mail permissions also require order reading. The web
-consent checkboxes start unchecked and describe customer contact data, changes,
-manual payments and ticket mail. Both the persisted consent and the current
+consent presents exactly the requested capabilities in one visible summary,
+including customer contact data, changes, manual payments and ticket mail.
+Selecting resources and approving the connection grants those displayed scopes
+without separate functional checkboxes. Narrow OAuth requests remain narrow.
+Organizer groups start collapsed above two groups; disclosure never selects a
+resource, and selecting every existing child never grants future-event access.
+Both the persisted consent and the current
 OAuth token must carry every required permission. Old grants and refreshes never
 acquire them. The configured native Flutter/standalone consent retains its
 original capabilities until it explicitly implements these choices.

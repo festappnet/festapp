@@ -1703,7 +1703,19 @@
     "ordersRead": "Bestellungen, Kontaktdaten und Ticketanzahl lesen",
     "ordersWrite": "Bestelldaten und Produkte ändern und Bestellungen stornieren",
     "paymentsWrite": "Manuelle Zahlungen erfassen und Bestellungen als bezahlt markieren",
-    "ticketsSend": "Tickets per E-Mail an Kunden senden"
+    "ticketsSend": "Tickets per E-Mail an Kunden senden",
+    "chooseScope": "Die Auswahl eines Veranstalters umfasst seine aktuellen und zukünftigen Veranstaltungen. Klappen Sie ihn auf, um einzelne Veranstaltungen auszuwählen.",
+    "showOccasions": "Veranstaltungen anzeigen ({count})",
+    "hideOccasions": "Veranstaltungen ausblenden ({count})",
+    "accessSummary": "Was diese Verbindung erlaubt",
+    "sameRights": "Für Ihre Auswahl kann die Anwendung die folgenden Funktionen nutzen. Ihre aktuellen Benutzerrechte gelten weiterhin.",
+    "baseAccess": "Identität, verfügbare Veranstaltungen und Ticketgestaltung lesen",
+    "sensitiveActionsHint": "Vor dem Stornieren von Bestellungen, Ändern von Zahlungen oder Versenden von Tickets soll die Anwendung Ihren konkreten Auftrag prüfen.",
+    "selectionSummary": "Ausgewählte Veranstalter: {organizers}. Einzelne Veranstaltungen: {occasions}.",
+    "wholeOrganizerSelected": "Gesamter Veranstalter",
+    "groupSelection": "Ausgewählte Veranstaltungen: {selected} von {count}",
+    "inheritedSelectionHint": "Über den Veranstalter eingeschlossen. Heben Sie dessen Auswahl auf, um einzelne Veranstaltungen auszuwählen.",
+    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung."
   },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",
