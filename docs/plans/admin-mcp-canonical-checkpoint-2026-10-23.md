@@ -900,3 +900,58 @@ this is an old public-owner/receipt transition test, not a full old-server resto
 The complete new seat-order test file was collected and passed: 12/12, 0 skips.
 Current runtime source remains 290bbceae; no runtime code changed in this test cut.
 Next remains the actual workspace/HTTP or browser flow and final release gates.
+
+
+### Current-main integration and actual SDK transport - 63a242287
+
+The isolated seat-order branch is now rebased onto fetched authoritative main
+`c83df930c93f81497474954282cf1a6d57ffd805`. The only rebase conflict was generated
+source parity; regenerated it from both current canonical sources. Frozen PR571
+and its source remain unchanged. Migration2350 bytes/digest remain unchanged.
+Runtime source is `63a242287b37c336bf393f9797421577616a8e5a`.
+
+Main added real notification producers to creation, cancellation, capacities
+and email owners. A new transactional integration case loads those current
+canonical owners with real owner privileges, enables only the synthetic tenant
+and proves quote rollback plus exactly-once order-created/order-cancelled events
+on commit and replay. It never installs cron jobs and rolls all added fixture
+schema back. New real-SQL cases now total13, all passed (12-case final batch plus
+this new main-integration case). This closes the meaningful main overlap gate.
+
+The production SupabaseClient HTTP factory test found that the SDK wraps network
+loss in FunctionsFetchException. The adapter now normalizes fetch/relay/temporary
+HTTP failures to the existing retry transport while preserving its UUID;401/403
+become the existing authorization-denial path. Four actual-SDK HTTP cases passed:
+network loss, HTTP503, relay and401; exact payload bytes/UUID survive explicit
+recovery, and401 has no automatic retry. The earlier four immutable-journal/actor
+cases remain passing, so8 port/recovery cases are covered. Both changed dialog
+cases passed again after rebase; final targeted analysis0 errors/0 warnings,
+27 informational diagnostics. Structured order errors now have localized UI
+messages and required-field errors show the actual known field title.
+
+Canonical source audit now passes8/8 on current main, including source-contract
+reproducibility. Main itself carries the updated ticket-layout source contract;
+this task did not regenerate a readiness hash. The earlier7/1 result above is
+historical. This source check does not claim a live PDF readiness result.
+
+Protected production readback discovered missing canonical2300/2340 ledger rows.
+Their release owner identified the original wrong public.supabase_migrations
+ledger and repaired only those metadata rows under its runtime lock; no DDL was
+reapplied. An independent read-only recheck verified the canonical rows and both
+source digests, with zero obsolete public rows. Prerequisites2300,2310,2340 and
+240100 are present; our2320/2330/2350 remain unapplied. All production writes in
+this task remain held behind the existing publication/release gates.
+
+Preparing full-app E2E with the supported launcher and a fresh owned backend:
+`/Users/miakh/festapp-wizard-seat-orders-20261023`, project of the same name,
+API56821/DB56822. Only --prepare-only has run. The CLI truncated the first long
+project name, so its empty config-only directory was renamed and its project_id
+corrected before any containers started. No existing project was reset. An
+unrelated WordPress organizer Flutter server on59802 appeared during testing;
+the process gate prevented another task. This thread holds no Flutter slot and
+has not stopped that server. Batch/release owner was explicitly notified.
+Next: finish fresh backend preparation and synthetic fixture; run actual local
+full-app/browser flow when the workstation Flutter task is available, then
+selected-ticket cancellation and the remaining plan. Update this checkpoint
+with any new main/tenant868 publication from the independent batch owner before
+our own publication; that owner was told this thread is not pushing/releasing.

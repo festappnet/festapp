@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "c02bb2d0129f5675244213cd1c5444fa99abe350",
+  "sourceMain": "c83df930c93f81497474954282cf1a6d57ffd805",
   "liveBaselineVersion": "0.20.370+867",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění účtu ani audit všech tenant variant. Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Potvrzené uvolnění rezervací a prohození vstupenek čekají na publikaci a nasazení.",
@@ -483,7 +483,7 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "verificationState": "pending",
-      "verificationNote": "Prošlo 12 SQL integračních scénářů, souběh checkoutu a odebrání práv, 4 testy obnovy UI požadavku a 2 dialogové testy. Zbývá průchod skutečným workspace a release gates; kandidát není nasazen.",
+      "verificationNote": "Prošlo 13 SQL integračních scénářů včetně notifikací nového main, 8 testů portu a obnovy (včetně skutečného Supabase HTTP klienta) a 2 dialogové testy. Připravuje se průchod skutečnou aplikací; kandidát není nasazen.",
       "deploymentState": "pending"
     },
     {
