@@ -884,3 +884,19 @@ Next: complete the real workspace/HTTP or browser flow, historical receipt
 migration recovery and affected release gates, then reconcile a freshly fetched
 canonical main before publication. Continue selected-ticket cancellation and
 later plan stages. No production test orders, emails or payments were created.
+
+
+### Historical replacement migration gate - passed
+
+Commit `098dded04` adds the temporal recovery test using the real issued public
+replacement owner extracted from immutable `20261021100000_canonical_authorization.sql`.
+It creates a real legacy-shaped receipt and pending invoice on the disposable
+fixture, applies the actual full 2350 forward migration, then verifies byte-equal
+receipt replay and unchanged allocations, money/history and delivery rows.
+A historical receipt without a dispatch marker receives a lookup-only lease;
+SQL refuses invoice POST dispatch. This closes the dedicated historical-receipt
+item above. Existing shared helper schema remains the current fixture schema;
+this is an old public-owner/receipt transition test, not a full old-server restore.
+The complete new seat-order test file was collected and passed: 12/12, 0 skips.
+Current runtime source remains 290bbceae; no runtime code changed in this test cut.
+Next remains the actual workspace/HTTP or browser flow and final release gates.

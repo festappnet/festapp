@@ -483,7 +483,7 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "verificationState": "pending",
-      "verificationNote": "Prošlo 11 SQL integračních scénářů, souběh checkoutu a odebrání práv, 4 testy obnovy UI požadavku a 2 dialogové testy. Zbývá průchod skutečným workspace a release gates; kandidát není nasazen.",
+      "verificationNote": "Prošlo 12 SQL integračních scénářů, souběh checkoutu a odebrání práv, 4 testy obnovy UI požadavku a 2 dialogové testy. Zbývá průchod skutečným workspace a release gates; kandidát není nasazen.",
       "deploymentState": "pending"
     },
     {
