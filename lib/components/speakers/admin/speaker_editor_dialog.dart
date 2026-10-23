@@ -119,15 +119,23 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
 
     _description = await _htmlSave.prepare(
         _description ?? '', HtmlMediaOwner.occasion(_occasionId));
+    if (!mounted) return;
     final subtitle = _subtitleController.text.trim();
-    final model = widget.speaker
-      ..title = name
-      ..subtitle = subtitle.isEmpty ? null : subtitle
-      ..description = _description
-      ..image = _image
-      ..order = int.tryParse(_orderController.text.trim()) ?? 0
-      ..isHidden = _isHidden
-      ..topics = _selectedTopics.toList();
+    // Keep edits private until the command returns a persisted entity.
+    final original = widget.speaker;
+    final model = SpeakerModel(
+      id: original.id,
+      aggregateVersion: original.aggregateVersion,
+      data: Map<String, dynamic>.from(original.data),
+      events: List<SpeakerEventRef>.from(original.events),
+      title: name,
+      subtitle: subtitle.isEmpty ? null : subtitle,
+      description: _description,
+      image: _image,
+      order: int.tryParse(_orderController.text.trim()) ?? 0,
+      isHidden: _isHidden,
+      topics: _selectedTopics.toList(),
+    );
 
     final saved = await ExceptionHandler.guard<SpeakerModel>(
       context,

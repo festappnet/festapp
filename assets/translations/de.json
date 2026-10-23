@@ -484,6 +484,7 @@
     "news": "Nachrichten"
   },
   "FeatureSchedule": {
+    "eventTypeCodeAlreadyUsed": "Ein anderer Veranstaltungstyp verwendet diesen Code bereits. Geben Sie einen eindeutigen Code ein.",
     "programRemindersTitle": "Programmerinnerungen",
     "programRemindersDescription": "Lege fest, wann du vor Beginn der Einträge in Mein Programm benachrichtigt wirst.",
     "programRemindersToggle": "Vor Programmbeginn benachrichtigen",

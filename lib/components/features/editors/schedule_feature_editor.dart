@@ -1,5 +1,6 @@
 import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/features/features_strings.dart';
 import '../schedule_feature.dart';
 
@@ -50,7 +51,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
     _eveningBreakTime = widget.feature.eveningBreakTime;
     _eventTypes = widget.feature.eventTypes
         .map((et) => EventType(
-            code: et.code,
+            code: et.code.trim(),
             title: et.title,
             colorDefinition: et.colorDefinition))
         .toList();
@@ -59,7 +60,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
   void _saveEventTypesToFeature() {
     widget.feature.eventTypes = List<EventType>.from(_eventTypes.map((et) =>
         EventType(
-            code: et.code,
+            code: et.code.trim(),
             title: et.title,
             colorDefinition: et.colorDefinition)));
   }
@@ -103,8 +104,13 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
 
   void _addEventType() {
     _refresh(() {
+      final codes = _eventTypes.map((type) => type.code.trim()).toSet();
+      var suffix = 1;
+      while (codes.contains('new_type_$suffix')) {
+        suffix++;
+      }
       _eventTypes.add(EventType(
-          code: 'new_type_${_eventTypes.length + 1}',
+          code: 'new_type_$suffix',
           title: FeaturesStrings.eventTypeDefaultTitle,
           colorDefinition: 'seed1'));
     });
@@ -119,7 +125,10 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
   void _updateEventType(int index, EventType updatedType) {
     if (index >= 0 && index < _eventTypes.length) {
       _refresh(() {
-        _eventTypes[index] = updatedType;
+        _eventTypes[index]
+          ..code = updatedType.code
+          ..title = updatedType.title
+          ..colorDefinition = updatedType.colorDefinition;
       });
     }
   }
@@ -218,38 +227,54 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
           ),
         ],
         const SizedBox(height: 24),
-        ExpansionTile(
-          title: Text(FeaturesStrings.titleEventTypes,
-              style: Theme.of(context).textTheme.titleLarge),
-          initiallyExpanded: false,
-          tilePadding: const EdgeInsets.symmetric(horizontal: 0.0),
-          childrenPadding:
-              const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
-          children: <Widget>[
-            if (_eventTypes.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(FeaturesStrings.emptyEventTypes,
-                    style: Theme.of(context).textTheme.bodyMedium),
+        FormField<void>(
+          validator: (_) {
+            final codes = _eventTypes.map((type) => type.code.trim()).toList();
+            if (codes.any((code) => code.isEmpty)) {
+              return CommonStrings.fieldCannotBeEmpty;
+            }
+            return codes.toSet().length == codes.length
+                ? null
+                : FeaturesStrings.eventTypeCodeAlreadyUsed;
+          },
+          builder: (field) => ExpansionTile(
+            subtitle: field.hasError
+                ? Text(field.errorText!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error))
+                : null,
+            title: Text(FeaturesStrings.titleEventTypes,
+                style: Theme.of(context).textTheme.titleLarge),
+            initiallyExpanded: false,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 0.0),
+            childrenPadding:
+                const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
+            children: <Widget>[
+              if (_eventTypes.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text(FeaturesStrings.emptyEventTypes,
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _eventTypes.length,
+                itemBuilder: (context, index) {
+                  return _buildEventTypeFormItem(_eventTypes[index], index);
+                },
               ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _eventTypes.length,
-              itemBuilder: (context, index) {
-                return _buildEventTypeFormItem(_eventTypes[index], index);
-              },
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.add_circle_outline),
-                onPressed: _addEventType,
-                label: Text(FeaturesStrings.buttonAddEventType),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: _addEventType,
+                  label: Text(FeaturesStrings.buttonAddEventType),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -281,14 +306,8 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
     String currentDropdownValue =
         isCustom ? "custom" : eventType.colorDefinition;
 
-    TextEditingController hexColorController = TextEditingController(
-        text: isCustom && eventType.colorDefinition.toLowerCase() != "custom"
-            ? eventType.colorDefinition
-            : "");
-    hexColorController.selection = TextSelection.fromPosition(
-        TextPosition(offset: hexColorController.text.length));
-
     return Card(
+      key: ObjectKey(eventType),
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       elevation: 2.0,
       child: Padding(
@@ -298,6 +317,16 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
           children: [
             TextFormField(
               initialValue: eventType.code,
+              validator: (value) {
+                final code = value?.trim() ?? '';
+                if (code.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+                if (_eventTypes.any((other) =>
+                    !identical(other, eventType) &&
+                    other.code.trim() == code)) {
+                  return FeaturesStrings.eventTypeCodeAlreadyUsed;
+                }
+                return null;
+              },
               decoration: InputDecoration(
                   labelText: FeaturesStrings.labelEventTypeCode, filled: true),
               onChanged: (value) {
@@ -345,14 +374,10 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
                       if (newValue != null) {
                         String newColorDef = newValue;
                         if (newValue == "custom") {
-                          newColorDef = hexColorController.text.isNotEmpty &&
-                                  hexColorController.text.startsWith("#")
-                              ? hexColorController.text
-                              : "#A0A0A0";
-                          if (hexColorController.text.isEmpty ||
-                              !hexColorController.text.startsWith("#")) {
-                            hexColorController.text = newColorDef;
-                          }
+                          newColorDef = isCustom &&
+                                  eventType.colorDefinition.startsWith('#')
+                              ? eventType.colorDefinition
+                              : '#A0A0A0';
                         }
                         _updateEventType(
                             index,
@@ -385,7 +410,7 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
               Padding(
                 padding: const EdgeInsets.only(top: 10.0),
                 child: TextFormField(
-                  controller: hexColorController,
+                  initialValue: eventType.colorDefinition,
                   decoration: InputDecoration(
                       labelText: FeaturesStrings.labelCustomColorHex,
                       hintText: "#RRGGBB or #AARRGGBB",
@@ -398,17 +423,6 @@ class _ScheduleFeatureFormState extends State<_ScheduleFeatureForm> {
                             title: eventType.title,
                             colorDefinition:
                                 value.startsWith("#") ? value : "#$value"));
-                  },
-                  onEditingComplete: () {
-                    String finalHex = hexColorController.text;
-                    if (!finalHex.startsWith("#")) finalHex = "#$finalHex";
-                    _updateEventType(
-                        index,
-                        EventType(
-                            code: eventType.code,
-                            title: eventType.title,
-                            colorDefinition: finalHex));
-                    FocusScope.of(context).unfocus();
                   },
                 ),
               ),

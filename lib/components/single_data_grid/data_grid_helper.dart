@@ -195,7 +195,8 @@ class DataGridHelper {
     return value as T?;
   }
 
-  static String getValueFromFormatted(dynamic value) {
+  static String getValueFromFormatted(dynamic rawValue) {
+    final value = rawValue?.toString() ?? "";
     final startIndex = value.indexOf(":");
     if (startIndex == -1) {
       return value;
@@ -204,7 +205,8 @@ class DataGridHelper {
     return result;
   }
 
-  static int? getIdFromFormatted(String value) {
+  static int? getIdFromFormatted(String? value) {
+    if (value == null || value.isEmpty) return null;
     final startIndex = value.indexOf(":");
     if (startIndex == -1) {
       return null;

@@ -323,7 +323,8 @@
     "suspiciousReasonInvalidTimingDetail": "Konec ({end}) není později než začátek ({start}).",
     "suspiciousReasonMultiDayDetail": "Událost začíná {start} a končí {end}, takže zasahuje do více kalendářních dnů.",
     "suspiciousReasonOutsideOccasionDetail": "Čas události ({eventRange}) přesahuje termín celé akce ({occasionRange}).",
-    "suspiciousReasonExactDuplicateDetail": "Nejméně jedna další událost má stejný název „{title}“, čas {time} a místo „{place}“."
+    "suspiciousReasonExactDuplicateDetail": "Nejméně jedna další událost má stejný název „{title}“, čas {time} a místo „{place}“.",
+    "eventTypeCodeAlreadyUsed": "Tento kód už používá jiný typ události. Zadejte jedinečný kód."
   },
   "FeatureImport": {
     "importFeatureDescription": "Umožňuje import uživatelů z různých zdrojů, jako jsou soubory CSV nebo vstupenky.",
@@ -798,7 +799,6 @@
     "noWaves": "Zatím nejsou žádné cenové vlny.",
     "waveNow": "Aktuálně",
     "waveHiddenState": "Skryto",
-    "bankSyncWarningDetailsHint": "Klikněte pro zobrazení detailu",
     "bankSyncWarningContactShort": "Kontaktujte správce bankovního účtu:",
     "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párování plateb nefunguje",
@@ -834,7 +834,8 @@
     "waveAvailabilityNoChange": "Ponechat dostupnost",
     "cancellationEmailTitle": "Objednávka byla zrušena",
     "cancellationEmailQuestion": "Poslat zákazníkovi na {email} potvrzení o zrušení celé objednávky?",
-    "skipCancellationEmail": "Teď neposílat"
+    "skipCancellationEmail": "Teď neposílat",
+    "bankSyncWarningDetailsHint": "Klikněte pro zobrazení detailu"
   },
   "UserColumns": {
     "id": "Id",
