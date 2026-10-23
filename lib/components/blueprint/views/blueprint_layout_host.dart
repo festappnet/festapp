@@ -1,3 +1,4 @@
+import '../blueprint_command_rejection.dart';
 import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
@@ -949,7 +950,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       key: _commercialRowKeys.putIfAbsent(node.id, () => GlobalKey()),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: MouseRegion(
-        onEnter: (_) => controller.layout.highlightObjects(highlighted ?? {node.id}),
+        onEnter: (_) =>
+            controller.layout.highlightObjects(highlighted ?? {node.id}),
         onExit: (_) => controller.layout.highlightObjects({}),
         child: Ink(
           decoration: BoxDecoration(
@@ -963,7 +965,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 : null,
           ),
           child: ListTile(
-            key: ValueKey('commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
+            key: ValueKey(
+                'commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             minLeadingWidth: 18,
@@ -971,10 +974,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             selected: selected,
             leading: Icon(icon, size: 18),
             title: Text(node.label.isEmpty
-                ? (node.kind == 'capacityArea' ? BlueprintStrings.standingAreas : BlueprintStrings.tablesTitle)
+                ? (node.kind == 'capacityArea'
+                    ? BlueprintStrings.standingAreas
+                    : BlueprintStrings.tablesTitle)
                 : node.label),
-            subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Text('($count)', style: Theme.of(context).textTheme.bodySmall),
+            subtitle:
+                Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing:
+                Text('($count)', style: Theme.of(context).textTheme.bodySmall),
             onTap: _busy ? null : () => _selectCommercialRow(node.id),
           ),
         ),
@@ -1133,23 +1140,47 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final seats = Set<String>.from(_detailSeatIds);
     final ids = _temporaryHolds(seats);
     if (ids.isEmpty) return;
-    final confirmed = await DialogHelper.showConfirmationDialog(
-      context,
-      BlueprintStrings.releaseTemporaryReservation,
-      BlueprintStrings.releaseTemporaryReservationConfirm,
-      confirmButtonMessage: BlueprintStrings.releaseTemporaryReservation,
-    );
-    if (!mounted ||
-        !confirmed ||
-        !_canOrder ||
-        _busy ||
-        !identical(session, controller)) return;
-    final current = _temporaryHolds(seats).toSet();
-    final selected = ids.where(current.contains).toList();
-    if (selected.isEmpty) return;
     setState(() => _operationPending = true);
     try {
-      await DbTickets.releaseBlueprintHolds(selected);
+      final preview = await DbTickets.previewBlueprintHolds(
+          session.snapshot.occasionId, ids);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
+      if (!preview.canApply)
+        throw BlueprintCommandRejection(
+            409, {'reason': 'BLUEPRINT_SEAT_ORDERED'});
+      if (preview.activeHoldCount == 0) {
+        await _refresh();
+        return;
+      }
+      final confirmed = await DialogHelper.showConfirmationDialogRich(
+        context: context,
+        title: BlueprintStrings.releaseTemporaryReservation,
+        confirmButtonText: BlueprintStrings.releaseTemporaryReservation,
+        content: SizedBox(
+            width: 360,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(BlueprintStrings.releaseTemporaryReservationConfirm),
+              const SizedBox(height: 12),
+              Text(BlueprintStrings.releaseTemporaryReservationPreview(
+                  preview.activeHoldCount, preview.affectedSpotIds.length)),
+              const SizedBox(height: 8),
+              SizedBox(
+                  height: (preview.seats.length * 28.0)
+                      .clamp(56.0, 240.0)
+                      .toDouble(),
+                  child: ListView.builder(
+                      itemCount: preview.seats.length,
+                      itemBuilder: (context, index) {
+                        final seat = preview.seats[index];
+                        return Text(seat.title ?? '#${seat.id}');
+                      })),
+            ])),
+      );
+      if (!mounted ||
+          !confirmed ||
+          !_canOrder ||
+          !identical(session, controller)) return;
+      await DbTickets.releaseBlueprintHolds(preview);
       await _refresh();
     } catch (error) {
       if (mounted)
@@ -1340,7 +1371,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                     _commercialNodeRow(
                       node: area,
                       selected: _commercialSelection.contains(area.id),
-                      summary: _productText(controller.snapshot.areaBindings[area.id]?.productId),
+                      summary: _productText(
+                          controller.snapshot.areaBindings[area.id]?.productId),
                       count: controller.areaCapacity(area.id),
                       icon: Icons.people_outline,
                     ),

@@ -1161,6 +1161,9 @@
     "no_matching_answers": "Brak kolejnych pasujących pól."
   },
   "FeatureBlueprint": {
+    "releaseTemporaryReservationPreview": "Tymczasowe rezerwacje: {held}. Miejsca w całym wyborze: {total}.",
+    "releaseTemporaryReservationChanged": "Rezerwacje lub wybór uległy zmianie. Sprawdź miejsca i ponownie przygotuj zwolnienie.",
+    "releaseTemporaryReservationProtected": "Niektóre miejsca należą już do zamówienia. Zarządzaj ich biletami oddzielnie.",
     "protectedCount": "Zajęte miejsca: {count}.",
     "cancelReservation": "Anuluj wybrane rezerwacje",
     "assignSelectionProduct": "Wspólny produkt i cena",
@@ -1376,6 +1379,7 @@
     "productOptionsRead": "Odczytywać dostępne typy produktów i opcje zasobów",
     "seatsRead": "Odczytywać miejsca i ich stan",
     "seatsBlock": "Blokować i odblokowywać wybrane miejsca",
+    "seatsReleaseHolds": "Zwalniać tymczasowe rezerwacje wybranych miejsc",
     "inventoryRead": "Odczytywać pule zasobów, pojemność, ustawienia i zajętość kontekstów",
     "inventoryWrite": "Edytować pule zasobów, konteksty i zasoby",
     "productsRead": "Odczytywać produkty, ceny i przypisania magazynowe",

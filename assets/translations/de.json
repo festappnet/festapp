@@ -3,6 +3,9 @@
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },
   "FeatureBlueprint": {
+    "releaseTemporaryReservationPreview": "Temporäre Reservierungen: {held}. Plätze in der gesamten Auswahl: {total}.",
+    "releaseTemporaryReservationChanged": "Reservierungen oder Auswahl haben sich geändert. Prüfen Sie die Plätze und wiederholen Sie die Freigabe.",
+    "releaseTemporaryReservationProtected": "Einige Plätze gehören bereits zu einer Bestellung. Verwalten Sie deren Tickets separat.",
     "protectedCount": "Belegte Plätze: {count}.",
     "cancelReservation": "Ausgewählte Reservierungen stornieren",
     "assignSelectionProduct": "Gemeinsames Produkt und Preis",
@@ -1827,6 +1830,7 @@
     "productOptionsRead": "Verfügbare Produkttypen und Bestandsoptionen lesen",
     "seatsRead": "Sitzplätze und ihren Status lesen",
     "seatsBlock": "Ausgewählte Sitzplätze sperren und entsperren",
+    "seatsReleaseHolds": "Temporäre Reservierungen ausgewählter Plätze aufheben",
     "inventoryRead": "Bestandspools, Kapazitäten, Einstellungen und Kontextbelegung lesen",
     "inventoryWrite": "Bestandspools, Kontexte und Ressourcen bearbeiten",
     "productsRead": "Produkte, Preise und Bestandszuordnungen lesen",

@@ -3,6 +3,9 @@
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
   },
   "FeatureBlueprint": {
+    "releaseTemporaryReservationPreview": "Dočasných rezervácií: {held}. Dotknutých miest v celom výbere: {total}.",
+    "releaseTemporaryReservationChanged": "Rezervácia alebo výber sa zmenili. Skontrolujte miesta a zopakujte uvoľnenie.",
+    "releaseTemporaryReservationProtected": "Niektoré miesta už patria do objednávky. Ich vstupenky môžete spravovať samostatne.",
     "protectedCount": "Obsadené miesta: {count}.",
     "cancelReservation": "Zrušiť vybrané rezervácie",
     "assignSelectionProduct": "Spoločný produkt a cena",
@@ -1854,6 +1857,7 @@
     "productOptionsRead": "Čítať dostupné typy produktov a skladové možnosti",
     "seatsRead": "Čítať miesta a ich prevádzkový stav",
     "seatsBlock": "Blokovať a odblokovať vybrané miesta",
+    "seatsReleaseHolds": "Uvoľňovať dočasné rezervácie vybraných miest",
     "inventoryRead": "Čítať sklady, kapacity, nastavenia a obsadenie kontextov",
     "inventoryWrite": "Upravovať sklady, ich kontexty a zdroje",
     "productsRead": "Čítať produkty, ceny a skladové priradenia",

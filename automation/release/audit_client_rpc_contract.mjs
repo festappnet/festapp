@@ -10,7 +10,7 @@ import {
 } from '../lib/supabase_management.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const RPC_CALL = /(?:\.rpc|_transport\.invoke|\b_invoke|(?<![.\w])invoke|_configurationCommand|_adminCommand)\s*\(\s*(['"])([a-z][a-z0-9_]*)\1/g;
+const RPC_CALL = /(?:\.rpc|_transport\.invoke|\b_invoke|(?<![.\w])invoke|_configurationCommand|_adminCommand|_readRpc)\s*\(\s*(['"])([a-z][a-z0-9_]*)\1/g;
 
 function fail(message) {
   throw new Error(message);

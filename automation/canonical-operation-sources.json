@@ -271,6 +271,8 @@
     "inventory/save_inventory_pool_command_internal.sql",
     "inventory/manage_inventory.sql",
     "eshop/product_catalog_options.sql",
-    "blueprint/admin_seats.sql"
+    "blueprint/admin_seats.sql",
+    "blueprint/hold_release.sql",
+    "blueprint/release_holds_command_internal.sql"
   ]
 }

@@ -6,16 +6,18 @@ import {fixture} from '../../../automation/authorization/benchmark.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db){await db.query(await readFile(new URL('../../../supabase/migrations/20261023220000_blueprint_seat_operations.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));}
+async function install(db){await db.query(await readFile(new URL('../../../supabase/migrations/20261023220000_blueprint_seat_operations.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023230000_confirmed_blueprint_hold_release.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));}
 async function setup(t,persistent=false){let root,f;const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');if(persistent&&f)await cleanup(db,f,root);await db.end();});await install(db);root=await fixture(db,1);const fx=(await db.query('select blueprint_test_fixture_internal($1) value',[root.org])).rows[0].value;f={...root,occasion:Number(fx.occasion),blueprint:Number(fx.blueprint),unit:Number((await db.query('select unit from occasions where id=$1',[fx.occasion])).rows[0].unit)};
  await db.query('update occasion_users set "user"=$2 where occasion=$1',[f.occasion,f.actor]);await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');const saved=(await db.query('select update_blueprint_client_sync_v1($1,$2) value',[fx.request,randomUUID()])).rows[0].value;assert.equal(saved.status,'applied',JSON.stringify(saved));
  await db.query('RESET ROLE');const bindings=(await db.query('select blueprint_binding_projection_internal($1) value',[f.blueprint])).rows[0].value.seatBindings;
  const unit=randomUUID();const doc={...fx.request.layout,selectionUnits:[{id:unit,kind:'atomic',nodeIds:bindings.slice(0,2).map(b=>b.nodeId)}]};await db.query('update eshop.blueprints set layout=$2 where id=$1',[f.blueprint,doc]);await db.query('update eshop.blueprint_seat_bindings set selection_unit=$2 where blueprint=$1 and spot=any($3)',[f.blueprint,unit,bindings.slice(0,2).map(b=>b.spotId)]);await db.query('SET LOCAL ROLE authenticated');return{db,f,bindings,doc,fx,ex:executor(db,f)};}
-function executor(db,f){const stats={calls:0,lose:false};const owner={root:'/tmp/festapp-seat-operations',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['seats.list','seats.preview_block','seats.block'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,a)=>{stats.calls++;await db.query('SAVEPOINT rpc');try{let data;
+function executor(db,f){const stats={calls:0,lose:false,payloadBytes:[]};const owner={root:'/tmp/festapp-seat-operations',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['seats.list','seats.preview_block','seats.block','seats.preview_release','seats.release_holds'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,a)=>{stats.calls++;await db.query('SAVEPOINT rpc');try{let data;
  if(name==='get_blueprint_seats')data=(await db.query('select get_blueprint_seats($1,$2,$3,$4,$5,$6) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_after,a.p_limit])).rows[0].value;
  else if(name==='preview_blueprint_seat_block')data=(await db.query('select preview_blueprint_seat_block($1,$2,$3,$4,$5,$6) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_blocked])).rows[0].value;
+ else if(name==='preview_blueprint_hold_release')data=(await db.query('select preview_blueprint_hold_release($1,$2,$3,$4,$5) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_spots,a.p_editor])).rows[0].value;
+ else if(name==='release_blueprint_holds'){data=(await db.query('select release_blueprint_holds($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_affected_spots,a.p_expected_revision,a.p_hold_snapshot,a.p_command_id,a.p_editor])).rows[0].value;assert.equal(data.sync,undefined);}
  else{assert.equal(name,'block_blueprint_seats');data=(await db.query('select block_blueprint_seats($1,$2,$3,$4,$5,$6,$7,$8,$9) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_affected_spots,a.p_expected_revision,a.p_blocked,a.p_command_id])).rows[0].value;assert.equal(data.sync,undefined);}
- await db.query('RELEASE SAVEPOINT rpc');if(stats.lose&&name==='block_blueprint_seats'){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}return{data,error:null};}catch(e){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{error:{code:e.code,status:e.code==='42501'?403:400}};} }},{userId:f.actor})};const ops=new Operations(owner);return{stats,owner,list:(after)=>ops.invoke('seats.list',{occasionId:f.occasion,blueprintId:f.blueprint,limit:2,...(after?{after}:{})}),preview:(spotIds,blocked)=>ops.invoke('seats.preview_block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds,blocked}),block:(preview,commandId=randomUUID())=>ops.invoke('seats.block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,blocked:preview.blocked,commandId})};}
+ stats.payloadBytes.push({rpc:name,bytes:Buffer.byteLength(JSON.stringify(data),'utf8')});await db.query('RELEASE SAVEPOINT rpc');if(stats.lose&&['block_blueprint_seats','release_blueprint_holds'].includes(name)){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}return{data,error:null};}catch(e){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{error:{code:e.code,status:e.code==='42501'?403:400}};} }},{userId:f.actor})};const ops=new Operations(owner);return{stats,owner,previewRelease:spotIds=>ops.invoke('seats.preview_release',{occasionId:f.occasion,spotIds}),release:(preview,commandId=randomUUID())=>ops.invoke('seats.release_holds',{occasionId:f.occasion,blueprintId:preview.blueprintId,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,holdSnapshot:preview.holdSnapshot,commandId}),list:(after)=>ops.invoke('seats.list',{occasionId:f.occasion,blueprintId:f.blueprint,limit:2,...(after?{after}:{})}),preview:(spotIds,blocked)=>ops.invoke('seats.preview_block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds,blocked}),block:(preview,commandId=randomUUID())=>ops.invoke('seats.block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,blocked:preview.blocked,commandId})};}
 const ok=r=>{assert.equal(r.ok,true,JSON.stringify(r));return r.data;};
 
 test('seat inspection and explicit expanded blocking share the canonical aggregate, preserve layout and replay one receipt',options,async t=>{
@@ -73,11 +75,95 @@ test('seat scope, complete selection validation, canonical source and helper ACL
  await db.query('SAVEPOINT denied_bp');await assert.rejects(db.query('select get_blueprint_seats($1,$2,$3,$4)',[f.occasion,f.org,f.unit,foreignBp]),e=>e.code==='42501');await db.query('ROLLBACK TO SAVEPOINT denied_bp');await db.query('RELEASE SAVEPOINT denied_bp');
  const scope=ex.owner.delegatedContext;ex.owner.delegatedContext=async()=>({organizationId:f.org,unitId:f.unit+99999});assert.equal((await ex.list()).error.code,'FORBIDDEN');ex.owner.delegatedContext=scope;assert.equal((await ex.preview([bindings[0].spotId,bindings[0].spotId],true)).error.code,'INVALID_INPUT');
  await db.query('RESET ROLE');await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
- const owners=['lock_blueprint_inventory_internal','blueprint_spot_facts_internal','check_blueprint_block_changes_internal','check_blueprint_admin_scope_internal','blueprint_admin_seat_rows_internal','get_blueprint_seats','blueprint_block_selection_internal','preview_blueprint_seat_block','block_blueprint_seats','save_blueprint_layout_impl_internal','save_blueprint_layout_internal_v1','get_blueprint_for_edit'];const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');const assertions=contract.split('\n').filter(l=>owners.some(n=>l.includes("to_regprocedure('public."+n+'(')));assert.equal(assertions.length,owners.length);await db.query('DO $$ BEGIN\n'+assertions.join('\n')+'\nEND $$;');
+ const owners=['lock_blueprint_inventory_internal','blueprint_spot_facts_internal','check_blueprint_block_changes_internal','check_blueprint_admin_scope_internal','blueprint_admin_seat_rows_internal','get_blueprint_seats','blueprint_block_selection_internal','preview_blueprint_seat_block','block_blueprint_seats','save_blueprint_layout_impl_internal','save_blueprint_layout_internal_v1','get_blueprint_for_edit','blueprint_hold_snapshot_internal','blueprint_hold_selection_internal','preview_blueprint_hold_release','release_blueprint_holds','release_blueprint_holds_command_internal'];const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');const assertions=contract.split('\n').filter(l=>owners.some(n=>l.includes("to_regprocedure('public."+n+'(')));assert.equal(assertions.length,owners.length);await db.query('DO $$ BEGIN\n'+assertions.join('\n')+'\nEND $$;');
  for(const role of ['anon','service_role'])assert.equal((await db.query("select has_function_privilege($1,'block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)','execute') allowed",[role])).rows[0].allowed,false);
  assert.equal((await db.query("select has_function_privilege('authenticated','blueprint_spot_facts_internal(bigint,bigint[],timestamptz)','execute') allowed")).rows[0].allowed,false);
 });
 
 for(const name of ['layout_integration_test.sql','authorization_test.sql'])test('blueprint regression: '+name,options,async t=>{
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);await db.query('SET LOCAL ROLE postgres');await db.query("select set_config('request.jwt.claim.role','service_role',true)");await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../database/tests/blueprint/'+name,import.meta.url),'utf8'));
+});
+
+test('hold release binds the confirmed reservation identity; old receipt replay cannot release a later buyer',options,async t=>{
+ const{db,f,bindings,fx}=await setup(t);const secret=randomUUID();const held=(await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,secret,bindings[0].spotId])).rows[0].v;assert.equal(held.code,200);
+ const preview=(await db.query('select preview_blueprint_hold_release($1,$2,$3,$4) v',[f.occasion,f.org,f.unit,[bindings[0].spotId]])).rows[0].v;assert.equal(preview.affectedSpotIds.length,2);assert.equal(preview.activeHoldCount,2);assert.equal(preview.canApply,true);assert(!JSON.stringify(preview).includes(secret));
+ const commandId=randomUUID(),args=[f.occasion,f.org,f.unit,f.blueprint,preview.requestedSpotIds,preview.affectedSpotIds,preview.layoutRevision,preview.holdSnapshot,commandId];
+ const done=(await db.query('select release_blueprint_holds($1,$2,$3,$4,$5,$6,$7,$8,$9) v',args)).rows[0].v;assert.equal(done.status,'applied',JSON.stringify(done));assert.equal(done.data.releasedCount,2);assert.equal(done.sync,undefined);
+ const laterSecret=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,laterSecret,bindings[0].spotId])).rows[0].v.code,200);
+ const replay=(await db.query('select release_blueprint_holds($1,$2,$3,$4,$5,$6,$7,$8,$9) v',args)).rows[0].v;assert.deepEqual(replay,done);
+ const stale=(await db.query('select release_blueprint_holds($1,$2,$3,$4,$5,$6,$7,$8,$9) v',[...args.slice(0,8),randomUUID()])).rows[0].v;assert.equal(stale.status,'rejected');assert.equal(stale.data.reason,'BLUEPRINT_HOLDS_CHANGED');
+ await db.query('RESET ROLE');assert.equal(Number((await db.query('select count(*) from eshop.spots where blueprint=$1 and secret=$2',[f.blueprint,laterSecret])).rows[0].count),2);
+});
+
+test('MCP hold preview/release uses the same receipt, separate order-editor role and safe uncertain replay',options,async t=>{
+ const{db,f,bindings,fx,ex}=await setup(t);await db.query('RESET ROLE');await db.query('update occasion_users set is_editor=false where occasion=$1 and "user"=$2',[f.occasion,f.actor]);await db.query('SET LOCAL ROLE authenticated');
+ const secret=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,secret,bindings[0].spotId])).rows[0].v.code,200);
+ assert.equal((await ex.preview([bindings[0].spotId],true)).error.code,'FORBIDDEN');const preview=ok(await ex.previewRelease([bindings[0].spotId]));assert.equal(preview.activeHoldCount,2);assert(!JSON.stringify(preview).includes(secret));
+ const commandId=randomUUID();ex.stats.lose=true;assert.equal((await ex.release(preview,commandId)).ok,false);
+ const later=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,later,bindings[0].spotId])).rows[0].v.code,200);
+ const saved=ok(await ex.release(preview,commandId));
+ assert.equal(ex.stats.payloadBytes.filter(p=>p.rpc==='preview_blueprint_hold_release').length,1,'one scoped preview RPC, no separate joins from MCP');
+ assert.equal(ex.stats.payloadBytes.filter(p=>p.rpc==='release_blueprint_holds').length,2,'one RPC per write attempt, uncertain retry uses its receipt');
+ assert(ex.stats.payloadBytes.every(p=>p.bytes<8192),'lean SQL responses contain no full editor/cache projection');
+ t.diagnostic('Serialized SQL JSON bytes for two-seat atomic unit: '+JSON.stringify(ex.stats.payloadBytes));
+ assert.equal(saved.releasedCount,2);assert.equal(saved.layoutRevision,preview.layoutRevision);assert.equal((await ex.release(preview)).error.code,'SEAT_HOLDS_CHANGED_NEW_PREVIEW_REQUIRED');await db.query('RESET ROLE');assert.equal(Number((await db.query('select count(*) from eshop.spots where blueprint=$1 and secret=$2',[f.blueprint,later])).rows[0].count),2);
+});
+
+test('pre-extraction hold receipts replay unchanged and preserve later buyer holds',options,async t=>{
+ const{db,f,bindings,fx}=await setup(t);await db.query('RESET ROLE');const historical=await readFile(new URL('../../../supabase/migrations/20261021100000_canonical_authorization.sql',import.meta.url),'utf8');const definition=historical.match(/CREATE OR REPLACE FUNCTION public\.release_blueprint_holds_client_sync_v1\([\s\S]*?\$\$;/)?.[0];assert(definition);await db.query(definition);await db.query('SET LOCAL ROLE authenticated');
+ const first=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,first,bindings[0].spotId])).rows[0].v.code,200);const commandId=randomUUID();const original=(await db.query('select release_blueprint_holds_client_sync_v1($1,$2) v',[[bindings[0].spotId],commandId])).rows[0].v;assert.equal(original.status,'applied');
+ const later=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,later,bindings[0].spotId])).rows[0].v.code,200);await db.query('RESET ROLE');await db.query(await readFile(new URL('../../../database/functions/eshop/release_blueprint_holds_client_sync_v1.sql',import.meta.url),'utf8'));await db.query('SET LOCAL ROLE authenticated');assert.deepEqual((await db.query('select release_blueprint_holds_client_sync_v1($1,$2) v',[[bindings[0].spotId],commandId])).rows[0].v,original);await db.query('RESET ROLE');assert.equal(Number((await db.query('select count(*) from eshop.spots where blueprint=$1 and secret=$2',[f.blueprint,later])).rows[0].count),2);
+});
+
+
+test('hold release fails closed for incomplete confirmation, foreign scope, used seats and direct helper access',options,async t=>{
+ const{db,f,bindings,fx,ex}=await setup(t);
+ const preview=ok(await ex.previewRelease([bindings[0].spotId]));
+ assert.equal((await ex.release({...preview,affectedSpotIds:[bindings[0].spotId]})).error.code,'SEAT_RELEASE_REJECTED_NEW_PREVIEW_REQUIRED');
+ const originalScope=ex.owner.delegatedContext;ex.owner.delegatedContext=async()=>({organizationId:f.org,unitId:f.unit+99999});
+ assert.equal((await ex.previewRelease([bindings[0].spotId])).error.code,'FORBIDDEN');
+ assert.equal((await ex.release(preview)).error.code,'FORBIDDEN');ex.owner.delegatedContext=originalScope;
+ await db.query('RESET ROLE');
+ const order=Number((await db.query("insert into eshop.orders(occasion,order_sequence,order_symbol,state) values($1,next_order_sequence($1),generate_order_symbol(),'paid') returning id",[f.occasion])).rows[0].id);
+ const ticket=Number((await db.query("insert into eshop.tickets(occasion,state) values($1,'used') returning id",[f.occasion])).rows[0].id);
+ const item=Number((await db.query('insert into eshop.order_product_ticket("order",ticket,product) values($1,$2,$3) returning id',[order,ticket,fx.product])).rows[0].id);
+ await db.query('update eshop.spots set order_product_ticket=$2 where id=$1',[bindings[1].spotId,item]);
+ const before=(await db.query('select to_jsonb(o) value from eshop.orders o where id=$1',[order])).rows[0].value;
+ for(const signature of ['blueprint_hold_snapshot_internal(bigint,bigint[])','blueprint_hold_selection_internal(bigint,bigint,bigint[],integer)','release_blueprint_holds_command_internal(bigint[],uuid,bigint[],bigint,text)'])
+  for(const role of ['anon','authenticated','service_role'])assert.equal((await db.query("select has_function_privilege($1,$2,'execute') allowed",[role,signature])).rows[0].allowed,false,role+' cannot invoke '+signature);
+ for(const signature of ['preview_blueprint_hold_release(bigint,bigint,bigint,bigint[],boolean)','release_blueprint_holds(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,text,uuid,boolean)'])
+  for(const role of ['anon','service_role'])assert.equal((await db.query("select has_function_privilege($1,$2,'execute') allowed",[role,signature])).rows[0].allowed,false);
+ await db.query('SET LOCAL ROLE authenticated');
+ const protectedPreview=ok(await ex.previewRelease([bindings[0].spotId]));assert.equal(protectedPreview.canApply,false);assert.equal(protectedPreview.seats.find(s=>s.spotId===bindings[1].spotId).state,'used');
+ assert.equal((await ex.release(protectedPreview)).error.code,'SEAT_RELEASE_REJECTED_NEW_PREVIEW_REQUIRED');
+ await db.query('RESET ROLE');assert.deepEqual((await db.query('select to_jsonb(o) value from eshop.orders o where id=$1',[order])).rows[0].value,before);
+ assert.equal(Number((await db.query('select order_product_ticket from eshop.spots where id=$1',[bindings[1].spotId])).rows[0].order_product_ticket),item);
+});
+
+
+test('two connections: confirmed hold release waits for checkout and rejects a replacement buyer without clearing it',options,async t=>{
+ const{db,f,fx,bindings,ex}=await setup(t,true);
+ const buyer=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);t.after(async()=>{await buyer.query('ROLLBACK');await buyer.end();});
+ const first=randomUUID();assert.equal((await db.query('select select_spot($1,$2,$3,true) v',[fx.formKey,first,bindings[0].spotId])).rows[0].v.code,200);
+ const preview=ok(await ex.previewRelease([bindings[0].spotId]));await db.query('COMMIT');
+ await buyer.query('BEGIN');assert.equal((await buyer.query('select select_spot($1,$2,$3,false) v',[fx.formKey,first,bindings[0].spotId])).rows[0].v.code,200);
+ const later=randomUUID();assert.equal((await buyer.query('select select_spot($1,$2,$3,true) v',[fx.formKey,later,bindings[0].spotId])).rows[0].v.code,200);
+ await db.query('BEGIN');await db.query("set local statement_timeout='5s'");await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');
+ const pending=ex.release(preview);let blocked=false;
+ for(let i=0;i<100;i++){if((await buyer.query('select $1::int=any(pg_blocking_pids($2)) value',[buyer.processID,db.processID])).rows[0].value){blocked=true;break;}await new Promise(r=>setTimeout(r,10));}
+ assert(blocked,'release waits on actual checkout lock');await buyer.query('COMMIT');
+ assert.equal((await pending).error.code,'SEAT_HOLDS_CHANGED_NEW_PREVIEW_REQUIRED');await db.query('COMMIT');
+ assert.equal(Number((await buyer.query('select count(*) from eshop.spots where blueprint=$1 and secret=$2',[f.blueprint,later])).rows[0].count),2);
+ // Permission can be revoked while the request waits, after its initial check.
+ await db.query('BEGIN');await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');
+ const fresh=ok(await ex.previewRelease([bindings[0].spotId]));await db.query('COMMIT');
+ await buyer.query('BEGIN');await buyer.query('select lock_blueprint_scope_internal($1)',[[f.occasion]]);
+ await db.query('BEGIN');await db.query("set local statement_timeout='5s'");await db.query("select set_config('request.jwt.claim.sub',$1,true)",[f.actor]);await db.query('SET LOCAL ROLE authenticated');
+ const revokedCommand=randomUUID(),waiting=ex.release(fresh,revokedCommand);blocked=false;
+ for(let i=0;i<100;i++){if((await buyer.query('select $1::int=any(pg_blocking_pids($2)) value',[buyer.processID,db.processID])).rows[0].value){blocked=true;break;}await new Promise(r=>setTimeout(r,10));}
+ assert(blocked,'release passed its early check before role revocation');
+ await buyer.query('update occasion_users set is_editor=false,is_editor_order=false,is_editor_order_view=false where occasion=$1 and "user"=$2',[f.occasion,f.actor]);await buyer.query('COMMIT');
+ assert.equal((await waiting).error.code,'FORBIDDEN');await db.query('COMMIT');
+ assert.equal(Number((await buyer.query('select count(*) from eshop.spots where blueprint=$1 and secret=$2',[f.blueprint,later])).rows[0].count),2);
+ assert.equal(Number((await buyer.query('select count(*) from client_mutation_receipts where command_id=$1',[revokedCommand])).rows[0].count),0);
 });
