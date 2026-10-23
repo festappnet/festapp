@@ -339,7 +339,12 @@ void main() {
             'id': 'mail',
             'kind': 'email_problem',
             'status': 'active',
-            'data': {'reason': 'complaint', 'messageId': 'message'}
+            'data': {
+              'reason': 'complaint',
+              'messageId': 'message',
+              'recipient': 'jana@example.invalid',
+              'customerName': 'Jana Nováková'
+            }
           }
         ]
       }),
@@ -375,6 +380,7 @@ void main() {
         home: NotificationCenterPanel(
             controller: controller, onDetail: (_) => details++)));
     await tester.pumpAndSettle();
+    expect(find.text('jana@example.invalid - Jana Nováková'), findsOneWidget);
     expect(find.textContaining('NotificationCenter.reasons.complaint'),
         findsOneWidget);
     expect(find.text('NotificationCenter.detail'), findsOneWidget);
@@ -470,7 +476,7 @@ void main() {
               'The vector outline must actually paint against the app bar surface');
     }
   });
-  testWidgets('panel fills available height while keeping modal margins',
+  testWidgets('panel fits short content while keeping modal margins',
       (tester) async {
     final controller =
         NotificationCenterController(read: (_, params) async => {});
@@ -501,8 +507,12 @@ void main() {
           (widget) => widget is Material && widget.type == MaterialType.card);
       expect(surface, findsOneWidget);
       final rect = tester.getRect(surface);
-      expect(rect.top, closeTo(16, .01));
-      expect(rect.bottom, closeTo(size.height - 16, .01));
+      expect(rect.top, greaterThanOrEqualTo(16));
+      expect(rect.bottom, lessThanOrEqualTo(size.height - 16));
+      expect(rect.height, lessThanOrEqualTo(size.height * .85));
+      if (size.height >= 600) {
+        expect(rect.height, lessThan(size.height * .7));
+      }
       expect(rect.left, greaterThanOrEqualTo(16));
       expect(rect.right, lessThanOrEqualTo(size.width - 16));
       expect(rect.width, lessThanOrEqualTo(440));
