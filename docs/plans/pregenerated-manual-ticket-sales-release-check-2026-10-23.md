@@ -1,7 +1,23 @@
 # Ticket batch release verification
 
 Verification: release. Scope: canonical main and prod/festapptickets only.
-Production deployment is pending; the earlier failed baseline report is superseded by the results below.
+Released 2026-10-23: **0.20.371+868** at https://vstupenky.online.
+The earlier failed baseline report is superseded by the results below.
+
+- Application main: `25ca9c3dbe85fac4ee82a1cef08d19134b7a7dd1`.
+- Tenant: `eef39e71db71faacde495f9cded8cf05242d5aa5`; previous production
+  `be6fec583ea41d4e7102505f0f6182db6b32a370` remains an ancestor.
+- Immutable Pages deployment: https://55dc3db9.vstupenkyonline.pages.dev.
+- Three consecutive live version/asset/legal probes: PASS.
+- Canonical drift, local build and both unchanged PWA cache limits: PASS.
+  Core 24,174,445 / 26,214,400 bytes; known 62,877,220 / 62,914,560 bytes.
+- Both exact SQL migrations are committed with their original-byte ledger records;
+  all 77 effective API role matrices match. Private R2 capability, Functions health
+  and the bounded three-service document CPU policy are verified live.
+- Backend function/Worker source remains the unchanged ancestor `c47e6edf0`;
+  the runtime policy patch is from application main above. Later main changes
+  only compact served translation formatting and complete that runtime policy.
+
 
 | Gate | Result |
 | --- | --- |
@@ -34,8 +50,13 @@ Evidence: `/tmp/festapp-batches-fresh-bootstrap2.log`,
 `/tmp/festapp-batches-worker-final.log`,
 `/tmp/festapp-batches-r2-pdf-result.log`.
 
-Before deployment: fetch main/prod again, preserve canonical ancestry and tenant
-policy, provision the dedicated private R2 capability, install the verified
-44-function bundle, apply exact migration bytes with the ledger atomically,
-verify runtime/ACL/readiness, then build locally and deploy directly with the
-normal build, drift, PWA, legal and coherent live-version gates.
+The release used the local direct Pages deployment path and published only
+`prod/festapptickets`; no GitHub production build was dispatched. The live
+Worker revision is `136aa32c-f3ef-4221-8495-0471251d6860`. Existing production
+data was never used for fixtures or synthetic sales.
+
+Final private receipts, mode 0600:
+`/private/tmp/festapp-ticket-batches-release-evidence-20261023/final-release-receipt.json`,
+`backend-release-receipt.json`, and `validation.json` alongside it.
+The deployed artifact tree SHA-256 is
+`a5befaacd8b4732bb4d0441261d4db1b851a5aae23217114697923b0041b0508`.

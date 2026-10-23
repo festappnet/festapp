@@ -1,3 +1,11 @@
+import 'package:fstapp/components/eshop/seat_order_commands.dart';
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
+import '../../support/fixtures/blueprint_order_preview_fixture.dart';
+import 'package:easy_localization/easy_localization.dart';
+import '../../support/fixtures/blueprint_swap_preview_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
+import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart';
+import '../../support/fixtures/local_app_storage_fixture.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_inline_name.dart';
@@ -14,7 +22,6 @@ import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
-import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -93,14 +100,19 @@ http.Response pickerRead(http.Request request, String state,
 void main() {
   WidgetEnvironmentFixture.register();
   late RootSupabaseFixture backend;
+  late LocalAppStorageFixture commandStorage;
   setUpAll(() async {
+    commandStorage = await LocalAppStorageFixture.open();
     backend = await RootSupabaseFixture.open((request) =>
         pickerResponse?.call(request) ??
         (throw StateError('Unexpected UI fixture request')));
     // Resolve asset I/O before widget fake-async zones can cache a pending read.
     await TicketFontCatalog.loadFamilies();
   });
-  tearDownAll(() => backend.dispose());
+  tearDownAll(() async {
+    await backend.dispose();
+    await commandStorage.dispose();
+  });
   setUpAll(() {
     environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
@@ -421,22 +433,9 @@ void main() {
         MaterialApp(
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
-          selectedSpotIds: const [71],
-          initialAnalysis: {
-            'total_price': 100,
-            'currency': 'CZK',
-            'conflicts': [],
-            'new_order_items': [
-              {
-                'spot_id': 71,
-                'spot_title': 'A1',
-                'product_title': 'Seat',
-                'price': 100
-              }
-            ],
-            'order_form': {
-              'key': '00000000-0000-4000-8000-000000000001',
-              'fields': [
+          request: seatOrderRequestFixture(),
+          commands: seatOrderCommandsFixture(
+              fields: [
                 {
                   'id': 601,
                   'type': 'name',
@@ -453,20 +452,18 @@ void main() {
                   'is_hidden': false,
                   'is_ticket_field': true
                 },
-              ]
-            },
-          },
-          submit: (_, data) async {
-            submitted = data;
-            throw StateError('test_stop');
-          },
+              ],
+              onQuote: (data) async {
+                submitted = data;
+                throw StateError('test_stop');
+              }),
         ))));
     await tester.pumpAndSettle();
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     await tester.enterText(find.byType(TextFormField), 'local@example.test');
-    final confirm =
-        find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder);
+    final confirm = find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr());
     await tester.ensureVisible(confirm);
     await tester.tap(confirm);
     await tester.pumpAndSettle();
@@ -491,6 +488,35 @@ void main() {
       ]
     });
     expect(submitted!['form_key'], '00000000-0000-4000-8000-000000000001');
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'seat order shows printed-batch rejection without exposing a confirmation or writing',
+      (tester) async {
+    var writes = 0;
+    final commands = SupabaseSeatOrderCommands.withTransport(
+        ClientCommandTransport((_, __) async {
+      writes++;
+      return null;
+    }),
+        readRpc: (_, params) async => params['p_input'] == null
+            ? seatOrderRequirementsJson()
+            : {'code': 409, 'reason': 'BATCH_TICKET_PRINT_IMMUTABLE'});
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintCreateOrderDialog(
+                    request: seatOrderRequestFixture(), commands: commands))));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'local@example.invalid');
+    await tester.tap(find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr()));
+    await tester.pumpAndSettle();
+    expect(
+        find.text('FeatureBlueprint.orderBatchImmutable'.tr()), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder),
+        findsNothing);
+    expect(writes, 0);
   });
   testWidgetsWithEnvironment(() => environment,
       'whole order cancellation email is an optional follow-up',
@@ -747,29 +773,179 @@ void main() {
     editor.controller.undo();
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
+    var previewReads = 0;
+    final cancellations = <Map<String, dynamic>>[];
+    final submittedReleases = <Map<String, dynamic>>[];
+    final snapshot = List.filled(64, 'a').join();
+    pickerResponse = (request) {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      late Map<String, dynamic> response;
+      if (request.url.path.endsWith('/preview_blueprint_hold_release')) {
+        previewReads++;
+        expect(body['p_spots'], [13]);
+        response = {
+          'occasionId': 1,
+          'blueprintId': 1,
+          'layoutRevision': 1,
+          'requestedSpotIds': [13],
+          'affectedSpotIds': [13, 14],
+          'holdSnapshot': snapshot,
+          'activeHoldCount': 2,
+          'canApply': true,
+          'seats': [
+            {'spotId': 13, 'title': 'Seat 3', 'state': 'selected'},
+            {'spotId': 14, 'title': 'Confirmed companion', 'state': 'selected'},
+          ],
+        };
+      } else if (request.url.path
+          .endsWith('/preview_blueprint_ticket_cancellation')) {
+        response = {
+          'occasionId': 1,
+          'blueprintId': 1,
+          'requestedSpotIds': body['p_spots'],
+          'affectedSpotIds': [11],
+          'ticketIds': [51],
+          'blueprints': [
+            {'id': 1, 'revision': 1}
+          ],
+          'confirmationHash': snapshot,
+          'seats': [
+            {
+              'spotId': 11,
+              'blueprintId': 1,
+              'title': 'Reviewed ticket seat',
+              'ticketId': 51,
+              'orderId': 61,
+              'state': 'paid'
+            }
+          ],
+          'orders': [
+            {
+              'orderId': 61,
+              'beforeAmount': '100.00',
+              'afterAmount': '100.00',
+              'delta': '0.00',
+              'currencyCode': 'CZK',
+              'beforeState': 'paid',
+              'afterState': 'storno'
+            }
+          ]
+        };
+      } else if (request.url.path.endsWith('/cancel_blueprint_tickets')) {
+        cancellations.add(body);
+        response = commandResponseFixture(body['p_command_id'] as String,
+            data: {'cancelledOrderIds': [], 'updatedOrders': []});
+      } else if (request.url.path.endsWith('/release_blueprint_holds')) {
+        submittedReleases.add(body);
+        response =
+            commandResponseFixture(body['p_command_id'] as String, data: {
+          'spotIds': [13, 14]
+        });
+      } else {
+        throw StateError('Unexpected UI operation: ${request.url.path}');
+      }
+      return http.Response(jsonEncode(response), 200,
+          headers: {'content-type': 'application/json'}, request: request);
+    };
     final release = find.byKey(const ValueKey('commercial-release-holds'));
     await tester.ensureVisible(release);
-    await tester.tap(release);
-    await tester.pumpAndSettle();
+    Future<void> openReleaseConfirmation() async {
+      for (var attempt = 0;
+          attempt < 10 &&
+              tester.widget<OutlinedButton>(release).onPressed == null;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      expect(tester.widget<OutlinedButton>(release).onPressed, isNotNull,
+          reason: 'The previous cancelled operation must finish before retry');
+      // The real durable journal must start in the real async zone, just as
+      // filesystem-backed fixture cases elsewhere in this suite.
+      await tester.runAsync(() => tester.tap(release));
+      // Advance fake-async work before yielding to the real HTTP continuation.
+      // pumpAndSettle alone can finish before an RPC schedules the dialog frame.
+      for (var attempt = 0;
+          attempt < 10 &&
+              find
+                  .text(BlueprintStrings.releaseTemporaryReservationConfirm)
+                  .evaluate()
+                  .isEmpty;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.pumpAndSettle();
+    }
+
+    await openReleaseConfirmation();
+    expect(previewReads, 1,
+        reason: 'The actual RPC preview completes before confirmation');
     expect(find.text(BlueprintStrings.releaseTemporaryReservationConfirm),
+        findsOneWidget,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .join(' | '));
+    expect(find.text('Confirmed companion'), findsOneWidget);
+    expect(find.text(BlueprintStrings.releaseTemporaryReservationPreview(2, 2)),
         findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
+    expect(submittedReleases, isEmpty, reason: 'Cancel must keep every hold');
+    await openReleaseConfirmation();
+    // A local overlay change after confirmation cannot silently narrow the intent.
     source.spots!.last.setSeatState(BlueprintSeatState.available);
+    await tester.runAsync(() => tester.tap(find.widgetWithText(
+        ElevatedButton, BlueprintStrings.releaseTemporaryReservation)));
+    for (var attempt = 0;
+        attempt < 10 && submittedReleases.isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(previewReads, 2);
+    expect(submittedReleases, hasLength(1),
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .join(' | '));
+    expect(submittedReleases.single['p_spots'], [13]);
+    expect(submittedReleases.single['p_affected_spots'], [13, 14]);
+    expect(submittedReleases.single['p_hold_snapshot'], snapshot);
+    expect(
+        tester
+            .widgetList<BlueprintEditorFeedback>(
+                find.byType(BlueprintEditorFeedback))
+            .map((feedback) => feedback.message),
+        everyElement(isNull),
+        reason:
+            'The command must complete its journal and refresh without a UI error');
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({for (final seat in seats) seat.id});
+    await tester.pumpAndSettle();
     final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
     await tester.ensureVisible(action);
     await tester.tap(action);
     await tester.pumpAndSettle();
-    final summary = tester.widget<DataGridActionSummary<TicketModel>>(
-        find.byType(DataGridActionSummary<TicketModel>));
-    expect(summary.items.map((ticket) => ticket.id), [51]);
-    // Dismissal must not send a cancellation command (the fixture rejects I/O).
+    expect(find.text('Reviewed ticket seat'), findsOneWidget);
+    expect(find.textContaining('51'), findsWidgets);
+    // Dismissal must not send cancellation I/O (only preview/release is allowed).
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(source.spots!.first.orderProductTicket, 101);
+    expect(cancellations, isEmpty);
     expect(tester.takeException(), isNull);
-    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({for (final seat in seats) seat.id});
     await tester.pumpAndSettle();
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.pumpAndSettle();
     expect(
@@ -798,8 +974,104 @@ void main() {
             .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
             .viewSelection,
         {seats.first.id, seats.last.id});
+    var swapPreviews = 0;
+    Map<String, dynamic>? approvedSwap;
+    final swapWrites = <Map<String, dynamic>>[];
+    pickerResponse = (request) {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      late Map<String, dynamic> response;
+      if (request.url.path.endsWith('/preview_blueprint_seat_swap')) {
+        swapPreviews++;
+        expect({body['p_first'], body['p_second']}, {11, 13});
+        response = blueprintSwapPreviewFixture();
+        if (body['p_first'] == 13) {
+          final sourceIds = response['sourceSpotIds'];
+          response['sourceSpotIds'] = response['targetSpotIds'];
+          response['targetSpotIds'] = sourceIds;
+        }
+        response['firstSpotId'] = body['p_first'];
+        response['secondSpotId'] = body['p_second'];
+        approvedSwap = response;
+      } else if (request.url.path.endsWith('/swap_blueprint_seats')) {
+        swapWrites.add(body);
+        response = commandResponseFixture(body['p_command_id'] as String);
+      } else {
+        throw StateError('Unexpected swap request: ${request.url.path}');
+      }
+      return http.Response(jsonEncode(response), 200,
+          request: request, headers: {'content-type': 'application/json'});
+    };
+    final swapConfirm =
+        find.byKey(const ValueKey('blueprint-confirm-operation'));
+    Future<void> openSwap() async {
+      for (var attempt = 0;
+          attempt < 100 &&
+              tester.widget<FilledButton>(swapConfirm).onPressed == null;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.runAsync(() => tester.tap(swapConfirm));
+      for (var attempt = 0;
+          attempt < 100 && find.text('Source companion').evaluate().isEmpty;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Source companion'), findsOneWidget,
+          reason: 'Preview calls: $swapPreviews; ' +
+              tester
+                  .widgetList<Text>(find.byType(Text))
+                  .map((t) => t.data)
+                  .join(' | '));
+      expect(find.text('Destination companion'), findsOneWidget);
+      expect(find.text(BlueprintStrings.swapServerNotice), findsOneWidget);
+    }
+
+    await openSwap();
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
+    expect(swapWrites, isEmpty);
+    await openSwap();
+    // Selection can change while a modal is open; the approved payload cannot.
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({seats[1].id, seats[2].id});
+    final dialog = find.byType(AlertDialog);
+    await tester.runAsync(() => tester.tap(find.descendant(
+        of: dialog,
+        matching: find.widgetWithText(
+            FilledButton, BlueprintStrings.legendSwapSeats))));
+    for (var attempt = 0;
+        attempt < 100 &&
+            (swapWrites.isEmpty ||
+                find
+                    .byKey(const ValueKey('blueprint-confirm-operation'))
+                    .evaluate()
+                    .isNotEmpty);
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(swapPreviews, 2);
+    expect(swapWrites, hasLength(1));
+    expect(swapWrites.single['p_first'], approvedSwap!['firstSpotId']);
+    expect(swapWrites.single['p_second'], approvedSwap!['secondSpotId']);
+    expect(swapWrites.single['p_source_spots'], approvedSwap!['sourceSpotIds']);
+    expect(swapWrites.single['p_target_spots'], approvedSwap!['targetSpotIds']);
+    expect(swapWrites.single['p_confirmation_hash'],
+        blueprintSwapPreviewFixture()['confirmationHash']);
+    expect(
+        tester
+            .widgetList<BlueprintEditorFeedback>(
+                find.byType(BlueprintEditorFeedback))
+            .map((f) => f.message),
+        everyElement(isNull));
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         capabilities: {AuthorizationCapabilities.occasionsWrite: true},
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: false));
@@ -1270,48 +1542,44 @@ void main() {
         MaterialApp(
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
-          selectedSpotIds: const [71],
-          analyze: (_) async {
+          request: seatOrderRequestFixture(),
+          commands: seatOrderCommandsFixture(onRequirements: () async {
             if (++analyses == 1) throw StateError('offline');
-            return {
-              'total_price': 100,
-              'currency': 'CZK',
-              'conflicts': [],
-              'new_order_items': [
-                {
-                  'spot_id': 71,
-                  'spot_title': 'A1',
-                  'product_title': 'Standard',
-                  'price': 100
-                }
-              ]
-            };
-          },
-          submit: (_, __) {
+          }, onCreate: (_) {
             submissions++;
             return pending.future;
-          },
+          }),
         ))));
     await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.analysisFailed), findsOneWidget);
+    expect(analyses, 1);
     await tester.tap(find.text(CommonStrings.retry));
     await tester.pumpAndSettle();
     expect(analyses, 2);
-    await tester.enterText(find.byType(TextFormField), 'local@example.test');
+    await tester.enterText(
+        find.byType(TextFormField, skipOffstage: false), 'local@example.test');
+    await tester.tap(find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr()));
+    await tester.pumpAndSettle();
     await tester.tap(
         find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder));
     await tester.pump();
     expect(submissions, 1);
     expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
         isNull);
-    expect(tester.widget<TextFormField>(find.byType(TextFormField)).enabled,
+    expect(
+        tester
+            .widget<TextFormField>(
+                find.byType(TextFormField, skipOffstage: false))
+            .enabled,
         isFalse);
     pending.completeError(StateError('reservation changed'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('reservation changed'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, CommonStrings.retry),
+        findsOneWidget);
     expect(
         tester
-            .widget<TextFormField>(find.byType(TextFormField))
+            .widget<TextFormField>(
+                find.byType(TextFormField, skipOffstage: false))
             .controller!
             .text,
         'local@example.test');
@@ -1766,8 +2034,12 @@ void main() {
         'commercial-table-10000000-0000-4000-8000-000000000010'));
     final areaRow = find.byKey(
         const ValueKey('commercial-area-10000000-0000-4000-8000-000000000020'));
-    expect(find.descendant(of: areaRow, matching: find.byIcon(Icons.people_outline)), findsOneWidget);
-    expect(find.descendant(of: areaRow, matching: find.text('(20)')), findsOneWidget);
+    expect(
+        find.descendant(
+            of: areaRow, matching: find.byIcon(Icons.people_outline)),
+        findsOneWidget);
+    expect(find.descendant(of: areaRow, matching: find.text('(20)')),
+        findsOneWidget);
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);
@@ -2444,55 +2716,56 @@ void main() {
     expect(
         find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
     pickerResponse = (request) {
-      expect(
-          request.url.path, endsWith('/rpc/get_product_catalog'));
+      expect(request.url.path, endsWith('/rpc/get_product_catalog'));
       return http.Response(
-          jsonEncode({'catalog':{
-            'server_time': '2026-10-21T10:00:00Z',
-            'product_types': [
-              {'id': 2, 'title': 'Admission', 'type': 'spot'},
-              {'id': 3, 'title': 'Extras', 'type': 'other'}
-            ],
-            'products': [
-              {
-                'id': 9,
-                'title': 'Standing ticket',
-                'price': 80,
-                'currency_code': 'CZK',
-                'product_type': 2,
-                'ordered_count': 1
-              },
-              {
-                'id': 10,
-                'title': 'Table ticket',
-                'price': 500,
-                'currency_code': 'CZK',
-                'product_type': 2,
-                'ordered_count': 4
-              },
-              {
-                'id': 11,
-                'title': 'Non-admission product',
-                'price': 50,
-                'product_type': 3
-              }
-            ],
-            'inventory_pools': [
-              {
-                'id': 5,
-                'occasion': 1,
-                'title': 'Standing',
-                'sellable_capacity': 25
-              }
-            ],
-            'inventory_contexts': [
-              {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
-            ],
-            'product_inventory_contexts': [
-              {'product': 9, 'inventory_context': 6, 'quantity': 1}
-            ],
-            'forms': [],
-          }}),
+          jsonEncode({
+            'catalog': {
+              'server_time': '2026-10-21T10:00:00Z',
+              'product_types': [
+                {'id': 2, 'title': 'Admission', 'type': 'spot'},
+                {'id': 3, 'title': 'Extras', 'type': 'other'}
+              ],
+              'products': [
+                {
+                  'id': 9,
+                  'title': 'Standing ticket',
+                  'price': 80,
+                  'currency_code': 'CZK',
+                  'product_type': 2,
+                  'ordered_count': 1
+                },
+                {
+                  'id': 10,
+                  'title': 'Table ticket',
+                  'price': 500,
+                  'currency_code': 'CZK',
+                  'product_type': 2,
+                  'ordered_count': 4
+                },
+                {
+                  'id': 11,
+                  'title': 'Non-admission product',
+                  'price': 50,
+                  'product_type': 3
+                }
+              ],
+              'inventory_pools': [
+                {
+                  'id': 5,
+                  'occasion': 1,
+                  'title': 'Standing',
+                  'sellable_capacity': 25
+                }
+              ],
+              'inventory_contexts': [
+                {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
+              ],
+              'product_inventory_contexts': [
+                {'product': 9, 'inventory_context': 6, 'quantity': 1}
+              ],
+              'forms': [],
+            }
+          }),
           200,
           headers: {'content-type': 'application/json'},
           request: request);

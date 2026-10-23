@@ -298,6 +298,24 @@
     "eshop/update_ticket_note_hidden.sql",
     "eshop_orders/update_order_note_hidden.sql",
     "eshop_ticket_batches/exports.sql",
-    "eshop_ticket_batches/access.sql"
+    "eshop_ticket_batches/access.sql",
+    "blueprint/hold_release.sql",
+    "blueprint/release_holds_command_internal.sql",
+    "blueprint/apply_seat_swap_internal.sql",
+    "blueprint/swap_command_internal.sql",
+    "blueprint/preview_blueprint_swap.sql",
+    "blueprint/seat_swap.sql",
+    "eshop_orders/amount_changes.sql",
+    "blueprint/order_input.sql",
+    "blueprint/order_selection.sql",
+    "blueprint/apply_seat_order_internal.sql",
+    "blueprint/order_quote.sql",
+    "blueprint/order_command_internal.sql",
+    "eshop_orders/replace_blueprint_order_client_sync_v1.sql",
+    "blueprint/seat_orders.sql",
+    "blueprint/order_rejection.sql",
+    "eshop_orders/replacement_invoice_preparation.sql",
+    "blueprint/order_conflicts.sql",
+    "blueprint/ticket_cancellation.sql"
   ]
 }

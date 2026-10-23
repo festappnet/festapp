@@ -69,21 +69,6 @@ class DbOrders {
     );
   }
 
-  static Future<FunctionResponse> replaceTicketOrder(
-    List<int> spotIds,
-    Map<String, dynamic> inputData,
-  ) async {
-    final replacement = {
-      'spotIds': (spotIds.toSet().toList()..sort()),
-      'inputData': inputData,
-    };
-    return _sendTicketOrderIntent(
-      namespace: 'ticket_order_replace',
-      payload: replacement,
-      bodyKey: 'replacement',
-    );
-  }
-
   static Future<FunctionResponse> _sendTicketOrderIntent({
     required String namespace,
     required Map<String, dynamic> payload,

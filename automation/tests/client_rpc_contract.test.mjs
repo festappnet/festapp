@@ -16,6 +16,7 @@ try {
     _invoke('wrapped_rpc', const {});
     _configurationCommand('configuration_rpc', const {});
     _adminCommand('admin_rpc', 1, 2);
+    _readRpc('preview_rpc', {});
     invoke('callback_rpc');
     client.functions.invoke('edge-function');
   `);
@@ -24,7 +25,7 @@ try {
   `);
   assert.deepEqual(
     extractClientRpcContract(fixture).map((entry) => entry.name),
-    ['admin_rpc', 'callback_rpc', 'command_rpc', 'configuration_rpc', 'direct_rpc', 'web_rpc', 'wrapped_rpc'],
+    ['admin_rpc', 'callback_rpc', 'command_rpc', 'configuration_rpc', 'direct_rpc', 'preview_rpc', 'web_rpc', 'wrapped_rpc'],
   );
   console.log('Client RPC contract extraction passed.');
 } finally {

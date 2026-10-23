@@ -1,3 +1,7 @@
+import {seatCancellationDescriptors,seatCancellationDataSchemas,invokeSeatCancellationOperation} from './seat-cancellations.mjs';
+import {seatOrderDescriptors,seatOrderDataSchemas,invokeSeatOrderOperation} from './seat-orders.mjs';
+import {seatSwapDescriptors,seatSwapDataSchemas,invokeSeatSwapOperation} from './seat-swaps.mjs';
+import {seatHoldDescriptors,seatHoldDataSchemas,invokeSeatHoldOperation} from './seat-holds.mjs';
 import {seatDescriptors,seatDataSchemas,invokeSeatOperation} from './seats.mjs';
 import { inventoryAuthoringDescriptors, inventoryAuthoringDataSchemas, invokeInventoryAuthoringOperation } from './inventory-authoring.mjs';
 import { inventoryDescriptors, inventoryDataSchemas, invokeInventoryOperation } from './inventory.mjs';
@@ -41,6 +45,10 @@ const dataSchemas = {
     ...productScheduleDataSchemas,
     ...inventoryDataSchemas,
     ...seatDataSchemas,
+    ...seatHoldDataSchemas,
+    ...seatSwapDataSchemas,
+    ...seatOrderDataSchemas,
+    ...seatCancellationDataSchemas,
     ...inventoryAuthoringDataSchemas,
     'occasions.create': occasionCreateResult,
     'access.inspect': accessProjection,
@@ -112,7 +120,7 @@ const resultSchema = (id) =>
         meta: metaSchema,
     });
 const descriptors = [
-    ...[...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
+    ...[...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
@@ -291,9 +299,13 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (seatCancellationDataSchemas[id]) data = await invokeSeatCancellationOperation(this.owner, client, id, args);
+                else if (seatOrderDataSchemas[id]) data = await invokeSeatOrderOperation(this.owner, client, id, args, context);
+                else if (seatSwapDataSchemas[id]) data = await invokeSeatSwapOperation(this.owner, client, id, args);
+                else if (seatHoldDataSchemas[id]) data = await invokeSeatHoldOperation(this.owner, client, id, args);
                 else if (seatDataSchemas[id]) data = await invokeSeatOperation(this.owner, client, id, args);
                 else if (inventoryAuthoringDataSchemas[id]) data = await invokeInventoryAuthoringOperation(this.owner, client, id, args);
                 else if (inventoryDataSchemas[id]) data = await invokeInventoryOperation(this.owner, client, id, args);
