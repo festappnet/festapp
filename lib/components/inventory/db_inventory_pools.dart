@@ -1,3 +1,6 @@
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/app_config.dart';
+import 'models/standing_inventory_preparation.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/inventory_pools_list_bundle.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
@@ -11,6 +14,12 @@ class DbInventoryPools {
   static InventoryCommands get _commands =>
       SupabaseInventoryCommands(_supabase);
 
+  static Future<StandingInventoryPreparation> prepareStandingInventory(
+          ProductModel product, int capacity) =>
+      _commands.prepareStanding(product, capacity,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id);
+
   static Future<UserInventoryBundle> getUserInventory() async {
     // 1. Call the RPC function.
     final response = await _supabase.rpc('get_user_inventory');
@@ -22,34 +31,27 @@ class DbInventoryPools {
   static Future<InventoryPoolsListBundle> getInventoryPoolsByOccasionLink(
       String occasionLink) async {
     final response = await _supabase.rpc(
-      'get_inventory_pools_by_occasion_link',
-      params: {'p_occasion_link': occasionLink},
+      'get_inventory_catalog',
+      params: {
+        'p_occasion_link': occasionLink,
+        'p_organization': AppConfig.organization,
+        'p_mode': 'summary',
+        'p_limit': null
+      },
     );
-
-    if (response is Map &&
-        response.containsKey('code') &&
-        response['code'] != 200) {
-      throw Exception(
-          "Failed to fetch inventory pools: ${response['message']}");
-    }
-    final bundle = InventoryPoolsListBundle.fromJson(response);
-    final poolMap = {for (var p in bundle.pools) p.id: p};
-    final contextMap = {for (var c in bundle.inventoryContexts) c.id: c};
-    for (final context in bundle.inventoryContexts) {
-      context.inventoryPool = poolMap[context.inventoryPoolId];
-    }
-    for (final spot in bundle.spots) {
-      if (spot.inventoryContextId != null) {
-        spot.inventoryContext = contextMap[spot.inventoryContextId];
-      }
-    }
-    return bundle;
+    return InventoryPoolsListBundle.fromJson(
+        Map<String, dynamic>.from(response));
   }
 
   static Future<InventoryPoolBundle> getInventoryPoolBundle(int poolId) async {
     final response = await _supabase.rpc(
-      'get_inventory_pool_bundle',
-      params: {'p_inventory_pool_id': poolId},
+      'get_inventory_pool_for_edit',
+      params: {
+        'p_pool': poolId,
+        'p_occasion': RightsService.currentOccasionId(),
+        'p_organization': AppConfig.organization,
+        'p_unit': RightsService.currentUnit()?.id,
+      },
     );
 
     if (response is Map &&

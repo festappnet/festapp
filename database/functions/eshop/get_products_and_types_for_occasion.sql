@@ -1,6 +1,9 @@
-CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
-RETURNS json LANGUAGE plpgsql STABLE
-SECURITY DEFINER
+-- One projection for the complete UI bundle and bounded product pages.
+-- Internal only: callers own tenant/permission checks. NULL limit is the
+-- explicit complete editor mode; pages use ID keysets, not a collection snapshot.
+CREATE OR REPLACE FUNCTION public.get_product_catalog_data_internal(
+ p_occasion bigint,p_after bigint DEFAULT NULL,p_limit integer DEFAULT NULL)
+RETURNS json LANGUAGE plpgsql STABLE SECURITY INVOKER
 SET search_path = public, extensions AS $$
 DECLARE
   product_types json;
@@ -9,36 +12,30 @@ DECLARE
   inventory_contexts_data json;
   product_inventory_contexts_data json;
   forms_data json;
-  occ_id bigint;
+  occ_id bigint := p_occasion;
+  selected_ids bigint[];
+  next_id bigint;
 BEGIN
-  -- Resolve occasion_id from the provided occasion_link
-  SELECT id
-    INTO occ_id
-  FROM public.occasions
-  WHERE id = public.resolve_occasion_link_internal(occasion_link)
-    AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
-
-  -- If the occasion link is invalid, raise an exception.
-  IF occ_id IS NULL THEN
-    RAISE EXCEPTION 'Occasion not found for link: %', occasion_link;
+  IF p_limit IS NOT NULL AND (p_limit<1 OR p_limit>100) OR p_after IS NOT NULL AND p_after<1 THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid catalog page';
+  END IF;
+  SELECT coalesce(array_agg(id ORDER BY id),'{}'::bigint[]) INTO selected_ids
+  FROM (SELECT p.id FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
+        WHERE pt.occasion=occ_id AND p.occasion=occ_id AND (p_after IS NULL OR p.id>p_after)
+        ORDER BY p.id LIMIT CASE WHEN p_limit IS NULL THEN NULL ELSE p_limit+1 END) selected;
+  IF cardinality(selected_ids)>p_limit THEN
+    selected_ids:=selected_ids[1:p_limit];
+    next_id:=selected_ids[p_limit];
+  END IF;
+  -- A page must never silently truncate inventory assignments. The existing
+  -- product DTO supports up to 1000 assignments per product.
+  IF p_limit IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.product_inventory_contexts
+       WHERE product=ANY(selected_ids) GROUP BY product HAVING count(*)>1000) THEN
+    RAISE program_limit_exceeded USING MESSAGE='product inventory assignments exceed catalog page contract';
   END IF;
 
-  -- Verify if the current user is an editor for the order's occasion
-  IF NOT can_read_orders(occ_id) THEN
-      RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to view this.');
-  END IF;
-
--- Fetch all product types for the given occasion
-  SELECT json_agg(
-           json_build_object(
-             'id', pt.id,
-             'type', pt.type,
-             'title', pt.title
-           )
-         )
-    INTO product_types
-  FROM eshop.product_types pt
-  WHERE pt.occasion = occ_id;
+  product_types:=public.get_product_type_rows_internal(occ_id,
+    CASE WHEN p_limit IS NULL THEN NULL ELSE ARRAY(SELECT product_type FROM eshop.products WHERE id=ANY(selected_ids)) END)::json;
 
   -- Fetch all products for the given occasion, including form IDs
   SELECT json_agg(
@@ -61,51 +58,39 @@ BEGIN
              'order', p."order",
              'maximum', p.maximum,
              'form_ids', (
-               SELECT COALESCE(json_agg(DISTINCT ff.form), '[]'::json)
-               FROM public.form_fields ff
-               WHERE ff.product_type = p.product_type
+               SELECT COALESCE(json_agg(DISTINCT ff.form ORDER BY ff.form), '[]'::json)
+               FROM public.form_fields ff JOIN public.forms f ON f.id=ff.form
+               WHERE ff.product_type = p.product_type AND f.occasion=occ_id
              ),
-             'ordered_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               WHERE opt.product = p.id
-             ),
-             'paid_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               JOIN eshop.orders o ON o.id = opt.order
-               WHERE opt.product = p.id
-                 AND o.state = 'paid'
-             ),
-             'sent_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               JOIN eshop.orders o ON o.id = opt.order
-               WHERE opt.product = p.id
-                 AND o.state = 'sent'
-             )
-           )
+             -- These are product-ticket relationship rows, never unique people
+             -- or order counts. Preserve historical all-state ordered_count.
+             'ordered_count', sales.ordered_count,
+             'paid_count', sales.paid_count,
+             'sent_count', sales.sent_count,
+             'purchased_count', sales.purchased_count
+           ) ORDER BY p.id
          )
     INTO products
   FROM eshop.products p
-  WHERE p.product_type IN (
-    SELECT pt.id
-    FROM eshop.product_types pt
-    WHERE pt.occasion = occ_id
-  );
+  CROSS JOIN LATERAL (
+    SELECT count(*) ordered_count,
+      count(*) FILTER(WHERE o.state='paid') paid_count,
+      count(*) FILTER(WHERE o.state='sent') sent_count,
+      count(*) FILTER(WHERE o.state IN ('paid','sent')) purchased_count
+    FROM eshop.order_product_ticket opt LEFT JOIN eshop.orders o ON o.id=opt."order"
+    WHERE opt.product=p.id
+  ) sales
+  WHERE p.id=ANY(selected_ids);
 
   -- Fetch all inventory pools for the occasion
   SELECT json_agg(ip.*)
   INTO inventory_pools_data
   FROM public.inventory_pools ip
-  WHERE ip.occasion = occ_id;
+  WHERE ip.occasion = occ_id AND p_limit IS NULL;
 
-  -- Fetch all inventory contexts for the occasion
-  SELECT json_agg(ic.*)
-  INTO inventory_contexts_data
-  FROM public.inventory_contexts ic
-  JOIN public.inventory_pools ip ON ic.inventory_pool = ip.id
-  WHERE ip.occasion = occ_id;
+  inventory_contexts_data:=public.get_product_context_rows_internal(occ_id,
+    CASE WHEN p_limit IS NULL THEN NULL ELSE ARRAY(SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=ANY(selected_ids)) END,
+    p_limit IS NULL)::json;
 
   -- Fetch all links between products and inventory contexts for the occasion
   SELECT json_agg(pic.*)
@@ -113,25 +98,28 @@ BEGIN
   FROM eshop.product_inventory_contexts pic
   JOIN eshop.products p ON pic.product = p.id
   JOIN eshop.product_types pt ON p.product_type = pt.id
-  WHERE pt.occasion = occ_id;
+  WHERE pt.occasion = occ_id AND p.id=ANY(selected_ids);
 
   -- Fetch only the id, title, and link for each form associated with the occasion
   SELECT json_agg(
            json_build_object(
              'id', f.id,
-             'title', f.title,
-             'link', f.link
-           )
+             'title', f.title
+           )::jsonb || CASE WHEN p_limit IS NULL THEN jsonb_build_object('link',f.link) ELSE '{}'::jsonb END
          )
     INTO forms_data
   FROM public.forms f
-  WHERE f.occasion = occ_id;
+  WHERE f.occasion = occ_id AND (p_limit IS NULL OR EXISTS(
+    SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
+    WHERE ff.form=f.id AND p.id=ANY(selected_ids)));
+  IF p_limit IS NOT NULL AND json_array_length(coalesce(forms_data,'[]'::json))>1000 THEN
+    RAISE program_limit_exceeded USING MESSAGE='form references exceed catalog page contract';
+  END IF;
 
   RETURN json_build_object(
     'server_time', clock_timestamp(),
-    'price_waves', (SELECT COALESCE(json_agg(w ORDER BY w.change_time,w.id),'[]'::json)
-      FROM eshop.product_price_waves w WHERE w.occasion=occ_id AND (w.change_time>clock_timestamp() OR
-        EXISTS(SELECT 1 FROM eshop.planned_changes pc WHERE pc.wave_id=w.id AND NOT pc.applied))),
+    'nextCursor',next_id,
+    'price_waves', CASE WHEN p_limit IS NULL THEN public.get_product_price_waves_internal(occ_id)->'waves' ELSE '[]'::jsonb END,
     'product_types', COALESCE(product_types, '[]'::json),
     'products', COALESCE(products, '[]'::json),
     'inventory_pools', COALESCE(inventory_pools_data, '[]'::json),
@@ -142,5 +130,23 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.get_product_catalog_data_internal(bigint,bigint,integer) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Public compatibility entry used by released editor clients. Remove only once
+-- supported clients use get_product_catalog exclusively. No second projection.
+CREATE OR REPLACE FUNCTION public.get_products_and_types_for_edit(occasion_link text)
+RETURNS json LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path=public,extensions AS $$
+DECLARE oc bigint;
+BEGIN
+ SELECT id INTO oc FROM public.occasions
+ WHERE id=public.resolve_occasion_link_internal(occasion_link)
+ AND organization=(SELECT ui.organization FROM public.user_info ui WHERE ui.id=auth.uid());
+ IF oc IS NULL THEN RAISE EXCEPTION 'Occasion not found for link: %',occasion_link; END IF;
+ IF public.can_read_orders(oc) IS DISTINCT FROM TRUE THEN
+  RETURN json_build_object('code',403,'message','User is not authorized to view this.');
+ END IF;
+ RETURN public.get_product_catalog_data_internal(oc);
+END $$;
 REVOKE ALL ON FUNCTION public.get_products_and_types_for_edit(text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_products_and_types_for_edit(text) TO authenticated;

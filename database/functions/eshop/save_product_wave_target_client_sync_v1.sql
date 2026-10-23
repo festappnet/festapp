@@ -17,6 +17,7 @@ BEGIN
  hash:=encode(extensions.digest(convert_to(p_target::text,'UTF8'),'sha256'),'hex');
  begin_result:=public.begin_client_mutation_v1(p_command_id,'inventory.wave.target.save',oc,actor,hash);
  IF begin_result->>'disposition'='replay' THEN RETURN begin_result->'response'; END IF;
+ BEGIN
  IF p_target->>'wave_id' IS NULL THEN
   wave:=public.create_product_price_wave(p_target->>'occasion_link',(p_target->>'change_time')::timestamptz);
   wave_id:=(wave->>'id')::bigint;
@@ -30,11 +31,20 @@ BEGIN
   CASE WHEN p_target->>'wave_id' IS NULL THEN (wave->>'revision')::bigint ELSE (p_target->>'expected_wave_revision')::bigint END,
   (p_target->>'price')::numeric,(p_target->>'is_hidden')::boolean,
   (p_target->>'expected_price_revision')::bigint,(p_target->>'expected_visibility_revision')::bigint);
+ EXCEPTION WHEN serialization_failure THEN
+  IF SQLERRM<>'PRICE_CHANGE_CONFLICT' THEN RAISE; END IF;
+  RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('reason','PRICE_CHANGE_CONFLICT'));
+ WHEN invalid_parameter_value THEN
+  IF SQLERRM NOT IN ('FUTURE_TIME_REQUIRED','INVALID_PRODUCT_PRICE','DEPOSIT_AMOUNT_TOO_HIGH','BLUEPRINT_PRODUCT_VISIBILITY_NOT_SUPPORTED','WAVE_ALREADY_APPLIED','INVALID_REVISION') THEN RAISE; END IF;
+  RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',422,jsonb_build_object('reason',SQLERRM));
+ END;
  SELECT coalesce(array_agg(DISTINCT ou."user"),'{}') INTO users FROM public.occasion_users ou
  JOIN eshop.order_product_ticket opt ON opt.ticket=ou.ticket WHERE ou.occasion=oc AND opt.product=(p_target->>'product_id')::bigint;
  RETURN public.complete_private_inventory_mutation_v1(p_command_id,oc,'inventory.wave.target.save',
   jsonb_build_array(jsonb_build_object('entityType','product_price_wave','entityId',wave_id,'operation','update',
-   'safeLabel','Product price wave','changedFields',jsonb_build_array('targets'))),users,jsonb_build_object('wave',wave,'productId',p_target->'product_id'));
+   'safeLabel','Product price wave','changedFields',jsonb_build_array('targets'))),users,jsonb_build_object('waveId',wave_id,'change',NULL,'wave',wave,'productId',p_target->'product_id','targets',
+   (SELECT coalesce(jsonb_agg(to_jsonb(pc) ORDER BY pc.id),'[]') FROM eshop.planned_changes pc
+    WHERE pc.wave_id=(wave->>'id')::bigint AND pc.subject_id=(p_target->>'product_id')::bigint AND NOT pc.applied)));
 END $$;
 REVOKE ALL ON FUNCTION public.save_product_wave_target_client_sync_v1(jsonb,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.save_product_wave_target_client_sync_v1(jsonb,uuid) TO authenticated;

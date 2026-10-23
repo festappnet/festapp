@@ -1,0 +1,218 @@
+{
+  "date": "2026-10-23",
+  "baseMain": "4cfc9b7bc66f48c2d6e42155f08e905dde112d0d",
+  "migration": "20261023170000_product_schedule_commands.sql",
+  "migrationSha256": "1fa4edd55f64f80f06965a33f9c516311a38839cf14d2d5ef6a475f9bfdd008f",
+  "verification": {
+    "mcpSuite": {
+      "tests": 87,
+      "passed": 87,
+      "skipped": 0
+    },
+    "scheduleSqlSuite": {
+      "tests": 10,
+      "passed": 10,
+      "skipped": 0
+    },
+    "flutterSchedulingAndSetup": 18,
+    "flutterSetupAndTransportFinal": 13,
+    "webConsent": 29
+  },
+  "interpretation": "Marked, mail-fenced disposable PostgreSQL only. Actual Operations executor and domain SQL, one RPC per attempt; session/delegation lookups stubbed and excluded. Byte counts are serialized SQL response JSON, not HTTP wire traffic. Error responses without a SQL envelope are excluded from replies. Fixture data rolled back or explicitly cleaned up. No production orders, payments or email.",
+  "scenarios": [
+    {
+      "fixture": "domain-actions",
+      "attempts": 27,
+      "replies": [
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 0,
+          "jsonBytes": 50
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 904
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 904
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 904
+        },
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 1,
+          "jsonBytes": 213
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 675
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 409,
+          "waves": null,
+          "jsonBytes": 297
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 409,
+          "waves": null,
+          "jsonBytes": 297
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "move_wave",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 449
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "move_wave",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 449
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "move_wave",
+          "code": 409,
+          "waves": null,
+          "jsonBytes": 296
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "cancel_wave",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 366
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "cancel_wave",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 366
+        },
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 0,
+          "jsonBytes": 50
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_price_change",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 586
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_price_change",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 586
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_price_change",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 587
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "cancel_price_change",
+          "code": 409,
+          "waves": null,
+          "jsonBytes": 296
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "cancel_price_change",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 368
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "cancel_price_change",
+          "code": 200,
+          "waves": null,
+          "jsonBytes": 368
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 422,
+          "waves": null,
+          "jsonBytes": 299
+        },
+        {
+          "rpc": "manage_product_schedule",
+          "action": "save_target",
+          "code": 422,
+          "waves": null,
+          "jsonBytes": 299
+        },
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 0,
+          "jsonBytes": 50
+        }
+      ]
+    },
+    {
+      "fixture": "125-wave-pages",
+      "attempts": 3,
+      "replies": [
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 50,
+          "jsonBytes": 8398
+        },
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 50,
+          "jsonBytes": 8398
+        },
+        {
+          "rpc": "get_product_schedule",
+          "action": null,
+          "code": 200,
+          "waves": 25,
+          "jsonBytes": 4224
+        }
+      ]
+    }
+  ]
+}
