@@ -366,3 +366,17 @@ Flutter task. No production changes or deployment have run. All owned source sti
 requires main review/merge; next engineering cut is operational seats 2B, starting
 with inspection and block/unblock through the canonical blueprint aggregate owner.
 Stages 3-10 remain pending; no claim of full-plan completion.
+
+## Publication refresh after final verification
+
+Authoritative main advanced to 671a83f7692316e5b2da5e1989e5d4ba790d55a0
+(PR #567, stronger shared SEO fallback regression guards). Inspected both changed
+test files, merged main, and retained its stricter deploy_workflow.test.sh rather
+than the subsumed candidate assertion. The affected shell/embedded SEO gate passed.
+No domain/runtime code changed; the 109-test MCP result remains applicable.
+Final current UI adapter already passed cb8baafe2 client/navigation CI. Production
+remains blocked by required approving review and final-head release gates; no
+review bypass or production write. Worktree remains separate from the dirty user
+checkout. Exact next cut: operational seats 2B inspection + block/unblock, with
+shared selection-unit expansion, original revision, blueprint save owner, and
+checkout/hold/sold/concurrent-retry tests. Do not start by directly updating flags.
