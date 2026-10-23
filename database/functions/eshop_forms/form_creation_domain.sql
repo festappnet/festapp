@@ -9,7 +9,16 @@ DECLARE
     new_form JSONB;
     new_product_type_id BIGINT;
     now TIMESTAMPTZ := NOW();
+    payment_default text;
+    initial_data jsonb := '{"is_reminder_enabled": true}'::jsonb;
 BEGIN
+    SELECT org.data->>'DEFAULT_FORM_PAYMENT_METHOD' INTO payment_default
+    FROM public.occasions o JOIN public.organizations org ON org.id=o.organization
+    WHERE o.id=p_occasion_id;
+    IF payment_default = 'stripe' THEN
+      -- A closed draft can await Connect without inventing a recipient or bank.
+      initial_data := initial_data || '{"payments":{"bankEnabled":false}}'::jsonb;
+    END IF;
     -- Create the new form
     INSERT INTO public.forms(
         title,
@@ -29,7 +38,7 @@ BEGIN
         now,
         now,
         604800, -- Default to 7 days
-        '{"is_reminder_enabled": true}'::jsonb -- Default reminder setting
+        initial_data
     )
     RETURNING to_jsonb(public.forms.*) INTO new_form;
 

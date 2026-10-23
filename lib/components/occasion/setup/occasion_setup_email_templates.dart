@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -131,9 +132,11 @@ class _OccasionSetupEmailTemplatesState
   }
 
   String _contextTitle(Map entry) {
-    if (entry['customized'] == true) return 'Vlastní návrh';
+    if (entry['customized'] == true)
+      return OccasionSetupStrings.ui('custom_design');
     final template = entry['template'] as Map;
-    if (template['occasion'] != null) return 'Převzatá šablona';
+    if (template['occasion'] != null)
+      return OccasionSetupStrings.ui('copied_template');
     final scope = _catalog!['emailScope'] as Map;
     if (template['unit'] != null) return '${scope['unit']['title'] ?? ''}';
     if (template['organization'] != null)
@@ -147,12 +150,12 @@ class _OccasionSetupEmailTemplatesState
         Text(EmailTemplatesStrings.title,
             style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
-        const Text(
-            'E-maily můžete upravit přímo zde. Změny se uloží do konceptu a použijí se po vytvoření akce.'),
+        Text(OccasionSetupStrings.ui(
+            'edit_emails_here_changes_are_saved_in_this_draft_and_ap')),
         const SizedBox(height: 16),
         if (_loading) const LinearProgressIndicator(),
         if (_failed) ...[
-          const Text('Šablony e-mailů se nepodařilo načíst.'),
+          Text(OccasionSetupStrings.ui('email_templates_could_not_be_loaded')),
           TextButton(onPressed: _load, child: const Text('Zkusit znovu')),
         ],
         if (_catalog != null)

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_public_occasions(
+CREATE OR REPLACE FUNCTION public.get_public_occasions(
   p_organization_id bigint,
   p_unit_id bigint DEFAULT NULL
 )
@@ -66,7 +66,8 @@ BEGIN
     )
     INTO occasions_data
     FROM public.occasions o
-    WHERE o.organization = p_organization_id
+    LEFT JOIN public.external_occasions_cache c ON c.link = o.link
+    WHERE public.catalog_includes_occasion_internal(p_organization_id, o.organization, c.source_name)
       AND o.is_hidden = false
       AND o.is_promoted = true;
 

@@ -116,7 +116,9 @@ BEGIN
     configuration := public.build_occasion_setup_configuration(p_unit,p_id);
     UPDATE public.occasion_setup_drafts SET data =
       jsonb_build_object('defaultConfiguration',configuration,
-        'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
+        'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
+        'paymentMethod',CASE WHEN (SELECT data->>'DEFAULT_FORM_PAYMENT_METHOD' FROM public.organizations WHERE id=d.organization)='stripe' THEN 'stripe' ELSE NULL END,
+        'paymentChoicesEnabled',public.stripe_unit_feature_enabled_internal(d.unit))
       || d.data WHERE id = p_id RETURNING * INTO d;
     PERFORM public.admit_occasion_draft_v1(auth.uid(),p_unit,d.organization,octet_length(d.data::text),false,false,policy);
   END IF;
@@ -142,7 +144,9 @@ BEGIN
   configuration := public.build_occasion_setup_configuration(d.unit,p_id);
   UPDATE public.occasion_setup_drafts SET data =
     jsonb_build_object('defaultConfiguration',configuration,
-      'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true)
+      'formDraft',configuration->'forms'->0,'formDefaultsFollowEvent',true,
+        'paymentMethod',CASE WHEN (SELECT data->>'DEFAULT_FORM_PAYMENT_METHOD' FROM public.organizations WHERE id=d.organization)='stripe' THEN 'stripe' ELSE NULL END,
+        'paymentChoicesEnabled',public.stripe_unit_feature_enabled_internal(d.unit))
     || (d.data-'defaultConfiguration'), revision = revision+1, updated_at=now()
     WHERE id=p_id RETURNING * INTO d;
   PERFORM public.admit_occasion_draft_v1(auth.uid(),d.unit,d.organization,octet_length(d.data::text),false,false,policy);

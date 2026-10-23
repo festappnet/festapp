@@ -6,6 +6,7 @@ import { CommonStrings } from '../shared/common_strings.js';
 import { ToastHelper } from '../ui/toast.js';
 import { Modal } from '../ui/modal.js';
 import { RightsService } from '../../services/rights_service.js';
+import { LocalizationService } from '../../services/localization_service.js';
 import { AppConfig } from '../../app_config.js';
 import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 import { RouterService } from '../../services/router_service.js';
@@ -570,7 +571,7 @@ export class LoginModal extends HTMLElement {
                 name: firstName,
                 surname: lastName,
                 // Add language if available
-                lang: 'cs' // Defaulting to cs as per project context, or derive from LocalizationService
+                lang: LocalizationService.currentLocale
             };
             await AuthService.register(data);
             this._stickyToast = ToastHelper.showSuccess(`${CommonStrings.checkEmail} ${email}`, 0); // 0 = sticky/persistent

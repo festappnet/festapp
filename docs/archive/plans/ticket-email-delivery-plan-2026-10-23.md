@@ -1,7 +1,7 @@
 # Doručení vstupenek jako PDF nebo QR v e-mailu
 
 Datum: 2026-10-23  
-Stav: Implementováno a cíleně ověřeno na aktuálním canonical main podkladu; připraveno k publikaci a vydání 2026-10-23.  
+Stav: Dokončeno a nasazeno 2026-10-23 na `vstupenky.online`, verze `0.20.368+865`. Viz [záznam vydání](../../operations/ticket-email-delivery-release-2026-10-23.md).
 Ověření při implementaci: standard (sdílené doručování a SQL kontrakt)
 
 UI/UX posouzení: subagent `gpt-6-astra`, reasoning `medium`; jeho závěry jsou zapracované níže.
@@ -133,7 +133,7 @@ Přesný seznam testovacích souborů doplní implementující agent podle vznik
 
 ## Nasazení, kompatibilita a návrat
 
-Původní plán autorizoval pouze návrh; uživatel následně výslovně zadal lokální implementaci execution promptu. Lokální implementace je dokončena. V původním kroku nebyly produkční operace autorizovány; následná žádost o dokončení rozšířila rozsah na přípravu publikace a vydání. Stav a zbývající povinné repo brány jsou níže. Neměnit aktuální rozpracované změny uživatele ani přepínat jeho větev; společný kód při implementaci patří na canonical `main` podle repo pravidel, případně v izolovaném checkoutu.
+Původní plán autorizoval pouze návrh; uživatel následně výslovně zadal lokální implementaci execution promptu. Lokální implementace je dokončena. V původním kroku nebyly produkční operace autorizovány; následná žádost o dokončení rozšířila rozsah na přípravu publikace a vydání. Publikace i vydání jsou dokončeny; výsledky a omezení jsou níže. Neměnit aktuální rozpracované změny uživatele ani přepínat jeho větev; společný kód při implementaci patří na canonical `main` podle repo pravidel, případně v izolovaném checkoutu.
 
 Při později autorizovaném vydání nejprve nasadit SQL validaci a čtení defaultu, potom worker podporující všechny režimy a staré snapshoty, a teprve následně UI umožňující uložit inline/both. Prověřit i ostatní zapisující klienty a jejich zachování atributu, aby starý save nevracel vědomě zvolený režim na PDF. Neměnit jiné tenant větve ani je nestavět bez výslovného rozsahu. Rutinní deployment a live ověření delegovat podle repo pravidel levnějšímu subagentovi; neočekávané technické problémy vrátit hlavnímu agentovi.
 
@@ -189,14 +189,14 @@ E2E používá samostatný `festapp-wizard-ticket-email-20261023` backend na loo
 
 Uživatel následně zadal dokončení včetně přípravy publikace/nasazení a uvedl, že testovací schránky nebude mít. Gmail, Outlook, Seznam a Apple Mail proto nejsou skutečně ověřeny; mobilní poštovní klienty, dark mode, přeposlání, vypnuté obrázky a skenovatelnost z těchto klientů nelze vykazovat jako prošlé. Kompatibilita transportu a lokální náhled nenahrazují toto zjištění.
 
-Ochrana canonical `main` nastavuje jedno schválení PR pro běžné účty, ale `enforce_admins=false`; aktuální účet `miakh` má práva administrátora a žádný další ruleset pro main není aktivní. Uživatelovo trvalé pravidlo dovoluje přímou ověřenou publikaci do vlastních repozitářů, proto lze využít tuto existující výjimku bez změny ochrany. Draft PR #572 slouží jako přehled změny. Po merge je pořadí SQL -> kompatibilní Function bundle -> jediný tenant `prod/festapptickets` / `vstupenky.online`, s lokálním buildem, canonical drift gate a ověřením živé verze. Žádná produkční změna ani skutečný e-mail dosud neproběhly.
+Ochrana canonical `main` nastavuje jedno schválení PR pro běžné účty, ale `enforce_admins=false`; účet `miakh` má práva administrátora a žádný další ruleset pro main nebyl aktivní. Podle uživatelova trvalého pravidla proběhla ověřená přímá publikace s existující výjimkou, bez změny ochrany. PR [#572](https://github.com/festappnet/festapp/pull/572) se tím označil jako merged. Následovalo nasazení SQL, kompatibilního Function bundle a jediného tenantu `prod/festapptickets` / `vstupenky.online`. Lokální build, canonical drift gate a tři ověření živé verze prošly. Žádné testovací e-maily nebyly odeslány. Přesné revize a výsledky jsou v [záznamu vydání](../../operations/ticket-email-delivery-release-2026-10-23.md).
 
 
 ### Zachování PWA rozpočtu při vydání
 
-První produkční kompilace dokončila Flutter i web client, ale known offline cache překročila dosavadních 60 MiB o 16 237 bajtů. Rozpočet nebyl zvýšen. Build nyní bezztrátově minifikuje výsledné JSON překlady před generováním PWA manifestu; všech šest jazyků i všechny dekódované hodnoty zůstávají stejné. Naměřená úspora je 85 028 bajtů a stejné artefakty pak procházejí původním rozpočtem: core 24 086 761 B, known 62 845 769 B při limitu 62 914 560 B. Výchozí nevyhovující build byl zachován odděleně.
+První produkční kompilace dokončila Flutter i web client, ale known offline cache překročila dosavadních 60 MiB o 16 237 bajtů. Rozpočet nebyl zvýšen. Build nyní bezztrátově minifikuje výsledné JSON překlady před generováním PWA manifestu; všech šest jazyků i všechny dekódované hodnoty zůstávají stejné. Předběžné měření kopie překladů web clientu ukázalo úsporu 85 028 bajtů; skutečný build používá úplné Flutter katalogy a jeho finální měření je uvedeno níže. Výchozí nevyhovující build byl zachován odděleně.
 
 Nový build krok má cílené testy zachování skutečných katalogů, Unicode, mezer uvnitř textu, HTML, placeholderů, idempotence a odmítnutí neplatného JSON. Tato změna se týká pouze build toolingu; nasazené SQL a Function bundle ze zdroje `f7b34bc14867bbbbfb83f39df118e7d710a69dac` se nemění.
 
 
-Při opakovaném úplném sestavení se ověřilo skutečné umístění Flutter assetů: `build/web/assets/assets/translations`. Minifikace běží ještě před přidáním samostatné kopie web clientu `/assets/translations`; helper i jeho testy proto používají tento vnořený Flutter adresář. První pokus s nevhodnou cestou skončil před publikací a byl zachován jako oddělený nevyhovující artefakt. Předběžné měření 85 028 B se týkalo web client kopie po sloučení. Skutečný Flutter adresář před sloučením obsahuje úplné katalogy o 1 020 963 B; jejich bezztrátová minifikace dává 917 432 B, tedy úsporu 103 531 B. Oběma variantám zůstávají dekódované hodnoty beze změny; finální cache měření provede úplný build.
+Při opakovaném úplném sestavení se ověřilo skutečné umístění Flutter assetů: `build/web/assets/assets/translations`. Minifikace běží ještě před přidáním samostatné kopie web clientu `/assets/translations`; helper i jeho testy proto používají tento vnořený Flutter adresář. První pokus s nevhodnou cestou skončil před publikací a byl zachován jako oddělený nevyhovující artefakt. Předběžné měření 85 028 B se týkalo web client kopie po sloučení. Skutečný Flutter adresář před sloučením obsahuje úplné katalogy o 1 020 963 B; jejich bezztrátová minifikace dává 917 432 B, tedy úsporu 103 531 B. Oběma variantám zůstávají dekódované hodnoty beze změny; finální úplný build prošel: core 24 171 788 B z 26 214 400 B a known 62 827 265 B z 62 914 560 B. Původní limity zůstaly beze změny.

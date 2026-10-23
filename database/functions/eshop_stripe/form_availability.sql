@@ -34,7 +34,12 @@ BEGIN
  IF jsonb_typeof(config)<>'object' OR EXISTS(SELECT 1 FROM jsonb_object_keys(config) k WHERE k NOT IN ('bankEnabled','stripeConnectionId'))
   OR (config ? 'bankEnabled' AND jsonb_typeof(config->'bankEnabled')<>'boolean') THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  IF nullif(config->>'stripeConnectionId','') IS NULL THEN
-  IF config->'bankEnabled'='false'::jsonb THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
+  IF config->'bankEnabled'='false'::jsonb AND EXISTS (
+    SELECT 1 FROM public.forms f JOIN public.form_fields ff ON ff.form=f.id
+    JOIN eshop.products p ON p.product_type=ff.product_type
+    WHERE f.id=p_form AND f.is_open AND NOT coalesce(ff.is_hidden,false)
+      AND NOT coalesce(p.is_hidden,false) AND p.price>0
+  ) THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INCOMPLETE'; END IF;
   RETURN;
  END IF;
  -- Serialize editor selection with a verified account replacement.

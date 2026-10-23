@@ -33,6 +33,10 @@ fi
 # Source the config (DOMAIN)
 source "$CONFIG_FILE"
 MAX_TICKETS_PER_ORDER="${MAX_TICKETS_PER_ORDER:-20}"
+WEB_ORGANIZER_LANDING_ENABLED="${WEB_ORGANIZER_LANDING_ENABLED:-false}"
+case "$WEB_ORGANIZER_LANDING_ENABLED" in true|false) ;; *)
+    echo "Error: WEB_ORGANIZER_LANDING_ENABLED must be true or false"; exit 1 ;;
+esac
 [[ "$MAX_TICKETS_PER_ORDER" =~ ^[1-9][0-9]{0,3}$ ]] || {
     echo "Error: MAX_TICKETS_PER_ORDER must be a positive integer up to 9999"
     exit 1
@@ -296,6 +300,11 @@ origin = f"https://{domain}"
 language = languages.split(',')[0].strip()
 source = re.sub(r'(<html\s+lang=")[^"]*(")', lambda m: m.group(1) + language + m.group(2), source, count=1)
 source = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", source, count=1, flags=re.DOTALL)
+legal = ('Legal information', 'Privacy', 'Terms') if language == 'en' else ('Právní informace', 'Soukromí', 'Podmínky')
+source = re.sub(r'(<nav class="site-legal-links" aria-label=")[^"]*(")', lambda m: m[1] + legal[0] + m[2], source)
+for href, label in zip(('privacy', 'terms'), legal[1:]):
+    source = re.sub(r'(<a href="/' + href + r'/">)[^<]*(</a>)', lambda m: m[1] + label + m[2], source)
+
 source, count = re.subn(
     r'(<section id="site-introduction"[^>]*>\s*<h1[^>]*>).*?(</h1>\s*<p[^>]*>).*?(</p>\s*</section>)',
     lambda m: m.group(1) + site_name + m.group(2) + description + m.group(3),
@@ -370,16 +379,16 @@ fi
 # Static host fallback; the Cloudflare router supplies the live public catalog.
 if [ -d "$PROJECT_ROOT/web_client/public" ]; then
     printf 'User-agent: *\nAllow: /\nSitemap: https://%s/sitemap.xml\n' "$DOMAIN" > "$PROJECT_ROOT/web_client/public/robots.txt"
-    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$DOMAIN" <<'SITEMAP'
+    python3 - "$PROJECT_ROOT/web_client/public/sitemap.xml" "$DOMAIN" "$WEB_ORGANIZER_LANDING_ENABLED" <<'SITEMAP'
 import html
 import pathlib
 import sys
-path, domain = sys.argv[1:]
+path, domain, organizers = sys.argv[1:]
 pathlib.Path(path).write_text(
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     f'  <url><loc>https://{html.escape(domain)}/</loc></url>\n'
-    + ('  <url><loc>https://vstupenky.online/events</loc></url>\n' if domain == 'vstupenky.online' else '')
+    + (f'  <url><loc>https://{html.escape(domain)}/events</loc></url>\n' if organizers == 'true' else '')
     + '</urlset>\n', encoding='utf-8')
 SITEMAP
 fi
@@ -445,13 +454,22 @@ if [ "$BACKEND_ACTIVATION_PHASE" = canonical ]; then
     DELETE_ACCOUNT_ANON_KEY="$BACKEND_ACTIVATION_CANONICAL_SUPABASE_ANON_KEY"
 fi
 python3 - "$DELETE_ACCOUNT_TEMPLATE" "$DELETE_ACCOUNT_FILE" "$APP_NAME" \
-    "$DELETE_ACCOUNT_SUPABASE_URL" "$DELETE_ACCOUNT_ANON_KEY" <<'PY'
+    "$DELETE_ACCOUNT_SUPABASE_URL" "$DELETE_ACCOUNT_ANON_KEY" "$WEB_SUPPORTED_LANGUAGES" <<'PY'
 import html
 import json
 import sys
 
-template_path, output_path, app_name, supabase_url, anon_key = sys.argv[1:]
+template_path, output_path, app_name, supabase_url, anon_key, languages = sys.argv[1:]
 source = open(template_path, encoding="utf-8").read()
+from pathlib import Path
+locale = languages.split(',')[0]
+# Other existing profiles retain the Czech copy until their own content exists.
+copy_locale = 'en' if locale == 'en' else 'cs'
+copy = json.loads(Path(template_path).with_name('copy.json').read_text())[copy_locale]
+for key, text in copy.items():
+    token = '__FESTAPP_COPY_' + key.upper()
+    source = source.replace(token + '_HTML__', html.escape(text)).replace(token + '_JSON__', json.dumps(text, ensure_ascii=False))
+source = source.replace('__FESTAPP_LOCALE__', locale).replace('__FESTAPP_LOCALE_JSON__', json.dumps(locale))
 replacements = {
     "__FESTAPP_APP_NAME_HTML__": html.escape(app_name),
     "__FESTAPP_DELETE_ENDPOINT__": json.dumps(
@@ -569,6 +587,7 @@ source = open(path, encoding="utf-8").read()
 source = re.sub(r"static isAllUnit = .*;", f"static isAllUnit = {is_all_unit};", source)
 language_list = ", ".join(repr(language) for language in languages)
 source = re.sub(r"static supportedLanguages = .*;", f"static supportedLanguages = [{language_list}];", source)
+source = re.sub(r"static defaultLanguage = .*;", f"static defaultLanguage = {languages[0]!r};", source)
 open(path, "w", encoding="utf-8").write(source)
 PY
 
@@ -960,3 +979,30 @@ fi
 
 # Security headers are generated from the main-owned policy, never tenant copies.
 node "$PROJECT_ROOT/automation/lib/csp_policy.mjs" --sync-headers
+
+python3 - "$PROJECT_ROOT" "$WEB_ORGANIZER_LANDING_ENABLED" <<'LANDING_CONFIG'
+from pathlib import Path
+import re,sys
+root, enabled = Path(sys.argv[1]), sys.argv[2]
+for file, declaration in [('web_client/src/app_config.js', 'static organizerLandingEnabled = '), ('lib/app_config.dart', 'static const bool organizerLandingEnabled = ')]:
+    p = root / file
+    text = p.read_text()
+    pattern = r'  static (?:const bool )?organizerLandingEnabled = (?:true|false);\n'
+    text = re.sub(pattern, '', text)
+    marker = 'class AppConfig {'
+    if marker not in text: raise SystemExit('Missing AppConfig class')
+    p.write_text(text.replace(marker, marker + '\n  ' + declaration + enabled + ';', 1))
+LANDING_CONFIG
+
+python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" <<'FLUTTER_LANGUAGES'
+from pathlib import Path
+import re,sys
+p=Path(sys.argv[1])
+names={'cs':'Čeština','en':'English','de':'Deutsch','pl':'Polski','sk':'Slovenčina','uk':'Українська'}
+languages=sys.argv[2].split(',')
+if not languages or any(code not in names for code in languages): raise SystemExit('Unsupported Flutter language')
+entries='\n'.join('        LanguageModel(const Locale("'+code+'"), "'+names[code]+'"),' for code in languages)
+source,count=re.subn(r'static List<LanguageModel> availableLanguages\(\) => \[[\s\S]*?\];', 'static List<LanguageModel> availableLanguages() => [\n'+entries+'\n      ];',p.read_text())
+if count != 1: raise SystemExit('Missing Flutter language adapter')
+p.write_text(source)
+FLUTTER_LANGUAGES

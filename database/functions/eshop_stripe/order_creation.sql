@@ -11,10 +11,11 @@ BEGIN
   OR pi.amount*100<>trunc(pi.amount*100) OR o.state<>'ordered' OR o.form IS NULL OR EXISTS(
    SELECT 1 FROM eshop.stripe_checkout_attempts WHERE order_id=o.id) THEN RAISE EXCEPTION 'STRIPE_ORDER_SNAPSHOT_INVALID'; END IF;
  INSERT INTO eshop.stripe_checkout_attempts(id,order_id,payment_info_id,organization_id,unit_id,connection_id,livemode,
-  amount_minor,currency,order_revision,idempotency_key,created_at,reservation_expires_at,return_base_url)
+  amount_minor,currency,order_revision,idempotency_key,created_at,reservation_expires_at,return_base_url,checkout_locale)
  VALUES(attempt,o.id,pi.id,c.organization_id,c.unit_id,c.id,c.livemode,
   (pi.amount*100)::bigint,pi.currency_code,1,'festapp:checkout:'||attempt,stamp,stamp+interval '31 minutes',
-  (SELECT rtrim(data->>'DEFAULT_URL','/')||'/stripe/return' FROM public.organizations WHERE id=c.organization_id));
+  (SELECT rtrim(data->>'DEFAULT_URL','/')||'/stripe/return' FROM public.organizations WHERE id=c.organization_id),
+  (SELECT CASE WHEN data->>'DEFAULT_LANGUAGE' IN ('cs','en','de','pl','sk') THEN data->>'DEFAULT_LANGUAGE' ELSE 'en' END FROM public.organizations WHERE id=c.organization_id));
  UPDATE eshop.payment_info SET deadline=stamp+interval '31 minutes' WHERE id=pi.id;
  RETURN attempt;
 END $$;

@@ -1,0 +1,23 @@
+{
+  "desktop": {
+    "locale": "en",
+    "sections": 6,
+    "reference": false,
+    "src": "layout-build.mp4",
+    "ready": 4,
+    "time": 12.9,
+    "label": "Replay: Add a table beside the finished row, align it and adjust its chairs."
+  },
+  "mobile": {
+    "src": "layout-build-mobile.mp4",
+    "ready": 4,
+    "time": 4.443939,
+    "overflow": false,
+    "locale": "en"
+  },
+  "realMissingFileFallback": {
+    "fault": "missing-acceptance-fixture.mp4",
+    "label": "Retry: Add a table beside the finished row, align it and adjust its chairs.",
+    "result": "pass"
+  }
+}

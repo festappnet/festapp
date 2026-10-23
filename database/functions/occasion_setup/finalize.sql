@@ -9,6 +9,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  intro_image text; form_link text; selected_bank bigint; bank_fingerprint text; bank_currencies text[]; required_currencies text[]; wave jsonb; target jsonb; saved_wave jsonb; wave_product bigint;
  has_tickets boolean;
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
+ payment_method text;
  sale_mode text; sale_start timestamptz; sale_end timestamptz;
  blueprint_mode text; blueprint_id bigint; blueprint_source bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
@@ -22,6 +23,9 @@ BEGIN
  IF d.data ? 'finalizedOccasion' THEN RAISE invalid_parameter_value USING MESSAGE='Draft already finalized'; END IF;
  IF d.revision IS DISTINCT FROM p_expected_revision THEN RAISE serialization_failure USING MESSAGE='Draft changed in another session'; END IF;
  payload := public.normalize_occasion_setup_appearance_internal(d.data);
+ payment_method:=payload->>'paymentMethod';
+ IF payment_method IS NOT NULL AND payment_method NOT IN ('stripe','bank','both') THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid payment method'; END IF;
  blueprint_mode:=CASE payload->>'blueprintMode'
   WHEN 'Bez plánku' THEN 'none' WHEN 'Nový' THEN 'new' WHEN 'Převzít' THEN 'copy'
   ELSE payload->>'blueprintMode' END;
@@ -98,7 +102,7 @@ BEGIN
  CROSS JOIN LATERAL jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p
  WHERE coalesce((payload->>'formEnabled')::boolean,true) AND NOT coalesce((f->>'is_hidden')::boolean,false)
    AND NOT coalesce((p->>'is_hidden')::boolean,false) AND (p->>'price')::numeric>0;
- IF required_currencies IS NOT NULL AND (payload ? 'bankAccountId' OR payload ? 'bankAccountConfirmed') THEN
+ IF required_currencies IS NOT NULL AND payment_method IS DISTINCT FROM 'stripe' AND (payload ? 'bankAccountId' OR payload ? 'bankAccountConfirmed' OR payment_method IN ('bank','both')) THEN
   IF nullif(payload->>'bankAccountId','') IS NULL THEN
    RAISE invalid_parameter_value USING MESSAGE='Bank account selection required'; END IF;
   selected_bank:=(payload->>'bankAccountId')::bigint;
@@ -187,6 +191,15 @@ BEGIN
    ||jsonb_build_object('start_time',sale_start,'end_time',sale_end,
      'enable_countdown',coalesce((payload->>'saleCountdown')::boolean,false),
      'sale_preparation',sale_mode='preparation'));
+  IF coalesce(nullif(payload->>'formSourceOccasionId','')::bigint,source_id) IS NOT NULL
+     AND EXISTS(SELECT 1 FROM public.occasions src WHERE src.id=coalesce(nullif(payload->>'formSourceOccasionId','')::bigint,source_id) AND src.unit IS DISTINCT FROM d.unit) THEN
+   form_meta:=form_meta #- '{payments,stripeConnectionId}';
+  END IF;
+  IF payment_method IS NOT NULL THEN
+   form_meta:=jsonb_set(form_meta,'{payments}',coalesce(form_meta->'payments','{}'::jsonb)
+      ||jsonb_build_object('bankEnabled',payment_method<>'stripe'));
+   IF payment_method='bank' THEN form_meta:=form_meta #- '{payments,stripeConnectionId}'; END IF;
+  END IF;
   form_data:=jsonb_set(form_data,'{data}',form_meta);
   SELECT id INTO form_id FROM public.forms WHERE occasion=new_id ORDER BY id LIMIT 1;
   IF form_id IS NULL THEN

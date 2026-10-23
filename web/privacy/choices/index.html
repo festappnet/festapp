@@ -22,7 +22,7 @@
 <p>Samotná registrace není souhlasem s newsletterem ani nepovinným sledováním. V nastavení prohlížeče lze odstranit také uložené přihlašovací údaje, nastavení a mezipaměť; může tím dojít k odhlášení.</p>
 <p>Úplné informace najdete v dokumentu <a href="/privacy/" data-legal-link>Ochrana osobních údajů</a>. Již zahájené smazání účtu dokončíte na stránce <a href="https://vstupenky.online/delete-account/">Potvrzení smazání účtu</a>.</p><footer><a href="/support/" data-legal-link>Kontakt a podpora</a></footer></main></div><script>(()=>{
 const toggle=document.querySelector('.theme-toggle');
-const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?'Světlý režim':'Tmavý režim';};updateToggle();
+const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?"Světlý režim":"Tmavý režim";};updateToggle();
 toggle.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('theme',dark?'dark':'light');}catch{}updateToggle();});
 const params=new URLSearchParams(window.location.search);const returnTo=params.get('returnTo');const close=document.querySelector('.app-close');
 if(!returnTo||!returnTo.startsWith('/')||returnTo.startsWith('//')){close.addEventListener('click',(event)=>{event.preventDefault();window.close();window.setTimeout(()=>window.location.assign(close.href),350);});return;}

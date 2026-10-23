@@ -41,7 +41,7 @@ export class SeoService {
 
         // Fallbacks
         if (!description) {
-            description = formModel.description || 'Rychlé a jednoduché založení události, prodej vstupenek a registrace.';
+            description = formModel.description || (AppConfig.supportedLanguages[0] === 'en' ? 'Create events, sell tickets and manage registrations.' : 'Rychlé a jednoduché založení události, prodej vstupenek a registrace.');
         }
         
         // Add date info if available
@@ -152,7 +152,7 @@ export class SeoService {
 
     static _formatDate(dateObj) {
         if (!dateObj) return '';
-        return dateObj.toLocaleDateString('cs-CZ', {
+        return dateObj.toLocaleDateString(AppConfig.supportedLanguages[0], {
             day: 'numeric', 
             month: 'numeric', 
             year: 'numeric'

@@ -14,7 +14,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
   cpSync(new URL('../../web_client/index.html', import.meta.url), join(root, 'web_client/index.html'));
   const config = join(root, 'automation/project.conf');
-  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\n');
+  writeFileSync(config, 'DOMAIN=vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_LINK=https://vstupenky.online\nAPP_NAME="Tickets & events"\nVERSION=0.0.1+1\nTHEME_SEED_3=#4465a6\n');
   const render = () => {
     const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
@@ -87,7 +87,7 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!escaped.includes('<script>alert('));
   writeFileSync(contentPath, originalContent);
 
-  writeFileSync(config, 'DOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
+  writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=false\nDOMAIN=other.invalid\nWEB_LINK=https://other.invalid\nAPP_NAME=Other\n');
   render(); assert.equal(existsSync(output), false);
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('cloudflareinsights.com'));
   assert.ok(!readFileSync(join(root, 'web_client/index.html'), 'utf8').includes('href="/pro-poradatele"'));
@@ -99,7 +99,7 @@ test('actual build stamping uses configured canonical origin and the shared clas
   const script = readFileSync(new URL('../cloudflare_build.sh', import.meta.url), 'utf8');
   const worker = join(root, 'worker.js'); const config = join(root, 'project.conf');
   writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1]);
-  writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
+  writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   const python = script.match(/python3 - build\/web\/_worker.js automation\/project.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
   const result = spawnSync('python3', ['-', worker, config], { input: python, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -125,7 +125,7 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   const python = apply.match(/<<'SITEMAP'\n([\s\S]*?)\nSITEMAP/)[1];
   const output = join(root, 'sitemap.xml');
   for (const domain of ['vstupenky.online','other.invalid']) {
-    const run = spawnSync('python3', ['-',output,domain], {input:python,encoding:'utf8'});
+    const run = spawnSync('python3', ['-',output,domain,domain === 'vstupenky.online' ? 'true' : 'false'], {input:python,encoding:'utf8'});
     assert.equal(run.status, 0, run.stderr);
     const xml = readFileSync(output, 'utf8');
     assert.ok(xml.includes(`https://${domain}/`));
@@ -136,4 +136,34 @@ test('static sitemap fallback keeps tenant-specific catalog URLs and sharing ass
   assert.equal(png.subarray(1,4).toString(), 'PNG');
   assert.equal(png.readUInt32BE(16), 1200);
   assert.equal(png.readUInt32BE(20), 630);
+});
+
+test('English uses the same template, no Czech references, and requires real English recordings', t => {
+  const root = mkdtempSync(join(tmpdir(), 'festapp-en-marketing-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(join(root, 'automation/release'), { recursive: true });
+  cpSync(new URL('../release/render_organizer_page.mjs', import.meta.url), join(root, 'automation/release/render_organizer_page.mjs'));
+  cpSync(new URL('../release/organizers', import.meta.url), join(root, 'automation/release/organizers'), { recursive: true });
+  const mediaPath = join(root, 'automation/release/organizers/clips.en.json');
+  const mediaFixture = JSON.parse(readFileSync(mediaPath, 'utf8'));
+  for (const clip of mediaFixture.clips) clip.captureStatus = 'pending';
+  writeFileSync(mediaPath, JSON.stringify(mediaFixture));
+  const config = join(root, 'project.conf');
+  writeFileSync(config, 'WEB_ORGANIZER_LANDING_ENABLED=true\nWEB_SUPPORTED_LANGUAGES=en\nWEB_LINK=https://tickets.example.invalid\nDOMAIN=tickets.example.invalid\nAPP_NAME=Festapp Tickets\n');
+  const run = (...args) => spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, ...args], { encoding: 'utf8' });
+  const gated = run();
+  assert.notEqual(gated.status, 0);
+  assert.match(gated.stderr, /English product recordings are incomplete/);
+  assert.equal(existsSync(join(root, 'web/organizers-page')), false);
+  const preview = run('--preview');
+  assert.equal(preview.status, 0, preview.stderr);
+  const html = readFileSync(join(root, 'web/organizers-page'), 'utf8');
+  assert.match(html, /<html lang="en">/);
+  assert.equal((html.match(/class="feature reveal"/g) || []).length, 6);
+  assert.ok(!html.includes('id="reference"'));
+  assert.ok(!html.includes('vstupenky.online'));
+  assert.ok(!html.includes('{{'));
+  assert.ok(html.includes('Stripe Checkout'));
+  assert.ok(html.includes('English recording pending.'));
+  assert.ok(!html.includes('cloudflareinsights.com'));
 });

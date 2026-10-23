@@ -100,4 +100,20 @@ git -C "$REPO" add lib/main.dart
 git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm tamper-slunovrat-shared
 expect_failure slunovrat-shared "$(git -C "$REPO" rev-parse HEAD)" festivalslunovrat
 
+git -C "$REPO" switch -qc prod/festappticketsglobal "$BASE_SHA"
+cp "$REPO/automation/tests/fixtures/tenants/festappticketsglobal.conf" "$REPO/automation/project.conf"
+(cd "$REPO" && bash automation/apply_config.sh automation/project.conf >/dev/null)
+node -e 'const fs=require("fs");fs.writeFileSync(process.argv[1],JSON.stringify({schemaVersion:1,tenantId:"festappticketsglobal",baseMainSha:process.argv[2]},null,2)+"\n")' "$REPO/automation/tenant-overlay.json" "$BASE_SHA"
+git -C "$REPO" add -A
+git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm valid-english-overlay
+EN_TIP=$(git -C "$REPO" rev-parse HEAD)
+(cd "$REPO" && CANONICAL_MAIN_REF=main "$TMP_ROOT/checker.sh" "$BASE_SHA" festappticketsglobal "$EN_TIP" >/dev/null)
+
+# Even the Global branch cannot fork shared code, media recipes or release tools.
+git -C "$REPO" switch -qc tamper-global-shared "$EN_TIP"
+printf '\n# Global-only capture change\n' >> "$REPO/automation/landing_capture/scenario_contract.py"
+git -C "$REPO" add automation/landing_capture/scenario_contract.py
+git -C "$REPO" -c user.name=cutover-test -c user.email=cutover@example.invalid commit -qm forbidden-global-capture-fork
+expect_failure global-capture "$(git -C "$REPO" rev-parse HEAD)" festappticketsglobal
+
 echo "Tenant branch drift tests passed"

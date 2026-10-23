@@ -1357,11 +1357,11 @@ void main() {
         tester,
         MaterialApp(
             home: Scaffold(
-                body: TicketSettings(
+                body: SingleChildScrollView(child: TicketSettings(
                     feature: feature,
                     occasionId: 7,
                     service: SettingsService(),
-                    showScanningSettings: false))));
+                    showScanningSettings: false)))));
     await tester.pumpAndSettle();
     expect(find.byType(TicketScanningSettings), findsNothing);
     expect(find.byType(CheckboxListTile), findsNothing);
@@ -1451,6 +1451,7 @@ void main() {
     await tester.pumpAndSettle();
     final edit = find.widgetWithText(FilledButton, 'TicketLayout.edit'.tr());
     expect(service.resolveCalls, 1);
+    await tester.ensureVisible(edit);
     await tester.tap(edit);
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
@@ -1461,6 +1462,7 @@ void main() {
         reason: 'cancel does not reload the thumbnail');
     expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.ensureVisible(edit);
     await tester.tap(edit);
     await tester.pumpAndSettle();
     final editorController = tester

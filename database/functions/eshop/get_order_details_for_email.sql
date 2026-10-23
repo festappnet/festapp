@@ -15,7 +15,7 @@ BEGIN
     SELECT jsonb_build_object(
         'order', to_jsonb(o.*) || jsonb_build_object('data', o.data || jsonb_build_object(
           'tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))),
-        'occasion', to_jsonb(occ.*),
+        'occasion', to_jsonb(occ.*)||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
         'payment_info', to_jsonb(pi.*),
         'bank_account', CASE
             WHEN upper(o.currency_code) = 'EUR'

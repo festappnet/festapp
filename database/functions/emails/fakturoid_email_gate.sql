@@ -28,7 +28,7 @@ BEGIN
     END IF;
   END IF;
   PERFORM public.enqueue_order_email('TICKET_ORDER_CONFIRMATION',jsonb_build_object(
-    'command_id',p_command_id,'ticket_order',p_order_payload,'lang',coalesce(nullif(p_language,''),'cs'),
+    'command_id',p_command_id,'ticket_order',p_order_payload,'lang',coalesce(nullif(p_language,''),(SELECT CASE WHEN data->>'DEFAULT_LANGUAGE'='en' THEN 'en' ELSE 'cs' END FROM public.organizations WHERE id=v_organization),'cs'),
     'fakturoid_pending',v_await_fakturoid),v_organization,p_occasion,v_unit,
     CASE WHEN v_await_fakturoid THEN 'infinity'::timestamptz ELSE now() END);
 

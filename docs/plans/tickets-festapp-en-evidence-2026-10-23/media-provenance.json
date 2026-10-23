@@ -1,0 +1,288 @@
+{
+  "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+  "committed": false,
+  "archiveSha256": "2b4d4440dc0361cf0e6e532cc5976e2ebd7fa44276bd8a2a2e1b66936e6108b9",
+  "clips": [
+    {
+      "cues": [
+        {
+          "cue": "unbroken-layout-build",
+          "sourceStart": 1792758279.605859,
+          "sourceEnd": 1792758292.490474,
+          "speed": 1,
+          "encodedDuration": 12.9
+        }
+      ],
+      "outputs": {
+        "layout-build.mp4": {
+          "width": 1140,
+          "height": 792,
+          "duration": 12.9,
+          "decode": "PASS"
+        },
+        "layout-build-mobile.mp4": {
+          "width": 820,
+          "height": 792,
+          "duration": 12.9,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "layout-build-en-1792758278",
+      "clip": "layout-build",
+      "section": "planek",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "6f5e11c28508f17f94ca815df94df6b9d5f3c5cc6cd331b7cfa61f917744ca65",
+      "sourceSnapshot": "source-final.tar.gz"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-layout-refine",
+          "sourceStart": 1792758794.101145,
+          "sourceEnd": 1792758815.465159,
+          "speed": 1,
+          "encodedDuration": 21.366667
+        }
+      ],
+      "outputs": {
+        "layout-refine.mp4": {
+          "width": 1140,
+          "height": 792,
+          "duration": 21.366667,
+          "decode": "PASS"
+        },
+        "layout-refine-mobile.mp4": {
+          "width": 820,
+          "height": 792,
+          "duration": 21.366667,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "layout-refine-en-1792758793",
+      "clip": "layout-refine",
+      "section": "planek",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "6f5e11c28508f17f94ca815df94df6b9d5f3c5cc6cd331b7cfa61f917744ca65",
+      "sourceSnapshot": "source-final.tar.gz"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-form-build",
+          "sourceStart": 1792757009.155941,
+          "sourceEnd": 1792757046.7454772,
+          "speed": 1,
+          "encodedDuration": 37.6
+        }
+      ],
+      "outputs": {
+        "form-build.mp4": {
+          "width": 1200,
+          "height": 804,
+          "duration": 37.6,
+          "decode": "PASS"
+        },
+        "form-build-mobile.mp4": {
+          "width": 720,
+          "height": 638,
+          "duration": 37.6,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "form-unbroken-en-1792757008",
+      "clip": "form-build",
+      "section": "formular",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "e5f919e74ca595317beda483a0191ce8ea380fc9a3bb6061a9a7fecffd0ed598",
+      "sourceSnapshot": "earlier English app artifact, preserved outside Git"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-ticket-design",
+          "sourceStart": 1792757255.755122,
+          "sourceEnd": 1792757266.341005,
+          "speed": 1,
+          "encodedDuration": 10.6
+        }
+      ],
+      "outputs": {
+        "ticket-design.mp4": {
+          "width": 1200,
+          "height": 822,
+          "duration": 10.6,
+          "decode": "PASS"
+        },
+        "ticket-design-mobile.mp4": {
+          "width": 900,
+          "height": 720,
+          "duration": 10.6,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "ticket-design-en-1792757255",
+      "clip": "ticket-design",
+      "section": "vstupenka",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "e5f919e74ca595317beda483a0191ce8ea380fc9a3bb6061a9a7fecffd0ed598",
+      "sourceSnapshot": "earlier English app artifact, preserved outside Git"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-seat-select",
+          "sourceStart": 1792758913.9065988,
+          "sourceEnd": 1792758921.6849458,
+          "speed": 1,
+          "encodedDuration": 7.766667
+        }
+      ],
+      "outputs": {
+        "seat-select.mp4": {
+          "width": 1200,
+          "height": 804,
+          "duration": 7.766667,
+          "decode": "PASS"
+        },
+        "seat-select-mobile.mp4": {
+          "width": 720,
+          "height": 900,
+          "duration": 7.766667,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "native 430x900 customer/scanner UI scaled for responsive presentation",
+      "captureId": "seat-select-en-1792758913",
+      "clip": "seat-select",
+      "section": "vyber-mist",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "sourceSnapshot": "task worktree and protected local fixture configuration",
+      "surface": "shared JavaScript client against disposable canonical backend"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-check-in",
+          "sourceStart": 1792759392.3187919,
+          "sourceEnd": 1792759397.158088,
+          "speed": 1,
+          "encodedDuration": 4.833333
+        }
+      ],
+      "outputs": {
+        "check-in.mp4": {
+          "width": 1200,
+          "height": 800,
+          "duration": 4.833333,
+          "decode": "PASS"
+        },
+        "check-in-mobile.mp4": {
+          "width": 500,
+          "height": 1000,
+          "duration": 4.833333,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "native 430x900 customer/scanner UI scaled for responsive presentation",
+      "captureId": "check-in-en-1792759391",
+      "clip": "check-in",
+      "section": "odbaveni",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "sourceSnapshot": "task worktree and protected local fixture configuration",
+      "surface": "shared JavaScript client against disposable canonical backend",
+      "cameraFixture": "Actual PDF ticket QR rendered into Chrome fake-video input. Real decoder, lookup and online admission; no mocked app/provider response."
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-orders-overview",
+          "sourceStart": 1792760096.387477,
+          "sourceEnd": 1792760127.5567338,
+          "speed": 1,
+          "encodedDuration": 31.166667
+        }
+      ],
+      "outputs": {
+        "orders-overview.mp4": {
+          "width": 1200,
+          "height": 900,
+          "duration": 31.166667,
+          "decode": "PASS"
+        },
+        "orders-overview-mobile.mp4": {
+          "width": 720,
+          "height": 900,
+          "duration": 31.166667,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "orders-overview-en-1792760095",
+      "clip": "orders-overview",
+      "section": "prehled",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "6f5e11c28508f17f94ca815df94df6b9d5f3c5cc6cd331b7cfa61f917744ca65",
+      "sourceSnapshot": "source-final.tar.gz"
+    },
+    {
+      "cues": [
+        {
+          "cue": "unbroken-layout-grid",
+          "sourceStart": 1792758896.528548,
+          "sourceEnd": 1792758911.5756412,
+          "speed": 1,
+          "encodedDuration": 15.033008
+        }
+      ],
+      "outputs": {
+        "layout-grid.mp4": {
+          "width": 1140,
+          "height": 792,
+          "duration": 15.033333,
+          "decode": "PASS"
+        },
+        "layout-grid-mobile.mp4": {
+          "width": 820,
+          "height": 792,
+          "duration": 15.033333,
+          "decode": "PASS"
+        }
+      },
+      "internalCuts": 0,
+      "speed": 1,
+      "leadingSetupTrim": 0.0,
+      "mobilePresentation": "same English desktop authoring take adapted for narrow presentation",
+      "captureId": "layout-grid-en-1792758895",
+      "clip": "layout-grid",
+      "section": "planek",
+      "sourceBase": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+      "mainDartJsSha256": "6f5e11c28508f17f94ca815df94df6b9d5f3c5cc6cd331b7cfa61f917744ca65",
+      "sourceSnapshot": "source-final.tar.gz"
+    }
+  ]
+}

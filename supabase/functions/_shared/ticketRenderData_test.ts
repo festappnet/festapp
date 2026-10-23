@@ -126,3 +126,21 @@ Deno.test('repeatable free text validates and projects unchanged into preview an
   const invalid=structuredClone(layout);mutate(invalid);assertThrows(()=>validateLayout(invalid));
  }
 });
+
+Deno.test('English ticket retains admission QR, exact amount and event civil time', () => {
+ const d=normalizeTicketData({ticket_symbol:'ADMISSION-123',note:'Vegetarian',price:12.34,currency_code:'EUR',order_product_ticket:[{id:1,spot_group_title:'A'}]},
+ {id:7,locale:'en',title:'Starlight Ball',start_time:'2026-10-31T23:30:00Z',end_time:'2026-11-01T01:00:00Z',data:{timezone:'Europe/Prague'}},
+ {name:'Alex',surname:'Morgan'});
+ assertEquals(d.qr,'ADMISSION-123');
+ assertEquals(d.spotGroup,'Table: A');
+ assertEquals(d.note,'Note: Vegetarian');
+ assertEquals(d.price,'Price: €12.34');
+ assertEquals(d.occasionStartTime,'00:30');
+ assertEquals(d.footer,'This ticket is non-transferable');
+});
+
+Deno.test('English date range keeps month before both days', () => {
+  const data = normalizeTicketData({ticket_symbol:'ENRANGE123',price:350,currency_code:'CZK'},
+    {locale:'en',title:'Evening',start_time:'2026-11-22T18:00:00Z',end_time:'2026-11-25T18:00:00Z',data:{timezone:'Europe/Prague'}});
+  if (!/^Nov 22.*25, 2026$/.test(data.occasionDatePlace ?? '')) throw new Error(JSON.stringify(data));
+});

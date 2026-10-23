@@ -27,7 +27,9 @@ export function initDemoPlayers(root = document) {
   const automatic = () => !motion.matches && !connection?.saveData;
   const pauseOthers = current => players.forEach(player => { if (player !== current) player.video.pause(); });
   function updateButton(player) {
-    const text = player.error ? 'Zkusit znovu' : player.ended ? 'Znovu přehrát' : !player.video.paused ? 'Pozastavit' : 'Přehrát';
+    const en = document.documentElement.lang === 'en';
+    const t = (cs, english) => en ? english : cs;
+    const text = player.error ? t('Zkusit znovu', 'Retry') : player.ended ? t('Znovu přehrát', 'Replay') : !player.video.paused ? t('Pozastavit', 'Pause') : t('Přehrát', 'Play');
     player.button.setAttribute('aria-pressed', String(!player.video.paused));
     player.button.setAttribute('aria-label', `${text}: ${player.variant.description}`);
   }

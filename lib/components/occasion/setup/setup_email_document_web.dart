@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'dart:js_interop';
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
@@ -39,7 +40,7 @@ class _SetupEmailDocumentState extends State<SetupEmailDocument> {
             _observer?.disconnect();
             final frame = element as web.HTMLIFrameElement;
             _frame = frame;
-            frame.title = 'Náhled skutečného e-mailu';
+            frame.title = OccasionSetupStrings.ui('actual_email_preview');
             frame.referrerPolicy = 'no-referrer';
             frame.tabIndex = -1;
             frame.setAttribute('sandbox', 'allow-same-origin');

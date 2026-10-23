@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/painting.dart';
@@ -7,10 +8,10 @@ import '../../ticket_layout/ticket_theme_color.dart';
 
 /// Concrete values persist with the draft; a preset is only an editing shortcut.
 class OccasionSetupAppearance {
-  static const ticketCompositions = {
-    'silk_light': 'Hedvábí - světlé',
-    'silk_dark': 'Hedvábí - tmavé',
-  };
+  static Map<String, String> get ticketCompositions => {
+        'silk_light': OccasionSetupStrings.ui('silk_light'),
+        'silk_dark': OccasionSetupStrings.ui('silk_dark'),
+      };
   static const themedArtwork = {
     'concert_stub',
     'festival_poster',
@@ -64,56 +65,56 @@ class OccasionSetupAppearance {
     'Playfair Display':
         'gf:775cd3f92411b97cc374e0d8909c5caf3713508120866dc62b08f7a20213ba6d',
   };
-  static const presets = [
-    {
-      'id': 'clean',
-      'label': 'Čistý',
-      'primary': '4465A6',
-      'secondary': '4465A6',
-      'gradient': false,
-      'fontFamily': 'Roboto',
-    },
-    {
-      'id': 'gala',
-      'label': 'Slavnostní',
-      'primary': '14284B',
-      'secondary': 'A87F28',
-      'gradient': true,
-      'fontFamily': 'Roboto Slab',
-    },
-    {
-      'id': 'energy',
-      'label': 'Energický',
-      'primary': 'BB350C',
-      'secondary': '8B182E',
-      'gradient': true,
-      'fontFamily': 'Russo One',
-    },
-    {
-      'id': 'nature',
-      'label': 'Přírodní',
-      'primary': '216445',
-      'secondary': '146475',
-      'gradient': true,
-      'fontFamily': 'Roboto',
-    },
-    {
-      'id': 'soft',
-      'label': 'Jemný',
-      'primary': '885268',
-      'secondary': 'B89A68',
-      'gradient': true,
-      'fontFamily': 'Roboto Slab',
-    },
-    {
-      'id': 'contrast',
-      'label': 'Kontrastní',
-      'primary': '111111',
-      'secondary': '111111',
-      'gradient': false,
-      'fontFamily': 'Roboto',
-    },
-  ];
+  static List<Map<String, dynamic>> get presets => [
+        {
+          'id': 'clean',
+          'label': OccasionSetupStrings.ui('clean'),
+          'primary': '4465A6',
+          'secondary': '4465A6',
+          'gradient': false,
+          'fontFamily': 'Roboto',
+        },
+        {
+          'id': 'gala',
+          'label': OccasionSetupStrings.ui('gala'),
+          'primary': '14284B',
+          'secondary': 'A87F28',
+          'gradient': true,
+          'fontFamily': 'Roboto Slab',
+        },
+        {
+          'id': 'energy',
+          'label': OccasionSetupStrings.ui('energetic'),
+          'primary': 'BB350C',
+          'secondary': '8B182E',
+          'gradient': true,
+          'fontFamily': 'Russo One',
+        },
+        {
+          'id': 'nature',
+          'label': OccasionSetupStrings.ui('natural'),
+          'primary': '216445',
+          'secondary': '146475',
+          'gradient': true,
+          'fontFamily': 'Roboto',
+        },
+        {
+          'id': 'soft',
+          'label': OccasionSetupStrings.ui('soft'),
+          'primary': '885268',
+          'secondary': 'B89A68',
+          'gradient': true,
+          'fontFamily': 'Roboto Slab',
+        },
+        {
+          'id': 'contrast',
+          'label': OccasionSetupStrings.ui('contrast'),
+          'primary': '111111',
+          'secondary': '111111',
+          'gradient': false,
+          'fontFamily': 'Roboto',
+        },
+      ];
 
   static Map<String, dynamic> read(Map data) {
     if (data['appearance'] is Map)

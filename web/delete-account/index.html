@@ -16,24 +16,24 @@ const token = new URLSearchParams(location.search).get('token') || '';
 const endpoint = "https://kjdpmixlnhntmxjedpxh.supabase.co/functions/v1/confirm-account-deletion";
 const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqZHBtaXhsbmhudG14amVkcHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDE5NDI5NzEsImV4cCI6MjAxNzUxODk3MX0.06nTXCL-i1GxLckfEyCNlVVwt62QTzKUezqmsYSR_MI";
 async function inspect() {
-  if (!token) { status.textContent = 'Odkaz není platný.'; return; }
+  if (!token) { status.textContent = "Odkaz není platný."; return; }
   try {
     const response = await fetch(`${endpoint}?token=${encodeURIComponent(token)}`, {method:'GET', headers:{apikey:apiKey}});
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body.status !== 'valid') { status.textContent = response.status === 410 ? 'Platnost odkazu vypršela.' : 'Odkaz není platný nebo už byl použit.'; return; }
-    status.textContent = `Odkaz je platný do ${new Date(body.expiresAt).toLocaleString('cs-CZ')}.`;
+    if (!response.ok || body.status !== 'valid') { status.textContent = response.status === 410 ? "Platnost odkazu vypršela." : "Odkaz není platný nebo už byl použit."; return; }
+    status.textContent = `Odkaz je platný do ${new Date(body.expiresAt).toLocaleString("cs")}.`;
     action.hidden = false;
-  } catch { status.textContent = 'Ověření se nezdařilo. Zkuste to později.'; }
+  } catch { status.textContent = "Ověření se nezdařilo. Zkuste to později."; }
 }
 button.addEventListener('click', async () => {
-  if (!confirm('Opravdu chcete nevratně smazat celý účet?')) return;
-  button.disabled = true; status.textContent = 'Smazání se zpracovává…';
+  if (!confirm("Opravdu chcete nevratně smazat celý účet?")) return;
+  button.disabled = true; status.textContent = "Smazání se zpracovává…";
   try {
     const response = await fetch(endpoint, {method:'POST', headers:{'content-type':'application/json',apikey:apiKey}, body:JSON.stringify({token})});
     const body = await response.json().catch(() => ({}));
-    if (response.ok && ['completed','already_completed','processing'].includes(body.status)) { action.hidden = true; status.textContent = body.status === 'processing' ? 'Smazání probíhá. Tuto stránku můžete později znovu načíst.' : 'Účet byl smazán.'; return; }
-    status.textContent = response.status === 410 ? 'Platnost odkazu vypršela.' : 'Smazání se nezdařilo. Zkuste to později.';
-  } catch { status.textContent = 'Smazání se nezdařilo. Zkuste to později.'; }
+    if (response.ok && ['completed','already_completed','processing'].includes(body.status)) { action.hidden = true; status.textContent = body.status === 'processing' ? "Smazání probíhá. Tuto stránku můžete později znovu načíst." : "Účet byl smazán."; return; }
+    status.textContent = response.status === 410 ? "Platnost odkazu vypršela." : "Smazání se nezdařilo. Zkuste to později.";
+  } catch { status.textContent = "Smazání se nezdařilo. Zkuste to později."; }
   button.disabled = false;
 });
 inspect();

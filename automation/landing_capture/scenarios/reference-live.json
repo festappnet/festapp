@@ -1,0 +1,240 @@
+{
+  "url": "https://vstupenky.online/",
+  "capturedAt": "2026-10-23T13:59:07.259Z",
+  "clips": [
+    {
+      "id": "layout-build",
+      "duration": 12.266667,
+      "src": "/organizers-media/layout-build.mp4?v=eb11698aa0a0"
+    },
+    {
+      "id": "layout-refine",
+      "duration": 14,
+      "src": "/organizers-media/layout-refine.mp4"
+    },
+    {
+      "id": "layout-grid",
+      "duration": 45.866016,
+      "src": "/organizers-media/layout-grid.mp4"
+    },
+    {
+      "id": "form-build",
+      "duration": 45.833333,
+      "src": "/organizers-media/form-build.mp4?v=8ae1987ae895"
+    },
+    {
+      "id": "ticket-design",
+      "duration": 8.833,
+      "src": "/organizers-media/ticket-design.mp4"
+    },
+    {
+      "id": "seat-select",
+      "duration": 10.566667,
+      "src": "/organizers-media/seat-select.mp4"
+    },
+    {
+      "id": "check-in",
+      "duration": 8.5,
+      "src": "/organizers-media/check-in.mp4"
+    },
+    {
+      "id": "orders-overview",
+      "duration": 19.1,
+      "src": "/organizers-media/orders-overview.mp4"
+    }
+  ],
+  "assets": [
+    {
+      "clip": "layout-build",
+      "variant": "src",
+      "path": "/organizers-media/layout-build.mp4",
+      "sha256": "eb11698aa0a0ef4e2f54bbbc69d1ada654a04eac43107e8dbf253499afb92f9b"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/layout-build-mobile.mp4",
+      "sha256": "22569911d7bf127d4cb1bd3d7fadb730655cd74624b1844ad1b0348ca2d5b146"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "poster",
+      "path": "/organizers-media/layout-build-start.jpg",
+      "sha256": "1e108cf1247f577ad7c0c49cfc9fb25f0a06e69ac3a35a0748f35ad709a22014"
+    },
+    {
+      "clip": "layout-build",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/layout-build-mobile-start.jpg",
+      "sha256": "a6d64f43a6e84fb1c2fd27545e099f4c6933cf4365dc8eb9256a0e04da34b6e4"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "src",
+      "path": "/organizers-media/layout-refine.mp4",
+      "sha256": "b5999d90ab4f3500d21d35c745560f419b9400e23f2e0f9c2338ae854701523a"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/layout-refine-mobile.mp4",
+      "sha256": "8445ce05f1abf41c7def804ead294dffc9a1e81588567fa7771ad81ba2aad1d5"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "poster",
+      "path": "/organizers-media/layout-refine.jpg",
+      "sha256": "4964e9ea4faaa9b7f40f418c62e70ef099096231dbf4d55b43ed85aa0eab088f"
+    },
+    {
+      "clip": "layout-refine",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/layout-refine-mobile.jpg",
+      "sha256": "8e94711588d248042a3154c620ab7297cb621edd9124a92693cf220107c16944"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "src",
+      "path": "/organizers-media/layout-grid.mp4",
+      "sha256": "6de789c1f3477789ed1fab9513d2bdec15656b0a83158532300cb2e4de7af084"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/layout-grid-mobile.mp4",
+      "sha256": "ae31ab5efe60f368a0c2f2add1cd1f7dc04ca39d8b97be8d52f08141c4abca05"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "poster",
+      "path": "/organizers-media/layout-grid.jpg",
+      "sha256": "a529cabae8dc032da0df9940a0eada887c93ca90853a5e463276a8cd05b91ce0"
+    },
+    {
+      "clip": "layout-grid",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/layout-grid-mobile.jpg",
+      "sha256": "bd5ceb42aa0bd822697617078cfe8f21bee0d532c0207600afe5cd200fbc5786"
+    },
+    {
+      "clip": "form-build",
+      "variant": "src",
+      "path": "/organizers-media/form-build.mp4",
+      "sha256": "8ae1987ae89595fab408207f6d8bba27cc1c36a333754e056b2d14567a507f84"
+    },
+    {
+      "clip": "form-build",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/form-build-mobile.mp4",
+      "sha256": "f9566ce3c148ac467ae6a6e31e52a38b93a78b840d19fa6ac31dc71d45d0166b"
+    },
+    {
+      "clip": "form-build",
+      "variant": "poster",
+      "path": "/organizers-media/form-build.webp",
+      "sha256": "798ceeb1d9a92b9675a5477f7ec9c58cd9a51d6116ddb9edf21c17ccfd1f97af"
+    },
+    {
+      "clip": "form-build",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/form-build-mobile.webp",
+      "sha256": "dcb0fcc4e89f663b6948bc51c2c3b35c52896fbdc3ca5358eef9b69b463b00f7"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "src",
+      "path": "/organizers-media/ticket-design.mp4",
+      "sha256": "cb50d4ae3a8d4d8036b967deeed308a48c6024333c64ee72c0b2b7c8dfa59763"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/ticket-design-mobile.mp4",
+      "sha256": "7de402bb47d6240f3f0f9f600d76ee3f13fb39b0e4bbe11d3bd9d1b1abe364ed"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "poster",
+      "path": "/organizers-media/ticket-design.jpg",
+      "sha256": "f423c9fab4c208b7b8b0065446f51b6856fd15f1a782163417b243afc11e0484"
+    },
+    {
+      "clip": "ticket-design",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/ticket-design-mobile.jpg",
+      "sha256": "f8a290cbf523e95c3934442d76d7e218956ed1f63e9618d5e2140a28c83dad67"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "src",
+      "path": "/organizers-media/seat-select.mp4",
+      "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/seat-select-mobile.mp4",
+      "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "poster",
+      "path": "/organizers-media/seat-select.jpg",
+      "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905"
+    },
+    {
+      "clip": "seat-select",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/seat-select-mobile.jpg",
+      "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905"
+    },
+    {
+      "clip": "check-in",
+      "variant": "src",
+      "path": "/organizers-media/check-in.mp4",
+      "sha256": "468d23b6b1c6d454c724f5889d079f02dcedd5c9b4f540a0509bd24bb58c0391"
+    },
+    {
+      "clip": "check-in",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/check-in-mobile.mp4",
+      "sha256": "56270c23d2d18b5a7cf2f16b28bb64cb0f348d610776482241d1399e1d9c1a8d"
+    },
+    {
+      "clip": "check-in",
+      "variant": "poster",
+      "path": "/organizers-media/check-in.webp",
+      "sha256": "148219adc82f2c9fb84d8278e7e2accf3ec35508ab231c47e7598a8cfb3fdd3a"
+    },
+    {
+      "clip": "check-in",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/check-in-mobile.webp",
+      "sha256": "0fd9063a0a842dd71f03e0429fdf5a752d4997b523c7106969f8004f03347b19"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "src",
+      "path": "/organizers-media/orders-overview.mp4",
+      "sha256": "854d639b3ca1c2aa0627320c5799ba40d4fbce112336e0d837a4edf66e76fbc0"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "mobileSrc",
+      "path": "/organizers-media/orders-overview-mobile.mp4",
+      "sha256": "b69d95b6f5f9c11fe7adbfa2ccc5528d7a3ef6cbe2b69b9b7bb233a72cf3133b"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "poster",
+      "path": "/organizers-media/orders-overview.webp",
+      "sha256": "c6745f65383638ff3f05575dec360755f19feb67053f0cd59f8248be3cc4952a"
+    },
+    {
+      "clip": "orders-overview",
+      "variant": "mobilePoster",
+      "path": "/organizers-media/orders-overview-mobile.webp",
+      "sha256": "2951c8e95f2400cbcc55af792fd98f3abbe12a720f0b2a9fbe449043bde4940e"
+    }
+  ]
+}

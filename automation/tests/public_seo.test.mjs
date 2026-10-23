@@ -347,3 +347,25 @@ test('other tenants keep their event catalogue and never serve the marketing hom
  assert.ok(!html.includes('data-page="organizers"'));
  assert.equal((await worker.fetch(new Request('https://other.invalid/pro-poradatele'),env)).status,404);
 });
+
+test('English catalog and sitemap keep each organization isolated across requests and outages', async t => {
+  const source = workerSource.replace('const DEFAULT_LANGUAGE = "cs";', 'const DEFAULT_LANGUAGE = "en";').replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = true;');
+  const { default: english } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    const org = JSON.parse(options.body).p_organization_id;
+    if (org === 999) throw new Error('offline');
+    return Response.json({ occasions: org === 900001 ? [] : [{ title: 'Czech catalog event',link: 'cs-event',features: [] }] });
+  });
+  await english.fetch(request('/events'), {...env, ORGANIZATION_ID: 3});
+  const empty = await english.fetch(request('/events'), {...env, ORGANIZATION_ID: 900001});
+  const html = await empty.text();
+  assert.ok(html.includes('No events have been published yet.'));
+  assert.ok(!html.includes('Czech catalog event'));
+  const sitemap = await english.fetch(request('/sitemap.xml'), {...env, ORGANIZATION_ID: 900001});
+  assert.ok(!(await sitemap.text()).includes('cs-event'));
+  assert.match(sitemap.headers.get('cache-control'), /no-store/);
+  const outage = await english.fetch(request('/events'), {...env, ORGANIZATION_ID: 999});
+  const failure = await outage.text();
+  assert.ok(failure.includes('Events could not be loaded.'));
+  assert.ok(!failure.includes('Czech catalog event'));
+});

@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="cs">
+<html lang="__FESTAPP_LOCALE__">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Smazání účtu | __FESTAPP_APP_NAME_HTML__</title>
+  <title>__FESTAPP_COPY_DELETE_ACCOUNT_HTML__ | __FESTAPP_APP_NAME_HTML__</title>
   <style>body{margin:0;background:#f6f7fb;color:#15182d;font:17px/1.55 system-ui,sans-serif}main{max-width:620px;margin:auto;padding:52px 22px}.card{background:white;border-radius:18px;padding:28px;box-shadow:0 8px 35px #19204018}button{border:0;border-radius:10px;padding:14px 18px;font:700 16px system-ui;cursor:pointer;background:#b42318;color:#fff}button:disabled{opacity:.55}a{color:#0000b8}.muted{color:#5a6178}</style>
 </head>
-<body><main><div class="card"><h1>Smazání účtu</h1><p id="status" role="status">Ověřuji jednorázový odkaz…</p><div id="action" hidden><p>Smazáním ztratíte přístup k účtu, účasti, uloženému programu a soukromým údajům. Zákonem vyžadované záznamy mohou zůstat pouze bez přímé identity.</p><p><strong>Pouhé otevření této stránky účet nemaže.</strong></p><button id="confirm" type="button">Trvale smazat účet</button></div><p class="muted"><a href="/privacy/choices">Jak smazání funguje</a></p></div></main>
+<body><main><div class="card"><h1>__FESTAPP_COPY_DELETE_ACCOUNT_HTML__</h1><p id="status" role="status">__FESTAPP_COPY_CHECKING_HTML__</p><div id="action" hidden><p>__FESTAPP_COPY_CONSEQUENCES_HTML__</p><p><strong>__FESTAPP_COPY_OPENING_DOES_NOT_DELETE_HTML__</strong></p><button id="confirm" type="button">__FESTAPP_COPY_CONFIRM_HTML__</button></div><p class="muted"><a href="/privacy/choices">__FESTAPP_COPY_DETAILS_HTML__</a></p></div></main>
 <script type="module">
 const status = document.querySelector('#status');
 const action = document.querySelector('#action');
@@ -16,24 +16,24 @@ const token = new URLSearchParams(location.search).get('token') || '';
 const endpoint = __FESTAPP_DELETE_ENDPOINT__;
 const apiKey = __FESTAPP_ANON_KEY__;
 async function inspect() {
-  if (!token) { status.textContent = 'Odkaz není platný.'; return; }
+  if (!token) { status.textContent = __FESTAPP_COPY_INVALID_JSON__; return; }
   try {
     const response = await fetch(`${endpoint}?token=${encodeURIComponent(token)}`, {method:'GET', headers:{apikey:apiKey}});
     const body = await response.json().catch(() => ({}));
-    if (!response.ok || body.status !== 'valid') { status.textContent = response.status === 410 ? 'Platnost odkazu vypršela.' : 'Odkaz není platný nebo už byl použit.'; return; }
-    status.textContent = `Odkaz je platný do ${new Date(body.expiresAt).toLocaleString('cs-CZ')}.`;
+    if (!response.ok || body.status !== 'valid') { status.textContent = response.status === 410 ? __FESTAPP_COPY_EXPIRED_JSON__ : __FESTAPP_COPY_USED_JSON__; return; }
+    status.textContent = `__FESTAPP_COPY_VALID_UNTIL_HTML__ ${new Date(body.expiresAt).toLocaleString(__FESTAPP_LOCALE_JSON__)}.`;
     action.hidden = false;
-  } catch { status.textContent = 'Ověření se nezdařilo. Zkuste to později.'; }
+  } catch { status.textContent = __FESTAPP_COPY_VERIFICATION_FAILED_JSON__; }
 }
 button.addEventListener('click', async () => {
-  if (!confirm('Opravdu chcete nevratně smazat celý účet?')) return;
-  button.disabled = true; status.textContent = 'Smazání se zpracovává…';
+  if (!confirm(__FESTAPP_COPY_CONFIRM_PROMPT_JSON__)) return;
+  button.disabled = true; status.textContent = __FESTAPP_COPY_PROCESSING_JSON__;
   try {
     const response = await fetch(endpoint, {method:'POST', headers:{'content-type':'application/json',apikey:apiKey}, body:JSON.stringify({token})});
     const body = await response.json().catch(() => ({}));
-    if (response.ok && ['completed','already_completed','processing'].includes(body.status)) { action.hidden = true; status.textContent = body.status === 'processing' ? 'Smazání probíhá. Tuto stránku můžete později znovu načíst.' : 'Účet byl smazán.'; return; }
-    status.textContent = response.status === 410 ? 'Platnost odkazu vypršela.' : 'Smazání se nezdařilo. Zkuste to později.';
-  } catch { status.textContent = 'Smazání se nezdařilo. Zkuste to později.'; }
+    if (response.ok && ['completed','already_completed','processing'].includes(body.status)) { action.hidden = true; status.textContent = body.status === 'processing' ? __FESTAPP_COPY_PENDING_JSON__ : __FESTAPP_COPY_COMPLETED_JSON__; return; }
+    status.textContent = response.status === 410 ? __FESTAPP_COPY_EXPIRED_JSON__ : __FESTAPP_COPY_FAILED_JSON__;
+  } catch { status.textContent = __FESTAPP_COPY_FAILED_JSON__; }
   button.disabled = false;
 });
 inspect();

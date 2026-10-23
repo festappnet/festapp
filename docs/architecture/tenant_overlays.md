@@ -93,3 +93,28 @@ tenant organizer, clause, logo and font values used by
 `generate-order-agreement`. The old tenant-named endpoint has no runtime caller
 in main and is removed from the source tree. Deploying the canonical endpoint
 and provisioning its tenant data are separate operational steps.
+
+## Global and Czech ticketing profiles
+
+`prod/festappticketsglobal` is a thin deployment overlay over the same main-owned
+core as `prod/festapptickets`. They may share backend organization 3; Git
+branch identity is not a database authorization boundary. Do not switch shared
+organization defaults to configure one web profile.
+
+The Global source allowlist permits deploy configuration and explicitly named
+brand/icon assets only. HTML/CSS/components, SQL, Edge Functions, translations,
+product videos, shared capture storyboards and release tools belong to main.
+Generated differences are accepted only when `apply_config.sh` reproduces them.
+Never copy a translated implementation onto a tenant branch.
+
+When a real additional difference is necessary, add its narrow source/data path
+to the main-owned policy, explain the reason and prove it with drift/replay
+checks. Do not add broad source-directory exceptions or resolve shared-code
+conflicts with tenant-side `ours`. Update main once, merge it forward into each
+explicitly requested tenant, reapply the profile and regenerate. A second tenant
+is not implicitly authorized for a release by a shared change.
+
+Both locales use `automation/landing_capture/scenarios/storyboard.json`. Native
+scene geometry, prices, action order, camera and editing are shared. Locale files
+carry only text. Capture-pair evidence is required before calling a replacement
+video an original-scenario reproduction; see the capture scenario README.
