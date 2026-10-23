@@ -181,8 +181,9 @@ class LayoutTextPreviewCache {
       _document = null;
       return scene;
     }
-    if (identical(_input, scene) && identical(_document, document))
+    if (identical(_input, scene) && identical(_document, document)) {
       return _output!;
+    }
     final issues = scene['issues'] as List? ?? const [],
         nodes = {for (final node in document.nodes) node.id: node};
     const pendingReasons = {

@@ -70,6 +70,10 @@ test('form SEO escapes names and strips tracking parameters from canonical URLs'
   assert.ok(html.includes('<title>A &quot;quote&quot; &amp; &lt;b&gt;title&lt;/b&gt; - vstupenky.online</title>'));
   assert.ok(html.includes('href="https://tickets.invalid/form/form-name"'));
   assert.ok(!html.includes('source=mail'));
+  // A form without an event image must advertise the published site icon.
+  for (const [attribute, prefix] of [['property', 'og'], ['name', 'twitter']]) {
+    assert.ok(html.includes(`${attribute}="${prefix}:image" content="https://tickets.invalid/android-chrome-512x512.png"`));
+  }
 });
 
 test('public page social images use a published fallback and preserve event images', async t => {

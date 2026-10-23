@@ -10,6 +10,7 @@ DECLARE
     v_inventory_contexts_data jsonb;
     v_spots_data jsonb;
     result jsonb;
+    catalog jsonb;
 BEGIN
     -- Canonical merges may contain the same legacy link in multiple tenants.
     SELECT o.id
@@ -38,17 +39,15 @@ BEGIN
     -- Get the full occasion object
     SELECT to_jsonb(o) INTO v_occasion_data FROM public.occasions o WHERE id = v_occasion_id;
 
-    -- Aggregate all inventory pools for the occasion, sorted by creation date.
-    SELECT COALESCE(jsonb_agg(to_jsonb(ip) ORDER BY ip.created_at), '[]'::jsonb)
-    INTO v_pools_data
-    FROM public.inventory_pools ip
-    WHERE ip.occasion = v_occasion_id;
-
-    -- Aggregate all inventory_contexts for all pools of the occasion, sorted by the 'order' column.
-    SELECT COALESCE(jsonb_agg(to_jsonb(ic) ORDER BY ic.order), '[]'::jsonb)
-    INTO v_inventory_contexts_data
-    FROM public.inventory_contexts ic
-    WHERE ic.inventory_pool IN (SELECT id FROM public.inventory_pools WHERE occasion = v_occasion_id);
+    -- Released clients still need the old raw spot array. Metadata and counts
+    -- delegate to the same projection as the current summary UI/MCP readers.
+    catalog:=public.get_inventory_catalog_data_internal(v_occasion_id);
+    SELECT coalesce(jsonb_agg(p.value||jsonb_build_object('description',ip.description,'data',ip.data)
+      ORDER BY ip.created_at,ip.id),'[]') INTO v_pools_data
+      FROM jsonb_array_elements(catalog->'pools') p(value) JOIN public.inventory_pools ip ON ip.id=(p.value->>'id')::bigint WHERE ip.occasion=v_occasion_id;
+    SELECT coalesce(jsonb_agg(c.value||jsonb_build_object('data',ic.data) ORDER BY ic."order" NULLS LAST,ic.id),'[]') INTO v_inventory_contexts_data
+      FROM jsonb_array_elements(catalog->'inventory_contexts') c(value) JOIN public.inventory_contexts ic ON ic.id=(c.value->>'id')::bigint
+      JOIN public.inventory_pools ip ON ip.id=ic.inventory_pool WHERE ip.occasion=v_occasion_id;
 
     -- Aggregate all spots that belong to any context within the occasion's pools
     SELECT COALESCE(jsonb_agg(jsonb_build_object(

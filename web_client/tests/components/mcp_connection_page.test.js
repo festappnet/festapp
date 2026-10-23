@@ -237,3 +237,47 @@ test('product-only consent displays and submits exactly the new catalog scopes w
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('schedule consent is explicit and preserves all registry dependencies',async()=>{
+ const permissions=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');
+ assert.match(f.container.textContent,/cenové vlny/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+
+test('standing preparation consent is separate from product edits',async()=>{
+ const permissions=['festapp:products:read','festapp:standing-inventory:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/stání/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+test('inventory summaries display and persist only their explicit read consent',async()=>{
+ const permissions=['festapp:inventory:read'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst sklady, kapacity, nastavení a obsazení kontextů/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+test('stock authoring consent names stock settings and retains only requested permissions',async()=>{
+ const permissions=['festapp:inventory:read','festapp:inventory:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Upravovat sklady, jejich kontexty a zdroje/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+test('product choices require the requested explicit authoring-read consent',async()=>{
+ const permissions=['festapp:products:read','festapp:product-options:read'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst dostupné typy produktů a skladové volby/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+test('seat consent distinguishes lifecycle reads from changing blocked bindings',async()=>{
+ const permissions=['festapp:seats:read','festapp:seats:block'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst místa a jejich provozní stav/);assert.match(f.container.textContent,/Blokovat a odblokovat vybraná místa/);f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

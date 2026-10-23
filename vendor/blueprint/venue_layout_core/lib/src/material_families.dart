@@ -116,7 +116,7 @@ VenueLayoutDocument withLayoutMinimalStyle(VenueLayoutDocument document) {
   {
     final styled = withLayoutMaterialFamily(document, 'minimal'),
         kinds = Map<String, dynamic>.from(styled.styles['kinds'] as Map);
-    for (final kind in ['table', 'furniture'])
+    for (final kind in ['table', 'furniture']) {
       kinds[kind] = {
         ...kinds[kind] as Map,
         'fill': '#FFFFFFFF',
@@ -124,6 +124,7 @@ VenueLayoutDocument withLayoutMinimalStyle(VenueLayoutDocument document) {
         'strokeWidth': 1,
         'cornerRadius': 3.0,
       };
+    }
     kinds['table'] = {
       ...kinds['table'] as Map,
       'label': {...kinds['table']['label'] as Map? ?? {}, 'color': '#000000FF'},

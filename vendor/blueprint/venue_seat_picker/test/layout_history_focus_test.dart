@@ -90,7 +90,7 @@ void main() {
             body: VenueLayoutEditor(
               controller: c,
               showGallery: false,
-              inspectorBuilder: (_, __) => Column(
+              inspectorBuilder: (_, _) => Column(
                 children: [
                   const SizedBox(
                     height: 40,

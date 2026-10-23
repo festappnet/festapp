@@ -8,7 +8,7 @@ import 'package:fstapp/components/inventory/models/inventory_context_model.dart'
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../blueprint_layout_controller.dart';
-import '../blueprint_standing_inventory.dart';
+import 'package:fstapp/components/inventory/db_inventory_pools.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_product_dialogs.dart';
 
@@ -31,11 +31,6 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
   ProductsEditBundle? catalog;
   ProductModel? product;
   InventoryContextModel? inventory;
-  final preparations = <int, BlueprintStandingInventory>{};
-  BlueprintStandingInventory get preparation => preparations.putIfAbsent(
-        product!.id!,
-        () => BlueprintStandingInventory(),
-      );
   bool busy = true;
   String? error;
   late final capacity = TextEditingController(
@@ -117,8 +112,7 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
       inventory = options.length == 1 ? options.single : null;
 
       error = null;
-      capacity.text = (preparation.preparedCapacity ??
-              inventory?.inventoryPool?.sellableCapacity ??
+      capacity.text = (inventory?.inventoryPool?.sellableCapacity ??
               widget.controller.areaCapacity(widget.nodeId))
           .toString();
     });
@@ -215,12 +209,17 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
       var linked = p;
       var contextId = inventory?.id;
       if (contextId == null) {
-        linked = await preparation.prepare(p, count);
-        contextId = linked.includedInventories.single.inventoryContextId;
-        // Linking inventory increments the product aggregate. Use the returned
-        // catalog projection for later product edits, rather than a stale version.
-        final refreshed = await loadCatalog();
-        linked = refreshed.products.firstWhere((item) => item.id == p.id);
+        final prepared =
+            await DbInventoryPools.prepareStandingInventory(p, count);
+        linked = prepared.product;
+        contextId = prepared.context.id!;
+        catalog!.inventoryPools.add(prepared.pool);
+        catalog!.inventoryContexts.add(prepared.context);
+        final productIndex =
+            catalog!.products.indexWhere((item) => item.id == p.id);
+        catalog!.products[productIndex] = linked;
+        product = linked;
+        inventory = prepared.context;
       }
       widget.controller.bindStandingArea(
         widget.nodeId,
@@ -302,17 +301,13 @@ class _StandingSetupState extends State<BlueprintStandingSetupDialog> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: capacity,
-                    enabled: !busy &&
-                        product != null &&
-                        preparation.preparedCapacity == null,
+                    enabled: !busy && product != null,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: BlueprintStrings.standingCapacity,
                       border: const OutlineInputBorder(),
                     ),
                   ),
-                  if (product != null && preparation.preparedCapacity != null)
-                    Text(BlueprintStrings.standingPreparationRetained),
                 ],
               ],
             ),

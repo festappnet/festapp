@@ -1,13 +1,11 @@
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/rights_service.dart';
-import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
-import 'package:festapp_core/sync.dart';
-import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/supabase_eshop_commands.dart';
+import 'package:fstapp/components/eshop/supabase_product_schedule_commands.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
@@ -26,16 +24,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbEshop {
   static final _supabase = Supabase.instance.client;
-  static EshopCommands get commands => SupabaseEshopCommands(_supabase,
-      productScope: () {
-        final occasion = RightsService.currentOccasionId();
-        if (occasion == null) throw StateError('Product occasion required');
-        return {
-          'p_occasion': occasion,
-          'p_organization': AppConfig.organization,
-          'p_unit': RightsService.currentUnit()?.id,
-        };
-      });
+  static Map<String, dynamic> _productScope() {
+    final occasion = RightsService.currentOccasionId();
+    if (occasion == null) throw StateError('Product occasion required');
+    return {
+      'p_occasion': occasion,
+      'p_organization': AppConfig.organization,
+      'p_unit': RightsService.currentUnit()?.id,
+    };
+  }
+
+  static EshopCommands get commands =>
+      SupabaseEshopCommands(_supabase, productScope: _productScope);
+  static SupabaseProductScheduleCommands get scheduleCommands =>
+      SupabaseProductScheduleCommands(_supabase, productScope: _productScope);
+  static void _checkScheduleLink(String link) {
+    if (RightsService.currentOccasion()?.link != link) {
+      throw StateError('Product occasion changed');
+    }
+  }
 
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
       int orderId) async {
@@ -291,12 +298,11 @@ class DbEshop {
   }
 
   static Future<ProductPriceWave> createProductPriceWave(
-          String link, DateTime time) async =>
-      ProductPriceWave.fromJson(await _supabase.rpc('create_product_price_wave',
-          params: {
-            'p_occasion_link': link,
-            'p_change_time': time.toUtc().toIso8601String()
-          }));
+      String link, DateTime time) async {
+    _checkScheduleLink(link);
+    return scheduleCommands.ensureWave(time);
+  }
+
   static Future<void> saveNewProductWaveTarget(
       String occasionLink,
       ProductPriceWave wave,
@@ -305,76 +311,34 @@ class DbEshop {
       bool? hidden,
       int? priceRevision,
       int? visibilityRevision) async {
-    final response = ClientCommandResponse.from(
-        await ClientCommandTransport.supabase(_supabase, durable: true)
-            .invoke('save_product_wave_target_client_sync_v1', {
-      'p_target': {
-        'occasion_link': occasionLink,
-        'product_id': productId,
-        'change_time': wave.time.toUtc().toIso8601String(),
-        'price': price,
-        'is_hidden': hidden,
-        'expected_price_revision': priceRevision,
-        'expected_visibility_revision': visibilityRevision,
-      }
-    }));
-    if (response.code != 200)
-      throw StateError('Product wave target was rejected');
-    await applyClientCommandReplacements(response);
+    _checkScheduleLink(occasionLink);
+    await scheduleCommands.saveTarget(
+        wave, productId, price, hidden, priceRevision, visibilityRevision);
   }
 
   static Future<void> saveProductWaveTarget(
-      ProductPriceWave wave,
-      int productId,
-      double? price,
-      bool? hidden,
-      int? priceRevision,
-      int? visibilityRevision) async {
-    await _supabase.rpc('save_product_wave_target', params: {
-      'p_wave_id': wave.id,
-      'p_product_id': productId,
-      'p_expected_wave_revision': wave.revision,
-      'p_price': price,
-      'p_is_hidden': hidden,
-      'p_expected_price_revision': priceRevision,
-      'p_expected_visibility_revision': visibilityRevision
-    });
-  }
+          ProductPriceWave wave,
+          int productId,
+          double? price,
+          bool? hidden,
+          int? priceRevision,
+          int? visibilityRevision) =>
+      scheduleCommands.saveTarget(
+          wave, productId, price, hidden, priceRevision, visibilityRevision);
 
   static Future<void> moveProductPriceWave(
-      ProductPriceWave wave, DateTime time) async {
-    await _supabase.rpc('move_product_price_wave', params: {
-      'p_wave_id': wave.id,
-      'p_expected_revision': wave.revision,
-      'p_change_time': time.toUtc().toIso8601String()
-    });
-  }
-
-  static Future<void> cancelProductPriceWave(ProductPriceWave wave) async {
-    await _supabase.rpc('cancel_product_price_wave',
-        params: {'p_wave_id': wave.id, 'p_expected_revision': wave.revision});
-  }
-
+          ProductPriceWave wave, DateTime time) =>
+      scheduleCommands.moveWave(wave, time);
+  static Future<void> cancelProductPriceWave(ProductPriceWave wave) =>
+      scheduleCommands.cancelWave(wave);
   static Future<void> saveProductPriceChange(
-      int productId, double price, DateTime time,
-      {int? changeId, int? revision}) async {
-    await _supabase.rpc('save_product_price_change', params: {
-      'p_product_id': productId,
-      'p_price': price,
-      'p_change_time': time.toUtc().toIso8601String(),
-      'p_change_id': changeId,
-      'p_expected_revision': revision,
-    });
-  }
-
+          int productId, double price, DateTime time,
+          {int? changeId, int? revision}) =>
+      scheduleCommands.savePriceChange(productId, price, time,
+          changeId: changeId, revision: revision);
   static Future<void> cancelProductPriceChange(
-      int productId, int changeId, int revision) async {
-    await _supabase.rpc('cancel_product_price_change', params: {
-      'p_product_id': productId,
-      'p_change_id': changeId,
-      'p_expected_revision': revision,
-    });
-  }
+          int productId, int changeId, int revision) =>
+      scheduleCommands.cancelPriceChange(productId, changeId, revision);
 
   static Future<ProductModel> saveProductBasics(ProductModel product) async {
     final saved = await commands.saveProduct({

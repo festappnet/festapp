@@ -1,33 +1,32 @@
 import 'package:fstapp/components/occasion/occasion_model.dart';
-import 'package:fstapp/components/eshop/models/spot_model.dart';
-import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
+import 'inventory_context_stock.dart';
 import 'inventory_pool_model.dart';
 
-/// A data bundle containing the parent occasion, its associated inventory pools,
-/// and all related spots and contexts.
+/// Current stock-card summary. Raw spots and hold secrets stay out of this view.
 class InventoryPoolsListBundle {
   final OccasionModel occasion;
   final List<InventoryPoolModel> pools;
-  final List<InventoryContextModel> inventoryContexts;
-  final List<SpotModel> spots;
+  final List<InventoryContextStock> contextStocks;
 
-  InventoryPoolsListBundle({
-    required this.occasion,
-    required this.pools,
-    required this.inventoryContexts,
-    required this.spots,
-  });
+  InventoryPoolsListBundle(
+      {required this.occasion,
+      required this.pools,
+      required this.contextStocks});
 
   factory InventoryPoolsListBundle.fromJson(Map<String, dynamic> json) {
+    final pools = (json['pools'] as List)
+        .map((p) => InventoryPoolModel.fromJson(p))
+        .toList();
+    final byId = {for (final pool in pools) pool.id: pool};
+    final contexts = (json['inventory_contexts'] as List)
+        .map((c) => InventoryContextStock.fromJson(c))
+        .toList();
+    for (final stock in contexts) {
+      stock.context.inventoryPool = byId[stock.context.inventoryPoolId];
+    }
     return InventoryPoolsListBundle(
-      occasion: OccasionModel.fromJson(json['occasion']),
-      pools: (json['pools'] as List)
-          .map((p) => InventoryPoolModel.fromJson(p))
-          .toList(),
-      inventoryContexts: (json['inventory_contexts'] as List)
-          .map((c) => InventoryContextModel.fromJson(c))
-          .toList(),
-      spots: (json['spots'] as List).map((s) => SpotModel.fromJson(s)).toList(),
-    );
+        occasion: OccasionModel.fromJson(json['occasion']),
+        pools: pools,
+        contextStocks: contexts);
   }
 }

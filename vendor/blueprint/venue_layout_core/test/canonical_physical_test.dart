@@ -172,11 +172,12 @@ void main() {
           'face': 'top',
         },
         {'mode': 'sidePinned', 'side': 'top', 't': 0.5},
-      ])
+      ]) {
         expect(
           () => setTableSeatPlacement(d, seat.id, placement),
           throwsA(isA<InvalidLayoutDocument>()),
         );
+      }
     },
   );
 
@@ -415,8 +416,9 @@ void main() {
         originX: -37.5,
         originY: -37.5,
       );
-      for (final cell in [(0, 0), (1, 0), (0, 1)])
+      for (final cell in [(0, 0), (1, 0), (0, 1)]) {
         brush.stampCell(cell.$1, cell.$2);
+      }
       final node = brush.node(id: newLayoutId());
       final d = VenueLayoutDocument(schemaVersion: 2, nodes: [node]);
       expect(validateDocument(d), isEmpty);

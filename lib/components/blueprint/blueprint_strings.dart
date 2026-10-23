@@ -6,8 +6,6 @@ import 'package:venue_seat_picker/venue_seat_picker.dart'
 class BlueprintStrings {
   static String get standingNoAdmissionType =>
       'FeatureBlueprint.standingNoAdmissionType'.tr();
-  static String get standingPreparationRetained =>
-      'FeatureBlueprint.standingPreparationRetained'.tr();
 
   static String get areaProduct => 'FeatureBlueprint.areaProduct'.tr();
   static String get areaProductAssigned =>

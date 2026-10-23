@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:venue_layout_core/venue_layout_core.dart';
 import 'package:venue_seat_picker/venue_layout_templates.dart';
 
 void main(List<String> args) {
@@ -16,8 +15,9 @@ void main(List<String> args) {
       d,
       families,
       includePresets: true,
-    ).values)
+    ).values) {
       requests[r.id] = r.toJson();
+    }
   }
   File(args[1]).writeAsStringSync(jsonEncode(requests.values.toList()));
   stdout.writeln('Exported ${requests.length} canonical template requests');

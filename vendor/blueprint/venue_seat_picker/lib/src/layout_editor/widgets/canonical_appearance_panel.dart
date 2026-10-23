@@ -47,12 +47,14 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
       : c.document.nodes.firstWhere((n) => n.id == widget.nodeId);
   Map<String, dynamic> get declaration {
     if (scope == 'document') return {'label': c.document.styles['label'] ?? {}};
-    if (scope == 'kind')
+    if (scope == 'kind') {
       return Map<String, dynamic>.from(
         (c.document.styles['kinds'] as Map?)?[kind] as Map? ?? {},
       );
-    if (scope == 'children')
+    }
+    if (scope == 'children') {
       return Map<String, dynamic>.from(node.childStyles['seat'] as Map? ?? {});
+    }
     return node.style;
   }
 
@@ -139,12 +141,16 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
   List<String> usedColors() {
     final colors = <String>{};
     void visit(Object? value) {
-      if (value is String && RegExp(r'^#[a-fA-F0-9]{8}$').hasMatch(value))
+      if (value is String && RegExp(r'^#[a-fA-F0-9]{8}$').hasMatch(value)) {
         colors.add(value);
-      else if (value is Map) {
-        for (final entry in value.values) visit(entry);
+      } else if (value is Map) {
+        for (final entry in value.values) {
+          visit(entry);
+        }
       } else if (value is List) {
-        for (final entry in value) visit(entry);
+        for (final entry in value) {
+          visit(entry);
+        }
       }
     }
 
@@ -156,8 +162,9 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
     }
     final sampled = <String>{};
     for (final node in c.document.nodes) {
-      if (sampled.add(node.kind))
+      if (sampled.add(node.kind)) {
         visit(resolveNodeAppearance(c.document, node).values);
+      }
     }
     return colors.map((color) => color.substring(0, 7)).toSet().toList();
   }
@@ -166,8 +173,9 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
     final source = value?.toString() ?? 'core';
     if (source.startsWith('node:')) return tr('Object');
     if (source.startsWith('table:')) return tr('Table chair style');
-    if (source.startsWith('styles.kinds.'))
+    if (source.startsWith('styles.kinds.')) {
       return '${tr('Kind style')}: ${tr(source.substring(13))}';
+    }
     return tr(source == 'styles.label' ? 'All labels' : 'Default');
   }
 
@@ -227,12 +235,17 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                               MouseRegion(
                                 onEnter: (_) => preview(value),
                                 onExit: (_) {
-                                  if (c.gestureActive)
+                                  if (c.gestureActive) {
                                     c.preview(selectedDocument);
+                                  }
                                 },
                                 child: RadioListTile<String>(
                                   value: value,
+                                  // Retain compatibility with the declared Flutter 3.32 minimum.
+                                  // ignore: deprecated_member_use
                                   groupValue: selected,
+                                  // Retain compatibility with the declared Flutter 3.32 minimum.
+                                  // ignore: deprecated_member_use
                                   onChanged: (_) => select(value),
                                   title: Text(tr(value)),
                                   secondary: LayoutStylePreview(
@@ -555,11 +568,12 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
               ],
               onChanged: enabled
                   ? (value) {
-                      if (value != null)
+                      if (value != null) {
                         setState(() {
                           scope = value == 'document' ? 'document' : 'kind';
                           kind = value == 'document' ? 'table' : value;
                         });
+                      }
                     }
                   : null,
             ),
@@ -623,7 +637,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                 ],
                 onChanged: enabled
                     ? (type) {
-                        if (type != null)
+                        if (type != null) {
                           change(
                             ['strokePattern'],
                             {
@@ -635,6 +649,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                                     [12, 8],
                             },
                           );
+                        }
                       }
                     : null,
               ),
@@ -713,8 +728,9 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                       ],
                       onChanged: enabled
                           ? (v) {
-                              if (v != null)
+                              if (v != null) {
                                 change(['label', 'fontFamilyId'], v);
+                              }
                             }
                           : null,
                     ),
@@ -965,7 +981,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                         ],
                         onChanged: enabled
                             ? (type) {
-                                if (type != null)
+                                if (type != null) {
                                   change(
                                     ['strokePattern'],
                                     {
@@ -977,6 +993,7 @@ class _CanonicalAppearancePanelState extends State<CanonicalAppearancePanel> {
                                             [12, 8],
                                     },
                                   );
+                                }
                               }
                             : null,
                       ),
@@ -1083,8 +1100,9 @@ class _CanonicalNumberState extends State<_CanonicalNumber> {
   @override
   void didUpdateWidget(covariant _CanonicalNumber old) {
     super.didUpdateWidget(old);
-    if (!focus.hasFocus && old.value != widget.value)
+    if (!focus.hasFocus && old.value != widget.value) {
       text.text = widget.value.toString();
+    }
   }
 
   @override

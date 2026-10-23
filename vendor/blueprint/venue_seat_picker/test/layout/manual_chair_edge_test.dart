@@ -24,7 +24,6 @@ void main() {
       final manuallyPositioned = c.document;
       c.select({table.id});
       c.moveSelection(-2000, 0);
-      final movedTable = c.document.nodes.firstWhere((n) => n.id == table.id);
       expect(
         selectionBounds(c.document, {table.id})['x'],
         closeTo(0, .02),

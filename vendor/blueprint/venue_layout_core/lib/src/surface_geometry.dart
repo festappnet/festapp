@@ -100,14 +100,16 @@ List<Map<String, dynamic>> _polygonSlots(LayoutNode table) {
       );
       final hull = worldHull(chair, localMatrix(chair));
       if (polygonsOverlap(polygon, hull) ||
-          hulls.any((h) => polygonsOverlap(h, hull)))
+          hulls.any((h) => polygonsOverlap(h, hull))) {
         continue;
+      }
       if (result.any(
         (s) =>
             pow(x - (s['x'] as num), 2) + pow(y - (s['y'] as num), 2) <
             pitch * pitch - .01,
-      ))
+      )) {
         continue;
+      }
       result.add({
         'x': quantize(x),
         'y': quantize(y),
@@ -144,8 +146,9 @@ LayoutNode sketchSurface(
         dx = b[0] - a[0],
         dy = b[1] - a[1],
         length = sqrt(dx * dx + dy * dy);
-    if (!length.isFinite || length < 1)
+    if (!length.isFinite || length < 1) {
       throw ArgumentError('Sketch points must be distinct');
+    }
     normals.add([-dy / length, dx / length]);
   }
   final left = <List<double>>[], right = <List<double>>[];
@@ -153,8 +156,9 @@ LayoutNode sketchSurface(
     final a = normals[max(0, i - 1)], b = normals[min(i, normals.length - 1)];
     var nx = a[0] + b[0], ny = a[1] + b[1];
     final length = sqrt(nx * nx + ny * ny);
-    if (length < .1)
+    if (length < .1) {
       throw StateError('The surface outline cannot cross itself.');
+    }
     nx /= length;
     ny /= length;
     final dot = nx * b[0] + ny * b[1];
@@ -165,8 +169,9 @@ LayoutNode sketchSurface(
     right.add([p[0] - nx * offset, p[1] - ny * offset]);
   }
   final points = [...left, ...right.reversed];
-  if (polygonSelfIntersects(points))
+  if (polygonSelfIntersects(points)) {
     throw StateError('The surface outline cannot cross itself.');
+  }
   {
     final outline = shapeFromPoints('polygon', points, id: id);
     final geometry = outline.copyWith(

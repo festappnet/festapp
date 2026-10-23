@@ -162,8 +162,9 @@ void main() {
         ],
       );
       final grown = updateBusLayout(positioned, root.id, rows: 5, upperRows: 6);
-      for (final entry in slots(d).entries)
+      for (final entry in slots(d).entries) {
         expect(slots(grown)[entry.key]?.id, entry.value.id);
+      }
       expect(grown.nodes.firstWhere((n) => n.id == first.id).x, first.x + 4);
       expect(
         grown.nodes.firstWhere((n) => n.id == first.id).style['fill'],

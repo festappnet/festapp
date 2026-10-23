@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-23",
+  "migration": "20261023220000_blueprint_seat_operations.sql",
+  "migrationSha256": "05c544f1119498163d7645d06612345127f0487112550846b8c0a388491582ff",
+  "scope": "First 2B slice only: bounded seat inspection, complete-selection block preview and atomic block/unblock. Not deployed.",
+  "owners": {
+    "mutation": "Existing save_blueprint_layout_internal_v1, one inventory.blueprint.block receipt",
+    "UI": "Draft changes retained; ordinary Save/Cancel still calls the same aggregate owner",
+    "selection": "Existing checkout selection-unit expansion; original revision and exact confirmed expanded set required",
+    "read": "Shared blueprint_spot_facts_internal for UI lifecycle and bounded MCP rows",
+    "locks": "Canonical occasion advisory lock and shared product/pool/context/spot lock order"
+  },
+  "limits": {
+    "requestedSeats": 100,
+    "expandedSeats": 1000,
+    "readPage": 100,
+    "readJsonBytes": 1048576
+  },
+  "verification": {
+    "finalTargetedPostgresPassed": 7,
+    "sourceOwnersCompared": 12,
+    "consentUiPassed": 27,
+    "fullMcp": {
+      "passed": 113,
+      "failed": 4,
+      "skipped": 0
+    },
+    "parentBaselineReproduction": {
+      "source": "2aa1e7de5600f91e983537fb6116d3e3397afa4c",
+      "sameFailures": 4
+    }
+  },
+  "inheritedFreshDatabaseFailures": [
+    "Authorization reference envelope lacks the approved Stripe unit feature field",
+    "Historical ACL snapshot predates approved Stripe tables/columns and SEO/unit reader grant deltas",
+    "Ticket layout write readiness fails closed: validate_ticket_layout(jsonb) differs from its sealed expected body; no hash override performed",
+    "Order test setup SET ROLE postgres cannot replace a function owned by supabase_admin"
+  ],
+  "proof": [
+    "Lost response replays exactly one receipt and returns the same revision",
+    "Actual checkout hold and block contend with two connections in both directions",
+    "Concurrent permission revocation during preview prevents result disclosure",
+    "Used/ordered seat preserves the complete paid order",
+    "Partial confirmed expansion and half-unit full-editor save reject atomically",
+    "UI lifecycle state matches scoped MCP facts; secrets and order relationship IDs excluded",
+    "Existing layout integration and blueprint authorization regressions pass"
+  ],
+  "sqlQuality": "Incoming changes and unit membership materialized once, joined by identity rather than repeated correlated JSON scans. Canonical aggregate still validates the full saved layout; no production latency benchmark claimed.",
+  "remaining2B": [
+    "Release temporary holds",
+    "Swap ticket spots",
+    "Create order from selected seats",
+    "Cancel selected tickets"
+  ],
+  "reportMirror": "/private/tmp/festapp-mcp-recovery-20261022/docs/reports/admin-capabilities-2026-10-23.html"
+}

@@ -8,6 +8,12 @@ BEGIN
   PERFORM public.require_client_sync_service_role_v1();
   -- Serializes workers, including backlog across multiple instants of one product.
   IF NOT pg_try_advisory_xact_lock(7310420261004::bigint) THEN RETURN; END IF;
+  -- Hold all due products in ID order for the transaction. The former time/ID
+  -- loop could lock product B then A while a wave move locked A then B.
+  PERFORM 1 FROM eshop.products p WHERE EXISTS(SELECT 1 FROM eshop.planned_changes pc
+    WHERE pc.subject_id=p.id AND pc.change_type IN ('products.price','products.is_hidden')
+     AND NOT public.is_demo_occasion(pc.occasion) AND pc.change_time<=now() AND NOT pc.applied AND pc.failed_at IS NULL)
+    ORDER BY p.id FOR UPDATE;
   FOR v_candidate IN SELECT id,subject_id,change_type FROM eshop.planned_changes
     WHERE NOT public.is_demo_occasion(occasion) AND change_time<=now() AND NOT applied AND failed_at IS NULL ORDER BY change_time,id
   LOOP

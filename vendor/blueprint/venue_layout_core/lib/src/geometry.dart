@@ -63,21 +63,24 @@ Map<String, List<double>> worldMatrices(VenueLayoutDocument d) {
 List<double> worldMatrix(VenueLayoutDocument d, LayoutNode n) =>
     worldMatrices(d)[n.id]!.map(quantize).toList();
 List<List<double>> localHull(LayoutNode n) {
-  if (n.surface != null)
+  if (n.surface != null) {
     n = n.copyWith(properties: surfaceGeometryProperties(n));
+  }
   final shape = n.properties['shape'];
-  if (shape == 'polygon' && n.properties['points'] is List)
+  if (shape == 'polygon' && n.properties['points'] is List) {
     return (n.properties['points'] as List)
         .map((p) => (p as List).map((v) => (v as num).toDouble()).toList())
         .toList();
+  }
   if (shape == 'circle' ||
       shape == 'ellipse' ||
       shape == 'oval' ||
-      shape == 'round')
+      shape == 'round') {
     return List.generate(
       64,
       (i) => [cos(i * pi / 32) * n.width / 2, sin(i * pi / 32) * n.height / 2],
     );
+  }
   return [
     [-n.width / 2, -n.height / 2],
     [n.width / 2, -n.height / 2],
@@ -209,8 +212,9 @@ VenueLayoutDocument _moveLayoutLayers(
   for (final id in moved) {
     LayoutNode? n = byId[id];
     while (n != null) {
-      if (n.locked)
+      if (n.locked) {
         throw StateError('Locked object ${n.label.isEmpty ? n.id : n.label}');
+      }
       n = byId[n.parentId];
     }
   }
@@ -247,8 +251,9 @@ VenueLayoutDocument _moveLayoutLayers(
     if (List.generate(
       siblings.length,
       (i) => siblings[i].id == before[i],
-    ).every((v) => v))
+    ).every((v) => v)) {
       continue;
+    }
     if (toFront != null) {
       final active = siblings.where((n) => selected.contains(n.id)).toList();
       final stationary = siblings
@@ -411,11 +416,12 @@ class LayoutSpatialIndex {
                       2,
                 ),
                 2,
-              ))
+              )) {
             return n.properties['role'] == 'decoration' &&
                     _nodes[n.parentId]?.assembly != null
                 ? n.parentId
                 : n.id;
+          }
         }
       } else {
         final contours = _hitContours.putIfAbsent(
@@ -438,11 +444,12 @@ class LayoutSpatialIndex {
                 p[0],
                 p[1],
               ),
-            ))
+            )) {
           return n.properties['role'] == 'decoration' &&
                   _nodes[n.parentId]?.assembly != null
               ? n.parentId
               : n.id;
+        }
       }
     }
     return null;
@@ -488,8 +495,9 @@ bool _convexOverlap(List<List<double>> a, List<List<double>> b) {
       final ap = a.map((v) => v[0] * nx + v[1] * ny),
           bp = b.map((v) => v[0] * nx + v[1] * ny);
       if (ap.reduce(max) <= bp.reduce(min) + 1e-7 ||
-          bp.reduce(max) <= ap.reduce(min) + 1e-7)
+          bp.reduce(max) <= ap.reduce(min) + 1e-7) {
         return false;
+      }
     }
   }
   return true;
@@ -554,8 +562,9 @@ bool polygonContainsHull(List<List<double>> polygon, List<List<double>> hull) {
           c = polygon[j],
           d = polygon[(j + 1) % polygon.length];
       if (cross(a, b, c) * cross(a, b, d) < -1e-9 &&
-          cross(c, d, a) * cross(c, d, b) < -1e-9)
+          cross(c, d, a) * cross(c, d, b) < -1e-9) {
         return false;
+      }
     }
   }
   return true;
@@ -589,8 +598,9 @@ List<List<String>> layoutCollisions(VenueLayoutDocument d) {
       if (ancestor(n.id, other) || ancestor(other.id, n)) continue;
       final pair = [n.id, id]..sort();
       if (!seen.add(pair.join('/'))) continue;
-      if (polygonsOverlap(hull, worldHull(other, index.matrices[id]!)))
+      if (polygonsOverlap(hull, worldHull(other, index.matrices[id]!))) {
         out.add(pair);
+      }
     }
   }
   return out;
@@ -718,8 +728,9 @@ String? nearestNode(VenueLayoutDocument d, String fromId, String direction) {
   String? best;
   var score = double.infinity;
   for (final n in d.nodes) {
-    if (n.id == fromId || !const ['seat', 'capacityArea'].contains(n.kind))
+    if (n.id == fromId || !const ['seat', 'capacityArea'].contains(n.kind)) {
       continue;
+    }
     final target = m[n.id]!,
         dx = target[4] - from[4],
         dy = target[5] - from[5],

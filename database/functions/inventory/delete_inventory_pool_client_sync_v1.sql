@@ -19,7 +19,7 @@ BEGIN
   v_product_ids:=public.lock_pool_product_dependencies_internal_v1(p_pool);
   SELECT ip.title INTO v_title FROM public.inventory_pools ip WHERE ip.id=p_pool
     AND ip.occasion=p_occasion FOR UPDATE;
-  IF v_title IS NULL THEN RETURN public.complete_client_mutation_outcome_v1(
+  IF NOT FOUND THEN RETURN public.complete_client_mutation_outcome_v1(
     p_command_id,'unchanged',200,jsonb_build_object('version',0,'pool',NULL)); END IF;
   PERFORM 1 FROM public.inventory_contexts ic WHERE ic.inventory_pool=p_pool
     ORDER BY ic.id FOR UPDATE;

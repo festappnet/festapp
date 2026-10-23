@@ -7,7 +7,7 @@ void main() {
   final fixture = Map<String, dynamic>.from(
     jsonDecode(
       File(
-        'vendor/blueprint/venue_seat_picker/assets/layout_fonts/fixtures.json',
+        'test/fixtures/label_font_family.json',
       ).readAsStringSync(),
     ),
   );

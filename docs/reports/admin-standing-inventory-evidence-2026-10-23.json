@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-23",
+  "baseProductSlice": "aa2a191e5f82bcfbbaf8f556d8087a1136202762",
+  "migration": "20261023180000_atomic_standing_inventory.sql",
+  "sha256": "0f6427d83ee7a7b60975db5442532a78971923cc9f0c0674a3cba3c64f690c90",
+  "checks": {
+    "postgres": {
+      "tests": 7,
+      "passed": 7,
+      "skipped": 0
+    },
+    "flutterInventoryAndBlueprint": 34,
+    "remote": 15,
+    "consent": 30,
+    "runtimeSourceParityOwners": 5
+  },
+  "interpretation": "Real, marked, mail-fenced disposable PostgreSQL. One domain request per attempt through the actual Operations executor. JSON byte counts are SQL response serialization, not HTTP wire traffic; session/delegation lookups are stubbed/excluded. One product, pool, context and resource snapshot returned without spot dumps or catalog reload. Failure-injection data rolls back; committed concurrency fixtures are explicitly removed.",
+  "audit": {
+    "requests": 7,
+    "replies": [
+      {
+        "code": 200,
+        "jsonBytes": 1747
+      },
+      {
+        "code": 200,
+        "jsonBytes": 1747
+      },
+      {
+        "code": 200,
+        "jsonBytes": 1747
+      },
+      {
+        "code": 409,
+        "jsonBytes": 304
+      }
+    ],
+    "lose": false
+  }
+}

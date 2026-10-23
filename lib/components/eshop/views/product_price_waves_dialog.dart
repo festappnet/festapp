@@ -123,11 +123,7 @@ class _ProductPriceWavesDialogState extends State<ProductPriceWavesDialog> {
             product: product,
             save: (price, hidden) async {
               if (widget.actions != null) {
-                final persisted = wave.id == null
-                    ? await widget.actions!.create(wave.time)
-                    : wave;
-                await widget.actions!
-                    .saveTarget(persisted, product, price, hidden);
+                await widget.actions!.saveTarget(wave, product, price, hidden);
                 return;
               }
               if (wave.id == null) {

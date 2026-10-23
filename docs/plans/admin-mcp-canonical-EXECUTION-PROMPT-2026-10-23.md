@@ -3,6 +3,15 @@
 Repozitář: `/Users/miakh/source/festapp`. Připravené dokumenty jsou v checkoutu
 `/private/tmp/festapp-mcp-recovery-20261022`; zachovejte cizí rozpracované soubory
 v hlavním checkoutu. Změny sdíleného kódu nakonec patří do canonical main.
+Před prací načtěte aktuální autoritativní `origin/main` z GitHubu; místní `main`
+a remote ref nezávislého klonu s lokálním originem nemusí být aktuální.
+Pracujte v čistém izolovaném checkoutu, nepřesouvejte hlavní checkout jiné relace.
+
+Poslední potvrzený základ: `4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`.
+MCP protokol `2026-07-28`, server SDK 2.3.1 a Node adaptér 2.1.1 jsou nasazeny.
+Oficiální legacy hranice obsluhuje stejný katalog. Všech 74 MCP testů prošlo
+s reálnou disposable PostgreSQL, bez skipů; tento výsledek není náhradou
+za ověření nově změněných cest. Upgrade transportu neopakujte.
 
 Přečtěte celé autoritativní zadání:
 
@@ -20,7 +29,10 @@ celého katalogu při každé MCP stránce. Doloženou baseline uchovejte a poro
 s novou evidencí na stejných fixture. Potom sjednoťte nový i existující cíl cenové
 vlny na existující receipted příkaz v etapě 1. Produkty a objednávky znovu celé
 neimplementujte. Pokud uživatel omezí běh na určitou etapu, dokončete její ledger
-a ověření; jinak pokračujte postupně.
+a ověření; jinak pokračujte postupně. Nezastavujte po první etapě pouze kvůli získání
+potvrzení k další již zadané práci. Neúplnou etapu neoznačujte za hotovou.
+Při přerušení uložte přesný checkpoint, zdrojovou revizi, výsledky kontrol
+a nejbližší další krok tak, aby další relace neopakovala hotovou práci.
 
 Součástí každého řezu je povinná datová, SQL a síťová kontrola z plánu: agregáty,
 null/default semantics, duplicity, execution plan při podezření na výkon, pořadí
@@ -50,12 +62,18 @@ etapu. Každou odstraněnou cestu uzavřete v ledgeru; vydané veřejné klienty
 neodpojujte bez doloženého upgrade gate. Staré granty nerozšiřujte automaticky.
 Známý starší readiness problém layoutu neobcházejte regenerací hashe.
 
-Tento prompt sám neautorizuje commit, push, produkční migraci, nasazení ani
-skutečné e-maily/platby. Použijte výslovnou autorizaci aktuálního vykonávacího
-zadání nebo již platnou autorizaci v jeho kontextu; jednou udělenou žádost
-neopakujte. Při autorizovaném releasu jen vybraný tenant `festapptickets`,
-canonical backend, lokální web build a přímý deploy. Rutinní release delegujte
-levnějšímu agentovi podle AGENTS, s frozen source a přesnými gates.
+Uživatel již zadal implementaci i nasazení a požaduje zachování čisté
+architektury. Pokračujte v tomto rozsahu bez opakovaných žádostí o totéž
+povolení: sdílený kód do autoritativního main podle pravidel repozitáře,
+produkční rollout pouze `festapptickets` / `vstupenky.online`, organizace 3,
+canonical backend `api.festapp.net`. Produkční migrace patří do samostatného
+ověřeného kroku s přesnými zdrojovými digesty, kontrolou cíle, zálohou a recovery.
+Nevytvářejte produkční testovací objednávky, skutečné platby ani zákaznické
+e-maily. Jiné tenanty nevydávejte. Autorizovaný web release má lokální build
+a přímý deploy; backend-only změna nevyžaduje nesouvisející web build.
+Rutinní release delegujte levnějšímu agentovi podle AGENTS, s frozen source
+a přesnými gates. Každý release vázejte na konkrétní ověřenou revizi;
+nevydávejte cizí rozpracované změny bez jejich validace.
 
 Po každém řezu aktualizujte checkpoint, mapu administrace a zdrojový JSON
 statického katalogu, potom přegenerujte HTML pomocí

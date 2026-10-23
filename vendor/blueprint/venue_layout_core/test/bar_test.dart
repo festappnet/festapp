@@ -243,7 +243,7 @@ void main() {
         {...bar.properties, 'guestSide': 'any'},
         {...bar.properties}..remove('guestSide'),
         {...bar.properties, 'shape': 'ellipse'},
-      ])
+      ]) {
         expect(
           validateDocument(
             d.copyWith(
@@ -255,6 +255,7 @@ void main() {
           ),
           isNotEmpty,
         );
+      }
       final badSeat = stools(d).first.copyWith(y: -100);
       expect(
         validateDocument(

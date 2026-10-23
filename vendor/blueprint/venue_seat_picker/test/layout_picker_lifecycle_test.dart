@@ -76,7 +76,7 @@ void main() {
         home: Scaffold(
           body: VenueLayoutPicker(
             document: doc,
-            onSelectionRequested: (_, __) => response.future,
+            onSelectionRequested: (_, _) => response.future,
           ),
         ),
       ),
@@ -252,7 +252,13 @@ void main() {
               ),
             )
             .onPressed,
-        isNull,
+        isNotNull,
+      );
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text('1')),
+        findsOneWidget,
+        reason:
+            'A replacement session resets to the public default quantity of one.',
       );
       await tester.tap(find.byTooltip('Add one'));
       await tester.pump();
@@ -271,7 +277,13 @@ void main() {
               ),
             )
             .onPressed,
-        isNull,
+        isNotNull,
+      );
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text('1')),
+        findsOneWidget,
+        reason:
+            'A replacement session resets to the public default quantity of one.',
       );
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
@@ -331,7 +343,13 @@ void main() {
               ),
             )
             .onPressed,
-        isNull,
+        isNotNull,
+      );
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text('1')),
+        findsOneWidget,
+        reason:
+            'A replacement session resets to the public default quantity of one.',
       );
       await tester.tap(find.byTooltip('Add one'));
       await tester.pump();

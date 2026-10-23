@@ -6,12 +6,13 @@ typedef ScenePath = List<List<dynamic>>;
 /// Closed polygon contour with locally bounded corner fillets. Authored
 /// vertices remain unchanged; both renderers and hit contours use this path.
 ScenePath polygonContourPath(List points, {double cornerRadius = 0}) {
-  if (cornerRadius <= 0 || points.length < 3)
+  if (cornerRadius <= 0 || points.length < 3) {
     return [
       for (var i = 0; i < points.length; i++)
         [i == 0 ? 'M' : 'L', ...(points[i] as List)],
       ['Z'],
     ];
+  }
   final entries = <List<double>>[], exits = <List<double>>[];
   for (var i = 0; i < points.length; i++) {
     final a = points[(i + points.length - 1) % points.length] as List,
@@ -51,8 +52,9 @@ ScenePath polygonContourPath(List points, {double cornerRadius = 0}) {
 /// Canonical visual outline shared by both renderers and the hit index.
 /// Collision/resize footprints remain the authored width/height hull.
 ScenePath nodePath(LayoutNode n, {LayoutNode? parent}) {
-  if (n.surface != null)
+  if (n.surface != null) {
     n = n.copyWith(properties: surfaceGeometryProperties(n));
+  }
   final styled = _chairContours(n, parent);
   if (styled != null) return contoursPath(styled);
   final w = quantize(n.width) / 2,
@@ -210,8 +212,9 @@ List<List<List<double>>>? _chairContours(LayoutNode node, LayoutNode? parent) {
         'polyline',
         'line',
         'arrow',
-      ].contains(node.properties['shape']))
+      ].contains(node.properties['shape'])) {
     return null;
+  }
   final style = chairStyle(node);
   if (style == 'plain') return null;
   final w = quantize(node.width) / 2, h = quantize(node.height) / 2;

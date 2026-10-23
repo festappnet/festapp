@@ -25,6 +25,7 @@ dependencies:
   venue_layout_core: ^0.2.2
 
 dev_dependencies:
+  crypto: ^3.0.6
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter

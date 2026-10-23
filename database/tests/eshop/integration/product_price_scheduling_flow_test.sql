@@ -27,6 +27,7 @@ DECLARE
     v_report jsonb;
     v_report_user uuid;
     v_wave_id bigint;
+    v_blueprint_id bigint;
 BEGIN
     -- ==================================================================
     -- Setup: Two products - one with deposit, one without
@@ -74,12 +75,14 @@ BEGIN
     INSERT INTO eshop.spots (title, product, occasion, secret)
     VALUES ('Spot Mix 2', v_product_nodep_id, v_occasion_id, gen_random_uuid()) RETURNING id INTO v_spot_2_id;
 
-    -- ==================================================================
-    -- Step 1: Create mixed-cart order (deposit + non-deposit products)
-    -- Note: create_ticket_order validates secret against the first spot only.
-    -- We create two separate orders to test the mixed-cart scenario since
-    -- each spot has its own secret and the function uses input_data->>'secret'.
-    -- ==================================================================
+    -- Use the same form/blueprint/seat bindings required by canonical checkout.
+    INSERT INTO eshop.blueprints(organization,occasion,title,objects)
+      VALUES(v_org_id,v_occasion_id,'Scheduled price seats','[]') RETURNING id INTO v_blueprint_id;
+    UPDATE public.forms SET blueprint=v_blueprint_id WHERE id=v_form_id;
+    UPDATE eshop.spots SET blueprint=v_blueprint_id,secret_expiration_time=now()+interval '10 minutes'
+      WHERE id IN (v_spot_1_id,v_spot_2_id);
+    INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot)
+      SELECT v_blueprint_id,gen_random_uuid(),s FROM unnest(ARRAY[v_spot_1_id,v_spot_2_id]) s;
 
     -- Real checkout with a stale public-form price supplied by the client.
     UPDATE eshop.spots SET product=v_product_deposit_id WHERE id=v_spot_2_id;
@@ -105,7 +108,9 @@ BEGIN
     PERFORM assert_eq((SELECT amount FROM eshop.payment_info WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=v_order_id)),1000::numeric,'Existing payment stays fixed');
     PERFORM assert_eq((SELECT price FROM eshop.orders_history WHERE "order"=v_order_id ORDER BY id LIMIT 1),1000::numeric,'Existing history stays fixed');
     -- The same queue also controls availability: a stale public form cannot order a hidden product.
-    INSERT INTO eshop.spots(product,occasion,secret) VALUES(v_product_deposit_id,v_occasion_id,gen_random_uuid()) RETURNING id INTO v_spot_2_id;
+    INSERT INTO eshop.spots(product,occasion,blueprint,secret,secret_expiration_time)
+      VALUES(v_product_deposit_id,v_occasion_id,v_blueprint_id,gen_random_uuid(),now()+interval '10 minutes') RETURNING id INTO v_spot_2_id;
+    INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(v_blueprint_id,gen_random_uuid(),v_spot_2_id);
     INSERT INTO eshop.product_price_waves(occasion,change_time) VALUES(v_occasion_id,now()-interval '1 minute') RETURNING id INTO v_wave_id;
     INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion,wave_id)
       VALUES('products.is_hidden',v_product_deposit_id,'true',now()-interval '1 minute',v_occasion_id,v_wave_id);

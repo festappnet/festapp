@@ -26,6 +26,35 @@ void main() {
         ),
       );
 
+  testWidgets('side handle preserves opposite edge and one undo', (
+    tester,
+  ) async {
+    final original = tableLayout(
+      shape: 'rect',
+      count: 6,
+      width: 300,
+      height: 200,
+    );
+    final table = original.nodes.firstWhere((n) => n.kind == 'table');
+    final c = VenueLayoutController(original)..select({table.id});
+    await open(tester, c);
+    final east = Offset(table.x + table.width / 2, table.y);
+    surface(tester).onHandleStart!('Resize e', east);
+    surface(tester).onDragUpdate!(east + const Offset(80, 0));
+    await tester.pump();
+    surface(tester).onDragEnd!();
+    final enlarged = c.document.nodes.firstWhere((n) => n.id == table.id);
+    expect(c.error, isNull);
+    expect(enlarged.width, greaterThan(table.width));
+    expect(
+      enlarged.x - enlarged.width / 2,
+      closeTo(table.x - table.width / 2, .01),
+    );
+    c.undo();
+    expect(c.document.toJson(), original.toJson());
+    expect(c.canUndo, isFalse);
+  });
+
   test('text style never changes the physical table resize constraint', () {
     final source = tableLayout(shape: 'rect', count: 0, width: 180, height: 80);
     final table = source.nodes.single;
@@ -101,7 +130,7 @@ void main() {
   });
 
   testWidgets(
-    'free imported chairs reject a resize that would overwrite their placement',
+    'free imported chairs become automatic on resize and undo restores their poses',
     (tester) async {
       final tableDoc = tableLayout(shape: 'roundedRect', count: 6);
       final table = tableDoc.nodes.firstWhere((n) => n.kind == 'table');
@@ -138,7 +167,22 @@ void main() {
       surface(tester).onHandleStart!('Resize se', corner);
       surface(tester).onDragUpdate!(corner + const Offset(300, 300));
       surface(tester).onDragEnd!();
-      expect(c.error, contains('Fixed chairs'));
+      expect(c.error, isNull);
+      expect(
+        c.document.attachments.every(
+          (a) => a['placement']['mode'] == 'automatic',
+        ),
+        isTrue,
+      );
+      expect(
+        c.document.nodes
+            .where((n) => n.kind == 'seat')
+            .map((n) => n.id)
+            .toSet(),
+        original.nodes.where((n) => n.kind == 'seat').map((n) => n.id).toSet(),
+      );
+      expect(c.canUndo, isTrue);
+      c.undo();
       expect(c.document, same(original));
       expect(c.canUndo, isFalse);
     },

@@ -83,8 +83,9 @@ VenueLayoutDocument removePathVertex(
     changed = false;
     for (final candidate in document.nodes) {
       if (descendants.contains(candidate.parentId) &&
-          descendants.add(candidate.id))
+          descendants.add(candidate.id)) {
         changed = true;
+      }
     }
   }
   for (final descendant in descendants) {

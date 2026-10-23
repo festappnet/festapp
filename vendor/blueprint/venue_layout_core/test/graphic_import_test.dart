@@ -273,7 +273,7 @@ void main() {
         [
           {'op': 'layer', 'opacity': .5, 'external': 'https://example.test'},
         ],
-      ])
+      ]) {
         expect(
           () => LayoutVectorGraphic.fromJson({
             'version': 1,
@@ -283,6 +283,7 @@ void main() {
           }),
           throwsA(isA<GraphicImportFailure>()),
         );
+      }
     },
   );
   test(
@@ -310,11 +311,12 @@ void main() {
         {
           'strokePattern': {'type': 'solid', 'lengths': []},
         },
-      ])
+      ]) {
         expect(
           validateCanonicalStyle(style, 'style', kind: 'table'),
           isNotEmpty,
         );
+      }
       expect(
         validateCanonicalStyle({'fill': '#ff0000ff'}, 'style', kind: 'image'),
         isNotEmpty,

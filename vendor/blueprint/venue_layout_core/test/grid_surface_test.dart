@@ -47,8 +47,9 @@ void main() {
         [300, 200],
         [400, 350],
         [500, 300],
-      ])
+      ]) {
         expect(hitTest(d, p[0].toDouble(), p[1].toDouble()), n.id);
+      }
       expect(hitTest(d, 300, 300), isNull);
       expect(hitTest(d, 500, 200), isNull);
       final count = brush.cellCount;

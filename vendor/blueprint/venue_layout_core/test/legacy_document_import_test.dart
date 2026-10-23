@@ -54,7 +54,9 @@ class HistoricalInput {
           ? localMatrix(n)
           : multiplyMatrix(matrix(byId[n.parentId]!), localMatrix(n)),
     );
-    for (final n in nodes) matrix(n);
+    for (final n in nodes) {
+      matrix(n);
+    }
     return result;
   }
 }

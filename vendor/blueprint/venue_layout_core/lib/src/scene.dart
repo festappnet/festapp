@@ -33,8 +33,9 @@ List<dynamic> _centerLabelInk(List path) {
       final denominator = a - 2 * b + end;
       if (denominator.abs() > 1e-12) {
         final t = (a - b) / denominator;
-        if (t > 0 && t < 1)
+        if (t > 0 && t < 1) {
           include((1 - t) * (1 - t) * a + 2 * (1 - t) * t * b + t * t * end);
+        }
       }
       y = end;
     } else if (c[0] == 'C') {
@@ -149,11 +150,12 @@ ScenePath _polygonMaterialPath(LayoutNode n, {required bool wood}) {
     } else {
       // A narrow recess can collapse an inset; retain only safe edge details.
       for (var i = 0; i < offset.length; i++) {
-        if (safe[i])
+        if (safe[i]) {
           path.addAll([
             ['M', ...offset[i]],
             ['L', ...offset[(i + 1) % offset.length]],
           ]);
+        }
       }
     }
   }
@@ -175,11 +177,12 @@ ScenePath _polygonMaterialPath(LayoutNode n, {required bool wood}) {
       }
       ys.sort();
       for (var i = 0; i + 1 < ys.length; i += 2) {
-        if (ys[i + 1] - ys[i] > inset.abs() * 4)
+        if (ys[i + 1] - ys[i] > inset.abs() * 4) {
           path.addAll([
             ['M', x, ys[i] + inset.abs() * 2],
             ['L', x, ys[i + 1] - inset.abs() * 2],
           ]);
+        }
       }
     }
   }
@@ -279,13 +282,14 @@ Map<String, dynamic> _compileScene(
   }
   final cached = _sceneGeometryCache[document] ??= _SceneGeometry(document);
   final issues = cached.issues.toList(), items = <Map<String, dynamic>>[];
-  if (issues.isNotEmpty)
+  if (issues.isNotEmpty) {
     return {
       'protocol': 1,
       'canvas': document.canvas,
       'items': items,
       'issues': issues,
     };
+  }
   final matrices = cached.matrices;
   if (nodeIds == null || includeCanvas) {
     final floor = floorSceneItem(document);
@@ -523,7 +527,7 @@ Map<String, dynamic> _compileScene(
         'selected': selected,
         'pending': pending,
       });
-      if (dash.isNotEmpty)
+      if (dash.isNotEmpty) {
         items.add({
           'id': '${n.id}:stroke',
           'nodeId': n.id,
@@ -536,6 +540,7 @@ Map<String, dynamic> _compileScene(
           'strokeWidth': props['strokeWidth'] ?? 1,
           'opacity': props['opacity'] ?? 1,
         });
+      }
     }
     final seatStyle = chairStyle(n.copyWith(properties: props));
     final objectStyle =
@@ -1046,8 +1051,9 @@ class _SceneTween {
       if (a != null &&
           (!_sameList(a['matrix'] as List, b['matrix'] as List) ||
               !_sameList(a['path'] as List? ?? [], b['path'] as List? ?? []) ||
-              a['opacity'] != b['opacity']))
+              a['opacity'] != b['opacity'])) {
         before[i] = a;
+      }
     }
   }
 }
@@ -1119,8 +1125,9 @@ Map<String, dynamic> interpolateScene(
 /// Materialize stroke dashes once in the shared scene, including curved paths.
 /// Curves use pinned subdivisions (cubic 32, quadratic 16); adapters draw paths.
 ScenePath dashedPath(ScenePath path, List<double> pattern) {
-  if (pattern.isEmpty || pattern.any((v) => !v.isFinite || v <= 0))
+  if (pattern.isEmpty || pattern.any((v) => !v.isFinite || v <= 0)) {
     throw ArgumentError('Dash lengths must be positive');
+  }
   final lengths = pattern.length.isOdd ? [...pattern, ...pattern] : pattern,
       out = <List<dynamic>>[];
   var x = 0.0,

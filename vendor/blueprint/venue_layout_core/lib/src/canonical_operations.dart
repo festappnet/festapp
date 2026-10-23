@@ -30,8 +30,9 @@ VenueLayoutDocument setKindStyleLeaf(
   Object? value,
   bool unset = false,
 }) {
-  if (!canonicalStyleKinds.contains(kind))
+  if (!canonicalStyleKinds.contains(kind)) {
     throw ArgumentError('invalid_style_kind');
+  }
   final kinds = Map<String, dynamic>.from(
     document.styles['kinds'] as Map? ?? {},
   );
@@ -99,16 +100,18 @@ Map<String, dynamic> materializedNodeStyle(
 ) {
   if (!canonicalStyleKinds.contains(node.kind)) return node.style;
   final appearance = resolveNodeAppearance(document, node);
-  if (const {'image', 'vector'}.contains(node.kind))
+  if (const {'image', 'vector'}.contains(node.kind)) {
     return {'opacity': appearance.values['opacity']};
+  }
   return Map<String, dynamic>.from(appearance.values);
 }
 
 /// Resolve a copied fragment's source context once into ordinary declarations.
 /// Later edits use the ordinary resolver and physical placement commands.
 VenueLayoutDocument materializeFragmentContext(VenueLayoutDocument document) {
-  if (document.schemaVersion != 2)
+  if (document.schemaVersion != 2) {
     throw const FormatException('canonical_document_required');
+  }
   return document.copyWith(
     styles: const {},
     seatingDefaults: const {},

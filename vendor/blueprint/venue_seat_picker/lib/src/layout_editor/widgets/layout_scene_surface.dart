@@ -122,8 +122,9 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   LayoutNode? _edgeHandleNode;
 
   List<List<double>>? _vertexPoints(LayoutNode node) {
-    if (node.kind == 'table')
+    if (node.kind == 'table') {
       return node.surface?['type'] == 'grid' ? localHull(node) : null;
+    }
     final points = node.properties['points'];
     if (points is List) {
       return points
@@ -385,8 +386,9 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   bool _usesNativeText(LayoutNode node) {
     if (const {'seat', 'group', 'image', 'vector'}.contains(node.kind) ||
         isCouchNode(node) ||
-        isBarNode(node))
+        isBarNode(node)) {
       return false;
+    }
     final text = node.kind == 'text'
         ? '${node.properties['text'] ?? ''}'
         : '${(widget.presentation[node.id] as Map?)?['label'] ?? node.label}';
@@ -406,11 +408,12 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
       if (!_nativeFontLoads.add(key)) continue;
       widget.inlineTextStyleBuilder!(node)
           .then((style) {
-            if (mounted)
+            if (mounted) {
               setState(() {
                 _nativeFonts[key] = style;
                 _nativeFontErrors.remove(key);
               });
+            }
           })
           .catchError((Object error) {
             if (!mounted) return;
@@ -567,7 +570,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
       final fontFailed =
           nativeEditing &&
           _nativeFontErrors.intersection(_activeNativeFontKeys).isNotEmpty;
-      if (fontFailed)
+      if (fontFailed) {
         _scene = {
           ..._scene!,
           'issues': [
@@ -575,6 +578,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
             {'reason': 'Font unavailable'},
           ],
         };
+      }
       final scene = _scene!;
       final issues = scene['issues'] as List? ?? const [];
       final textWaiting =
@@ -704,20 +708,22 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                     onPanEnd: (_) {
                       _stopAutopan();
                       widget.onDragEnd?.call();
-                      if (_edgeHandleNode != null)
+                      if (_edgeHandleNode != null) {
                         setState(() {
                           _edgeHandleNode = null;
                           _edgeHandleDocument = null;
                         });
+                      }
                     },
                     onPanCancel: () {
                       _stopAutopan();
                       widget.onDragCancel?.call();
-                      if (_edgeHandleNode != null)
+                      if (_edgeHandleNode != null) {
                         setState(() {
                           _edgeHandleNode = null;
                           _edgeHandleDocument = null;
                         });
+                      }
                     },
                     child: SizedBox(
                       width: target,
@@ -850,12 +856,14 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                   ),
                   future: widget.inlineTextStyleBuilder!(widget.inlineNode!),
                   builder: (context, snapshot) {
-                    if (snapshot.hasError)
+                    if (snapshot.hasError) {
                       return const Center(
                         child: LayoutText('Font unavailable'),
                       );
-                    if (!snapshot.hasData)
+                    }
+                    if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
+                    }
                     return input(snapshot.data);
                   },
                 );
@@ -1908,7 +1916,7 @@ class LayoutScenePainter extends CustomPainter {
         ).storage,
       );
       final localClip = item['localClip'] as Map?;
-      if (localClip != null)
+      if (localClip != null) {
         canvas.clipRect(
           Rect.fromLTWH(
             (localClip['x'] as num).toDouble(),
@@ -1917,6 +1925,7 @@ class LayoutScenePainter extends CustomPainter {
             (localClip['height'] as num).toDouble(),
           ),
         );
+      }
       if (item['kind'] == 'nativeText') {
         (item['nativeParagraph'] as TextPainter).paint(
           canvas,
@@ -1942,7 +1951,7 @@ class LayoutScenePainter extends CustomPainter {
           'reflect' => TileMode.mirror,
           _ => TileMode.clamp,
         };
-        if (raw['type'] == 'linear')
+        if (raw['type'] == 'linear') {
           return ui.Gradient.linear(
             point(raw['from']),
             point(raw['to']),
@@ -1950,6 +1959,7 @@ class LayoutScenePainter extends CustomPainter {
             stops,
             tile,
           );
+        }
         final m = raw['matrix'] as List;
         final matrix = Matrix4.identity()
           ..setEntry(0, 0, (m[0] as num).toDouble())

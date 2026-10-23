@@ -42,10 +42,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.analyze_new_order_spots(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='c5914c7742c77a9e436ea1b6963eeca0'),'current SQL source parity: public.analyze_new_order_spots(bigint[])');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_email_post_actions(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='dd1e19eae05493ddbeded22fbdad6625'),'current SQL source parity: public.apply_email_post_actions(uuid)');
--- supabase/migrations/20261020120000_canonical_operations_foundation.sql
+-- supabase/migrations/20261023170000_product_schedule_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_planned_changes()') AND md5(btrim(prosrc,E' \n\r\t'))='924c58a41dccfdb79ba60c4a8829fde6'),'current SQL source parity: public.apply_planned_changes()');
--- supabase/migrations/20261021220000_occasion_sales_setup_and_catalog.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_planned_changes_client_sync_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='a677618effa2001ab6134fdaf417694c'),'current SQL source parity: public.apply_planned_changes_client_sync_v1()');
+-- supabase/migrations/20261023170000_product_schedule_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_planned_changes_client_sync_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='0fa7b0604c2da5ddc9e392364a9cecf8'),'current SQL source parity: public.apply_planned_changes_client_sync_v1()');
 -- supabase/migrations/20261018220000_global_canonical_mutation_release.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.assert_canonical_mutation_write_release_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1468f4782994ef67a2d47124358a5352'),'current SQL source parity: public.assert_canonical_mutation_write_release_internal_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -72,10 +72,18 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_stripe_disconnect(bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='7f4b42fe8938e635eabf7aca9f501c94'),'current SQL source parity: public.begin_stripe_disconnect(bigint,boolean,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='dab19e51d6577dac6803131baa106fcf'),'current SQL source parity: public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='46a2e1dd1f8ec1d16b1f06852994af32'),'current SQL source parity: public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_admin_seat_rows_internal(bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='c96de3df12bfdac6446d2259c83e04a2'),'current SQL source parity: public.blueprint_admin_seat_rows_internal(bigint,bigint,bigint[])');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_block_selection_internal(bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='d397dab48f9184b477b18f75e9545303'),'current SQL source parity: public.blueprint_block_selection_internal(bigint,bigint,bigint[])');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_hold_admission_internal(bigint,bigint[],uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='0593a85cc3e2748307d5606bd91eb132'),'current SQL source parity: public.blueprint_hold_admission_internal(bigint,bigint[],uuid)');
 -- supabase/migrations/20261019220000_blueprint_reviewed_legacy_migration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_legacy_migration_source_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a9d0a2214bcd1e4e9b90ef80232aad71'),'current SQL source parity: public.blueprint_legacy_migration_source_internal(bigint)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_spot_facts_internal(bigint,bigint[],timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='1b773fd467e842d56db8f143c5244dd0'),'current SQL source parity: public.blueprint_spot_facts_internal(bigint,bigint[],timestamp with time zone)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_write_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='0c68680b6879b48966f2bf3bc0210d37'),'current SQL source parity: public.blueprint_write_rule(boolean,boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -268,9 +276,15 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_reception_registration_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e936d78d7f0f3bc1accba438718e5e33'),'current SQL source parity: public.cancel_reception_registration_v1(bigint,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_bank_account_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df39c0ba082b4e785792ee797388eb96'),'current SQL source parity: public.check_bank_account_writable(bigint)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_blueprint_admin_scope_internal(bigint,bigint,bigint,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='1e3244f957ae3d6e3f0c6e48b40ba9fa'),'current SQL source parity: public.check_blueprint_admin_scope_internal(bigint,bigint,bigint,boolean,boolean)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_blueprint_block_changes_internal(bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='81cd97e692115e7f099503a52c6d379f'),'current SQL source parity: public.check_blueprint_block_changes_internal(bigint,jsonb,jsonb)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_inventory_entity_scope_internal(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c1465cd28c33864b168a824f1ca7f434'),'current SQL source parity: public.check_inventory_entity_scope_internal(bigint,bigint,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_occasion_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='94c61aa699189eaecf95287d4c046d0f'),'current SQL source parity: public.check_occasion_writable(bigint)');
--- supabase/migrations/20261023093000_shared_product_catalog.sql
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_product_catalog_scope_internal(bigint,bigint,bigint,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2435da35c2397336acf0aa722216af85'),'current SQL source parity: public.check_product_catalog_scope_internal(bigint,bigint,bigint,boolean,boolean)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_product_wave_editor(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b46d6677a69ce282c4433d75cc167342'),'current SQL source parity: public.check_product_wave_editor(bigint)');
@@ -428,8 +442,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_information_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b5d9ffd84b564eb10bad721b26649067'),'current SQL source parity: public.delete_information_client_sync_v1(bigint,bigint,uuid,bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_inventory_pool(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b6b29637691169a6818f3115de045863'),'current SQL source parity: public.delete_inventory_pool(bigint)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b8db7e3c628f0a321f4ba6cd72179eeb'),'current SQL source parity: public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1abaef6b0f75e581242ae862b69a9680'),'current SQL source parity: public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_news_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e455591f8eed33bfa918d3fed548a4fe'),'current SQL source parity: public.delete_news_client_sync_v1(bigint,bigint,uuid,bigint)');
 -- supabase/migrations/20261022000000_occasion_setup_usability_performance.sql
@@ -622,8 +636,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint(uuid,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5c181c759bd3d1bab9c30c63fa2d5ae5'),'current SQL source parity: public.get_blueprint(uuid,uuid,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6f74bc3265d4921693fa258766777916'),'current SQL source parity: public.get_blueprint_for_authoring_v1(bigint)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='9e0111cacef4bca26a38789af89c98e2'),'current SQL source parity: public.get_blueprint_for_edit(text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='dc782be9541ddfe6ed314a1f1ec90a38'),'current SQL source parity: public.get_blueprint_for_edit(text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_seats(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='daa186f7e47767e34f0c884ece288108'),'current SQL source parity: public.get_blueprint_seats(bigint,bigint,bigint,bigint,bigint,integer)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_client_commit_v1(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='6af641731b185b0e3eed618fcae9ab79'),'current SQL source parity: public.get_client_commit_v1(uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -656,10 +672,34 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_information_command_data_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5fe4bf1789ba6849896575d3c55b2bc6'),'current SQL source parity: public.get_information_command_data_v1(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_information_editor_bundle_v1(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='16bdbebd69b4ba04c9f22fce141b8a62'),'current SQL source parity: public.get_information_editor_bundle_v1(bigint,text)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_bundle(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ee236e8c170dbca1cb744efd0dcf49f5'),'current SQL source parity: public.get_inventory_pool_bundle(bigint)');
--- supabase/migrations/20261020120000_canonical_operations_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pools_by_occasion_link(text)') AND md5(btrim(prosrc,E' \n\r\t'))='9db1ef3b66c470eb49d6ec5c98d0a6e8'),'current SQL source parity: public.get_inventory_pools_by_occasion_link(text)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_catalog(bigint,bigint,bigint,text,bigint,integer,text)') AND md5(btrim(prosrc,E' \n\r\t'))='b5fbe83b784566d533cea5fd44a73d6f'),'current SQL source parity: public.get_inventory_catalog(bigint,bigint,bigint,text,bigint,integer,text)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_catalog_data_internal(bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='b39b03135bbe619e905bcc38def41d7d'),'current SQL source parity: public.get_inventory_catalog_data_internal(bigint,bigint,integer)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_context_catalog(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='d8eea3ade7493e8038379ad5ae75831a'),'current SQL source parity: public.get_inventory_context_catalog(bigint,bigint,bigint,bigint,bigint,integer)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_context_facts_internal(bigint,bigint[],bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='7dee91ef2de53318663ddd0eafd8b771'),'current SQL source parity: public.get_inventory_context_facts_internal(bigint,bigint[],bigint[])');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_context_rows_internal(bigint,bigint[],bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='f611771cbbd4b128b979950411dd5aa4'),'current SQL source parity: public.get_inventory_context_rows_internal(bigint,bigint[],bigint,integer)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_bundle(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='35cfbc0bc27c78f2537f396aed37f802'),'current SQL source parity: public.get_inventory_pool_bundle(bigint)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_for_edit(bigint,bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='bea284fc0dfdcc3b5a85663cbfb45a2c'),'current SQL source parity: public.get_inventory_pool_for_edit(bigint,bigint,bigint,bigint)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_rows_internal(bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='cd02745aee94349f7a30b07f27958ac1'),'current SQL source parity: public.get_inventory_pool_rows_internal(bigint,bigint[],boolean)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_settings(bigint,bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6176927b76a737070bcbac66b56115fc'),'current SQL source parity: public.get_inventory_pool_settings(bigint,bigint,bigint,bigint)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_settings_data_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='52e87c2f34c3c4a37416998f4559021a'),'current SQL source parity: public.get_inventory_pool_settings_data_internal(bigint)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pool_settings_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6a1569458d7b67dc09fed7510304314d'),'current SQL source parity: public.get_inventory_pool_settings_internal(bigint)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_pools_by_occasion_link(text)') AND md5(btrim(prosrc,E' \n\r\t'))='9b1f65ce4ce5cff0c3b223d43c4d5a10'),'current SQL source parity: public.get_inventory_pools_by_occasion_link(text)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_resource_rows_internal(bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='cb9c04261a921ecdab0e9cecca607541'),'current SQL source parity: public.get_inventory_resource_rows_internal(bigint,bigint[],boolean)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_inventory_resources(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='0a312bc2ca020a351290f674e4ff0c73'),'current SQL source parity: public.get_inventory_resources(bigint,bigint,bigint,bigint,bigint,integer)');
 -- supabase/migrations/20261022034500_bank_membership_set_semantics.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_is_admin_on_bank_account(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3c23162aed59349ae1a91201cbb1b242'),'current SQL source parity: public.get_is_admin_on_bank_account(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -696,12 +736,26 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_private_client_sync_v1(jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='0535bd20f8867df7e6ba36ae70f51160'),'current SQL source parity: public.get_private_client_sync_v1(jsonb,jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_private_profile_payload_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='d56994e00fe5abd6343d135a278dc13f'),'current SQL source parity: public.get_private_profile_payload_v1(bigint,uuid)');
--- supabase/migrations/20261023093000_shared_product_catalog.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_catalog(bigint,bigint,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='98aa650a8141f9dae152a4e175c65637'),'current SQL source parity: public.get_product_catalog(bigint,bigint,bigint,text)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_catalog(bigint,bigint,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='345b8db3b6c4c0fa189d299bdc1c76c3'),'current SQL source parity: public.get_product_catalog(bigint,bigint,bigint,text)');
+-- supabase/migrations/20261023210000_product_authoring_options.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_catalog_data_internal(bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='48cc170c5a22e61507b938bba3c9d16a'),'current SQL source parity: public.get_product_catalog_data_internal(bigint,bigint,integer)');
+-- supabase/migrations/20261023210000_product_authoring_options.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_catalog_options(bigint,bigint,bigint,text,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='b133b9b18f1d80fdabbd08305dfc9f19'),'current SQL source parity: public.get_product_catalog_options(bigint,bigint,bigint,text,bigint,integer)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='3ad624b3becd83e116aa4ef061b52faf'),'current SQL source parity: public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer)');
+-- supabase/migrations/20261023210000_product_authoring_options.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_context_rows_internal(bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='16eda608336ef6acd3172e12dcec3aa6'),'current SQL source parity: public.get_product_context_rows_internal(bigint,bigint[],boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0115c091687a0ab8f3335bb4ad5fe2c7'),'current SQL source parity: public.get_product_for_authoring_v1(bigint)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_products_and_types_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='30298862627991f08147ead707d379b0'),'current SQL source parity: public.get_products_and_types_for_edit(text)');
+-- supabase/migrations/20261023170000_product_schedule_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_price_waves_internal(bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='5d00fdc83a99d2e7a817cf9a469ff5ce'),'current SQL source parity: public.get_product_price_waves_internal(bigint,bigint,integer)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_schedule(bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='9211e538ac036be0026200824e7fc91e'),'current SQL source parity: public.get_product_schedule(bigint,bigint,bigint,bigint,integer)');
+-- supabase/migrations/20261023210000_product_authoring_options.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_product_type_rows_internal(bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='09cdbb4bc42b587e31f329e8fa037ecb'),'current SQL source parity: public.get_product_type_rows_internal(bigint,bigint[])');
+-- supabase/migrations/20261023210000_product_authoring_options.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_products_and_types_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='621d349cfd2a81637c4ff48e4b36a66d'),'current SQL source parity: public.get_products_and_types_for_edit(text)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_public_client_sync_component_core_v1(text,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='51ed041445e470707a4929741ee88eae'),'current SQL source parity: public.get_public_client_sync_component_core_v1(text,text,bigint)');
 -- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
@@ -798,6 +852,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_form_for_occasion_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='bfe2262eb79226f59f9a587f9f12783b'),'current SQL source parity: public.insert_form_for_occasion_internal_v1(bigint,text,text)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.inventory_copy_target_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='604bd24712dc418a35616de6d38e0578'),'current SQL source parity: public.inventory_copy_target_rule(boolean,boolean)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.inventory_pool_command_snapshot_internal(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='cf7396dd119aadeb495f0ddadb4db83e'),'current SQL source parity: public.inventory_pool_command_snapshot_internal(bigint,boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.is_demo_bank_account(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3bd93720c914ce7938c38306fcd5bba8'),'current SQL source parity: public.is_demo_bank_account(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -814,6 +870,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_activity_editor_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='74b438760cf910ca588b9e2e647b2a91'),'current SQL source parity: public.lock_activity_editor_internal_v1(bigint)');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_blueprint_hold_scope_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='4bdc25d86f4a722eb5933b2d783002dc'),'current SQL source parity: public.lock_blueprint_hold_scope_internal(bigint[])');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_blueprint_inventory_internal(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7cc184f53d0c1c6911ba0a8ee3ce51cc'),'current SQL source parity: public.lock_blueprint_inventory_internal(bigint,bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_event_deletion_scope_internal_v1(bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='19b82dfd320d37be10f016d24186a1b7'),'current SQL source parity: public.lock_event_deletion_scope_internal_v1(bigint,bigint[])');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -836,8 +894,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.log_canonical_mutation_request_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='20b090f11aff638d1e7c5d000b8bdebd'),'current SQL source parity: public.log_canonical_mutation_request_v1()');
 -- supabase/migrations/20261007150000_canonical_mutation_observation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.log_canonical_mutation_scope_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8c008057cc0ccda28733e8068210752e'),'current SQL source parity: public.log_canonical_mutation_scope_internal_v1(bigint)');
--- supabase/migrations/20261023093000_shared_product_catalog.sql
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_inventory(bigint,bigint,bigint,text,jsonb,uuid,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='e97ce5fe3a9877dd17eb7e867e005288'),'current SQL source parity: public.manage_inventory(bigint,bigint,bigint,text,jsonb,uuid,boolean)');
+-- supabase/migrations/20261023190000_inventory_summary_reads.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_product(bigint,bigint,bigint,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='f190acda0b1b35e005c85213fe0f0b21'),'current SQL source parity: public.manage_product(bigint,bigint,bigint,text,jsonb,uuid)');
+-- supabase/migrations/20261023170000_product_schedule_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_product_schedule(bigint,bigint,bigint,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='b807176adfbd0b2a721701e2d6915ea0'),'current SQL source parity: public.manage_product_schedule(bigint,bigint,bigint,text,jsonb,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.map_editor_read_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='3f4dc9022d50562b6a48d6e46b0c5928'),'current SQL source parity: public.map_editor_read_rule(boolean,boolean)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -900,6 +962,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.password_verification_attempt_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c2675a597edfb913dfb7a73f37a74a24'),'current SQL source parity: public.password_verification_attempt_v1(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.place_move_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='73f870eaea9c56088435b4d80cbf5315'),'current SQL source parity: public.place_move_rule(boolean,boolean,boolean,boolean)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='f06295cd0da6360f21c3dc26f68662bb'),'current SQL source parity: public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_seat_block(bigint,bigint,bigint,bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d580d3bb07cfa1ef2a4f6212c6621515'),'current SQL source parity: public.preview_blueprint_seat_block(bigint,bigint,bigint,bigint,bigint[],boolean)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.profile_group_import_state_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='237630b27ba322de2a4ca222d09864ee'),'current SQL source parity: public.profile_group_import_state_internal_v1(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -966,9 +1032,9 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5d2060bbce15913781cad80f8535b9ae'),'current SQL source parity: public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_activity_history(bigint,jsonb,text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='05c04ff1af99491d842034f2f7695ad4'),'current SQL source parity: public.save_activity_history(bigint,jsonb,text,bigint,text)');
--- supabase/migrations/20261022020000_blueprint_standing_capacity.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_impl_internal(jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='c5e1c0849f12c698c2ab2f35ab7b5a9d'),'current SQL source parity: public.save_blueprint_layout_impl_internal(jsonb,boolean)');
--- supabase/migrations/20261022020000_blueprint_standing_capacity.sql
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_impl_internal(jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f8421aa002183455c051fb94c6529938'),'current SQL source parity: public.save_blueprint_layout_impl_internal(jsonb,boolean)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1757e48f111e5970cac96665f0274e8c'),'current SQL source parity: public.save_blueprint_layout_internal_v1(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='69a59a2dfd29f5c20a431ccefb8f6005'),'current SQL source parity: public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)');
@@ -982,8 +1048,14 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_icon_client_sync_v1(bigint,uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='556e69b9e6245623efca35e0703b54d0'),'current SQL source parity: public.save_icon_client_sync_v1(bigint,uuid,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_information_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bdf0391eb37e8720855ebcc901c83f6c'),'current SQL source parity: public.save_information_client_sync_v1(bigint,uuid,bigint,jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='4f9ae96d9f4576f8502f1042fe7d5114'),'current SQL source parity: public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='4e6d71d411b92f2652f9fef85d03194a'),'current SQL source parity: public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)');
+-- supabase/migrations/20261023200000_inventory_authoring_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_command_internal(bigint,uuid,bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='dac457a33f1b594083515bca4a00b8b6'),'current SQL source parity: public.save_inventory_pool_command_internal(bigint,uuid,bigint,jsonb,boolean)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='14757eb190894e055e37a53ad120fa39'),'current SQL source parity: public.save_inventory_pool_internal(jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_resource_internal(bigint,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='31f5bb4b2b9d1998b97c9fdefa41c303'),'current SQL source parity: public.save_inventory_resource_internal(bigint,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_news_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1f65c4c9cbfc65815549eb07af3efb60'),'current SQL source parity: public.save_news_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1006,14 +1078,14 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_place_type_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='51cd67803821c544cac279b3df7a566f'),'current SQL source parity: public.save_place_type_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='65a404959aa25446215aea34f4723114'),'current SQL source parity: public.save_product_wave_target(bigint,bigint,bigint,numeric,boolean,bigint,bigint)');
--- supabase/migrations/20261020120000_canonical_operations_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_product_wave_target_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='84d00382e63c1f8c344093368536f202'),'current SQL source parity: public.save_product_wave_target_client_sync_v1(jsonb,uuid)');
+-- supabase/migrations/20261023170000_product_schedule_commands.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_product_wave_target_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='17a1305d7e2761f064de2df16bc1ec29'),'current SQL source parity: public.save_product_wave_target_client_sync_v1(jsonb,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3787aa30ed0724ddbc6ad2dc99ac6cc6'),'current SQL source parity: public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)');
 -- supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql
  PERFORM assert_true(to_regprocedure('public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)') IS NULL,'retired SQL identity remains absent: public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='69d5a383a63ae5b7493b4a4f5b9615b6'),'current SQL source parity: public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b664b2d2cadbe566186dabe4c3e051ce'),'current SQL source parity: public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_speaker_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a5785aaff84107ffb5c1102248b48d54'),'current SQL source parity: public.save_speaker_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1142,8 +1214,8 @@ DO $$ BEGIN
  PERFORM assert_true(to_regprocedure('public.update_inclusion_type_group(jsonb)') IS NULL,'retired SQL identity remains absent: public.update_inclusion_type_group(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='2abdfc38884c3567b397af58951e434e'),'current SQL source parity: public.update_inventory_pool_bundle(jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e98552bf5f91d33e933c72466ed8a3f5'),'current SQL source parity: public.update_inventory_pool_bundle_internal_v1(jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b90592b7bc0d8b4d880ff5b668994aac'),'current SQL source parity: public.update_inventory_pool_bundle_internal_v1(jsonb)');
 -- supabase/migrations/20261020173000_ticket_layout_legacy_fence.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='0425e6f46c20d2c30a2ffd054619b2b0'),'current SQL source parity: public.update_occasion(jsonb)');
 -- supabase/migrations/20261015200000_pretty_public_links.sql

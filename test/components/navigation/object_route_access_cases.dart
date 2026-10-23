@@ -44,8 +44,7 @@ class ObjectFixture extends RootStackRouter {
           pools: [
             InventoryPoolModel(id: 42, title: 'Room pool', occasionId: 1)
           ],
-          inventoryContexts: [],
-          spots: []);
+          contextStocks: []);
   Future<List<BankAccountModel>> Function(int) accounts = (_) async =>
       [BankAccountModel(id: 9, title: 'Unit account', isAdmin: true)];
   AutoRoute page(String name, String path, Widget Function(RouteData) builder,

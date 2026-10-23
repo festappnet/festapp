@@ -1,13 +1,11 @@
 """Encode a continuous real-UI retake and its responsive landing presentation.
 
-Raw input is a stopped capture.py take. Only the layout copy cue is accelerated;
-the complete form workflow retains original timing, including scrolling.
+Raw input is a stopped capture.py take. Both chapters preserve one unbroken
+source interval at original speed. Only leading setup may be trimmed.
 """
 import argparse
 import json
 from pathlib import Path
-import sys
-
 import subprocess
 
 
@@ -49,18 +47,22 @@ def main():
     parser.add_argument('chapter', choices=['layout-build', 'form-build'])
     parser.add_argument('take', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--start-at', type=float, help='First genuine motion timestamp; trim only leading setup.')
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     frames = json.loads((args.take / 'frames.json').read_text())
     cues = json.loads((args.take / 'cues.json').read_text())
     layout = args.chapter == 'layout-build'
-    spans = cues if layout else [dict(name='continuous-form', start=cues[0]['start'], end=cues[-1]['end'])]
+    start = args.start_at if args.start_at is not None else cues[0]['start']
+    if not cues[0]['start'] <= start < cues[-1]['end']:
+        parser.error('Motion start must lie inside the recorded action interval')
+    spans = [dict(name='unbroken-' + args.chapter, start=start, end=cues[-1]['end'])]
     parts, records = [], []
     for index, cue in enumerate(spans):
         listing = output / f'{args.chapter}-{index}.ffconcat'
         manifest(args.take.resolve(), frames, cue['start'], cue['end'], listing)
-        speed = 1.5 if cue['name'] == 'complete-second-row' else 1
+        speed = 1
         crop = '1128:780:0:112' if layout else '1000:760:0:180'
         vf = (f'crop={crop},scale=in_range=full:out_range=limited,'
               + ('pad=1140:792:6:6:color=0xebf1f6,' if layout else
@@ -79,11 +81,6 @@ def main():
     desktop = output / f'{args.chapter}.mp4'
     run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', str(listing),
          '-c', 'copy', '-movflags', '+faststart', str(desktop)])
-    if layout:
-        sys.path.insert(0, str(Path(__file__).parent / 'layout'))
-        from remove_copy_collision_frames import trim
-        cuts = trim(desktop, records, allowed_prefixes=('complete-second-row',))
-        (output / 'copy-transition-cuts.json').write_text(json.dumps(cuts, indent=2))
     mobile = output / f'{args.chapter}-mobile.mp4'
     size = '820:792' if layout else '720:638'
     run(['ffmpeg', '-v', 'error', '-y', '-i', str(desktop), '-vf',
@@ -101,6 +98,7 @@ def main():
         stream, duration = probe(video)
         results[video.name] = dict(width=stream['width'], height=stream['height'], duration=duration, decode='PASS')
     proof = dict(sourceTake=str(args.take.resolve()), cues=records, outputs=results,
+                 internalCuts=0, speed=1, leadingSetupTrim=start-cues[0]['start'],
                  mobilePresentation='scaled desktop authoring, not native mobile UI')
     (output / f'{args.chapter}-proof.json').write_text(json.dumps(proof, indent=2))
     print(json.dumps(results))

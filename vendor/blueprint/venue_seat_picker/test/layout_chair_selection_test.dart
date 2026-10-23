@@ -182,9 +182,7 @@ void main() {
   testWidgets('couch seat hit preserves furniture assembly selection', (
     tester,
   ) async {
-    final d = VenueLayoutTemplates.all
-        .firstWhere((t) => t.id == 'lounge')
-        .create();
+    final d = couchLayout();
     final couch = d.nodes.firstWhere((n) => n.kind == 'furniture');
     final chair = d.nodes.firstWhere(
       (n) => n.kind == 'seat' && n.parentId == couch.id,

@@ -63,7 +63,7 @@ void main() {
             find
                 .descendant(
                   of: find.byKey(
-                    ValueKey('inspector-context-false:${table.id}'),
+                    ValueKey('inspector-context-false:false:${table.id}'),
                   ),
                   matching: find.byType(Scrollable),
                 )

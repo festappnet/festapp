@@ -24,8 +24,9 @@ String? tableSideForSeat(VenueLayoutDocument document, LayoutNode seat) {
   final anchor = document.attachments
       .where((a) => a['seatId'] == seat.id && a['targetId'] == table.id)
       .firstOrNull;
-  if (anchor?['placement']?['mode'] == 'sidePinned')
+  if (anchor?['placement']?['mode'] == 'sidePinned') {
     return anchor!['placement']['side'] as String?;
+  }
   final local = multiplyMatrix(
     inverseMatrix(worldMatrix(document, table)),
     worldMatrix(document, seat),
@@ -48,8 +49,9 @@ VenueLayoutDocument moveTableSeatToSide(
           document,
           document.nodes.firstWhere((node) => node.id == seatId),
         );
-    if (table == null || !supportsTableSeatSides(table))
+    if (table == null || !supportsTableSeatSides(table)) {
       throw ArgumentError('Select a chair at a rectangular table');
+    }
     final horizontal = side == 'top' || side == 'bottom';
     final length = horizontal ? table.width : table.height,
         along = horizontal ? seat.x : seat.y;

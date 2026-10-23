@@ -1,4 +1,4 @@
-"""Record a prepared five-table row, native table drop, then a second row.
+"""Record one native table drop, alignment and two added chairs continuously.
 
 Open the genuine editor at1440x960 with its archived outline/stage and exactly
 five tables at screen centers (420,340)..(960,340). Prepare this before capture.
@@ -30,19 +30,23 @@ def record():
     assert sum(n['kind'] == 'table' for n in initial['nodes']) == 5
     assert sum(n['kind'] == 'seat' for n in initial['nodes']) == 30
     proof('prepared-row')
-    start('layout-row-ready-cs')
-    cue('ready-row'); hold(.5); end()
-    cue('add-table')
-    drag([[170+(420-170)*i/6, 450+(465-450)*i/6] for i in range(7)])
-    hold(.5); end(); proof('new-table')
+    install_pointer()
+    ab('mouse', 'move', 170, 450)
+    hold(1)
+    start('layout-unbroken-cs')
+    cue('continuous-placement-and-chairs')
+    drag([[170+(500-170)*i/8, 450+(465-450)*i/8] for i in range(9)])
+    hold(.5)
+    drag([(500, 465), (480, 465), (460, 465), (440, 465), (420, 465)])
+    hold(.5)
+    ui('Přidat židli'); hold(.4)
+    ui('Přidat židli'); hold(.4)
     ui('Zrušit výběr')
-    cue('complete-second-row')
-    for a, b in [(420, 555), (555, 690), (690, 825), (825, 960)]:
-        drag([(a, 465), (b, 465)], 'Control')
-        ui('Zrušit výběr')
-    end(); proof('two-rows')
-    cue('finished'); ab('mouse', 'move', 1435, 955); hold(1.4); end()
+    ab('mouse', 'move', 1100, 850)
+    hold(1)
+    end()
     stop()
+    proof('finished-six-tables')
 
 
 if __name__ == '__main__':

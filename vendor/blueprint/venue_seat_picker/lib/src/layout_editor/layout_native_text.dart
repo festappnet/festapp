@@ -31,8 +31,9 @@ class LayoutNativeTextCache {
       final node = nodes[rank];
       if (const {'seat', 'group', 'image', 'vector'}.contains(node.kind) ||
           node.assembly?['kind'] == 'couch' ||
-          isBarNode(node))
+          isBarNode(node)) {
         continue;
+      }
       final text = node.kind == 'text'
           ? '${node.properties['text'] ?? ''}'
           : '${(presentation[node.id] as Map?)?['label'] ?? node.label}';

@@ -19,6 +19,31 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets('admin sales columns retain the canonical SQL counts through an edit', (tester) async {
+    final product = ProductModel.fromJson({
+      'id': 7, 'title': 'Admission', 'ordered_count': 4,
+      'paid_count': 2, 'sent_count': 1, 'purchased_count': 3,
+      'form_ids': [9],
+    }).copyWith(formTitles: 'Registration');
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+      final record = ProductGridRecord(product: product,
+          commands: _Commands((_) {}), guard: ExceptionHandler.guardVoid);
+      final row = record.toTrinaRow(context);
+      expect(row.cells[EshopColumnIds.PRODUCT_PAID_COUNT]!.value, 3);
+      expect(row.cells[EshopColumnIds.PRODUCT_ORDERED_COUNT]!.value, 4);
+      expect(row.cells[EshopColumnIds.PRODUCT_USED_IN_FORMS]!.value, 'Registration');
+      final edited = ProductGridRecord.fromPlutoJson({
+        for (final entry in row.cells.entries) entry.key: entry.value.value,
+        EshopColumnIds.PRODUCT_TITLE: 'Updated admission',
+      }, commands: _Commands((_) {}), guard: ExceptionHandler.guardVoid).product;
+      expect(edited.purchasedCount, 3);
+      expect(edited.orderedCount, 4);
+      expect(edited.paidCount, 2);
+      expect(edited.sentCount, 1);
+      expect(edited.copyWith(title: 'Another title').purchasedCount, 3);
+      return const SizedBox.shrink();
+    })));
+  });
   for (final action in ['cancel', 'save', 'rejected save']) {
     testWidgets('product grid retains one draft through $action',
         (tester) async {

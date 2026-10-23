@@ -14,7 +14,7 @@ void main() {
         f['id'] as String: Map<String, dynamic>.from(f),
     };
     final requests = <String, Map<String, dynamic>>{};
-    for (final locale in ['en', 'cs'])
+    for (final locale in ['en', 'cs']) {
       for (final template in VenueLayoutTemplates.all) {
         final d = template.create(
           localize: VenueLayoutLocalizations(Locale(locale)).text,
@@ -24,9 +24,11 @@ void main() {
           d,
           families,
           includePresets: true,
-        ).values)
+        ).values) {
           requests[r.id] = r.toJson();
+        }
       }
+    }
     final corpus = <VenueLayoutDocument>[
       busLayout(decks: 2),
       compartmentLayout(),
@@ -84,10 +86,27 @@ void main() {
         ],
       ),
     ];
-    for(final height in [100.0,160.0])corpus.add(VenueLayoutDocument(nodes:[LayoutNode(id:newLayoutId(),kind:'table',width:160,height:height,label:'Table 1',surface:{'type':height==160?'circle':'rect'})]));
-  for (final d in corpus)
-      for (final request in collectTextRequests(d, families).values)
+    for (final height in [100.0, 160.0]) {
+      corpus.add(
+        VenueLayoutDocument(
+          nodes: [
+            LayoutNode(
+              id: newLayoutId(),
+              kind: 'table',
+              width: 160,
+              height: height,
+              label: 'Table 1',
+              surface: {'type': height == 160 ? 'circle' : 'rect'},
+            ),
+          ],
+        ),
+      );
+    }
+    for (final d in corpus) {
+      for (final request in collectTextRequests(d, families).values) {
         requests[request.id] = request.toJson();
+      }
+    }
     File(outputPath).writeAsStringSync(jsonEncode(requests.values.toList()));
     expect(requests, isNotEmpty);
   });

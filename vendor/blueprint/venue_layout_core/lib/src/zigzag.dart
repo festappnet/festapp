@@ -124,10 +124,11 @@ VenueLayoutDocument updateZigzag(
     nodes: [for (final n in document.nodes) n.id == id ? corrected : n],
   );
   final issues = validateDocument(result);
-  if (issues.isNotEmpty)
+  if (issues.isNotEmpty) {
     throw StateError(
       'Invalid zigzag: ${issues.map((e) => e.reason).join(', ')}',
     );
+  }
   return result;
 }
 

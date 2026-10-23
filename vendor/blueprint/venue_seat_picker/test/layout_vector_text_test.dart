@@ -63,8 +63,9 @@ void main() {
       ))!.buffer.asUint8List();
       var ink = 0;
       for (var i = 0; i < pixels.length; i += 4) {
-        if (pixels[i] < 100 && pixels[i + 1] < 100 && pixels[i + 2] < 100)
+        if (pixels[i] < 100 && pixels[i + 1] < 100 && pixels[i + 2] < 100) {
           ink++;
+        }
       }
       expect(ink, greaterThan(50));
       image.dispose();

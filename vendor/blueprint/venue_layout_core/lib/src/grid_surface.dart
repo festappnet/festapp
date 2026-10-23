@@ -25,8 +25,9 @@ class GridSurfaceBrush {
         !originX.isFinite ||
         !originY.isFinite ||
         diameter < 1 ||
-        diameter > 32)
+        diameter > 32) {
       throw ArgumentError('Invalid brush');
+    }
     for (final cell in seedCells) {
       stampCell(cell.$1, cell.$2);
     }
@@ -89,8 +90,9 @@ class GridSurfaceBrush {
         ring(hole as List),
     ];
     final columns = (targetW / step).round(), rows = (targetH / step).round();
-    if (columns * rows > 16384)
+    if (columns * rows > 16384) {
       throw StateError('Surface brush limit reached.');
+    }
     final brush = GridSurfaceBrush(
       step: step,
       originX: originX,
@@ -123,8 +125,9 @@ class GridSurfaceBrush {
   bool stampCell(int x, int y, {bool erase = false}) {
     final cell = (x, y);
     if (_cells.contains(cell) == !erase) return false;
-    if (!erase && _cells.length >= 16384)
+    if (!erase && _cells.length >= 16384) {
       throw StateError('Surface brush limit reached.');
+    }
     if (erase) {
       _cells.remove(cell);
       edge((x + 1, y), (x, y));
@@ -151,8 +154,9 @@ class GridSurfaceBrush {
         step <= 0 ||
         !step.isFinite ||
         diameter < 1 ||
-        diameter > 32)
+        diameter > 32) {
       throw ArgumentError('Invalid brush');
+    }
     if (clip != null) {
       x = x.clamp(
         (clip!['x'] as num).toDouble(),
@@ -179,8 +183,9 @@ class GridSurfaceBrush {
                   originX + (xx + 1) * step >
                       (clip!['x'] as num) + (clip!['width'] as num) ||
                   originY + (yy + 1) * step >
-                      (clip!['y'] as num) + (clip!['height'] as num)))
+                      (clip!['y'] as num) + (clip!['height'] as num))) {
             continue;
+          }
           changed = stampCell(xx, yy, erase: erase) || changed;
         }
     }
@@ -230,8 +235,9 @@ class GridSurfaceBrush {
       do {
         vertices.add(at);
         final nexts = remaining[at];
-        if (nexts == null || nexts.isEmpty)
+        if (nexts == null || nexts.isEmpty) {
           throw StateError('Invalid painted outline');
+        }
         final candidates = nexts.toList();
         if (previous != null && candidates.length > 1) {
           final dx = at.$1 - previous.$1, dy = at.$2 - previous.$2;
@@ -261,11 +267,13 @@ class GridSurfaceBrush {
         final p = vertices[(i + vertices.length - 1) % vertices.length],
             a = vertices[i],
             b = vertices[(i + 1) % vertices.length];
-        if ((a.$1 - p.$1) * (b.$2 - a.$2) - (a.$2 - p.$2) * (b.$1 - a.$1) != 0)
+        if ((a.$1 - p.$1) * (b.$2 - a.$2) - (a.$2 - p.$2) * (b.$1 - a.$1) != 0) {
           ring.add([originX + a.$1 * step, originY + a.$2 * step]);
+        }
       }
-      if (ring.length < 3 || polygonSelfIntersects(ring))
+      if (ring.length < 3 || polygonSelfIntersects(ring)) {
         throw StateError('The surface outline cannot cross itself.');
+      }
       rings.add(ring);
     }
     double area(List<List<double>> ring) {
@@ -278,11 +286,13 @@ class GridSurfaceBrush {
     }
 
     rings.sort((a, b) => area(b).abs().compareTo(area(a).abs()));
-    if (rings.skip(1).any((r) => area(r) > 0))
+    if (rings.skip(1).any((r) => area(r) > 0)) {
       throw StateError('Paint a connected surface.');
+    }
     if (rings.fold<int>(0, (s, r) => s + r.length) >
-        layoutLimits['verticesMax']!)
+        layoutLimits['verticesMax']!) {
       throw StateError('Path vertex limit reached');
+    }
     final base = shapeFromPoints(
       'polygon',
       rings.first,
@@ -307,8 +317,9 @@ class GridSurfaceBrush {
       final outer = gridRing(rings.first);
       final columns = outer.map((point) => point[0]).reduce(math.max),
           rows = outer.map((point) => point[1]).reduce(math.max);
-      if (columns * rows > 16384)
+      if (columns * rows > 16384) {
         throw StateError('Surface brush limit reached.');
+      }
       return base.copyWith(
         kind: 'table',
         surface: {
@@ -333,8 +344,9 @@ LayoutNode snapTableSurfaceToGrid(
   String? preset,
 }) {
   if (preset != null) {
-    if (!const {'L', 'rectangle'}.contains(preset))
+    if (!const {'L', 'rectangle'}.contains(preset)) {
       throw ArgumentError('Unknown grid surface preset');
+    }
     final step = isBarNode(node)
         ? barSurfaceModuleSize
         : tableSurfaceModuleSize;
@@ -347,8 +359,9 @@ LayoutNode snapTableSurfaceToGrid(
     );
     for (var y = 0; y < rows; y++) {
       for (var x = 0; x < columns; x++) {
-        if (preset == 'rectangle' || x == 0 || y == rows - 1)
+        if (preset == 'rectangle' || x == 0 || y == rows - 1) {
           brush.stampCell(x, y);
+        }
       }
     }
     return gridSurfaceReplacement(node, brush);
@@ -383,10 +396,11 @@ LayoutNode _editableGridSurface(VenueLayoutDocument document, String id) {
     LayoutNode? node = byId[target];
     final seen = <String>{};
     while (node != null && seen.add(node.id)) {
-      if (node.locked)
+      if (node.locked) {
         throw StateError(
           'Locked object ${node.label.isEmpty ? node.id : node.label}',
         );
+      }
       node = byId[node.parentId];
     }
   }
@@ -428,8 +442,9 @@ VenueLayoutDocument extendGridTableSurface(
   RangeError.checkValidIndex(edgeIndex, hull);
   final a = hull[edgeIndex], b = hull[(edgeIndex + 1) % hull.length];
   final dx = b[0] - a[0], dy = b[1] - a[1];
-  if (dx.abs() > .001 && dy.abs() > .001)
+  if (dx.abs() > .001 && dy.abs() > .001) {
     throw StateError('Use a grid-aligned edge.');
+  }
   final length = math.sqrt(dx * dx + dy * dy);
   if (length < .001) return document;
   final nx = dy / length, ny = -dx / length;

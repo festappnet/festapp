@@ -32,6 +32,8 @@ class ProductModel {
   final int? maximum;
   final int? orderedCount;
   final int? paidCount;
+  /// Canonical administration count of product-ticket rows in paid/sent orders.
+  final int? purchasedCount;
   final int? sentCount;
   final String? currencyCode;
   final List<ProductInventoryContextModel> includedInventories;
@@ -202,6 +204,7 @@ class ProductModel {
     this.maximum,
     this.orderedCount,
     this.paidCount,
+    this.purchasedCount,
     this.sentCount,
     this.currencyCode,
     List<ProductInventoryContextModel>? includedInventories,
@@ -253,6 +256,7 @@ class ProductModel {
       maximum: json['maximum'],
       orderedCount: json[metaOrderedCount],
       paidCount: json[metaPaidCount],
+      purchasedCount: json['purchased_count'],
       sentCount: json[metaSentCount],
       isDynamicallyAvailable: json[metaIsDynamicallyAvailable],
       formIds: List<int>.from(json['form_ids'] ?? []),
@@ -298,6 +302,7 @@ class ProductModel {
     Object? maximum = _unchanged,
     Object? orderedCount = _unchanged,
     Object? paidCount = _unchanged,
+    Object? purchasedCount = _unchanged,
     Object? sentCount = _unchanged,
     Object? currencyCode = _unchanged,
     Object? includedInventories = _unchanged,
@@ -367,6 +372,9 @@ class ProductModel {
     paidCount: identical(paidCount, _unchanged)
         ? this.paidCount
         : paidCount as int?,
+    purchasedCount: identical(purchasedCount, _unchanged)
+        ? this.purchasedCount
+        : purchasedCount as int?,
     sentCount: identical(sentCount, _unchanged)
         ? this.sentCount
         : sentCount as int?,

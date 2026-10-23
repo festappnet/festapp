@@ -248,7 +248,11 @@ void main() {
       find.byKey(const ValueKey('editor-color-Basic colors-2563EB')),
     );
     await tester.pump();
-    expect(controller.document.nodes.single.style['fill'], '#CBD5E1FF');
+    expect(
+      controller.document.nodes.single.style['fill'],
+      '#2563EBFF',
+      reason: 'The canonical color field previews the chosen swatch live.',
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
     await tester.pumpAndSettle();
     expect(controller.document.nodes.single.style['fill'], '#2563EBFF');
@@ -306,7 +310,13 @@ void main() {
           expect(preview.document.canvas['fill'], '#00000000');
           expect(preview.document.nodes.every((n) => n.label.isEmpty), true);
           if (kind == 'Text') {
-            expect(find.descendant(of: find.byWidget(preview), matching: find.text('Aa')), findsOneWidget);
+            expect(
+              find.descendant(
+                of: find.byWidget(preview),
+                matching: find.text('Aa'),
+              ),
+              findsOneWidget,
+            );
             continue;
           }
           final paint = find.descendant(
@@ -440,7 +450,14 @@ void main() {
         );
         await tester.pump();
         expect(tester.takeException(), isNull);
-        expect(find.text(width < 900 ? 'Insert' : 'Objects'), findsOneWidget);
+        if (width < 700) {
+          expect(
+            find.byKey(const ValueKey('layout-mobile-library')),
+            findsOneWidget,
+          );
+        } else {
+          expect(find.text(width < 900 ? 'Insert' : 'Objects'), findsOneWidget);
+        }
       }
 
       await tester.tap(find.text('Table').last);
@@ -545,7 +562,9 @@ void main() {
         ),
       ),
     );
-    final field = find.byWidgetPredicate((w) => w is TextField && w.decoration?.labelText == 'Text');
+    final field = find.byWidgetPredicate(
+      (w) => w is TextField && w.decoration?.labelText == 'Text',
+    );
     await tester.enterText(field, 'First line\nSecond line');
     tester.widget<TextField>(field).onEditingComplete!();
     await tester.pump();
