@@ -115,3 +115,10 @@ scopes use the private SQL registry in `eshop_payment_references/` in the existi
 order transaction. Account aliases share canonical receiving identity; committed
 symbols and form watermarks survive order deletion. Enrollment freezes receiving
 identity and starts locked. See the [scope/import/activation runbook](../../../docs/operations/banksync/FESTAPP-PAYMENT-REFERENCES-2026-10-18.md).
+
+## Pregenerated ticket visibility
+
+Orders / Pregenerated and the Blueprint batch action require an enabled `ticket`
+feature with `pregenerated_tickets: true` (default false). Configure it in the
+ticket feature settings. The UI flag does not replace server permission checks.
+A single eligible form is selected automatically in the batch creation dialog.

@@ -1712,6 +1712,8 @@
     "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Předgenerované vstupenky",
+    "pregeneratedTicketsDescription": "Umožní vytvářet dávky vstupenek pro tisk a ruční prodej.",
     "enableManualTicketScan": "Povolit ruční skenování vstupenek",
     "enableManualTicketScanDescription": "Umožňuje ruční vyhledání a výběr vstupenek, pokud účastník zapomněl vstupenku.",
     "selectTicket": "Vybrat vstupenku",

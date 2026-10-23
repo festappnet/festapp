@@ -1711,6 +1711,8 @@
     "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Pregenerated tickets",
+    "pregeneratedTicketsDescription": "Create batches of tickets for printing and manual sales.",
     "enableManualTicketScan": "Enable Manual Ticket Scan",
     "enableManualTicketScanDescription": "Allows searching and selecting tickets manually if attendee forgot ticket.",
     "selectTicket": "Select Ticket",

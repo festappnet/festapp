@@ -354,6 +354,8 @@
     "publicLinkHistoryHelp": "Pôvodné adresy budú naďalej fungovať."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Predgenerované vstupenky",
+    "pregeneratedTicketsDescription": "Umožní vytvárať dávky vstupeniek na tlač a ručný predaj.",
     "scanCameraInstruction": "Namierte kameru na kód účastníka na overenie vstupu.",
     "signedInCompanions": "Prihlásení spoločníci"
   },

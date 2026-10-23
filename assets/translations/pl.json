@@ -336,6 +336,8 @@
     "publicLinkHistoryHelp": "Poprzednie adresy będą nadal działać."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Wstępnie wygenerowane bilety",
+    "pregeneratedTicketsDescription": "Twórz partie biletów do druku i sprzedaży ręcznej.",
     "scanCameraInstruction": "Skieruj kamerę na kod uczestnika, aby zweryfikować wejście.",
     "signedInCompanions": "Zalogowani towarzysze"
   },

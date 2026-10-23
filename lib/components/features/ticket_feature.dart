@@ -26,6 +26,7 @@ class TicketFeature extends Feature {
   String? ticketBackground;
   String? ticketType;
   TicketDeliveryMode deliveryMode;
+  bool pregeneratedTickets;
   bool? canScanManually;
   bool? showHiddenNote;
 
@@ -39,6 +40,7 @@ class TicketFeature extends Feature {
     this.ticketBackground,
     this.ticketType,
     this.deliveryMode = TicketDeliveryMode.pdfAttachment,
+    this.pregeneratedTickets = false,
     this.canScanManually,
     this.showHiddenNote,
   });
@@ -54,6 +56,8 @@ class TicketFeature extends Feature {
       deliveryMode: TicketDeliveryMode.parse(
           json[FeatureConstants.ticketDeliveryMode],
           present: json.containsKey(FeatureConstants.ticketDeliveryMode)),
+      pregeneratedTickets:
+          json[FeatureConstants.ticketPregeneratedTickets] == true,
       canScanManually: json[FeatureConstants.ticketCanScanManually] ?? false,
       showHiddenNote: json[FeatureConstants.ticketShowHiddenNote] ?? false,
     )
@@ -70,6 +74,7 @@ class TicketFeature extends Feature {
     final data = {
       FeatureConstants.metaCode: code,
       FeatureConstants.ticketDeliveryMode: deliveryMode.value,
+      FeatureConstants.ticketPregeneratedTickets: pregeneratedTickets,
       FeatureConstants.metaIsEnabled: isEnabled,
     };
     if (ticketLightColor != null) {

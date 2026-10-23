@@ -260,6 +260,8 @@
     "orderLabel": "Замовлення"
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Попередньо згенеровані квитки",
+    "pregeneratedTicketsDescription": "Створюйте партії квитків для друку та ручного продажу.",
     "description": "Після оплати квиток надсилається користувачу. Квиток може мати власний фон і колір тексту.",
     "deleteImageConfirm": "Ви впевнені, що хочете видалити це зображення?",
     "backgroundColor": "Колір фону",

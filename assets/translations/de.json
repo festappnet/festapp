@@ -334,6 +334,8 @@
     "publicLinkHistoryHelp": "Bisherige Adressen funktionieren weiterhin."
   },
   "FeatureTicket": {
+    "enablePregeneratedTickets": "Vorgenerierte Tickets",
+    "pregeneratedTicketsDescription": "Ticketkontingente für den Druck und den manuellen Verkauf erstellen.",
     "scanCameraInstruction": "Richten Sie die Kamera auf den Code des Teilnehmers, um den Eintritt zu überprüfen.",
     "signedInCompanions": "Angemeldete Begleiter"
   },
