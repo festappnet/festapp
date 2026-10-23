@@ -39,13 +39,55 @@ passed, including preservation of canonical counts through local edits/copyWith.
 Evidence: `admin-data-network-admin-view-2026-10-23.json`; previous files retained.
 Publication/deployment still pending; no production writes.
 
-## Next stage 1 - bounded investigation
+## Stage 1 - locally complete
 
-UI `DbEshop.saveNewProductWaveTarget` uses receipt; existing target, move/cancel,
-and standalone price changes use raw RPCs. Existing target receipt supports
-`wave_id` plus `expected_wave_revision`; keep this domain owner. Wave operations
-currently lock wave -> sorted products -> plans; scheduler order requires a
-real two-connection qualification. Business revision conflicts currently raise
-40001; distinguish them from infrastructure serialization/deadlock retries.
-Next: complete stage 1 owner/typed contract/caller ledger, then implement together
-and validate PostgreSQL + affected client adapter tests in one coherent batch.
+Owners/callers:
+- UI DbEshop -> SupabaseProductScheduleCommands -> manage_product_schedule.
+- MCP product_schedules.list/change -> get_product_schedule/manage_product_schedule.
+- Shared wave matrix projection: get_product_price_waves_internal, consumed by
+  the full administration catalog and bounded schedule list.
+- save_target delegates to the existing target receipt with no outer receipt.
+  ensure/move/cancel and standalone price save/cancel each have one domain receipt.
+- Existing raw wave/price functions retain their actual rules. Current UI raw
+  calls removed; occasion_setup/finalize.sql still uses create/target inside its
+  own existing transaction. Published old clients retain compatibility RPCs.
+  Removal gate: last supported client upgraded plus SQL caller migration.
+
+Conflicts are receipted 409 outcomes; true 40001/40P01 remain retryable with the
+same identity. Failure after new term creation rolls back term/adoption/targets.
+Scheduler prelocks due products by ID to eliminate time-order inversion against
+wave move. Target edit preserves separate price/visibility revisions and explicit
+null/false semantics. Setup draft new target uses one onChanged, not create+save.
+No historical purchased prices, payments, ticket lifecycle or email effects change.
+
+Migration: `20261023170000_product_schedule_commands.sql` (digest and exact request/
+byte evidence in `docs/reports/admin-product-schedule-evidence-2026-10-23.json`).
+Verification: all 87 MCP tests passed with real DB, 0 skipped; final targeted
+10 schedule SQL tests passed, including 6 canonical regressions, actual
+checkout/history/payment price preservation, sync-failure rollback and source
+parity for 8 changed owners. 18 scheduling/setup Flutter tests passed; final
+13 setup/transport tests passed after adding the atomic draft test; 29 consent
+web tests passed. Targeted Dart analysis: no errors/warnings, 10 existing style
+infos. New test registered in eshop_unit_cases for the shared client runner.
+
+Disposable fixture corrections: regression tests run as their intended postgres
+role with service JWT for scheduler probes; checkout fixture now supplies the
+canonical form/blueprint/seat binding and hold expiration, like the supported
+checkout tests. The disposable DB has unrelated older `_swap_spots_update_ticket`
+body drift, so runtime source checks are limited to the 8 affected owners;
+authored-vs-effective whole-repository generator check still passes. No readiness
+hash regenerated. No production writes, no publication or release yet.
+
+## Exact next steps
+
+1. Publish verified stages 0/0B/1 to fresh authoritative main; reconcile any
+   intervening commits and rerun only affected checks.
+2. Delegate routine frozen-source festapptickets release: target/org/activation,
+   backup and atomic SQL+ledger, consent web build/direct deployment, then issuer
+   image using the same MCP registry. Preserve known rollback images and probe
+   exact live SQL/ACL, issuer health and coherent tenant version/build/legal.
+3. Continue stage 2: replace BlueprintStandingInventory.prepare's three writes
+   and _pool/_resource/_linked memory with one durable domain transaction, first
+   reusing the internal owners behind inventory pool/resource/product commands.
+   Preserve actual existing-order allocations; inspect the relevant inventory
+   administration RPCs and table meaning before extending MCP.

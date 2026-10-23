@@ -495,3 +495,23 @@ test('order permissions require explicit requested consent and both persisted gr
     assert.throws(()=>all.authorizeOperation('orders.list',{occasionId:8}),/FORBIDDEN/);
     token.scope=READ_SCOPE;assert(!owner().allowedOperations.includes('products.list'));assert(!owner().allowedOperations.includes('orders.list'),'grant cannot exceed the current OAuth token');
 });
+
+test('product schedule tools require new explicit consent; old product grants stay unchanged',async t=>{
+ const f=await setup(t);const id='schedule-permissions';
+ const permissions=['festapp:products:read','festapp:products:write'];
+ const grant={id,binding:'schedule-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(owner().allowedOperations.includes('products.save'));
+ assert(!owner().allowedOperations.includes('product_schedules.list'));
+ assert(!owner().allowedOperations.includes('product_schedules.change'));
+ assert.throws(()=>verifyPermissions(['festapp:product-schedules:write'],MCP_SCOPES));
+ const scheduled=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
+ assert.deepEqual(verifyPermissions(scheduled,MCP_SCOPES),scheduled);
+ f.storage.put('Delegation',id,{...grant,permissions:scheduled});
+ assert(owner().allowedOperations.includes('product_schedules.change'));
+ token.scope=[READ_SCOPE,'festapp:products:read','festapp:product-schedules:read'].join(' ');
+ assert(owner().allowedOperations.includes('product_schedules.list'));
+ assert(!owner().allowedOperations.includes('product_schedules.change'),'token must also include explicit write scope');
+});

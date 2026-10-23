@@ -1395,6 +1395,8 @@
     "individualOnlyHint": "K dispozícii máš iba výber jednotlivých akcií.",
     "orderPermissions": "Oprávnenia k objednávkam",
     "orderPermissionsHint": "Platí len pre vybraných organizátorov a akcie. Úpravy, platby aj odosielanie zahŕňajú čítanie objednávok.",
+    "productSchedulesRead": "Čítať cenové vlny a plánované zmeny produktov",
+    "productSchedulesWrite": "Plánovať, presúvať a rušiť ceny a viditeľnosť produktov",
     "productsRead": "Čítať produkty, ceny a skladové priradenia",
     "productsWrite": "Vytvárať, upravovať a odstraňovať produkty",
     "ordersRead": "Čítať objednávky, kontaktné údaje a počty vstupeniek",

@@ -134,9 +134,7 @@ BEGIN
   RETURN json_build_object(
     'server_time', clock_timestamp(),
     'nextCursor',next_id,
-    'price_waves', (SELECT COALESCE(json_agg(w ORDER BY w.change_time,w.id),'[]'::json)
-      FROM eshop.product_price_waves w WHERE p_limit IS NULL AND w.occasion=occ_id AND (w.change_time>clock_timestamp() OR
-        EXISTS(SELECT 1 FROM eshop.planned_changes pc WHERE pc.wave_id=w.id AND NOT pc.applied))),
+    'price_waves', CASE WHEN p_limit IS NULL THEN public.get_product_price_waves_internal(occ_id)->'waves' ELSE '[]'::jsonb END,
     'product_types', COALESCE(product_types, '[]'::json),
     'products', COALESCE(products, '[]'::json),
     'inventory_pools', COALESCE(inventory_pools_data, '[]'::json),

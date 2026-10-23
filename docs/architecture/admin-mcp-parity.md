@@ -69,7 +69,7 @@ that every row is exposed by the current MCP catalog.
 | Orders, customer responses and ticket products | operator order adapters over existing order commands | Available; changes, cancellation, paid state and reports |
 | Payments and ticket delivery | payment pairing and canonical mail queue | Manual payment and queued tickets available; no implied provider refund |
 | Products, stock assignments | product catalog and client-sync product owners | First slice: read/create/update/delete and combined stock save |
-| Scheduled product prices/visibility, waves | product price changes/waves commands | Next product slice; list exposes current pending changes |
+| Scheduled product prices/visibility, waves | shared schedule command adapter and existing wave/plan owners | Local: wave list, ensure/target/move/cancel and standalone price changes; explicit new consent |
 | Email templates, previews, inheritance | email template domain and shared renderer; unit/occasion template tabs | Next area after products; retain exact inheritance and rendering rules |
 | Forms, fields, form access/sales | form aggregate commands; forms tab | Pending, audit draft/save/publication boundaries together |
 | Seating plans, spots and ticket artwork | blueprint aggregate, seating/capacity commands and canonical PDF renderer | Artwork read available; full editor operations pending |
@@ -95,3 +95,30 @@ product linkage and catalog refresh cross domain boundaries. It belongs to the
 inventory/blueprint cutover, and is not advertised as a new atomic product save.
 Each such workflow must be traced and migrated as a whole before its MCP write
 is exposed.
+
+## Product scheduling cutover
+
+The wave matrix and MCP wave list share `get_product_price_waves_internal` via
+`get_product_catalog` / `get_product_schedule`. Counts distinguish pending
+products, pending changes and applied changes. Product target values/revisions
+remain in the same product read model; no raw plans-table dump or Node price engine.
+
+`SupabaseProductScheduleCommands` and MCP use `manage_product_schedule`.
+The target branch retains `save_product_wave_target_client_sync_v1` as its sole
+receipt owner, including atomic term creation/adoption and first target.
+Other actions have one receipt in the schedule domain adapter and call the
+existing wave/price owners. Known business revision conflicts produce a durable
+409 outcome; genuine serialization/deadlock errors remain retryable with the
+same command UUID. Null explicitly removes a target; false means visible.
+
+Removed all six raw current-UI price/wave mutation RPC calls in DbEshop.
+The setup draft action saves a new term and target in one local draft update;
+SQL finalization remains its own existing aggregate transaction. The scheduler
+locks due products by ID before its time/ID loop, matching wave move/cancel.
+Released RPCs remain compatible because supported older clients and
+`occasion_setup/finalize.sql` consume them; contraction requires their upgrade
+and a separate SQL-owner migration, not removal of the single domain engine.
+New schedule scopes require explicit consent; old product grants stay unchanged.
+Local validation and byte/request evidence are in
+[the stage 1 report](../reports/admin-product-schedule-evidence-2026-10-23.json).
+Publication and production deployment are tracked by the execution checkpoint.

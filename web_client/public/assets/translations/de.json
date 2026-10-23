@@ -1368,6 +1368,8 @@
     "individualOnlyHint": "Nur einzelne Veranstaltungen können ausgewählt werden.",
     "orderPermissions": "Berechtigungen für Bestellungen",
     "orderPermissionsHint": "Gilt nur für ausgewählte Veranstalter und Veranstaltungen. Bearbeitung, Zahlungen und Versand umfassen auch das Lesen von Bestellungen.",
+    "productSchedulesRead": "Preiswellen und geplante Produktänderungen lesen",
+    "productSchedulesWrite": "Produktpreise und Sichtbarkeit planen, verschieben und stornieren",
     "productsRead": "Produkte, Preise und Bestandszuordnungen lesen",
     "productsWrite": "Produkte erstellen, bearbeiten und löschen",
     "ordersRead": "Bestellungen, Kontaktdaten und Ticketanzahl lesen",

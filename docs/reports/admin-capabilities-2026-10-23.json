@@ -152,11 +152,17 @@
       "id": "action-010",
       "area": "Plánované ceny",
       "title": "Vytvořit cenovou vlnu",
-      "description": "Společný termín plánovaných změn.",
+      "description": "Společný termín plánovaných změn. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
@@ -166,11 +172,17 @@
       "id": "action-011",
       "area": "Plánované ceny",
       "title": "Nastavit budoucí cenu a viditelnost produktu",
-      "description": "Založení vlny s prvním cílem má být jeden atomický krok.",
+      "description": "Založení vlny s prvním cílem má být jeden atomický krok. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
@@ -180,11 +192,17 @@
       "id": "action-012",
       "area": "Plánované ceny",
       "title": "Změnit termín cenové vlny",
-      "description": "Původní revize vlny musí zůstat kontrolovaná.",
+      "description": "Původní revize vlny musí zůstat kontrolovaná. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
@@ -194,11 +212,17 @@
       "id": "action-013",
       "area": "Plánované ceny",
       "title": "Zrušit cenovou vlnu nebo plánovanou změnu",
-      "description": "Nepřepisuje historické ceny prodaných vstupenek.",
+      "description": "Nepřepisuje historické ceny prodaných vstupenek. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",

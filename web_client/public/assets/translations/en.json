@@ -3598,6 +3598,8 @@
     "individualOnlyHint": "Only individual occasions are available for selection.",
     "orderPermissions": "Order permissions",
     "orderPermissionsHint": "Applies only to selected organizers and occasions. Editing, payments and sending also include reading orders.",
+    "productSchedulesRead": "Read product price waves and scheduled changes",
+    "productSchedulesWrite": "Schedule, move and cancel product prices and visibility",
     "productsRead": "Read products, prices and inventory assignments",
     "productsWrite": "Create, edit and delete products",
     "ordersRead": "Read orders, contact details and ticket counts",

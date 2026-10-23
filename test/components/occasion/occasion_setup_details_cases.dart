@@ -1,6 +1,7 @@
 import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.dart';
 import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/views/form_variable_symbol_settings.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_presentation.dart';
 import 'package:flutter/material.dart';
@@ -209,6 +210,22 @@ void main() {
     expect(draft.bundle().priceWaves.single.time, moved.toUtc());
     await draft.cancel(wave);
     expect(draft.bundle().products.single.priceChanges, isEmpty);
+  });
+  test('draft first target writes the entire local intention once', () async {
+    final data = <String, dynamic>{};
+    var saves = 0;
+    final draft = OccasionSetupPriceWaveDraft(data, (patch) {
+      saves++;
+      data.addAll(patch);
+    });
+    final time = DateTime.now().add(const Duration(days: 20));
+    await draft.saveTarget(
+        ProductPriceWave(time: time), ProductModel(id: 100), 150, false);
+    expect(saves, 1);
+    final wave = (data['priceWaves'] as List).single;
+    expect(wave['targets'], [
+      {'product': 100, 'price': 150.0, 'is_hidden': false}
+    ]);
   });
   testWidgets(
     'selected account is ready without checkbox and currency changes invalidate it',

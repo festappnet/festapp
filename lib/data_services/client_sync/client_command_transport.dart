@@ -258,6 +258,8 @@ class ClientCommandTransport {
       'organization',
       'unit',
       'product_id',
+      'wave_id',
+      'change_id',
       'occasion_link',
       'p_occasion',
       'p_order',
@@ -292,6 +294,7 @@ class ClientCommandTransport {
               'p_bundle',
               'pool',
               'p_target',
+              'p_payload',
             }.contains(key)) {
           collect(entry.value as Map, '$path/$key');
         }
