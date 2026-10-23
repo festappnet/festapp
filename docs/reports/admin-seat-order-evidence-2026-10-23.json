@@ -39,7 +39,8 @@
     "One shared order amount projection is used by swaps and seat orders; removed the superseded private swap-money owner",
     "Real issued replacement owner from immutable 20261021100000 migration creates a historical receipt; applying actual 2350 preserves its exact replay and keeps unknown historical invoice dispatch lookup-only",
     "Current-main notification creation and cancellation producers participate in quote rollback and publish once with the same confirmed order intent",
-    "Actual Supabase SDK and production Dart factory retain exact Edge payload/UUID after network failure, HTTP503 and relay failure; HTTP401 maps to authorization denial without automatic replay, and later explicit recovery uses the same intent"
+    "Actual Supabase SDK and production Dart factory retain exact Edge payload/UUID after network failure, HTTP503 and relay failure; HTTP401 maps to authorization denial without automatic replay, and later explicit recovery uses the same intent",
+    "Unmocked local full-stack Auth/REST/Kong/actual Deno Edge/PostgreSQL: scoped requirements/quote, initial order and replacement, one receipt/confirmation per UUID and exact HTTP replay; eight calls allHTTP200, zero payment-provider calls, email workers paused"
   ],
   "network": {
     "fixture": "Actual MCP executor -> production Edge coordinator -> real disposable PostgreSQL; synthetic provider only",
@@ -89,7 +90,8 @@
     "project": "festapp-wizard-seat-orders-20261023",
     "apiPort": 56821,
     "databasePort": 56822,
-    "status": "Fresh owned backend bootstrapping via supported --prepare-only launcher; no Flutter or browser started",
+    "status": "Fresh owned backend ready; all canonical migrations applied, production-style canonical owner roles aligned, synthetic fixture created, mail workers paused. Actual Auth/REST/Kong/Edge order creation and replacement with exact receipt replay passed. Flutter/browser pending.",
     "externalFlutterTask": "Unrelated organizer E2E server on59802 owns workstation Flutter task; not stopped"
-  }
+  },
+  "fullStackEvidence": "docs/reports/admin-seat-order-fullstack-2026-10-23.json"
 }

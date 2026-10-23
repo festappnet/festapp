@@ -955,3 +955,37 @@ full-app/browser flow when the workstation Flutter task is available, then
 selected-ticket cancellation and the remaining plan. Update this checkpoint
 with any new main/tenant868 publication from the independent batch owner before
 our own publication; that owner was told this thread is not pushing/releasing.
+
+
+### Full-stack local API boundary - passed
+
+Fresh named Supabase project `festapp-wizard-seat-orders-20261023` finished all
+baseline/forward migrations through current main. Only this owned project was
+changed. Canonical declared function/table ownership was aligned to the actual
+production postgres role (without weakening guards), cron jobs remain disabled,
+all email workers paused/disconnected and the synthetic unit has no external
+service configuration. Canonical blueprint test fixtures create a real saved
+layout and bank recipient under the local seeded admin.
+
+Executed `/tmp/festapp-seat-order-prepare-fixture.mjs`, then
+`/tmp/festapp-seat-order-fullstack-probe.mjs`. The latter uses real local password
+Auth and an authenticated Supabase JS client against Kong/REST and the actual
+Deno `send-ticket-order` function, not an injected coordinator or HTTP simulator.
+Real initial order and replacement each commit once with one confirmation
+intent, and exact HTTP replay changes neither. Requirements include the existing
+order before replacement; original order ends cancelled and replacement ordered.
+Eight HTTP calls all200: serialized response bytes458/884/2641/2641 and
+813/1391/2781/2781. These are response bodies, not wire packet/TLS sizes.
+Zero payment-provider calls; all addresses are synthetic .invalid recipients
+and workers remain paused. Evidence is committed in
+`docs/reports/admin-seat-order-fullstack-2026-10-23.json`.
+
+The fixture and private defines live under the owned backend workspace:
+`seat-order-fixture.json`, `wizard-defines.json`, both mode0600. The owned Edge
+serve session is exec1751, private log `edge-serve.log`; do not print keys/tokens.
+The supported launcher was invoked with --prepare-only; no Flutter/browser has
+started. Workspace fixture remains available for the pending browser check.
+The WordPress thread01a1691a-c897-7290-81fb-c27bba27092f was asked to coordinate
+release of its existing organizer server; do not terminate that other session.
+The batch release thread01a168be likewise knows this thread is not publishing
+or deploying. Next: actual browser UI when the shared Flutter task is available.
