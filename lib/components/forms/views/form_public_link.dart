@@ -1,6 +1,7 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'form_embed_code.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/link.dart';
 import 'package:fstapp/app_config.dart';
 import '../../_shared/copy_button.dart';
 import '../form_strings.dart';
@@ -14,7 +15,7 @@ bool isValidPublicSlug(String value, {bool allowEmpty = false}) =>
 String publicLinkUrl(String link, {bool isForm = true}) =>
     '${AppConfig.webLink}/${isForm ? 'form/' : ''}${Uri.encodeComponent(link)}${isForm ? '' : '/event'}';
 
-/// Draft addresses are plain text; only the independently saved baseline copies.
+/// Draft addresses are plain text; saved addresses can be opened and copied.
 class PublicLink extends StatelessWidget {
   final String link;
   final String? savedLink;
@@ -34,7 +35,22 @@ class PublicLink extends StatelessWidget {
       if (saved != null && saved.isNotEmpty) ...[
         Text(FormStrings.savedPublicLink, style: const TextStyle(fontSize: 12)),
         Row(children: [
-          Expanded(child: SelectableText(publicLinkUrl(saved, isForm: isForm))),
+          Expanded(
+            child: Link(
+              uri: Uri.parse(publicLinkUrl(saved, isForm: isForm)),
+              target: LinkTarget.blank,
+              builder: (context, followLink) => InkWell(
+                onTap: followLink,
+                child: Text(
+                  publicLinkUrl(saved, isForm: isForm),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ),
           CopyButton(
               value: publicLinkUrl(saved, isForm: isForm),
               showLabel: showCopyLabel),

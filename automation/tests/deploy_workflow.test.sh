@@ -179,8 +179,16 @@ done
 # Social crawlers must always receive a real image asset. Event-specific images
 # still come from get_occasion_seo_data; this only validates the no-image
 # fallback shared by Cloudflare, Netlify, and the base web-client document.
+# Cloudflare inlines the shared SEO module; validate that owner and its wiring.
+if grep -F -q 'web_client/src/services/public_page_seo.js' "$BUILD_SH" &&
+    grep -F -q 'source.replace("// SHARED_PUBLIC_PAGE_SEO", public_seo)' "$BUILD_SH"; then
+    echo "  ok: Cloudflare uses the shared public SEO projection"
+else
+    echo "  FAIL: Cloudflare no longer inlines the shared public SEO projection"
+    fail=1
+fi
 for social_source in \
-    "$BUILD_SH" \
+    "$PROJECT_ROOT/web_client/src/services/public_page_seo.js" \
     "$PROJECT_ROOT/netlify/edge-functions/inject-og.js" \
     "$PROJECT_ROOT/web_client/index.html"; do
     if grep -F -q 'android-chrome-512x512.png' "$social_source" &&

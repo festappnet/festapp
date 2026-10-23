@@ -176,3 +176,24 @@ cards, including per-context physical/allocated/unassigned counts; then typed
 pool/resource save/delete adapters. Preserve published client RPC boundaries.
 Also close the unused product-type/context editor-choice gap with a bounded read,
 not a whole catalog transfer. Operational seat cut 2B remains pending.
+## PR publication and deployment gate
+
+Published stages 0/0B/1 as PR https://github.com/festappnet/festapp/pull/564
+against refreshed authoritative main `9eef213f2b664b2b7f4978f51b43a90535ab7c8a`.
+One approving review is required by current GitHub branch protection; it is not
+bypassed. No production changes or release have run. Delegated read-only
+preflight confirmed canonical tenant activation generation 1 and organization 3,
+matching host/runtime/database assertions, healthy previous MCP image and
+absence of candidate versions from the live SQL ledger.
+
+CI image, seat-checkout and ticket-preview/delivery gates passed. Web-startup's
+static deployment test looked for the image fallback literally in cloudflare_build.sh,
+although that script now inlines the canonical public_page_seo.js. The guard now
+checks the shared source plus its actual build wiring. The corrected
+`bash automation/tests/deploy_workflow.test.sh` passed locally. Runtime source
+and the 87-test MCP result are unchanged by this test-only correction.
+
+Stage 2A is now locally validated on feat/admin-mcp-standing-20261023. Its
+completed source is being integrated with the frozen PR fixes; further inventory
+reads and operational seat commands remain separate pending cuts.
+Release remains gated on an approved, merged authoritative main revision.
