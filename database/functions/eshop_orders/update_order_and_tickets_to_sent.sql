@@ -33,6 +33,7 @@ BEGIN
         FROM eshop.orders o
         WHERE o.id = order_id;
 
+    PERFORM public.notification_center_order_state_internal(order_id);
         -- Return a success message with a status code 200
         RETURN jsonb_build_object('code', 200, 'message', 'Order and tickets updated to sent successfully');
     END IF;

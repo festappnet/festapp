@@ -50,6 +50,7 @@ BEGIN
   RETURN jsonb_build_object('message_id',v_row.message_id,'state',v_row.workflow_state,'replayed',true);
  END IF;
  PERFORM public.admit_email_intent_v1(v_row.id);
+ PERFORM public.notification_center_email_internal(v_row.message_id);
  IF p_not_before<=now() THEN PERFORM public.wake_email_worker(); END IF;
  RETURN jsonb_build_object('message_id',v_row.message_id,'state',v_row.workflow_state,'replayed',false);
 END $$;
@@ -237,6 +238,7 @@ BEGIN
  IF NOT public.email_intent_valid(v_row) OR EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN
   UPDATE public.email_messages SET workflow_state=CASE WHEN EXISTS(SELECT 1 FROM public.email_suppressions WHERE recipient=lower(v_row.recipient)) THEN 'suppressed' ELSE 'cancelled' END WHERE id=v_row.id;
   UPDATE public.email_attempts SET state='cancelled',finished_at=now() WHERE attempt_id=p_attempt;
+  PERFORM public.notification_center_email_internal(v_row.message_id);
   RETURN jsonb_build_object('disposition','cancelled');
  END IF;
  -- A partial acceptance can change a queued offer after its rendered snapshot
@@ -313,9 +315,11 @@ BEGIN
    target_time=now()+make_interval(secs=>v_delay*(0.8+random()*0.4)),last_error=left(p_error,100),lease_until=NULL WHERE id=v_m.id;
   IF p_outcome='unknown' THEN UPDATE public.email_capacity SET provider_outage_streak=least(provider_outage_streak+1,10),
    probe_until=NULL,probe_attempt=NULL,circuit_until=now()+make_interval(secs=>least(300,30*power(2,least(provider_outage_streak,4)))::double precision) WHERE singleton; END IF;
+  PERFORM public.notification_center_email_internal(v_m.message_id);
   IF p_error='throttled' THEN UPDATE public.email_capacity SET rate_factor=greatest(rate_factor/2,0.01),probe_until=NULL,probe_attempt=NULL,circuit_until=now()+interval '15 seconds' WHERE singleton; END IF;
  END IF;
  PERFORM public.reconcile_email_events();
+ PERFORM public.notification_center_email_internal(v_m.message_id);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.reconcile_email_events() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -339,6 +343,7 @@ BEGIN
    accepted_at=coalesce(accepted_at,v_event.accepted),provider_message_id=coalesce(provider_message_id,v_event.provider_id),
    workflow_state=CASE WHEN v_event.accepted IS NOT NULL AND workflow_state IN ('sending','unknown') THEN 'accepted' ELSE workflow_state END,feedback_pending=false
   WHERE message_id=v_event.message_id;
+  PERFORM public.notification_center_email_internal(v_event.message_id);
   UPDATE public.email_attempts SET state='accepted',provider_message_id=v_event.provider_id,finished_at=coalesce(finished_at,now())
   WHERE message_id=v_event.message_id AND state IN ('sending','unknown') AND v_event.accepted IS NOT NULL;
  INSERT INTO public.email_suppressions(recipient,reason)

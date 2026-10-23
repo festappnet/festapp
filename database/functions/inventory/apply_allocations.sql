@@ -180,5 +180,6 @@ BEGIN
 
         END LOOP;
     END LOOP;
+    PERFORM public.notification_center_order_capacity_internal(p_order_id);
 END;
 $$;

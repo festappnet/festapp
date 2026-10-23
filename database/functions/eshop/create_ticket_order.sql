@@ -10,6 +10,7 @@ BEGIN
   target:=public.allocate_ticket_order_identity_internal(f);
   result:=public.finalize_ticket_order_internal_v1(target,input_data,false);
   IF coalesce((result->>'code')::integer,500)<>200 THEN RAISE EXCEPTION '%',result::text; END IF;
+  PERFORM public.notification_center_order_internal(target,'order_created','created');
   RETURN result;
  EXCEPTION WHEN SQLSTATE 'PT429' THEN
   RETURN jsonb_build_object('code',429,'errorCode','ABUSE_LIMIT_EXCEEDED','message','Capacity is temporarily limited. Try again later.');

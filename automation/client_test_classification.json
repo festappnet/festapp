@@ -315,7 +315,8 @@
         "test/components/news/news_unit_cases.dart",
         "test/components/news/news_commands_cases.dart",
         "test/components/features/feature_settings_editor_cases.dart",
-        "test/data_services/client_sync/client_command_replacements_cases.dart"
+        "test/data_services/client_sync/client_command_replacements_cases.dart",
+        "test/components/notification_center/notification_center_cases.dart"
       ]
     },
     "test/sessions/shared_czech_test.dart": {

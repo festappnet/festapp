@@ -50,7 +50,7 @@ BEGIN
   ('public.inventory_copy_target_rule(boolean,boolean)','604bd24712dc418a35616de6d38e0578',false,false),
   ('public.map_editor_read_rule(boolean,boolean)','3f4dc9022d50562b6a48d6e46b0c5928',false,false),
   ('public.merge_ticket_appearance_internal_v1(bigint,jsonb,jsonb)','454cb997425470c75fb41a1519238708',false,true),
-  ('public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)','a3f3f13a808f135138c57002c9f09f18',false,true),
+  ('public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)','6a50d4e8877de4585d90046816e43817',false,true),
   ('public.news_data_read_rule(boolean,boolean,boolean,boolean,boolean,boolean)','f68f00938a5a8efee47af7edc0062f94',false,false),
   ('public.occasion_commit_read_rule(boolean,boolean)','f85d72057735264187b467f21764e2d9',false,false),
   ('public.occasion_context_read_rule(boolean,boolean,boolean)','b54f8cf02bc1580acba23e2497d1cc9f',false,false),
@@ -82,6 +82,7 @@ BEGIN
   ('public.schedule_entry_navigation_rule(boolean)','f0258b7a3cc8e3a024dee1a96d34d407',false,false),
   ('public.schedule_feedback_read_rule(boolean,boolean)','a546bbfc24dce06e231e832a11ddb4b4',false,false),
   ('public.schedule_participants_read_rule(boolean,boolean,boolean)','7f6977ddb21f0e2044e154b4428275d1',false,false),
+  ('public.ticket_delivery_mode(jsonb)','c2590b2701840fc3cba0df9e8d0359cd',false,true),
   ('public.ticket_layout_rule(boolean,boolean)','8bc8e0cd6a5a45d10d57f79cec655768',false,false),
   ('public.ticket_layout_uses_product_type(bigint,bigint)','dddc7962230734dd5835601b455d8bb4',false,true),
   ('public.unit_abuse_policy_read_rule(boolean,boolean)','42fc89183ec978eccce36173bc6c3a50',false,false),
@@ -94,8 +95,8 @@ BEGIN
   ('public.update_occasion(jsonb)','0425e6f46c20d2c30a2ffd054619b2b0',true,true),
   ('public.update_occasion_182(jsonb)','bdcda71506ac0abb50a466bb18eb1cc7',true,true),
   ('public.update_occasion_203(jsonb)','916b23b47758d87e478b3b7d84a50ee2',true,true),
-  ('public.update_occasion_internal_v1(jsonb)','af28b14cbd1953b1a1062579fde69ec0',true,true),
-  ('public.validate_ticket_layout(jsonb)','5153fe15bd80e6c1985413e54d8cd3a6',false,true),
+  ('public.update_occasion_internal_v1(jsonb)','caa969eaee4e96f00f4b45d285684a92',true,true),
+  ('public.validate_ticket_layout(jsonb)','53d7703a06dbde87349a0ac04e50cd54',false,true),
   ('public.validate_ticket_layout_references(bigint,jsonb)','aad01d93c9f0a7035efa243caa3d5a20',false,true)
  ) expected(signature,body_md5,definer,needs_path)
  LEFT JOIN pg_proc p ON p.oid=to_regprocedure(expected.signature);

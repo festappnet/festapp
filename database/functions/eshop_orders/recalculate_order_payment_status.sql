@@ -61,5 +61,6 @@ BEGIN
             AND eshop.tickets.state IN ('paid','sent');
         END IF;
     END IF;
+    PERFORM public.notification_center_order_state_internal(p_order_id);
 END;
 $$;

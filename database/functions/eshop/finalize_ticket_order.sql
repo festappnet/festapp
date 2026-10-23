@@ -681,6 +681,7 @@ BEGIN
         END;
     END;
 
+    PERFORM public.notification_center_order_capacity_internal(order_id);
     RETURN result;
 END;
 $$;

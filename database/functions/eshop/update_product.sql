@@ -89,6 +89,7 @@ BEGIN
     IF NOT (p_input ? 'inventory_contexts') THEN
       PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
     END IF;
+    PERFORM public.notification_center_product_capacity_internal(v_product_id);
     RETURN v_product_id;
 
   -- CASE 2: Product was NOT found (v_product_id was NULL or was an ID that doesn't exist)
@@ -174,6 +175,7 @@ BEGIN
     IF NOT (p_input ? 'inventory_contexts') THEN
       PERFORM public.advance_ticketing_authoring_version_internal_v1('product',v_occasion_id,v_product_id);
     END IF;
+    PERFORM public.notification_center_product_capacity_internal(v_product_id);
     RETURN v_product_id;
 
   END IF;
