@@ -858,7 +858,7 @@
     "removePlace": "Прибрати призначення місця"
   },
   "Administration": {
-    "webAnalytics": "Серверний трафік сайту",
+    "webAnalytics": "Вебаналітика",
     "openCloudflareAnalytics": "Відкрити статистику в Cloudflare",
     "organizationSettings": "Налаштування організації",
     "copyLink": "Скопіювати посилання",

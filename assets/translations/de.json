@@ -664,7 +664,7 @@
     "removePlace": "Ortszuweisung entfernen"
   },
   "Administration": {
-    "webAnalytics": "Website-Serververkehr",
+    "webAnalytics": "Webanalyse",
     "openCloudflareAnalytics": "Statistik in Cloudflare öffnen",
     "organizationSettings": "Organisationseinstellungen",
     "copyLink": "Link kopieren",

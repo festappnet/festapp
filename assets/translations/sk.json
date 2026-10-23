@@ -685,7 +685,7 @@
     "removePlace": "Odobrať priradenie miesta"
   },
   "Administration": {
-    "webAnalytics": "Prevádzka webu",
+    "webAnalytics": "Webová analytika",
     "openCloudflareAnalytics": "Otvoriť prehľad v Cloudflare",
     "organizationSettings": "Nastavenia organizácie",
     "copyLink": "Kopírovať odkaz",
