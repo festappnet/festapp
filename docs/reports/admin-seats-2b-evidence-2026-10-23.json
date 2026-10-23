@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-23",
+  "stage": "2B",
+  "sourceMain": "067ad53fb9fd8706f7c930f6215fdd6fc69e8a06",
+  "status": "implemented and published; deployment in progress",
+  "tenant": "festapptickets",
+  "operations": [
+    "inspect seats",
+    "block/unblock seats",
+    "release temporary holds",
+    "swap ticket seats",
+    "create/replace order from seats",
+    "cancel selected tickets"
+  ],
+  "verification": {
+    "postgres": {
+      "passed": 68,
+      "skipped": 0,
+      "log": "/tmp/festapp-2b-final-pg.log"
+    },
+    "remoteAndActualMcpSdk": {
+      "passed": 31,
+      "log": "/tmp/festapp-2b-remote-final.log"
+    },
+    "consentUi": {
+      "passed": 37,
+      "log": "/tmp/festapp-2b-consent-final.log"
+    },
+    "canonicalSourcesAndAssemblers": {
+      "passed": 10,
+      "log": "/tmp/festapp-2b-sources.log"
+    },
+    "canonicalSourceGenerator": {
+      "passed": 9,
+      "log": "/tmp/festapp-2b-source-python.log"
+    },
+    "actualDartSdkCancellationRecovery": {
+      "passed": 2,
+      "log": "/tmp/festapp-cancellation-client-tests.log"
+    },
+    "seatOrderRecovery": {
+      "passed": 12,
+      "log": "/tmp/festapp-seat-recovery-final-tests.log"
+    },
+    "localizedUi": {
+      "passed": 3,
+      "log": "/tmp/festapp-2b-final-ui.log",
+      "scope": "Order required fields/printed guard; real reservation host with cancellation review/Cancel, holds and swaps. HTTP responses are synthetic; separate PostgreSQL tests execute real writes."
+    },
+    "dartAnalysis": {
+      "errors": 0,
+      "warnings": 0,
+      "infos": 33,
+      "log": "/tmp/festapp-cancellation-analysis.log"
+    }
+  },
+  "cancellation": {
+    "canonicalReceiptOwner": "cancel_tickets_command_internal",
+    "releasedAdapter": "storno_tickets_client_sync_v1(bigint[],uuid)",
+    "previewRpc": "preview_blueprint_ticket_cancellation",
+    "writeRpc": "cancel_blueprint_tickets",
+    "consentScope": "festapp:seats:cancel-tickets",
+    "networkSerializedDomainBytes": {
+      "preview": 595,
+      "write": 909,
+      "replay": 909
+    },
+    "networkNote": "MCP executor and real SQL; JSON response bytes, excluding HTTP/TLS. One request per preview/write/replay.",
+    "printPolicy": "A sold printed batch ticket can be cancelled; original PDF/snapshot/QR remain unchanged, no return to stock. Other financial lock callers preserve print immutability."
+  },
+  "migrations": [
+    {
+      "file": "20261023232000_confirmed_blueprint_hold_release.sql",
+      "sha256": "ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f"
+    },
+    {
+      "file": "20261023233000_confirmed_blueprint_seat_swap.sql",
+      "sha256": "5b475bded0e14e702dfe64d71158c769ce8034c394604fa3cf4cd49ea02d5030"
+    },
+    {
+      "file": "20261024023000_confirmed_blueprint_seat_orders.sql",
+      "sha256": "41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2"
+    },
+    {
+      "file": "20261024024000_confirmed_blueprint_ticket_cancellation.sql",
+      "sha256": "ba94848a412c2921af4b4f938e3e318734f42377b5e8c1e95cbec121ca5fdbb6"
+    }
+  ],
+  "production": {
+    "previousLiveVersion": "0.20.371+868",
+    "deploymentVerified": false
+  },
+  "buildGateCorrection": {
+    "failedCandidateKnownBytes": 62945201,
+    "knownLimitBytesUnchanged": 62914560,
+    "failedCandidateCoreBytes": 24226001,
+    "coreLimitBytesUnchanged": 26214400,
+    "method": "esbuild lexical whitespace-only compaction before immutable naming; identifiers and syntax minification disabled; legal comments retained",
+    "testsPassed": 10,
+    "actualFormattingProbeSavedBytes": 138531,
+    "cachePolicyChanged": false,
+    "releaseCandidateRequiresRebuild": true
+  }
+}
