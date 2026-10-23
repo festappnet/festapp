@@ -34,4 +34,4 @@ Event information may change. Contact the organizer for current conditions. Thes
 
 ## Privacy and support
 
-See <https://tickets.festap.net/privacy/> for personal data information and <https://tickets.festap.net/support/> for technical help.
+See <https://tickets.festapp.net/privacy/> for personal data information and <https://tickets.festapp.net/support/> for technical help.

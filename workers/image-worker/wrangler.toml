@@ -50,7 +50,7 @@ binding = "IMAGES"
 
 [vars]
 CF_ZONE_ID = "02fd6ca8f4652d62e9b05f24a5e9d84f"
-CONTROL_ALLOWED_ORIGINS = "https://live.festapp.net,https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app,https://slunovrat.festapp.net,https://app.festivalslunovrat.cz,https://app.absolventskyvelehrad.cz,https://csa2024.festapp.net,https://clovekavira.festapp.net,https://biscup.festapp.net,https://farnostopava.festapp.net,https://hvezdamorska.festapp.net,https://jubileum2025.festapp.net"
+CONTROL_ALLOWED_ORIGINS = "https://live.festapp.net,https://csmostrava.festapp.net,https://vstupenky.online,https://praha.akhcr.cz,https://akhweb.netlify.app,https://slunovrat.festapp.net,https://app.festivalslunovrat.cz,https://app.absolventskyvelehrad.cz,https://csa2024.festapp.net,https://clovekavira.festapp.net,https://biscup.festapp.net,https://farnostopava.festapp.net,https://hvezdamorska.festapp.net,https://jubileum2025.festapp.net,https://tickets.festapp.net"
 
 # Public canonical Auth endpoint and anon key, scoped to Slunovrat uploads.
 SUPABASE_URL_SLUNOVRAT = "https://api.festapp.net"

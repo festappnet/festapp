@@ -69,7 +69,7 @@ BEGIN
   LEFT JOIN public.external_occasions_cache c ON o.link = c.link
   WHERE 
     -- Use the same explicit source-map policy as the other public projection.
-    public.catalog_includes_occasion_internal(p_organization_id, o.organization, c.source_name)
+    public.catalog_includes_occasion_internal(p_organization_id, o.organization, c.source_name, true)
     -- Unit Filter (Optional)
     AND (p_unit_id IS NULL OR o.unit = p_unit_id)
     -- Visibility Rules

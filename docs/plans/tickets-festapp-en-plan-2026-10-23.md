@@ -1,4 +1,4 @@
-# Anglický ticketing na tickets.festap.net
+# Anglický ticketing na tickets.festapp.net
 
 Datum: 2026-10-23  
 Stav: rozpracovaný prováděcí plán se závazným sdílením jádra a odděleným katalogem  
@@ -6,7 +6,7 @@ Ověřování při implementaci: standard (platby, autentizace, veřejné kontra
 
 ## Upřesnění zadání po implementačním předání
 
-Cílová Git nasazovací větev a profil se jmenují `prod/festappticketsglobal` / `festappticketsglobal`, bez pomlčky. Veřejný brand je **Festapp Tickets**; česká varianta je označována **Festapp Tickets Czech**. Doména je `tickets.festap.net`.
+Cílová Git nasazovací větev a profil se jmenují `prod/festappticketsglobal` / `festappticketsglobal`, bez pomlčky. Veřejný brand je **Festapp Tickets**; česká varianta je označována **Festapp Tickets Czech**. Doména je `tickets.festapp.net`.
 
 Nejnovější pokyn nahrazuje mezitím zvažované sdílení organizace 3: anglická varianta používá samostatnou organizaci **25 - Festapp Tickets Global**, založenou na kanonickém backendu 2026-10-23. Má jazyk `en`, výchozí platbu `stripe` a žádné akce, jednotky, členy ani externí zdroje. Nové Stripe platby jsou vypnuté pro sandbox i live. Česká organizace 3 ani její produkční větev nebyla změněna. Založení organizace není nasazením webu; důkaz je v `tickets-festapp-en-evidence-2026-10-23/organization-provisioning.json`.
 
@@ -33,7 +33,7 @@ Konkrétní dosud neprovedené provozní kroky a chybějící skutečné hodnoty
 
 ## Výsledek a rozsah
 
-Na `https://tickets.festap.net` funguje anglická obdoba vstupenky.online: web pro pořadatele, katalog veřejných akcí, založení a správa akce, formuláře, produkty, plánek a výběr míst, objednávka, platba, e-maily, PDF vstupenky, odbavení a přehledy. Primární platbou je karta přes existující Stripe integraci. Bankovní převod včetně platebního QR lze pořadatelem výslovně zapnout jako vedlejší metodu. QR pro kontrolu vstupenky zůstává součástí vstupenky i při platbě kartou.
+Na `https://tickets.festapp.net` funguje anglická obdoba vstupenky.online: web pro pořadatele, katalog veřejných akcí, založení a správa akce, formuláře, produkty, plánek a výběr míst, objednávka, platba, e-maily, PDF vstupenky, odbavení a přehledy. Primární platbou je karta přes existující Stripe integraci. Bankovní převod včetně platebního QR lze pořadatelem výslovně zapnout jako vedlejší metodu. QR pro kontrolu vstupenky zůstává součástí vstupenky i při platbě kartou.
 
 Závazné upřesnění uživatele: používat doslova stejné jádro a vycházet co nejvíce z původní stránky; české události se na anglickém webu ve výchozím stavu nezobrazují. Jde o další tenant nad společným produktem, nikoli kopii aplikace nebo přesměrování české služby. Sdílený kód zůstává na `main`. České formuláře, obsah, obchodní nastavení a aktivace Stripe na vstupenky.online se tímto úkolem nemění. Implementace společných oprav může vyžadovat české regresní testy, nikoli český deploy.
 
@@ -77,7 +77,7 @@ Reprezentativní cesta: doména a activation manifest vyberou tenant -> veřejn�
 
 ### Předpoklady vyžadující vyřešení před provisioningem
 
-- **Doména:** přepis zadání chápu jako `tickets.festap.net` podle opravy názvu. Před DNS, Stripe allowlisty a publikací potvrdit přesný hostname.
+- **Doména:** přepis zadání chápu jako `tickets.festapp.net` podle opravy názvu. Před DNS, Stripe allowlisty a publikací potvrdit přesný hostname.
 - **Datový model:** jako implementační rozhodnutí použít novou organization a vlastní katalog; nejde o jazykový alias organization 3. Uživatelem potvrzené nezobrazování českých událostí je pevné. Sdílení stejné akce mezi katalogy není požadováno a neimplementuje se. Pokud později vznikne tento požadavek, vyžaduje samostatný kontrakt publikace, `DEFAULT_URL`, identity a canonical URL; nekopírovat data jako náhradu.
 - **Brand:** pracovní veřejný název `Festapp Tickets`, existující Festapp identita. Finální název, kontaktní adresa a právní subjekt se stanoví před dokončením obsahu. Nevytvářet fiktivní reference nebo ceník.
 - **Pilot:** pořadatel, země jeho Stripe účtu, měna a konkrétní akce nejsou zadány. Výběr patří před živou akceptaci, neodvozovat jej z angličtiny. Neaktivovat EUR jen podle pracovní domény.

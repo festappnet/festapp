@@ -2,7 +2,7 @@
 
 Worktree: `/Users/miakh/source/festapp-worktrees/tickets-en-20261023`, branch `feat/festappticketsglobal`, upstream base `d97835e798e48f17047de4b438a2db6b9e0f8a9c`. Changes are deliberately uncommitted. The original working tree was not replaced, reset or stashed.
 
-Current naming: deployment branch `prod/festappticketsglobal`, profile `festappticketsglobal`, public brand Festapp Tickets. The latest instruction chooses a separate organization. Organization **25 - Festapp Tickets Global** now exists on the canonical backend for `tickets.festap.net`, with English locale and Stripe defaults. The sandbox acceptance below uses synthetic organization 900001 and does not establish deployed production acceptance.
+Current naming: deployment branch `prod/festappticketsglobal`, profile `festappticketsglobal`, public brand Festapp Tickets. The latest instruction chooses a separate organization. Organization **25 - Festapp Tickets Global** now exists on the canonical backend for `tickets.festapp.net`, with English locale and Stripe defaults. The sandbox acceptance below uses synthetic organization 900001 and does not establish deployed production acceptance.
 
 ## Later shared-core and original-video clarification
 
@@ -27,7 +27,7 @@ unproven. Existing video files were preserved, not relabeled as matching. The us
 
 - One landing HTML/CSS renderer, marketing entry, wizard, form/editor, payment stack and mail queue. Locale/profile/content select English. The current main configuration is restored to Czech.
 - Explicit landing flag and English tenant policy/fixture. Organization 900001 and its `.invalid` origins are synthetic test values, never production provisioning inputs.
-- One organization/source predicate uses existing `external_sync_maps`. It covers catalog RPCs and organization-aware SEO; Worker sitemap/catalog fail closed and do not reuse a global external feed or an organization-1 fallback. English references are empty.
+- One organization/source predicate uses existing `external_sync_maps`. It covers catalog RPCs and organization-aware SEO; Worker sitemap/catalog fail closed and do not reuse a global external feed or an organization-1 fallback. English references are empty. `CATALOG_SOURCE_POLICY=explicit` activates the strict policy for Global; tenants without the opt-in retain their existing external-catalog behavior.
 - Trusted organization defaults select Stripe without implicitly enabling bank payments. Closed drafts can await Connect; paid publication and checkout remain server-gated. Existing bank configuration remains the compatibility default outside this profile. Cross-unit copies cannot retain a foreign Stripe recipient.
 - The bounded wizard interaction question was delegated as requested to gpt-6-astra at medium effort. Its accepted result reuses `PaymentMethodCards`, keeps draft payment choice independent from Connect status, and renders bank fields only after an explicit bank/both choice.
 - Checkout snapshots trusted locale; legacy attempts keep `auto` and their original provider body. New English templates are insert-only and preserve overrides/prepared or historical messages. PDF rendering uses trusted locale, exact card amounts and event civil time. Account deletion/legal/support rendering shares the original templates.
