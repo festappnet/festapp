@@ -1,3 +1,4 @@
+import '../blueprint/blueprint_ticket_cancellation_preview.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_swap_preview.dart';
 import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -65,6 +66,26 @@ class DbTickets {
     if (ticketIds.isEmpty) return const TicketCancellationOutcome();
     return _commands.cancel(ticketIds);
   }
+
+  static Future<BlueprintTicketCancellationPreview>
+      previewBlueprintCancellation(
+              int occasionId, int blueprintId, List<int> spotIds) =>
+          _commands.previewCancellation(
+              occasionId: occasionId,
+              organizationId: AppConfig.organization,
+              unitId: RightsService.currentUnit()?.id,
+              blueprintId: blueprintId,
+              spotIds: spotIds);
+  static Future<TicketCancellationOutcome> cancelBlueprintTickets(
+          BlueprintTicketCancellationPreview preview) =>
+      _commands.cancelSelection(preview);
+  static Future<TicketCancellationOutcome?> recoverBlueprintCancellation(
+          int occasionId, int blueprintId) =>
+      _commands.recoverCancellation(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId);
 
   static Future<List<TicketModel>> getAllTickets(String occasionLink) async {
     var ordersBundle = await DbOrders.getAllOrdersBundle(

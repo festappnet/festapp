@@ -1875,7 +1875,8 @@
     "groupSelection": "Wybrane wydarzenia: {selected} z {count}",
     "inheritedSelectionHint": "Uwzględnione przez wybór organizatora. Odznacz organizatora, aby wybrać pojedyncze wydarzenia.",
     "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie.",
-    "seatsCreateOrders": "Tworzyć zamówienia z miejsc i zastępować pierwotne bilety"
+    "seatsCreateOrders": "Tworzyć zamówienia z miejsc i zastępować pierwotne bilety",
+    "seatsCancelTickets": "Anuluj bilety wybrane na planie"
   },
   "EditorFileDrop": {
     "hint": "Upuść obraz, aby zastąpić tło",

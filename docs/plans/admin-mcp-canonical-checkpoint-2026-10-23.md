@@ -1062,3 +1062,27 @@ under applicable repository gates. Deployment requires backup/target/digest gate
 and2320+2330+240230+ledger in one atomic transaction, preserving newest domain
 owners, plus coordinated festapptickets-only runtime release. Routine release
 execution goes to the cheaper deployment agent. Do not deploy another tenant.
+
+### Stop request superseded - finish and deploy operational2B
+
+User explicitly resumed with completion and festapptickets deployment required,
+then stop after2B. Final cancellation uses canonical bulk cancellation and one
+inventory.tickets.cancel receipt; released RPC remains a thin compatible adapter.
+New240240 follows240230; no applied historical migration was rewritten. The
+private financial lock has an explicit print-preservation mode: existing mutation
+callers retain the guard, cancellation follows current sold-batch void policy.
+Batch owner confirmed policy and reserved timestamp240240.
+
+Current integration SQL batch:68/68 real PostgreSQL tests passed,0 skips
+(/tmp/festapp-2b-final-pg.log):7 cancellation,14 seat orders,23 earlier seat
+regressions and24 authorization regressions. Includes real two-connection
+cancellation serialization, stale approval rollback, replay after lost response,
+partial cancellation/paid-money preservation, cross-map ticket closure and
+printed-ticket void without print-content mutation. Remote/SDK31/31, consent
+37/37, canonical source/assembler10/10 and source generator9/9 passed. Real Dart
+SDK cancellation recovery2/2 covers original UUID/payload and expired receipt;
+previous final seat-order recovery12/12 remains valid on unchanged port inputs.
+UI review/Cancel and preceding swap/release flows use the supported localized
+widget suite; final evidence log is /tmp/festapp-2b-final-ui.log. Deployment remains
+unperformed at this checkpoint; record exact main/tenant/SQL/Edge/MCP receipts
+before declaring the stage deployed. Do not continue stage3 after this release.

@@ -1,12 +1,12 @@
 -- One parent-before-child lock owner. Financial seat commands include the
 -- complete order-product closure; existing inventory callers keep their scope.
 CREATE OR REPLACE FUNCTION public.lock_spot_assignment_scope_internal(
- p_spots bigint[],p_resources bigint[],p_financial boolean,p_products bigint[])
+ p_spots bigint[],p_resources bigint[],p_financial boolean,p_products bigint[],p_preserve_print boolean)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE before_spots jsonb;after_spots jsonb;before_resources jsonb;after_resources jsonb;
  resource_ids bigint[];v_orders bigint[];v_order_products bigint[]:=coalesce(p_products,'{}');
 BEGIN
- IF p_financial IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='assignment lock mode required'; END IF;
+ IF p_financial IS NULL OR p_preserve_print IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='assignment lock mode required'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_array(s.id,s.occasion,s.product,s.blueprint,s.inventory_context,s.resource,s.resource_slot,s.order_product_ticket) ORDER BY s.id),'[]')
  INTO before_spots FROM eshop.spots s WHERE s.id=ANY(p_spots);
  SELECT ARRAY(SELECT DISTINCT id FROM (
@@ -50,10 +50,18 @@ BEGIN
  END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_array(s.id,s.occasion,s.product,s.blueprint,s.inventory_context,s.resource,s.resource_slot,s.order_product_ticket) ORDER BY s.id),'[]')
  INTO after_spots FROM eshop.spots s WHERE s.id=ANY(p_spots);
- PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
- JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spots)));
+ IF p_preserve_print THEN PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+ JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spots))); END IF;
  IF before_spots IS DISTINCT FROM after_spots THEN RAISE serialization_failure USING MESSAGE='spot parent changed; retry the same command'; END IF;
 END $$;
+REVOKE ALL ON FUNCTION public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[],boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Print-content mutations preserve the guard. Canonical cancellation may void
+-- the admission identity without changing any printed content.
+CREATE OR REPLACE FUNCTION public.lock_spot_assignment_scope_internal(p_spots bigint[],p_resources bigint[],p_financial boolean,p_products bigint[])
+RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.lock_spot_assignment_scope_internal(p_spots,p_resources,p_financial,p_products,true)
+$$;
 REVOKE ALL ON FUNCTION public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[]) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Existing callers retain their arity; the product closure has one lock owner.

@@ -18,7 +18,7 @@ export async function install(db){
   if(file==='notification_center/maintenance.sql'&&(await db.query("select to_regclass('public.notification_center_maintenance') present")).rows[0].present)sql=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION'));
   await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);
  }
- for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261024023000_confirmed_blueprint_seat_orders.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261024023000_confirmed_blueprint_seat_orders.sql','20261024024000_confirmed_blueprint_ticket_cancellation.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  const currentOwners=['blueprint/save.sql','eshop/materialize_ticket_products_internal_v1.sql','eshop/create_ticket_order.sql',
   'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql','eshop_orders/recalculate_order_payment_status.sql',
   'inventory/apply_allocations.sql','inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql','eshop_waitlist/fakturoid_recovery.sql'];
@@ -53,6 +53,8 @@ export async function setup(t,persistent=false){let root,f;const db=await openDi
 export function executor(db,f,{invokeEdge}={}){
  const stats={calls:0,lose:false,payloadBytes:[]};
  const params={
+  preview_blueprint_ticket_cancellation:['p_occasion','p_organization','p_unit','p_blueprint','p_spots'],
+  cancel_blueprint_tickets:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_tickets','p_confirmation_hash','p_command_id','p_editor'],
   get_blueprint_seats:['p_occasion','p_organization','p_unit','p_blueprint','p_after','p_limit'],
   preview_blueprint_seat_block:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_blocked'],
   block_blueprint_seats:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_affected_spots','p_expected_revision','p_blocked','p_command_id'],
@@ -66,9 +68,9 @@ export function executor(db,f,{invokeEdge}={}){
   assert(Object.hasOwn(params,name),'known real seat RPC');stats.calls++;await db.query('SAVEPOINT rpc');
   try{const values=params[name].map(k=>a[k]??null),sql=`select ${name}(${values.map((_,i)=>'$'+(i+1)).join(',')}) value`;
    const data=(await db.query(sql,values)).rows[0].value;
-   if(['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats'].includes(name))assert.equal(data.sync,undefined);
+   if(['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats','cancel_blueprint_tickets'].includes(name))assert.equal(data.sync,undefined);
    stats.payloadBytes.push({rpc:name,bytes:Buffer.byteLength(JSON.stringify(data),'utf8')});await db.query('RELEASE SAVEPOINT rpc');
-   if(stats.lose&&['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats'].includes(name)){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}
+   if(stats.lose&&['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats','cancel_blueprint_tickets'].includes(name)){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}
    return{data,error:null};
   }catch(error){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{data:null,error:{code:error.code,status:error.code==='42501'?403:400}};}
  },functions:{invoke:async(name,options)=>{
@@ -77,7 +79,7 @@ export function executor(db,f,{invokeEdge}={}){
    if(stats.lose){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}return response;
  }}};
  const owner={root:'/tmp/festapp-seat-operations',profile:{binding:'seat-fixture:'+f.actor,organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},
-  allowedOperations:['seats.list','seats.preview_block','seats.block','seats.preview_release','seats.release_holds','seats.preview_swap','seats.swap','seats.preview_order','seats.create_order'],
+  allowedOperations:['seats.list','seats.preview_block','seats.block','seats.preview_release','seats.release_holds','seats.preview_swap','seats.swap','seats.preview_order','seats.create_order','seats.preview_cancel','seats.cancel_tickets'],
   delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action(client,{userId:f.actor})};
  const ops=new Operations(owner);
  return{stats,owner,ops,

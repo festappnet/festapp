@@ -315,6 +315,7 @@
     "blueprint/seat_orders.sql",
     "blueprint/order_rejection.sql",
     "eshop_orders/replacement_invoice_preparation.sql",
-    "blueprint/order_conflicts.sql"
+    "blueprint/order_conflicts.sql",
+    "blueprint/ticket_cancellation.sql"
   ]
 }

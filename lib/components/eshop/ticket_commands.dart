@@ -1,3 +1,4 @@
+import '../blueprint/blueprint_ticket_cancellation_preview.dart';
 import 'dart:convert';
 import 'package:fstapp/components/blueprint/blueprint_seat_swap_preview.dart';
 import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
@@ -47,6 +48,19 @@ abstract interface class TicketCommands {
       int? unitId,
       required int blueprintId});
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds);
+  Future<BlueprintTicketCancellationPreview> previewCancellation(
+      {required int occasionId,
+      required int organizationId,
+      int? unitId,
+      required int blueprintId,
+      required List<int> spotIds});
+  Future<TicketCancellationOutcome> cancelSelection(
+      BlueprintTicketCancellationPreview preview);
+  Future<TicketCancellationOutcome?> recoverCancellation(
+      {required int occasionId,
+      required int organizationId,
+      int? unitId,
+      required int blueprintId});
   Future<BlueprintHoldReleasePreview> previewHoldRelease(List<int> spotIds,
       {required int occasionId, required int organizationId, int? unitId});
   Future<void> releaseHolds(BlueprintHoldReleasePreview preview);
@@ -63,6 +77,72 @@ class SupabaseTicketCommands implements TicketCommands {
 
   final ClientCommandTransport _transport;
   final ClientCommandRpc? _read;
+
+  @override
+  Future<BlueprintTicketCancellationPreview> previewCancellation(
+      {required int occasionId,
+      required int organizationId,
+      int? unitId,
+      required int blueprintId,
+      required List<int> spotIds}) async {
+    final raw = await _readRpc('preview_blueprint_ticket_cancellation', {
+      'p_occasion': occasionId,
+      'p_organization': organizationId,
+      'p_unit': unitId,
+      'p_blueprint': blueprintId,
+      'p_spots': spotIds
+    });
+    final preview = BlueprintTicketCancellationPreview(
+        Map<String, dynamic>.from(raw as Map),
+        organizationId: organizationId,
+        unitId: unitId);
+    if (preview.occasionId != occasionId || preview.blueprintId != blueprintId)
+      throw const FormatException('Cancellation scope changed');
+    return preview;
+  }
+
+  Future<TicketCancellationOutcome> _cancelled(Object? raw) async {
+    if (raw is Map && raw['code'] == 410)
+      throw BlueprintCommandRejection(
+          410, {'reason': 'BLUEPRINT_ORDER_RECOVERY_REQUIRED'});
+    final response = ClientCommandResponse.from(raw);
+    if (response.code != 200)
+      throw BlueprintCommandRejection(response.code, response.data);
+    await response.applyConfirmedReplacements();
+    return TicketCancellationOutcome.fromJson(response.data);
+  }
+
+  @override
+  Future<TicketCancellationOutcome> cancelSelection(
+          BlueprintTicketCancellationPreview preview) async =>
+      _cancelled(await _transport.invoke('cancel_blueprint_tickets', {
+        'p_occasion': preview.occasionId,
+        'p_organization': preview.organizationId,
+        'p_unit': preview.unitId,
+        'p_blueprint': preview.blueprintId,
+        'p_spots': preview.spotIds,
+        'p_tickets': preview.ticketIds,
+        'p_confirmation_hash': preview.data['confirmationHash'],
+        'p_editor': true
+      }));
+
+  @override
+  Future<TicketCancellationOutcome?> recoverCancellation(
+      {required int occasionId,
+      required int organizationId,
+      int? unitId,
+      required int blueprintId}) async {
+    if (_transport.principalBinding == null) return null;
+    final pending = await _transport.pendingIntent('cancel_blueprint_tickets',
+        {'p_occasion': occasionId, 'p_unit': unitId});
+    if (pending == null) return null;
+    final request = jsonDecode(pending.requestJson) as Map;
+    if (request['p_organization'] != organizationId ||
+        request['p_blueprint'] != blueprintId)
+      throw BlueprintCommandRejection(
+          409, {'reason': 'BLUEPRINT_ORDER_RECOVERY_REQUIRED'});
+    return _cancelled(await _transport.resume(pending));
+  }
 
   @override
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds) async {
