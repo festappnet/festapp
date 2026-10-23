@@ -21,7 +21,7 @@ REVOKE ALL ON FUNCTION public.check_product_catalog_scope_internal(bigint,bigint
 CREATE OR REPLACE FUNCTION public.get_product_catalog(p_organization bigint,p_occasion bigint DEFAULT NULL,
  p_unit bigint DEFAULT NULL,p_occasion_link text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE oc bigint:=p_occasion; link text;
+DECLARE oc bigint:=p_occasion;
 BEGIN
  IF p_occasion_link IS NOT NULL THEN
   oc:=public.resolve_occasion_link_internal(p_occasion_link);
@@ -29,11 +29,28 @@ BEGIN
    RAISE insufficient_privilege USING MESSAGE='product context unavailable'; END IF;
  END IF;
  PERFORM public.check_product_catalog_scope_internal(oc,p_organization,p_unit,false,true);
- SELECT o.link INTO link FROM public.occasions o WHERE o.id=oc;
- RETURN jsonb_build_object('occasionId',oc,'catalog',public.get_products_and_types_for_edit(link));
+ RETURN jsonb_build_object('occasionId',oc,'catalog',public.get_product_catalog_data_internal(oc));
 END $$;
 REVOKE ALL ON FUNCTION public.get_product_catalog(bigint,bigint,bigint,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_product_catalog(bigint,bigint,bigint,text) TO authenticated;
+
+-- Bounded read mode of the same catalog owner. Keep the four-argument
+-- editor API for released clients; no overload with ambiguous defaults.
+CREATE OR REPLACE FUNCTION public.get_product_catalog_page(p_organization bigint,p_occasion bigint,
+ p_unit bigint DEFAULT NULL,p_after bigint DEFAULT NULL,p_limit integer DEFAULT 50)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE catalog jsonb;
+BEGIN
+ IF p_limit IS NULL OR p_limit<1 OR p_limit>100 OR p_after IS NOT NULL AND p_after<1 THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid catalog page';
+ END IF;
+ PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
+ catalog:=public.get_product_catalog_data_internal(p_occasion,p_after,p_limit)::jsonb;
+ RETURN jsonb_build_object('occasionId',p_occasion,'nextCursor',catalog->'nextCursor','catalog',
+   catalog-ARRAY['nextCursor','server_time','price_waves','inventory_pools','forms']);
+END $$;
+REVOKE ALL ON FUNCTION public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.manage_product(p_occasion bigint,p_organization bigint,p_unit bigint,
  p_action text,p_product jsonb,p_command_id uuid)

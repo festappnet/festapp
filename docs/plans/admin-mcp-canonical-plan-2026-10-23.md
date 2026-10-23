@@ -1,8 +1,12 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Stav: plán připraven; další etapy neimplementovány.
+Datum: 2026-10-23. Stav: etapa 0 lokálně dokončena, další etapy rozpracovány postupně.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
-Tento úkol vytváří plán a prováděcí zadání, nemění runtime ani produkci.
+Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
+upgrade byl samostatně dokončen a nasazen z main
+`4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`: MCP `2026-07-28`, server SDK
+2.3.1, Node adaptér 2.1.1, oficiální legacy hranice; všech 74 MCP testů prošlo
+včetně disposable PostgreSQL bez skipů. Exekuční práce začíná etapou 0 níže.
 
 ## Výsledek a hranice
 
@@ -632,15 +636,27 @@ admin tabů, nikoliv po přidání jejich názvů do MCP katalogu.
 
 ### Checkpoint
 
-- Dokončeno před tímto plánem: základní katalog produktů, vybrané objednávkové
-  operace, manuální platby, queued vstupenky, správa/revokace připojení.
-- Etapy 0-10 včetně provozního řezu 2B: připravené k postupnému vykonání, zatím neimplementované.
-- Další konkrétní krok: etapa 0, serverové stránkování produktového read owneru
-  a odstranění full-catalog přenosu pro každou MCP stránku. Potom sjednocení
-  `saveProductWaveTarget` / `saveNewProductWaveTarget` v etapě 1 a nový
-  `tools/festapp/test/product-waves-postgres.test.mjs` podle existujícího harnessu.
-- Nová evidence: lokální datový audit se 100 a 1000 produkty, dvě stránky limitu
-  50 pro každou velikost; skutečný SQL owner a MCP executor; fixture plně rollback.
-- Nebyla provedena implementace, produkční migrace, build ani deploy. Při prvním
-  sepsání plánu neběžely runtime testy; následný datový průchod použil pouze
-  výše uvedený disposable reproduktor a dočasné DDL v rollback transakci.
+- Etapa 0 lokálně hotová na autoritativním základu `4cfc9b7bc` v izolovaném
+  `/private/tmp/festapp-admin-mcp-canonical-20261023`. Publikace a produkční migrace dosud neproběhly.
+- Owner: `get_product_catalog_data_internal`; UI `get_product_catalog` (celý editor)
+  a MCP `get_product_catalog_page` (ID keyset 1-100) sdílejí stejnou projekci.
+  `get_products_and_types_for_edit(text)` zachován jako adaptér vydaných klientů.
+  Exit gate: upgrade posledního podporovaného klienta a odstranění jeho volání.
+- Odstraněno MCP full-catalog sort/filter/slice a opakované filtrování inventory links.
+  Stránka přenáší jen relevantní typy a kontexty; prázdná stránka má prázdná metadata.
+  Editor záměrně zachovává úplné pools/forms/waves. Page DTO podporuje nejvýše
+  1000 inventory vazeb na produkt; větší historický záznam selže explicitně, bez truncation.
+- Ověřeno: 3 skutečné PostgreSQL testy, 0 skipů: 1000 produktů, úplný průchod,
+  UI/compat shoda, null/defaults, counts bez násobení form/inventory vazbami,
+  scope a ACL, invalid limit/cursor, dvě spojení pro insert/delete a čekající scope move.
+  Stránky jsou READ COMMITTED keysets, nikoli zmrazený snapshot celé kolekce.
+- [Nová evidence](../reports/admin-data-network-keyset-2026-10-23.json): při 1000
+  produktech DB vrací 50 místo 1000; 28884-28894 B místo 575165 B na stránku.
+  Jeden doménový request, auth lookupy oddělené. Jde o skutečný serializovaný DB
+  výsledek, nikoli HTTP wire měření. Původní baseline zachována beze změny.
+  EXPLAIN ANALYZE vnitřního SELECT: korelované subplány 50 místo 1000 loops,
+  lokální jednotlivé vzorky 3.087 ms proti 49.058 ms; žádný nový index ani plošná předagregace.
+- Další krok: etapa 1, sjednotit nové/existující cíle na receipted owner,
+  připojit move/cancel a samostatné změny, ověřit scheduler souběh a replay.
+- Přesné zdroje a výsledky průběžně v
+  [execution checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md).

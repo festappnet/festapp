@@ -70,9 +70,11 @@
       "id": "action-005",
       "area": "Produkty",
       "title": "Vypsat produkty, ceny, verze a skladové vazby",
-      "description": "Včetně produktových typů a naplánovaných změn.",
+      "description": "Serverové ID stránky 1-100 produktů; typy a skladové kontexty patří pouze k vrácené stránce. UI používá společnou projekci v režimu celého editoru. Etapa 0 lokálně ověřena, dosud nenasazena.",
       "sources": [
-        "tools/festapp/src/operations/products.mjs"
+        "tools/festapp/src/operations/products.mjs",
+        "database/functions/eshop/product_catalog.sql",
+        "database/functions/eshop/get_products_and_types_for_occasion.sql"
       ],
       "mcp": [
         "products.list"

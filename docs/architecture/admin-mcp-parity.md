@@ -13,7 +13,7 @@ Existing issued grants are never expanded by adding tools.
   call these same RPCs. Inputs pin organization, occasion and optional unit;
   reads also accept the UI's occasion link. Writes accept a fixed action,
   original product version, payload and immutable command UUID.
-- Owners retained: `get_products_and_types_for_edit`, product client-sync
+- Owners retained: `get_product_catalog_data_internal`, product client-sync
   commands and their internal domain functions. They alone calculate prices,
   enforce product/plan/order usage, update inventory and publish sync receipts.
 - One product save may contain the complete inventory assignment. Both clients
@@ -34,8 +34,12 @@ Existing issued grants are never expanded by adding tools.
   after the released-client upgrade gate and SQL caller migration are proven.
   Historical forward migrations are immutable.
 
-MCP's list adapter emits an allowlisted catalog projection and bounded pages;
-all product types and stock contexts are available to compose an exact save.
+MCP uses `get_product_catalog_page` with server-side ID keysets (1-100 rows);
+UI's explicit complete bundle and the compatibility reader share the same
+`get_product_catalog_data_internal` projection. Types and stock contexts cover
+only the returned page. No full-catalog sort/filter/slice remains in Node.
+Concurrent inserts after the cursor appear, deleted rows disappear; traversal
+is not a frozen snapshot. See the [measured SQL/data evidence](../reports/admin-data-network-keyset-2026-10-23.json).
 It never returns form keys, QR codes or customer records. `data` and stock lists
 are whole replacements: adapters must preserve entries outside the requested
 change. Immediate price edits never rewrite purchased order prices.
