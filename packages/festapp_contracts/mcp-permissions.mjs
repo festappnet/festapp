@@ -7,6 +7,7 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:tickets:send': { label: 'ticketsSend', operations: ['orders.send_tickets'], requires: ['festapp:orders:read'] },
     'festapp:seats:read': { label: 'seatsRead', operations: ['seats.list'], requires: [] },
     'festapp:seats:release-holds': { label: 'seatsReleaseHolds', operations: ['seats.preview_release','seats.release_holds'], requires: ['festapp:seats:read'] },
+    'festapp:seats:swap': { label: 'seatsSwap', operations: ['seats.preview_swap','seats.swap'], requires: ['festapp:seats:read','festapp:orders:read'] },
     'festapp:seats:block': { label: 'seatsBlock', operations: ['seats.preview_block','seats.block'], requires: ['festapp:seats:read'] },
     'festapp:inventory:read': { label: 'inventoryRead', operations: ['inventory.pools.list','inventory.contexts.list','inventory.pools.inspect','inventory.resources.list'], requires: [] },
     'festapp:inventory:write': { label: 'inventoryWrite', operations: ['inventory.change'], requires: ['festapp:inventory:read'] },

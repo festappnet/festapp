@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-23",
+  "migration": "20261023233000_confirmed_blueprint_seat_swap.sql",
+  "migrationSha256": "5b475bded0e14e702dfe64d71158c769ce8034c394604fa3cf4cd49ea02d5030",
+  "status": "SQL/MCP verified; final workspace UI rerun pending; not published or deployed",
+  "verification": {
+    "fullMcp": {
+      "tests": 135,
+      "passed": 134,
+      "failed": 1,
+      "skipped": 0
+    },
+    "seatPostgresPassed": 23,
+    "sourceOwnersCompared": 28,
+    "remotePassed": 21,
+    "consentUiPassed": 29,
+    "recoveryIdentityPortPassed": 3,
+    "priorWorkspaceUiPassed": 1,
+    "finalWorkspaceAfterIdentityGuard": "pending"
+  },
+  "proof": [
+    "Atomic four-seat financial effects, no duplicate order aggregate",
+    "Price change or missing money rejects all assignments, history and payment changes",
+    "Legacy receipt exact replay; retired private owners absent and helpers non-executable by API roles",
+    "Actual two-connection checkout, revocation, form/order lock priority and used-ticket race",
+    "Foreign product/ticket/order parents rejected before effects",
+    "Immutable UI approval and durable recovery preserve exact original UUID/payload; actor change discards preview"
+  ],
+  "serializedSqlJsonBytes": {
+    "twoSeatPreview": 653,
+    "write": 530,
+    "replay": 530,
+    "rejection": 271,
+    "measurement": "Actual SQL JSON serialization; excludes HTTP headers/TLS"
+  },
+  "parentGraphCalls": {
+    "fourSeatBefore": 3,
+    "fourSeatAfter": 1,
+    "pairApplications": 2,
+    "latencyMeasured": false
+  },
+  "productionScopeAudit": {
+    "organization": 3,
+    "canonicalLayoutSpots": 4182,
+    "mismatchedParents": 0,
+    "readOnly": true
+  },
+  "remaining": [
+    "Final Flutter workspace/analyzer slot",
+    "Current main integration and required review before authorized festapptickets release",
+    "Separate preexisting PDF validator readiness mismatch; seal unchanged"
+  ]
+}

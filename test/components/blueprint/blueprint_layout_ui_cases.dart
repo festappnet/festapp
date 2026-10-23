@@ -1,3 +1,4 @@
+import '../../support/fixtures/blueprint_swap_preview_fixture.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart';
 import '../../support/fixtures/local_app_storage_fixture.dart';
@@ -913,8 +914,104 @@ void main() {
             .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
             .viewSelection,
         {seats.first.id, seats.last.id});
+    var swapPreviews = 0;
+    Map<String, dynamic>? approvedSwap;
+    final swapWrites = <Map<String, dynamic>>[];
+    pickerResponse = (request) {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      late Map<String, dynamic> response;
+      if (request.url.path.endsWith('/preview_blueprint_seat_swap')) {
+        swapPreviews++;
+        expect({body['p_first'], body['p_second']}, {11, 13});
+        response = blueprintSwapPreviewFixture();
+        if (body['p_first'] == 13) {
+          final sourceIds = response['sourceSpotIds'];
+          response['sourceSpotIds'] = response['targetSpotIds'];
+          response['targetSpotIds'] = sourceIds;
+        }
+        response['firstSpotId'] = body['p_first'];
+        response['secondSpotId'] = body['p_second'];
+        approvedSwap = response;
+      } else if (request.url.path.endsWith('/swap_blueprint_seats')) {
+        swapWrites.add(body);
+        response = commandResponseFixture(body['p_command_id'] as String);
+      } else {
+        throw StateError('Unexpected swap request: ${request.url.path}');
+      }
+      return http.Response(jsonEncode(response), 200,
+          request: request, headers: {'content-type': 'application/json'});
+    };
+    final swapConfirm =
+        find.byKey(const ValueKey('blueprint-confirm-operation'));
+    Future<void> openSwap() async {
+      for (var attempt = 0;
+          attempt < 100 &&
+              tester.widget<FilledButton>(swapConfirm).onPressed == null;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.runAsync(() => tester.tap(swapConfirm));
+      for (var attempt = 0;
+          attempt < 100 && find.text('Source companion').evaluate().isEmpty;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Source companion'), findsOneWidget,
+          reason: 'Preview calls: $swapPreviews; ' +
+              tester
+                  .widgetList<Text>(find.byType(Text))
+                  .map((t) => t.data)
+                  .join(' | '));
+      expect(find.text('Destination companion'), findsOneWidget);
+      expect(find.text(BlueprintStrings.swapServerNotice), findsOneWidget);
+    }
+
+    await openSwap();
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
+    expect(swapWrites, isEmpty);
+    await openSwap();
+    // Selection can change while a modal is open; the approved payload cannot.
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({seats[1].id, seats[2].id});
+    final dialog = find.byType(AlertDialog);
+    await tester.runAsync(() => tester.tap(find.descendant(
+        of: dialog,
+        matching: find.widgetWithText(
+            FilledButton, BlueprintStrings.legendSwapSeats))));
+    for (var attempt = 0;
+        attempt < 100 &&
+            (swapWrites.isEmpty ||
+                find
+                    .byKey(const ValueKey('blueprint-confirm-operation'))
+                    .evaluate()
+                    .isNotEmpty);
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(swapPreviews, 2);
+    expect(swapWrites, hasLength(1));
+    expect(swapWrites.single['p_first'], approvedSwap!['firstSpotId']);
+    expect(swapWrites.single['p_second'], approvedSwap!['secondSpotId']);
+    expect(swapWrites.single['p_source_spots'], approvedSwap!['sourceSpotIds']);
+    expect(swapWrites.single['p_target_spots'], approvedSwap!['targetSpotIds']);
+    expect(swapWrites.single['p_confirmation_hash'],
+        blueprintSwapPreviewFixture()['confirmationHash']);
+    expect(
+        tester
+            .widgetList<BlueprintEditorFeedback>(
+                find.byType(BlueprintEditorFeedback))
+            .map((f) => f.message),
+        everyElement(isNull));
     RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         capabilities: {AuthorizationCapabilities.occasionsWrite: true},
         occasionUser: OccasionUserModel(isEditor: true, isEditorOrder: false));

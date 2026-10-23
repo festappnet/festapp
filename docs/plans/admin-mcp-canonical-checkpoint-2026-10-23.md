@@ -597,3 +597,82 @@ operations is updated, hold cut locally verified/pending publication. Next: same
 confirmed financial effects boundary for swaps. Current branch
 feat/admin-mcp-seat-holds-main-20261023, source40b135831 plus final fixture/docs
 updates; await preceding production rollout before publishing this next cut.
+
+
+## Next 2B swap - SQL owner implemented, UI/MCP cut still open
+
+Verified hold slice is frozen separately at546d37f90 on
+feat/admin-mcp-seat-holds-main-20261023. New uncommitted swap work is isolated on
+feat/admin-mcp-confirmed-swap-20261023; never publish it as the finished hold cut.
+
+Financial rules/locks moved once from retired private swap_spot_tickets_internal_v1
+into apply_blueprint_seat_swap_internal. Existing pair/price maths remain untouched;
+the applier captures before facts and actual after effects while holding the same
+financial/spot locks. Preview rolls the real apply back; confirmed receipt applies
+it once inside a rollback scope and persists only when its actual effects match
+the approved hash, expanded IDs and layout revision. Superseded private owner is
+explicitly dropped, source contract records retirement. Legacy public receipt is
+one thin adapter with original hash and replay. New scoped SQL preview/command
+are written; Node registration, UI, grant, contention/ACL tests and report stage
+completion remain outstanding. Migration2330 has NOT run on production.
+
+Six targeted PG cases PASS: existing layout/authorization/finance regressions,
+actual paid delta100->150 with preview rollback and replay, changed destination
+price/incomplete confirmation rollback without history/money effects, pre-upgrade
+receipt replay. Inspection found an intentional existing distinction: UI and
+financial owner allow used singleton swaps, but reject used atomic-unit members.
+Preserve this existing policy; a ticket becoming used after preview invalidates
+that consent. Shared lifecycle projection shows current state before approval.
+Do not silently invent a new blanket used-ticket prohibition. Actual two-connection
+contention and permission loss must still be added for this new swap boundary.
+
+
+## 2B confirmed seat swap - final SQL/MCP batch verified, final UI gate pending
+
+Current source: feat/admin-mcp-confirmed-swap-20261023, parent546d37f90.
+Authoritative origin/main fetched: ee0287419 (ticket-delivery changes use2310;
+no swap helper/financial owner overlap; translation additions require merging).
+Migration2330 is NOT deployed. Hold PR571 head0c1431d9 has six green CI checks
+but remains review-gated and engineering-stopped until the preview identity fix
+is included in a newly validated source. Earlier bundle is deployed as
+festapptickets0.20.367+864, tenant8a390d70/main d97835e.
+
+One aggregate apply_blueprint_seat_swap_internal owns actual price/order updates,
+full atomic groups, lifecycle and semantic money projection. Preview executes it
+inside rollback. Confirmed command validates original hash/IDs/revision inside
+an effect rollback scope, then finalizes the existing inventory.spots.swap receipt.
+Old public adapters preserve fingerprints/replay. Both superseded private swap
+owners are dropped; the two-argument private lock helper is only a thin arity
+adapter to the single canonical parent-graph implementation. Existing financial
+calculation helpers remain unchanged. Missing order header money rejects the new
+quote/confirmed write, never defaults to zero or commits before typed decoding.
+
+Final real disposable PostgreSQL MCP batch:135 tests,134 PASS,1 known PDF readiness
+FAIL,0 skips. Seat suite23 PASS including three inherited blueprint SQL regressions.
+Source parity28 owners, helper ACL, legacy pre-upgrade receipts, checkout and role
+revocation, actual used-ticket race, foreign parent rejection and four-seat
+second-member rollback all PASS. Actual form/order-before-blueprint deadlock
+regression reproduced RED (57014), then GREEN after aggregate lock correction.
+Measured four-seat preview parent-graph calls3->1, pair applications2; no latency
+claim. Actual serialized SQL JSON preview653/write530/replay530 bytes (no HTTP/TLS).
+
+UI uses immutable complete preview and displays affected seats/products/tickets,
+customer facts only in authorized editor mode, and actual per-order price changes.
+MCP omits customer facts. Dedicated seats:swap consent requires seats:read and
+orders:read. Normal path is one preview RPC and one write RPC. Uncertain durable
+write is resumed with original UUID/payload before a new preview; expired recovery
+retains the original intent. Changed local selection cannot alter approved input.
+Preview discards a response after actor identity changes (RED/GREEN verified).
+Three final recovery/identity port cases PASS; prior actual workspace UI PASS.
+Final workspace UI rerun after identity guard awaits the shared Flutter slot.
+No Cloudflare diff-cache flag/transport has been enabled.
+
+Protected production read-only scope audit:4182 org3 spots on canonical layouts,
+zero occasion/product/product-type/order/ticket parent mismatches; no IDs or PII
+returned. No production fixture or new migration was executed.
+
+Next: final short UI/analyzer gate when workstation slot is released, freeze
+source, update PR571 with exact validated scope/revision and preserve required
+review. Rebase onto current authoritative main and rerun affected checks before
+publication. Then continue seat-order creation and ticket cancellation (2B),
+followed by stages3-10. This is not completion of the whole plan.

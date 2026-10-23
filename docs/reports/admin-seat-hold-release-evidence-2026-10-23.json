@@ -2,7 +2,7 @@
   "date": "2026-10-23",
   "migration": "20261023230000_confirmed_blueprint_hold_release.sql",
   "migrationSha256": "ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f",
-  "status": "Verified locally on canonical main d97835e798e48f17047de4b438a2db6b9e0f8a9c; not published or deployed",
+  "status": "PR571 head0c1431d9678990536ed6235626967ef9b446fa68 has six green CI checks; required review pending; engineering stop until preview identity guard included",
   "verification": {
     "postgresCasesPassed": 12,
     "remoteTestsPassed": 20,
@@ -33,8 +33,9 @@
     "Actual UI preview/cancel/confirm sends original expanded IDs and snapshot after local overlay changes, using real disposable command journal and Supabase HTTP parser; refresh shows no command error"
   ],
   "remaining": [
-    "Publish after coordinator completes current production release; hold2300 is excluded from that release",
-    "Known preexisting PDF validator readiness seal mismatch still blocks its distinct artwork write tool"
+    "Include verified preview identity guard in final release source",
+    "Required main review and festapptickets release",
+    "Known preexisting PDF readiness mismatch remains separate"
   ],
   "serializedSqlJsonBytes": {
     "twoSeatPreview": 379,

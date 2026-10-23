@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_seat_swap_preview.dart';
 import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:uuid/uuid.dart';
@@ -300,16 +301,29 @@ class DbTickets {
     }
   }
 
-  /// Blueprint V2 always uses the receipted command authority.
-  static Future<void> swapBlueprintSpots(int firstSpotId, int secondSpotId) =>
-      _commands.swapSpots(firstSpotId, secondSpotId);
+  static Future<BlueprintSeatSwapPreview> previewBlueprintSwap(
+          {required int occasionId,
+          required int blueprintId,
+          required int firstSpotId,
+          required int secondSpotId}) =>
+      _commands.previewSwap(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId,
+          firstSpotId: firstSpotId,
+          secondSpotId: secondSpotId);
 
-  static Future<void> swapSpotTickets(
-    int spotId1,
-    int spotId2,
-  ) async {
-    await _commands.swapSpots(spotId1, spotId2);
-  }
+  static Future<bool> recoverBlueprintSwap(
+          {required int occasionId, required int blueprintId}) =>
+      _commands.recoverSwap(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId);
+
+  static Future<void> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
+      _commands.swapSpots(preview);
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(
       String scanCode) async {

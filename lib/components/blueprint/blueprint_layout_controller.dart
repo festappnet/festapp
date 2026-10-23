@@ -1,3 +1,4 @@
+import 'blueprint_seat_swap_preview.dart';
 import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -695,21 +696,36 @@ class BlueprintLayoutController extends ChangeNotifier
     }
   }
 
-  Future<Map<String, dynamic>> previewSwap() {
+  Future<BlueprintSeatSwapPreview> previewSwap() {
     final spots = selectedSpotIds;
-    if (spots.length != 2) throw StateError('swap_requires_two_spots');
-    return DbForms.previewBlueprintSwap(spots[0], spots[1]);
+    final blueprintId = snapshot.blueprintId;
+    if (spots.length != 2 || blueprintId == null)
+      throw StateError('swap_requires_two_spots');
+    return DbTickets.previewBlueprintSwap(
+        occasionId: snapshot.occasionId,
+        blueprintId: blueprintId,
+        firstSpotId: spots[0],
+        secondSpotId: spots[1]);
   }
 
-  Future<void> swapSelected() async {
-    final spots = selectedSpotIds;
-    if (spots.length != 2 || isBusy)
-      throw StateError('swap_requires_two_spots');
+  Future<bool> recoverSwap() {
+    final blueprintId = snapshot.blueprintId;
+    if (blueprintId == null) return Future.value(false);
+    return DbTickets.recoverBlueprintSwap(
+        occasionId: snapshot.occasionId, blueprintId: blueprintId);
+  }
+
+  Future<void> swapSelected(BlueprintSeatSwapPreview preview) async {
+    if (isBusy ||
+        preview.occasionId != snapshot.occasionId ||
+        preview.blueprintId != snapshot.blueprintId) {
+      throw StateError('swap_confirmation_scope_changed');
+    }
     isBusy = true;
     error = null;
     notifyListeners();
     try {
-      await DbTickets.swapBlueprintSpots(spots[0], spots[1]);
+      await DbTickets.swapBlueprintSpots(preview);
       _operationSelection.clear();
     } catch (e) {
       error = e;
