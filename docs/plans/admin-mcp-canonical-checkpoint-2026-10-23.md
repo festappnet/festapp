@@ -676,3 +676,27 @@ source, update PR571 with exact validated scope/revision and preserve required
 review. Rebase onto current authoritative main and rerun affected checks before
 publication. Then continue seat-order creation and ticket cancellation (2B),
 followed by stages3-10. This is not completion of the whole plan.
+
+
+## Main integration and next 2B boundary
+
+Hold + confirmed swap integrated without conflicts onto authoritative main
+ee0287419ed0950890763875089709df52fee25e. Branch
+feat/admin-mcp-confirmed-seats-main-20261023, implementation4e65efa2d.
+Post-integration full MCP remains134 PASS/1 known PDF FAIL/0 skips (135 total);
+consent UI29 PASS. Regenerated source parity includes only upstream2310 email
+function changes in addition to our already verified28 seat owners. No seal
+was changed. PR571 remains frozen0c1431d9,6CI green,no approving review; do not
+release that old source. Final UI gate is explicitly pending shared Flutter slot.
+
+Focused next-cut map: BlueprintLayoutHost._order -> BlueprintCreateOrderDialog ->
+DbEshop.createOrderFromSpots -> DbOrders.replaceTicketOrder -> send-ticket-order
+Edge -> replace_blueprint_order_client_sync_v1. That existing receipt already
+atomically combines cancellation/preparation and create_ticket_order_internal_v1,
+then enqueues confirmation. It must remain the one write owner for seat orders.
+The existing analyze_new_order_spots projection supplies relevant old order/ticket
+conflicts, product/spot prices, total/currency and required form fields. Next
+implementation must bind that semantic snapshot to original confirmed selection
+and form/customer input, add actual scoped consent and current-parent/lock checks
+inside the same aggregate; never expose a raw spots INSERT or another receipt
+chain. No next-cut source modification yet.

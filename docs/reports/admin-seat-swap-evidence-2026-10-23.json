@@ -49,5 +49,18 @@
     "Final Flutter workspace/analyzer slot",
     "Current main integration and required review before authorized festapptickets release",
     "Separate preexisting PDF validator readiness mismatch; seal unchanged"
-  ]
+  ],
+  "integration": {
+    "authoritativeMain": "ee0287419ed0950890763875089709df52fee25e",
+    "branch": "feat/admin-mcp-confirmed-seats-main-20261023",
+    "rebaseConflicts": 0,
+    "postIntegrationMcp": {
+      "tests": 135,
+      "passed": 134,
+      "failed": 1,
+      "skipped": 0
+    },
+    "postIntegrationConsentPassed": 29,
+    "sourceParityRegenerated": "Ticket-delivery2310 changes only; no readiness seal update"
+  }
 }
