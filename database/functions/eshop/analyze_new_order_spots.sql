@@ -67,6 +67,11 @@ BEGIN
     WHERE s.id = ANY(p_spot_ids)
     -- Include any state that implies the spot is technically "occupied"
   ),
+  impacted_tickets AS (
+    SELECT order_id,order_data,order_state,ticket_id,ticket_symbol,
+      array_agg(DISTINCT spot_id ORDER BY spot_id) AS selected_spot_ids
+    FROM impacted_base GROUP BY order_id,order_data,order_state,ticket_id,ticket_symbol
+  ),
   impacted_enriched AS (
     -- Safely extract the specific ticket from JSON
     SELECT
@@ -77,7 +82,7 @@ BEGIN
         WHERE (item->>'id')::bigint = ib.ticket_id
         LIMIT 1
       ) as ticket_json
-    FROM impacted_base ib
+    FROM impacted_tickets ib
   ),
   order_stats AS (
     -- Calculate if whole order is cancelled
@@ -98,6 +103,7 @@ BEGIN
       'note', ie.order_data->>'note',
 
       'ticket_id', ie.ticket_id,
+      'selected_spot_ids', ie.selected_spot_ids,
       'ticket_symbol', ie.ticket_symbol,
       'is_fully_cancelled', (os.affected_ticket_count >= os.total_ticket_count AND os.total_ticket_count > 0),
       -- The products array from the JSON (Spot + Extras)

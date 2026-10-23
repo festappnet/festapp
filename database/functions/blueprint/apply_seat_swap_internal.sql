@@ -48,10 +48,7 @@ BEGIN
  IF EXISTS(SELECT 1 FROM eshop.spots s LEFT JOIN eshop.blueprint_seat_bindings b ON b.spot=s.id
   WHERE s.id=ANY(ids) AND (b.blocked OR s.product IS NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()))) THEN
   RAISE EXCEPTION 'BLUEPRINT_SEAT_PROTECTED'; END IF;
- SELECT coalesce(jsonb_object_agg(o.id::text,jsonb_build_object('amount',o.price,'state',o.state,
-  'payment',CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object('id',p.id,'method',p.payment_method,
-   'amount',p.amount,'paid',p.paid,'returned',p.returned,'currency',p.currency_code) END)),'{}')
- INTO before_orders FROM eshop.orders o LEFT JOIN eshop.payment_info p ON p.id=o.payment_info WHERE o.id=ANY(v_order_ids);
+ before_orders:=public.order_payment_snapshot_internal(v_order_ids);
  WITH lifecycle AS MATERIALIZED (SELECT id,state FROM public.blueprint_spot_facts_internal(occ,ids))
  SELECT coalesce(jsonb_agg(jsonb_build_object('spotId',s.id,'title',s.title,'state',lifecycle.state,'productId',s.product,
   'productTitle',p.title,'orderId',o.id,'ticketId',i.ticket,

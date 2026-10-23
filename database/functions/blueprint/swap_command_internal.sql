@@ -26,7 +26,7 @@ BEGIN
  JOIN public.occasion_users ou ON ou.ticket=i.ticket AND ou.occasion=occ WHERE s.id=ANY(affected);
  BEGIN
   effect:=public.apply_blueprint_seat_swap_internal(p_first,p_second);
-  IF p_confirmation IS NOT NULL THEN money:=public.get_blueprint_swap_money_internal(effect->'orders'); END IF;
+  IF p_confirmation IS NOT NULL THEN money:=public.project_order_amount_changes_internal(effect->'orders'); END IF;
   IF p_confirmation IS NOT NULL AND
    (effect->>'confirmationHash' IS DISTINCT FROM p_confirmation->>'hash'
     OR effect->'sourceSpotIds' IS DISTINCT FROM p_confirmation->'source'

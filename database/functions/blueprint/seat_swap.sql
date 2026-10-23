@@ -22,7 +22,7 @@ BEGIN
  SELECT coalesce(jsonb_agg(CASE WHEN p_editor THEN s ELSE s-'customer' END ORDER BY (s->>'spotId')::bigint),'[]')
  INTO rows FROM jsonb_array_elements(effect->'sides') s;
  BEGIN
-  money:=public.get_blueprint_swap_money_internal(effect->'orders');
+  money:=public.project_order_amount_changes_internal(effect->'orders');
  EXCEPTION WHEN check_violation THEN
   RETURN jsonb_build_object('code',409,'reason','BLUEPRINT_SWAP_MONEY_UNAVAILABLE');
  END;

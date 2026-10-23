@@ -1,10 +1,10 @@
 -- One parent-before-child lock owner. Financial seat commands include the
 -- complete order-product closure; existing inventory callers keep their scope.
 CREATE OR REPLACE FUNCTION public.lock_spot_assignment_scope_internal(
- p_spots bigint[],p_resources bigint[],p_financial boolean)
+ p_spots bigint[],p_resources bigint[],p_financial boolean,p_products bigint[])
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE before_spots jsonb;after_spots jsonb;before_resources jsonb;after_resources jsonb;
- resource_ids bigint[];v_orders bigint[];v_order_products bigint[]:='{}';
+ resource_ids bigint[];v_orders bigint[];v_order_products bigint[]:=coalesce(p_products,'{}');
 BEGIN
  IF p_financial IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='assignment lock mode required'; END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_array(s.id,s.occasion,s.product,s.blueprint,s.inventory_context,s.resource,s.resource_slot,s.order_product_ticket) ORDER BY s.id),'[]')
@@ -19,7 +19,7 @@ BEGIN
  IF p_financial THEN
   IF v_orders IS DISTINCT FROM ARRAY(SELECT DISTINCT i."order" FROM eshop.order_product_ticket i JOIN eshop.spots s ON s.order_product_ticket=i.id WHERE s.id=ANY(p_spots) ORDER BY i."order") THEN
    RAISE serialization_failure USING MESSAGE='assignment order parents changed; retry the same command'; END IF;
-  SELECT ARRAY(SELECT DISTINCT product FROM eshop.order_product_ticket WHERE "order"=ANY(v_orders) AND product IS NOT NULL ORDER BY product) INTO v_order_products;
+  SELECT ARRAY(SELECT product FROM eshop.order_product_ticket WHERE "order"=ANY(v_orders) AND product IS NOT NULL UNION SELECT unnest(coalesce(p_products,'{}'::bigint[])) ORDER BY 1) INTO v_order_products;
  END IF;
  -- Union every affected product before taking any blueprint/inventory child.
  PERFORM 1 FROM eshop.products WHERE id IN(
@@ -54,6 +54,13 @@ BEGIN
  JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spots)));
  IF before_spots IS DISTINCT FROM after_spots THEN RAISE serialization_failure USING MESSAGE='spot parent changed; retry the same command'; END IF;
 END $$;
+REVOKE ALL ON FUNCTION public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Existing callers retain their arity; the product closure has one lock owner.
+CREATE OR REPLACE FUNCTION public.lock_spot_assignment_scope_internal(p_spots bigint[],p_resources bigint[],p_financial boolean)
+RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.lock_spot_assignment_scope_internal(p_spots,p_resources,p_financial,'{}'::bigint[])
+$$;
 REVOKE ALL ON FUNCTION public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Existing private SQL callers retain their arity, not a second implementation.
