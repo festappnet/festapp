@@ -4,7 +4,10 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 
-// Keep Dart identifiers, expression syntax and deferred-library identities.
+// Keep Dart identifiers, constructor names and deferred-library identities.
+// dart2js installs runtime type tags from constructor.name. Even without
+// identifier minification, esbuild renames shadowed constructors (A -> A2).
+// keepNames restores the names before Dart installs those type tags.
 // Only lexical whitespace/comments change, before immutable files are stamped.
 const require=createRequire(new URL('../web_client/package.json',import.meta.url));
 export async function compactFlutterJavascript(buildDir){
@@ -13,7 +16,7 @@ export async function compactFlutterJavascript(buildDir){
  if(!names.includes('main.dart.js'))throw new Error('Missing compiled main.dart.js');
  const transformed=await Promise.all(names.map(async name=>{
   const source=await readFile(path.join(buildDir,name),'utf8');
-  const {code}=await transform(source,{loader:'js',target:'esnext',minifyWhitespace:true,minifyIdentifiers:false,minifySyntax:false,legalComments:'inline',sourcemap:false});
+  const {code}=await transform(source,{loader:'js',target:'esnext',keepNames:true,minifyWhitespace:true,minifyIdentifiers:false,minifySyntax:false,legalComments:'inline',sourcemap:false});
   return{name,source,code:Buffer.byteLength(code)<Buffer.byteLength(source)?code:source};
  }));
  let savedBytes=0;
