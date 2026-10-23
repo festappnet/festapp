@@ -1,3 +1,7 @@
+import 'dart:convert';
+import '../../features/ticket_feature.dart';
+import '../../ticket_layout/views/ticket_delivery_selector.dart';
+import '../../ticket_layout/views/ticket_delivery_preview.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
@@ -275,6 +279,39 @@ class _OccasionSetupCommunicationState
               onPressed: () =>
                   widget.onChanged({'communicationTone': 'inherit'}),
               child: Text(story('restoreDefault'))),
+        if (OccasionSetupStory.hasTickets(widget.data)) ...[
+          const SizedBox(height: 24),
+          TicketDeliverySelector(
+              value: TicketDeliveryMode.parse(
+                  (widget.data['ticketDraft'] as Map?)?['delivery_mode'],
+                  present: (widget.data['ticketDraft'] as Map?)
+                          ?.containsKey('delivery_mode') ??
+                      false),
+              enabled:
+                  (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false,
+              onChanged: (mode) => widget.onChanged({
+                    'ticketDraft': {
+                      ...?widget.data['ticketDraft'] as Map?,
+                      'code': 'ticket',
+                      'is_enabled':
+                          (widget.data['ticketDraft'] as Map?)?['is_enabled'] ??
+                              true,
+                      'delivery_mode': mode.value
+                    }
+                  })),
+          if (widget.loadPreview != null &&
+              (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false) ...[
+            const SizedBox(height: 24),
+            TicketDeliveryPreview(
+                revision: jsonEncode(widget.data),
+                load: (count) => widget.loadPreview!({
+                      ...jsonDecode(jsonEncode(widget.data))
+                          as Map<String, dynamic>,
+                      'previewMessageType': 'order_tickets',
+                      'previewTicketCount': count,
+                    })),
+          ],
+        ],
         if (widget.loadPreview != null) ...[
           const SizedBox(height: 24),
           OccasionSetupEmailTemplates(

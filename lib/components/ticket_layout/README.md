@@ -460,3 +460,17 @@ color anchors. The renderer applies the action's two inks to those roles while
 retaining luminance for text contrast. It no longer guesses ink ownership from
 whether a source pixel looks warm. Existing palette-v1 resource IDs retain their
 original renderer for saved-layout compatibility; new choices emit v2 only.
+
+## Email delivery
+
+The event's `ticket.delivery_mode` selects `pdf_attachment` (the default when
+absent), `inline_qr`, or `both`. SQL rejects other explicit values. Delivery is
+independent of `ticket_type` and the print layout; changing it never resends
+existing tickets. Disabled ticket features issue neither PDFs nor inline QR.
+Inline delivery uses the existing ticket symbol in a PNG, with no PDF font,
+background or layout dependency. PDF download and printing retain their current
+renderer. Both representations share the admission state.
+
+The settings screen and event setup Communication step edit the same feature.
+Inline mode retains an optional PDF design for printing. Authorized server
+previews use invalid sample codes, show attachment names, and never enqueue mail.

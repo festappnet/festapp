@@ -46,6 +46,10 @@ BEGIN
     END IF;
   END IF;
 
+  IF v_code='TICKET_ORDER_PAYMENT_DONE' AND
+    (length(coalesce(p_data->>'html',''))-length(replace(coalesce(p_data->>'html',''),'{{tickets}}','')))/length('{{tickets}}')>1 THEN
+    RAISE invalid_parameter_value USING MESSAGE='Only one tickets block is allowed'; END IF;
+
   -- An occasion override is identified by occasion + code. Ancestors are
   -- metadata, not identity; the partial unique index also fences concurrent saves.
   IF v_occ IS NOT NULL THEN

@@ -2072,5 +2072,28 @@
     "occasion": "Jednotlivá akcia #{id}",
     "loginHint": "Na správu prepojení sa prihláste k svojmu účtu.",
     "revoked": "Prístup aplikácie bol odobratý."
+  },
+  "TicketDelivery": {
+    "blockDescription": "Systémový blok jednoduchých QR; pri PDF je prázdny.",
+    "settingsReference": "Spôsob doručenia vyberiete v nastavení vstupeniek podujatia.",
+    "title": "Doručenie vstupeniek",
+    "scopeHelp": "Platí pre všetky vstupenky podujatia. Zmena neupraví už odoslané ani pripravené e-maily.",
+    "pdf_attachment": "PDF v prílohe",
+    "pdf_attachmentHelp": "Vstupenky odošleme ako PDF v prílohe e-mailu.",
+    "inline_qr": "QR priamo v e-maile",
+    "inline_qrHelp": "Do tela e-mailu vložíme iba QR kódy, bez grafickej vstupenky a bez PDF.",
+    "both": "QR v e-maile aj PDF v prílohe",
+    "bothHelp": "V e-maile budú jednoduché QR kódy a v prílohe PDF vstupenky.",
+    "reviewTemplate": "Skontrolujte náhľad a text šablóny, najmä zmienky o PDF prílohách.",
+    "sameTicket": "QR v e-maile a PDF patria k rovnakej vstupenke.",
+    "preview": "Náhľad e-mailu so vstupenkami",
+    "oneTicket": "1 vstupenka",
+    "threeTickets": "3 vstupenky",
+    "sampleHelp": "Ukážkové QR nie sú platné vstupenky. QR vyžadujú zobrazenie obrázkov.",
+    "previewFailed": "Náhľad sa nepodarilo načítať.",
+    "retry": "Skúsiť znova",
+    "editPrintPdf": "Upraviť PDF na tlač",
+    "blockHelp": "Blok {{tickets}} vloží jednoduché QR podľa nastavenia doručenia. Použite ho najviac raz; bez bloku sa QR pridajú na koniec. Pri PDF zostane prázdny.",
+    "duplicateBlock": "Blok {{tickets}} možno použiť iba raz."
   }
 }

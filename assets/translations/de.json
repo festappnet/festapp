@@ -2045,5 +2045,28 @@
     "occasion": "Einzelne Veranstaltung #{id}",
     "loginHint": "Melden Sie sich an, um Verbindungen zu verwalten.",
     "revoked": "Der App-Zugriff wurde entfernt."
+  },
+  "TicketDelivery": {
+    "blockDescription": "Systemblock mit einfachen QR-Codes; bei PDF-Zustellung leer.",
+    "settingsReference": "Wählen Sie die Zustellungsart in den Ticketeinstellungen der Veranstaltung.",
+    "title": "Ticketzustellung",
+    "scopeHelp": "Gilt für alle Tickets dieser Veranstaltung. Bereits gesendete oder vorbereitete E-Mails bleiben unverändert.",
+    "pdf_attachment": "PDF im Anhang",
+    "pdf_attachmentHelp": "Tickets werden als PDF-Anhänge versendet.",
+    "inline_qr": "QR direkt in der E-Mail",
+    "inline_qrHelp": "Die E-Mail enthält nur QR-Codes, ohne gestaltetes Ticket und ohne PDF.",
+    "both": "QR in der E-Mail und PDF im Anhang",
+    "bothHelp": "Die E-Mail enthält einfache QR-Codes und PDF-Tickets im Anhang.",
+    "reviewTemplate": "Prüfen Sie die Vorschau und den Vorlagentext, insbesondere Hinweise auf PDF-Anhänge.",
+    "sameTicket": "Der QR-Code in der E-Mail und im PDF gehört zum selben Ticket.",
+    "preview": "Vorschau der Ticket-E-Mail",
+    "oneTicket": "1 Ticket",
+    "threeTickets": "3 Tickets",
+    "sampleHelp": "Beispiel-QR-Codes sind keine gültigen Tickets. QR-Codes erfordern die Anzeige von Bildern.",
+    "previewFailed": "Die Vorschau konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "editPrintPdf": "PDF zum Drucken bearbeiten",
+    "blockHelp": "Der Block {{tickets}} fügt einfache QR-Codes gemäß den Zustellungseinstellungen ein. Verwenden Sie ihn höchstens einmal; ohne Block werden QR-Codes angehängt. Im PDF-Modus bleibt er leer.",
+    "duplicateBlock": "Verwenden Sie den Block {{tickets}} nur einmal."
   }
 }

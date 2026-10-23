@@ -1,3 +1,4 @@
+import '../../ticket_layout/ticket_delivery_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
@@ -399,7 +400,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (!await _flush()) throw StateError('Draft save failed');
     final response = await Supabase.instance.client.functions.invoke(
       'occasion-setup-email-preview',
-      body: {'draftId': _stored.id, 'revision': _stored.revision},
+      body: {
+        'draftId': _stored.id,
+        'revision': _stored.revision,
+        if (snapshot['previewMessageType'] != null)
+          'messageType': snapshot['previewMessageType'],
+        if (snapshot['previewTicketCount'] != null)
+          'sampleTicketCount': snapshot['previewTicketCount'],
+        if (snapshot['previewMessageType'] == 'order_tickets')
+          'deliveryMode': (snapshot['ticketDraft'] as Map?)?['delivery_mode'] ??
+              'pdf_attachment',
+      },
     );
     return Map<String, dynamic>.from(response.data as Map);
   }
@@ -927,6 +938,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _questionReady(Map<String, dynamic> d, OccasionSetupQuestion q) {
     if (q.key == 'ticket')
       return !OccasionSetupStory.hasTickets(d) ||
+          (d['ticketDraft'] as Map?)?['delivery_mode'] == 'inline_qr' ||
           (d['ticketDraft'] as Map?)?['layout'] is Map;
     if (q.key == 'appearance')
       return d['appearance'] is Map &&
@@ -1924,6 +1936,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'Vstupenka',
             [
               _reviewRow(
+                  TicketDeliveryStrings.text('title'),
+                  TicketDeliveryStrings.label(
+                      _ticketDraftFeature(d).deliveryMode)),
+              _reviewRow(
                 'Vzhled',
                 (d['ticketDraft'] as Map?)?['layout'] == null
                     ? 'Výchozí šablona'
@@ -2088,8 +2104,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         draftId: _stored.id,
         unitId: _stored.unit,
         data: d,
-        onChanged: (patch) =>
-            _change((x) => x.addAll(patch), changesConfiguration: true),
+        onChanged: (patch) {
+          if (patch.containsKey('ticketDraft')) _ticketFeature = null;
+          _change((x) => x.addAll(patch), changesConfiguration: true);
+        },
       );
     }
     if (_questions[_questionIndex(d)].key == 'payments')
@@ -2316,71 +2334,72 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           ),
           if (OccasionSetupStory.hasTickets(d)) ...[
             const SizedBox(height: 20),
-            OccasionSetupTicketGallery(
-              key: ValueKey('ticket-gallery-$_editEpoch'),
-              selectedId: d['ticketTemplateId'] as String?,
-              currentTemplate: ((d['ticketDraft'] as Map?)?['layout']
-                              as Map?)?['templates']?[
-                          _ticketDraftFeature(d).ticketType == 'named'
-                              ? 'named'
-                              : 'wide'] ==
-                      null
-                  ? null
-                  : Map<String, dynamic>.from(
-                      ((d['ticketDraft'] as Map)['layout'] as Map)['templates'][
-                          _ticketDraftFeature(d).ticketType == 'named'
-                              ? 'named'
-                              : 'wide']),
-              appearance: OccasionSetupAppearance.read(d),
-              loadResources: () async {
-                if (!await _flush())
-                  throw StateError('Koncept se nepodařilo uložit');
-                final service = TicketLayoutService()
-                    .forSetupDraft(_stored.id, _stored.unit,
-                        revision: _stored.revision)
-                    .withPreviewOccasion(TicketPreviewOccasion(
-                        title: d['title'] as String,
-                        startTime: DateTime.tryParse(d['start'] as String),
-                        endTime: DateTime.tryParse(d['end'] as String),
-                        placeName: d['placeName'] as String?));
-                final resources = await service.resolve(
-                    0,
-                    _ticketDraftFeature(d).ticketType == 'named'
-                        ? 'named'
-                        : 'wide',
-                    (d['ticketDraft'] as Map?)?['layout'] == null
-                        ? null
-                        : Map<String, dynamic>.from(
-                            (d['ticketDraft'] as Map)['layout']),
-                    _ticketDraftFeature(d).ticketBackground);
-                final sharedFont = OccasionSetupAppearance
-                    .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
-                if (sharedFont != null &&
-                    !resources.fonts.containsKey(sharedFont)) {
-                  resources.fonts[sharedFont] =
-                      await service.fontForSetupDraft(_stored.id, sharedFont);
-                }
-                return resources;
-              },
-              onSelected: (selection) => _change((x) {
-                final feature = Map<String, dynamic>.from(
-                    x['ticketDraft'] as Map? ??
-                        {'code': 'ticket', 'is_enabled': true});
-                feature['layout'] = {
-                  'schemaVersion': 3,
-                  'templates': {
-                    _ticketDraftFeature(x).ticketType == 'named'
-                        ? 'named'
-                        : 'wide': selection.value
+            if (_ticketDraftFeature(d).deliveryMode.includesPdf)
+              OccasionSetupTicketGallery(
+                key: ValueKey('ticket-gallery-$_editEpoch'),
+                selectedId: d['ticketTemplateId'] as String?,
+                currentTemplate: ((d['ticketDraft'] as Map?)?['layout']
+                                as Map?)?['templates']?[
+                            _ticketDraftFeature(d).ticketType == 'named'
+                                ? 'named'
+                                : 'wide'] ==
+                        null
+                    ? null
+                    : Map<String, dynamic>.from(((d['ticketDraft']
+                            as Map)['layout'] as Map)['templates'][
+                        _ticketDraftFeature(d).ticketType == 'named'
+                            ? 'named'
+                            : 'wide']),
+                appearance: OccasionSetupAppearance.read(d),
+                loadResources: () async {
+                  if (!await _flush())
+                    throw StateError('Koncept se nepodařilo uložit');
+                  final service = TicketLayoutService()
+                      .forSetupDraft(_stored.id, _stored.unit,
+                          revision: _stored.revision)
+                      .withPreviewOccasion(TicketPreviewOccasion(
+                          title: d['title'] as String,
+                          startTime: DateTime.tryParse(d['start'] as String),
+                          endTime: DateTime.tryParse(d['end'] as String),
+                          placeName: d['placeName'] as String?));
+                  final resources = await service.resolve(
+                      0,
+                      _ticketDraftFeature(d).ticketType == 'named'
+                          ? 'named'
+                          : 'wide',
+                      (d['ticketDraft'] as Map?)?['layout'] == null
+                          ? null
+                          : Map<String, dynamic>.from(
+                              (d['ticketDraft'] as Map)['layout']),
+                      _ticketDraftFeature(d).ticketBackground);
+                  final sharedFont = OccasionSetupAppearance
+                      .fonts[OccasionSetupAppearance.read(d)['fontFamily']];
+                  if (sharedFont != null &&
+                      !resources.fonts.containsKey(sharedFont)) {
+                    resources.fonts[sharedFont] =
+                        await service.fontForSetupDraft(_stored.id, sharedFont);
                   }
-                };
-                feature['background'] = selection.background;
-                x['ticketDraft'] = feature;
-                x['ticketTemplateId'] = selection.key;
-                x['ticketTemplateSource'] = selection.source;
-                _ticketFeature = null;
-              }, changesConfiguration: true),
-            ),
+                  return resources;
+                },
+                onSelected: (selection) => _change((x) {
+                  final feature = Map<String, dynamic>.from(
+                      x['ticketDraft'] as Map? ??
+                          {'code': 'ticket', 'is_enabled': true});
+                  feature['layout'] = {
+                    'schemaVersion': 3,
+                    'templates': {
+                      _ticketDraftFeature(x).ticketType == 'named'
+                          ? 'named'
+                          : 'wide': selection.value
+                    }
+                  };
+                  feature['background'] = selection.background;
+                  x['ticketDraft'] = feature;
+                  x['ticketTemplateId'] = selection.key;
+                  x['ticketTemplateSource'] = selection.source;
+                  _ticketFeature = null;
+                }, changesConfiguration: true),
+              ),
             const SizedBox(height: 20),
             _ticketSettings(d),
           ],
@@ -2423,6 +2442,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ),
               productEditing: false,
               showScanningSettings: false,
+              showDeliverySelector: false,
               showPreview: false,
               previewOccasion: TicketPreviewOccasion(
                 title: d['title'] as String,

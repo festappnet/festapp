@@ -27,6 +27,7 @@ SET search_path = public, extensions
 
      input_features JSONB;
      old_features JSONB;
+     old_sync_enabled boolean := false;
      processed_features JSONB;
      feature JSONB;
      form_feature_found BOOLEAN;
@@ -105,7 +106,7 @@ SET search_path = public, extensions
          -- This is an UPDATE operation
 
          -- Check for the existence of the occasion and get its current unit
-         SELECT unit, features INTO final_unit, old_features FROM public.occasions WHERE id = occ_id FOR UPDATE;
+         SELECT unit, features, is_order_synchronization_enabled INTO final_unit, old_features, old_sync_enabled FROM public.occasions WHERE id = occ_id FOR UPDATE;
          IF NOT FOUND THEN
              RAISE EXCEPTION 'Occasion with ID % not found', occ_id;
          END IF;
@@ -249,7 +250,10 @@ SET search_path = public, extensions
 
      -- Revalidate in-flight reminders after every relevant occasion update.
      PERFORM public.queue_payment_reminders(occ_id,coalesce(v_reminder_interval_seconds,86400));
-     IF updated_occ.is_order_synchronization_enabled THEN
+     IF updated_occ.is_order_synchronization_enabled AND (
+       NOT coalesce(old_sync_enabled,false) OR (
+        NOT jsonb_path_exists(coalesce(old_features,'[]'), '$[*] ? (@.code == "ticket" && @.is_enabled == true)')
+        AND jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "ticket" && @.is_enabled == true)'))) THEN
        FOR v_email_order IN SELECT id FROM eshop.orders WHERE occasion=occ_id AND state='paid' LOOP
          PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
        END LOOP;

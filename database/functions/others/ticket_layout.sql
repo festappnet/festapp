@@ -1,3 +1,16 @@
+-- Closed delivery contract. Missing attributes retain the PDF default without backfill.
+CREATE OR REPLACE FUNCTION public.ticket_delivery_mode(p_feature jsonb)
+RETURNS text LANGUAGE plpgsql IMMUTABLE SET search_path = public, extensions AS $$
+BEGIN
+ IF NOT coalesce(p_feature ? 'delivery_mode',false) THEN RETURN 'pdf_attachment'; END IF;
+ IF jsonb_typeof(p_feature->'delivery_mode') IS DISTINCT FROM 'string'
+   OR p_feature->>'delivery_mode' NOT IN ('pdf_attachment','inline_qr','both') THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid ticket delivery mode'; END IF;
+ RETURN p_feature->>'delivery_mode';
+END $$;
+REVOKE ALL ON FUNCTION public.ticket_delivery_mode(jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.ticket_delivery_mode(jsonb) TO authenticated,service_role;
+
 -- Layout validation and merge; authorization is owned by user_permissions/ticket_layout.sql.
 CREATE OR REPLACE FUNCTION public.validate_ticket_layout(p_layout jsonb)
 RETURNS void LANGUAGE plpgsql STABLE
@@ -169,11 +182,12 @@ $$;
 CREATE OR REPLACE FUNCTION public.merge_ticket_layout_features(p_old jsonb,p_next jsonb,p_change jsonb DEFAULT NULL,p_create boolean DEFAULT false)
 RETURNS jsonb LANGUAGE plpgsql STABLE
 SET search_path = public, extensions AS $$
-DECLARE old_layout jsonb; next_layout jsonb; f jsonb; result jsonb:='[]'; found_ticket boolean:=false;
+DECLARE old_ticket jsonb; old_layout jsonb; next_layout jsonb; f jsonb; result jsonb:='[]'; found_ticket boolean:=false;
 BEGIN
   IF jsonb_typeof(p_next) IS DISTINCT FROM 'array' OR (SELECT count(*) FROM jsonb_array_elements(p_next) e WHERE e->>'code'='ticket')>1
   THEN RAISE EXCEPTION 'Invalid features'; END IF;
   SELECT value->'layout' INTO old_layout FROM jsonb_array_elements(COALESCE(p_old,'[]')) WHERE value->>'code'='ticket';
+  SELECT value INTO old_ticket FROM jsonb_array_elements(COALESCE(p_old,'[]')) WHERE value->>'code'='ticket';
   next_layout:=old_layout;
   IF p_change IS NOT NULL THEN
     IF jsonb_typeof(p_change)<>'object' OR NOT (p_change ? 'expected' AND p_change ? 'next')
@@ -190,12 +204,16 @@ BEGIN
   FOR f IN SELECT * FROM jsonb_array_elements(p_next) LOOP
     IF f->>'code'='ticket' THEN
       found_ticket:=true;
+      -- Older clients omitting the attribute cannot reset an explicit choice.
+      IF NOT p_create AND NOT (f ? 'delivery_mode') AND old_ticket ? 'delivery_mode' THEN
+        f:=f||jsonb_build_object('delivery_mode',old_ticket->'delivery_mode'); END IF;
+      PERFORM public.ticket_delivery_mode(f);
       IF p_create AND p_change IS NULL THEN next_layout:=f->'layout'; IF next_layout IS NOT NULL THEN PERFORM public.validate_ticket_layout(next_layout); END IF; END IF;
       f:=f-'layout'; IF next_layout IS NOT NULL THEN f:=f||jsonb_build_object('layout',next_layout); END IF;
     END IF;
     result:=result||jsonb_build_array(f);
   END LOOP;
-  IF NOT found_ticket AND next_layout IS NOT NULL THEN result:=result||jsonb_build_array(jsonb_build_object('code','ticket','is_enabled',false,'layout',next_layout)); END IF;
+  IF NOT found_ticket AND (next_layout IS NOT NULL OR old_ticket ? 'delivery_mode') THEN result:=result||jsonb_build_array((coalesce(old_ticket,'{}'::jsonb) || jsonb_build_object('code','ticket','is_enabled',false) || CASE WHEN next_layout IS NOT NULL THEN jsonb_build_object('layout',next_layout) ELSE '{}'::jsonb END)); END IF;
   RETURN result;
 END;
 $$;

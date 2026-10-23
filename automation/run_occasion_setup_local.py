@@ -119,9 +119,21 @@ def prepare():
     function_owner.write_text(str(expected) + '\n')
     config = BACKEND / 'supabase/config.toml'
     text = config.read_text()
-    if '[functions.preview-ticket-layout]' not in text:
-        config.write_text(text + '\n[functions.preview-ticket-layout]\n'
-                          'static_files = ["./functions/_shared/ticket-assets/*"]\n')
+    # Explicit files avoid directory glob entries in the local Edge asset loader.
+    # Both preview endpoints may render a PDF; inline mode never reads these assets.
+    assets = sorted('./functions/' + str(path.relative_to(functions))
+                    for path in (functions / '_shared/ticket-assets').rglob('*') if path.is_file())
+    for name in ['preview-ticket-layout', 'occasion-setup-email-preview']:
+        header = '[functions.' + name + ']'
+        setting = 'static_files = ' + json.dumps(assets)
+        pattern = r'(\[' + re.escape('functions.' + name) + r'\]\n)(.*?)(?=\n\[|\Z)'
+        match = re.search(pattern, text, flags=re.S)
+        if match:
+            body = re.sub(r'^static_files\s*=.*\n?', '', match.group(2), flags=re.M)
+            text = text[:match.start()] + match.group(1) + body.rstrip() + '\n' + setting + '\n' + text[match.end():]
+        else:
+            text += '\n' + header + '\n' + setting + '\n'
+    config.write_text(text)
     return defines
 
 

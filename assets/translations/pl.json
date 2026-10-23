@@ -2047,5 +2047,28 @@
     "occasion": "Pojedyncze wydarzenie #{id}",
     "loginHint": "Zaloguj się na konto, aby zarządzać połączeniami.",
     "revoked": "Dostęp aplikacji został odebrany."
+  },
+  "TicketDelivery": {
+    "blockDescription": "Systemowy blok prostych kodów QR; pusty przy dostarczaniu PDF.",
+    "settingsReference": "Wybierz sposób dostarczenia w ustawieniach biletów wydarzenia.",
+    "title": "Dostarczenie biletów",
+    "scopeHelp": "Dotyczy wszystkich biletów na wydarzenie. Zmiana nie wpływa na wysłane ani przygotowane wiadomości.",
+    "pdf_attachment": "PDF w załączniku",
+    "pdf_attachmentHelp": "Bilety wyślemy jako załączniki PDF.",
+    "inline_qr": "QR bezpośrednio w wiadomości",
+    "inline_qrHelp": "W treści wiadomości umieścimy tylko kody QR, bez graficznego biletu i PDF.",
+    "both": "QR w wiadomości i PDF w załączniku",
+    "bothHelp": "W wiadomości znajdą się proste kody QR, a w załączniku bilety PDF.",
+    "reviewTemplate": "Sprawdź podgląd i treść szablonu, zwłaszcza wzmianki o załącznikach PDF.",
+    "sameTicket": "QR w wiadomości i PDF należą do tego samego biletu.",
+    "preview": "Podgląd wiadomości z biletami",
+    "oneTicket": "1 bilet",
+    "threeTickets": "3 bilety",
+    "sampleHelp": "Przykładowe kody QR nie są ważnymi biletami. Kody QR wymagają wyświetlania obrazów.",
+    "previewFailed": "Nie udało się wczytać podglądu.",
+    "retry": "Spróbuj ponownie",
+    "editPrintPdf": "Edytuj PDF do druku",
+    "blockHelp": "Blok {{tickets}} wstawia proste kody QR zgodnie z ustawieniami dostarczania. Użyj go najwyżej raz; bez bloku QR zostaną dodane na końcu. W trybie PDF pozostaje pusty.",
+    "duplicateBlock": "Bloku {{tickets}} można użyć tylko raz."
   }
 }

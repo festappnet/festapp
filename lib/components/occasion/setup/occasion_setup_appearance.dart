@@ -170,6 +170,7 @@ class OccasionSetupAppearance {
     final feature = Map<String, dynamic>.from(
       data['ticketDraft'] as Map? ?? {'code': 'ticket', 'is_enabled': true},
     );
+    if (feature['delivery_mode'] == 'inline_qr') return;
     final layout = feature['layout'] is Map
         ? jsonDecode(jsonEncode(feature['layout'])) as Map
         : {

@@ -4063,5 +4063,28 @@
     "occasion": "Individual event #{id}",
     "loginHint": "Sign in to your account to manage connections.",
     "revoked": "App access has been removed."
+  },
+  "TicketDelivery": {
+    "blockDescription": "System block of simple QR codes; empty for PDF delivery.",
+    "settingsReference": "Choose the delivery mode in the event ticket settings.",
+    "title": "Ticket delivery",
+    "scopeHelp": "Applies to every ticket for this event. Changes do not alter emails already sent or prepared.",
+    "pdf_attachment": "PDF attachment",
+    "pdf_attachmentHelp": "Tickets are sent as PDF attachments.",
+    "inline_qr": "QR directly in email",
+    "inline_qrHelp": "Only QR codes appear in the email, without a designed ticket or PDF.",
+    "both": "QR in email and PDF attachment",
+    "bothHelp": "Simple QR codes appear in the email and PDF tickets are attached.",
+    "reviewTemplate": "Check the preview and template text, especially references to PDF attachments.",
+    "sameTicket": "The QR in the email and PDF belong to the same ticket.",
+    "preview": "Ticket email preview",
+    "oneTicket": "1 ticket",
+    "threeTickets": "3 tickets",
+    "sampleHelp": "Sample QR codes are not valid tickets. QR codes require images to be displayed.",
+    "previewFailed": "The preview could not be loaded.",
+    "retry": "Try again",
+    "editPrintPdf": "Edit PDF for printing",
+    "blockHelp": "The {{tickets}} block inserts simple QR codes according to ticket delivery settings. Use it at most once; otherwise QR codes are appended. It is empty in PDF mode.",
+    "duplicateBlock": "Use the {{tickets}} block only once."
   }
 }

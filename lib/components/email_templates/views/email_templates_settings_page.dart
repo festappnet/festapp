@@ -1,3 +1,4 @@
+import '../../ticket_layout/ticket_delivery_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -511,7 +512,18 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             _htmlSave.save(() => _performHtmlSave(), context: context));
   }
 
+  bool get _duplicateTicketsBlock =>
+      widget.template.code == 'TICKET_ORDER_PAYMENT_DONE' &&
+      RegExp(r'{{\s*tickets\s*}}')
+              .allMatches(_bodyDraft?.html ?? _htmlContent ?? '')
+              .length >
+          1;
+
   Future<void> _performHtmlSave() async {
+    if (_duplicateTicketsBlock) {
+      setState(() {});
+      return;
+    }
     if (!_canEdit) return;
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState!.save();
@@ -672,6 +684,15 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             : Icons.tune,
                         size: 20)),
               ]),
+              if (widget.template.code == 'TICKET_ORDER_PAYMENT_DONE') ...[
+                Text(TicketDeliveryStrings.text('blockHelp')),
+                Text(TicketDeliveryStrings.text('settingsReference')),
+                if (_duplicateTicketsBlock)
+                  Text(TicketDeliveryStrings.text('duplicateBlock'),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
+                const SizedBox(height: 8),
+              ],
               DecoratedBox(
                   decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,

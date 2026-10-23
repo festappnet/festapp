@@ -106,3 +106,23 @@ EMAIL_NATIVE_REHEARSAL=1 deno test --allow-env --allow-net --allow-read --allow-
 The current SQL runner exits nonzero for files still failing after sequential retry. Inspect its selected-file count and summary too: a filter matching no tests exits zero. The pg_net test sends one local machine wake and races the same intent across two connections. The pinned GoTrue test uses no SMTP/SES and checks signed enqueue, outage, and both secure email-change links. None of these is a load or synthetic batch test.
 
 Provider contracts: [SES SendEmail](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html), [SES GetAccount](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_GetAccount.html), [STS identity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html), [signed Auth hook](https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook), [self-hosted hooks](https://supabase.com/docs/guides/self-hosting/self-hosted-auth-hooks), [SNS topic signature configuration](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-topic.html).
+
+### Disposable ticket-mode rehearsal
+
+After preparing a dedicated local database named `festapp_ticket_email_*` with
+current canonical SQL and isolated fixtures, run from `web_client`:
+
+```sh
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:57322/festapp_ticket_email_20261023 \
+  pnpm exec node ../automation/email-delivery/rehearse-ticket-delivery.mjs
+```
+
+The runner rejects nonlocal or differently named databases. A rollback-only
+transaction exercises paid transitions, the canonical queue, encrypted prepared
+snapshots, send fencing, SES stubs, post-actions and repeated admission for all
+three modes. The Deno adapter has no network permission. No provider credentials,
+real payment or mailbox are used. It writes a self-contained email preview to
+`/tmp/festapp-ticket-email-previews/index.html` (override with
+`TICKET_EMAIL_PREVIEW_DIR`). These generated codes cease to exist after rollback.
+This does not replace approved real-mail-client checks before production inline
+activation.

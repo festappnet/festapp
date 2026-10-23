@@ -1,5 +1,8 @@
 import { styleEmailPlainValues } from "./emailPlainValueStyles.ts";
-import { completeEmailContent, type EmailRequiredLink } from "./emailContentCompletion.ts";
+import {
+  completeEmailContent,
+  type EmailRequiredLink,
+} from "./emailContentCompletion.ts";
 const _DEFAULT_EMAIL = Deno.env.get("DEFAULT_EMAIL") || "";
 export type EmailContext = {
   organization: number;
@@ -13,6 +16,8 @@ export type EmailAttachment = {
   content: unknown;
   contentType: string;
   encoding: string;
+  disposition?: "ATTACHMENT" | "INLINE";
+  contentId?: string;
 };
 
 export type EmailTemplate = {
@@ -38,6 +43,9 @@ export type DeliverEmailInput = {
   templateCode?: string;
   context: EmailContext;
   substitutions: Record<string, unknown>;
+  subjectSubstitutions?: Record<string, unknown>;
+  /** Trusted ticket block, composed once before the inherited wrapper. */
+  ticketBlock?: string;
   /** Candidate actions for authored slots; never appended to a custom body. */
   requiredLinks?: EmailRequiredLink[];
   attachments?: EmailAttachment[];
@@ -84,6 +92,8 @@ export type PreparedEmail = {
       content: string;
       contentType: string;
       encoding: "base64";
+      disposition?: "ATTACHMENT" | "INLINE";
+      contentId?: string;
     }
   >;
 };
@@ -115,9 +125,20 @@ export async function renderEmail(
     !template || typeof template.subject !== "string" ||
     typeof template.html !== "string"
   ) throw new EmailTemplateNotFoundError(input.templateCode ?? "inline");
-  const subject = substitute(template.subject, input.substitutions);
+  const subject = substitute(
+    template.subject,
+    input.subjectSubstitutions ?? input.substitutions,
+  );
+  let body = template.html;
+  const ticketBlock = input.ticketBlock ??
+    (input.templateCode === "TICKET_ORDER_PAYMENT_DONE" ? "" : undefined);
+  if (ticketBlock !== undefined) {
+    const marker = "{{tickets}}", first = body.indexOf(marker);
+    body = first < 0 ? body + ticketBlock : body.slice(0, first) + ticketBlock +
+      body.slice(first + marker.length).replaceAll(marker, "");
+  }
   const html = styleEmailPlainValues(completeEmailContent(
-    substitute(template.html, input.substitutions),
+    substitute(body, input.substitutions),
     input.requiredLinks ?? [],
     resolved?.wrapper?.html,
   ));
@@ -132,6 +153,8 @@ export async function renderEmail(
       content: encodeAttachment(a.content, a.encoding),
       contentType: a.contentType,
       encoding: "base64",
+      ...(a.disposition ? { disposition: a.disposition } : {}),
+      ...(a.contentId ? { contentId: a.contentId } : {}),
     })),
   };
 }
