@@ -310,3 +310,55 @@ and their temporary rename was reverted before publication/application. Neither
 new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
 not deploy. Generated source parity follows actual current main; no PDF readiness
 seal changed. Final report marks swap locally verified/pending deployment.
+
+## Operational seats 2B - confirmed seat orders
+
+Current local candidate: `63a242287`, based on canonical main `c83df930`.
+Not published/deployed; full-app browser/release gates and ticket cancellation
+still remain before completing 2B. Migration2350 is additive and unapplied live.
+
+| Boundary | Shared implementation |
+| --- | --- |
+| UI caller | BlueprintLayoutHost -> typed SeatOrderCommands -> send-ticket-order |
+| MCP callers | seats.preview_order, seats.create_order -> same Edge coordinator |
+| Requirements/final quote | preview_blueprint_seat_order; actual aggregate executes inside rollback |
+| Database intent | replace_blueprint_order_command_internal -> apply_blueprint_seat_order_internal |
+| Receipt | Existing inventory.order.replace, one original UUID and immutable acknowledgement |
+| External preparation | Same prepareFakturoidTicketOrder, private service-only dispatch lease |
+| Permission | New festapp:seats:create-orders requires seats:read and orders:read; no old grant widens |
+
+The view exposes administration meaning: expanded atomic selections, distinct
+original tickets and historical products, original buyer contacts once per
+order, every additionally released binding and its blueprint, actual before/after
+order amounts and the actual new ticket total. Contacts use the explicit existing
+orders-read consent. Requirements identify real customer/per-ticket field IDs;
+final approval binds the actual normalized form answers and current bank
+recipient, actor, all affected blueprint revisions and state. UI and MCP do no
+financial sums or refund calculations. Swaps and seat orders share the same
+private order-money projection and typed Dart/Node money representation.
+
+The quote runs the actual cancellation, creation and confirmation producers,
+including current-main organization notifications, within rollback. Confirmed
+execution repeats the same aggregate and rejects changed effects before keeping
+any mutation. Generated order IDs do not enter the confirmation hash. Received
+money stays in its original order; a reduced order amount never claims a refund.
+A provider failure after replacement cannot cancel its new allocation. Unknown
+invoice POST outcome stays lookup-only, even after lease expiry or a negative
+provider GET; Fakturoid custom_id is not treated as guaranteed idempotency.
+
+Removed current Flutter analyzeNewOrderSpots/createOrderFromSpots and
+replaceTicketOrder producers. Issued backend replacement remains a thin adapter
+with the original request fingerprint. Existing local legacy recovery digests
+can resume only their exact original payload and UUID. They cannot be silently
+replaced with a newly confirmed intent. The current durable UI journal retains
+original parameters through network/process loss; actual SDK fetch, relay and
+HTTP errors use the same retry owner. Actor changes fail closed on reads, errors
+and before the server claims the command UUID.
+
+Evidence: 13 new real-PostgreSQL scenarios, 8 actual SDK/journal cases and 2
+changed-dialog cases; 23 prior seat and 24 authorization scenarios retained.
+An unmocked local Auth/REST/Kong/Deno Edge/PostgreSQL probe created and replaced
+synthetic orders with exact replay and one queued confirmation per UUID. Its
+8 calls all returned200; no provider was connected and mail workers were paused.
+See admin-seat-order-evidence-2026-10-23.json and
+admin-seat-order-fullstack-2026-10-23.json in docs/reports.
