@@ -84,7 +84,8 @@
       "phase": "0",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-006",
@@ -100,7 +101,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-007",
@@ -116,7 +118,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-008",
@@ -132,7 +135,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-009",
@@ -148,7 +152,8 @@
       "phase": "0",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-010",
@@ -168,7 +173,8 @@
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-011",
@@ -188,7 +194,8 @@
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-012",
@@ -208,7 +215,8 @@
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-013",
@@ -228,7 +236,8 @@
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-014",
@@ -251,7 +260,8 @@
       "phase": "2",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-015",
@@ -269,7 +279,8 @@
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-016",
@@ -287,7 +298,8 @@
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-017",
@@ -305,7 +317,8 @@
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-018",
@@ -324,7 +337,8 @@
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-019",
@@ -343,46 +357,65 @@
     {
       "id": "action-020",
       "area": "Plánky a místa",
-      "title": "Zobrazit plánek a stav míst",
-      "description": "Volná, blokovaná, dočasně držená a prodaná místa je nutné rozlišovat.",
+      "title": "Zobrazit adresovaná místa a jejich provozní stav",
+      "description": "MCP stránkuje místa a rozlišuje blokaci, aktivní dočasnou rezervaci, objednané a použité místo. Nevrací rezervovací tajemství ani zákazníky; geometrický editor je samostatná etapa.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/eshop/get_blueprint_for_edit.sql",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.list"
+      ],
       "phase": "2B",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-021",
       "area": "Plánky a místa",
       "title": "Zablokovat vybraná místa",
-      "description": "Administrativně vyřadit volná místa z nabídky. UI změnu drží v draftu do uložení. Chráněná místa nelze přepsat.",
+      "description": "Náhled ukáže celý společný výběr. Potvrzuje se přesná množina míst a původní revize; jeden chráněný člen odmítne celou dávku. UI zachovává draft/Uložit/Zrušit.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/blueprint/save.sql",
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_block",
+        "seats.block"
+      ],
       "phase": "2B",
       "effect": "write",
       "scope": "Akce",
       "certainty": "confirmed",
-      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
+      "deploymentState": "pending"
     },
     {
       "id": "action-022",
       "area": "Plánky a místa",
       "title": "Odblokovat vybraná místa",
-      "description": "Změnit administrativní blokaci; nesmí zrušit objednávku ani aktivní rezervaci.",
+      "description": "Náhled ukáže celý společný výběr. Potvrzuje se přesná množina míst a původní revize; jeden chráněný člen odmítne celou dávku. UI zachovává draft/Uložit/Zrušit.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/blueprint/save.sql",
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_block",
+        "seats.block"
+      ],
       "phase": "2B",
       "effect": "write",
       "scope": "Akce",
       "certainty": "confirmed",
-      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
+      "deploymentState": "pending"
     },
     {
       "id": "action-023",
@@ -1416,9 +1449,10 @@
   ],
   "dataQualityReview": {
     "date": "2026-10-23",
-    "status": "Produktové a skladové řezy lokálně opravené a ověřené; celkový audit pokračuje.",
-    "finding": "Původní baseline ukázala celý katalog na každou produktovou stránku a jednotlivá místa ve skladovém přehledu. Kandidát vybírá produktové IDs před projekcí a skladové karty i MCP čtou stejné SQL souhrny bez jednotlivých míst.",
-    "nextStep": "Provozní operace nad místy 2B a další etapy; nasazení festapptickets po povinném review/merge.",
-    "evidence": "admin-inventory-summary-network-2026-10-23.json"
-  }
+    "status": "První část 2B ověřena; celkový audit a nasazení pokračují.",
+    "finding": "Sedm cílených PostgreSQL regresí míst a 27 testů souhlasu prošlo. Širší sada má 113 úspěšných testů a 4 starší problémy, shodně potvrzené i na předchozím kandidátovi při obnově testovací databáze.",
+    "nextStep": "Uvolnění dočasných rezervací a další 2B; před celkovým dokončením vyřešit také zaznamenané starší problémy testovacích kontraktů.",
+    "evidence": "admin-seat-block-evidence-2026-10-23.json"
+  },
+  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby a první část 2B - inspekce a blokace/odblokace míst. Nové řezy dosud nejsou nasazené. Dále: uvolnění dočasných rezervací, přesuny míst a další operace 2B."
 }

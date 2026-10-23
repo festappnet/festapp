@@ -3675,6 +3675,8 @@
     "productSchedulesWrite": "Plánovat, přesouvat a rušit ceny a viditelnost produktů",
     "standingInventoryWrite": "Připravit zásoby pro vstupenky na stání",
     "productOptionsRead": "Číst dostupné typy produktů a skladové volby",
+    "seatsRead": "Číst místa a jejich provozní stav",
+    "seatsBlock": "Blokovat a odblokovat vybraná místa",
     "inventoryRead": "Číst sklady, kapacity, nastavení a obsazení kontextů",
     "inventoryWrite": "Upravovat sklady, jejich kontexty a zdroje",
     "productsRead": "Číst produkty, ceny a skladová přiřazení",

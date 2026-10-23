@@ -3673,6 +3673,8 @@
     "productSchedulesWrite": "Schedule, move and cancel product prices and visibility",
     "standingInventoryWrite": "Prepare standing admission inventory",
     "productOptionsRead": "Read available product types and stock choices",
+    "seatsRead": "Read seats and their operational state",
+    "seatsBlock": "Block and unblock selected seats",
     "inventoryRead": "Read stock pools, capacity, settings and context occupancy",
     "inventoryWrite": "Edit stock pools, contexts and resources",
     "productsRead": "Read products, prices and inventory assignments",

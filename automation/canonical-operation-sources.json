@@ -270,6 +270,7 @@
     "inventory/inventory_authoring_reads.sql",
     "inventory/save_inventory_pool_command_internal.sql",
     "inventory/manage_inventory.sql",
-    "eshop/product_catalog_options.sql"
+    "eshop/product_catalog_options.sql",
+    "blueprint/admin_seats.sql"
   ]
 }

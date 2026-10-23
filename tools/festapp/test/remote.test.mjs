@@ -557,3 +557,10 @@ test('unused product choices require explicit consent beyond previously issued p
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:product-options:read']});assert(owner().allowedOperations.includes('products.options'));
  token.scope=READ_SCOPE+' festapp:products:read';assert(!owner().allowedOperations.includes('products.options'));
 });
+
+test('seat lifecycle reads and blocking require separate explicit grants and token scopes',async t=>{
+ const f=await setup(t),id='seat-permissions';const grant={id,binding:'seat-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:orders:read','festapp:orders:write','festapp:inventory:read','festapp:inventory:write'],expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});assert(!owner().allowedOperations.includes('seats.list'));assert(!owner().allowedOperations.includes('seats.block'));assert.throws(()=>verifyPermissions(['festapp:seats:block'],MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read']});assert(owner().allowedOperations.includes('seats.list'));assert(!owner().allowedOperations.includes('seats.preview_block'));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read','festapp:seats:block']});assert(owner().allowedOperations.includes('seats.block'));token.scope=READ_SCOPE+' festapp:seats:read';assert(!owner().allowedOperations.includes('seats.block'));
+});

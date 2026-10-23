@@ -1372,6 +1372,8 @@
     "productSchedulesWrite": "Produktpreise und Sichtbarkeit planen, verschieben und stornieren",
     "standingInventoryWrite": "Bestand für Stehplatztickets vorbereiten",
     "productOptionsRead": "Verfügbare Produkttypen und Bestandsoptionen lesen",
+    "seatsRead": "Sitzplätze und ihren Status lesen",
+    "seatsBlock": "Ausgewählte Sitzplätze sperren und entsperren",
     "inventoryRead": "Bestandspools, Kapazitäten, Einstellungen und Kontextbelegung lesen",
     "inventoryWrite": "Bestandspools, Kontexte und Ressourcen bearbeiten",
     "productsRead": "Produkte, Preise und Bestandszuordnungen lesen",

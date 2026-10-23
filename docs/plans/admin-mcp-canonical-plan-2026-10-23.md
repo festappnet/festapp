@@ -725,3 +725,14 @@ Nový souhlas nerozšiřuje vydané produktové granty. Testy ověřují shodu s
 125+125 nepoužitých voleb, omezení objemu, oprávnění, skutečný souběh odebrání
 práv a nepřítomnost závislosti na celém katalogu či jednotlivých místech.
 Dále zbývá provozní 2B a etapy 3-10; nasazení čeká na povinné review/merge.
+
+### Checkpoint: první provozní řez 2B
+
+Lokálně ověřena inspekce a blokace/odblokace adresovaných míst. Server nyní
+vynucuje celé výběrové jednotky při běžném uložení plánku; MCP vyžaduje náhled,
+celou potvrzenou množinu a původní revizi. Zachován UI draft/Uložit/Zrušit,
+kanonický save owner, jedna receipt a zámky sdílené s checkoutem. Prošlo sedm
+cílených PostgreSQL regresí a 27 testů souhlasu. Evidence výslovně zachycuje čtyři
+zděděná selhání celé sady na čerstvé DB, potvrzená také na původním kandidátovi.
+Nesnižovat readiness ani nepřegenerovat hash jen kvůli testu. Dále zbývá zbytek
+2B a etapy 3-10. HTML/JSON průběžně zrcadlit na uživatelem zadanou recovery cestu.

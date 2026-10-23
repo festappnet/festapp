@@ -380,3 +380,67 @@ review bypass or production write. Worktree remains separate from the dirty user
 checkout. Exact next cut: operational seats 2B inspection + block/unblock, with
 shared selection-unit expansion, original revision, blueprint save owner, and
 checkout/hold/sold/concurrent-retry tests. Do not start by directly updating flags.
+
+## Operational seat cut 2B - first slice in progress
+
+Starting from published 2aa1e7de with 109 MCP tests and all seven CI gates passed.
+UI setBlockedForSeats expands the document's complete selection unit and rejects
+any protected member, retaining changes in the draft until Save. Backend save
+previously checked changed seats individually but did not enforce complete block
+selection units. Add the missing check at that existing aggregate owner; retain
+UI draft/Save/Cancel. MCP uses existing checkout selection-unit expansion, previews
+all affected spot IDs and requires that exact set plus the original layout revision.
+Block has one new receipt over the existing non-receipted canonical save owner;
+no nested receipt and no direct flag UPDATE. Reuse its exact financial/spot lock
+sequence in a private helper. Shared lifecycle SQL feeds UI and bounded inspection;
+MCP never receives hold secrets or order/customer identifiers. Production review
+remains a release gate, not a reason to pause the independent implementation.
+
+User-visible report mirror (standing requirement from this turn): after EACH
+completed/verified cut regenerate the capability JSON/HTML, then atomically copy
+both to /private/tmp/festapp-mcp-recovery-20261022/docs/reports/ under their same
+admin-capabilities-2026-10-23 names. The former recovery checkout had disappeared;
+restored the requested static artifact and missing linked supporting documents.
+That path is now the user's report preview, not an implementation checkout. Keep
+it on the last VERIFIED cut and distinguish implementation from actual deployment.
+
+## Operational seats 2B - first slice locally verified
+
+Added bounded seat inspection, complete-selection preview and block/unblock with
+original revision + exact confirmed expanded spot IDs. One new receipt delegates
+to the existing canonical non-receipted aggregate save; its helper is still the
+only flag mutation owner. UI retains draft/Save/Cancel, now backed by complete-unit
+server validation as well as existing client checks. Shared lifecycle facts feed
+both UI and MCP; metadata excludes reservation/customer/order identifiers. Shared
+financial/spot lock ordering retained. Set-based membership/change joins avoid
+correlated repeated JSON scans. Limits 100 requested/1000 expanded/100 per page,
+1 MiB read/preview; no silent truncation. New explicit seat-read/block scopes.
+
+Seven final PostgreSQL cases PASS: actual two-connection checkout versus block in
+both directions, revocation during preview, used ticket/order preservation, partial
+confirmation/full-editor half-unit rejection, unchanged geometry, receipt replay,
+foreign scope/ACL and 12 source owner assertions, existing layout/auth regressions.
+Consent UI 27 PASS; remote seat consent passed. Workstation Flutter slot belongs
+to another session; no new local Flutter task. Existing controller draft/undo/unit
+coverage is unchanged and will be covered by the normal client CI.
+
+The prior disposable DB disappeared during work. Canonical prepare-local.sh
+safely recreated only the marked cron/mail-fenced authz project from all migrations.
+Full MCP suite on this fresh schema: 113 PASS, 4 FAIL, 0 skips. Reproduced those
+same four cases on frozen parent 2aa1e7de, independently of the new seat slice:
+(1) authorization reference omits Stripe unit feature field; (2) pre-cutover ACL
+snapshot predates later Stripe tables/column and SEO/unit-reader grant changes;
+(3) validate_ticket_layout(jsonb) differs from the readiness seal, which correctly
+hides ticket-layout writes; (4) order-test migration installer incorrectly assumes
+postgres owns every function. No readiness hash or permission gate was overridden.
+These are unresolved overall validation issues, not green full-suite evidence.
+Exact evidence: admin-seat-block-evidence-2026-10-23.json. Fresh seed's explicit
+organization id19 caused one sequence collision while progressing naturally;
+no sequence was reset. All seven seat tests then passed on final source.
+
+User report HTML/JSON now mirrors 27 implemented tools on the EXACT requested
+recovery path. It shows progress and pending deployment per changed operation;
+first 2B slice is verified locally, not production-deployed. Mirror its new linked
+seat evidence when refreshing. Next cut: release temporary holds with explicit
+expanded-selection preview; then swaps, seat orders and ticket cancellations.
+Continue independent implementation while required GitHub review gates release.

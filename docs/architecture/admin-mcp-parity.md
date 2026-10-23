@@ -187,3 +187,24 @@ had complete choices; the discovery gap was in the bounded MCP product view.
 No extra UI request or second authoring-selection rule was introduced. See the
 [product read contract](product-admin-read-contract.md). Operational seat cut 2B
 and stages 3-10 remain pending, with production still gated by required main review.
+
+## Operational seats 2B - inspection and blocking
+
+First 2B slice implements bounded seats.list, expanded seats.preview_block and
+seats.block. Lifecycle facts are shared with the private UI reader. Blocking is
+an independent binding setting, not a temporary hold, order or checked-in state.
+No hold secret, customer identity or order relationship is exposed by MCP.
+
+The confirmed requested/expanded IDs and original layout revision bind a single
+new receipt to the existing non-receipted canonical blueprint aggregate owner.
+The full editor now enforces complete atomic block-selection units server-side,
+including protected companions. It retains local draft/Save/Cancel. A shared lock
+helper preserves the existing financial and spot lock sequence. Incoming JSON
+changes and memberships are materialized once and joined, avoiding repeated
+whole-array scans. No direct new path updates blocked flags. Canonical full-layout
+validation remains; narrow operations do not bypass it.
+
+[Seat evidence](../reports/admin-seat-block-evidence-2026-10-23.json) records actual
+checkout contention in both directions, live revocation, old/new source controls
+and the four inherited fresh-database suite failures. Release holds, swaps,
+seat-based order creation and selected-ticket cancellation remain separate cuts.

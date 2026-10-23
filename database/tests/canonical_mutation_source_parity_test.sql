@@ -72,10 +72,18 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_stripe_disconnect(bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='7f4b42fe8938e635eabf7aca9f501c94'),'current SQL source parity: public.begin_stripe_disconnect(bigint,boolean,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='dab19e51d6577dac6803131baa106fcf'),'current SQL source parity: public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='46a2e1dd1f8ec1d16b1f06852994af32'),'current SQL source parity: public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_admin_seat_rows_internal(bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='c96de3df12bfdac6446d2259c83e04a2'),'current SQL source parity: public.blueprint_admin_seat_rows_internal(bigint,bigint,bigint[])');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_block_selection_internal(bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='d397dab48f9184b477b18f75e9545303'),'current SQL source parity: public.blueprint_block_selection_internal(bigint,bigint,bigint[])');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_hold_admission_internal(bigint,bigint[],uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='0593a85cc3e2748307d5606bd91eb132'),'current SQL source parity: public.blueprint_hold_admission_internal(bigint,bigint[],uuid)');
 -- supabase/migrations/20261019220000_blueprint_reviewed_legacy_migration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_legacy_migration_source_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a9d0a2214bcd1e4e9b90ef80232aad71'),'current SQL source parity: public.blueprint_legacy_migration_source_internal(bigint)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_spot_facts_internal(bigint,bigint[],timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='1b773fd467e842d56db8f143c5244dd0'),'current SQL source parity: public.blueprint_spot_facts_internal(bigint,bigint[],timestamp with time zone)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.blueprint_write_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='0c68680b6879b48966f2bf3bc0210d37'),'current SQL source parity: public.blueprint_write_rule(boolean,boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -268,6 +276,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_reception_registration_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e936d78d7f0f3bc1accba438718e5e33'),'current SQL source parity: public.cancel_reception_registration_v1(bigint,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_bank_account_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df39c0ba082b4e785792ee797388eb96'),'current SQL source parity: public.check_bank_account_writable(bigint)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_blueprint_admin_scope_internal(bigint,bigint,bigint,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='1e3244f957ae3d6e3f0c6e48b40ba9fa'),'current SQL source parity: public.check_blueprint_admin_scope_internal(bigint,bigint,bigint,boolean,boolean)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_blueprint_block_changes_internal(bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='81cd97e692115e7f099503a52c6d379f'),'current SQL source parity: public.check_blueprint_block_changes_internal(bigint,jsonb,jsonb)');
 -- supabase/migrations/20261023200000_inventory_authoring_commands.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_inventory_entity_scope_internal(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c1465cd28c33864b168a824f1ca7f434'),'current SQL source parity: public.check_inventory_entity_scope_internal(bigint,bigint,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -624,8 +636,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint(uuid,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5c181c759bd3d1bab9c30c63fa2d5ae5'),'current SQL source parity: public.get_blueprint(uuid,uuid,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6f74bc3265d4921693fa258766777916'),'current SQL source parity: public.get_blueprint_for_authoring_v1(bigint)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='9e0111cacef4bca26a38789af89c98e2'),'current SQL source parity: public.get_blueprint_for_edit(text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='dc782be9541ddfe6ed314a1f1ec90a38'),'current SQL source parity: public.get_blueprint_for_edit(text)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint_seats(bigint,bigint,bigint,bigint,bigint,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='daa186f7e47767e34f0c884ece288108'),'current SQL source parity: public.get_blueprint_seats(bigint,bigint,bigint,bigint,bigint,integer)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_client_commit_v1(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='6af641731b185b0e3eed618fcae9ab79'),'current SQL source parity: public.get_client_commit_v1(uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -856,6 +870,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_activity_editor_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='74b438760cf910ca588b9e2e647b2a91'),'current SQL source parity: public.lock_activity_editor_internal_v1(bigint)');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_blueprint_hold_scope_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='4bdc25d86f4a722eb5933b2d783002dc'),'current SQL source parity: public.lock_blueprint_hold_scope_internal(bigint[])');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_blueprint_inventory_internal(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7cc184f53d0c1c6911ba0a8ee3ce51cc'),'current SQL source parity: public.lock_blueprint_inventory_internal(bigint,bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_event_deletion_scope_internal_v1(bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='19b82dfd320d37be10f016d24186a1b7'),'current SQL source parity: public.lock_event_deletion_scope_internal_v1(bigint,bigint[])');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -948,6 +964,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.place_move_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='73f870eaea9c56088435b4d80cbf5315'),'current SQL source parity: public.place_move_rule(boolean,boolean,boolean,boolean)');
 -- supabase/migrations/20261023180000_atomic_standing_inventory.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='f06295cd0da6360f21c3dc26f68662bb'),'current SQL source parity: public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_seat_block(bigint,bigint,bigint,bigint,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d580d3bb07cfa1ef2a4f6212c6621515'),'current SQL source parity: public.preview_blueprint_seat_block(bigint,bigint,bigint,bigint,bigint[],boolean)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.profile_group_import_state_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='237630b27ba322de2a4ca222d09864ee'),'current SQL source parity: public.profile_group_import_state_internal_v1(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1014,9 +1032,9 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5d2060bbce15913781cad80f8535b9ae'),'current SQL source parity: public.save_activity_draft_client_sync_v1(bigint,uuid,bigint,jsonb,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_activity_history(bigint,jsonb,text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='05c04ff1af99491d842034f2f7695ad4'),'current SQL source parity: public.save_activity_history(bigint,jsonb,text,bigint,text)');
--- supabase/migrations/20261022020000_blueprint_standing_capacity.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_impl_internal(jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='c5e1c0849f12c698c2ab2f35ab7b5a9d'),'current SQL source parity: public.save_blueprint_layout_impl_internal(jsonb,boolean)');
--- supabase/migrations/20261022020000_blueprint_standing_capacity.sql
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_impl_internal(jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f8421aa002183455c051fb94c6529938'),'current SQL source parity: public.save_blueprint_layout_impl_internal(jsonb,boolean)');
+-- supabase/migrations/20261023220000_blueprint_seat_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1757e48f111e5970cac96665f0274e8c'),'current SQL source parity: public.save_blueprint_layout_internal_v1(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='69a59a2dfd29f5c20a431ccefb8f6005'),'current SQL source parity: public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)');
