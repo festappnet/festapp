@@ -197,3 +197,6 @@ Ochrana canonical `main` nastavuje jedno schválení PR pro běžné účty, ale
 První produkční kompilace dokončila Flutter i web client, ale known offline cache překročila dosavadních 60 MiB o 16 237 bajtů. Rozpočet nebyl zvýšen. Build nyní bezztrátově minifikuje výsledné JSON překlady před generováním PWA manifestu; všech šest jazyků i všechny dekódované hodnoty zůstávají stejné. Naměřená úspora je 85 028 bajtů a stejné artefakty pak procházejí původním rozpočtem: core 24 086 761 B, known 62 845 769 B při limitu 62 914 560 B. Výchozí nevyhovující build byl zachován odděleně.
 
 Nový build krok má cílené testy zachování skutečných katalogů, Unicode, mezer uvnitř textu, HTML, placeholderů, idempotence a odmítnutí neplatného JSON. Tato změna se týká pouze build toolingu; nasazené SQL a Function bundle ze zdroje `f7b34bc14867bbbbfb83f39df118e7d710a69dac` se nemění.
+
+
+Při opakovaném úplném sestavení se ověřilo skutečné umístění Flutter assetů: `build/web/assets/assets/translations`. Minifikace běží ještě před přidáním samostatné kopie web clientu `/assets/translations`; helper i jeho testy proto používají tento vnořený Flutter adresář. První pokus s nevhodnou cestou skončil před publikací a byl zachován jako oddělený nevyhovující artefakt. Překlady obou kopií mají stejný obsah i formátovací režii, takže úspora a zachovaný cache rozpočet se nemění.

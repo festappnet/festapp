@@ -4,9 +4,9 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-/** Remove JSON formatting from built catalogs while retaining every translation. */
+/** Minify Flutter asset catalogs before Vite adds its separate /assets/translations copy. */
 export async function minifyWebTranslations(buildDir) {
-  const directory = path.join(buildDir, 'assets/translations');
+  const directory = path.join(buildDir, 'assets/assets/translations');
   const files = (await readdir(directory, { withFileTypes: true }))
     .filter(entry => entry.isFile() && entry.name.endsWith('.json'));
   let beforeBytes = 0, afterBytes = 0;

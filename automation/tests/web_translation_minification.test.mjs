@@ -5,20 +5,20 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { minifyWebTranslations } from '../minify_web_translations.mjs';
 
-test('built catalogs retain every locale and exact decoded values, without formatting overhead', async () => {
+test('Flutter output catalogs retain every locale and exact decoded values, without formatting overhead', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-translations-'));
   try {
     const source = new URL('../../assets/translations/', import.meta.url);
-    await cp(source, path.join(root, 'assets/translations'), { recursive: true });
+    await cp(source, path.join(root, 'assets/assets/translations'), { recursive: true });
     const files = (await readdir(source)).filter(file => file.endsWith('.json'));
     const expected = await Promise.all(files.map(async file =>
       [file, JSON.parse(await readFile(new URL(file, source), 'utf8'))]));
     const result = await minifyWebTranslations(root);
     assert.equal(result.files, files.length);
     assert.ok(result.afterBytes <= result.beforeBytes);
-    assert.deepEqual((await readdir(path.join(root, 'assets/translations'))).filter(file => file.endsWith('.json')).sort(), files.sort());
+    assert.deepEqual((await readdir(path.join(root, 'assets/assets/translations'))).filter(file => file.endsWith('.json')).sort(), files.sort());
     for (const [file, value] of expected) {
-      assert.deepEqual(JSON.parse(await readFile(path.join(root, 'assets/translations', file), 'utf8')), value);
+      assert.deepEqual(JSON.parse(await readFile(path.join(root, 'assets/assets/translations', file), 'utf8')), value);
     }
     const repeated = await minifyWebTranslations(root);
     assert.equal(repeated.beforeBytes, result.afterBytes);
@@ -29,7 +29,7 @@ test('built catalogs retain every locale and exact decoded values, without forma
 test('embedded whitespace, HTML, placeholders and Unicode are content; malformed JSON fails closed', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-translation-content-'));
   try {
-    const directory = path.join(root, 'assets/translations');
+    const directory = path.join(root, 'assets/assets/translations');
     await mkdir(directory, { recursive: true });
     const value = { label: '  Příliš žluťoučký  ', html: '<p>{{tickets}}\n  line</p>', list: ['a\tb', '😀'] };
     await writeFile(path.join(directory, 'cs.json'), JSON.stringify(value, null, 4));
