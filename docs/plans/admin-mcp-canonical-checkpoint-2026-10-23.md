@@ -444,3 +444,11 @@ first 2B slice is verified locally, not production-deployed. Mirror its new link
 seat evidence when refreshing. Next cut: release temporary holds with explicit
 expanded-selection preview; then swaps, seat orders and ticket cancellations.
 Continue independent implementation while required GitHub review gates release.
+
+Publication base refresh: inspected and merged main 01ed297d0 (organizer media and
+capture/encoding tooling only). It changes no seat/domain owner; existing targeted
+verification remains valid. The four fresh-schema failures reproduced on frozen
+parent are confirmed, not assumed. Do not overwrite or weaken ticket readiness
+for a green test. Their follow-up remains part of overall completion, separate
+from the locally passing first seat slice. User-facing report now links this
+explicit evidence and the pending-deployment state.

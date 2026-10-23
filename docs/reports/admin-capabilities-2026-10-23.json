@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "671a83f7692316e5b2da5e1989e5d4ba790d55a0",
+  "sourceMain": "01ed297d0fdadf8319dde9e5bd9c5a8c7d140fb0",
   "liveBaselineVersion": "0.20.365+859",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené. Nové produktové a skladové řezy jsou ověřené v kandidátovi PR #564, dosud nejsou nasazené.",
