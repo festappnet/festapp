@@ -20,3 +20,21 @@ for(const failure of ['network','http503','relay200','http401','http403','relay4
  assert.equal(bodies.length,2);assert.deepEqual(bodies[1],bodies[0]);assert.equal(bodies[0].commandId,commandId);assert.equal(bodies[0].replacement.confirmation.actorId,actor);
  await client.auth.stopAutoRefresh();
 });
+
+test('actual MCP SDK publishes the confirmed order schema and invokes the same HTTP owner without PDF readiness',async t=>{
+ const [{Operations},{createServer},{Client:McpClient,InMemoryTransport}]=await Promise.all([
+  import('../src/operations/catalog.mjs'),import('../src/mcp/server.mjs'),import('@modelcontextprotocol/client')]);
+ let writes=0;
+ const client=createClient('https://fixture.invalid','synthetic-fixture-key',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(url,options)=>{
+  assert.equal(new URL(url).origin,'https://fixture.invalid');assert.equal(new URL(url).pathname,'/functions/v1/send-ticket-order');
+  const body=JSON.parse(options.body);assert.equal(body.commandId,commandId);assert.equal(body.replacement.confirmation.editor,false);writes++;return Response.json(acknowledgement);
+ }}});
+ const owner={root:'/tmp/festapp-seat-order-protocol',profile:{binding:'protocol-fixture',name:'fixture',tenantId:'fixture',organizationId:1,backendOrigin:'https://fixture.invalid'},allowedOperations:['seats.preview_order','seats.create_order'],
+  delegatedContext:async()=>({organizationId:1,unitId:4}),authorized:callback=>callback(client,{userId:actor})};
+ const operations=new Operations(owner),server=createServer(operations),sdk=new McpClient({name:'seat-order-fixture',version:'1'});
+ const [one,two]=InMemoryTransport.createLinkedPair();await server.connect(one);await sdk.connect(two);
+ t.after(async()=>{await sdk.close();await server.close();await client.auth.stopAutoRefresh();});
+ const listing=await sdk.listTools();assert.deepEqual(listing.tools.map(tool=>tool.name),['festapp_seats_preview_order','festapp_seats_create_order']);
+ const tool=listing.tools.find(tool=>tool.name==='festapp_seats_create_order');assert.equal(tool.inputSchema.additionalProperties,false);assert(tool.inputSchema.required.includes('actorId'));assert.equal(tool.annotations.destructiveHint,true);assert.equal(tool.annotations.idempotentHint,true);
+ const result=await sdk.callTool({name:tool.name,arguments:args});assert(!result.isError);assert.equal(result.structuredContent.ok,true);assert.equal(result.structuredContent.data.orderId,7);assert.equal(writes,1);assert.equal(operations.writeReady,false,'seat operations do not activate or bypass the PDF writer family');
+});
