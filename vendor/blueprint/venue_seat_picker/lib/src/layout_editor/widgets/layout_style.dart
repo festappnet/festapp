@@ -208,12 +208,14 @@ VenueLayoutDocument saveLayoutAppearancePreset(
   String name,
 ) {
   final title = name.trim();
-  if (title.isEmpty || title.length > 80)
+  if (title.isEmpty || title.length > 80) {
     throw const FormatException('Enter a style name.');
+  }
   if (document.presets.any(
     (p) => (p['title'] as String).toLowerCase() == title.toLowerCase(),
-  ))
+  )) {
     throw const FormatException('A style with this name already exists.');
+  }
   final appearance = captureLayoutAppearance(document, node.id);
   final fragment = VenueLayoutDocument(
     styles: {
@@ -591,6 +593,7 @@ class _LayoutStylePresetsState extends State<LayoutStylePresets> {
 
 class LayoutStylePreview extends StatelessWidget {
   const LayoutStylePreview({
+    super.key,
     required this.appearance,
     this.size = const Size(58, 40),
   });

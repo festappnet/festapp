@@ -37,21 +37,23 @@ String resolvedLayoutFontFace(
       weight = label['weight'],
       italic = label['italic'];
   final family = families[id];
-  if (family is! Map)
+  if (family is! Map) {
     throw LayoutTextDependencyFailure(
       'font_family_unavailable',
       nodeId: nodeId,
       fontFamilyId: id as String?,
     );
+  }
   final face =
       (family['faces']
           as Map?)?['$weight:${italic == true ? 'italic' : 'normal'}'];
-  if (face is! String || face.isEmpty)
+  if (face is! String || face.isEmpty) {
     throw LayoutTextDependencyFailure(
       'font_face_unavailable',
       nodeId: nodeId,
       fontFamilyId: id as String?,
     );
+  }
   return face;
 }
 
@@ -91,8 +93,9 @@ Map<String, LayoutTextRequest> collectTextRequests(
   Map<String, dynamic> families, {
   bool includePresets = false,
 }) {
-  if (document.schemaVersion != 2)
+  if (document.schemaVersion != 2) {
     throw const FormatException('canonical_document_required');
+  }
   final requests = <String, LayoutTextRequest>{};
   void collect(VenueLayoutDocument doc, String namespace) {
     for (final node in doc.nodes) {
@@ -108,22 +111,24 @@ Map<String, LayoutTextRequest> collectTextRequests(
       final text = node.kind == 'text'
           ? '${node.properties['text'] ?? ''}'
           : node.label;
-      if (text.isNotEmpty)
+      if (text.isNotEmpty) {
         requests['$namespace${node.id}'] = nodeTextRequest(
           doc,
           node,
           families,
           text: text,
         );
+      }
     }
     if (includePresets)
-      for (final preset in doc.presets)
+      for (final preset in doc.presets) {
         collect(
           VenueLayoutDocument.fromJson(
             Map<String, dynamic>.from(preset['document'] as Map),
           ),
           '$namespace${preset['id']}/',
         );
+      }
   }
 
   collect(document, '');
@@ -144,20 +149,23 @@ Set<String> collectDeclaredLayoutFontFamilies(
 
   void collect(VenueLayoutDocument doc) {
     style(doc.styles);
-    for (final value in (doc.styles['kinds'] as Map? ?? {}).values)
+    for (final value in (doc.styles['kinds'] as Map? ?? {}).values) {
       if (value is Map) style(value);
+    }
     for (final node in doc.nodes) {
       style(node.style);
-      for (final value in node.childStyles.values)
+      for (final value in node.childStyles.values) {
         if (value is Map) style(value);
+      }
     }
     if (includePresets)
-      for (final preset in doc.presets)
+      for (final preset in doc.presets) {
         collect(
           VenueLayoutDocument.fromJson(
             Map<String, dynamic>.from(preset['document'] as Map),
           ),
         );
+      }
   }
 
   collect(document);
@@ -178,8 +186,9 @@ Set<String> _numericFontFaces(
     final parent = nodes[ids.first]?.parentId;
     if (parent != null &&
         nodes[parent]?.kind == 'furniture' &&
-        ids.every((id) => nodes[id]?.parentId == parent))
+        ids.every((id) => nodes[id]?.parentId == parent)) {
       parents.putIfAbsent(parent, () => ids.length);
+    }
   }
   if (!document.nodes.any(
     (n) =>
@@ -187,8 +196,9 @@ Set<String> _numericFontFaces(
         (n.kind == 'furniture' &&
             n.properties['furniture'] != 'couch' &&
             (parents[n.id] ?? 0) > 1),
-  ))
+  )) {
     return const {};
+  }
   final virtual = LayoutNode(
     id: '00000000-0000-4000-8000-000000000000',
     kind: 'text',
@@ -234,9 +244,10 @@ List<LayoutIssue> validateCanonicalTextResources(
   final issues = <LayoutIssue>[];
   void issue(String reason, String path) =>
       issues.add(LayoutIssue(reason, path));
-  if (resources['protocol'] != 2)
+  if (resources['protocol'] != 2) {
     issue('unsupported_resource_protocol', 'resources.protocol');
-  for (final key in resources.keys)
+  }
+  for (final key in resources.keys) {
     if (!{
       'protocol',
       'fontFamilies',
@@ -245,8 +256,10 @@ List<LayoutIssue> validateCanonicalTextResources(
       'numberSymbols',
       'assets',
       'images',
-    }.contains(key))
+    }.contains(key)) {
       issue('unknown_resource_field', 'resources.$key');
+  }
+    }
   final families = resources['fontFamilies'];
   if (families is! Map) {
     issue('invalid_font_families', 'resources.fontFamilies');
@@ -271,20 +284,24 @@ List<LayoutIssue> validateCanonicalTextResources(
       final digest = sha256
           .convert(utf8.encode(canonicalContractJson(payload)))
           .toString();
-      if (entry.key != 'font-family:$digest' || family['hash'] != digest)
+      if (entry.key != 'font-family:$digest' || family['hash'] != digest) {
         issue('font_family_hash_mismatch', path);
-      for (final face in (family['faces'] as Map).entries)
+      }
+      for (final face in (family['faces'] as Map).entries) {
         if (!RegExp(r'^(400|700):(normal|italic)$').hasMatch('${face.key}') ||
-            face.value is! String)
+            face.value is! String) {
           issue('invalid_font_face', path);
+      }
+        }
     }
   }
   final texts = resources['textLayouts'];
   if (texts is! Map) {
     issue('invalid_text_layouts', 'resources.textLayouts');
   } else {
-    if (texts.length > 20000)
+    if (texts.length > 20000) {
       issue('text_layout_limit', 'resources.textLayouts');
+    }
     for (final entry in texts.entries) {
       final value = entry.value, path = 'resources.textLayouts.${entry.key}';
       if (value is! Map ||
@@ -305,16 +322,19 @@ List<LayoutIssue> validateCanonicalTextResources(
           }).isNotEmpty ||
           descriptor['layoutResourceProtocol'] != 2 ||
           canonicalContractJson(descriptor['policy']) !=
-              canonicalContractJson(canonicalLayoutTextPolicy))
+              canonicalContractJson(canonicalLayoutTextPolicy)) {
         issue('text_policy_mismatch', path);
+      }
       if (entry.key !=
-          'layout-text:${sha256.convert(utf8.encode(canonicalContractJson(descriptor)))}')
+          'layout-text:${sha256.convert(utf8.encode(canonicalContractJson(descriptor)))}') {
         issue('text_layout_hash_mismatch', path);
+      }
       if (!_path(value['path']) ||
           !_box(value['clip']) ||
           canonicalContractJson(value['clip']) !=
-              canonicalContractJson((descriptor['request'] as Map?)?['box']))
+              canonicalContractJson((descriptor['request'] as Map?)?['box'])) {
         issue('invalid_text_path', path);
+      }
     }
   }
   final assets = resources['assets'];
@@ -348,8 +368,9 @@ List<LayoutIssue> validateCanonicalTextResources(
       }
       for (final key in ['width', 'height', 'byteLength']) {
         final v = asset[key];
-        if (v is! int || v < 1 || v > (key == 'byteLength' ? 819200 : 3000))
+        if (v is! int || v < 1 || v > (key == 'byteLength' ? 819200 : 3000)) {
           issue('invalid_asset_manifest', '$path.$key');
+        }
       }
     }
   }
@@ -377,8 +398,9 @@ List<LayoutIssue> validateCanonicalTextResources(
       if (canonicalContractJson(value['descriptor']) !=
               canonicalContractJson(descriptor) ||
           value['id'] !=
-              'layout-number:${sha256.convert(utf8.encode(canonicalContractJson(descriptor)))}')
+              'layout-number:${sha256.convert(utf8.encode(canonicalContractJson(descriptor)))}') {
         issue('numeric_policy_mismatch', path);
+      }
       final tokens = value['tokens'] as Map;
       if (tokens.length != 11) issue('invalid_numeric_alphabet', path);
       for (final token in tokens.entries) {
@@ -388,8 +410,9 @@ List<LayoutIssue> validateCanonicalTextResources(
             !_path(v['path']) ||
             v['advance'] is! num ||
             !(v['advance'] as num).isFinite ||
-            v['advance'] <= 0)
+            v['advance'] <= 0) {
           issue('invalid_numeric_symbol', path);
+        }
       }
     }
   }
@@ -427,11 +450,12 @@ Map<String, dynamic>? preparedNodeText(
             canonicalContractJson(request.resourceDescriptor) ||
         !_path(value['path']) ||
         canonicalContractJson(value['clip']) !=
-            canonicalContractJson(request.descriptor['box']))
+            canonicalContractJson(request.descriptor['box'])) {
       throw LayoutTextDependencyFailure(
         'text_layout_unavailable',
         nodeId: node.id,
       );
+    }
     return Map<String, dynamic>.from(value);
   } on LayoutTextDependencyFailure catch (error) {
     issues.add({'reason': error.reason, 'nodeId': node.id});
@@ -452,8 +476,9 @@ List<List<dynamic>> canonicalNumberPath(
     if (!count.isFinite ||
         count < 0 ||
         count != count.truncate() ||
-        count > 1000000000)
+        count > 1000000000) {
       throw LayoutTextDependencyFailure('invalid_capacity', nodeId: nodeId);
+    }
     final virtual = LayoutNode(id: nodeId, kind: 'text');
     final defaults = document.copyWith(
       styles: {'label': document.styles['label'] ?? {}},
@@ -466,20 +491,22 @@ List<List<dynamic>> canonicalNumberPath(
     final symbols = (resources['numberSymbols'] as Map?)?[faceId];
     if (symbols is! Map ||
         symbols['unitsPerEm'] is! num ||
-        symbols['tokens'] is! Map)
+        symbols['tokens'] is! Map) {
       throw LayoutTextDependencyFailure(
         'numeric_symbols_unavailable',
         nodeId: nodeId,
       );
+    }
     final tokens = symbols['tokens'] as Map, placed = <List<dynamic>>[];
     var advance = 0.0, minY = double.infinity, maxY = double.negativeInfinity;
     for (final char in '×${count.toInt()}'.split('')) {
       final token = tokens[char];
-      if (token is! Map || !_path(token['path']) || token['advance'] is! num)
+      if (token is! Map || !_path(token['path']) || token['advance'] is! num) {
         throw LayoutTextDependencyFailure(
           'numeric_symbol_unavailable',
           nodeId: nodeId,
         );
+      }
       for (final raw in token['path'] as List) {
         final c = raw as List;
         final next = <dynamic>[c.first];
@@ -518,7 +545,7 @@ Set<String> collectNumericFontFaces(
 }) {
   final faces = {..._numericFontFaces(document, families)};
   if (includePresets)
-    for (final preset in document.presets)
+    for (final preset in document.presets) {
       faces.addAll(
         collectNumericFontFaces(
           VenueLayoutDocument.fromJson(
@@ -528,6 +555,7 @@ Set<String> collectNumericFontFaces(
           includePresets: true,
         ),
       );
+    }
   return Set.unmodifiable(faces);
 }
 
@@ -557,8 +585,9 @@ List<String> collectLayoutTextResourceIds(
     final prepared = (resources['textLayouts'] as Map?)?[request.id];
     if (prepared is! Map ||
         canonicalContractJson(prepared['descriptor']) !=
-            canonicalContractJson(request.resourceDescriptor))
+            canonicalContractJson(request.resourceDescriptor)) {
       throw const LayoutTextDependencyFailure('text_layout_unavailable');
+    }
     ids.add(request.id);
   }
   for (final face in collectNumericFontFaces(
@@ -571,8 +600,9 @@ List<String> collectLayoutTextResourceIds(
     if (prepared is! Map ||
         prepared['id'] != id ||
         canonicalContractJson(prepared['descriptor']) !=
-            canonicalContractJson(layoutNumberDescriptor(face)))
+            canonicalContractJson(layoutNumberDescriptor(face))) {
       throw const LayoutTextDependencyFailure('numeric_symbols_unavailable');
+    }
     ids.add(id);
   }
   return ids.toList()..sort();

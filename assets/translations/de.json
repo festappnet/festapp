@@ -675,7 +675,7 @@
     "removePlace": "Ortszuweisung entfernen"
   },
   "Administration": {
-    "webAnalytics": "Website-Serververkehr",
+    "webAnalytics": "Webanalyse",
     "openCloudflareAnalytics": "Statistik in Cloudflare öffnen",
     "organizationSettings": "Organisationseinstellungen",
     "copyLink": "Link kopieren",
@@ -1713,6 +1713,14 @@
     "individualOnlyHint": "Nur einzelne Veranstaltungen können ausgewählt werden.",
     "orderPermissions": "Berechtigungen für Bestellungen",
     "orderPermissionsHint": "Gilt nur für ausgewählte Veranstalter und Veranstaltungen. Bearbeitung, Zahlungen und Versand umfassen auch das Lesen von Bestellungen.",
+    "productSchedulesRead": "Preiswellen und geplante Produktänderungen lesen",
+    "productSchedulesWrite": "Produktpreise und Sichtbarkeit planen, verschieben und stornieren",
+    "standingInventoryWrite": "Bestand für Stehplatztickets vorbereiten",
+    "productOptionsRead": "Verfügbare Produkttypen und Bestandsoptionen lesen",
+    "seatsRead": "Sitzplätze und ihren Status lesen",
+    "seatsBlock": "Ausgewählte Sitzplätze sperren und entsperren",
+    "inventoryRead": "Bestandspools, Kapazitäten, Einstellungen und Kontextbelegung lesen",
+    "inventoryWrite": "Bestandspools, Kontexte und Ressourcen bearbeiten",
     "productsRead": "Produkte, Preise und Bestandszuordnungen lesen",
     "productsWrite": "Produkte erstellen, bearbeiten und löschen",
     "ordersRead": "Bestellungen, Kontaktdaten und Ticketanzahl lesen",

@@ -66,8 +66,9 @@ VenueLayoutDocument withLayoutStudioPalette(
   String name,
 ) {
   final p = layoutStudioPalettes[name];
-  if (p == null)
+  if (p == null) {
     throw ArgumentError.value(name, 'name', 'Unknown studio palette');
+  }
   final kinds = document.styles['kinds'] as Map? ?? {};
   return document.copyWith(
     canvas: {...document.canvas, 'fill': p['canvas']},

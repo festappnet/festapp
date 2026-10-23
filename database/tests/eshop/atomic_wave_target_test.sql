@@ -15,11 +15,13 @@ BEGIN
  INSERT INTO eshop.planned_changes(change_type,subject_id,new_value,change_time,occasion) VALUES('products.price',product,'20',at_time,oc) RETURNING id INTO plan;
  target:=jsonb_build_object('occasion_link',link,'product_id',product,'change_time',at_time,'price',30,'is_hidden',NULL,
   'expected_price_revision',NULL,'expected_visibility_revision',NULL);
- BEGIN PERFORM public.save_product_wave_target_client_sync_v1(target,cmd);RAISE EXCEPTION 'stale adopted plan accepted';
- EXCEPTION WHEN serialization_failure THEN NULL; END;
+ result:=public.save_product_wave_target_client_sync_v1(target,cmd);
+ ASSERT result->>'code'='409','stale adoption is a terminal domain conflict';
+ ASSERT public.save_product_wave_target_client_sync_v1(target,cmd)=result,'conflict replay is stable';
  ASSERT NOT EXISTS(SELECT 1 FROM eshop.product_price_waves WHERE occasion=oc);
  ASSERT (SELECT wave_id IS NULL AND new_value='20' FROM eshop.planned_changes WHERE id=plan),'failed target must roll back wave/adoption';
  target:=jsonb_set(target,'{expected_price_revision}','1');
+ cmd:=gen_random_uuid(); -- A fresh decision after reload has a new identity.
  EXECUTE 'SET LOCAL ROLE authenticated';
  result:=public.save_product_wave_target_client_sync_v1(target,cmd);
  ASSERT result->>'code'='200';ASSERT public.save_product_wave_target_client_sync_v1(target,cmd)=result;

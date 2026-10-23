@@ -57,17 +57,21 @@ dynamic freeze(dynamic value) {
   final active = Set<Object>.identity();
   var entries = 0;
   dynamic copy(dynamic v, int depth) {
-    if (depth > 64 || ++entries > 1000000)
+    if (depth > 64 || ++entries > 1000000) {
       throw const FormatException('JSON nesting or value count limit exceeded');
+    }
     if (v == null || v is String || v is bool || v is num) return v;
-    if (v is! Map && v is! List)
+    if (v is! Map && v is! List) {
       throw const FormatException('Only JSON values are supported');
-    if (!active.add(v as Object))
+    }
+    if (!active.add(v as Object)) {
       throw const FormatException('Cyclic JSON value');
+    }
     dynamic result;
     if (v is Map) {
-      if (v.keys.any((k) => k is! String))
+      if (v.keys.any((k) => k is! String)) {
         throw const FormatException('JSON keys must be strings');
+      }
       result = Map<String, dynamic>.unmodifiable(
         v.map((k, x) => MapEntry(k as String, copy(x, depth + 1))),
       );
@@ -403,11 +407,12 @@ class VenueLayoutDocument {
   );
   Map<String, dynamic> toJson() {
     final issues = validateDocument(this);
-    if (issues.isNotEmpty)
+    if (issues.isNotEmpty) {
       throw InvalidLayoutDocument(issues, {
         'schemaVersion': schemaVersion,
         'nodes': nodes.map((n) => {'id': n.id, 'kind': n.kind}).toList(),
       });
+    }
     return _toJsonUnchecked();
   }
 
@@ -483,25 +488,29 @@ List<LayoutIssue> validateDocument(VenueLayoutDocument d) =>
       _validateDocumentUncached(d),
     );
 List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
-  if (d.schemaVersion != 2)
+  if (d.schemaVersion != 2) {
     return [LayoutIssue('unsupported_schema', 'schemaVersion')];
+  }
   final out = <LayoutIssue>[];
   void issue(String r, String p, [String? id]) =>
       out.add(LayoutIssue(r, p, id));
   final index = <String, LayoutNode>{};
   if (d.nodes.length > layoutMaxNodes) issue('node_limit', 'nodes');
-  if (d.nodes.where((n) => n.kind == 'seat').length > layoutMaxSeats)
+  if (d.nodes.where((n) => n.kind == 'seat').length > layoutMaxSeats) {
     issue('seat_limit', 'nodes');
+  }
   for (final k in ['x', 'y', 'width', 'height']) {
     final v = d.canvas[k];
     if (v is! num ||
         !v.isFinite ||
         (k == 'width' || k == 'height') &&
-            (v < layoutLimits['canvasMin']! || v > layoutLimits['canvasMax']!))
+            (v < layoutLimits['canvasMin']! || v > layoutLimits['canvasMax']!)) {
       issue('invalid_canvas', 'canvas.$k');
+    }
   }
-  if (!layoutColorPattern.hasMatch('${d.canvas['fill']}'))
+  if (!layoutColorPattern.hasMatch('${d.canvas['fill']}')) {
     issue('invalid_color', 'canvas.fill');
+  }
   for (final n in d.nodes) {
     if (!_uuid.hasMatch(n.id)) issue('invalid_uuid', 'nodes.id', n.id);
     if (index.containsKey(n.id)) issue('duplicate_id', 'nodes.id', n.id);
@@ -516,12 +525,14 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
       'text',
       'image',
       'vector',
-    ].contains(n.kind))
+    ].contains(n.kind)) {
       issue('unknown_kind', 'nodes.kind', n.id);
+    }
     if ([n.x, n.y, n.rotation, n.width, n.height].any((v) => !v.isFinite) ||
         n.width <= 0 ||
-        n.height <= 0)
+        n.height <= 0) {
       issue('invalid_geometry', 'nodes.transform', n.id);
+    }
     final p = surfaceGeometryProperties(n);
     if (p.keys.any(
       (k) => const [
@@ -535,8 +546,9 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
         'locked',
         'label',
       ].contains(k),
-    ))
+    )) {
       issue('reserved_property', 'nodes.properties', n.id);
+    }
     if (p['shape'] != null &&
         !const [
           'rect',
@@ -550,48 +562,59 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
           'polyline',
           'line',
           'arrow',
-        ].contains(p['shape']))
+        ].contains(p['shape'])) {
       issue('invalid_shape', 'nodes.shape', n.id);
+    }
     if (p['strokeWidth'] != null &&
         (p['strokeWidth'] is! num ||
             !(p['strokeWidth'] as num).isFinite ||
-            (p['strokeWidth'] as num) < 0))
+            (p['strokeWidth'] as num) < 0)) {
       issue('invalid_stroke', 'nodes.strokeWidth', n.id);
+    }
     if (p['arrowHeadLength'] != null &&
         (p['arrowHeadLength'] is! num ||
             !(p['arrowHeadLength'] as num).isFinite ||
-            (p['arrowHeadLength'] as num) <= 0))
+            (p['arrowHeadLength'] as num) <= 0)) {
       issue('invalid_arrow_head_length', 'nodes.arrowHeadLength', n.id);
+    }
     if (p['dash'] != null &&
         (p['dash'] is! List ||
-            (p['dash'] as List).any((v) => v is! num || !v.isFinite || v <= 0)))
+            (p['dash'] as List).any((v) => v is! num || !v.isFinite || v <= 0))) {
       issue('invalid_dash', 'nodes.dash', n.id);
+    }
     if (p['labelOrientation'] != null &&
-        !const ['screen', 'object'].contains(p['labelOrientation']))
+        !const ['screen', 'object'].contains(p['labelOrientation'])) {
       issue('invalid_label_orientation', 'nodes.labelOrientation', n.id);
+    }
     if (p['align'] != null &&
-        !const ['left', 'center', 'right'].contains(p['align']))
+        !const ['left', 'center', 'right'].contains(p['align'])) {
       issue('invalid_alignment', 'nodes.align', n.id);
+    }
 
     for (final k in ['fill', 'stroke', 'color']) {
-      if (p[k] != null && !layoutColorPattern.hasMatch('${p[k]}'))
+      if (p[k] != null && !layoutColorPattern.hasMatch('${p[k]}')) {
         issue('invalid_color', 'nodes.$k', n.id);
+      }
     }
     if (p['opacity'] != null &&
         (p['opacity'] is! num ||
             (p['opacity'] as num) < 0 ||
-            (p['opacity'] as num) > 1))
+            (p['opacity'] as num) > 1)) {
       issue('invalid_opacity', 'nodes.opacity', n.id);
+    }
     if (n.kind == 'text') {
       if ('${p['text'] ?? ''}'.runes.length >
-          layoutLimits['textMaxCodePoints']!)
+          layoutLimits['textMaxCodePoints']!) {
         issue('text_limit', 'nodes.text', n.id);
+      }
       final size = resolveNodeAppearance(d, n).label['size'],
           lh = resolveNodeAppearance(d, n).label['lineHeight'];
-      if (size is! num || !size.isFinite || size < 1 || size > 4096)
+      if (size is! num || !size.isFinite || size < 1 || size > 4096) {
         issue('font_size', 'nodes.size', n.id);
-      if (lh is! num || !lh.isFinite || lh < 0.8 || lh > 3)
+      }
+      if (lh is! num || !lh.isFinite || lh < 0.8 || lh > 3) {
         issue('line_height', 'nodes.lineHeight', n.id);
+      }
     }
     if (p.containsKey('pathPattern') ||
         p.containsKey('zigzagTeeth') ||
@@ -646,9 +669,9 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
     if (points != null) {
       if (points is! List ||
           points.length > layoutLimits['verticesMax']! ||
-          points.length < (p['shape'] == 'polygon' ? 3 : 2))
+          points.length < (p['shape'] == 'polygon' ? 3 : 2)) {
         issue('invalid_vertices', 'nodes.points', n.id);
-      else if (points.any(
+      } else if (points.any(
         (v) =>
             v is! List ||
             v.length != 2 ||
@@ -683,41 +706,49 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
   final members = <String>{};
   final unitIds = <String>{};
   for (final u in d.selectionUnits) {
-    if (!_uuid.hasMatch('${u['id']}') || !unitIds.add('${u['id']}'))
+    if (!_uuid.hasMatch('${u['id']}') || !unitIds.add('${u['id']}')) {
       issue('invalid_unit_id', 'selectionUnits');
+    }
     final ids = u['nodeIds'];
     if (ids is! List || ids.isEmpty) {
       issue('empty_unit', 'selectionUnits');
       continue;
     }
     for (final id in ids) {
-      if (index[id]?.kind != 'seat')
+      if (index[id]?.kind != 'seat') {
         issue('invalid_member', 'selectionUnits', id.toString());
-      if (!members.add(id.toString()))
+      }
+      if (!members.add(id.toString())) {
         issue('duplicate_membership', 'selectionUnits', id.toString());
+      }
     }
   }
   for (final a in d.attachments) {
     if (index[a['seatId']]?.kind != 'seat' ||
         index[a['targetId']] == null ||
-        index[a['seatId']]?.parentId != a['targetId'])
+        index[a['seatId']]?.parentId != a['targetId']) {
       issue('invalid_attachment', 'attachments');
+    }
   }
   for (final s in d.sections) {
-    if (index[s['rootId']]?.kind != 'group')
+    if (index[s['rootId']]?.kind != 'group') {
       issue('invalid_section_root', 'sections');
+    }
   }
-  if (d.presets.length > layoutLimits['presetsMax']!)
+  if (d.presets.length > layoutLimits['presetsMax']!) {
     issue('preset_limit', 'presets');
+  }
   for (final p in d.presets) {
     final nodes = (p['document'] as Map?)?['nodes'] ?? p['nodes'];
-    if (nodes is List && nodes.length > layoutLimits['presetNodesMax']!)
+    if (nodes is List && nodes.length > layoutLimits['presetNodesMax']!) {
       issue('preset_node_limit', 'presets');
+    }
   }
   if (d.background case final Map<String, dynamic> b) {
     final opacity = b['opacity'] ?? 1;
-    if (opacity is! num || !opacity.isFinite || opacity < 0 || opacity > 1)
+    if (opacity is! num || !opacity.isFinite || opacity < 0 || opacity > 1) {
       issue('invalid_opacity', 'background.opacity');
+    }
     final c = b['crop'];
     if (c is Map) {
       final x = c['x'] ?? 0,
@@ -730,8 +761,9 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
           w <= 0 ||
           h <= 0 ||
           x + w > 1 ||
-          y + h > 1)
+          y + h > 1) {
         issue('invalid_crop', 'background.crop');
+      }
     }
   }
   _validateExtras(d, index, out);
@@ -743,8 +775,9 @@ List<LayoutIssue> _validateDocumentUncached(VenueLayoutDocument d) {
             'non_json_value',
           ].contains(i.reason),
         ) &&
-        _documentPayloadBytes(d) > layoutMaxBytes)
+        _documentPayloadBytes(d) > layoutMaxBytes) {
       issue('payload_limit', 'document');
+    }
   } catch (_) {
     issue('non_json_value', 'document');
   }
@@ -927,9 +960,9 @@ List<LayoutIssue> _jsonIssues(
     }
     if (v == null || v is bool || v is String) return;
     if (v is num) {
-      if (!v.isFinite)
+      if (!v.isFinite) {
         issues.add(LayoutIssue('nonfinite_number', p));
-      else if (v.abs() > 8796093022207)
+      } else if (v.abs() > 8796093022207)
         issues.add(LayoutIssue('unsafe_number', p));
       return;
     }
@@ -951,8 +984,9 @@ List<LayoutIssue> _jsonIssues(
         if (business &&
             _privateKeys.contains(
               k.toLowerCase().replaceAll(RegExp(r'[_-]'), ''),
-            ))
+            )) {
           issues.add(LayoutIssue('host_data_forbidden', '$p.$k'));
+        }
         walk(e.value, '$p.$k', depth + 1);
       }
     } else {
@@ -972,12 +1006,14 @@ List<LayoutIssue> _nodeDecodeIssues(Map<String, dynamic> j) {
   void add(String r, String k) =>
       issues.add(LayoutIssue(r, k, j['id'] is String ? j['id'] : null));
   if (j['id'] is! String || !_uuid.hasMatch(j['id'])) add('invalid_uuid', 'id');
-  if (j['kind'] is! String || !_nodeKinds.contains(j['kind']))
+  if (j['kind'] is! String || !_nodeKinds.contains(j['kind'])) {
     add('unknown_kind', 'kind');
+  }
   if (j.containsKey('parentId') &&
       j['parentId'] != null &&
-      (j['parentId'] is! String || !_uuid.hasMatch(j['parentId'])))
+      (j['parentId'] is! String || !_uuid.hasMatch(j['parentId']))) {
     add('invalid_parent_id', 'parentId');
+  }
   final t = j['transform'];
   if (t is! Map) {
     add('missing_transform', 'transform');
@@ -985,15 +1021,17 @@ List<LayoutIssue> _nodeDecodeIssues(Map<String, dynamic> j) {
     for (final k in ['x', 'y', 'rotation']) {
       if (!_finite(t[k])) add('invalid_transform', 'transform.$k');
     }
-    if (t.keys.any((k) => !const ['x', 'y', 'rotation'].contains(k)))
+    if (t.keys.any((k) => !const ['x', 'y', 'rotation'].contains(k))) {
       add('unknown_transform_field', 'transform');
+    }
   }
   for (final k in ['width', 'height']) {
     if (!_finite(j[k]) || j[k] <= 0) add('invalid_dimension', k);
   }
   if (j.containsKey('z') && j['z'] is! int) add('invalid_z', 'z');
-  if (j.containsKey('locked') && j['locked'] is! bool)
+  if (j.containsKey('locked') && j['locked'] is! bool) {
     add('invalid_locked', 'locked');
+  }
   for (final key in [
     'style',
     'childStyles',
@@ -1002,30 +1040,37 @@ List<LayoutIssue> _nodeDecodeIssues(Map<String, dynamic> j) {
     'graphic',
     'originalSource',
   ]) {
-    if (j.containsKey(key) && j[key] is! Map)
+    if (j.containsKey(key) && j[key] is! Map) {
       add('invalid_canonical_record', key);
+    }
   }
-  if (j.containsKey('label') && j['label'] is! String)
+  if (j.containsKey('label') && j['label'] is! String) {
     add('invalid_label', 'label');
-  if (j.keys.any((k) => const ['x', 'y', 'rotation'].contains(k)))
+  }
+  if (j.keys.any((k) => const ['x', 'y', 'rotation'].contains(k))) {
     add('flat_transform_forbidden', 'transform');
+  }
   return issues;
 }
 
 List<LayoutIssue> _documentDecodeIssues(Map<String, dynamic> j) {
   final issues = _jsonIssues(j, business: true);
   void add(String r, String p) => issues.add(LayoutIssue(r, p));
-  if (j.keys.any((k) => !_documentKeys.contains(k)))
+  if (j.keys.any((k) => !_documentKeys.contains(k))) {
     add('unknown_document_field', 'document');
-  if (j['symbolSetVersion'] != 1)
+  }
+  if (j['symbolSetVersion'] != 1) {
     add('unsupported_symbols', 'symbolSetVersion');
+  }
   if (j['canvas'] is! Map) add('missing_canvas', 'canvas');
   if (j.containsKey('defaultTextStyle') ||
       j.containsKey('appearance') ||
-      j.containsKey('generators'))
+      j.containsKey('generators')) {
     add('legacy_style_forbidden', 'document');
-  for (final key in ['styles', 'seatingDefaults', 'textPolicy'])
+  }
+  for (final key in ['styles', 'seatingDefaults', 'textPolicy']) {
     if (j[key] is! Map) add('missing_canonical_record', key);
+  }
   if (j['nodes'] is! List) {
     add('missing_nodes', 'nodes');
   } else {
@@ -1036,8 +1081,9 @@ List<LayoutIssue> _documentDecodeIssues(Map<String, dynamic> j) {
       } else {
         if (j['schemaVersion'] == 2 &&
             node.containsKey('assembly') &&
-            node['assembly'] is! Map)
+            node['assembly'] is! Map) {
           add('invalid_assembly', 'nodes[$i].assembly');
+        }
         issues.addAll(
           _nodeDecodeIssues(
             Map<String, dynamic>.from(node),
@@ -1048,13 +1094,16 @@ List<LayoutIssue> _documentDecodeIssues(Map<String, dynamic> j) {
   }
   for (final k in ['sections', 'selectionUnits', 'attachments', 'presets']) {
     if (j.containsKey(k) &&
-        (j[k] is! List || (j[k] as List).any((v) => v is! Map)))
+        (j[k] is! List || (j[k] as List).any((v) => v is! Map))) {
       add('invalid_collection', k);
+    }
   }
-  if (j['background'] != null && j['background'] is! Map)
+  if (j['background'] != null && j['background'] is! Map) {
     add('invalid_background', 'background');
-  if (issues.isEmpty && utf8.encode(jsonEncode(j)).length > layoutMaxBytes)
+  }
+  if (issues.isEmpty && utf8.encode(jsonEncode(j)).length > layoutMaxBytes) {
     add('payload_limit', 'document');
+  }
   return issues;
 }
 
@@ -1099,13 +1148,14 @@ void _validateExtras(
       'opacity',
       'crop',
     }, 'background');
-    if (d.background!['crop'] is Map)
+    if (d.background!['crop'] is Map) {
       fields(Map<String, dynamic>.from(d.background!['crop']), const {
         'x',
         'y',
         'width',
         'height',
       }, 'background.crop');
+    }
   }
   final allIds = <String>{...nodes.keys};
   void identity(dynamic id, String path) {
@@ -1145,8 +1195,9 @@ void _validateExtras(
   for (final entry in d.canvas.entries) {
     if (const ['x', 'y', 'width', 'height'].contains(entry.key) &&
         _finite(entry.value) &&
-        (entry.value as num).abs() > layoutLimits['geometryAbsMax']!)
+        (entry.value as num).abs() > layoutLimits['geometryAbsMax']!) {
       issue('coordinate_range', 'canvas.${entry.key}');
+    }
   }
   if (d.symbolSetVersion != 1) issue('unsupported_symbols', 'symbolSetVersion');
   out.addAll(
@@ -1181,8 +1232,9 @@ void _validateExtras(
         'upperRows',
         'upperRear',
       ]) {
-        if (p[key] is! int || p[key] < 0 || p[key] > layoutMaxSeats)
+        if (p[key] is! int || p[key] < 0 || p[key] > layoutMaxSeats) {
           issue('invalid_transport_count', 'nodes.$key', n.id);
+        }
       }
       if (p['left'] is int &&
           p['right'] is int &&
@@ -1190,8 +1242,9 @@ void _validateExtras(
         issue('invalid_bus_blocks', 'nodes.left', n.id);
       }
       for (final key in ['rear', 'upperRear']) {
-        if (p[key] is int && p[key] > 6)
+        if (p[key] is int && p[key] > 6) {
           issue('invalid_transport_count', 'nodes.$key', n.id);
+        }
       }
     }
     if (p['assembly'] == 'compartments' &&
@@ -1258,8 +1311,9 @@ void _validateExtras(
       }
     }
     for (final key in p.keys) {
-      if (!_geometryKeys.contains(key))
+      if (!_geometryKeys.contains(key)) {
         issue('unknown_geometry_property', 'nodes.$key', n.id);
+      }
     }
     if ([
       n.x,
@@ -1267,8 +1321,9 @@ void _validateExtras(
       n.rotation,
       n.width,
       n.height,
-    ].any((v) => v.isFinite && v.abs() > layoutLimits['geometryAbsMax']!))
+    ].any((v) => v.isFinite && v.abs() > layoutLimits['geometryAbsMax']!)) {
       issue('coordinate_range', 'nodes.geometry', n.id);
+    }
     if (p['points'] is List &&
         (p['points'] as List).any(
           (p) =>
@@ -1278,8 +1333,9 @@ void _validateExtras(
                     _finite(v) &&
                     (v as num).abs() > layoutLimits['geometryAbsMax']!,
               ),
-        ))
+        )) {
       issue('coordinate_range', 'nodes.points', n.id);
+    }
     if (p['symbol'] != null &&
         !const [
           'chair',
@@ -1287,25 +1343,31 @@ void _validateExtras(
           'sofa',
           'wheelchair',
           'driver',
-        ].contains(p['symbol']))
+        ].contains(p['symbol'])) {
       issue('unknown_symbol', 'nodes.symbol', n.id);
-    if (n.parentId != null && !_uuid.hasMatch(n.parentId!))
+    }
+    if (n.parentId != null && !_uuid.hasMatch(n.parentId!)) {
       issue('invalid_parent_id', 'nodes.parentId', n.id);
+    }
     if (n.parentId != null &&
         nodes[n.parentId] != null &&
         !const [
           'group',
           'table',
           'furniture',
-        ].contains(nodes[n.parentId]!.kind))
+        ].contains(nodes[n.parentId]!.kind)) {
       issue('invalid_parent_kind', 'nodes.parentId', n.id);
-    if (p['text'] != null && p['text'] is! String)
+    }
+    if (p['text'] != null && p['text'] is! String) {
       issue('invalid_text', 'nodes.text', n.id);
-    if (n.kind == 'text' && p['text'] == null)
+    }
+    if (n.kind == 'text' && p['text'] == null) {
       issue('missing_text', 'nodes.text', n.id);
+    }
     if (p['fontId'] != null &&
-        (p['fontId'] is! String || (p['fontId'] as String).isEmpty))
+        (p['fontId'] is! String || (p['fontId'] as String).isEmpty)) {
       issue('invalid_font_id', 'nodes.fontId', n.id);
+    }
     for (final key in [
       'bold',
       'italic',
@@ -1313,8 +1375,9 @@ void _validateExtras(
       'manualRotation',
       'obstacle',
     ]) {
-      if (p[key] != null && p[key] is! bool)
+      if (p[key] != null && p[key] is! bool) {
         issue('invalid_boolean', 'nodes.$key', n.id);
+      }
     }
     for (final key in ['size', 'lineHeight']) {
       if (p[key] != null &&
@@ -1326,8 +1389,9 @@ void _validateExtras(
               p[key] >
                   (key == 'size'
                       ? layoutLimits['fontSizeMax']!
-                      : layoutLimits['lineHeightMax']!)))
+                      : layoutLimits['lineHeightMax']!))) {
         issue(key == 'size' ? 'font_size' : 'line_height', 'nodes.$key', n.id);
+      }
     }
     for (final key in [
       'seatWidth',
@@ -1339,23 +1403,29 @@ void _validateExtras(
       if (p[key] != null &&
           (!_finite(p[key]) ||
               p[key] < (key == 'seatWidth' || key == 'seatHeight' ? 1 : 0) ||
-              p[key] > 1000000))
+              p[key] > 1000000)) {
         issue('invalid_table_seating', 'nodes.$key', n.id);
+      }
     }
     if (p['cornerRadius'] != null &&
-        (!_finite(p['cornerRadius']) || p['cornerRadius'] < 0))
+        (!_finite(p['cornerRadius']) || p['cornerRadius'] < 0)) {
       issue('invalid_radius', 'nodes.cornerRadius', n.id);
+    }
     if (p['labelOrientation'] != null &&
-        !const ['screen', 'object'].contains(p['labelOrientation']))
+        !const ['screen', 'object'].contains(p['labelOrientation'])) {
       issue('invalid_label_orientation', 'nodes.labelOrientation', n.id);
+    }
     if (p['fontStyle'] != null &&
-        !const ['normal', 'italic'].contains(p['fontStyle']))
+        !const ['normal', 'italic'].contains(p['fontStyle'])) {
       issue('invalid_font_style', 'nodes.fontStyle', n.id);
-    if (p['capacity'] != null && (p['capacity'] is! int || p['capacity'] < 0))
+    }
+    if (p['capacity'] != null && (p['capacity'] is! int || p['capacity'] < 0)) {
       issue('invalid_capacity', 'nodes.capacity', n.id);
+    }
     if (p['strokeStyle'] != null &&
-        !const ['solid', 'dashed', 'dotted'].contains(p['strokeStyle']))
+        !const ['solid', 'dashed', 'dotted'].contains(p['strokeStyle'])) {
       issue('invalid_stroke_style', 'nodes.strokeStyle', n.id);
+    }
     if (p.containsKey('holes')) {
       final holes = p['holes'];
       if (p['shape'] != 'polygon' || holes is! List || holes.length > 128) {
@@ -1374,9 +1444,9 @@ void _validateExtras(
             validHoles.add(ring);
           }
         }
-        if (vertices > layoutLimits['verticesMax']!)
+        if (vertices > layoutLimits['verticesMax']!) {
           issue('vertex_limit', 'nodes.holes', n.id);
-        else if (p['points'] is List &&
+        } else if (p['points'] is List &&
             polygon(p['points'], 'nodes.${n.id}.points')) {
           final outer = (p['points'] as List)
               .map(
@@ -1387,21 +1457,24 @@ void _validateExtras(
             final h = validHoles[i];
             if (polygonRingArea(h) * polygonRingArea(outer) >= 0 ||
                 !h.every((p) => polygonRingContains(outer, p[0], p[1])) ||
-                polygonRingsTouch(outer, h))
+                polygonRingsTouch(outer, h)) {
               issue('invalid_hole', 'nodes.holes', n.id);
+            }
             for (var j = 0; j < i; j++) {
               final other = validHoles[j];
               if (polygonRingsTouch(h, other) ||
                   polygonRingContains(h, other[0][0], other[0][1]) ||
-                  polygonRingContains(other, h[0][0], h[0][1]))
+                  polygonRingContains(other, h[0][0], h[0][1])) {
                 issue('overlapping_holes', 'nodes.holes', n.id);
+              }
             }
           }
         }
       }
     }
-    if (p['shape'] == 'polygon' && p['points'] == null)
+    if (p['shape'] == 'polygon' && p['points'] == null) {
       issue('missing_vertices', 'nodes.points', n.id);
+    }
     if (p['shape'] == 'polygon' &&
         p['points'] is List &&
         polygon(p['points'], 'nodes.${n.id}.points')) {}
@@ -1410,10 +1483,12 @@ void _validateExtras(
     identity(u['id'], 'selectionUnits.id');
     if (u.keys.any(
       (k) => !const ['id', 'nodeIds', 'kind', 'label'].contains(k),
-    ))
+    )) {
       issue('unknown_selection_unit_field', 'selectionUnits');
-    if (u['kind'] != 'atomic')
+    }
+    if (u['kind'] != 'atomic') {
       issue('invalid_selection_unit_kind', 'selectionUnits.kind');
+    }
   }
   for (final a in d.attachments) {
     {
@@ -1424,10 +1499,12 @@ void _validateExtras(
   final sectionRoots = <String>{};
   for (final s in d.sections) {
     identity(s['id'], 'sections.id');
-    if (s['title'] is! String || (s['title'] as String).isEmpty)
+    if (s['title'] is! String || (s['title'] as String).isEmpty) {
       issue('invalid_section_title', 'sections.title');
-    if (!sectionRoots.add('${s['rootId']}'))
+    }
+    if (!sectionRoots.add('${s['rootId']}')) {
       issue('duplicate_section_root', 'sections.rootId');
+    }
     if (s.keys.any(
       (k) => !const [
         'id',
@@ -1437,13 +1514,16 @@ void _validateExtras(
         'outline',
         'order',
       ].contains(k),
-    ))
+    )) {
       issue('unknown_section_field', 'sections');
+    }
     if (s['outline'] != null) polygon(s['outline'], 'sections.outline');
-    if (s['order'] != null && s['order'] is! int)
+    if (s['order'] != null && s['order'] is! int) {
       issue('invalid_order', 'sections.order');
-    if (s['levelId'] != null && s['levelId'] is! String)
+    }
+    if (s['levelId'] != null && s['levelId'] is! String) {
       issue('invalid_level', 'sections.levelId');
+    }
   }
   for (final p in d.presets) {
     identity(p['id'], 'presets.id');
@@ -1455,10 +1535,12 @@ void _validateExtras(
         'document',
         'version',
       ].contains(k),
-    ))
+    )) {
       issue('unknown_preset_field', 'presets');
-    if (p['title'] is! String || (p['title'] as String).isEmpty)
+    }
+    if (p['title'] is! String || (p['title'] as String).isEmpty) {
       issue('invalid_preset_title', 'presets.title');
+    }
     final fragment = p['document'];
     if (fragment is! Map<String, dynamic>) {
       issue('invalid_preset_document', 'presets.document');
@@ -1485,19 +1567,22 @@ void _validateExtras(
   if (d.background case final Map<String, dynamic> b) {
     for (final key in ['x', 'y', 'rotation', 'width', 'height', 'scale']) {
       if (!_finite(b[key]) ||
-          const ['width', 'height', 'scale'].contains(key) && b[key] <= 0)
+          const ['width', 'height', 'scale'].contains(key) && b[key] <= 0) {
         issue('invalid_background_transform', 'background.$key');
+      }
     }
     final ref = b['assetRef'];
     if (ref is! String ||
         !RegExp(r'^[A-Za-z0-9][A-Za-z0-9:._-]{0,255}$').hasMatch(ref) ||
-        ref.contains('..'))
+        ref.contains('..')) {
       issue('invalid_asset_ref', 'background.assetRef');
+    }
     final hash =
         b['hash'] ??
         (ref is String && ref.startsWith('image:') ? ref.substring(6) : null);
-    if (hash is! String || !_sha256Pattern.hasMatch(hash))
+    if (hash is! String || !_sha256Pattern.hasMatch(hash)) {
       issue('invalid_asset_hash', 'background.hash');
+    }
     if (b['crop'] is! Map) {
       issue('invalid_crop', 'background.crop');
     } else {
@@ -1507,8 +1592,9 @@ void _validateExtras(
     }
     for (final k in ['x', 'y', 'rotation', 'width', 'height', 'scale']) {
       if (_finite(b[k]) &&
-          (b[k] as num).abs() > layoutLimits['geometryAbsMax']!)
+          (b[k] as num).abs() > layoutLimits['geometryAbsMax']!) {
         issue('coordinate_range', 'background.$k');
+      }
     }
   }
 }
@@ -1518,8 +1604,9 @@ List<LayoutIssue> validateLayoutResources(Map<String, dynamic> resources) {
   final serializable = Map<String, dynamic>.from(resources)..remove('images');
   final issues = _jsonIssues(serializable, path: 'resources');
   if (issues.isNotEmpty || resources.isEmpty) return issues;
-  if (resources['protocol'] != canonicalTextResourceProtocol)
+  if (resources['protocol'] != canonicalTextResourceProtocol) {
     return [LayoutIssue('unsupported_resource_protocol', 'resources.protocol')];
+  }
   return validateCanonicalTextResources(resources);
 }
 
@@ -1613,16 +1700,18 @@ bool sameLayoutNode(LayoutNode a, LayoutNode b) {
       quantize(a.y) != quantize(b.y) ||
       quantize(a.rotation) != quantize(b.rotation) ||
       quantize(a.width) != quantize(b.width) ||
-      quantize(a.height) != quantize(b.height))
+      quantize(a.height) != quantize(b.height)) {
     return false;
+  }
   if (!sameLayoutValue(a.style, b.style) ||
       !sameLayoutValue(a.childStyles, b.childStyles) ||
       !sameLayoutValue(a.seating, b.seating) ||
       !sameLayoutValue(a.surface, b.surface) ||
       !sameLayoutValue(a.assembly, b.assembly) ||
       !sameLayoutValue(a.graphic, b.graphic) ||
-      !sameLayoutValue(a.originalSource, b.originalSource))
+      !sameLayoutValue(a.originalSource, b.originalSource)) {
     return false;
+  }
   if (identical(a.properties, b.properties)) return true;
   if (a.properties.length != b.properties.length) return false;
   for (final entry in a.properties.entries) {
@@ -1647,11 +1736,13 @@ bool sameLayoutDocument(VenueLayoutDocument a, VenueLayoutDocument b) {
   if (a.schemaVersion != b.schemaVersion ||
       !sameLayoutValue(a.styles, b.styles) ||
       !sameLayoutValue(a.seatingDefaults, b.seatingDefaults) ||
-      !sameLayoutValue(a.textPolicy, b.textPolicy))
+      !sameLayoutValue(a.textPolicy, b.textPolicy)) {
     return false;
+  }
   if (a.symbolSetVersion != b.symbolSetVersion ||
-      a.nodes.length != b.nodes.length)
+      a.nodes.length != b.nodes.length) {
     return false;
+  }
   for (var i = 0; i < a.nodes.length; i++) {
     if (a.nodes[i].id != b.nodes[i].id) {
       return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
@@ -1659,13 +1750,15 @@ bool sameLayoutDocument(VenueLayoutDocument a, VenueLayoutDocument b) {
     if (!sameLayoutNode(a.nodes[i], b.nodes[i])) return false;
   }
   if (!sameLayoutValue(a.canvas, b.canvas) ||
-      !sameLayoutValue(a.background, b.background))
+      !sameLayoutValue(a.background, b.background)) {
     return false;
+  }
   if (sameLayoutValue(a.sections, b.sections) &&
       sameLayoutValue(a.selectionUnits, b.selectionUnits) &&
       sameLayoutValue(a.attachments, b.attachments) &&
-      sameLayoutValue(a.presets, b.presets))
+      sameLayoutValue(a.presets, b.presets)) {
     return true;
+  }
   return jsonEncode(a.toJson()) == jsonEncode(b.toJson());
 }
 
@@ -1715,8 +1808,9 @@ bool polygonRingContains(List<List<double>> points, double x, double y) {
   for (var i = 0, j = points.length - 1; i < points.length; j = i++) {
     final a = points[i], b = points[j];
     if ((a[1] > y) != (b[1] > y) &&
-        x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0])
+        x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) {
       inside = !inside;
+    }
   }
   return inside;
 }
@@ -1733,11 +1827,13 @@ bool polygonRingsTouch(List<List<double>> a, List<List<double>> b) {
       if (max(p[0], q[0]) < min(r[0], s[0]) ||
           max(r[0], s[0]) < min(p[0], q[0]) ||
           max(p[1], q[1]) < min(r[1], s[1]) ||
-          max(r[1], s[1]) < min(p[1], q[1]))
+          max(r[1], s[1]) < min(p[1], q[1])) {
         continue;
+      }
       if (cross(p, q, r) * cross(p, q, s) <= 0 &&
-          cross(r, s, p) * cross(r, s, q) <= 0)
+          cross(r, s, p) * cross(r, s, q) <= 0) {
         return true;
+      }
     }
   return false;
 }
@@ -1755,14 +1851,17 @@ void _validateCanonicalDocument(
     String path, [
     String? id,
   ]) {
-    for (final i in validateCanonicalLeaves(v, fields, path))
+    for (final i in validateCanonicalLeaves(v, fields, path)) {
       issue(i.reason, i.path, id);
+    }
   }
 
-  if (d.styles.keys.any((k) => k != 'label' && k != 'kinds'))
+  if (d.styles.keys.any((k) => k != 'label' && k != 'kinds')) {
     issue('unknown_style_scope', 'styles');
-  if (d.styles.containsKey('label'))
+  }
+  if (d.styles.containsKey('label')) {
     leaves(d.styles['label'], canonicalLabelFields, 'styles.label');
+  }
   final kinds = d.styles['kinds'];
   if (kinds != null) {
     if (kinds is! Map) {
@@ -1777,8 +1876,9 @@ void _validateCanonicalDocument(
           e.value,
           'styles.kinds.${e.key}',
           kind: e.key as String,
-        ))
+        )) {
           issue(i.reason, i.path);
+        }
       }
   }
   leaves(d.seatingDefaults, canonicalSeatingFields, 'seatingDefaults');
@@ -1786,16 +1886,18 @@ void _validateCanonicalDocument(
     for (final k in ['language', 'direction']) k: canonicalLabelFields[k]!,
   }, 'textPolicy');
   if (!d.textPolicy.containsKey('language') ||
-      !d.textPolicy.containsKey('direction'))
+      !d.textPolicy.containsKey('direction')) {
     issue('missing_text_policy', 'textPolicy');
+  }
   for (final node in d.nodes) {
     final path = 'nodes.${node.id}';
     for (final i in validateCanonicalStyle(
       node.style,
       '$path.style',
       kind: node.kind,
-    ))
+    )) {
       issue(i.reason, i.path, node.id);
+    }
     final legacy = {
       ...legacyStyleDestinations.keys,
       ...legacySeatingDestinations.keys,
@@ -1804,32 +1906,40 @@ void _validateCanonicalDocument(
       'manualRotation',
       'assembly',
     };
-    for (final key in node.properties.keys)
-      if (legacy.contains(key))
+    for (final key in node.properties.keys) {
+      if (legacy.contains(key)) {
         issue('legacy_property_forbidden', '$path.$key', node.id);
-    for (final key in node.properties.keys)
-      if (!canonicalGeometryPropertyKeys.contains(key) && !legacy.contains(key))
+    }
+      }
+    for (final key in node.properties.keys) {
+      if (!canonicalGeometryPropertyKeys.contains(key) && !legacy.contains(key)) {
         issue('unknown_canonical_geometry_field', '$path.$key', node.id);
+    }
+      }
     if (node.originalSource != null &&
         (node.kind != 'vector' ||
-            !validOriginalSvgSource(node.originalSource!)))
+            !validOriginalSvgSource(node.originalSource!))) {
       issue('invalid_original_source', '$path.originalSource', node.id);
+    }
     if (node.kind == 'table') {
       leaves(node.seating, canonicalSeatingFields, '$path.seating', node.id);
-      if (node.childStyles.keys.any((k) => k != 'seat'))
+      if (node.childStyles.keys.any((k) => k != 'seat')) {
         issue('invalid_child_style_kind', '$path.childStyles', node.id);
+      }
       if (node.childStyles.containsKey('seat'))
         for (final i in validateCanonicalStyle(
           node.childStyles['seat'],
           '$path.childStyles.seat',
           kind: 'seat',
-        ))
+        )) {
           issue(i.reason, i.path, node.id);
+        }
       _validateCanonicalSurface(node, out);
       if (node.properties.keys.any(
         (k) => const {'shape', 'points', 'holes'}.contains(k),
-      ))
+      )) {
         issue('legacy_surface_forbidden', path, node.id);
+      }
     } else {
       final assemblyRoot =
           const {'group', 'furniture'}.contains(node.kind) &&
@@ -1841,28 +1951,32 @@ void _validateCanonicalDocument(
           }.contains(node.assembly?['kind']);
       if (node.childStyles.isNotEmpty ||
           node.surface != null ||
-          node.seating.isNotEmpty && !assemblyRoot)
+          node.seating.isNotEmpty && !assemblyRoot) {
         issue('table_record_on_other_kind', path, node.id);
-      if (assemblyRoot)
+      }
+      if (assemblyRoot) {
         leaves(node.seating, canonicalSeatingFields, '$path.seating', node.id);
+      }
     }
     if (node.assembly != null) {
       for (final problem in validateCanonicalAssembly(
         node.assembly!,
         node.kind,
         '$path.assembly',
-      ))
+      )) {
         issue(problem.reason, problem.path, node.id);
+      }
     }
     if (node.kind == 'vector') {
       if (node.graphic?['type'] != 'vector') {
         issue('vector_graphic_required', '$path.graphic', node.id);
-      } else
+      } else {
         try {
           LayoutVectorGraphic.fromJson({...node.graphic!}..remove('type'));
         } on GraphicImportFailure catch (e) {
           issue(e.reason, '$path.graphic', node.id);
         }
+      }
     } else if (node.kind == 'image') {
       final g = node.graphic;
       if (g == null ||
@@ -1895,8 +2009,9 @@ void _validateCanonicalDocument(
             crop['width'] <= 0 ||
             crop['height'] <= 0 ||
             crop['x'] + crop['width'] > 1 ||
-            crop['y'] + crop['height'] > 1)
+            crop['y'] + crop['height'] > 1) {
           issue('invalid_bitmap_crop', '$path.graphic.crop', node.id);
+        }
       }
     } else if (node.graphic != null) {
       issue('graphic_on_other_kind', '$path.graphic', node.id);
@@ -1926,10 +2041,12 @@ void _validateCanonicalDocument(
         !attached.add('${a['seatId']}') ||
         seat?.kind != 'seat' ||
         seat?.parentId != target?.id ||
-        (target?.kind != 'table' && !assemblyTarget))
+        (target?.kind != 'table' && !assemblyTarget)) {
       issue('invalid_attachment', 'attachments');
-    if (!const {'auto', 'manual'}.contains(a['rotationMode']))
+    }
+    if (!const {'auto', 'manual'}.contains(a['rotationMode'])) {
       issue('invalid_rotation_mode', 'attachments.rotationMode');
+    }
     final placement = a['placement'];
     if (placement is! Map) {
       issue('invalid_placement', 'attachments.placement');
@@ -1937,11 +2054,13 @@ void _validateCanonicalDocument(
     }
     final mode = placement['mode'];
     if (mode == 'automatic' || mode == 'free') {
-      if (placement.length != 1)
+      if (placement.length != 1) {
         issue('invalid_placement', 'attachments.placement');
+      }
     } else if (mode == 'sidePinned') {
-      if (target?.kind != 'table')
+      if (target?.kind != 'table') {
         issue('invalid_side_pin_target', 'attachments.targetId');
+      }
       if (placement['cell'] != null) {
         final cell = placement['cell'];
         if (placement.keys.any(
@@ -1955,9 +2074,9 @@ void _validateCanonicalDocument(
               'right',
               'bottom',
               'left',
-            }.contains(placement['face']))
+            }.contains(placement['face'])) {
           issue('invalid_grid_pin', 'attachments.placement');
-        else if (target == null ||
+        } else if (target == null ||
             !canonicalGridPinOnBoundary(target, cell, placement['face']))
           issue('invalid_grid_pin_boundary', 'attachments.placement');
       } else if (placement.keys.any(
@@ -2030,10 +2149,12 @@ void _validateCanonicalSurface(LayoutNode node, List<LayoutIssue> out) {
   }
   if (s['type'] == 'rect' || s['type'] == 'circle') {
     if (s.length != 1) issue('unknown_surface_field');
-    if (s['type'] == 'circle' && (node.width - node.height).abs() > 1 / 1024)
+    if (s['type'] == 'circle' && (node.width - node.height).abs() > 1 / 1024) {
       issue('non_circular_surface');
-    if (s['type'] == 'circle' && node.properties['furniture'] == 'bar')
+    }
+    if (s['type'] == 'circle' && node.properties['furniture'] == 'bar') {
       issue('bar_circle_unsupported');
+    }
     return;
   }
   if (s['type'] != 'grid' ||
@@ -2099,20 +2220,23 @@ void _validateCanonicalSurface(LayoutNode node, List<LayoutIssue> out) {
       minY != 0 ||
       maxX * maxY > 16384 ||
       (node.width - maxX * module).abs() > 1 / 1024 ||
-      (node.height - maxY * module).abs() > 1 / 1024)
+      (node.height - maxY * module).abs() > 1 / 1024) {
     issue('grid_dimensions');
+  }
   for (var i = 1; i < valid.length; i++) {
     final hole = valid[i];
     if (polygonRingArea(ring) * polygonRingArea(hole) >= 0 ||
         !hole.every((p) => polygonRingContains(ring, p[0], p[1])) ||
-        polygonRingsTouch(ring, hole))
+        polygonRingsTouch(ring, hole)) {
       issue('invalid_grid_hole');
+    }
     for (var j = 1; j < i; j++) {
       final prior = valid[j];
       if (polygonRingsTouch(prior, hole) ||
           polygonRingContains(prior, hole[0][0], hole[0][1]) ||
-          polygonRingContains(hole, prior[0][0], prior[0][1]))
+          polygonRingContains(hole, prior[0][0], prior[0][1])) {
         issue('overlapping_grid_holes');
+      }
     }
   }
 }
@@ -2196,16 +2320,19 @@ ResolvedNodeAppearance resolveNodeAppearance(
       ...document.textPolicy,
     },
   }, 'core');
-  if (document.styles['label'] case final Map label)
+  if (document.styles['label'] case final Map label) {
     layer({'label': label}, 'styles.label');
-  if ((document.styles['kinds'] as Map?)?[node.kind] case final Map kind)
+  }
+  if ((document.styles['kinds'] as Map?)?[node.kind] case final Map kind) {
     layer(kind, 'styles.kinds.${node.kind}');
+  }
   if (node.kind == 'seat' && node.parentId != null) {
     final parent = document.nodes
         .where((n) => n.id == node.parentId && n.kind == 'table')
         .firstOrNull;
-    if (parent?.childStyles['seat'] case final Map child)
+    if (parent?.childStyles['seat'] case final Map child) {
       layer(child, 'table:${parent!.id}');
+    }
   }
   layer(node.style, 'node:${node.id}');
   return ResolvedNodeAppearance(values, sources);
@@ -2222,8 +2349,9 @@ Map<String, dynamic> patchCanonicalStyle(
   if (path.isEmpty ||
       path.length > 2 ||
       (path.length == 2 && path.first != 'label') ||
-      (!unset && value == null))
+      (!unset && value == null)) {
     throw const FormatException('invalid_style_patch');
+  }
   final next = Map<String, dynamic>.from(style);
   if (path.length == 1) {
     if (unset) {
@@ -2271,8 +2399,9 @@ Map<String, dynamic> surfaceGeometryProperties(LayoutNode node) {
           !(surface['moduleSize'] as num).isFinite ||
           !validRing(surface['outer']) ||
           surface['holes'] is! List ||
-          !(surface['holes'] as List).every(validRing))
+          !(surface['holes'] as List).every(validRing)) {
         return node.properties;
+      }
       final module = (surface['moduleSize'] as num).toDouble();
       List<List<double>> ring(List raw) => [
         for (final point in raw)

@@ -49,8 +49,9 @@ void main() {
     t,
   ) async {
     Future<TextStyle> load(LayoutNode n) async {
-      if ((n.style['label'] as Map)['fontFamilyId'] == oldFamily)
+      if ((n.style['label'] as Map)['fontFamilyId'] == oldFamily) {
         throw StateError('temporary_failure');
+      }
       return const TextStyle(fontFamily: 'Ahem');
     }
 

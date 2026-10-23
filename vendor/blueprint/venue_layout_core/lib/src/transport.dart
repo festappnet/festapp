@@ -198,7 +198,7 @@ VenueLayoutDocument busLayout({
           radius: 2,
           fill: '#E9EFF4FF',
         );
-        for (var step = 0; step < 3; step++)
+        for (var step = 0; step < 3; step++) {
           b.line(
             slot('door-$door-step-$step'),
             [
@@ -208,6 +208,7 @@ VenueLayoutDocument busLayout({
             deck: deck,
             stroke: '#7C8C9CFF',
           );
+        }
       }
     }
     if (decks == 2) {
@@ -221,7 +222,7 @@ VenueLayoutDocument busLayout({
         radius: 4,
         fill: '#EEF2F6FF',
       );
-      for (var step = 0; step < 6; step++)
+      for (var step = 0; step < 6; step++) {
         b.line(
           slot('stair-$step'),
           [
@@ -231,6 +232,7 @@ VenueLayoutDocument busLayout({
           deck: deck,
           stroke: '#7C8C9CFF',
         );
+      }
       b.text(
         slot('stairs-label'),
         offset + width - 68,
@@ -257,7 +259,7 @@ VenueLayoutDocument busLayout({
     );
     for (var row = 0; row < count; row++) {
       final y = front + 20 + row * 64;
-      for (var i = 0; i < left; i++)
+      for (var i = 0; i < left; i++) {
         b.seat(
           'deck:$deck:row:$row:left:$i',
           aisleLeft - 26 - (left - 1 - i) * 52,
@@ -265,7 +267,8 @@ VenueLayoutDocument busLayout({
           '${number++}',
           deck: deck,
         );
-      for (var i = 0; i < right; i++)
+      }
+      for (var i = 0; i < right; i++) {
         b.seat(
           'deck:$deck:row:$row:right:$i',
           aisleRight + 26 + i * 52,
@@ -273,6 +276,7 @@ VenueLayoutDocument busLayout({
           '${number++}',
           deck: deck,
         );
+      }
       b.line(
         slot('window-left-$row'),
         [
@@ -294,7 +298,7 @@ VenueLayoutDocument busLayout({
         strokeWidth: 3,
       );
     }
-    for (var i = 0; i < back; i++)
+    for (var i = 0; i < back; i++) {
       b.seat(
         'deck:$deck:rear:$i',
         offset + width / 2 + (i - (back - 1) / 2) * 52,
@@ -302,8 +306,9 @@ VenueLayoutDocument busLayout({
         '${number++}',
         deck: deck,
       );
+    }
     final last = front + 20 + max(0, count - 1) * 64, gap = height - 48 - last;
-    if (deck == 0 && decks == 2 && gap >= 130)
+    if (deck == 0 && decks == 2 && gap >= 130) {
       b.text(
         slot('service-label'),
         offset + width / 2,
@@ -313,6 +318,7 @@ VenueLayoutDocument busLayout({
         'Service area',
         deck: deck,
       );
+    }
   }
   return _checked(
     _transportSeating(
@@ -431,7 +437,7 @@ VenueLayoutDocument compartmentLayout({
       stroke: '#7C8C9CFF',
       strokeWidth: 2,
     );
-    if (c == compartments - 1)
+    if (c == compartments - 1) {
       b.line(
         'decor:comp:$c:right',
         [
@@ -441,6 +447,7 @@ VenueLayoutDocument compartmentLayout({
         stroke: '#7C8C9CFF',
         strokeWidth: 2,
       );
+    }
     b.line('decor:comp:$c:door-left', [
       [start, depth + 8],
       [center - 36, depth + 8],
@@ -480,7 +487,7 @@ VenueLayoutDocument compartmentLayout({
     // compartment partitions, along the transverse axis toward the side corridor.
     for (var row = 0; row < 2; row++) {
       final count = row == 0 ? front : back;
-      for (var i = 0; i < count; i++)
+      for (var i = 0; i < count; i++) {
         b.seat(
           'comp:$c:row:$row:seat:$i',
           row == 0 ? start + 34 : start + cell - 34,
@@ -488,6 +495,7 @@ VenueLayoutDocument compartmentLayout({
           '${number++}',
           rotation: row == 0 ? 90 : 270,
         );
+      }
     }
   }
   for (var side = 0; side < 2; side++) {
@@ -550,7 +558,7 @@ VenueLayoutDocument compartmentLayout({
 
 Map<String, int> busLayoutParameters(VenueLayoutDocument document, String id) {
   final root = _root(document, id, 'bus'), p = root.assembly!;
-  if (p['decks'] is int)
+  if (p['decks'] is int) {
     return {
       for (final key in [
         'rows',
@@ -563,6 +571,7 @@ Map<String, int> busLayoutParameters(VenueLayoutDocument document, String id) {
       ])
         key: p[key] as int,
     };
+  }
   throw StateError('Missing canonical bus parameters');
 }
 
@@ -571,11 +580,12 @@ Map<String, int> compartmentLayoutParameters(
   String id,
 ) {
   final root = _root(document, id, 'compartments'), p = root.assembly!;
-  if (p['compartments'] is int && p['seats'] is int)
+  if (p['compartments'] is int && p['seats'] is int) {
     return {
       'compartments': p['compartments'] as int,
       'seats': p['seats'] as int,
     };
+  }
   throw StateError('Missing canonical compartment parameters');
 }
 
@@ -665,14 +675,16 @@ VenueLayoutDocument _reconcile(
     if (ancestor.locked) throw StateError('Locked transport layout');
     ancestor = index[ancestor.parentId];
   }
-  if (children.any((n) => n.locked))
+  if (children.any((n) => n.locked)) {
     throw StateError('Locked transport layout');
+  }
   final oldBySlot = <String, LayoutNode>{};
   for (final node in children) {
     if (node.properties['slot'] != null) {
       final slot = canonical('${node.properties['slot']}');
-      if (oldBySlot.containsKey(slot))
+      if (oldBySlot.containsKey(slot)) {
         throw StateError('Duplicate transport slot');
+      }
       oldBySlot[slot] = node;
     }
   }
@@ -686,11 +698,12 @@ VenueLayoutDocument _reconcile(
   for (final unit in d.selectionUnits) {
     final ids = (unit['nodeIds'] as List).cast<String>().toSet();
     if (ids.any(protected.contains)) protectedAll.addAll(ids);
-    if (ids.any(removed.contains) && !removed.containsAll(ids))
+    if (ids.any(removed.contains) && !removed.containsAll(ids)) {
       throw TransportLayoutRejected(
         'Atomic seat groups prevent changing this transport layout.',
         ids,
       );
+    }
   }
   final unsafe = children
       .where(
@@ -701,11 +714,12 @@ VenueLayoutDocument _reconcile(
       )
       .map((n) => n.id)
       .toSet();
-  if (unsafe.isNotEmpty)
+  if (unsafe.isNotEmpty) {
     throw TransportLayoutRejected(
       'Manual or protected seats prevent changing this transport layout.',
       unsafe,
     );
+  }
   final labels = d.nodes
       .where((n) => n.kind == 'seat')
       .map((n) => n.label)
@@ -721,7 +735,9 @@ VenueLayoutDocument _reconcile(
     if (old == null) {
       var added = candidate;
       if (candidate.kind == 'seat') {
-        while (labels.contains('$nextNumber')) nextNumber++;
+        while (labels.contains('$nextNumber')) {
+          nextNumber++;
+        }
         added = candidate.copyWith(label: '${nextNumber++}');
         labels.add(added.label);
       }
@@ -806,8 +822,9 @@ String _coupeSlot(String slot, int seats) {
 
 LayoutNode _root(VenueLayoutDocument d, String id, String assembly) {
   final node = d.nodes.firstWhere((n) => n.id == id);
-  if (node.kind != 'group' || ((node.assembly?['kind'])) != assembly)
+  if (node.kind != 'group' || ((node.assembly?['kind'])) != assembly) {
     throw ArgumentError('Expected $assembly transport assembly');
+  }
   return node;
 }
 
@@ -841,11 +858,12 @@ void _busCounts(
 
 VenueLayoutDocument _checked(VenueLayoutDocument d) {
   final issues = validateDocument(d);
-  if (issues.isNotEmpty)
+  if (issues.isNotEmpty) {
     throw InvalidLayoutDocument(issues, {
       'operation': 'transport',
       'nodes': d.nodes.length,
     });
+  }
   return d;
 }
 
@@ -889,7 +907,7 @@ class _Vehicle {
 
           'role': 'decoration',
           'slot': slot,
-          if (deck != null) 'deck': deck,
+          'deck': ?deck,
         },
       ),
     );
@@ -915,7 +933,7 @@ class _Vehicle {
       properties: {
         'role': 'decoration',
         'slot': slot,
-        if (deck != null) 'deck': deck,
+        'deck': ?deck,
       },
     );
     nodes.add(node.copyWith(parentId: root.id));
@@ -948,7 +966,7 @@ class _Vehicle {
 
           'role': 'decoration',
           'slot': slot,
-          if (deck != null) 'deck': deck,
+          'deck': ?deck,
         },
       ),
     );
@@ -976,7 +994,7 @@ class _Vehicle {
         },
         properties: {
           'slot': slot,
-          if (deck != null) 'deck': deck,
+          'deck': ?deck,
           'symbol': 'chair',
         },
       ),

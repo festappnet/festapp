@@ -153,11 +153,12 @@ void main() {
           },
         ),
         d.nodes.last.copyWith(style: const {'unknown': 1}),
-      ])
+      ]) {
         expect(
           validateDocument(d.copyWith(nodes: [d.nodes.first, n])),
           isNotEmpty,
         );
+      }
       expect(
         validateDocument(
           d.copyWith(

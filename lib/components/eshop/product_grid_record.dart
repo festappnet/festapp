@@ -151,6 +151,10 @@ class ProductGridRecord extends ITrinaRowModel {
           currencyCode: json[EshopColumnIds.PRODUCT_CURRENCY_CODE],
           order: json[EshopColumnIds.PRODUCT_ORDER],
           maximum: json[EshopColumnIds.PRODUCT_MAXIMUM],
+          orderedCount: model?.orderedCount,
+          purchasedCount: model?.purchasedCount,
+          paidCount: model?.paidCount,
+          sentCount: model?.sentCount,
           priceChanges: model?.priceChanges,
           visibilityChanges: model?.visibilityChanges,
           priceServerTime: model?.priceServerTime,
@@ -168,7 +172,7 @@ class ProductGridRecord extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     final product = this.product;
-    final total = (product.paidCount ?? 0) + (product.sentCount ?? 0);
+    final total = product.purchasedCount ?? 0;
     return TrinaRow(cells: {
       EshopColumnIds.PRODUCT_ID: TrinaCell(value: product.id ?? 0),
       EshopColumnIds.PRODUCT_IS_HIDDEN:

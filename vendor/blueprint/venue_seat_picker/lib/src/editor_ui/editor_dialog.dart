@@ -50,10 +50,12 @@ class _EditorDialogDismissalState extends State<EditorDialogDismissal> {
     // still close when a disabled/replaced control leaves focus on its caller.
     if (event is! KeyDownEvent ||
         event.logicalKey != LogicalKeyboardKey.escape ||
-        _route?.isCurrent != true)
+        _route?.isCurrent != true) {
       return KeyEventResult.ignored;
-    if (widget.enabled)
+    }
+    if (widget.enabled) {
       (widget.onClose ?? () => Navigator.of(context).maybePop())();
+    }
     return KeyEventResult.handled;
   }
 

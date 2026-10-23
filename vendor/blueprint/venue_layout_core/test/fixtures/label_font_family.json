@@ -1,0 +1,19 @@
+{
+  "protocol": 2,
+  "fontFamilies": {
+    "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5": {
+      "id": "font-family:f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+      "hash": "f7b3a0ebd5b869a2c40433fdc5c003472743d3587c9ff15275ee2eaea54a19c5",
+      "faces": {
+        "400:italic": "gf:cab2f63113328b72dce6b3e1eac7f268a27290911049f79fe760630c7befd861",
+        "400:normal": "gf:7f3ec5073a282c666c9a0063573345841229caf50ed34d33017e20d441bf5caf",
+        "700:italic": "gf:07b9b53ecf7da2d6c4af6841bb5c9e16087594914c6723a782805a4201b3cdc5",
+        "700:normal": "gf:a059c7343a09d6144d964625cb5d7cd9a0692772f981920c253941600447cb8d"
+      },
+      "family": "Roboto",
+      "version": 1
+    }
+  },
+  "textLayouts": {},
+  "numberSymbols": {}
+}

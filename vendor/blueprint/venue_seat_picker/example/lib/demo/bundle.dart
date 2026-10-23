@@ -131,19 +131,22 @@ class DemoBundle {
     if (assets is Map) {
       for (final entry in assets.entries) {
         final asset = entry.value;
-        if (entry.key is! String || asset is! Map || asset['url'] is! String)
+        if (entry.key is! String || asset is! Map || asset['url'] is! String) {
           throw const FormatException('Asset must contain embedded bytes');
+        }
         final uri = Uri.tryParse(asset['url'] as String), data = uri?.data;
         if (uri?.scheme != 'data' ||
             data == null ||
             !data.isBase64 ||
-            data.mimeType != asset['mimeType'])
+            data.mimeType != asset['mimeType']) {
           throw const FormatException('Asset must contain embedded bytes');
+        }
         final bytes = data.contentAsBytes();
         if (bytes.length > maxAssetBytes ||
             bytes.length != asset['byteLength'] ||
-            sha256.convert(bytes).toString() != asset['hash'])
+            sha256.convert(bytes).toString() != asset['hash']) {
           throw const FormatException('Invalid embedded asset');
+        }
       }
     }
   }
@@ -159,10 +162,11 @@ class DemoBundle {
       throw const FormatException('Missing embedded background resource');
     }
     final issues = compileScene(doc, resources: resources)['issues'] as List;
-    if (issues.isNotEmpty)
+    if (issues.isNotEmpty) {
       throw FormatException(
         'Missing or invalid prepared resource: ${issues.first}',
       );
+    }
   }
 
   static VenueLayoutDocument? _validateHost(

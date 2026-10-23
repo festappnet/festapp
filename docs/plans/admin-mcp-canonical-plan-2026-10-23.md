@@ -1,8 +1,12 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Stav: plán připraven; další etapy neimplementovány.
+Datum: 2026-10-23. Stav: etapy 0, 0B, 1 a řez 2A lokálně dokončeny; pokračují další řezy etapy 2.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
-Tento úkol vytváří plán a prováděcí zadání, nemění runtime ani produkci.
+Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
+upgrade byl samostatně dokončen a nasazen z main
+`4cfc9b7bc66f48c2d6e42155f08e905dde112d0d`: MCP `2026-07-28`, server SDK
+2.3.1, Node adaptér 2.1.1, oficiální legacy hranice; všech 74 MCP testů prošlo
+včetně disposable PostgreSQL bez skipů. Exekuční práce začíná etapou 0 níže.
 
 ## Výsledek a hranice
 
@@ -131,6 +135,21 @@ Názvy nových veřejných doménových operací budou bez zbytečného V2/V3. E
 verzovaný veřejný kontrakt se nepřejmenovává bez migračního důvodu. Vydané klienty
 nelze odpojit tichým odstraněním RPC. Zachovaný kompatibilní vstup má pouze
 adaptaci na jednoho vlastníka a doloženou podmínku odstranění.
+
+## Význam administračního pohledu
+
+Před každým řezem vycházet z konkrétní administrační tabulky nebo formuláře:
+co správce potřebuje zjistit či rozhodnout, které sloupce a vazby k tomu používá
+ a jakou entitu skutečně počítají agregáty. MCP nesmí být pouhá kopie řádků tabulky
+ani nutit agenta dopočítávat obchodní význam ze surových dat. Kanonický čtecí model
+zahrnuje relevantní počty, stav, názvy souvisejících objektů a verze pro další krok.
+Optimalizuje se výběr a nepotřebný přenos, nikoli odstranění důležitých souvislostí.
+
+Produktový pohled má [konkrétní sémantický kontrakt](../architecture/product-admin-read-contract.md).
+Například UI zaplaceno zahrnuje paid i sent; počet objednaných položek není počet
+lidí ani počet unikátních objednávek. Každý další řez zaznamená obdobnou stručnou
+mapu otázka/sloupec -> společný owner/vazba -> DTO. Neodvozovat neověřenou
+prodejní dostupnost nebo revenue z pouhé přítomnosti odkazu či počtu vazeb.
 
 ## Datová, SQL a síťová kvalita každého řezu
 
@@ -632,15 +651,88 @@ admin tabů, nikoliv po přidání jejich názvů do MCP katalogu.
 
 ### Checkpoint
 
-- Dokončeno před tímto plánem: základní katalog produktů, vybrané objednávkové
-  operace, manuální platby, queued vstupenky, správa/revokace připojení.
-- Etapy 0-10 včetně provozního řezu 2B: připravené k postupnému vykonání, zatím neimplementované.
-- Další konkrétní krok: etapa 0, serverové stránkování produktového read owneru
-  a odstranění full-catalog přenosu pro každou MCP stránku. Potom sjednocení
-  `saveProductWaveTarget` / `saveNewProductWaveTarget` v etapě 1 a nový
-  `tools/festapp/test/product-waves-postgres.test.mjs` podle existujícího harnessu.
-- Nová evidence: lokální datový audit se 100 a 1000 produkty, dvě stránky limitu
-  50 pro každou velikost; skutečný SQL owner a MCP executor; fixture plně rollback.
-- Nebyla provedena implementace, produkční migrace, build ani deploy. Při prvním
-  sepsání plánu neběžely runtime testy; následný datový průchod použil pouze
-  výše uvedený disposable reproduktor a dočasné DDL v rollback transakci.
+- Etapa 0 lokálně hotová na autoritativním základu `4cfc9b7bc` v izolovaném
+  `/private/tmp/festapp-admin-mcp-canonical-20261023`. Publikace a produkční migrace dosud neproběhly.
+- Owner: `get_product_catalog_data_internal`; UI `get_product_catalog` (celý editor)
+  a MCP `get_product_catalog_page` (ID keyset 1-100) sdílejí stejnou projekci.
+  `get_products_and_types_for_edit(text)` zachován jako adaptér vydaných klientů.
+  Exit gate: upgrade posledního podporovaného klienta a odstranění jeho volání.
+- Odstraněno MCP full-catalog sort/filter/slice a opakované filtrování inventory links.
+  Stránka přenáší jen relevantní typy a kontexty; prázdná stránka má prázdná metadata.
+  Editor záměrně zachovává úplné pools/forms/waves. Page DTO podporuje nejvýše
+  1000 inventory vazeb na produkt; větší historický záznam selže explicitně, bez truncation.
+- Ověřeno: 3 skutečné PostgreSQL testy, 0 skipů: 1000 produktů, úplný průchod,
+  UI/compat shoda, null/defaults, counts bez násobení form/inventory vazbami,
+  scope a ACL, invalid limit/cursor, dvě spojení pro insert/delete a čekající scope move.
+  Stránky jsou READ COMMITTED keysets, nikoli zmrazený snapshot celé kolekce.
+- [Nová evidence](../reports/admin-data-network-keyset-2026-10-23.json): při 1000
+  produktech DB vrací 50 místo 1000; 28884-28894 B místo 575165 B na stránku.
+  Jeden doménový request, auth lookupy oddělené. Jde o skutečný serializovaný DB
+  výsledek, nikoli HTTP wire měření. Původní baseline zachována beze změny.
+  EXPLAIN ANALYZE vnitřního SELECT: korelované subplány 50 místo 1000 loops,
+  lokální jednotlivé vzorky 3.087 ms proti 49.058 ms; žádný nový index ani plošná předagregace.
+- Upřesnění uživatele: navazující etapa 0B doplnila sémantiku skutečné tabulky:
+  SQL `purchased_count` zahrnuje paid/sent, UI jej používá přímo; MCP zná formuláře
+  a skladové názvy/data. Counts se při UI editaci zachovají. 3 SQL testy bez skipů
+  a 4 grid testy prošly. Nová evidence admin-view: 29895-29905 B při 1000 produktech,
+  stále 50 produktů a jeden request. Starší evidence nebyla přepsána.
+- Etapa 1 lokálně hotová: společný `manage_product_schedule`, zachovaný receipt
+  owner cíle, bounded wave read ze stejné projekce jako matice, aktuální UI bez raw
+  mutačních RPC. Scheduler má pořadí zámků podle ID produktů. Nové scopes jsou
+  výslovné, staré granty se nerozšiřují. 87 MCP testů bez skipů, 10 cílených SQL
+  testů, 18 + 13 cílených Flutter testů a 29 consent testů prošlo; přesné detaily
+  a omezení disposable source parity jsou v execution checkpointu a stage 1 evidenci.
+- Řez 2A lokálně hotový: jedna transakce/receipt, společné pool/resource/assignment
+  vlastníky, odstraněná klientská saga i reload katalogu, uložené IDs/verze.
+  7 reálných SQL testů bez skipů, 34 Flutter, 15 remote a 30 consent testů prošlo.
+- Publikované 0/0B/1 čekají v PR #564 na vyžadovaný review/merge. Nasazení dosud
+  neproběhlo; kanonický produkční target byl ověřen delegovaným read-only preflightem.
+- Další krok: bounded skladové read modely podle skutečných UI karet a jejich RPC,
+  pool/resource adaptéry, editorové volby produktů a provozní řez 2B.
+- Přesné zdroje a výsledky průběžně v
+  [execution checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md).
+
+
+### Checkpoint: společné skladové souhrny
+
+Lokálně dokončen čtecí řez etapy 2: UI skladové karty a MCP používají stejné SQL
+počty míst bez násobení child joins. MCP stránkuje pooly a kontexty zvlášť, UI
+výslovně žádá celý souhrn bez jednotlivých míst. Nový souhlas inventory read je
+oddělený. Oprávnění se kontrolují i po čtení; dvouspojové testy pokrývají odebrání
+práv u skladových, produktových a cenových přehledů i přesun poolu.
+40 cílených PostgreSQL/MCP/remote testů, 24 consent testů a 42 českých widget testů
+v obou pořadích prošlo. Evidence: admin-inventory-summary-network-2026-10-23.json.
+Zápisové adaptéry pool/resource, produktové volby a 2B dosud nejsou dokončené.
+
+### Checkpoint: doménové adaptéry skladů a zdrojů
+
+Lokálně dokončeny scoped read/save/delete poolů, kontextů a zdrojů nad společnými
+vlastníky a receipt hranicemi. Aktuální UI používá stejné doménové příkazy jako MCP;
+projekce nastavení sdílejí plný UI editor i omezené MCP čtení. Staré veřejné identity
+zůstávají explicitními kompatibilními adaptéry pro vydané klienty. Opraveno mazání
+skladu bez názvu. Doplněny testy starých receiptů, skutečného souběhu a rollbacku,
+kapacitních ochran, stránkování, limitů a oprávnění. Přesný checkpoint a digest
+obsahuje admin-inventory-authoring-evidence-2026-10-23.json. Produktové editorové
+volby, provozní 2B a další etapy zůstávají otevřené; tento řez není celé zadání.
+
+### Checkpoint: volby pro tvorbu produktu
+
+Dokončeno samostatně stránkované čtení typů a skladových kontextů v MCP, včetně
+nepoužitých voleb v prázdném katalogu. Upřesnění staršího checkpointu: úplný UI
+editor tyto volby již měl; chyběla jejich dostupnost přes omezený MCP přehled.
+UI nadále dělá svůj dosavadní katalogový požadavek a sdílí metadata s novým čtením.
+Nový souhlas nerozšiřuje vydané produktové granty. Testy ověřují shodu s UI,
+125+125 nepoužitých voleb, omezení objemu, oprávnění, skutečný souběh odebrání
+práv a nepřítomnost závislosti na celém katalogu či jednotlivých místech.
+Dále zbývá provozní 2B a etapy 3-10; nasazení čeká na povinné review/merge.
+
+### Checkpoint: první provozní řez 2B
+
+Lokálně ověřena inspekce a blokace/odblokace adresovaných míst. Server nyní
+vynucuje celé výběrové jednotky při běžném uložení plánku; MCP vyžaduje náhled,
+celou potvrzenou množinu a původní revizi. Zachován UI draft/Uložit/Zrušit,
+kanonický save owner, jedna receipt a zámky sdílené s checkoutem. Prošlo sedm
+cílených PostgreSQL regresí a 27 testů souhlasu. Evidence výslovně zachycuje čtyři
+zděděná selhání celé sady na čerstvé DB, potvrzená také na původním kandidátovi.
+Nesnižovat readiness ani nepřegenerovat hash jen kvůli testu. Dále zbývá zbytek
+2B a etapy 3-10. HTML/JSON průběžně zrcadlit na uživatelem zadanou recovery cestu.

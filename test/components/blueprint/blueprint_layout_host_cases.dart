@@ -1,7 +1,3 @@
-import 'package:fstapp/components/blueprint/blueprint_standing_inventory.dart';
-import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
-import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
-import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/blueprint/blueprint_font_selection.dart';
 import '../../support/fixtures/blueprint_font_registry_fixture.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_state.dart';
@@ -73,37 +69,10 @@ Map<String, dynamic> accepted(Map<String, dynamic> input) => {
     };
 void main() {
   test(
-    'standing setup prepares supply once and saves an undoable initial binding',
+    'standing setup binds the authoritative prepared product as an undoable draft',
     () async {
       final id = newLayoutId();
       final otherArea = newLayoutId();
-      final operations = <String>[];
-      var rejectLink = true;
-      final preparation = BlueprintStandingInventory(
-        savePool: (bundle) async {
-          operations.add('pool');
-          expect(bundle.pool.sellableCapacity, 25);
-          return InventoryPoolBundle(
-            pool: InventoryPoolModel(
-              id: 5,
-              occasionId: 8,
-              sellableCapacity: 25,
-            ),
-            contexts: [InventoryContextModel(id: 6, inventoryPoolId: 5)],
-          );
-        },
-        saveResource: (resource) async {
-          operations.add('resource');
-          expect(resource.inventoryPoolId, 5);
-          expect(resource.capacity, 25);
-          resource.id = 7;
-        },
-        linkProduct: (product, context) async {
-          operations.add('link');
-          expect(context, 6);
-          if (rejectLink) throw StateError('conflict');
-        },
-      );
       final product = ProductModel(
         id: 9,
         occasion: 8,
@@ -112,11 +81,11 @@ void main() {
         orderedCount: 4,
         productTypeString: ProductModel.spotType,
       );
-      await expectLater(preparation.prepare(product, 25), throwsStateError);
-      await expectLater(preparation.prepare(product, 30), throwsStateError);
-      rejectLink = false;
-      final linked = await preparation.prepare(product, 25);
-      expect(operations, ['pool', 'resource', 'link', 'link']);
+      final linked =
+          product.copyWith(aggregateVersion: 1, includedInventories: [
+        ProductInventoryContextModel(
+            productId: 9, inventoryContextId: 6, quantity: 1),
+      ]);
       final source = BlueprintModel(
         layoutSnapshot: BlueprintLayoutSnapshot(
           blueprintId: 4,
@@ -216,10 +185,6 @@ void main() {
       expect(reloaded.areaCapacity(id), 25);
       reloaded.layout.readOnly = true;
       expect(() => reloaded.setAreaCapacity(id, 5), throwsStateError);
-      await expectLater(
-        preparation.prepare(linked, 25),
-        throwsStateError,
-      );
     },
   );
 

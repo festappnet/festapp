@@ -70,27 +70,11 @@ BEGIN
     SELECT coalesce(jsonb_agg(spot),'[]'::jsonb) INTO valid_spots
       FROM eshop.blueprint_seat_bindings WHERE blueprint=blueprint_id;
 
-    -- Fetch enriched spots data
-    SELECT jsonb_agg(
-      jsonb_build_object(
-        'id', s.id,
-        'title', s.title,
-        'product', s.product,
-        'order_product_ticket', s.order_product_ticket,
-        'state', CASE
-          WHEN t.state = 'used' THEN 'used'
-          WHEN s.order_product_ticket IS NOT NULL THEN 'ordered'
-          WHEN s.secret IS NOT NULL AND s.secret_expiration_time > now() THEN 'selected'
-          ELSE 'available'
-        END
-      )
-    )
-    INTO spotsData
-    FROM eshop.spots s
-    LEFT JOIN eshop.order_product_ticket opt ON s.order_product_ticket = opt.id
-    LEFT JOIN eshop.tickets t ON opt.ticket = t.id
-    WHERE s.id = ANY(SELECT jsonb_array_elements_text(valid_spots)::BIGINT)
-      AND s.occasion = occasion_id;
+    -- Shared lifecycle interpretation; only this released/private UI view
+    -- includes the order-product relationship ID needed by its order controls.
+    SELECT jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'product',f.product,
+      'order_product_ticket',f.order_product_ticket,'state',f.state) ORDER BY f.id) INTO spotsData
+    FROM public.blueprint_spot_facts_internal(occasion_id,ARRAY(SELECT jsonb_array_elements_text(valid_spots)::bigint)) f;
 
     -- Fetch all products of type "spot", "taxi", "food"
     SELECT jsonb_agg(jsonb_build_object(

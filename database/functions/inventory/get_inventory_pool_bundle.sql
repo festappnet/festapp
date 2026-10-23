@@ -13,78 +13,29 @@ DECLARE
     v_products_data jsonb;
     v_product_inventory_contexts_data jsonb; -- New variable for the join table data
     result jsonb;
+    settings jsonb;
 BEGIN
     -- Get occasion for permission check from the inventory pool
     SELECT occasion INTO v_occasion_id
     FROM public.inventory_pools
-    WHERE id = p_inventory_pool_id;
+    WHERE id = p_inventory_pool_id FOR SHARE;
 
     IF v_occasion_id IS NULL THEN
         RAISE EXCEPTION 'Inventory Pool not found.';
     END IF;
 
     -- Permission check
-    IF NOT can_read_orders(v_occasion_id) THEN
+    IF public.can_read_orders(v_occasion_id) IS DISTINCT FROM TRUE THEN
         RAISE EXCEPTION 'User is not authorized to view this occasion.';
     END IF;
 
-    -- Get the main inventory pool details
-    SELECT to_jsonb(ip) INTO v_pool_data FROM public.inventory_pools ip WHERE ip.id = p_inventory_pool_id;
-
-    -- Get the full occasion details
-    SELECT to_jsonb(o) INTO v_occasion_data
-    FROM public.occasions o
-    WHERE o.id = v_occasion_id;
-
-    -- Aggregate all resources for the pool, and for each resource, aggregate its slots.
-    SELECT COALESCE(jsonb_agg(resources_with_slots), '[]'::jsonb)
-    INTO v_resources_data
-    FROM (
-        SELECT
-            jsonb_build_object(
-                'id', r.id,
-                'created_at', r.created_at,
-                'updated_at', r.updated_at,
-                'title', r.title,
-                'description', r.description,
-                'capacity', r.capacity,
-                'booking_rules', r.booking_rules,
-                'inventory_pool', r.inventory_pool,
-                'place', r.place,
-                'occasion', r.occasion,
-                'unit', r.unit,
-                'data', r.data,
-                'aggregate_version', COALESCE((
-                    SELECT av.version
-                    FROM public.client_aggregate_versions av
-                    WHERE av.aggregate_type = 'resource'
-                      AND av.scope_type = 'occasion'
-                      AND av.scope_id = v_occasion_id
-                      AND av.aggregate_id = r.id::text
-                ), 0),
-                'slots', (
-                    SELECT COALESCE(jsonb_agg(
-                        jsonb_build_object(
-                            'id', rs.id,
-                            'resource', rs.resource,
-                            'title', rs.title,
-                            'data', rs.data
-                        ) ORDER BY rs.id
-                    ), '[]'::jsonb)
-                    FROM public.resource_slots rs
-                    WHERE rs.resource = r.id
-                )
-            ) AS resources_with_slots
-        FROM public.resources r
-        WHERE r.inventory_pool = p_inventory_pool_id
-        ORDER BY r.title
-    ) AS subquery;
-
-    -- Aggregate all inventory contexts for the pool, sorted by the 'order' field
-    SELECT COALESCE(jsonb_agg(to_jsonb(ic) ORDER BY ic.order), '[]'::jsonb)
-    INTO v_contexts_data
-    FROM public.inventory_contexts ic
-    WHERE ic.inventory_pool = p_inventory_pool_id;
+    -- Current UI and MCP share the pool/context and resource projections.
+    settings:=public.get_inventory_pool_settings_data_internal(p_inventory_pool_id);
+    v_pool_data:=settings->'pool';
+    v_contexts_data:=settings->'contexts';
+    SELECT to_jsonb(o) INTO v_occasion_data FROM public.occasions o WHERE o.id=v_occasion_id;
+    v_resources_data:=public.get_inventory_resource_rows_internal(v_occasion_id,
+      ARRAY(SELECT id FROM public.resources WHERE inventory_pool=p_inventory_pool_id),true);
 
     -- Aggregate all places for the occasion
     SELECT COALESCE(jsonb_agg(to_jsonb(p) ORDER BY p.order), '[]'::jsonb)
@@ -128,6 +79,9 @@ BEGIN
     );
     -- MODIFICATION END
 
+    IF public.can_read_orders(v_occasion_id) IS DISTINCT FROM TRUE THEN
+        RAISE insufficient_privilege USING MESSAGE='occasion order viewer required';
+    END IF;
     RETURN result;
 EXCEPTION
     WHEN OTHERS THEN

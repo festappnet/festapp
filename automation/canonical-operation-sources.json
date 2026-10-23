@@ -57,6 +57,7 @@
     "eshop/update_product.sql",
     "eshop/update_product_client_sync_v1.sql",
     "eshop/product_catalog.sql",
+    "eshop/product_schedule_commands.sql",
     "inventory/update_product_inventory_contexts_client_sync_v1.sql",
     "eshop/product_price_waves.sql",
     "eshop/save_product_wave_target_client_sync_v1.sql",
@@ -65,6 +66,8 @@
     "groups/add_user_group_members_client_sync_v1.sql",
     "groups/group_member_read.sql",
     "inventory/get_inventory_pool_bundle.sql",
+    "inventory/inventory_catalog.sql",
+    "inventory/get_inventory_pools_by_occasion_link.sql",
     "inventory/update_inventory_pool_bundle_internal_v1.sql",
     "inventory/save_inventory_pool_client_sync_v1.sql",
     "inventory/update_inventory_pool_bundle.sql",
@@ -74,6 +77,9 @@
     "eshop/swap_spot_tickets.sql",
     "blueprint/swap_spot_tickets_client_sync_v1.sql",
     "inventory/save_resource_client_sync_v1.sql",
+    "inventory/save_inventory_resource_internal.sql",
+    "inventory/save_inventory_pool_internal.sql",
+    "inventory/prepare_standing_inventory.sql",
     "inventory/update_resource.sql",
     "inventory/delete_inventory_pool_client_sync_v1.sql",
     "inventory/delete_inventory_pool.sql",
@@ -260,6 +266,11 @@
     "users/occasion_enrolment_internal.sql",
     "others/legacy_occasion_catalogs.sql",
     "blueprint/resource_admission.sql",
-    "units/occasion_dashboard.sql"
+    "units/occasion_dashboard.sql",
+    "inventory/inventory_authoring_reads.sql",
+    "inventory/save_inventory_pool_command_internal.sql",
+    "inventory/manage_inventory.sql",
+    "eshop/product_catalog_options.sql",
+    "blueprint/admin_seats.sql"
   ]
 }

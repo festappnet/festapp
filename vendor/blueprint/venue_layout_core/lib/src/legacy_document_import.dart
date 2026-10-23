@@ -41,8 +41,9 @@ LayoutImportResult importLegacyLayout(
   final familyByFace = <String, Map<String, dynamic>>{};
   for (final family in fontFamilies.values) {
     final faces = family['faces'];
-    if (faces is! Map)
+    if (faces is! Map) {
       throw const FormatException('invalid_font_family_manifest');
+    }
     for (final face in faces.entries) {
       // Prefer the original regular face when multiple families share bytes.
       familyByFace.putIfAbsent(face.value as String, () => family);
@@ -54,8 +55,9 @@ LayoutImportResult importLegacyLayout(
       final destination = legacyStyleDestinations[e.key];
       if (destination != null &&
           destination.startsWith('label.') &&
-          !const {'fontId', 'bold', 'italic', 'fontStyle'}.contains(e.key))
+          !const {'fontId', 'bold', 'italic', 'fontStyle'}.contains(e.key)) {
         result[destination.substring(6)] = e.value;
+      }
     }
     final hasTypography = raw.keys.any(
       (k) => legacyStyleDestinations[k]?.startsWith('label.') == true,
@@ -143,14 +145,17 @@ LayoutImportResult importLegacyLayout(
       result['italic'] = italic;
       report('closest_actual_face_selected', path);
     }
-    if (explicitBold || raw.containsKey('fontId') && weight != 400)
+    if (explicitBold || raw.containsKey('fontId') && weight != 400) {
       result['weight'] = weight;
-    if (explicitItalic || raw.containsKey('fontId') && italic)
+    }
+    if (explicitItalic || raw.containsKey('fontId') && italic) {
       result['italic'] = italic;
+    }
     if (merged['bold'] == true ||
         merged['italic'] == true ||
-        merged['fontStyle'] == 'italic')
+        merged['fontStyle'] == 'italic') {
       report('faux_typography_replaced', path);
+    }
 
     return result;
   }
@@ -161,8 +166,9 @@ LayoutImportResult importLegacyLayout(
       final destination = legacyStyleDestinations[e.key];
       if (destination != null &&
           !destination.startsWith('label.') &&
-          destination != 'strokePattern')
+          destination != 'strokePattern') {
         result[destination] = e.value;
+      }
     }
     final l = label(raw, path, inherited: inherited);
     if (l.isNotEmpty) result['label'] = l;
@@ -180,8 +186,9 @@ LayoutImportResult importLegacyLayout(
     'label': label(legacy.defaultTextStyle, 'defaultTextStyle'),
   };
   (styles['label'] as Map).putIfAbsent('orientation', () => 'screen');
-  if (!legacy.defaultTextStyle.containsKey('labelOrientation'))
+  if (!legacy.defaultTextStyle.containsKey('labelOrientation')) {
     report('legacy_label_orientation_materialized', 'styles.label.orientation');
+  }
   final kindStyles = <String, dynamic>{};
   for (final e in legacy.appearance.entries) {
     final converted = style(
@@ -202,9 +209,11 @@ LayoutImportResult importLegacyLayout(
   if (kindStyles.isNotEmpty) styles['kinds'] = kindStyles;
   final physical = <String, dynamic>{};
   final tableDefaults = legacy.appearance['table'] as Map? ?? {};
-  for (final e in legacySeatingDestinations.entries)
-    if (tableDefaults.containsKey(e.key))
+  for (final e in legacySeatingDestinations.entries) {
+    if (tableDefaults.containsKey(e.key)) {
       physical[e.value] = tableDefaults[e.key];
+  }
+    }
   final nodes = <LayoutNode>[];
   const assemblyFields = {
     'rows',
@@ -230,9 +239,9 @@ LayoutImportResult importLegacyLayout(
     final local = <String, dynamic>{};
     for (final e in raw.entries) {
       if (!legacyStyleDestinations.containsKey(e.key)) continue;
-      if (!global.containsKey(e.key) || mask.contains(e.key))
+      if (!global.containsKey(e.key) || mask.contains(e.key)) {
         local[e.key] = e.value;
-      else if (e.value != global[e.key])
+      } else if (e.value != global[e.key])
         report('shadowed_style_removed', 'nodes.${node.id}.${e.key}');
     }
     final ownStyle = node.kind == 'group'
@@ -279,8 +288,9 @@ LayoutImportResult importLegacyLayout(
     final seating = <String, dynamic>{};
     Map<String, dynamic>? surface, assembly;
     if (node.kind == 'table') {
-      for (final e in legacySeatingDestinations.entries)
+      for (final e in legacySeatingDestinations.entries) {
         if (raw.containsKey(e.key)) seating[e.value] = raw[e.key];
+      }
       final children = legacy.nodes
           .where((n) => n.parentId == node.id && n.kind == 'seat')
           .toList();
@@ -333,8 +343,9 @@ LayoutImportResult importLegacyLayout(
           for (final p in rawRing) {
             final x = ((p[0] as num) + node.width / 2) / module,
                 y = ((p[1] as num) + node.height / 2) / module;
-            if ((x - x.round()).abs() > 1e-8 || (y - y.round()).abs() > 1e-8)
+            if ((x - x.round()).abs() > 1e-8 || (y - y.round()).abs() > 1e-8) {
               return null;
+            }
             points.add([x.round(), y.round()]);
           }
           return points;
@@ -396,14 +407,16 @@ LayoutImportResult importLegacyLayout(
           if (polygonRingArea([
                 for (final p in outer) [p[0].toDouble(), p[1].toDouble()],
               ]) <
-              0)
+              0) {
             outer.setAll(0, outer.reversed.toList());
+          }
           for (final h in holes) {
             if (polygonRingArea([
                   for (final p in h!) [p[0].toDouble(), p[1].toDouble()],
                 ]) >
-                0)
+                0) {
               h.setAll(0, h.reversed.toList());
+            }
           }
           surface = {
             'type': 'grid',
@@ -449,11 +462,12 @@ LayoutImportResult importLegacyLayout(
       node,
       legacyNodes[node.parentId],
     );
-    if (quantize(effectiveRotation) != quantize(node.rotation))
+    if (quantize(effectiveRotation) != quantize(node.rotation)) {
       report(
         'legacy_effective_rotation_materialized',
         'nodes.${node.id}.transform.rotation',
       );
+    }
     nodes.add(
       node.copyWith(
         rotation: effectiveRotation,
@@ -469,8 +483,9 @@ LayoutImportResult importLegacyLayout(
   for (final a in legacy.attachments) {
     final seat = legacy.nodes.firstWhere((n) => n.id == a['seatId']);
     final manual = seat.properties['manual'] == true || a['manual'] == true;
-    if (manual)
+    if (manual) {
       report('free_placement_preserved', 'attachments.${a['seatId']}');
+    }
     attachments.add({
       if (a['id'] != null) 'id': a['id'],
       'seatId': a['seatId'],
@@ -538,11 +553,12 @@ LayoutImportResult importLegacyLayout(
       );
       final parameters = _legacyRowParameters(input, root.id);
       final complete = {'kind': 'rows', ...parameters};
-      if (!sameLayoutValue(root.assembly, complete))
+      if (!sameLayoutValue(root.assembly, complete)) {
         report(
           'legacy_row_parameters_materialized',
           'nodes.${root.id}.assembly',
         );
+      }
       nodes[index] = root.copyWith(assembly: complete);
     } else if (const {'bus', 'compartments'}.contains(root.assembly?['kind'])) {
       final kind = root.assembly!['kind'] as String,
@@ -615,8 +631,9 @@ LayoutImportResult importLegacyLayout(
   }
   for (var index = 0; index < nodes.length; index++) {
     final root = nodes[index];
-    if (!const {'rows', 'bus', 'compartments'}.contains(root.assembly?['kind']))
+    if (!const {'rows', 'bus', 'compartments'}.contains(root.assembly?['kind'])) {
       continue;
+    }
     final seats = nodes
         .where((node) => node.parentId == root.id && node.kind == 'seat')
         .toList();
@@ -642,8 +659,9 @@ LayoutImportResult importLegacyLayout(
     final parent = convertedNodes[seat.parentId];
     if (parent == null ||
         (parent.kind != 'table' && parent.assembly == null) ||
-        attachedSeats.contains(seat.id))
+        attachedSeats.contains(seat.id)) {
       continue;
+    }
     final old = legacyNodes[seat.id]!;
     var free = old.properties['manual'] == true,
         manualRotation =
@@ -675,15 +693,17 @@ LayoutImportResult importLegacyLayout(
         final y =
             parts[0]! * (spec['rowSpacing'] as num) +
             arc * math.pow(parts[2]! - half, 2);
-        if ((seat.x - x).abs() > 1 / 1024 || (seat.y - y).abs() > 1 / 1024)
+        if ((seat.x - x).abs() > 1 / 1024 || (seat.y - y).abs() > 1 / 1024) {
           free = true;
+        }
         final rotation =
             math.atan(2 * arc * (parts[2]! - half) / spacing) * 180 / math.pi;
         if ((seat.rotation - rotation).abs() > 1 / 1024) manualRotation = true;
       }
     }
-    if (free)
+    if (free) {
       report('materialized_assembly_exception_preserved', 'nodes.${seat.id}');
+    }
     attachments.add({
       'seatId': seat.id,
       'targetId': parent.id,
@@ -699,18 +719,21 @@ LayoutImportResult importLegacyLayout(
       fontFaces: fontFaces,
       sourceRevision: sourceRevision,
     );
-    for (final i in nested.receipt['decisions'] as List)
+    for (final i in nested.receipt['decisions'] as List) {
       decisions.add({
         ...i as Map<String, dynamic>,
         'path': 'presets.${p['id']}.${i['path']}',
       });
-    for (final i in nested.receipt['issues'] as List)
+    }
+    for (final i in nested.receipt['issues'] as List) {
       issues.add({
         ...i as Map<String, dynamic>,
         'path': 'presets.${p['id']}.${i['path']}',
       });
-    if (nested.document != null)
+    }
+    if (nested.document != null) {
       presets.add({...p, 'document': nested.document!.toJson()});
+    }
   }
   VenueLayoutDocument? candidate;
   if (!issues.any((i) => i['blocked'] == true)) {
@@ -731,7 +754,9 @@ LayoutImportResult importLegacyLayout(
       background: legacy.background,
     );
     final invalid = validateDocument(candidate);
-    for (final i in invalid) report(i.reason, i.path, blocked: true);
+    for (final i in invalid) {
+      report(i.reason, i.path, blocked: true);
+    }
     if (invalid.isNotEmpty) candidate = null;
   }
   final target = candidate?.toJson();
@@ -770,16 +795,19 @@ VenueLayoutDocument acceptLegacyLayoutImport(
   final currentHash = sha256
       .convert(utf8.encode(canonicalContractJson(currentSource)))
       .toString();
-  if (document == null || receipt['status'] != 'ready')
+  if (document == null || receipt['status'] != 'ready') {
     throw StateError('layout_import_not_ready');
+  }
   if (receipt['sourceRevision'] != currentRevision ||
-      receipt['sourceHash'] != currentHash)
+      receipt['sourceHash'] != currentHash) {
     throw StateError('layout_import_source_changed');
+  }
   if (receipt['targetHash'] !=
           sha256
               .convert(utf8.encode(canonicalContractJson(document.toJson())))
               .toString() ||
-      validateDocument(document).isNotEmpty)
+      validateDocument(document).isNotEmpty) {
     throw StateError('layout_import_target_changed');
+  }
   return document;
 }

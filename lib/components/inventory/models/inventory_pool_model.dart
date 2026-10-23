@@ -75,6 +75,9 @@ class InventoryPoolModel {
   int? id;
   String? title;
   int? sellableCapacity;
+
+  /// Read-only resource supply from the shared administration projection.
+  final int? resourceCapacity;
   int? occasionId;
   bool isAutoResourceAssignment;
   String? description;
@@ -87,6 +90,7 @@ class InventoryPoolModel {
     this.id,
     this.title,
     this.sellableCapacity,
+    this.resourceCapacity,
     this.occasionId,
     this.isAutoResourceAssignment = true,
     this.description,
@@ -104,6 +108,7 @@ class InventoryPoolModel {
       id: json[t.id],
       title: json[t.title],
       sellableCapacity: json[t.sellable_capacity],
+      resourceCapacity: json['resource_capacity'],
       occasionId: json[t.occasion],
       isAutoResourceAssignment:
           data[t.data_is_auto_resource_assignment] as bool? ?? true,

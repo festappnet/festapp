@@ -207,8 +207,9 @@ List<CanonicalContractIssue> validateCanonicalAssembly(
   String path,
 ) {
   final kind = spec['kind'], members = canonicalAssemblyMembers[kind];
-  if (members == null || canonicalAssemblyNodeKinds[kind] != nodeKind)
+  if (members == null || canonicalAssemblyNodeKinds[kind] != nodeKind) {
     return [CanonicalContractIssue('invalid_assembly', path)];
+  }
   final issues = <CanonicalContractIssue>[
     for (final field in members)
       if (!spec.containsKey(field))
@@ -237,8 +238,9 @@ List<CanonicalContractIssue> validateCanonicalAssembly(
     _ => spec['seats'] as num,
   };
   if (seats > canonicalAssemblyMaxSeats ||
-      kind == 'bus' && (spec['left'] as num) + (spec['right'] as num) == 0)
+      kind == 'bus' && (spec['left'] as num) + (spec['right'] as num) == 0) {
     issues.add(CanonicalContractIssue('invalid_assembly_capacity', path));
+  }
   return issues;
 }
 
@@ -258,8 +260,9 @@ List<CanonicalContractIssue> validateCanonicalLeaves(
       continue;
     }
     var valid = v != null;
-    if (rule['enum'] case final List allowed)
+    if (rule['enum'] case final List allowed) {
       valid = valid && allowed.contains(v);
+    }
     switch (rule['type']) {
       case 'number':
         valid =
@@ -302,8 +305,9 @@ List<CanonicalContractIssue> validateCanonicalLeaves(
               {'value': item},
               {'value': itemRule},
               at,
-            ).isNotEmpty)
+            ).isNotEmpty) {
               valid = false;
+            }
           }
         }
       case 'boolean':
@@ -320,8 +324,9 @@ List<CanonicalContractIssue> validateCanonicalStyle(
   required String kind,
 }) {
   if (value is! Map) return [CanonicalContractIssue('invalid_style', path)];
-  if (kind == 'group' && value.isNotEmpty)
+  if (kind == 'group' && value.isNotEmpty) {
     return [CanonicalContractIssue('unsupported_group_style', path)];
+  }
   final leaves = <String, dynamic>{...value}
     ..remove('label')
     ..remove('strokePattern');
@@ -344,19 +349,22 @@ List<CanonicalContractIssue> validateCanonicalStyle(
       issues.add(CanonicalContractIssue('unsupported_label', '$path.label'));
     }
   }
-  if (kind == 'text' && leaves.keys.any((k) => k != 'opacity'))
+  if (kind == 'text' && leaves.keys.any((k) => k != 'opacity')) {
     issues.add(CanonicalContractIssue('unsupported_visual_style', path));
+  }
   if ((kind == 'image' || kind == 'vector') &&
-      value.keys.any((k) => k != 'opacity'))
+      value.keys.any((k) => k != 'opacity')) {
     issues.add(CanonicalContractIssue('unsupported_media_style', path));
+  }
   if (value.containsKey('strokePattern')) {
-    if (kind == 'text' || kind == 'image' || kind == 'vector')
+    if (kind == 'text' || kind == 'image' || kind == 'vector') {
       issues.add(
         CanonicalContractIssue(
           'unsupported_stroke_pattern',
           '$path.strokePattern',
         ),
       );
+    }
     final pattern = value['strokePattern'];
     var valid =
         pattern is Map &&
@@ -379,10 +387,11 @@ List<CanonicalContractIssue> validateCanonicalStyle(
             );
       }
     }
-    if (!valid)
+    if (!valid) {
       issues.add(
         CanonicalContractIssue('invalid_stroke_pattern', '$path.strokePattern'),
       );
+    }
   }
   return issues;
 }
@@ -397,12 +406,14 @@ String canonicalContractJson(Object? value) {
     }
     if (v is List) return '[${v.map(encode).join(',')}]';
     if (v is num) {
-      if (!v.isFinite)
+      if (!v.isFinite) {
         throw const FormatException('non_finite_contract_number');
+      }
       if (v == 0) return '0';
       var text = v.toString().toLowerCase();
-      if (!text.contains('e'))
+      if (!text.contains('e')) {
         return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
+      }
       final parts = text.split('e'), exponent = int.parse(parts[1]);
       var mantissa = parts[0], sign = '';
       if (mantissa.startsWith('-')) {

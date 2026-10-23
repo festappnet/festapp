@@ -15,7 +15,7 @@ VenueLayoutDocument arrow([Object? length]) => VenueLayoutDocument(
           [-50, 0],
           [50, 0],
         ],
-        if (length != null) 'arrowHeadLength': length,
+        'arrowHeadLength': ?length,
       },
       style: {'fill': '#00000000', 'stroke': '#000000FF'},
     ),

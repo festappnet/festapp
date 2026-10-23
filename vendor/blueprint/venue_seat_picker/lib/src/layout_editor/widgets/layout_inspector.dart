@@ -1293,7 +1293,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
             onChanged: c.readOnly || c.saving || node.locked
                 ? null
                 : (side) {
-                    if (side != null)
+                    if (side != null) {
                       _run(
                         () => c.apply(
                           setBarGuestSide(
@@ -1306,6 +1306,7 @@ class _LayoutInspectorState extends State<LayoutInspector> {
                           label: 'Change bar side',
                         ),
                       );
+                    }
                   },
           ),
         if (isZigzagNode(node)) ...[

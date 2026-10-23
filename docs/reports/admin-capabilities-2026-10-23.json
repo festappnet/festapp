@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "0fd16f4374b065c578ecee3f647fda40cb17b37b",
+  "sourceMain": "01ed297d0fdadf8319dde9e5bd9c5a8c7d140fb0",
   "liveBaselineVersion": "0.20.365+859",
   "tenant": "festapptickets",
-  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené.",
+  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené. Nové produktové a skladové řezy jsou ověřené v kandidátovi PR #564, dosud nejsou nasazené.",
   "actions": [
     {
       "id": "action-001",
@@ -70,17 +70,22 @@
       "id": "action-005",
       "area": "Produkty",
       "title": "Vypsat produkty, ceny, verze a skladové vazby",
-      "description": "Včetně produktových typů a naplánovaných změn.",
+      "description": "Společný administrační pohled: počty položek objednávek a zaplacených/odeslaných položek, formuláře a názvy skladových skupin, ceny a naplánované změny. SQL stránky 1-100. Lokálně ověřeno; dosud nenasazeno.",
       "sources": [
-        "tools/festapp/src/operations/products.mjs"
+        "tools/festapp/src/operations/products.mjs",
+        "database/functions/eshop/product_catalog.sql",
+        "database/functions/eshop/get_products_and_types_for_occasion.sql",
+        "database/functions/eshop/product_catalog_options.sql"
       ],
       "mcp": [
-        "products.list"
+        "products.list",
+        "products.options"
       ],
       "phase": "0",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-006",
@@ -96,7 +101,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-007",
@@ -112,7 +118,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-008",
@@ -128,7 +135,8 @@
       "phase": "0",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-009",
@@ -144,77 +152,116 @@
       "phase": "0",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-010",
       "area": "Plánované ceny",
       "title": "Vytvořit cenovou vlnu",
-      "description": "Společný termín plánovaných změn.",
+      "description": "Společný termín plánovaných změn. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-011",
       "area": "Plánované ceny",
       "title": "Nastavit budoucí cenu a viditelnost produktu",
-      "description": "Založení vlny s prvním cílem má být jeden atomický krok.",
+      "description": "Založení vlny s prvním cílem má být jeden atomický krok. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-012",
       "area": "Plánované ceny",
       "title": "Změnit termín cenové vlny",
-      "description": "Původní revize vlny musí zůstat kontrolovaná.",
+      "description": "Původní revize vlny musí zůstat kontrolovaná. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-013",
       "area": "Plánované ceny",
       "title": "Zrušit cenovou vlnu nebo plánovanou změnu",
-      "description": "Nepřepisuje historické ceny prodaných vstupenek.",
+      "description": "Nepřepisuje historické ceny prodaných vstupenek. Společná receipted RPC cesta UI/MCP; lokálně ověřeno, publikace/nasazení čeká.",
       "sources": [
-        "lib/components/eshop/db_eshop.dart"
+        "lib/components/eshop/db_eshop.dart",
+        "database/functions/eshop/product_schedule_commands.sql",
+        "lib/components/eshop/supabase_product_schedule_commands.dart",
+        "tools/festapp/src/operations/product-schedules.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "product_schedules.list",
+        "product_schedules.change"
+      ],
       "phase": "1",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-014",
       "area": "Sklady a kapacity",
       "title": "Zobrazit sklady, kontexty a jejich obsazení",
-      "description": "Sklad není totéž jako produkt nebo jednotlivé místo.",
+      "description": "Stejné SQL souhrny pro UI i MCP: fyzická a alokovaná místa, nepřiřazené alokace a samostatné dočasné rezervace. Počty nejsou počet lidí ani příslib dostupnosti; MCP stránkuje sklady a kontexty bez jednotlivých míst a tajných klíčů.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/inventory_catalog.sql",
+        "lib/components/inventory/db_inventory_pools.dart",
+        "lib/components/inventory/views/inventory_pool_card.dart",
+        "tools/festapp/src/operations/inventory.mjs",
+        "database/functions/inventory/inventory_authoring_reads.sql"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.pools.list",
+        "inventory.contexts.list",
+        "inventory.pools.inspect",
+        "inventory.resources.list"
+      ],
       "phase": "2",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-015",
@@ -222,27 +269,37 @@
       "title": "Vytvořit nebo upravit sklad a jeho kontexty",
       "description": "Kapacitní stropy a automatické přiřazování zdrojů.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-016",
       "area": "Sklady a kapacity",
       "title": "Vytvořit nebo upravit zdroj a jeho kapacitu",
-      "description": "Skutečná dostupná nabídka, včetně již existujících alokací.",
+      "description": "Kapacita zdroje a pravidla rezervace přes společný příkaz; uložená nabídka není příslib zbývající dostupnosti.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-017",
@@ -250,27 +307,38 @@
       "title": "Odstranit zdroj nebo sklad",
       "description": "Ochrana používaných vazeb a očekávaná verze.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-018",
       "area": "Sklady a kapacity",
       "title": "Připravit skladovou kapacitu pro stání",
-      "description": "Dnes tři navazující zápisy: sklad s kontextem, zdroj a vazba produktu. Priorita pro atomický wrapper.",
+      "description": "Jeden atomický příkaz vytvoří sklad, kontext a zdroj a přiřadí existující produkt. Zachová prodané položky a vrací uložené verze bez reloadu katalogu. Řez 2A lokálně ověřen, dosud nepublikován/nenasazen.",
       "sources": [
-        "lib/components/blueprint/blueprint_standing_inventory.dart"
+        "database/functions/inventory/prepare_standing_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "lib/components/blueprint/views/blueprint_standing_setup_dialog.dart",
+        "tools/festapp/src/operations/inventory.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.prepare_standing"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-019",
@@ -289,46 +357,65 @@
     {
       "id": "action-020",
       "area": "Plánky a místa",
-      "title": "Zobrazit plánek a stav míst",
-      "description": "Volná, blokovaná, dočasně držená a prodaná místa je nutné rozlišovat.",
+      "title": "Zobrazit adresovaná místa a jejich provozní stav",
+      "description": "MCP stránkuje místa a rozlišuje blokaci, aktivní dočasnou rezervaci, objednané a použité místo. Nevrací rezervovací tajemství ani zákazníky; geometrický editor je samostatná etapa.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/eshop/get_blueprint_for_edit.sql",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.list"
+      ],
       "phase": "2B",
       "effect": "read",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "deploymentState": "pending"
     },
     {
       "id": "action-021",
       "area": "Plánky a místa",
       "title": "Zablokovat vybraná místa",
-      "description": "Administrativně vyřadit volná místa z nabídky. UI změnu drží v draftu do uložení. Chráněná místa nelze přepsat.",
+      "description": "Náhled ukáže celý společný výběr. Potvrzuje se přesná množina míst a původní revize; jeden chráněný člen odmítne celou dávku. UI zachovává draft/Uložit/Zrušit.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/blueprint/save.sql",
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_block",
+        "seats.block"
+      ],
       "phase": "2B",
       "effect": "write",
       "scope": "Akce",
       "certainty": "confirmed",
-      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
+      "deploymentState": "pending"
     },
     {
       "id": "action-022",
       "area": "Plánky a místa",
       "title": "Odblokovat vybraná místa",
-      "description": "Změnit administrativní blokaci; nesmí zrušit objednávku ani aktivní rezervaci.",
+      "description": "Náhled ukáže celý společný výběr. Potvrzuje se přesná množina míst a původní revize; jeden chráněný člen odmítne celou dávku. UI zachovává draft/Uložit/Zrušit.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "database/functions/blueprint/admin_seats.sql",
+        "database/functions/blueprint/save.sql",
+        "lib/components/blueprint/blueprint_layout_controller.dart",
+        "tools/festapp/src/operations/seats.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_block",
+        "seats.block"
+      ],
       "phase": "2B",
       "effect": "write",
       "scope": "Akce",
       "certainty": "confirmed",
-      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
+      "deploymentState": "pending"
     },
     {
       "id": "action-023",
@@ -1362,9 +1449,10 @@
   ],
   "dataQualityReview": {
     "date": "2026-10-23",
-    "status": "První datový a síťový průchod; nejde o dokončený audit celé administrace.",
-    "finding": "V lokální fixture s 1000 produkty databáze vrací celý katalog, i když MCP zobrazí jen 50 produktů. Pro další stránku se načítá znovu.",
-    "nextStep": "Před dalším rozšiřováním opravit serverové stránkování. U každé další oblasti posoudit také SQL, transakce, zámky, objem dat a duplicitní pravidla.",
-    "evidence": "admin-data-network-baseline-2026-10-23.json"
-  }
+    "status": "První část 2B ověřena; celkový audit a nasazení pokračují.",
+    "finding": "Sedm cílených PostgreSQL regresí míst a 27 testů souhlasu prošlo. Širší sada má 113 úspěšných testů a 4 starší problémy, shodně potvrzené i na předchozím kandidátovi při obnově testovací databáze.",
+    "nextStep": "Uvolnění dočasných rezervací a další 2B; před celkovým dokončením vyřešit také zaznamenané starší problémy testovacích kontraktů.",
+    "evidence": "admin-seat-block-evidence-2026-10-23.json"
+  },
+  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby a první část 2B - inspekce a blokace/odblokace míst. Nové řezy dosud nejsou nasazené. Dále: uvolnění dočasných rezervací, přesuny míst a další operace 2B."
 }

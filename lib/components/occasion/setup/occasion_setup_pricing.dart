@@ -72,13 +72,30 @@ class OccasionSetupPriceWaveDraft implements ProductPriceWaveActions {
     if (hidden != null && product.isUsedInBlueprint == true)
       throw StateError('BLUEPRINT_PRODUCT_VISIBILITY_NOT_SUPPORTED');
     final list = waves;
+    var targetWaveId = wave.id;
+    if (targetWaveId == null) {
+      final existing = list
+          .where((w) =>
+              DateTime.parse(w['change_time']).isAtSameMomentAs(wave.time))
+          .firstOrNull;
+      targetWaveId = existing?['id'] ??
+          list.fold<int>(
+                  0, (m, w) => (w['id'] as int) < m ? w['id'] as int : m) -
+              1;
+      if (existing == null)
+        list.add({
+          'id': targetWaveId,
+          'change_time': wave.time.toUtc().toIso8601String(),
+          'targets': <Map<String, dynamic>>[]
+        });
+    }
     final targets = List<Map<String, dynamic>>.from(
-        (list.firstWhere((v) => v['id'] == wave.id)['targets'] as List)
+        (list.firstWhere((v) => v['id'] == targetWaveId)['targets'] as List)
             .map((v) => Map<String, dynamic>.from(v)));
     targets.removeWhere((t) => t['product'] == product.id);
     if (price != null || hidden != null)
       targets.add({'product': product.id, 'price': price, 'is_hidden': hidden});
-    list.firstWhere((v) => v['id'] == wave.id)['targets'] = targets;
+    list.firstWhere((v) => v['id'] == targetWaveId)['targets'] = targets;
     _save(list);
   }
 
