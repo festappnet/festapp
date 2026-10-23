@@ -15,7 +15,7 @@ export async function canonicalPreview() {
                 '--allow-env',
                 'tools/festapp/test/canonical_preview.ts',
             ],
-            { cwd, maxBuffer: 8 * 1024 * 1024 },
+            { cwd, maxBuffer: 32 * 1024 * 1024 },
         ).then(({ stdout }) => JSON.parse(stdout));
     return rendered;
 }

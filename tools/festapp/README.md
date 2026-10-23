@@ -247,7 +247,17 @@ may own its SQLite volume. After an unclean stop, verify that process is stopped
 before removing only its empty `remote-process.lock`; never clear another
 operator's per-profile refresh lock while it is active.
 
-References: [MCP SDK v1 server documentation](https://ts.sdk.modelcontextprotocol.io/server),
+The MCP boundary uses stable `@modelcontextprotocol/server` 2.3.1 and
+`@modelcontextprotocol/node` 2.1.1, explicitly serving protocol `2026-07-28`
+through `createMcpHandler` (HTTP) and `serveStdio`. The SDK's official legacy
+boundary serves existing clients through the identical domain catalog. The
+v1 SDK alias is test-only interoperability coverage; remove it and the legacy
+boundary when support for those clients ends. Modern and real v1 clients are
+tested over both HTTP/OAuth and subprocess stdio. Transport cancellation does
+not undo committed database commands: recovery keeps the same command ID.
+An SDK upgrade never adds scopes to existing OAuth grants.
+
+References: [MCP SDK v2 migration](https://ts.sdk.modelcontextprotocol.io/v2/migration/support-2026-07-28),
 [Supabase password authentication](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
 [Keychain binding](https://github.com/Brooooooklyn/keyring-node).
 

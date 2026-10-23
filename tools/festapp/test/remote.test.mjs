@@ -5,8 +5,9 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+import { Client as LegacyClient } from 'mcp-sdk-legacy/client/index.js';
+import { StreamableHTTPClientTransport as LegacyHTTPClientTransport } from 'mcp-sdk-legacy/client/streamableHttp.js';
 import { fixture, profile, actor, token as supabaseToken, reply } from './fixture.mjs';
 import { parseRemoteConfig, READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions } from '../src/remote/config.mjs';
 import { openRemoteStorage } from '../src/remote/storage.mjs';
@@ -182,7 +183,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);
     assert.deepEqual(f.storage.values('Delegation')[0].access, { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] });
-    const client = new Client({ name: 'tenant-consent-test', version: '1' });
+    const client = new Client({ name: 'tenant-consent-test', version: '1' }, { versionNegotiation: { mode: { pin: '2026-07-28' } } });
     await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
     }));
@@ -298,17 +299,18 @@ test('OAuth discovery, exact callbacks, browser CSRF and PKCE fail closed', asyn
     assert(!JSON.stringify(f.audit).includes('fixture-password'));
 });
 
-test('real OAuth code exchange and SDK HTTP reads, rotating refresh and browser revocation', async t => {
+for (const modern of [true, false]) test(`real OAuth code exchange and ${modern ? '2026-07-28' : 'legacy'} SDK HTTP reads, rotating refresh and browser revocation`, async t => {
     const f = await setup(t);
     const { tokens, exchange } = await connect(f);
     assert.equal(tokens.token_type, 'Bearer');
     assert(tokens.refresh_token);
     assert.notEqual(tokens.access_token, supabaseToken);
-    const client = new Client({ name: 'remote-fixture', version: '1' });
+    const client = new (modern ? Client : LegacyClient)({ name: 'remote-fixture', version: '1' }, modern ? { versionNegotiation: { mode: { pin: '2026-07-28' } } } : {});
     t.after(() => client.close());
-    await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+    await client.connect(new (modern ? StreamableHTTPClientTransport : LegacyHTTPClientTransport)(new URL(f.config.resource), {
         requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } },
     }));
+    if (modern) assert.equal(client.getProtocolEra(), 'modern');
     const list = await client.listTools();
     assert.deepEqual(list.tools.map(t => t.name), ['festapp_access_inspect', 'festapp_context_inspect', 'festapp_ticket_layouts_inspect']);
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });

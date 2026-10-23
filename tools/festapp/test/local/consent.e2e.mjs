@@ -1,7 +1,7 @@
 // Explicit opt-in integration runner. All credentials stay in the private task root.
 import assert from 'node:assert/strict';
-import {Client} from '@modelcontextprotocol/sdk/client/index.js';
-import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import {Client} from '@modelcontextprotocol/client';
+import {StreamableHTTPClientTransport} from '@modelcontextprotocol/client';
 import { createServer } from 'node:http';
 import { createServer as createHttps } from 'node:https';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
