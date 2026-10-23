@@ -48,7 +48,7 @@ CREATE OR REPLACE FUNCTION public.get_order_action_summary_internal(
  SELECT jsonb_build_object('isActive',CASE WHEN p_state='waitlisted' THEN
   coalesce(p_has_waiting,false) OR coalesce(p_pending_places,0)>0 ELSE p_state IS DISTINCT FROM 'storno' END,
  'allowedActions',CASE WHEN p_state='waitlisted' THEN jsonb_build_array('view','note','offer','withdraw')
- WHEN p_state IN ('storno','preparing_payment') THEN jsonb_build_array('view')
+ WHEN p_state IN ('stock','storno','preparing_payment') THEN jsonb_build_array('view')
  WHEN p_state='ordered' THEN jsonb_build_array('view','note','edit','cancel','paid')
  ELSE jsonb_build_array('view','note','edit','cancel','send') END);
 $$;

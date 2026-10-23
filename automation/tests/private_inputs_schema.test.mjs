@@ -8,6 +8,7 @@ const schema = JSON.parse(readFileSync(
 ));
 
 const consumedPrivateInputs = [
+  "TICKET_BATCH_SERVICE_SECRET",
   "STRIPE_MODE",
   "STRIPE_SECRET_KEY",
   "STRIPE_PLATFORM_ACCOUNT_ID",

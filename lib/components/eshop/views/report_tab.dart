@@ -1,3 +1,4 @@
+import '../ticket_batch_strings.dart';
 import 'report_number_format.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'report_text.dart';
@@ -547,7 +548,19 @@ class _ReportTabState extends State<ReportTab> {
   Widget _overview(OccasionReport report) => LayoutBuilder(
         builder: (context, constraints) {
           final orders = _states(ReportStrings.orders, report.orders);
-          final tickets = _states(ReportStrings.tickets, report.tickets);
+          final tickets = Column(children: [
+            _states(ReportStrings.tickets, report.tickets),
+            if ((report.ticketBatches['total'] ?? 0) > 0)
+              _section(TicketBatchStrings.title,
+                  TicketBatchStrings.text('explanation'), [
+                _value(TicketBatchStrings.available,
+                    '${report.ticketBatches['available']}'),
+                _value(TicketBatchStrings.sold,
+                    '${report.ticketBatches['sold_active']}'),
+                _value(TicketBatchStrings.voided,
+                    '${report.ticketBatches['voided_unsold']}'),
+              ]),
+          ]);
           final spots = report.spotsTotal == 0
               ? null
               : _section(ReportStrings.spots, ReportStrings.spotsHelp, [

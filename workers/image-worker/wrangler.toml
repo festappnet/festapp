@@ -45,6 +45,7 @@ binding = "IMAGES"
 # CF_CACHE_PURGE_TOKEN
 # IMAGE_PROCESSING_SERVICE_SECRET - one-purpose blueprint processing HMAC key;
 # same value as backend vault blueprint_image_processing_v1, never a user or service key.
+# TICKET_BATCH_SERVICE_SECRET - dedicated immutable private ticket batch PDF capability
 # TICKET_FONT_SERVICE_SECRET - dedicated font read/create capability, also in
 # the protected Edge function environment; never a Supabase/user credential.
 

@@ -83,6 +83,7 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Order Product Ticket % not found', p_opt_id; END IF;
 
     PERFORM public.check_ticket_is_mutable(opt.ticket);
+    PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[opt.ticket]);
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order" FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 

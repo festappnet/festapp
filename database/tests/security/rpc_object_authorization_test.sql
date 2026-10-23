@@ -47,7 +47,7 @@ BEGIN
   INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin,is_support)
     VALUES (account,bank_admin,true,false),(account,support_user,false,true),(foreign_account,outsider,true,false);
   INSERT INTO public.email_templates(code,html,subject,organization,unit)
-    VALUES ('RPC_SECURITY','own','own',own_org,own_unit),('RPC_SECURITY','foreign','foreign',foreign_org,foreign_unit);
+    VALUES ('TICKET_ORDER_CONFIRMATION','own','own',own_org,own_unit),('TICKET_ORDER_CONFIRMATION','foreign','foreign',foreign_org,foreign_unit);
   ids := jsonb_build_object('unit',own_unit,'foreign_unit',foreign_unit,'org',own_org,'foreign_org',foreign_org,
     'occasion',own_occ,'foreign_occasion',foreign_occ,'account',account,'foreign_account',foreign_account,
     'manager',manager,'target',target,'outsider',outsider,'bank_admin',bank_admin,'support',support_user,'editor',editor);
@@ -91,7 +91,7 @@ BEGIN
   IF n <> 1 THEN RAISE EXCEPTION 'Unit manager auth lookup failed'; END IF;
   PERFORM public.get_last_sign_in_at((x->>'target')::uuid);
   templates := public.get_entity_email_templates('unit',(x->>'unit')::bigint);
-  IF NOT templates->'templates' @> '[{"code":"RPC_SECURITY","html":"own"}]'::jsonb THEN RAISE EXCEPTION 'Own unit templates absent'; END IF;
+  IF NOT templates->'templates' @> '[{"code":"TICKET_ORDER_CONFIRMATION","html":"own"}]'::jsonb THEN RAISE EXCEPTION 'Own unit templates absent'; END IF;
   PERFORM public._rpc_security_expect_denied(format('SELECT public.get_all_email_templates(%L::jsonb)',jsonb_build_object('unit',x->'unit','organization',x->'foreign_org')::text));
 
   PERFORM set_config('request.jwt.claim.sub',x->>'outsider',true);

@@ -8,7 +8,7 @@ BEGIN
     JOIN public.user_info u ON u.organization = o.organization AND u.id = auth.uid()
     WHERE o.id = public.resolve_occasion_link_internal(occasion_link) AND public.can_read_orders(o.id)
   ), orders_scope AS MATERIALIZED (
-    SELECT o.* FROM eshop.orders o JOIN scope s ON s.id = o.occasion
+    SELECT o.* FROM eshop.orders o JOIN scope s ON s.id = o.occasion WHERE o.state IS DISTINCT FROM 'stock'
   ), payments AS MATERIALIZED (
     SELECT p.* FROM eshop.payment_info p
     WHERE p.id IN (SELECT payment_info FROM orders_scope)
@@ -68,7 +68,7 @@ BEGIN
     FROM order_money o FULL JOIN payment_money p USING(currency)
   ), ticket_scope AS (
     SELECT t.* FROM eshop.tickets t JOIN scope s ON s.id=t.occasion
-    WHERE EXISTS (SELECT 1 FROM eshop.order_product_ticket i WHERE i.ticket=t.id)
+    WHERE EXISTS (SELECT 1 FROM eshop.order_product_ticket i JOIN orders_scope o ON o.id=i."order" WHERE i.ticket=t.id)
   ), valid_orders AS MATERIALIZED (
     SELECT * FROM orders_scope WHERE state IS DISTINCT FROM 'storno' AND state IS DISTINCT FROM 'waitlisted'
   ), valid_tickets AS MATERIALIZED (
@@ -81,12 +81,12 @@ BEGIN
     SELECT (created_at AT TIME ZONE 'Europe/Prague')::date AS day,currency_code::text AS currency,count(*) AS count
     FROM valid_orders GROUP BY 1,2
   ), ticket_order_dates AS (
-    SELECT DISTINCT ON (t.id) t.id,t.created_at,o.currency_code
+    SELECT DISTINCT ON (t.id) t.id,CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_items b WHERE b.ticket_id=t.id AND b.sale_order_id=o.id) THEN o.created_at ELSE t.created_at END AS created_at,o.currency_code
     FROM ticket_scope t JOIN eshop.order_product_ticket i ON i.ticket=t.id
     JOIN orders_scope o ON o.id=i."order"
     ORDER BY t.id,o.created_at,o.id
   ), valid_ticket_order_dates AS (
-    SELECT DISTINCT ON (t.id) t.id,t.created_at,o.currency_code
+    SELECT DISTINCT ON (t.id) t.id,CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_items b WHERE b.ticket_id=t.id AND b.sale_order_id=o.id) THEN o.created_at ELSE t.created_at END AS created_at,o.currency_code
     FROM valid_tickets t JOIN eshop.order_product_ticket i ON i.ticket=t.id
     JOIN valid_orders o ON o.id=i."order"
     ORDER BY t.id,o.created_at,o.id
@@ -148,6 +148,12 @@ BEGIN
       'payments',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM payment_days d),'[]'::jsonb)
     ),
     'products',coalesce((SELECT jsonb_agg(to_jsonb(p) ORDER BY type_id,product_id) FROM products p),'[]'::jsonb),
+     'ticket_batches', (SELECT jsonb_build_object('total',count(*),'available',count(*) FILTER(WHERE i.sale_order_id IS NULL AND t.state<>'storno'),
+      'sold_active',count(*) FILTER(WHERE i.sale_order_id IS NOT NULL AND t.state<>'storno'),
+      'voided_unsold',count(*) FILTER(WHERE i.sale_order_id IS NULL AND t.state='storno'),
+      'cancelled_after_sale',count(*) FILTER(WHERE i.sale_order_id IS NOT NULL AND t.state='storno'))
+      FROM eshop.ticket_batch_items i JOIN eshop.ticket_batches b ON b.id=i.batch_id JOIN eshop.tickets t ON t.id=i.ticket_id
+      WHERE b.occasion IN(SELECT id FROM scope)),
     'warnings',coalesce((SELECT jsonb_agg(to_jsonb(w) ORDER BY code) FROM warnings w),'[]'::jsonb)
   ), invalid.value INTO r,invalid_payment FROM scope s CROSS JOIN invalid;
   IF r IS NULL THEN RETURN jsonb_build_object('code',403,'message','Report unavailable or access denied.'); END IF;

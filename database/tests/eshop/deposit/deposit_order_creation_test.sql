@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- Test: deposit order creation
 -- Goal: Verify orders correctly calculate deposit_amount from product.data
 
@@ -82,6 +84,8 @@ BEGIN
         )
     );
 
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
+
     SELECT create_ticket_order(v_input_data) INTO v_result;
 
     -- Verify order created successfully
@@ -123,6 +127,8 @@ BEGIN
             jsonb_build_object('spot', v_spot_2_id)
         )
     );
+
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
 
@@ -171,6 +177,8 @@ BEGIN
             jsonb_build_object('spot', v_spot_3_id)
         )
     );
+
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
 

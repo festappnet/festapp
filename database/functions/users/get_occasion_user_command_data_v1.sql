@@ -12,3 +12,5 @@ AS $function$
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_occasion_user_command_data_v1(p_occasion bigint, p_user uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.get_occasion_user_command_data_v1(bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_occasion_user_command_data_v1(bigint,uuid) TO service_role;

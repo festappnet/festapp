@@ -56,3 +56,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_occasion_user_client_sync_v1(p_occasion bigint, p_command_id uuid, p_profile jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb) TO authenticated,service_role;

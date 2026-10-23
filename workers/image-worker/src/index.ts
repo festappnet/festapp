@@ -1,3 +1,4 @@
+import { handleTicketBatches } from './ticket-batches';
 import type { Env } from './types';
 import {
   handleCors,
@@ -36,6 +37,8 @@ export default {
 
       if (url.pathname === '/service/account-assets') {
         response = await handleAccountAssets(request, env);
+      } else if (url.pathname.startsWith('/service/ticket-batches/')) {
+        response = await handleTicketBatches(request, env);
       } else if (url.pathname.startsWith('/service/ticket-fonts/')) {
         response = await handleTicketFonts(request, env);
       } else if (url.pathname.startsWith('/service/')) {

@@ -5,3 +5,5 @@ SET search_path = public, extensions AS $$
    (SELECT m.is_editor_view FROM public.occasion_users m WHERE m."user"=auth.uid() AND m.occasion=oc),
    public.is_demo_occasion(oc),public.can_read_demo_occasion(oc));
 $$;
+REVOKE ALL ON FUNCTION public.get_is_editor_view_on_occasion(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_is_editor_view_on_occasion(bigint) TO anon,authenticated,service_role;

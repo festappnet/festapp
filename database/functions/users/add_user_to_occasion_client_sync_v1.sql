@@ -53,3 +53,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.add_user_to_occasion_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.add_user_to_occasion_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.add_user_to_occasion_client_sync_v1(bigint,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.add_user_to_occasion_client_sync_v1(bigint,uuid,uuid) TO authenticated,service_role;

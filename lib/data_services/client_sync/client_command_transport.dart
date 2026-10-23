@@ -23,6 +23,7 @@ class ClientCommandTransport {
   ClientCommandTransport(
     this._rpc, {
     this.maxAttempts = 2,
+    this.retrySerialization = false,
     String? principalBinding,
     String? Function()? principalProvider,
   })  : _principalBinding = principalBinding,
@@ -31,10 +32,12 @@ class ClientCommandTransport {
   factory ClientCommandTransport.supabase(
     SupabaseClient client, {
     bool durable = false,
+    bool retrySerialization = false,
   }) =>
       ClientCommandTransport(
         (functionName, parameters) =>
             client.rpc(functionName, params: parameters),
+        retrySerialization: retrySerialization,
         principalProvider: durable
             ? () =>
                 '${client.rest.url}:${client.auth.currentUser?.id ?? 'anonymous'}'
@@ -43,6 +46,7 @@ class ClientCommandTransport {
 
   final ClientCommandRpc _rpc;
   final int maxAttempts;
+  final bool retrySerialization;
   final String? _principalBinding;
   final String? Function()? _principalProvider;
   String? get principalBinding =>
@@ -154,7 +158,12 @@ class ClientCommandTransport {
         if (error.code == '42501') {
           await RightsService.refreshAfterAuthorizationDenial(error: error);
         }
-        rethrow;
+        if (!retrySerialization ||
+            !{'40001', '40P01'}.contains(error.code) ||
+            attempt == maxAttempts) {
+          rethrow;
+        }
+        await Future<void>.delayed(Duration(milliseconds: 30 * attempt));
       } on TimeoutException {
         if (attempt == maxAttempts) rethrow;
       } on http.ClientException {
@@ -269,6 +278,8 @@ class ClientCommandTransport {
       'p_group',
       'p_group_id',
       'p_form_id',
+      'p_batch',
+      'p_form',
       'p_source_form_id',
       'p_pool',
       'p_unit',

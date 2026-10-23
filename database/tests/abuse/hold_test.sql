@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 DO $$
 DECLARE org bigint; un bigint; occ bigint; bp bigint; fk uuid; seat bigint; seat2 bigint;
  buyer uuid:=gen_random_uuid(); thief uuid:=gen_random_uuid(); expiry timestamptz; r jsonb;
@@ -10,6 +12,13 @@ BEGIN
  INSERT INTO public.forms(occasion,blueprint,title,is_open) VALUES(occ,bp,'Seats',true) RETURNING key INTO fk;
  INSERT INTO eshop.spots(occasion,blueprint,title) VALUES(occ,bp,'One') RETURNING id INTO seat;
  INSERT INTO eshop.spots(occasion,blueprint,title) VALUES(occ,bp,'Two') RETURNING id INTO seat2;
+ INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Admission','spot');
+ INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)
+ SELECT occ,id,'Admission',100,'CZK' FROM eshop.product_types WHERE occasion=occ;
+ UPDATE eshop.spots SET product=(SELECT id FROM eshop.products WHERE occasion=occ LIMIT 1) WHERE occasion=occ;
+ INSERT INTO public.form_fields(form,product_type,type)
+ SELECT id,(SELECT id FROM eshop.product_types WHERE occasion=occ LIMIT 1),'product_type' FROM public.forms WHERE key=fk;
+ PERFORM pg_temp.prepare_order_blueprint_fixture(fk);
  PERFORM set_config('request.jwt.claim.sub','',true);
  PERFORM set_config('request.jwt.claim.role','anon',true);
  EXECUTE 'SET LOCAL ROLE anon';

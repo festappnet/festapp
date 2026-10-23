@@ -33,6 +33,11 @@ BEGIN
     INSERT INTO eshop.bank_account_users (bank_account, "user", is_admin) 
     VALUES (v_acc_id, v_user_id, true);
 
+    INSERT INTO public.organizations(title) VALUES('Unpaired account authority') RETURNING id INTO v_org_id;
+    INSERT INTO public.units(title,organization) VALUES('Bank manager',v_org_id) RETURNING id INTO v_unit_id;
+    INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(v_unit_id,v_user_id,true);
+    INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(v_unit_id,v_acc_id);
+
     -- 3. Create Payment Info (representing a Ticket Order payment request)
     -- Must be linked to the bank account
     INSERT INTO eshop.payment_info (bank_account, amount, currency_code, variable_symbol)

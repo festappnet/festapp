@@ -90,3 +90,7 @@ BEGIN
  updated_at=now(),updated_by=auth.uid() WHERE occasion_id=p_occasion;
  RETURN public.get_scanner_settings(p_occasion);
 END $$;
+REVOKE ALL ON FUNCTION public.get_scanner_settings(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_settings(bigint) TO authenticated,service_role;
+REVOKE ALL ON FUNCTION public.update_scanner_settings(bigint,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.update_scanner_settings(bigint,bigint,jsonb) TO authenticated,service_role;

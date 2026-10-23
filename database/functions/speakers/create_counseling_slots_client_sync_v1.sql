@@ -24,3 +24,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.create_counseling_slots_client_sync_v1(p_speaker bigint, p_start timestamp with time zone, p_end timestamp with time zone, p_slot_minutes integer, p_place bigint, p_capacity integer, p_title text, p_break_minutes integer, p_command_id uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_counseling_slots_client_sync_v1(p_speaker bigint, p_start timestamp with time zone, p_end timestamp with time zone, p_slot_minutes integer, p_place bigint, p_capacity integer, p_title text, p_break_minutes integer, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_counseling_slots_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_counseling_slots_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer,uuid) TO authenticated,service_role;

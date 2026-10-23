@@ -29,3 +29,5 @@ BEGIN
     RETURN jsonb_build_object('code', 200, 'data', unit_data);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_unit_for_edit(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_unit_for_edit(bigint) TO anon,authenticated,service_role;

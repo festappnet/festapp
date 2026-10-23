@@ -34,8 +34,9 @@ BEGIN
  PERFORM assert_true((public.get_form(f)->'data'->>'is_open')::boolean,'demo signup form is open');
  BEGIN PERFORM public.create_ticket_order_internal_v1(jsonb_build_object('form',f)); RAISE EXCEPTION 'demo checkout accepted';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.select_spot(f,gen_random_uuid(),(SELECT id FROM eshop.spots WHERE occasion=oc LIMIT 1),true);
- RAISE EXCEPTION 'demo reservation accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ result:=public.select_spot(f,gen_random_uuid(),(SELECT id FROM eshop.spots WHERE occasion=oc LIMIT 1),true);
+ PERFORM assert_true(result->>'code'<>'200','demo reservation rejected');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.spots WHERE occasion=oc AND secret_expiration_time>clock_timestamp()),'demo rejection creates no active hold');
  SELECT count(*) INTO before_count FROM public.email_messages;
  BEGIN PERFORM public.enqueue_email('custom',jsonb_build_object('organization',1,'occasion',oc),'demo@example.invalid','{}','demo-test','custom');
  RAISE EXCEPTION 'demo email accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;

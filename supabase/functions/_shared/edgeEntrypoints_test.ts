@@ -78,6 +78,7 @@ const optionEntrypoints = [
   "waitlist-commands",
   "customer-order-access",
   "send-tickets",
+  "prepare-ticket-batch-document",
 ];
 
 for (const name of optionEntrypoints) {
@@ -464,3 +465,12 @@ for (const name of ["stripe-connect", "stripe-connect-callback"]) {
     assertEquals((await response.json()).error, "stripe_not_configured");
   });
 }
+
+Deno.test("batch export requires authorization and rejects unknown formats before document access", async () => {
+  const handler = await loadHandler("prepare-ticket-batch-document");
+  const body = JSON.stringify({batchId: "ba000000-0000-0000-0000-000000000001", format: "other"});
+  const unauthenticated = await handler(new Request("https://edge-test.invalid", {method:"POST",body}));
+  assertEquals(unauthenticated.status,401);
+  const invalid = await handler(new Request("https://edge-test.invalid", {method:"POST",headers:{Authorization:"Bearer invalid"},body}));
+  assertEquals(invalid.status,400);
+});

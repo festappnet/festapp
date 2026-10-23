@@ -1,3 +1,4 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
 -- Run after layout_integration_test.sql inside a rollback-only transaction.
 DO $$
 DECLARE f jsonb; other jsonb; resources jsonb; resource_id text:='layout-text:'||repeat('a',64); changed jsonb; denied boolean:=false;

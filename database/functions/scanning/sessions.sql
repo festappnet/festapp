@@ -51,3 +51,8 @@ BEGIN
  UPDATE public.scanner_sessions SET revoked_at=now() WHERE id=p_session;
  RETURN jsonb_build_object('code',200,'server_time',now());
 END $$;
+REVOKE ALL ON FUNCTION public.scanner_session_internal(uuid,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.open_scanner_session(text,bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.open_scanner_session(text,bigint,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.revoke_scanner_session(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.revoke_scanner_session(uuid,text) TO anon,authenticated,service_role;

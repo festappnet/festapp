@@ -187,5 +187,15 @@
     "node",
     "--test",
     "automation/tests/repository_artifacts.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/web_translation_minification.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/email_worker_cpu_budget.test.mjs"
   ]
 ]

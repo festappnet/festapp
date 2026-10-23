@@ -44,6 +44,7 @@ BEGIN
   IF EXISTS(SELECT 1 FROM eshop.orders o WHERE o.id=ANY(related_orders)
       AND (o.occasion<>order_oc OR o.form IS DISTINCT FROM form_id)) THEN
     RAISE EXCEPTION 'ORDER_WAITLIST_SCOPE_MISMATCH'; END IF;
+  PERFORM public.check_batch_order_delete_internal(order_id);
   PERFORM public.lock_order_capacity_scope_internal(related_orders);
   IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=delete_order_internal_v1.order_id AND state='preparing_payment')
     OR EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts a

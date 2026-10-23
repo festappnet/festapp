@@ -49,6 +49,7 @@ BEGIN
  SELECT coalesce(jsonb_object_agg(member,u->>'id'),'{}') INTO unit_index
  FROM jsonb_array_elements(coalesce(doc->'selectionUnits','[]')) u CROSS JOIN LATERAL jsonb_array_elements_text(u->'nodeIds') member;
  PERFORM public.lock_blueprint_inventory_internal(b.occasion,b.id);
+ PERFORM public.check_batch_blueprint_print_immutable_internal(b.id,doc);
  PERFORM public.check_blueprint_block_changes_internal(b.id,doc,p_blueprint->'seatChanges');
  IF EXISTS(SELECT change->>'nodeId' FROM jsonb_array_elements(coalesce(p_blueprint->'seatChanges','[]')) change GROUP BY change->>'nodeId' HAVING count(*)>1) THEN
   RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_DUPLICATE_SEAT_CHANGE'; END IF;

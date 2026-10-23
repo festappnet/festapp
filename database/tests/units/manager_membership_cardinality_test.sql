@@ -61,14 +61,14 @@ BEGIN
  BEGIN
   PERFORM public.get_bank_accounts_for_unit_management(foreign_unit);
   RAISE EXCEPTION 'Foreign unit bank management accepted editor';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'User is not manager.' THEN RAISE; END IF; END;
+ EXCEPTION WHEN insufficient_privilege THEN IF SQLERRM<>'User is not manager.' THEN RAISE; END IF; END;
  PERFORM set_config('request.jwt.claim.sub',outsider::text,true);
  IF public.get_is_manager_on_unit(own_unit) IS DISTINCT FROM false THEN
   RAISE EXCEPTION 'Multiple false memberships must not confer access'; END IF;
  BEGIN
   PERFORM public.get_bank_accounts_for_unit_management(own_unit);
   RAISE EXCEPTION 'Non-manager bank list accepted';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'User is not manager.' THEN RAISE; END IF; END;
+ EXCEPTION WHEN insufficient_privilege THEN IF SQLERRM<>'User is not manager.' THEN RAISE; END IF; END;
  PERFORM set_config('request.jwt.claim.sub','',true);
  IF public.get_is_manager_on_unit(own_unit) IS DISTINCT FROM false THEN
   RAISE EXCEPTION 'Unauthenticated manager lookup must deny'; END IF;

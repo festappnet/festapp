@@ -71,6 +71,7 @@ cp "$PROJECT_ROOT/automation/release/render_organizer_page.mjs" "$TMP_ROOT/autom
 cp -R "$PROJECT_ROOT/automation/release/organizers" "$TMP_ROOT/automation/release/organizers"
 cp "$PROJECT_ROOT"/automation/release/legal/*.md "$TMP_ROOT/automation/release/legal/"
 cp "$PROJECT_ROOT/automation/templates/web/delete-account/index.html" "$TMP_ROOT/automation/templates/web/delete-account/index.html"
+cp "$PROJECT_ROOT/automation/templates/web/delete-account/copy.json" "$TMP_ROOT/automation/templates/web/delete-account/copy.json"
 cp "$FIXTURE_CONF" "$TMP_ROOT/automation/project.conf"
 cp "$PROJECT_ROOT/.vscode/settings.json" "$TMP_ROOT/.vscode/settings.json"
 

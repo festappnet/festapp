@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- test-setup: database/tests/helpers/high_volume_email_fixture.sql
 -- Test: deposit reminder queueing and validation
 -- Goal: Verify queue_payment_reminders (deposit branch), send-time validation, and email code determination
@@ -100,6 +102,7 @@ BEGIN
             jsonb_build_object('spot', v_spot_1_id)
         )
     );
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
     SELECT create_ticket_order(v_input_data) INTO v_result;
     PERFORM assert_eq((v_result->>'code')::int, 200, 'Setup: Deposit order creation should succeed');
     v_order_id := (v_result->'order'->>'id')::bigint;
@@ -236,6 +239,7 @@ BEGIN
             jsonb_build_object('spot', v_spot_2_id)
         )
     );
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
     SELECT create_ticket_order(v_input_data) INTO v_result;
     PERFORM assert_eq((v_result->>'code')::int, 200, 'Test 5: Non-deposit order creation should succeed');
     v_order_2_id := (v_result->'order'->>'id')::bigint;

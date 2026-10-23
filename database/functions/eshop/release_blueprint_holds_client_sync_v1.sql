@@ -1,7 +1,7 @@
 -- Administrative release of temporary holds. Buyers still use select_spot.
 CREATE OR REPLACE FUNCTION public.release_blueprint_holds_client_sync_v1(
  p_spots bigint[], p_command_id uuid
-) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
+) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE actor uuid:=auth.uid(); occ bigint; ids bigint[]; bp bigint; started jsonb; users uuid[]; fingerprint text;
 BEGIN
  IF actor IS NULL OR coalesce(cardinality(p_spots),0)=0 OR cardinality(p_spots)>256 THEN

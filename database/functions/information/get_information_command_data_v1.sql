@@ -11,3 +11,5 @@ AS $function$
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_information_command_data_v1(p_information_id bigint) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.get_information_command_data_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_information_command_data_v1(bigint) TO service_role;

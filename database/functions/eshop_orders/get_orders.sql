@@ -110,6 +110,12 @@ BEGIN
         'state', t.state,
         'note', t.note,
         'note_hidden', t.note_hidden,
+        'batch', (SELECT jsonb_build_object('id',i.batch_id,'title',b.title,'ordinal',i.ordinal,'saleOrderId',i.sale_order_id) FROM eshop.ticket_batch_items i JOIN eshop.ticket_batches b ON b.id=i.batch_id WHERE i.ticket_id=t.id),
+        'allowedActions',CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id) THEN
+          jsonb_build_array('view') || CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_document_parts d WHERE d.kind='single' AND d.ticket_ids=ARRAY[t.id] AND d.state='ready') THEN jsonb_build_array('download') ELSE '[]'::jsonb END ||
+          CASE WHEN public.can_write_orders(t.occasion) THEN jsonb_build_array('note') ||
+            CASE WHEN t.state<>'storno' AND EXISTS(SELECT 1 FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id AND i.sale_order_id IS NOT NULL)
+              THEN jsonb_build_array('use','reset','cancel') ELSE '[]'::jsonb END ELSE '[]'::jsonb END END,
         'data', t.data
     ))
     INTO ticketsData
@@ -158,6 +164,8 @@ BEGIN
               THEN o.waitlist_summary END,
             'isActive',(o.waitlist_summary->>'isActive')::boolean,
             'allowedActions',public.get_order_allowed_actions_internal_v1(o.id,o.waitlist_summary),
+            'paymentChannel',CASE WHEN o.data ? 'ticketBatchOrigin' THEN 'cash' END,
+            'batchId',(SELECT b.id FROM eshop.ticket_batches b WHERE b.stock_order_id=o.id),
             'source_waitlist_order_id',o.source_waitlist_order_id,
             'form_id', o.form,
             'form', jsonb_build_object('id', o.form),

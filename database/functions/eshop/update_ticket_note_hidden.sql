@@ -18,7 +18,9 @@ BEGIN
         RETURN jsonb_build_object('code', 403, 'message', 'User is not authorized to edit this occasion');
     END IF;
 
-    PERFORM public.check_ticket_is_mutable(ticket_id);
+    IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders o ON o.id=x."order" WHERE x.ticket=ticket_id AND o.state='stock') THEN
+      PERFORM public.check_ticket_is_mutable(ticket_id);
+    END IF;
 
     -- Proceed to update note_hidden if the user is authorized
     UPDATE eshop.tickets

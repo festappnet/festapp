@@ -1,5 +1,8 @@
 /// Stable grid field identifiers, shared by row adapters and renderers.
 abstract final class EshopColumnIds {
+  static const String TICKET_ORIGIN = 'ticketOrigin';
+  static const String TICKET_BATCH = 'ticketBatch';
+  static const String TICKET_SALE_STATE = 'ticketSaleState';
   // Column identifier constants
   static const String TICKET_ID = "ticketId";
   static const String TICKET_SYMBOL = "ticketSymbol";

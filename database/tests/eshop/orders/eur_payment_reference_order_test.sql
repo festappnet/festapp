@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- A paid EUR order exposes one RF whose numeric payload is its unchanged VS.
 DO $$
 DECLARE
@@ -55,12 +57,12 @@ BEGIN
   VALUES ('EUR RF test spot', v_product_id, v_occasion_id, gen_random_uuid())
   RETURNING id INTO v_spot_id;
 
-  SELECT public.create_ticket_order(jsonb_build_object(
+  SELECT public.create_ticket_order(pg_temp.prepare_order_fixture_input(jsonb_build_object(
     'form', v_form_key,
     'email', 'eur-rf@example.com',
     'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_id),
     'ticket', jsonb_build_array(jsonb_build_object('spot', v_spot_id))
-  )) INTO v_result;
+  ))) INTO v_result;
 
   PERFORM assert_eq((v_result->>'code')::integer, 200, 'EUR order must succeed');
   PERFORM assert_eq(v_result->'order'->'payment_info'->>'creditor_name',

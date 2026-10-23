@@ -19,3 +19,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.get_unit_edit_data_v1(p_unit bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_unit_edit_data_v1(p_unit bigint) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_unit_edit_data_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_unit_edit_data_v1(bigint) TO authenticated,service_role;

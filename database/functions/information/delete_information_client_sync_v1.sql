@@ -58,3 +58,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.delete_information_client_sync_v1(p_occasion bigint, p_information_id bigint, p_command_id uuid, p_expected_version bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_information_client_sync_v1(p_occasion bigint, p_information_id bigint, p_command_id uuid, p_expected_version bigint) TO authenticated;
+REVOKE ALL ON FUNCTION public.delete_information_client_sync_v1(bigint,bigint,uuid,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_information_client_sync_v1(bigint,bigint,uuid,bigint) TO authenticated,service_role;

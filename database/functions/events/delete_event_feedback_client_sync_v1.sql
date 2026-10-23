@@ -64,3 +64,5 @@ END; $function$
 
 REVOKE ALL ON FUNCTION public.delete_event_feedback_client_sync_v1(p_occasion bigint, p_event bigint, p_client_id uuid, p_command_id uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_event_feedback_client_sync_v1(p_occasion bigint, p_event bigint, p_client_id uuid, p_command_id uuid) TO anon,authenticated;
+REVOKE ALL ON FUNCTION public.delete_event_feedback_client_sync_v1(bigint,bigint,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_event_feedback_client_sync_v1(bigint,bigint,uuid,uuid) TO anon,authenticated,service_role;

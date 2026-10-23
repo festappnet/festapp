@@ -338,3 +338,5 @@ BEGIN
       'version',v_version),'{}','[]','user',NULL,v_replacements);
 END; $function$
 ;
+REVOKE ALL ON FUNCTION public.delete_owned_companion_internal_v1(bigint,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_owned_companion_internal_v1(bigint,uuid,uuid) TO service_role;

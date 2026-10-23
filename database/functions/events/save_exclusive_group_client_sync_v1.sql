@@ -90,3 +90,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.save_exclusive_group_client_sync_v1(p_occasion bigint, p_command_id uuid, p_expected_version bigint, p_group jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.save_exclusive_group_client_sync_v1(p_occasion bigint, p_command_id uuid, p_expected_version bigint, p_group jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.save_exclusive_group_client_sync_v1(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.save_exclusive_group_client_sync_v1(bigint,uuid,bigint,jsonb) TO authenticated,service_role;

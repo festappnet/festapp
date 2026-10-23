@@ -260,3 +260,5 @@ END; $function$
 
 REVOKE ALL ON FUNCTION public.set_event_attendance_client_sync_v1(p_event_id bigint, p_participant_id uuid, p_action text, p_command_id uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.set_event_attendance_client_sync_v1(p_event_id bigint, p_participant_id uuid, p_action text, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.set_event_attendance_client_sync_v1(bigint,uuid,text,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_event_attendance_client_sync_v1(bigint,uuid,text,uuid) TO authenticated,service_role;

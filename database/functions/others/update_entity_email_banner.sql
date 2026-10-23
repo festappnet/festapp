@@ -56,7 +56,7 @@ begin
         v_new_html := v_new_html || '<div style="text-align: center;">';
         v_new_html := v_new_html || '<img src="' || p_banner_url || '" alt="' || coalesce(v_entity_title, 'Banner') || '" style="width: 100%; height: auto; display: block;">';
         v_new_html := v_new_html || '</div>';
-        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px;">';
+        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">';
         v_new_html := v_new_html || '{{content}}';
         v_new_html := v_new_html || '</div></div>';
 

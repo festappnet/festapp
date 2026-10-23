@@ -46,3 +46,5 @@ BEGIN
 END $function$
 ;
 REVOKE ALL ON FUNCTION public.create_companion_in_organization_internal_v1(org bigint, oc bigint, usr uuid, c_name text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.create_companion_in_organization_internal_v1(bigint,bigint,uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_companion_in_organization_internal_v1(bigint,bigint,uuid,text) TO service_role;

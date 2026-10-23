@@ -6,3 +6,5 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
   SELECT public.can_write_orders(oc);
 $$;
+REVOKE ALL ON FUNCTION public.get_is_editor_order_on_occasion(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_is_editor_order_on_occasion(bigint) TO anon,authenticated,service_role;

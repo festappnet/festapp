@@ -46,3 +46,7 @@ BEGIN
  WHERE sn.id=p_snapshot AND sn.session_id=p_session AND sn.expires_at>now() AND pg.page_index=p_page;
  RETURN jsonb_build_object('code',CASE WHEN result IS NULL THEN 404 ELSE 200 END,'data',result,'server_time',now());
 END $$;
+REVOKE ALL ON FUNCTION public.prepare_scanner_snapshot(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.prepare_scanner_snapshot(uuid,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_scanner_snapshot_page(uuid,text,uuid,integer) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_snapshot_page(uuid,text,uuid,integer) TO anon,authenticated,service_role;

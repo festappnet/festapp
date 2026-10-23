@@ -52,8 +52,10 @@ class OrderModel extends ITrinaRowModel {
   bool allows(String action) {
     final actions = allowedActions ?? waitlistSummary?.allowedActions;
     if (actions != null) return actions.contains(action);
-    if (isWaitlisted || state == stornoState || state == 'preparing_payment')
-      return action == 'view';
+    if (state == 'stock' ||
+        isWaitlisted ||
+        state == stornoState ||
+        state == 'preparing_payment') return action == 'view';
     return switch (action) {
       'view' || 'note' || 'edit' || 'cancel' => true,
       'paid' => state == orderedState,
@@ -95,6 +97,7 @@ class OrderModel extends ITrinaRowModel {
   String? currencyCode;
   // Read-only payment method supplied by authorized order/history projections.
   String? paymentMethod;
+  String? paymentChannel;
   bool get isStripePayment =>
       (paymentInfoModel?.paymentMethod ?? paymentMethod) == 'stripe';
   int get amountDecimalDigits => isStripePayment ? 2 : 0;
@@ -226,6 +229,7 @@ class OrderModel extends ITrinaRowModel {
     this.formId,
     this.currencyCode,
     this.paymentMethod,
+    this.paymentChannel,
     this.noteHidden,
     this.form,
     this.relatedTickets,
@@ -268,6 +272,7 @@ class OrderModel extends ITrinaRowModel {
           : null,
       currencyCode: json[TbEshop.orders.currency_code],
       paymentMethod: json['payment_method'] as String?,
+      paymentChannel: json['paymentChannel'] as String?,
       state: json[TbEshop.orders.state],
       formKey: orderData is Map<String, dynamic>
           ? orderData[TbEshop.orders.data_form]

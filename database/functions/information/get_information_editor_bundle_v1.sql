@@ -22,3 +22,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.get_information_editor_bundle_v1(p_occasion bigint, p_type text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.get_information_editor_bundle_v1(p_occasion bigint, p_type text) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_information_editor_bundle_v1(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_information_editor_bundle_v1(bigint,text) TO authenticated,service_role;

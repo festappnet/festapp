@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- Test: backward compatibility with existing orders
 -- Goal: Verify orders without deposit continue to work with full price as threshold
 
@@ -84,6 +86,8 @@ BEGIN
         )
     );
 
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
+
     SELECT create_ticket_order(v_input_data) INTO v_result;
     v_order_id := (v_result->'order'->>'id')::bigint;
     SELECT payment_info INTO v_payment_info_id FROM eshop.orders WHERE id = v_order_id;
@@ -124,6 +128,8 @@ BEGIN
             jsonb_build_object('spot', v_spot_b_id)
         )
     );
+
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
 
     SELECT create_ticket_order(v_input_data) INTO v_result;
     v_order_id := (v_result->'order'->>'id')::bigint;

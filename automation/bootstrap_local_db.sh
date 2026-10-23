@@ -58,6 +58,18 @@ python3 "$PROJECT_ROOT/automation/baseline.py" ledger-sql | psql "$DATABASE_URL"
 # The baseline owns every version through BASELINE_VERSION. Only genuinely new,
 # forward migrations are executed here.
 python3 "$PROJECT_ROOT/automation/baseline.py" upgrade-local --database-url "$MIGRATION_DATABASE_URL" >/dev/null
+# Match production's application owner while the extension-owning local admin
+# remains responsible for extension setup. Tests deliberately use postgres as
+# the operator, and SET ROLE for actual API permission assertions.
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
+GRANT ALL ON ALL TABLES IN SCHEMA public,eshop TO postgres;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public,eshop TO postgres;
+SELECT format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure)
+FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname='public' AND p.prokind IN ('f','w')
+AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_proc'::regclass AND d.objid=p.oid AND d.deptype='e')
+\gexec
+SQL
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$PROJECT_ROOT/supabase/seed.sql" >/dev/null
 # Demo contract tests use the same versioned synthetic fixtures as the application.
 # This bootstrap is pinned to the disposable localhost database above.

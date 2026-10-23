@@ -7,6 +7,9 @@ BEGIN
  SELECT * INTO v_order FROM eshop.orders WHERE id=coalesce((p_data->>'order_id')::bigint,(p_data#>>'{ticket_order,order,id}')::bigint) FOR UPDATE;
  SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
  IF v_order.id IS NULL OR v_order.occasion<>p_occ THEN RAISE EXCEPTION 'invalid_order_email'; END IF;
+ IF v_order.state='stock' THEN RAISE EXCEPTION 'ORDER_ACTION_NOT_ALLOWED'; END IF;
+ IF v_order.data ? 'ticketBatchOrigin' AND nullif(trim(v_order.data->>'email'),'') IS NULL THEN
+  RETURN jsonb_build_object('state','skipped','reason','no_recipient'); END IF;
  IF v_order.state='storno' AND p_code<>'TICKET_ORDER_STORNO' THEN
   RAISE EXCEPTION 'ORDER_CANCELLED: Cancelled orders are read-only' USING ERRCODE='55000';
  END IF;
@@ -52,7 +55,8 @@ BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_order FOR UPDATE;
  SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
- IF v_order.state='paid' AND v_occ.is_order_synchronization_enabled AND v_order.data ? 'email'
+ IF v_order.data ? 'ticketBatchOrigin' AND coalesce((v_order.data#>>'{ticketBatchOrigin,sendTickets}')::boolean,false) IS NOT TRUE THEN RETURN; END IF;
+ IF v_order.state='paid' AND (v_occ.is_order_synchronization_enabled OR v_order.data ? 'ticketBatchOrigin') AND v_order.data ? 'email'
  AND (coalesce(v_order.price,0)<>0 OR EXISTS(SELECT 1 FROM jsonb_array_elements(v_occ.features) f WHERE f->>'code'='ticket' AND (f->>'is_enabled')::boolean)) THEN
   PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',p_order),v_occ.organization,v_occ.id,v_occ.unit);
  END IF;
