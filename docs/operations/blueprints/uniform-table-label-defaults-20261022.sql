@@ -1,3 +1,7 @@
+-- Read-only verification on 2026-10-23 found this repair already applied:
+-- all 12 reviewed rows have revision expected+1, no per-table label overrides,
+-- and uniform resolved labels inherited from their shared table style.
+-- Keep the original guards as historical evidence; do not replay or refresh them.
 -- Scope: 12 reviewed uniform-table plans in vstupenky.online (organization 3).
 -- Mixed table typography, table-free plans and already-correct plans are excluded.
 -- Private before-image: /tmp/festapp-table-defaults-batch-before.json.

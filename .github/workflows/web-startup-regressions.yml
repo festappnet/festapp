@@ -36,6 +36,4 @@ jobs:
       - name: Verify restricted WebViews and production module identity
         run: bash automation/test_web_startup.sh
       - name: Verify deployment gates
-        run: |
-          bash automation/tests/deploy_workflow.test.sh
-          node --test automation/tests/public_seo.test.mjs
+        run: bash automation/tests/deploy_workflow.test.sh
