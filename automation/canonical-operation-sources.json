@@ -300,6 +300,11 @@
     "eshop_ticket_batches/exports.sql",
     "eshop_ticket_batches/access.sql",
     "blueprint/hold_release.sql",
-    "blueprint/release_holds_command_internal.sql"
+    "blueprint/release_holds_command_internal.sql",
+    "blueprint/apply_seat_swap_internal.sql",
+    "blueprint/swap_command_internal.sql",
+    "blueprint/preview_blueprint_swap.sql",
+    "blueprint/seat_swap.sql",
+    "blueprint/swap_money_projection.sql"
   ]
 }
