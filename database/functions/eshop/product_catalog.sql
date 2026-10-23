@@ -47,7 +47,7 @@ BEGIN
  PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
  catalog:=public.get_product_catalog_data_internal(p_occasion,p_after,p_limit)::jsonb;
  RETURN jsonb_build_object('occasionId',p_occasion,'nextCursor',catalog->'nextCursor','catalog',
-   catalog-ARRAY['nextCursor','server_time','price_waves','inventory_pools','forms']);
+   catalog-ARRAY['nextCursor','server_time','price_waves','inventory_pools']);
 END $$;
 REVOKE ALL ON FUNCTION public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer) TO authenticated;

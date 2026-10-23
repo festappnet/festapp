@@ -67,33 +67,28 @@ BEGIN
              'order', p."order",
              'maximum', p.maximum,
              'form_ids', (
-               SELECT COALESCE(json_agg(DISTINCT ff.form), '[]'::json)
-               FROM public.form_fields ff
-               WHERE ff.product_type = p.product_type
+               SELECT COALESCE(json_agg(DISTINCT ff.form ORDER BY ff.form), '[]'::json)
+               FROM public.form_fields ff JOIN public.forms f ON f.id=ff.form
+               WHERE ff.product_type = p.product_type AND f.occasion=occ_id
              ),
-             'ordered_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               WHERE opt.product = p.id
-             ),
-             'paid_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               JOIN eshop.orders o ON o.id = opt.order
-               WHERE opt.product = p.id
-                 AND o.state = 'paid'
-             ),
-             'sent_count', (
-               SELECT count(*)
-               FROM eshop.order_product_ticket opt
-               JOIN eshop.orders o ON o.id = opt.order
-               WHERE opt.product = p.id
-                 AND o.state = 'sent'
-             )
+             -- These are product-ticket relationship rows, never unique people
+             -- or order counts. Preserve historical all-state ordered_count.
+             'ordered_count', sales.ordered_count,
+             'paid_count', sales.paid_count,
+             'sent_count', sales.sent_count,
+             'purchased_count', sales.purchased_count
            ) ORDER BY p.id
          )
     INTO products
   FROM eshop.products p
+  CROSS JOIN LATERAL (
+    SELECT count(*) ordered_count,
+      count(*) FILTER(WHERE o.state='paid') paid_count,
+      count(*) FILTER(WHERE o.state='sent') sent_count,
+      count(*) FILTER(WHERE o.state IN ('paid','sent')) purchased_count
+    FROM eshop.order_product_ticket opt LEFT JOIN eshop.orders o ON o.id=opt."order"
+    WHERE opt.product=p.id
+  ) sales
   WHERE p.id=ANY(selected_ids);
 
   -- Fetch all inventory pools for the occasion
@@ -103,7 +98,9 @@ BEGIN
   WHERE ip.occasion = occ_id AND p_limit IS NULL;
 
   -- Fetch all inventory contexts for the occasion
-  SELECT json_agg(ic.*)
+  SELECT json_agg((CASE WHEN p_limit IS NULL THEN to_jsonb(ic) ELSE jsonb_build_object(
+    'id',ic.id,'title',ic.title,'inventory_pool',ic.inventory_pool,'block_date',ic.block_date) END)
+    ||jsonb_build_object('pool_title',ip.title,'pool_type',ip.type))
   INTO inventory_contexts_data
   FROM public.inventory_contexts ic
   JOIN public.inventory_pools ip ON ic.inventory_pool = ip.id
@@ -122,13 +119,17 @@ BEGIN
   SELECT json_agg(
            json_build_object(
              'id', f.id,
-             'title', f.title,
-             'link', f.link
-           )
+             'title', f.title
+           )::jsonb || CASE WHEN p_limit IS NULL THEN jsonb_build_object('link',f.link) ELSE '{}'::jsonb END
          )
     INTO forms_data
   FROM public.forms f
-  WHERE f.occasion = occ_id AND p_limit IS NULL;
+  WHERE f.occasion = occ_id AND (p_limit IS NULL OR EXISTS(
+    SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
+    WHERE ff.form=f.id AND p.id=ANY(selected_ids)));
+  IF p_limit IS NOT NULL AND json_array_length(coalesce(forms_data,'[]'::json))>1000 THEN
+    RAISE program_limit_exceeded USING MESSAGE='form references exceed catalog page contract';
+  END IF;
 
   RETURN json_build_object(
     'server_time', clock_timestamp(),

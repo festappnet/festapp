@@ -22,6 +22,23 @@ only inside the marked, mail-fenced disposable DB, then explicitly cleaned up.
 No new index: page reduces correlated subplan loops from 1000 to 50.
 No production writes, no build/deploy, no publication yet.
 
+## Stage 0B - administration meaning, locally complete
+
+User explicitly requested the operational administration view, including useful
+relations and aggregate semantics. See `docs/architecture/product-admin-read-contract.md`.
+SQL purchased_count now owns paid+sent totals; current UI consumes it and retains
+counts during edits. MCP exposes form IDs/titles and stock pool names/type/date,
+with no public form links. Three independent count scans became one lateral
+aggregate; forms/inventory joins cannot multiply the counts.
+Migration `20261023163000_product_admin_read_semantics.sql` SHA-256:
+`a61747a53d860161f1e3d0cf451f3a794cd9d0eac8ba38fc5814e5980935fa11`.
+Tests: 3 real SQL tests, 0 skipped, include 2 paid tickets in one order, sent and
+storno relationships, duplicate form fields and 2 inventory assignments; actual
+MCP executor returns purchased_count=3, ordered_count=4. 4 Flutter grid tests
+passed, including preservation of canonical counts through local edits/copyWith.
+Evidence: `admin-data-network-admin-view-2026-10-23.json`; previous files retained.
+Publication/deployment still pending; no production writes.
+
 ## Next stage 1 - bounded investigation
 
 UI `DbEshop.saveNewProductWaveTarget` uses receipt; existing target, move/cancel,

@@ -22,7 +22,7 @@ const projectionPlans = {};
 try {
     await db.query('BEGIN');
     await db.query('SET LOCAL ROLE postgres');
-    await db.query(await readFile(new URL('../../supabase/migrations/20261023160000_product_catalog_keyset.sql', import.meta.url),'utf8'));
+    await db.query(await readFile(new URL('../../supabase/migrations/20261023163000_product_admin_read_semantics.sql', import.meta.url),'utf8'));
     await db.query('RESET ROLE');
     const f = await fixture(db, 1);
     const type = Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Audit admission','entry') returning id", [f.occasion])).rows[0].id);
@@ -73,7 +73,7 @@ try {
 } finally {
     try { await db.query('ROLLBACK'); } finally { await db.end(); }
 }
-const report={date:'2026-10-23',sourceMain:'4cfc9b7bc66f48c2d6e42155f08e905dde112d0d',sourceChange:'20261023160000_product_catalog_keyset.sql',scope:'marked, mail-fenced disposable PostgreSQL only; all fixture data and DDL rolled back',
+const report={date:'2026-10-23',sourceMain:'4cfc9b7bc66f48c2d6e42155f08e905dde112d0d',sourceChange:'20261023163000_product_admin_read_semantics.sql',scope:'marked, mail-fenced disposable PostgreSQL only; all fixture data and DDL rolled back',
     interpretation:'Actual product MCP executor and canonical catalog RPC. Bytes are serialized JSON and an illustrative gzip result, not measured HTTP wire traffic. Timing is one local sample, not a production performance claim. No orders, seats or planned changes in these synthetic catalogs. Session/delegation lookups are stubbed and excluded from domainRpcCalls.',measures,projectionPlans};
 await writeFile(output,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
 for(const m of measures) console.log(`${m.fixtureProducts} products, page ${m.page}: DB ${m.databaseReturnedProducts} / MCP ${m.mcpReturnedProducts} products; ${m.databaseJsonBytes} uncompressed DB JSON bytes`);

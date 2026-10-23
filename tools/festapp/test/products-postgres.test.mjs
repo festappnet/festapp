@@ -12,7 +12,7 @@ test('shared product UI/MCP SQL boundary preserves atomic stock save, scope, ver
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL); await db.query('BEGIN');
  t.after(async()=>{await db.query('ROLLBACK');await db.end();});
  await db.query('SET LOCAL ROLE postgres');
- await db.query(await readFile(new URL('../../../supabase/migrations/20261023160000_product_catalog_keyset.sql',import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));
  await db.query('RESET ROLE'); const f=await fixture(db,2);
  const other=Number((await db.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
  const otherUnit=Number((await db.query("insert into units(title,organization) values('Other organizer',$1) returning id",[f.org])).rows[0].id);
@@ -95,7 +95,7 @@ test('server keysets bound rows and metadata and preserve the complete editor pr
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);
  await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});
  await db.query('SET LOCAL ROLE postgres');
- await db.query(await readFile(new URL('../../../supabase/migrations/20261023160000_product_catalog_keyset.sql',import.meta.url),'utf8'));
+ await db.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));
  await db.query('RESET ROLE');const f=await fixture(db,2);
  const type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,NULL,'entry') returning id",[f.occasion])).rows[0].id);
  await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Unrelated','entry')",[f.occasion]);
@@ -108,19 +108,36 @@ test('server keysets bound rows and metadata and preserve the complete editor pr
  const order=Number((await db.query("insert into eshop.orders(occasion,form,state,price,currency_code,order_sequence,order_symbol,data) values($1,$2,'paid',25,'CZK',next_order_sequence($1),generate_order_symbol(),'{}') returning id",[f.occasion,form])).rows[0].id);
  const tickets=(await db.query("insert into eshop.tickets(occasion,state,ticket_symbol) select $1,'paid',gen_random_uuid()::text from generate_series(1,2) returning id",[f.occasion])).rows.map(r=>r.id);
  await db.query('insert into eshop.order_product_ticket("order",product,ticket) select $1,$2,unnest($3::bigint[])',[order,ids[0],tickets]);
+ for(const state of ['sent','storno']) {
+  const orderId=Number((await db.query("insert into eshop.orders(occasion,form,state,price,currency_code,order_sequence,order_symbol,data) values($1,$2,$3,12.50,'CZK',next_order_sequence($1),generate_order_symbol(),'{}') returning id",[f.occasion,form,state])).rows[0].id);
+  const ticket=Number((await db.query("insert into eshop.tickets(occasion,state,ticket_symbol) values($1,$2,gen_random_uuid()::text) returning id",[f.occasion,state])).rows[0].id);
+  await db.query('insert into eshop.order_product_ticket("order",product,ticket) values($1,$2,$3)',[orderId,ids[0],ticket]);
+ }
  await db.query('SET LOCAL ROLE authenticated');
  const full=(await db.query('select get_product_catalog($1,$2,$3) value',[f.org,f.occasion,f.unit])).rows[0].value.catalog;
  const compat=(await db.query('select get_products_and_types_for_edit($1)::jsonb value',[f.link])).rows[0].value;
  assert.deepEqual(compat.products,full.products);
+ let requests=0;
+ const owner={root:'/tmp/festapp-product-semantics',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['products.list'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),
+  authorized:action=>action({rpc:async(name,args)=>{
+   assert.equal(name,'get_product_catalog_page');requests++;
+   return {data:(await db.query('select get_product_catalog_page($1,$2,$3,$4,$5) value',[args.p_organization,args.p_occasion,args.p_unit,args.p_after,args.p_limit])).rows[0].value,error:null};
+  }},{userId:f.actor})};
+ const result=await new Operations(owner).invoke('products.list',{occasionId:f.occasion,limit:50});
+ assert.equal(result.ok,true,JSON.stringify(result));assert.equal(requests,1);
+ assert.equal(result.data.products[0].purchased_count,3);assert.equal(result.data.products[0].ordered_count,4);
+ assert.deepEqual(result.data.products[0].form_ids,[form]);assert.deepEqual(result.data.forms,[{id:form,title:'Fixture'}]);
+ assert.equal(result.data.inventoryContexts[0].poolTitle,'Stock');assert.equal(result.data.inventoryContexts[0].blockDate,null);
+ assert.equal(JSON.stringify(result.data).includes('order_symbol'),false);
  let after=null;const seen=[];
  do {
   const result=(await db.query('select get_product_catalog_page($1,$2,$3,$4,50) value',[f.org,f.occasion,f.unit,after])).rows[0].value;
-  assert(result.catalog.products.length<=50);assert.equal(result.catalog.product_types.length,1);
+  assert(result.catalog.products.length<=50);assert.equal(result.catalog.product_types.length,1);assert.deepEqual(result.catalog.forms,[{id:form,title:'Fixture'}]);
   assert.equal(result.catalog.inventory_contexts.length,after===null?2:0);
   assert.equal(result.catalog.product_inventory_contexts.length,after===null?2:0);
   for(const product of result.catalog.products) {
    assert.deepEqual(product,full.products.find(p=>p.id===product.id));
-   assert.equal(product.ordered_count,product.id===ids[0]?2:0);assert.equal(product.paid_count,product.id===ids[0]?2:0);assert.equal(product.sent_count,0);assert.deepEqual(product.form_ids,[form]);
+   assert.equal(product.ordered_count,product.id===ids[0]?4:0);assert.equal(product.paid_count,product.id===ids[0]?2:0);assert.equal(product.sent_count,product.id===ids[0]?1:0);assert.equal(product.purchased_count,product.id===ids[0]?3:0);assert.deepEqual(product.form_ids,[form]);
    assert.equal(product.data,null);assert.equal(product.aggregate_version,0);
    seen.push(product.id);
   }
@@ -162,7 +179,7 @@ test('two connections: keysets see committed inserts/deletes and scope moves den
   await admin.end();
  });
  await admin.query('BEGIN');await admin.query('SET LOCAL ROLE postgres');
- await admin.query(await readFile(new URL('../../../supabase/migrations/20261023160000_product_catalog_keyset.sql',import.meta.url),'utf8'));
+ await admin.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));
  await admin.query('RESET ROLE');f=await fixture(admin,1);
  const type=Number((await admin.query("insert into eshop.product_types(occasion,title,type) values($1,'Concurrent','entry') returning id",[f.occasion])).rows[0].id);
  const ids=(await admin.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select $1,$2,'Product '||n,10,'CZK' from generate_series(1,4) n returning id",[f.occasion,type])).rows.map(r=>Number(r.id));

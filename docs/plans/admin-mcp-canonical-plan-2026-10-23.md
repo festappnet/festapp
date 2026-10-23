@@ -136,6 +136,21 @@ verzovaný veřejný kontrakt se nepřejmenovává bez migračního důvodu. Vyd
 nelze odpojit tichým odstraněním RPC. Zachovaný kompatibilní vstup má pouze
 adaptaci na jednoho vlastníka a doloženou podmínku odstranění.
 
+## Význam administračního pohledu
+
+Před každým řezem vycházet z konkrétní administrační tabulky nebo formuláře:
+co správce potřebuje zjistit či rozhodnout, které sloupce a vazby k tomu používá
+ a jakou entitu skutečně počítají agregáty. MCP nesmí být pouhá kopie řádků tabulky
+ani nutit agenta dopočítávat obchodní význam ze surových dat. Kanonický čtecí model
+zahrnuje relevantní počty, stav, názvy souvisejících objektů a verze pro další krok.
+Optimalizuje se výběr a nepotřebný přenos, nikoli odstranění důležitých souvislostí.
+
+Produktový pohled má [konkrétní sémantický kontrakt](../architecture/product-admin-read-contract.md).
+Například UI zaplaceno zahrnuje paid i sent; počet objednaných položek není počet
+lidí ani počet unikátních objednávek. Každý další řez zaznamená obdobnou stručnou
+mapu otázka/sloupec -> společný owner/vazba -> DTO. Neodvozovat neověřenou
+prodejní dostupnost nebo revenue z pouhé přítomnosti odkazu či počtu vazeb.
+
 ## Datová, SQL a síťová kvalita každého řezu
 
 Tato kontrola je součástí implementace všech oblastí, včetně již napojených
@@ -656,6 +671,11 @@ admin tabů, nikoliv po přidání jejich názvů do MCP katalogu.
   výsledek, nikoli HTTP wire měření. Původní baseline zachována beze změny.
   EXPLAIN ANALYZE vnitřního SELECT: korelované subplány 50 místo 1000 loops,
   lokální jednotlivé vzorky 3.087 ms proti 49.058 ms; žádný nový index ani plošná předagregace.
+- Upřesnění uživatele: navazující etapa 0B doplnila sémantiku skutečné tabulky:
+  SQL `purchased_count` zahrnuje paid/sent, UI jej používá přímo; MCP zná formuláře
+  a skladové názvy/data. Counts se při UI editaci zachovají. 3 SQL testy bez skipů
+  a 4 grid testy prošly. Nová evidence admin-view: 29895-29905 B při 1000 produktech,
+  stále 50 produktů a jeden request. Starší evidence nebyla přepsána.
 - Další krok: etapa 1, sjednotit nové/existující cíle na receipted owner,
   připojit move/cancel a samostatné změny, ověřit scheduler souběh a replay.
 - Přesné zdroje a výsledky průběžně v

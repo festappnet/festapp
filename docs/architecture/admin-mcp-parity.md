@@ -40,7 +40,10 @@ UI's explicit complete bundle and the compatibility reader share the same
 only the returned page. No full-catalog sort/filter/slice remains in Node.
 Concurrent inserts after the cursor appear, deleted rows disappear; traversal
 is not a frozen snapshot. See the [measured SQL/data evidence](../reports/admin-data-network-keyset-2026-10-23.json).
-It never returns form keys, QR codes or customer records. `data` and stock lists
+It carries the same operational counts as the table: `purchased_count` includes
+paid and sent relationships, plus distinct form references and readable stock
+pool/context metadata. See the [exact semantics and UI mapping](product-admin-read-contract.md).
+It never returns form links/keys, QR codes or customer records. `data` and stock lists
 are whole replacements: adapters must preserve entries outside the requested
 change. Immediate price edits never rewrite purchased order prices.
 
