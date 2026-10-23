@@ -270,3 +270,10 @@ test('stock authoring consent names stock settings and retains only requested pe
  await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Upravovat sklady, jejich kontexty a zdroje/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('product choices require the requested explicit authoring-read consent',async()=>{
+ const permissions=['festapp:products:read','festapp:product-options:read'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst dostupné typy produktů a skladové volby/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

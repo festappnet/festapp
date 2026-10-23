@@ -330,3 +330,39 @@ before/after reduction or HTTP/latency claim. No production writes/deployment.
 
 Next: bounded unused product type/context editor choices, then operational seat
 cut 2B and stages 3-10. Main review/merge is still required before production.
+
+## Product authoring options - completed locally
+
+Correction to the earlier gap assessment: SQL full editor mode already returned
+all types and inventory contexts (p_limit IS NULL), including unused choices.
+The missing capability was MCP discovery after product pages became related-only,
+especially an empty catalog. UI does not need another request or a replacement
+choice-loading mechanism. Its complete metadata and bounded product page metadata
+now share two internal projections with the new bounded choice endpoint.
+
+get_product_catalog_options / products.options selects either product types or
+inventory contexts by ID before projection, max 100 plus one lookahead, max 1 MiB.
+Context choices contain actual pool title/type/date; no context data, spots,
+customer/form access data or sales aggregate. New explicit product-options consent
+requires product-read; existing issued product grants gain no new operation.
+Late live scope/rights checks apply to both choice kinds. Actual product occasion
+now participates in catalog selection as well as its type occasion, preventing
+malformed legacy cross-occasion rows from being exposed through a local type.
+
+Targeted final batch: 27 PostgreSQL/MCP/remote tests PASS, 0 skips, and 26 consent
+UI tests PASS. Added 125 unused types and 125 unused contexts over an empty product
+catalog, with 1000 physical spots: three independent 50/50/25 pages each, matching
+full UI metadata and no private context data. Replacing the full catalog owner with
+a failing dependency still permits choice pages. A >1 MiB type title rejects even
+a one-row page. Invalid kind/null/limit/cursor, actual org/unit scope, private ACL
+and four owner source assertions pass. Actual two-connection revocation now covers
+both choice kinds in addition to the eight preceding read paths.
+Full final current-source MCP batch: 109 PASS, 0 failures, 0 skips (58.1 s),
+including real PostgreSQL, CLI modern/legacy SDK interoperability and issuer auth.
+
+Authoring candidate cb8baafe2 client-contract and navigation-interactions CI passed,
+covering the final scoped DbInventoryPools adapter without a concurrent local
+Flutter task. No production changes or deployment have run. All owned source still
+requires main review/merge; next engineering cut is operational seats 2B, starting
+with inspection and block/unblock through the canonical blueprint aggregate owner.
+Stages 3-10 remain pending; no claim of full-plan completion.

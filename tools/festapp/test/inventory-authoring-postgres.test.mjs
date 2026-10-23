@@ -6,7 +6,7 @@ import {fixture} from '../../../automation/authorization/benchmark.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
-async function install(db){for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql'])await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));}
+async function install(db){for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql','20261023210000_product_authoring_options.sql'])await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));}
 function executor(db,f){
  const stats={calls:[],lose:false};
  const owner={root:'/tmp/festapp-stock-authoring',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['inventory.change','inventory.pools.inspect','inventory.resources.list'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,args)=>{

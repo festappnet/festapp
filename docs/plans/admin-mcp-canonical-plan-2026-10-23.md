@@ -714,3 +714,14 @@ skladu bez názvu. Doplněny testy starých receiptů, skutečného souběhu a r
 kapacitních ochran, stránkování, limitů a oprávnění. Přesný checkpoint a digest
 obsahuje admin-inventory-authoring-evidence-2026-10-23.json. Produktové editorové
 volby, provozní 2B a další etapy zůstávají otevřené; tento řez není celé zadání.
+
+### Checkpoint: volby pro tvorbu produktu
+
+Dokončeno samostatně stránkované čtení typů a skladových kontextů v MCP, včetně
+nepoužitých voleb v prázdném katalogu. Upřesnění staršího checkpointu: úplný UI
+editor tyto volby již měl; chyběla jejich dostupnost přes omezený MCP přehled.
+UI nadále dělá svůj dosavadní katalogový požadavek a sdílí metadata s novým čtením.
+Nový souhlas nerozšiřuje vydané produktové granty. Testy ověřují shodu s UI,
+125+125 nepoužitých voleb, omezení objemu, oprávnění, skutečný souběh odebrání
+práv a nepřítomnost závislosti na celém katalogu či jednotlivých místech.
+Dále zbývá provozní 2B a etapy 3-10; nasazení čeká na povinné review/merge.

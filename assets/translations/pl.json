@@ -1707,6 +1707,7 @@
     "productSchedulesRead": "Czytać fale cenowe i zaplanowane zmiany produktów",
     "productSchedulesWrite": "Planować, przenosić i anulować ceny oraz widoczność produktów",
     "standingInventoryWrite": "Przygotować zasoby biletów na miejsca stojące",
+    "productOptionsRead": "Odczytywać dostępne typy produktów i opcje zasobów",
     "inventoryRead": "Odczytywać pule zasobów, pojemność, ustawienia i zajętość kontekstów",
     "inventoryWrite": "Edytować pule zasobów, konteksty i zasoby",
     "productsRead": "Odczytywać produkty, ceny i przypisania magazynowe",

@@ -179,3 +179,11 @@ New inventory-write consent requires inventory-read and expands no old grant.
 covers pre-upgrade receipts, rollback, capacity guards, foreign scope and shared
 source parity. Operational seat commands and unused product editor choices remain
 subsequent cuts; this is not completion of the entire administration plan.
+
+Product authoring choices are now available as separately consented
+`products.options`: bounded type or context pages, including currently unused
+choices. They reuse metadata projections with the full UI catalog. The UI already
+had complete choices; the discovery gap was in the bounded MCP product view.
+No extra UI request or second authoring-selection rule was introduced. See the
+[product read contract](product-admin-read-contract.md). Operational seat cut 2B
+and stages 3-10 remain pending, with production still gated by required main review.

@@ -1371,6 +1371,7 @@
     "productSchedulesRead": "Preiswellen und geplante Produktänderungen lesen",
     "productSchedulesWrite": "Produktpreise und Sichtbarkeit planen, verschieben und stornieren",
     "standingInventoryWrite": "Bestand für Stehplatztickets vorbereiten",
+    "productOptionsRead": "Verfügbare Produkttypen und Bestandsoptionen lesen",
     "inventoryRead": "Bestandspools, Kapazitäten, Einstellungen und Kontextbelegung lesen",
     "inventoryWrite": "Bestandspools, Kontexte und Ressourcen bearbeiten",
     "productsRead": "Produkte, Preise und Bestandszuordnungen lesen",

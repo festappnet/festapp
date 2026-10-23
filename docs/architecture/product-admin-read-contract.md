@@ -46,3 +46,19 @@ references have a 1000-reference ceiling; oversized historical data fails
 explicitly rather than silently dropping relationships. The complete editor
 mode retains the full editing choices. See measured results in
 [admin-view evidence](../reports/admin-data-network-admin-view-2026-10-23.json).
+
+Unused authoring choices use `products.options` / `get_product_catalog_options`.
+Each request selects one kind (product_types or inventory_contexts), at most 100
+IDs before projection, with a 1 MiB result ceiling and an ID cursor. Empty product
+pages keep empty related metadata; options independently discover unused types
+and contexts even when there are no products. The full UI editor already offered
+all those choices and continues to make its existing single catalog request.
+Both views now reuse get_product_type_rows_internal and
+get_product_context_rows_internal. MCP context choices retain actual group
+names/types/dates, never raw spots, context data, customer records or form links.
+
+New product-options consent requires product-read in both grant and token;
+previously issued product grants gain no extra operation. Scope and live rights
+are checked again after each read. Actual product occasion also participates in
+catalog selection, so a mismatched legacy product/type pair cannot expose a
+foreign occasion product through a local type.

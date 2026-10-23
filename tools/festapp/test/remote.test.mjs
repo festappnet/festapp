@@ -548,3 +548,12 @@ test('inventory writes require new consent and token scope, separate from standi
  token.scope=READ_SCOPE+' festapp:inventory:read';assert(!owner().allowedOperations.includes('inventory.change'));
  token.scope=[READ_SCOPE,...MCP_SCOPES].join(' ');f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:standing-inventory:write']});assert(!owner().allowedOperations.includes('inventory.change'));
 });
+
+test('unused product choices require explicit consent beyond previously issued product grants',async t=>{
+ const f=await setup(t),id='product-options-permissions';const permissions=['festapp:products:read','festapp:products:write'];
+ const grant={id,binding:'product-options-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions,expiresAt:Date.now()+60000,revoked:false};f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('products.options'));assert.throws(()=>verifyPermissions(['festapp:product-options:read'],MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:product-options:read']});assert(owner().allowedOperations.includes('products.options'));
+ token.scope=READ_SCOPE+' festapp:products:read';assert(!owner().allowedOperations.includes('products.options'));
+});

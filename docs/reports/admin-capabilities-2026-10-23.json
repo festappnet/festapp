@@ -74,10 +74,12 @@
       "sources": [
         "tools/festapp/src/operations/products.mjs",
         "database/functions/eshop/product_catalog.sql",
-        "database/functions/eshop/get_products_and_types_for_occasion.sql"
+        "database/functions/eshop/get_products_and_types_for_occasion.sql",
+        "database/functions/eshop/product_catalog_options.sql"
       ],
       "mcp": [
-        "products.list"
+        "products.list",
+        "products.options"
       ],
       "phase": "0",
       "effect": "read",
@@ -1416,7 +1418,7 @@
     "date": "2026-10-23",
     "status": "Produktové a skladové řezy lokálně opravené a ověřené; celkový audit pokračuje.",
     "finding": "Původní baseline ukázala celý katalog na každou produktovou stránku a jednotlivá místa ve skladovém přehledu. Kandidát vybírá produktové IDs před projekcí a skladové karty i MCP čtou stejné SQL souhrny bez jednotlivých míst.",
-    "nextStep": "Dokončit další etapy a provozní operace nad místy; nasazení festapptickets následuje po povinném review/merge.",
+    "nextStep": "Provozní operace nad místy 2B a další etapy; nasazení festapptickets po povinném review/merge.",
     "evidence": "admin-inventory-summary-network-2026-10-23.json"
   }
 }

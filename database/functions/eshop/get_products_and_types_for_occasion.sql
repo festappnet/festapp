@@ -21,7 +21,7 @@ BEGIN
   END IF;
   SELECT coalesce(array_agg(id ORDER BY id),'{}'::bigint[]) INTO selected_ids
   FROM (SELECT p.id FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
-        WHERE pt.occasion=occ_id AND (p_after IS NULL OR p.id>p_after)
+        WHERE pt.occasion=occ_id AND p.occasion=occ_id AND (p_after IS NULL OR p.id>p_after)
         ORDER BY p.id LIMIT CASE WHEN p_limit IS NULL THEN NULL ELSE p_limit+1 END) selected;
   IF cardinality(selected_ids)>p_limit THEN
     selected_ids:=selected_ids[1:p_limit];
@@ -34,17 +34,8 @@ BEGIN
     RAISE program_limit_exceeded USING MESSAGE='product inventory assignments exceed catalog page contract';
   END IF;
 
--- Fetch all product types for the given occasion
-  SELECT json_agg(
-           json_build_object(
-             'id', pt.id,
-             'type', pt.type,
-             'title', pt.title
-           )
-         )
-    INTO product_types
-  FROM eshop.product_types pt
-  WHERE pt.occasion = occ_id AND (p_limit IS NULL OR pt.id IN (SELECT product_type FROM eshop.products WHERE id=ANY(selected_ids)));
+  product_types:=public.get_product_type_rows_internal(occ_id,
+    CASE WHEN p_limit IS NULL THEN NULL ELSE ARRAY(SELECT product_type FROM eshop.products WHERE id=ANY(selected_ids)) END)::json;
 
   -- Fetch all products for the given occasion, including form IDs
   SELECT json_agg(
@@ -97,15 +88,9 @@ BEGIN
   FROM public.inventory_pools ip
   WHERE ip.occasion = occ_id AND p_limit IS NULL;
 
-  -- Fetch all inventory contexts for the occasion
-  SELECT json_agg((CASE WHEN p_limit IS NULL THEN to_jsonb(ic) ELSE jsonb_build_object(
-    'id',ic.id,'title',ic.title,'inventory_pool',ic.inventory_pool,'block_date',ic.block_date) END)
-    ||jsonb_build_object('pool_title',ip.title,'pool_type',ip.type))
-  INTO inventory_contexts_data
-  FROM public.inventory_contexts ic
-  JOIN public.inventory_pools ip ON ic.inventory_pool = ip.id
-  WHERE ip.occasion = occ_id AND (p_limit IS NULL OR ic.id IN (
-    SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=ANY(selected_ids)));
+  inventory_contexts_data:=public.get_product_context_rows_internal(occ_id,
+    CASE WHEN p_limit IS NULL THEN NULL ELSE ARRAY(SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=ANY(selected_ids)) END,
+    p_limit IS NULL)::json;
 
   -- Fetch all links between products and inventory contexts for the occasion
   SELECT json_agg(pic.*)

@@ -9,7 +9,7 @@ import { productScheduleDescriptors } from '../src/operations/product-schedules.
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 const migration=new URL('../../../supabase/migrations/20261023170000_product_schedule_commands.sql',import.meta.url);
 const future=days=>new Date(Date.now()+days*86400000).toISOString();
-async function install(db) {await db.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));await db.query(await readFile(migration,'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023190000_inventory_summary_reads.sql',import.meta.url),'utf8'));}
+async function install(db) {await db.query(await readFile(new URL('../../../supabase/migrations/20261023163000_product_admin_read_semantics.sql',import.meta.url),'utf8'));await db.query(await readFile(migration,'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023190000_inventory_summary_reads.sql',import.meta.url),'utf8'));await db.query(await readFile(new URL('../../../supabase/migrations/20261023210000_product_authoring_options.sql',import.meta.url),'utf8'));}
 function executor(db,f) {
  const stats={requests:0,bytes:0,lose:false,replies:[]};
  const owner={root:'/tmp/festapp-wave-fixture',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:productScheduleDescriptors.map(d=>d.id),delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),
