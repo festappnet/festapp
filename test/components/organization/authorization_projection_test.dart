@@ -72,38 +72,45 @@ void main() {
   testWidgets(
       'direct organization entry loads its missing context before allowing or denying access',
       (tester) async {
-    for (final granted in [true, false]) {
-      PackageInfo.setMockInitialValues(
-          appName: 'Fixture',
-          packageName: 'fixture',
-          version: '1.0.0',
-          buildNumber: '1',
-          buildSignature: '');
-      final previous = RightsService.occasionLinkModel;
-      addTearDown(
-          () => RightsService.occasionLinkModelNotifier.value = previous);
-      RightsService.occasionLinkModelNotifier.value = null;
-      contextResult = Completer<bool>();
-      final requests = backend.requests.length;
-      await tester.pumpWidget(MaterialApp(
-          home: OrganizationAdminGuard(
-              targetOrganizationId: AppConfig.organization,
-              builder: (_, org) => Text('organization-$org'))));
-      await tester.pump();
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Access Denied'), findsNothing);
-      contextResult!.complete(granted);
-      await tester.pumpAndSettle();
-      expect(find.text('organization-${AppConfig.organization}'),
-          granted ? findsOneWidget : findsNothing);
-      expect(
-          find.text('Access Denied'), granted ? findsNothing : findsOneWidget);
-      expect(
-          backend.requests
-              .skip(requests)
-              .where((r) => r.url.path == '/rest/v1/rpc/get_app_config_v219'),
-          hasLength(1));
-      await tester.pumpWidget(const SizedBox.shrink());
+    for (final initialContext in <OccasionLinkModel?>[
+      null,
+      // Startup restores cached settings as a non-null context with no rights.
+      OccasionLinkModel(code: 200),
+      OccasionLinkModel(code: 200, capabilities: {'orders.read': true}),
+    ]) {
+      for (final granted in [true, false]) {
+        PackageInfo.setMockInitialValues(
+            appName: 'Fixture',
+            packageName: 'fixture',
+            version: '1.0.0',
+            buildNumber: '1',
+            buildSignature: '');
+        final previous = RightsService.occasionLinkModel;
+        addTearDown(
+            () => RightsService.occasionLinkModelNotifier.value = previous);
+        RightsService.occasionLinkModelNotifier.value = initialContext;
+        contextResult = Completer<bool>();
+        final requests = backend.requests.length;
+        await tester.pumpWidget(MaterialApp(
+            home: OrganizationAdminGuard(
+                targetOrganizationId: AppConfig.organization,
+                builder: (_, org) => Text('organization-$org'))));
+        await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text('Access Denied'), findsNothing);
+        contextResult!.complete(granted);
+        await tester.pumpAndSettle();
+        expect(find.text('organization-${AppConfig.organization}'),
+            granted ? findsOneWidget : findsNothing);
+        expect(find.text('Access Denied'),
+            granted ? findsNothing : findsOneWidget);
+        expect(
+            backend.requests
+                .skip(requests)
+                .where((r) => r.url.path == '/rest/v1/rpc/get_app_config_v219'),
+            hasLength(1));
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
     }
   });
 
