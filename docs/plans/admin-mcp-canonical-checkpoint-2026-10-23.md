@@ -1086,3 +1086,16 @@ UI review/Cancel and preceding swap/release flows use the supported localized
 widget suite; final evidence log is /tmp/festapp-2b-final-ui.log. Deployment remains
 unperformed at this checkpoint; record exact main/tenant/SQL/Edge/MCP receipts
 before declaring the stage deployed. Do not continue stage3 after this release.
+
+### Release build gate correction - lexical Flutter JavaScript compaction
+
+First final tenant build passed compilation but known PWA bytes62,945,201 exceeded
+unchanged62,914,560 limit by30,641. Core24,226,001 remained below26,214,400.
+The correction compacts only lexical whitespace/comments with existing pinned
+esbuild0.27.1, preserving identifiers, expression syntax and legal comments,
+before immutable entry/chunk stamping. No PWA policy, cache limits, diff/cache
+protocol or application source changed. Actual candidate main/chunk formatting
+probe saves134,732+3,799 bytes. Executable main/deferred identity/ASI/regex/string
+and fail-before-write tests plus existing manifest/offline tests passed10/10
+(/tmp/festapp-2b-compact-tests.log). The release agent must build the new pipeline
+revision and verify its own final artifact; failed artifacts stay unshipped.

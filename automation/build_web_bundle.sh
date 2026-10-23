@@ -73,8 +73,11 @@ case "$FESTAPP_SETUP_ENABLED" in
     false|'') ;;
     *) echo "OCCASION_SETUP_ENABLED must be true or false." >&2; exit 1 ;;
 esac
+# Pinned esbuild is also used for lexical compaction before immutable stamping.
+(cd web_client && pnpm install --frozen-lockfile)
 "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
+node automation/compact_flutter_javascript.mjs build/web
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then
@@ -83,7 +86,6 @@ else
     mv build/web/index.html build/web/flutter.html
 fi
 
-(cd web_client && pnpm install --frozen-lockfile)
 # Both direct deployment and GitHub Deploy use this shared build path.
 # Fail before publishing if restricted WebViews or built module identity regress.
 bash automation/test_web_startup.sh
