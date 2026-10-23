@@ -15,7 +15,7 @@ const productInput = z.strictObject({ id: id.optional(), expected_aggregate_vers
     if (p.id ? p.expected_aggregate_version === undefined : p.expected_aggregate_version !== undefined || !p.title || p.price === undefined || !p.currency_code || !p.product_type)
         ctx.addIssue({ code: 'custom', message: 'An existing product requires its original version; a new one requires title, price, currency and product type.' });
 });
-const product = z.object({ id, aggregate_version: version, title: z.string().nullable(), description: z.string().nullable(),
+export const productAdminSchema = z.object({ id, aggregate_version: version, title: z.string().nullable(), description: z.string().nullable(),
     product_type: id, price: z.string().nullable(), currency_code: z.string().nullable(), data: z.json(),
     is_hidden: z.boolean().nullable(), order: z.number().int().nullable(), maximum: z.number().int().nullable(),
     ordered_count: z.number().int().nonnegative(), purchased_count: z.number().int().nonnegative(),
@@ -25,7 +25,7 @@ const product = z.object({ id, aggregate_version: version, title: z.string().nul
 });
 const receipt = z.strictObject({ occasionId: id, productId: id, aggregateVersion: version.nullable(), commandId: z.uuid(), status: z.enum(['applied', 'unchanged']) });
 export const productDataSchemas = {
-    'products.list': z.strictObject({ occasionId: id, products: z.array(product).max(100), nextCursor: id.nullable(),
+    'products.list': z.strictObject({ occasionId: id, products: z.array(productAdminSchema).max(100), nextCursor: id.nullable(),
         forms: z.array(z.strictObject({ id, title: z.string().nullable() })).max(1000),
         productTypes: z.array(z.object({ id, title: z.string().nullable(), type: z.string().nullable() })),
         inventoryContexts: z.array(z.strictObject({ id, title: z.string().nullable(), inventoryPoolId: id, poolTitle: z.string().nullable(), poolType: z.string().nullable(), blockDate: z.string().nullable() })) }),

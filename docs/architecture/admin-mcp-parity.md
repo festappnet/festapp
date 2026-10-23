@@ -89,12 +89,21 @@ bundle unrelated actions merely to reduce HTTP counts. Asset/provider work
 cannot become atomic through a SQL wrapper: preserve the existing outbox or
 explicit recovery protocol instead of claiming a single-request transaction.
 
-A concrete remaining compound workflow is standing-area stock preparation
-(`blueprint_standing_inventory.dart` and the setup dialog): inventory preparation,
-product linkage and catalog refresh cross domain boundaries. It belongs to the
-inventory/blueprint cutover, and is not advertised as a new atomic product save.
-Each such workflow must be traced and migrated as a whole before its MCP write
-is exposed.
+Standing-area stock preparation now has one transaction and one receipt:
+`prepare_standing_inventory`. The UI setup dialog and MCP delegate to it via
+typed inventory command adapters. `save_inventory_pool_internal` and
+`save_inventory_resource_internal` own mutation rules; existing full-editor and
+resource receipt APIs delegate to them. Product assignment/allocation stays in
+`update_product_inventory_contexts_internal_v1` and its existing allocator.
+The former `BlueprintStandingInventory` client saga was deleted, together with
+partial-success state and the post-save full catalog reload. The response pins
+the product's actual occasion/type/version and new stock IDs/versions, while
+one sync publication preserves the union of existing child audiences.
+[Stage 2A evidence](../reports/admin-standing-inventory-evidence-2026-10-23.json)
+includes failure after pool and resource creation, insufficient-capacity rollback,
+existing sales/addressed seats, competing commands and overlapping same-UUID replay.
+General pool/resource reads and edits plus operational seat commands remain
+separate next cuts; 2A does not claim that all inventory administration is exposed.
 
 ## Product scheduling cutover
 

@@ -1501,7 +1501,6 @@
       "selection": "Seat in your current selection."
     },
     "standingNoAdmissionType": "First create a ticket form for this event. It prepares the admission product type needed here.",
-    "standingPreparationRetained": "Prepared products and inventory remain saved if you close this dialog. You can manage them in Products and Inventory. Retry keeps the prepared capacity.",
     "areaProduct": "Area product",
     "areaProductAssigned": "Applied to the entire area",
     "assignStandingProduct": "Assign product",
@@ -3672,6 +3671,7 @@
     "orderPermissionsHint": "Applies only to selected organizers and occasions. Editing, payments and sending also include reading orders.",
     "productSchedulesRead": "Read product price waves and scheduled changes",
     "productSchedulesWrite": "Schedule, move and cancel product prices and visibility",
+    "standingInventoryWrite": "Prepare standing admission inventory",
     "productsRead": "Read products, prices and inventory assignments",
     "productsWrite": "Create, edit and delete products",
     "ordersRead": "Read orders, contact details and ticket counts",

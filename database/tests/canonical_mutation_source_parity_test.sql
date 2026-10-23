@@ -910,6 +910,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.password_verification_attempt_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c2675a597edfb913dfb7a73f37a74a24'),'current SQL source parity: public.password_verification_attempt_v1(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.place_move_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='73f870eaea9c56088435b4d80cbf5315'),'current SQL source parity: public.place_move_rule(boolean,boolean,boolean,boolean)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='f06295cd0da6360f21c3dc26f68662bb'),'current SQL source parity: public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.profile_group_import_state_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='237630b27ba322de2a4ca222d09864ee'),'current SQL source parity: public.profile_group_import_state_internal_v1(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -994,6 +996,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_information_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bdf0391eb37e8720855ebcc901c83f6c'),'current SQL source parity: public.save_information_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='4f9ae96d9f4576f8502f1042fe7d5114'),'current SQL source parity: public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_pool_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='14757eb190894e055e37a53ad120fa39'),'current SQL source parity: public.save_inventory_pool_internal(jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_inventory_resource_internal(bigint,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='31f5bb4b2b9d1998b97c9fdefa41c303'),'current SQL source parity: public.save_inventory_resource_internal(bigint,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_news_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1f65c4c9cbfc65815549eb07af3efb60'),'current SQL source parity: public.save_news_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1022,8 +1028,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3787aa30ed0724ddbc6ad2dc99ac6cc6'),'current SQL source parity: public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)');
 -- supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql
  PERFORM assert_true(to_regprocedure('public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)') IS NULL,'retired SQL identity remains absent: public.save_profile_companion_internal_v1(bigint,uuid,uuid,bigint,jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='69d5a383a63ae5b7493b4a4f5b9615b6'),'current SQL source parity: public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b664b2d2cadbe566186dabe4c3e051ce'),'current SQL source parity: public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_speaker_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a5785aaff84107ffb5c1102248b48d54'),'current SQL source parity: public.save_speaker_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1152,8 +1158,8 @@ DO $$ BEGIN
  PERFORM assert_true(to_regprocedure('public.update_inclusion_type_group(jsonb)') IS NULL,'retired SQL identity remains absent: public.update_inclusion_type_group(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='2abdfc38884c3567b397af58951e434e'),'current SQL source parity: public.update_inventory_pool_bundle(jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e98552bf5f91d33e933c72466ed8a3f5'),'current SQL source parity: public.update_inventory_pool_bundle_internal_v1(jsonb)');
+-- supabase/migrations/20261023180000_atomic_standing_inventory.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_inventory_pool_bundle_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b90592b7bc0d8b4d880ff5b668994aac'),'current SQL source parity: public.update_inventory_pool_bundle_internal_v1(jsonb)');
 -- supabase/migrations/20261020173000_ticket_layout_legacy_fence.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='0425e6f46c20d2c30a2ffd054619b2b0'),'current SQL source parity: public.update_occasion(jsonb)');
 -- supabase/migrations/20261015200000_pretty_public_links.sql

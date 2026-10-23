@@ -506,6 +506,7 @@ test('product schedule tools require new explicit consent; old product grants st
  assert(owner().allowedOperations.includes('products.save'));
  assert(!owner().allowedOperations.includes('product_schedules.list'));
  assert(!owner().allowedOperations.includes('product_schedules.change'));
+ assert(!owner().allowedOperations.includes('inventory.prepare_standing'));
  assert.throws(()=>verifyPermissions(['festapp:product-schedules:write'],MCP_SCOPES));
  const scheduled=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
  assert.deepEqual(verifyPermissions(scheduled,MCP_SCOPES),scheduled);
@@ -514,4 +515,9 @@ test('product schedule tools require new explicit consent; old product grants st
  token.scope=[READ_SCOPE,'festapp:products:read','festapp:product-schedules:read'].join(' ');
  assert(owner().allowedOperations.includes('product_schedules.list'));
  assert(!owner().allowedOperations.includes('product_schedules.change'),'token must also include explicit write scope');
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:standing-inventory:write']});
+ token.scope=[READ_SCOPE,...MCP_SCOPES].join(' ');
+ assert(owner().allowedOperations.includes('inventory.prepare_standing'));
+ token.scope=READ_SCOPE+' festapp:products:read';
+ assert(!owner().allowedOperations.includes('inventory.prepare_standing'),'standing preparation requires its explicit token scope');
 });

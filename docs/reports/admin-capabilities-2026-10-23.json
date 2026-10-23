@@ -288,11 +288,16 @@
       "id": "action-018",
       "area": "Sklady a kapacity",
       "title": "Připravit skladovou kapacitu pro stání",
-      "description": "Dnes tři navazující zápisy: sklad s kontextem, zdroj a vazba produktu. Priorita pro atomický wrapper.",
+      "description": "Jeden atomický příkaz vytvoří sklad, kontext a zdroj a přiřadí existující produkt. Zachová prodané položky a vrací uložené verze bez reloadu katalogu. Řez 2A lokálně ověřen, dosud nepublikován/nenasazen.",
       "sources": [
-        "lib/components/blueprint/blueprint_standing_inventory.dart"
+        "database/functions/inventory/prepare_standing_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "lib/components/blueprint/views/blueprint_standing_setup_dialog.dart",
+        "tools/festapp/src/operations/inventory.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.prepare_standing"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",

@@ -1,3 +1,6 @@
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/app_config.dart';
+import 'models/standing_inventory_preparation.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/inventory_pools_list_bundle.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
@@ -10,6 +13,12 @@ class DbInventoryPools {
   static final _supabase = Supabase.instance.client;
   static InventoryCommands get _commands =>
       SupabaseInventoryCommands(_supabase);
+
+  static Future<StandingInventoryPreparation> prepareStandingInventory(
+          ProductModel product, int capacity) =>
+      _commands.prepareStanding(product, capacity,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id);
 
   static Future<UserInventoryBundle> getUserInventory() async {
     // 1. Call the RPC function.

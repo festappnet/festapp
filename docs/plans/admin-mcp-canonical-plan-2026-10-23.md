@@ -1,6 +1,6 @@
 # Kanonické operace administrace pro UI a MCP
 
-Datum: 2026-10-23. Stav: etapy 0, 0B a 1 lokálně dokončeny; pokračuje etapa 2.
+Datum: 2026-10-23. Stav: etapy 0, 0B, 1 a řez 2A lokálně dokončeny; pokračují další řezy etapy 2.
 Ověřování implementace: `standard` (oprávnění, souběh, veřejné kontrakty a migrace).
 Dokončení jednotlivých řezů dokládá checkpoint níže. Transportní
 upgrade byl samostatně dokončen a nasazen z main
@@ -682,7 +682,12 @@ admin tabů, nikoliv po přidání jejich názvů do MCP katalogu.
   výslovné, staré granty se nerozšiřují. 87 MCP testů bez skipů, 10 cílených SQL
   testů, 18 + 13 cílených Flutter testů a 29 consent testů prošlo; přesné detaily
   a omezení disposable source parity jsou v execution checkpointu a stage 1 evidenci.
-- Další krok: publikace hotového balíku a delegovaný release pouze festapptickets;
-  současně postupné pokračování etapou 2, atomická příprava standing kapacity.
+- Řez 2A lokálně hotový: jedna transakce/receipt, společné pool/resource/assignment
+  vlastníky, odstraněná klientská saga i reload katalogu, uložené IDs/verze.
+  7 reálných SQL testů bez skipů, 34 Flutter, 15 remote a 30 consent testů prošlo.
+- Publikované 0/0B/1 čekají v PR #564 na vyžadovaný review/merge. Nasazení dosud
+  neproběhlo; kanonický produkční target byl ověřen delegovaným read-only preflightem.
+- Další krok: bounded skladové read modely podle skutečných UI karet a jejich RPC,
+  pool/resource adaptéry, editorové volby produktů a provozní řez 2B.
 - Přesné zdroje a výsledky průběžně v
   [execution checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md).

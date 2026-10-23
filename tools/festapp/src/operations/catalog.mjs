@@ -1,3 +1,4 @@
+import { inventoryDescriptors, inventoryDataSchemas, invokeInventoryOperation } from './inventory.mjs';
 import { productScheduleDescriptors, productScheduleDataSchemas, invokeProductScheduleOperation } from './product-schedules.mjs';
 import { productDescriptors, productDataSchemas, invokeProductOperation } from './products.mjs';
 import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
@@ -36,6 +37,7 @@ const dataSchemas = {
     ...orderDataSchemas,
     ...productDataSchemas,
     ...productScheduleDataSchemas,
+    ...inventoryDataSchemas,
     'occasions.create': occasionCreateResult,
     'access.inspect': accessProjection,
     'context.inspect': z.strictObject({
@@ -106,7 +108,7 @@ const resultSchema = (id) =>
         meta: metaSchema,
     });
 const descriptors = [
-    ...[...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
+    ...[...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors].map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions.', input: z.strictObject({}), domainReadOnly: true },
     { id: 'occasions.create', name: 'festapp_occasions_create',
       description: 'Create a hidden occasion with sales closed for an explicitly authorized organizer. Uses the canonical application command. Obtain user approval of the details first. On timeout retry the identical commandId and payload; never generate a new ID for an uncertain outcome.',
@@ -285,9 +287,10 @@ export class Operations {
                         userId: context.userId,
                         backend: this.owner.profile.backendOrigin,
                         enabledOperations: this.catalog.map((d) => d.id),
-                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
+                        writesEnabled: this.writeReady || this.owner.allowedOperations?.some(id => id === 'occasions.create' || [...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors].some(d => d.id === id && !d.domainReadOnly)) === true,
                     };
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (inventoryDataSchemas[id]) data = await invokeInventoryOperation(this.owner, client, id, args);
                 else if (productScheduleDataSchemas[id]) data = await invokeProductScheduleOperation(this.owner, client, id, args);
                 else if (productDataSchemas[id]) data = await invokeProductOperation(this.owner, client, id, args);
                 else if (orderDataSchemas[id]) data = await invokeOrderOperation(this.owner, client, id, args);

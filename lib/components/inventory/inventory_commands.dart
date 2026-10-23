@@ -1,3 +1,5 @@
+import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/inventory/models/standing_inventory_preparation.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
@@ -6,6 +8,9 @@ import 'package:festapp_core/sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class InventoryCommands {
+  Future<StandingInventoryPreparation> prepareStanding(
+      ProductModel product, int capacity,
+      {required int organizationId, int? unitId});
   Future<InventoryPoolBundle> savePool(InventoryPoolBundle bundle);
   Future<void> deletePool(int occasionId, int poolId, int expectedVersion);
   Future<ResourceModel> saveResource(int occasionId, ResourceModel resource);
@@ -19,6 +24,24 @@ class SupabaseInventoryCommands implements InventoryCommands {
   SupabaseInventoryCommands.withTransport(this._transport);
 
   final ClientCommandTransport _transport;
+
+  @override
+  Future<StandingInventoryPreparation> prepareStanding(
+      ProductModel product, int capacity,
+      {required int organizationId, int? unitId}) async {
+    if (product.id == null || product.occasion == null) {
+      throw ArgumentError('Saved product and occasion required');
+    }
+    final response = await _invoke('prepare_standing_inventory', {
+      'p_occasion': product.occasion,
+      'p_organization': organizationId,
+      'p_unit': unitId,
+      'p_product_id': product.id,
+      'p_expected_version': product.aggregateVersion,
+      'p_capacity': capacity,
+    });
+    return StandingInventoryPreparation.fromJson(response.data);
+  }
 
   @override
   Future<void> deletePool(

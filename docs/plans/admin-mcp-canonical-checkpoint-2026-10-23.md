@@ -91,3 +91,88 @@ hash regenerated. No production writes, no publication or release yet.
    reusing the internal owners behind inventory pool/resource/product commands.
    Preserve actual existing-order allocations; inspect the relevant inventory
    administration RPCs and table meaning before extending MCP.
+
+
+## Publication / stage 2 start
+
+Stages 0/0B/1 are published in PR https://github.com/festappnet/festapp/pull/564,
+frozen head `aa2a191e5f82bcfbbaf8f556d8087a1136202762`, refreshed base
+`9eef213f2b664b2b7f4978f51b43a90535ab7c8a` (only organization entry guard
+changed upstream; no overlap with tested owners). Main currently requires one
+approving review. No administrative bypass or production deployment performed.
+Stage 2 continues on `feat/admin-mcp-standing-20261023`, stacked on that frozen head.
+
+Delegated read-only release preflight verified canonical activation generation 1,
+organization 3 and matching host/runtime/database assertions. Legacy names contain
+rehearsal but are the actual canonical production target documented in the current
+admin-dashboard guide; names alone are not a mismatch. Current tenant build is
+0.20.365+860. MCP issuer is healthy at the prior 4cfc9b7 image. Candidate SQL
+versions are absent from the live ledger. Private operational details and exact
+commands are in `/tmp/festapp-admin-mcp-release-preflight-20261023.md`.
+
+Stage 2A boundary before implementation:
+- prepare_standing_inventory: existing product ID/version, actual occasion,
+  organization/unit selection, capacity 0-1000000, immutable command ID.
+- Existing owners: update_inventory_pool_bundle_internal_v1, resource rules
+  extracted from save_resource_client_sync_v1 into one internal domain function,
+  update_product_inventory_contexts_internal_v1 and apply_allocations.
+- One outer receipt and one sync publication; no nested pool/resource/link
+  receipt calls. Locks: receipt -> sorted existing order dependencies -> product
+  -> newly created pool/context/resource/spots -> existing allocator reentry.
+- UI BlueprintStandingInventory.prepare and setup dialog switch to one typed
+  durable RPC; remove _pool/_resource/_linked/_capacity partial-success state and
+  post-save catalog reload. Return authoritative product (including occasion,
+  type, new aggregate version), new pool/context/resource snapshots/versions.
+- Relevant UI read RPCs inventoried: get_inventory_pools_by_occasion_link,
+  get_inventory_pool_bundle, get_resources_for_inventory_pool_v1. Their existing
+  stock/allocation semantics remain owners for follow-on inventory read cuts;
+  raw spots/hold secrets are not a general MCP read DTO.
+- Targeted final batch: real PostgreSQL atomic rollback after pool/resource,
+  lost-response replay and single receipt, version conflict and competing
+  preparations via two connections, existing sold-item/addressed-seat allocation
+  preservation and insufficient capacity. Resource command regressions, targeted
+  standing adapter/dialog tests. No full suite after each edit.
+- Follow-on read issue found: page-related types/contexts omit unused editor
+  choices, including a type with no products. Supply a separate bounded choices
+  read through the same projections before declaring full product authoring
+  coverage; do not restore full-catalog transfer as a workaround.
+
+
+## Stage 2A - locally complete
+
+One `prepare_standing_inventory` transaction/receipt now creates pool, context,
+resource and the existing product assignment. Shared mutation owners extracted:
+`save_inventory_pool_internal` and `save_inventory_resource_internal`. Existing
+pool full-editor snapshot and resource receipt APIs delegate to those rules.
+Standing avoids constructing the unused full pool-editor bundle, and returns
+one authoritative product/pool/context/resource snapshot (including product
+occasion/type/version and existing form references). Sync publishes once to the
+union of existing pool/resource/assignment audiences.
+
+Removed `lib/components/blueprint/blueprint_standing_inventory.dart`, its
+_pool/_resource/_linked partial-success memory, preparedCapacity state, retained
+partial-operation text/getter, and setup dialog's post-command catalog reload.
+Current UI `SupabaseInventoryCommands.prepareStanding` and MCP
+`inventory.prepare_standing` use the same RPC. A separate explicit standing
+consent never expands existing product-edit grants.
+
+Final validation: 7 real PostgreSQL tests, no skips, including injected failures
+after pool and resource, insufficient-capacity terminal rejection, authoritative
+versions, existing paid item/addressed blueprint seat preservation, two-connection
+competing command conflict and overlapping same-UUID replay, 3 existing inventory
+regressions and source parity/ACL for 5 owners. 34 Flutter inventory/blueprint
+checks, 15 remote and 30 consent tests passed. Targeted Dart analysis has no
+errors/warnings (4 existing informational style/deprecation diagnostics).
+Exact source digest and actual request/JSON-byte measurements:
+`docs/reports/admin-standing-inventory-evidence-2026-10-23.json`.
+
+Still local on stacked standing branch. PR #564 was updated independently to
+head 6b7ce25f973aafb7b75e981077ee517e93df1cfc after the scoped deploy-gate test
+correction and merge of main's unrelated public-link change (14a2f091f).
+Review/merge is still required before production release; no live mutation ran.
+
+Next: bounded inventory administration reads using the RPC behind actual stock
+cards, including per-context physical/allocated/unassigned counts; then typed
+pool/resource save/delete adapters. Preserve published client RPC boundaries.
+Also close the unused product-type/context editor-choice gap with a bounded read,
+not a whole catalog transfer. Operational seat cut 2B remains pending.
