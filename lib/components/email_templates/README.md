@@ -163,3 +163,21 @@ Production action HTML belongs to `_shared/emailActionLink.ts`; completion belon
 to `_shared/emailContentCompletion.ts`, including the current order-card slot.
 TS and Dart completion use identical generated fixtures to prevent missing or
 duplicate opted-in overview links. There is no standalone ORDER_OVERVIEW template.
+
+## Ticket delivery block
+
+`TICKET_ORDER_PAYMENT_DONE` supports one reserved `{{tickets}}` block in its
+HTML content. The queue renderer supplies simple CID PNGs for `inline_qr` and
+`both`; PDF mode and payment notices leave it empty. An older inherited template
+without the block receives it at the end of its content, before the inherited
+wrapper. Duplicate blocks are rejected on save and rendered only once defensively.
+The ordinary template text owns all event, product and seating information.
+Payment notices, ticket messages and ticket previews share their payment-content
+substitutions, while order confirmation retains its own content.
+
+Inline PNG disposition and CID metadata survive the encrypted prepared snapshot
+and reach SES unchanged. Legacy snapshots without metadata remain PDF attachments.
+A retry reuses that snapshot; changing the event affects only later preparations
+or an explicit new resend. No QR URL, additional ticket identity or send path is
+introduced. Real Gmail, Outlook, Seznam and Apple Mail delivery checks remain a
+separate release gate requiring approved test mailboxes.

@@ -161,3 +161,29 @@ Deno.test("draft catalog returns the same authorized templates and preview conte
   assert(preview.previewContext.title === context.title);
   assert(preview.previewContext.products[0].price === 1000);
 });
+
+Deno.test("ticket preview preserves catalog response and uses only synthetic inline admission QR", async () => {
+  const result = await renderDraftPreview({ ...context, messageType: "order_tickets", deliveryMode: "inline_qr",
+    ticketsEnabled: true, ticketFeature: { code: "ticket", is_enabled: true }, sampleTicketCount: 3,
+    emailTemplates: [{code:"TICKET_ORDER_CONFIRMATION"}], emailScope: {unit:{id:1}} });
+  assert(result.inlineImages.length === 3 && result.attachments.length === 0);
+  assert((result.html.match(/<img /g) ?? []).length === 3);
+  assert(!result.html.includes("festapp-preview:") && result.emailTemplates.length === 1);
+  assert(result.emailScope.unit.id === 1);
+  const disabled = await renderDraftPreview({ ...context, messageType: "order_tickets", deliveryMode: "inline_qr", ticketsEnabled: false });
+  assert(disabled.inlineImages.length === 0 && disabled.attachments.length === 0);
+});
+Deno.test("existing-occasion preview forwards resource scope, and validates ticket options before context lookup", async () => {
+  let calls=0;
+  const handler=previewHandler(async(jwt,params)=>{
+    calls++; assert(jwt==="Bearer user-jwt" && params.p_id===null && params.p_occasion===12);
+    assert(params.p_message_type==="order_tickets" && params.p_delivery_mode==="inline_qr");
+    return {data:{...context,messageType:"order_tickets",deliveryMode:"inline_qr",ticketsEnabled:true},error:null};
+  });
+  const response=await handler(request({occasionId:12,messageType:"order_tickets",deliveryMode:"inline_qr",sampleTicketCount:3}));
+  assert(response.status===200 && (await response.json()).inlineImages.length===3);
+  for(const bad of [{...valid,occasionId:12},{...valid,messageType:"other"},{...valid,sampleTicketCount:20},{...valid,deliveryMode:"bad"}]) {
+    assert((await handler(request(bad))).status===400);
+  }
+  assert(calls===1);
+});

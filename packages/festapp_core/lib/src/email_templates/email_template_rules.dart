@@ -30,6 +30,7 @@ abstract final class EmailTemplateRules {
   static final tokenPattern = RegExp(r'\{\{([A-Za-z_][A-Za-z_0-9]*)\}\}');
   static EmailValueKind kindFor(String code) {
     if (const {
+      'tickets',
       'fullOrder',
       'paymentDetails',
       'balanceReasoning',
@@ -62,6 +63,7 @@ abstract final class EmailTemplateRules {
       // Whole content sections appear once. Links/buttons and inline content
       // may deliberately appear in several places, regardless of their kind.
       repeatable: !const {
+        'tickets',
         'fullOrder',
         'paymentDetails',
         'balanceReasoning',

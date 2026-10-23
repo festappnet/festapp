@@ -1,3 +1,4 @@
+import '../ticket_layout/ticket_delivery_strings.dart';
 import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/email_templates/email_templates_strings.dart';
@@ -316,6 +317,10 @@ class EmailTemplateModel {
           balanceReasoningSub,
         ],
         'TICKET_ORDER_PAYMENT_DONE': [
+          EmailTemplateSub(
+              code: 'tickets',
+              description: TicketDeliveryStrings.text('blockDescription'),
+              defaultValue: ''),
           ...orderOverviewSubs,
           orderSymbolSub,
           occasionTitleSub,

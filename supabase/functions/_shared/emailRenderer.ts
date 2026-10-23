@@ -1,11 +1,14 @@
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
-import { orderEmailOverviewUrl, overviewEmailSubstitutions } from './orderEmailOverview.ts';
+import {
+  orderEmailOverviewUrl,
+  overviewEmailSubstitutions,
+} from "./orderEmailOverview.ts";
 import { bankSyncWarningEmail } from "./bankSyncWarningEmail.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
 import { type PreparedEmail, renderEmail } from "./emailDelivery.ts";
-import { supabaseAdmin } from "./supabaseUtil.ts";
-import { prepareTicketRenderer } from "./ticketGeneration.ts";
+import { escapeTicketText, prepareTicketDelivery } from "./ticketDelivery.ts";
+import { ticketEmailSubstitutions } from "./ticketEmail.ts";
 import { getTicketOrderConfirmationTemplate } from "../send-email/getTicketOrderConfirmationTemplate.ts";
 import { getTicketOrderReminderTemplate } from "../send-email/getTicketOrderReminderTemplate.ts";
 import { getTicketOrderPaidTemplate } from "../send-email/getTicketOrderPaidTemplate.ts";
@@ -34,14 +37,37 @@ export async function renderQueuedEmail(
   if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
     return await renderWaitlistEmail(row);
   }
-  if (row.message_kind === 'custom' && row.code === 'BANK_SYNC_WARNING') {
-    return {prepared:bankSyncWarningEmail(row.recipient,row.data,Deno.env.get('DEFAULT_EMAIL') ?? ''),postAction:{tracking_policy:'disabled'}};
+  if (row.message_kind === "custom" && row.code === "BANK_SYNC_WARNING") {
+    return {
+      prepared: bankSyncWarningEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
   }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
-    return { prepared: firstLoginEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
+    return {
+      prepared: firstLoginEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
   }
-  if (row.message_kind === "custom" && row.code === "UNIT_VERIFICATION_REQUEST") {
-    return { prepared: unitVerificationEmail(row.recipient, row.data, Deno.env.get("DEFAULT_EMAIL") ?? ""), postAction: { tracking_policy: "disabled" } };
+  if (
+    row.message_kind === "custom" && row.code === "UNIT_VERIFICATION_REQUEST"
+  ) {
+    return {
+      prepared: unitVerificationEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
   }
   if (row.message_kind === "order_tickets") {
     const result = await emailRpc("get_order_details_for_email", {
@@ -49,30 +75,17 @@ export async function renderQueuedEmail(
     });
     if (result.code !== 200) throw new Error("ticket_order_unavailable");
     const { order, occasion, reply_to } = result.data;
-    const tickets =
-      (await emailRpc("get_tickets_with_details", { order_id: row.order_id }))
-        .filter((t: any) => t.state !== "storno");
-    if (!tickets.length) throw new Error("ticket_set_empty");
-    const enabled = occasion.features?.some((f: any) =>
-      f.code === "ticket" && f.is_enabled
+    const delivery = await prepareTicketDelivery(
+      occasion,
+      order.data,
+      await emailRpc("get_tickets_with_details", { order_id: row.order_id }),
+      async (...args) => {
+        const { prepareTicketRenderer } = await import("./ticketGeneration.ts");
+        return await prepareTicketRenderer(...args);
+      },
     );
-    const attachments = [];
-    if (enabled) {
-      const render = await prepareTicketRenderer(
-        occasion,
-        tickets[0],
-        order.data,
-      );
-      for (const ticket of tickets) {
-        const { bytes } = await render(ticket);
-        attachments.push({
-          filename: `ticket_${ticket.ticket_symbol}.pdf`,
-          content: bytes,
-          contentType: "application/pdf",
-          encoding: "binary",
-        });
-      }
-    }
+    const lang = row.data?.lang ?? "cs";
+    const payment = ticketEmailSubstitutions(result.data, lang);
     const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
     return {
       prepared: await renderEmail({
@@ -84,12 +97,25 @@ export async function renderQueuedEmail(
           occasion: row.occasion,
           unit: row.unit,
         },
-        substitutions: { occasionTitle: occasion.title, orderSymbol: order.order_symbol, ...overviewEmailSubstitutions(overviewUrl, row.data?.lang) },
+        subjectSubstitutions: {
+          ...payment,
+          ...overviewEmailSubstitutions(overviewUrl, lang),
+        },
+        substitutions: {
+          ...payment,
+          occasionTitle: escapeTicketText(occasion.title),
+          orderSymbol: escapeTicketText(order.order_symbol),
+          ...overviewEmailSubstitutions(overviewUrl, lang),
+        },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
-        attachments,
+        attachments: delivery.attachments,
+        ticketBlock: delivery.html,
       }),
-      postAction: { ...(overviewUrl ? { tracking_policy: "disabled" } : {}), ticket_ids: tickets.map((t: any) => t.id) },
+      postAction: {
+        ...(overviewUrl ? { tracking_policy: "disabled" } : {}),
+        ticket_ids: delivery.tickets.map((t: any) => t.id),
+      },
     };
   }
   const handlers: Record<string, any> = {
@@ -119,7 +145,10 @@ export async function renderQueuedEmail(
       occasion: row.occasion,
       unit: row.unit,
     },
-    substitutions: { ...rendered.subs, ...overviewEmailSubstitutions(overviewUrl, row.data?.lang) },
+    substitutions: {
+      ...rendered.subs,
+      ...overviewEmailSubstitutions(overviewUrl, row.data?.lang),
+    },
     attachments: rendered.attachments ?? [],
     replyTo: rendered.reply_to,
     from: `${rendered.sender || "Festapp"} | Festapp <${

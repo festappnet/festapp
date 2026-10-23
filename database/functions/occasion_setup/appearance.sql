@@ -4,6 +4,7 @@ RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
 DECLARE payload jsonb:=p_data-'eventKind'-'eventKindNeedsConfirmation'; appearance jsonb; shared_font text; has_tickets boolean;
 BEGIN
  has_tickets:=coalesce((payload->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(payload#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false));
+ PERFORM public.ticket_delivery_mode(payload->'ticketDraft');
  appearance:=payload->'appearance';
  IF appearance IS NOT NULL THEN
   IF jsonb_typeof(appearance)<>'object' OR coalesce(appearance->>'primary','') !~ '^[A-Fa-f0-9]{6}$' OR coalesce(appearance->>'secondary','') !~ '^[A-Fa-f0-9]{6}$'
@@ -19,7 +20,7 @@ BEGIN
     OR payload#>>'{formDraft,data,design,font_family}' IS DISTINCT FROM appearance->>'fontFamily'
     OR payload#>>'{formDraft,data,design,background_mode}' IS DISTINCT FROM (CASE WHEN (appearance->>'gradient')::boolean THEN 'gradient' ELSE 'solid' END)
     THEN RAISE invalid_parameter_value USING MESSAGE='Shared form style mismatch'; END IF;
-   IF has_tickets AND (payload#>'{ticketDraft,layout,templates}' IS NULL OR EXISTS(
+   IF has_tickets AND public.ticket_delivery_mode(payload->'ticketDraft')<>'inline_qr' AND (payload#>'{ticketDraft,layout,templates}' IS NULL OR EXISTS(
     SELECT 1 FROM jsonb_each(payload#>'{ticketDraft,layout,templates}') t
     WHERE t.value->>'fontId' IS DISTINCT FROM shared_font OR t.value->>'canvasColor' IS DISTINCT FROM appearance->>'primary'
      OR (CASE WHEN (appearance->>'gradient')::boolean THEN t.value->'canvasGradient' IS DISTINCT FROM jsonb_build_array(appearance->>'primary',appearance->>'secondary') ELSE t.value ? 'canvasGradient' END)))

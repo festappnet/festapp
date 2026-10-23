@@ -1,3 +1,6 @@
+import '../ticket_delivery_strings.dart';
+import 'ticket_delivery_selector.dart';
+import 'ticket_delivery_preview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -27,6 +30,7 @@ class TicketSettings extends StatefulWidget {
   final TicketPreviewOccasion? previewOccasion;
   final bool showScanningSettings;
   final bool showPreview;
+  final bool showDeliverySelector;
   TicketSettings(
       {super.key,
       required this.feature,
@@ -38,6 +42,7 @@ class TicketSettings extends StatefulWidget {
       this.previewOccasion,
       this.showScanningSettings = true,
       this.showPreview = true,
+      this.showDeliverySelector = true,
       TicketLayoutService? service})
       : service = service ?? TicketLayoutService();
   @override
@@ -57,15 +62,26 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   void didUpdateWidget(covariant TicketSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if(widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey) refresh();
+    if (widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey)
+      refresh();
   }
 
   Future<void>? _loading;
   String? _thumbnailKey;
-  String get _contextKey => jsonEncode([TicketLayoutService.identityKey(),
-    widget.occasionId, widget.service.setupDraftId, widget.service.setupRevision, type,widget.feature.layout,
-    widget.feature.ticketBackground,widget.previewOccasion?.toJson(),widget.readOnly,
-    widget.borrowResourcesOnly,RightsService.currentOccasion()?.aggregateVersion]);
+  String get _contextKey => jsonEncode([
+        TicketLayoutService.identityKey(),
+        widget.occasionId,
+        widget.feature.deliveryMode.value,
+        widget.service.setupDraftId,
+        widget.service.setupRevision,
+        type,
+        widget.feature.layout,
+        widget.feature.ticketBackground,
+        widget.previewOccasion?.toJson(),
+        widget.readOnly,
+        widget.borrowResourcesOnly,
+        RightsService.currentOccasion()?.aggregateVersion
+      ]);
   TicketLayoutResources? thumbnail;
   TicketLayoutController? thumbnailController;
   bool busy = false;
@@ -79,7 +95,10 @@ class _TicketSettingsState extends State<TicketSettings> {
   void initState() {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
-    try {_authChanges=Supabase.instance.client.auth.onAuthStateChange.listen((_)=>_contextChanged());} catch (_) {}
+    try {
+      _authChanges = Supabase.instance.client.auth.onAuthStateChange
+          .listen((_) => _contextChanged());
+    } catch (_) {}
     if (widget.showPreview)
       WidgetsBinding.instance.addPostFrameCallback((_) => refresh());
   }
@@ -95,13 +114,16 @@ class _TicketSettingsState extends State<TicketSettings> {
   }
 
   Future<void> refresh() {
-    if(_loading != null) return _loading!;
-    final key=_contextKey;
+    if (!widget.feature.deliveryMode.includesPdf) return Future.value();
+    if (_loading != null) return _loading!;
+    final key = _contextKey;
     return _loading = _refreshPreview().whenComplete(() {
-      _loading=null;
-      if(mounted && widget.showPreview && key != _contextKey) unawaited(refresh());
+      _loading = null;
+      if (mounted && widget.showPreview && key != _contextKey)
+        unawaited(refresh());
     });
   }
+
   Future<void> _refreshPreview() async {
     final key = _contextKey;
     final request = ++generation;
@@ -128,13 +150,23 @@ class _TicketSettingsState extends State<TicketSettings> {
 
   StreamSubscription? _authChanges;
   void _contextChanged() {
-    if(!mounted || thumbnail == null) return;
-    if(!thumbnail!.isValid) {
+    if (!mounted) return;
+    // Inline previews have no PDF thumbnail, but must still discard a previous
+    // identity/context's response and reauthorize through the preview endpoint.
+    setState(() {});
+    if (thumbnail == null) return;
+    if (!thumbnail!.isValid) {
       generation++;
-      setState(() {thumbnail?.dispose();thumbnail=null;_thumbnailKey=null;});
+      setState(() {
+        thumbnail?.dispose();
+        thumbnail = null;
+        _thumbnailKey = null;
+      });
     }
-    if(widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey) unawaited(refresh());
+    if (widget.showPreview && !_editorOpen && _thumbnailKey != _contextKey)
+      unawaited(refresh());
   }
+
   bool _editorOpen = false;
   bool _restoredPanel = false;
   @override
@@ -163,9 +195,9 @@ class _TicketSettingsState extends State<TicketSettings> {
     _refresh(() => busy = true);
     try {
       await ExceptionHandler.guard(context, futureFunction: () async {
-        if(_loading != null) await _loading;
-        if(thumbnail == null || _thumbnailKey != _contextKey) await refresh();
-        if(thumbnail == null || _thumbnailKey != _contextKey) return;
+        if (_loading != null) await _loading;
+        if (thumbnail == null || _thumbnailKey != _contextKey) await refresh();
+        if (thumbnail == null || _thumbnailKey != _contextKey) return;
         final r = thumbnail!.clone();
         if (!mounted) {
           r.dispose();
@@ -242,7 +274,8 @@ class _TicketSettingsState extends State<TicketSettings> {
       });
     } finally {
       _editorOpen = false;
-      if(mounted && widget.showPreview && _thumbnailKey != _contextKey) unawaited(refresh());
+      if (mounted && widget.showPreview && _thumbnailKey != _contextKey)
+        unawaited(refresh());
       final root =
           context.findAncestorWidgetOfExactType<RouterScope>()?.controller.root;
       if (root != null && mounted)
@@ -260,17 +293,46 @@ class _TicketSettingsState extends State<TicketSettings> {
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        if (widget.showDeliverySelector) ...[
+          TicketDeliverySelector(
+              value: widget.feature.deliveryMode,
+              enabled: widget.feature.isEnabled && !widget.readOnly,
+              onChanged: (mode) {
+                _refresh(() => widget.feature.deliveryMode = mode);
+                if (mode.includesPdf && widget.showPreview) refresh();
+              }),
+          const SizedBox(height: 24),
+          if (widget.feature.isEnabled && widget.occasionId > 0)
+            TicketDeliveryPreview(
+                revision: _contextKey,
+                load: (count) async {
+                  final response = await Supabase.instance.client.functions
+                      .invoke('occasion-setup-email-preview', body: {
+                    'occasionId': widget.occasionId,
+                    'messageType': 'order_tickets',
+                    'sampleTicketCount': count,
+                    'deliveryMode': widget.feature.deliveryMode.value,
+                  });
+                  return Map<String, dynamic>.from(response.data as Map);
+                }),
+          const SizedBox(height: 24),
+        ],
         if (widget.showScanningSettings) ...[
           TicketScanningSettings(
               feature: widget.feature, readOnly: widget.readOnly),
           const SizedBox(height: 12),
         ],
-        if (unsupported) Text(TicketLayoutStrings.unsupported),
-        if (thumbnail?.missingBackground == true)
+        if (widget.feature.deliveryMode.includesPdf && unsupported)
+          Text(TicketLayoutStrings.unsupported),
+        if (widget.feature.deliveryMode.includesPdf &&
+            thumbnail?.missingBackground == true)
           Padding(
               padding: const EdgeInsets.all(12),
               child: Text(TicketLayoutStrings.missingBackground)),
-        if (widget.showPreview && thumbnail != null && !unsupported)
+        if (widget.feature.deliveryMode.includesPdf &&
+            widget.showPreview &&
+            thumbnail != null &&
+            !unsupported)
           InkWell(
               onTap: () => showDialog<void>(
                   context: context,
@@ -317,6 +379,8 @@ class _TicketSettingsState extends State<TicketSettings> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.edit_outlined),
-            label: Text(TicketLayoutStrings.edit)),
+            label: Text(widget.feature.deliveryMode.includesPdf
+                ? TicketLayoutStrings.edit
+                : TicketDeliveryStrings.text('editPrintPdf'))),
       ]);
 }
