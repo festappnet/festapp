@@ -798,6 +798,7 @@
     "noWaves": "Zatím nejsou žádné cenové vlny.",
     "waveNow": "Aktuálně",
     "waveHiddenState": "Skryto",
+    "bankSyncWarningDetailsHint": "Klikněte pro zobrazení detailu",
     "bankSyncWarningContactShort": "Kontaktujte správce bankovního účtu:",
     "bankSyncPaymentPaused": "Synchronizace bankovního účtu pro tuto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párování plateb nefunguje",

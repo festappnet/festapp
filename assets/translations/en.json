@@ -798,6 +798,7 @@
     "noWaves": "No price waves yet.",
     "waveNow": "Current",
     "waveHiddenState": "Hidden",
+    "bankSyncWarningDetailsHint": "Click to view details",
     "bankSyncWarningContactShort": "Contact a bank account administrator:",
     "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
     "bankSyncWarningTitle": "Automatic payment matching is unavailable",

@@ -651,6 +651,7 @@
     "bankSyncWarningManage": "Перевірте синхронізацію в налаштуваннях банківського рахунку.",
     "bankSyncWarningOpenSettings": "Налаштування банківського рахунку",
     "bankSyncWarningSettingsUnavailable": "Рахунок не знайдено або ви не маєте дозволу ним керувати.",
+    "bankSyncWarningDetailsHint": "Натисніть, щоб переглянути деталі",
     "bankSyncWarningContactShort": "Зверніться до адміністратора банківського рахунку:",
     "bankSyncPaymentPaused": "Синхронізацію банківського рахунку для цього платежу вимкнено.",
     "bankSyncWarningTitle": "Автоматичне зіставлення платежів недоступне",

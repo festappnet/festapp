@@ -52,6 +52,8 @@ class OrdersStrings {
       'FeatureOrders.bankSyncWarningTitle'.tr();
   static String get bankSyncWarningHelp =>
       'FeatureOrders.bankSyncWarningHelp'.tr();
+  static String get bankSyncWarningDetailsHint =>
+      'FeatureOrders.bankSyncWarningDetailsHint'.tr();
   static String get bankSyncWarningContactShort =>
       'FeatureOrders.bankSyncWarningContactShort'.tr();
   static String get bankSyncWarningContact =>
