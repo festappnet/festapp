@@ -7,7 +7,7 @@ import { openDisposableDatabase } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { productDescriptors } from '../src/operations/products.mjs';
 async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023190000_inventory_summary_reads.sql'])
+ for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql'])
   await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
 }
 

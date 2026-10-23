@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "0fd16f4374b065c578ecee3f647fda40cb17b37b",
+  "sourceMain": "36ad57969e08eaf35d10e812ba9413e558d97d00",
   "liveBaselineVersion": "0.20.365+859",
   "tenant": "festapptickets",
-  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené.",
+  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené. Nové produktové a skladové řezy jsou ověřené v kandidátovi PR #564, dosud nejsou nasazené.",
   "actions": [
     {
       "id": "action-001",
@@ -237,11 +237,14 @@
         "database/functions/inventory/inventory_catalog.sql",
         "lib/components/inventory/db_inventory_pools.dart",
         "lib/components/inventory/views/inventory_pool_card.dart",
-        "tools/festapp/src/operations/inventory.mjs"
+        "tools/festapp/src/operations/inventory.mjs",
+        "database/functions/inventory/inventory_authoring_reads.sql"
       ],
       "mcp": [
         "inventory.pools.list",
-        "inventory.contexts.list"
+        "inventory.contexts.list",
+        "inventory.pools.inspect",
+        "inventory.resources.list"
       ],
       "phase": "2",
       "effect": "read",
@@ -254,9 +257,13 @@
       "title": "Vytvořit nebo upravit sklad a jeho kontexty",
       "description": "Kapacitní stropy a automatické přiřazování zdrojů.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
@@ -266,11 +273,15 @@
       "id": "action-016",
       "area": "Sklady a kapacity",
       "title": "Vytvořit nebo upravit zdroj a jeho kapacitu",
-      "description": "Skutečná dostupná nabídka, včetně již existujících alokací.",
+      "description": "Kapacita zdroje a pravidla rezervace přes společný příkaz; uložená nabídka není příslib zbývající dostupnosti.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
@@ -282,9 +293,13 @@
       "title": "Odstranit zdroj nebo sklad",
       "description": "Ochrana používaných vazeb a očekávaná verze.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/manage_inventory.sql",
+        "lib/components/inventory/inventory_commands.dart",
+        "tools/festapp/src/operations/inventory-authoring.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.change"
+      ],
       "phase": "2",
       "effect": "write",
       "scope": "Akce",
@@ -1399,9 +1414,9 @@
   ],
   "dataQualityReview": {
     "date": "2026-10-23",
-    "status": "První datový a síťový průchod; nejde o dokončený audit celé administrace.",
-    "finding": "V lokální fixture s 1000 produkty databáze vrací celý katalog, i když MCP zobrazí jen 50 produktů. Pro další stránku se načítá znovu.",
-    "nextStep": "Před dalším rozšiřováním opravit serverové stránkování. U každé další oblasti posoudit také SQL, transakce, zámky, objem dat a duplicitní pravidla.",
-    "evidence": "admin-data-network-baseline-2026-10-23.json"
+    "status": "Produktové a skladové řezy lokálně opravené a ověřené; celkový audit pokračuje.",
+    "finding": "Původní baseline ukázala celý katalog na každou produktovou stránku a jednotlivá místa ve skladovém přehledu. Kandidát vybírá produktové IDs před projekcí a skladové karty i MCP čtou stejné SQL souhrny bez jednotlivých míst.",
+    "nextStep": "Dokončit další etapy a provozní operace nad místy; nasazení festapptickets následuje po povinném review/merge.",
+    "evidence": "admin-inventory-summary-network-2026-10-23.json"
   }
 }

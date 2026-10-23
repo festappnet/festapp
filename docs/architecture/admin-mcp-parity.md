@@ -154,3 +154,28 @@ context pages lock the actual pool against a concurrent move.
 compares the exact prior RPC with the current UI and MCP on the same marked fixtures.
 These are serialized JSON bytes, not HTTP traffic or production latency measurements.
 Pool/resource authoring and operational seat commands remain subsequent cuts.
+
+Pool/resource authoring now uses scoped `manage_inventory` from both typed
+InventoryCommands and MCP. It delegates exactly one existing receipt owner with
+a late live occasion/entity scope check, including replay. The pool receipt body
+is owned by `save_inventory_pool_command_internal`; the historical public API
+is a compatibility adapter. Its editor mode preserves old payload hashes and
+full snapshots; compact mode binds its distinct snapshot choice into the hash,
+builds only pool/context settings and skips unused private replacement hydration.
+Resource commands preserve their existing owners; MCP's SQL response excludes
+unrelated resource fields and private sync replacements.
+
+`get_inventory_pool_settings_data_internal` and
+`get_inventory_resource_rows_internal` are the shared projections used by full
+UI editor bundles and compact MCP authoring reads. Current UI reads use an
+explicitly scoped `get_inventory_pool_for_edit` boundary. Complete MCP pool
+settings refuse more than 2000 contexts or a payload above the save limit, rather
+than truncating a replacement aggregate. Full editor reads retain their existing
+boundary. Resource settings use bounded ID pages, with a payload ceiling.
+Untitled pool deletion now checks row existence rather than a nullable label.
+New inventory-write consent requires inventory-read and expands no old grant.
+
+[Authoring evidence](../reports/admin-inventory-authoring-evidence-2026-10-23.json)
+covers pre-upgrade receipts, rollback, capacity guards, foreign scope and shared
+source parity. Operational seat commands and unused product editor choices remain
+subsequent cuts; this is not completion of the entire administration plan.

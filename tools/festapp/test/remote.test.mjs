@@ -538,3 +538,13 @@ test('inventory summaries require inventory consent in both grant and token',asy
  token.scope=READ_SCOPE+' festapp:inventory:read';f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read']});
  assert(!owner().allowedOperations.includes('inventory.contexts.list'));
 });
+
+test('inventory writes require new consent and token scope, separate from standing and inventory reads',async t=>{
+ const f=await setup(t),id='inventory-write-permissions';
+ const grant={id,binding:'inventory-write-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('inventory.change'));assert.throws(()=>verifyPermissions(['festapp:inventory:write'],MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:['festapp:inventory:read','festapp:inventory:write']});assert(owner().allowedOperations.includes('inventory.change'));
+ token.scope=READ_SCOPE+' festapp:inventory:read';assert(!owner().allowedOperations.includes('inventory.change'));
+ token.scope=[READ_SCOPE,...MCP_SCOPES].join(' ');f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read','festapp:standing-inventory:write']});assert(!owner().allowedOperations.includes('inventory.change'));
+});

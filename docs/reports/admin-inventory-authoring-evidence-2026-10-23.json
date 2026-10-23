@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-23",
+  "migration": "20261023200000_inventory_authoring_commands.sql",
+  "migrationSha256": "d284cc43cce224dd8ed4522c176f25a51bd34573e0761a67c9ba60bceac24414",
+  "scope": "Local completed pool/context/resource authoring cut, not deployed.",
+  "domainOwner": "manage_inventory delegates exactly one canonical receipt; UI and MCP share pool/context and resource read projections.",
+  "verification": {
+    "fullMcpSuiteBeforeFinalReadProjectionRefinement": {
+      "passed": 105,
+      "failed": 0,
+      "skipped": 0
+    },
+    "finalAffectedPostgresBatch": {
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    "finalAuthoringCases": 6,
+    "flutterInventoryCommandCases": 6,
+    "consentUiCases": 25,
+    "targetedCommandDartAnalysis": "No issues found; final scoped DbInventoryPools read adapter compilation is also covered by the pending current-head client CI."
+  },
+  "covered": [
+    "Ambiguous response retry retains identical intention and one pool receipt",
+    "Pre-extraction deployed SQL receipt replays unchanged through extracted owner",
+    "UI full snapshots retain pool table fields; MCP gets compact settings and no private sync payload",
+    "125 resources use three ID pages; 2001 contexts refuse compact replacement reads without truncation while full UI editor still reads them",
+    "Held allocation guards for pool/context/resource, existing sold/addressed-seat regressions",
+    "Untitled pool deletion succeeds and replays",
+    "Concurrent occasion scope move rolls back state, version, sync commit and receipt",
+    "Rights revocation during eight read APIs; actual foreign pool scope and private owner ACL/source parity"
+  ],
+  "networkSample": {
+    "compactPoolCreateSqlJsonBytes": 567,
+    "fullEditorPoolSaveSqlJsonBytes": 19688,
+    "interpretation": "Real serialized SQL JSON from the same fixture, different save outcomes. Not an HTTP byte measurement, controlled before/after ratio or production latency benchmark."
+  },
+  "remaining": [
+    "Bounded unused type/context choices for product editor",
+    "Operational seats 2B",
+    "Stages 3-10",
+    "Required main review/merge before festapptickets production rollout"
+  ]
+}

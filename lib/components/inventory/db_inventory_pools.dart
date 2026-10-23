@@ -45,8 +45,13 @@ class DbInventoryPools {
 
   static Future<InventoryPoolBundle> getInventoryPoolBundle(int poolId) async {
     final response = await _supabase.rpc(
-      'get_inventory_pool_bundle',
-      params: {'p_inventory_pool_id': poolId},
+      'get_inventory_pool_for_edit',
+      params: {
+        'p_pool': poolId,
+        'p_occasion': RightsService.currentOccasionId(),
+        'p_organization': AppConfig.organization,
+        'p_unit': RightsService.currentUnit()?.id,
+      },
     );
 
     if (response is Map &&

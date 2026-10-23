@@ -6,7 +6,7 @@ import {openDisposableDatabase} from './postgres.mjs';
 import {Operations} from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql'])
+ for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql'])
   await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
 }
 function executor(db,f) {
@@ -120,6 +120,9 @@ test('two connections: inventory and product reads recheck revoked rights; a mov
  for(const [sql,args,relation] of [
   ['select get_inventory_catalog($1,$2,$3)',[f.org,f.occasion,f.unit],'eshop.spots'],
   ['select get_inventory_context_catalog($2,$1,$3,$4)',[f.org,f.occasion,f.unit,pool],'eshop.spots'],
+  ['select get_inventory_pool_for_edit($2,$1,$3,$4)',[f.org,f.occasion,f.unit,pool],'eshop.products'],
+  ['select get_inventory_pool_settings($2,$1,$3,$4)',[f.org,f.occasion,f.unit,pool],'public.inventory_contexts'],
+  ['select get_inventory_resources($2,$1,$3,$4)',[f.org,f.occasion,f.unit,pool],'public.resources'],
   ['select get_product_catalog($1,$2,$3)',[f.org,f.occasion,f.unit],'eshop.products'],
   ['select get_product_catalog_page($1,$2,$3)',[f.org,f.occasion,f.unit],'eshop.products'],
   ['select get_product_schedule($2,$1,$3)',[f.org,f.occasion,f.unit],'eshop.product_price_waves'],

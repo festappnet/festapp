@@ -7,7 +7,7 @@ import { openDisposableDatabase } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql'])
+ for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql','20261023200000_inventory_authoring_commands.sql'])
   await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
 }
 async function productFixture(db) {
@@ -159,7 +159,7 @@ for(const name of ['eshop/standing_existing_product_inventory_test.sql','eshop/i
 test('runtime source parity and grants for the shared inventory owners',options,async t=>{
  const db=await openDisposableDatabase(process.env.FESTAPP_MCP_TEST_DATABASE_URL);await db.query('BEGIN');t.after(async()=>{await db.query('ROLLBACK');await db.end();});await install(db);
  await db.query(await readFile(new URL('../../../database/tests/helpers/assertions.sql',import.meta.url),'utf8'));
- const owners=['save_inventory_pool_internal','update_inventory_pool_bundle_internal_v1','save_inventory_resource_internal','save_resource_client_sync_v1','prepare_standing_inventory'];
+ const owners=['save_inventory_pool_command_internal','save_inventory_pool_internal','update_inventory_pool_bundle_internal_v1','save_inventory_resource_internal','save_resource_client_sync_v1','prepare_standing_inventory'];
  const contract=await readFile(new URL('../../../database/tests/canonical_mutation_source_parity_test.sql',import.meta.url),'utf8');
  const assertions=contract.split('\n').filter(line=>owners.some(name=>line.includes("to_regprocedure('public."+name+'(')));
  assert.equal(assertions.length,owners.length);await db.query('DO $$ BEGIN\n'+assertions.join('\n')+'\nEND $$;');

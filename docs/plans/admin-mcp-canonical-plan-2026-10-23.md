@@ -703,3 +703,14 @@ práv u skladových, produktových a cenových přehledů i přesun poolu.
 40 cílených PostgreSQL/MCP/remote testů, 24 consent testů a 42 českých widget testů
 v obou pořadích prošlo. Evidence: admin-inventory-summary-network-2026-10-23.json.
 Zápisové adaptéry pool/resource, produktové volby a 2B dosud nejsou dokončené.
+
+### Checkpoint: doménové adaptéry skladů a zdrojů
+
+Lokálně dokončeny scoped read/save/delete poolů, kontextů a zdrojů nad společnými
+vlastníky a receipt hranicemi. Aktuální UI používá stejné doménové příkazy jako MCP;
+projekce nastavení sdílejí plný UI editor i omezené MCP čtení. Staré veřejné identity
+zůstávají explicitními kompatibilními adaptéry pro vydané klienty. Opraveno mazání
+skladu bez názvu. Doplněny testy starých receiptů, skutečného souběhu a rollbacku,
+kapacitních ochran, stránkování, limitů a oprávnění. Přesný checkpoint a digest
+obsahuje admin-inventory-authoring-evidence-2026-10-23.json. Produktové editorové
+volby, provozní 2B a další etapy zůstávají otevřené; tento řez není celé zadání.

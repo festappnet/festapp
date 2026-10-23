@@ -275,3 +275,58 @@ It now tests ellipsis on the ordinary orderName binding and separately proves
 that an occasion title stays complete, within its box, below the preferred
 minimum. Both focused Flutter cases passed. No renderer, font metrics, PDF
 readiness contract or readiness hash was changed.
+
+## Pool/resource authoring cut - current boundary
+
+Starting from frozen read candidate 709d47c5 on a separate authoring branch.
+Existing InventoryCommands use four receipt owners. Preserve those receipts,
+locks, expected versions, sold/held guards and sync publication. A scoped common
+manage_inventory RPC will delegate to exactly one owner, with a final live scope
+check including replay; no outer receipt. Pool save's receipt implementation is
+extracted unchanged into one private owner with explicit editor/compact snapshots
+so MCP does not build or transfer unrelated full resource/place/product bundles.
+Authoring pool reads must include complete replacement context settings (bounded
+by the existing 2000-context save limit, fail above it), resource reads use bounded
+ID pages. Do not expose slot/customer/hold data. Retain old public RPC identities
+for released clients. Test untitled pool deletion: current owner mistakes NULL
+title for absence and therefore silently leaves an existing untitled pool intact.
+
+## Pool/resource authoring cut - completed locally
+
+UI InventoryCommands and MCP now call scoped manage_inventory. Each action
+(save/delete pool/resource) delegates exactly one existing receipt owner, then
+checks actual entity and live tenant/unit/occasion rights again, including replay.
+Pool receipt implementation extracted into one private command owner; old public
+identity delegates to it. Editor mode preserves the historical hash and full
+snapshot. Compact mode has its own hash discriminator, avoids full editor SQL
+and private replacement hydration. Sync publication still advances normal source
+revisions. MCP SQL responses exclude private sync replacements and unused resource
+fields. No nested receipts or separate commits.
+
+Shared pool/context and resource projection owners serve the current scoped full
+UI editor and compact MCP reads. Complete pool settings refuse >2000 contexts or
+>1 MiB instead of truncation; resource settings select bounded IDs before projection,
+with max 100 and 1 MiB ceiling. Full editor boundary remains intact. Old bare-ID
+public editor API retains its response, now locks its pool and rechecks read rights.
+Untitled pool deletion fixed: check NOT FOUND rather than NULL title.
+
+Verification: full MCP suite 105 PASS/0 skips before the final shared-read
+refinement; final affected PostgreSQL batch 17 PASS/0 skips. Six final authoring
+cases include pre-extraction deployed-migration receipts replaying unchanged,
+full UI field compatibility, 125-resource pages, 2001-context refusal versus full
+UI read, held-allocation guards, untitled deletion, actual two-connection scope
+move rolling back state/version/commit/receipt, and 13 owner source assertions.
+Read revocation test now exercises eight actual SQL APIs. Existing sold/addressed
+seat and resource-safety regressions pass. Inventory command Flutter cases: 6 PASS.
+Targeted commands/tests analysis: no issues. Consent UI: 25 PASS.
+Final DbInventoryPools scoped-read adapter awaits current-head client CI compilation;
+a different session owns the workstation's single Flutter slot, so no concurrent
+Flutter task was started. Previous read candidate 709d47c5 passed all 7 CI gates.
+
+Evidence admin-inventory-authoring-evidence-2026-10-23.json records the exact SQL
+digest, limits and test boundaries. A real sample returns 567 B for compact pool
+create and 19688 B for full UI save on the same fixture; different outcomes, so no
+before/after reduction or HTTP/latency claim. No production writes/deployment.
+
+Next: bounded unused product type/context editor choices, then operational seat
+cut 2B and stages 3-10. Main review/merge is still required before production.

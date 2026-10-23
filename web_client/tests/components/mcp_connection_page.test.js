@@ -259,7 +259,14 @@ test('standing preparation consent is separate from product edits',async()=>{
 test('inventory summaries display and persist only their explicit read consent',async()=>{
  const permissions=['festapp:inventory:read'];
  const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
- await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst zásoby, kapacity a obsazení kontextů/);
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst sklady, kapacity, nastavení a obsazení kontextů/);
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});
+
+test('stock authoring consent names stock settings and retains only requested permissions',async()=>{
+ const permissions=['festapp:inventory:read','festapp:inventory:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Upravovat sklady, jejich kontexty a zdroje/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });

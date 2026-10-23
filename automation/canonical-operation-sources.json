@@ -266,6 +266,9 @@
     "users/occasion_enrolment_internal.sql",
     "others/legacy_occasion_catalogs.sql",
     "blueprint/resource_admission.sql",
-    "units/occasion_dashboard.sql"
+    "units/occasion_dashboard.sql",
+    "inventory/inventory_authoring_reads.sql",
+    "inventory/save_inventory_pool_command_internal.sql",
+    "inventory/manage_inventory.sql"
   ]
 }

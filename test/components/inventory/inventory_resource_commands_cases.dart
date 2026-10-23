@@ -1,3 +1,6 @@
+import 'package:fstapp/components/inventory/models/inventory_pool_bundle.dart';
+import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
+import 'package:fstapp/app_config.dart';
 import 'dart:async';
 import 'package:festapp_core/eshop.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
@@ -113,8 +116,12 @@ void main() {
       ),
     );
 
-    expect(functionName, 'save_resource_client_sync_v1');
-    expect(parameters['p_expected_version'], 4);
+    expect(functionName, 'manage_inventory');
+    expect(parameters['p_action'], 'save_resource');
+    expect(parameters['p_occasion'], 7);
+    expect(parameters['p_organization'], AppConfig.organization);
+    expect(parameters['p_editor'], true);
+    expect(parameters['p_payload']['expectedVersion'], 4);
     expect(result.aggregateVersion, 5);
   });
 
@@ -143,8 +150,8 @@ void main() {
       ),
     );
 
-    expect(parameters['p_resource'], 9);
-    expect(parameters['p_expected_version'], 3);
+    expect(parameters['p_payload']['id'], 9);
+    expect(parameters['p_payload']['expectedVersion'], 3);
   });
 
   test('pool delete uses the loaded bundle version', () async {
@@ -167,7 +174,41 @@ void main() {
 
     await commands.deletePool(7, 3, 8);
 
-    expect(functionName, 'delete_inventory_pool_client_sync_v1');
-    expect(parameters['p_expected_version'], 8);
+    expect(functionName, 'manage_inventory');
+    expect(parameters['p_action'], 'delete_pool');
+    expect(parameters['p_payload']['expectedVersion'], 8);
   });
+
+  test('pool save retries identical scoped intent and consumes authoritative editor version', () async {
+    final calls = <Map<String, dynamic>>[];
+    var lost = true;
+    final commands = SupabaseInventoryCommands.withTransport(
+      ClientCommandTransport((name, params) async {
+        expect(name, 'manage_inventory');
+        calls.add(params);
+        if (lost) {lost = false; throw TimeoutException('response lost');}
+        return commandResponseFixture(params['p_command_id'] as String, data: {
+          'version': 5,
+          'bundle': {
+            'pool': {'id': 3, 'occasion': 7, 'title': 'Saved'},
+            'contexts': <Object>[],
+            'aggregate_version': 5,
+          }
+        });
+      }),
+    );
+    final result = await commands.savePool(InventoryPoolBundle(
+      pool: InventoryPoolModel(id: 3, occasionId: 7, title: 'Saved'),
+      aggregateVersion: 4,
+    ));
+    expect(calls.length, 2);
+    expect(calls[0], calls[1]);
+    expect(calls[0]['p_action'], 'save_pool');
+    expect(calls[0]['p_payload']['expectedVersion'], 4);
+    expect(calls[0]['p_payload']['bundle']['contexts'], isNull);
+    expect(calls[0]['p_editor'], true);
+    expect(result.pool.id, 3);
+    expect(result.aggregateVersion, 5);
+  });
+
 }
