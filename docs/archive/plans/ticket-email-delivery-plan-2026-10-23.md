@@ -1,7 +1,7 @@
 # Doručení vstupenek jako PDF nebo QR v e-mailu
 
 Datum: 2026-10-23  
-Stav: Lokálně implementováno a cíleně ověřeno 2026-10-23; bez produkčních změn, commitu a nasazení  
+Stav: Implementováno a cíleně ověřeno na aktuálním canonical main podkladu; připraveno k publikaci a vydání 2026-10-23.  
 Ověření při implementaci: standard (sdílené doručování a SQL kontrakt)
 
 UI/UX posouzení: subagent `gpt-6-astra`, reasoning `medium`; jeho závěry jsou zapracované níže.
@@ -178,6 +178,12 @@ pnpm exec node ../automation/email-delivery/rehearse-ticket-delivery.mjs
 ```
 
 Logy: `/tmp/festapp-ticket-canonical-deno-final.log`, `/tmp/festapp-ticket-canonical-{sql,preview-sql,sql-extra,integration}.log`, `/tmp/ticket-canonical-{analyze,context-analyze,flutter,context-flutter,core-test}.log`.
+
+### Celý průchod v izolované aplikaci
+
+Reálné password přihlášení, založení a otevření wizard draftu, uložení PDF -> inline -> PDF -> both a následné fyzické obnovení/otevření prošly. SQL revize 21/23/24 doložily uložené režimy a zachování layoutu. Skutečný místní Edge endpoint vracel 200: inline tři QR a žádné PDF, both tři QR i tři PDF a PDF samotné žádný QR a tři PDF. Existující katalog pěti šablon zůstal dostupný. Při 375 px byly QR čitelné, bez vodorovného posuvu; vizuální kontrolu provedl delegovaný UI/UX agent.
+
+E2E používá samostatný `festapp-wizard-ticket-email-20261023` backend na loopbacku, vlastní browser session a vlastní Flutter server; produkční/OneSignal hranice jsou blokované. První PDF náhled ukázal chybějící statické assety v místním runtime. Podporovaný launcher nyní do obou preview endpointů zapisuje seznam konkrétních souborů místo wildcardu zahrnujícího adresáře. Produkční router již zahrnuje rekurzivní ticket assety pro všechny workery a nemění se. Po opravě prošly všechny varianty skutečným runtime; Flutter slot byl uvolněn a vlastní testovací procesy uzavřeny.
 
 ### Stav publikace a omezení
 
