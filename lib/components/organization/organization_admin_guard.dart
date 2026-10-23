@@ -30,12 +30,10 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
   }
 
   Future<void> _initializeAccess() async {
-    // Direct entry skips the startup fetch, but cached settings can still
-    // restore a context without capabilities. Absence is not a checked denial.
+    // Direct web-client entry skips the startup occasion fetch. Load the same
+    // capability projection before interpreting its absence as a denial.
     if (Supabase.instance.client.auth.currentUser != null &&
-        (RightsService.occasionLinkModel?.capabilities.containsKey(
-                    AuthorizationCapabilities.organizationSettingsWrite) !=
-                true ||
+        (RightsService.occasionLinkModel == null ||
             RightsService.pendingContextUpdate != null)) {
       _loadingContext = true;
       try {
