@@ -154,6 +154,7 @@
 .reference-controls button{position:absolute;top:calc(var(--reference-image-width)*.28125 + 2px);transform:translateY(-50%);width:46px;height:46px;min-height:46px;padding:0;display:grid;place-items:center;border:1px solid #ffffffa6;background:#ffffff99;backdrop-filter:blur(8px);pointer-events:auto;border-radius:50%;box-shadow:0 3px 12px #19243b15}
 .reference-controls [data-reference-previous]{left:12px}.reference-controls [data-reference-next]{right:12px}
 .reference-controls button:disabled{opacity:0;pointer-events:none}
+.reference-controls button[hidden]{display:none}
 .reference-controls svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .closing-art [data-closing-motif]{transition:opacity .55s ease}
 @media(max-width:1000px){.reference-carousel{--reference-image-width:calc((100cqw - 40px)/2.35)}}

@@ -18,6 +18,8 @@ export function initReferenceCarousels(root = document) {
                 .filter(card => card.box.left < box.right - 8 && card.box.right > box.left + 8);
             previous.disabled = track.scrollLeft <= 2;
             next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
+            previous.hidden = previous.disabled;
+            next.hidden = next.disabled;
             position.textContent = visible.length
                 ? `${visible[0].index + 1}-${visible.at(-1).index + 1} z ${cards.length} plesů`
                 : `${cards.length} plesů`;
