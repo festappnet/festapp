@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import {setup,paidAtomicSwap,executor} from './seat-fixtures.mjs';
 import {openDisposableDatabase} from './postgres.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
@@ -166,4 +167,25 @@ test('released replacement adapter keeps its original input fingerprint and repl
  const stored=(await s.db.query('select request_sha256 from client_mutation_receipts where command_id=$1',[command])).rows[0];
  const original=(await s.db.query("select encode(extensions.digest(convert_to(jsonb_build_object('spots',$1::bigint[],'input',$2::jsonb)::text,'UTF8'),'sha256'),'hex') hash",[ids,input])).rows[0].hash;
  assert.equal(stored.request_sha256,original,'the released 3-argument fingerprint stays unchanged');
+});
+
+test('an actual pre-cutover receipt survives the forward migration and uncertain historical invoice dispatch stays lookup-only',options,async t=>{
+ const s=await paidAtomicSwap(t);await bank(s);
+ await s.db.query('RESET ROLE');
+ await s.db.query("insert into eshop.external_services(unit,type,data) values($1,'FAKTUROID',$2)",[s.f.unit,{client_id:'local',client_secret:'local',slug:'local',subject_id:1}]);
+ const installed=await readFile(new URL('../../../supabase/migrations/20261021100000_canonical_authorization.sql',import.meta.url),'utf8');
+ const original=installed.match(/CREATE OR REPLACE FUNCTION public\.replace_blueprint_order_client_sync_v1\([\s\S]*?\nEND; \$\$;/)?.[0];
+ assert(original,'use the real issued owner from immutable historical migration, not a synthesized receipt');
+ await s.db.query(original);await s.db.query('SET LOCAL ROLE authenticated');
+ const input={email:'historical-replacement@example.invalid',form_key:s.fx.formKey},ids=s.source.map(row=>row.spotId).sort((a,b)=>a-b),command=randomUUID();
+ const call=async()=>(await s.db.query('select replace_blueprint_order_client_sync_v1($1,$2,$3) v',[ids,input,command])).rows[0].v;
+ const historical=await call();assert.equal(historical.status,'applied',JSON.stringify(historical));assert.equal(historical.data.paymentPreparationPolicy,undefined);
+ const before=await state(s),order=Number(historical.data.order.id);assert.equal(before.orders.find(o=>Number(o.id)===order).state,'preparing_payment');
+ await s.db.query('RESET ROLE');
+ await s.db.query(await readFile(new URL('../../../supabase/migrations/20261023235000_confirmed_blueprint_seat_orders.sql',import.meta.url),'utf8'));
+ await s.db.query('SET LOCAL ROLE authenticated');assert.deepEqual(await call(),historical);assert.deepEqual(await state(s),before);
+ const client=invoiceClient(s),claim=await client.rpc('claim_replacement_invoice_preparation',{p_order:order,p_command:command});
+ assert.equal(claim.error,null);assert.equal(claim.data.status,'claimed');assert.equal(claim.data.allowCreate,false,'historical absence of a local dispatch marker never proves the invoice was not created');
+ const dispatch=await client.rpc('mark_replacement_invoice_dispatch',{p_order:order,p_command:command,p_token:claim.data.token});assert.equal(dispatch.error?.code,'23514');
+ assert.deepEqual(await state(s),before,'historical recovery cannot cancel the replacement or enqueue another delivery');
 });
