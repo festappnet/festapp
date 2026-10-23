@@ -920,8 +920,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.mark_news_read_client_sync_v1(bigint,bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='eef8238d747585ecb4f790083491ccb0'),'current SQL source parity: public.mark_news_read_client_sync_v1(bigint,bigint,uuid)');
 -- supabase/migrations/20261022050000_occasion_setup_types_appearance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.merge_ticket_appearance_internal_v1(bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='454cb997425470c75fb41a1519238708'),'current SQL source parity: public.merge_ticket_appearance_internal_v1(bigint,jsonb,jsonb)');
--- supabase/migrations/20261022050000_occasion_setup_types_appearance.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='a3f3f13a808f135138c57002c9f09f18'),'current SQL source parity: public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)');
+-- supabase/migrations/20261023231000_ticket_email_delivery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='6a50d4e8877de4585d90046816e43817'),'current SQL source parity: public.merge_ticket_layout_features(jsonb,jsonb,jsonb,boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='fe2cf82de587c05ab65a82674912a408'),'current SQL source parity: public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1206,6 +1206,8 @@ DO $$ BEGIN
  PERFORM assert_true(to_regprocedure('public.swap_spot_tickets_internal_v1(bigint,bigint)') IS NULL,'retired SQL identity remains absent: public.swap_spot_tickets_internal_v1(bigint,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.team_access_notice_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='42c3f300424c2bbb5acafe32cd89fe67'),'current SQL source parity: public.team_access_notice_rule(boolean,boolean,boolean)');
+-- supabase/migrations/20261023231000_ticket_email_delivery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_delivery_mode(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='c2590b2701840fc3cba0df9e8d0359cd'),'current SQL source parity: public.ticket_delivery_mode(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_layout_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='8bc8e0cd6a5a45d10d57f79cec655768'),'current SQL source parity: public.ticket_layout_rule(boolean,boolean)');
 -- supabase/migrations/20261022050000_occasion_setup_types_appearance.sql
@@ -1250,8 +1252,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion_182(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bdcda71506ac0abb50a466bb18eb1cc7'),'current SQL source parity: public.update_occasion_182(jsonb)');
 -- supabase/migrations/20261020173000_ticket_layout_legacy_fence.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion_203(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='916b23b47758d87e478b3b7d84a50ee2'),'current SQL source parity: public.update_occasion_203(jsonb)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='af28b14cbd1953b1a1062579fde69ec0'),'current SQL source parity: public.update_occasion_internal_v1(jsonb)');
+-- supabase/migrations/20261023231000_ticket_email_delivery.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_occasion_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='caa969eaee4e96f00f4b45d285684a92'),'current SQL source parity: public.update_occasion_internal_v1(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_and_tickets_to_storno(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='58cbc4395c358638e30161925fec90aa'),'current SQL source parity: public.update_order_and_tickets_to_storno(bigint)');
 -- supabase/migrations/20261022180000_stripe_checkout_ingest.sql

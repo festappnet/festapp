@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
+  "sourceMain": "ee0287419ed0950890763875089709df52fee25e",
   "liveBaselineVersion": "0.20.367+864",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění účtu ani audit všech tenant variant. Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Potvrzené uvolnění rezervací a prohození vstupenek čekají na publikaci a nasazení.",
