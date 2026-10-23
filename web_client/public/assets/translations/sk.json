@@ -1397,6 +1397,7 @@
     "productSchedulesRead": "Čítať cenové vlny a plánované zmeny produktov",
     "productSchedulesWrite": "Plánovať, presúvať a rušiť ceny a viditeľnosť produktov",
     "standingInventoryWrite": "Pripraviť zásoby pre vstupenky na státie",
+    "inventoryRead": "Čítať zásoby, kapacity a obsadenosť kontextov",
     "productsRead": "Čítať produkty, ceny a skladové priradenia",
     "productsWrite": "Vytvárať, upravovať a odstraňovať produkty",
     "ordersRead": "Čítať objednávky, kontaktné údaje a počty vstupeniek",

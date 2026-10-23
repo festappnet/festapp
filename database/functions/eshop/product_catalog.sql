@@ -21,7 +21,7 @@ REVOKE ALL ON FUNCTION public.check_product_catalog_scope_internal(bigint,bigint
 CREATE OR REPLACE FUNCTION public.get_product_catalog(p_organization bigint,p_occasion bigint DEFAULT NULL,
  p_unit bigint DEFAULT NULL,p_occasion_link text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE oc bigint:=p_occasion;
+DECLARE oc bigint:=p_occasion; result jsonb;
 BEGIN
  IF p_occasion_link IS NOT NULL THEN
   oc:=public.resolve_occasion_link_internal(p_occasion_link);
@@ -29,7 +29,9 @@ BEGIN
    RAISE insufficient_privilege USING MESSAGE='product context unavailable'; END IF;
  END IF;
  PERFORM public.check_product_catalog_scope_internal(oc,p_organization,p_unit,false,true);
- RETURN jsonb_build_object('occasionId',oc,'catalog',public.get_product_catalog_data_internal(oc));
+ result:=jsonb_build_object('occasionId',oc,'catalog',public.get_product_catalog_data_internal(oc));
+ PERFORM public.check_product_catalog_scope_internal(oc,p_organization,p_unit,false,true);
+ RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.get_product_catalog(bigint,bigint,bigint,text) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_product_catalog(bigint,bigint,bigint,text) TO authenticated;
@@ -46,6 +48,7 @@ BEGIN
  END IF;
  PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
  catalog:=public.get_product_catalog_data_internal(p_occasion,p_after,p_limit)::jsonb;
+ PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
  RETURN jsonb_build_object('occasionId',p_occasion,'nextCursor',catalog->'nextCursor','catalog',
    catalog-ARRAY['nextCursor','server_time','price_waves','inventory_pools']);
 END $$;

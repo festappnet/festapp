@@ -1,5 +1,4 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/components/inventory/models/inventory_pools_list_bundle.dart';
@@ -51,17 +50,6 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
       if (!mounted || _previousOccasionLink != occasionLink) return;
       _bundle = newBundle;
 
-      if (_bundle != null) {
-        // Link objects for easier access
-        for (var context in _bundle!.inventoryContexts) {
-          context.inventoryPool = _bundle!.pools
-              .firstWhereOrNull((group) => group.id == context.inventoryPoolId);
-        }
-        for (var spot in _bundle!.spots) {
-          spot.inventoryContext = _bundle!.inventoryContexts.firstWhereOrNull(
-              (context) => context.id == spot.inventoryContextId);
-        }
-      }
       if (newBundle.pools.length == 1 &&
           newBundle.pools.single.id != null &&
           context.routeData.queryParams.get('list')?.toString().toLowerCase() !=
@@ -129,18 +117,13 @@ class _InventoryPoolsTabState extends State<InventoryPoolsTab> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final group = _bundle!.pools[index];
-                  final groupContexts = _bundle!.inventoryContexts
-                      .where((c) => c.inventoryPoolId == group.id)
+                  final groupContexts = _bundle!.contextStocks
+                      .where(
+                          (stock) => stock.context.inventoryPoolId == group.id)
                       .toList();
-                  final contextIds = groupContexts.map((c) => c.id).toSet();
-                  final groupSpots = _bundle!.spots
-                      .where((s) => contextIds.contains(s.inventoryContextId))
-                      .toList();
-
                   return InventoryPoolCard(
                     pool: group,
                     contexts: groupContexts,
-                    spots: groupSpots,
                     onTap: () => _handleCardTap(group),
                   );
                 },

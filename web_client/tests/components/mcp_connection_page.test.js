@@ -255,3 +255,11 @@ test('standing preparation consent is separate from product edits',async()=>{
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('inventory summaries display and persist only their explicit read consent',async()=>{
+ const permissions=['festapp:inventory:read'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst zásoby, kapacity a obsazení kontextů/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

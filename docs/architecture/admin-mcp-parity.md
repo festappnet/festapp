@@ -131,3 +131,26 @@ New schedule scopes require explicit consent; old product grants stay unchanged.
 Local validation and byte/request evidence are in
 [the stage 1 report](../reports/admin-product-schedule-evidence-2026-10-23.json).
 Publication and production deployment are tracked by the execution checkpoint.
+
+## Shared inventory administration summaries
+
+Current `InventoryPoolsTab` and MCP stock readers use `inventory_catalog.sql`.
+UI explicitly requests `get_inventory_catalog` summary mode; MCP requests bounded
+pool and context ID pages (maximum 100). Pool/context summaries contain SQL-owned
+physical, allocated, unassigned allocated and separately held spot counts.
+Resource-slot assignments count as assigned. Counts are not unique orders or
+people; resource supply and the saved sellable ceiling are not checkout availability.
+Independent resource/context aggregates avoid multiplying child counts.
+
+Current readers never transfer raw spots, temporary hold secrets or order IDs.
+The historical `get_inventory_pools_by_occasion_link` retains its released full
+payload and original explicit order-view gate, delegating shared summary metadata.
+Full pool editor bundles and all mutation semantics remain their existing owners.
+New read consent is explicit and does not expand old product/standing grants.
+Actual organization/unit/occasion scope and rights are checked again after reading;
+context pages lock the actual pool against a concurrent move.
+
+[Measured summary read evidence](../reports/admin-inventory-summary-network-2026-10-23.json)
+compares the exact prior RPC with the current UI and MCP on the same marked fixtures.
+These are serialized JSON bytes, not HTTP traffic or production latency measurements.
+Pool/resource authoring and operational seat commands remain subsequent cuts.

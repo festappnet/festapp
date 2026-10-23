@@ -110,10 +110,13 @@ REVOKE ALL ON FUNCTION public.get_product_price_waves_internal(bigint,bigint,int
 CREATE OR REPLACE FUNCTION public.get_product_schedule(p_occasion bigint,p_organization bigint,p_unit bigint,
  p_after bigint DEFAULT NULL,p_limit integer DEFAULT 50)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
 BEGIN
  IF p_limit IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='bounded wave page required'; END IF;
  PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
- RETURN jsonb_build_object('occasionId',p_occasion)||public.get_product_price_waves_internal(p_occasion,p_after,p_limit);
+ result:=jsonb_build_object('occasionId',p_occasion)||public.get_product_price_waves_internal(p_occasion,p_after,p_limit);
+ PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,false,true);
+ RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.get_product_schedule(bigint,bigint,bigint,bigint,integer) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_product_schedule(bigint,bigint,bigint,bigint,integer) TO authenticated;

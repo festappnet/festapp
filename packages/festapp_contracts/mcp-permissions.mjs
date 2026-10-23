@@ -5,6 +5,7 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:orders:write': { label: 'ordersWrite', operations: ['orders.update', 'orders.cancel'], requires: ['festapp:orders:read'] },
     'festapp:payments:write': { label: 'paymentsWrite', operations: ['orders.mark_paid', 'payments.record'], requires: ['festapp:orders:read'] },
     'festapp:tickets:send': { label: 'ticketsSend', operations: ['orders.send_tickets'], requires: ['festapp:orders:read'] },
+    'festapp:inventory:read': { label: 'inventoryRead', operations: ['inventory.pools.list','inventory.contexts.list'], requires: [] },
     'festapp:standing-inventory:write': { label: 'standingInventoryWrite', operations: ['inventory.prepare_standing'], requires: ['festapp:products:read'] },
     'festapp:product-schedules:read': { label: 'productSchedulesRead', operations: ['product_schedules.list'], requires: ['festapp:products:read'] },
     'festapp:product-schedules:write': { label: 'productSchedulesWrite', operations: ['product_schedules.change'], requires: ['festapp:products:read', 'festapp:product-schedules:read'] },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
-import 'package:fstapp/components/eshop/models/spot_model.dart';
+import '../models/inventory_context_stock.dart';
 import 'package:fstapp/styles/styles_config.dart';
 
 import 'inventory_strings.dart';
@@ -8,15 +7,13 @@ import '../models/inventory_pool_model.dart';
 
 class InventoryPoolCard extends StatelessWidget {
   final InventoryPoolModel pool;
-  final List<InventoryContextModel> contexts;
-  final List<SpotModel> spots;
+  final List<InventoryContextStock> contexts;
   final VoidCallback onTap;
 
   const InventoryPoolCard({
     super.key,
     required this.pool,
     required this.contexts,
-    required this.spots,
     required this.onTap,
   });
 
@@ -28,16 +25,7 @@ class InventoryPoolCard extends StatelessWidget {
     final borderColor = isDarkMode ? Colors.grey[700]! : theme.dividerColor;
     final hasContexts = contexts.isNotEmpty;
 
-    // --- REMOVED ---
-    // The unassigned count logic is no longer needed at this level.
-    // final int unassignedCount = spots...
-    // final int totalOrdered = spots...
-
-    int capacityPerContext = 0;
-    if (hasContexts) {
-      capacityPerContext =
-          spots.where((s) => s.inventoryContextId == contexts.first.id).length;
-    }
+    final capacityPerContext = pool.resourceCapacity ?? 0;
 
     final bool useCompressedStyle = contexts.length > 5;
 
@@ -72,10 +60,6 @@ class InventoryPoolCard extends StatelessWidget {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  // --- REMOVED ---
-                  // The unassigned indicator widget call is gone from here.
-                  // const SizedBox(width: 8),
-                  // _buildUnassignedIndicator(context, unassignedCount, totalOrdered),
                 ],
               ),
               const SizedBox(height: 8),
@@ -107,9 +91,7 @@ class InventoryPoolCard extends StatelessWidget {
 
                     List<Widget> contextWidgets = itemsToShow
                         .map((c) => _ContextChip(
-                              contextModel: c,
-                              spots: spots,
-                              totalCapacity: capacityPerContext,
+                              stock: c,
                               useCompressedStyle: useCompressedStyle,
                               width: chipWidth,
                             ))
@@ -135,9 +117,6 @@ class InventoryPoolCard extends StatelessWidget {
       ),
     );
   }
-
-  // --- REMOVED ---
-  // The entire helper widget for the unassigned indicator is removed from InventoryPoolCard.
 
   Widget _buildStatItem(BuildContext context,
       {required IconData icon, required String label, required String value}) {
@@ -178,16 +157,12 @@ class InventoryPoolCard extends StatelessWidget {
 }
 
 class _ContextChip extends StatelessWidget {
-  final InventoryContextModel contextModel;
-  final List<SpotModel> spots;
-  final int totalCapacity;
+  final InventoryContextStock stock;
   final bool useCompressedStyle;
   final double width;
 
   const _ContextChip({
-    required this.contextModel,
-    required this.spots,
-    required this.totalCapacity,
+    required this.stock,
     required this.useCompressedStyle,
     required this.width,
   });
@@ -232,19 +207,10 @@ class _ContextChip extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    final orderedCapacity = spots
-        .where((s) =>
-            s.inventoryContextId == contextModel.id &&
-            s.orderProductTicketId != null)
-        .length;
-
-    // --- NEW: Calculate unassigned spots for this specific context ---
-    final int unassignedInContext = spots
-        .where((s) =>
-            s.inventoryContextId == contextModel.id &&
-            s.orderProductTicketId != null &&
-            s.resourceId == null)
-        .length;
+    final contextModel = stock.context;
+    final orderedCapacity = stock.allocatedCount;
+    final unassignedInContext = stock.unassignedCount;
+    final totalCapacity = stock.physicalCount;
 
     final double fillPercentage =
         totalCapacity > 0 ? orderedCapacity / totalCapacity : 0.0;

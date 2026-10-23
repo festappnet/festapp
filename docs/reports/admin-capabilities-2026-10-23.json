@@ -232,11 +232,17 @@
       "id": "action-014",
       "area": "Sklady a kapacity",
       "title": "Zobrazit sklady, kontexty a jejich obsazení",
-      "description": "Sklad není totéž jako produkt nebo jednotlivé místo.",
+      "description": "Stejné SQL souhrny pro UI i MCP: fyzická a alokovaná místa, nepřiřazené alokace a samostatné dočasné rezervace. Počty nejsou počet lidí ani příslib dostupnosti; MCP stránkuje sklady a kontexty bez jednotlivých míst a tajných klíčů.",
       "sources": [
-        "lib/components/inventory/inventory_commands.dart"
+        "database/functions/inventory/inventory_catalog.sql",
+        "lib/components/inventory/db_inventory_pools.dart",
+        "lib/components/inventory/views/inventory_pool_card.dart",
+        "tools/festapp/src/operations/inventory.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "inventory.pools.list",
+        "inventory.contexts.list"
+      ],
       "phase": "2",
       "effect": "read",
       "scope": "Akce",

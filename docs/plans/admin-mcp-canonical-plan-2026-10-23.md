@@ -691,3 +691,15 @@ admin tabů, nikoliv po přidání jejich názvů do MCP katalogu.
   pool/resource adaptéry, editorové volby produktů a provozní řez 2B.
 - Přesné zdroje a výsledky průběžně v
   [execution checkpointu](admin-mcp-canonical-checkpoint-2026-10-23.md).
+
+
+### Checkpoint: společné skladové souhrny
+
+Lokálně dokončen čtecí řez etapy 2: UI skladové karty a MCP používají stejné SQL
+počty míst bez násobení child joins. MCP stránkuje pooly a kontexty zvlášť, UI
+výslovně žádá celý souhrn bez jednotlivých míst. Nový souhlas inventory read je
+oddělený. Oprávnění se kontrolují i po čtení; dvouspojové testy pokrývají odebrání
+práv u skladových, produktových a cenových přehledů i přesun poolu.
+40 cílených PostgreSQL/MCP/remote testů, 24 consent testů a 42 českých widget testů
+v obou pořadích prošlo. Evidence: admin-inventory-summary-network-2026-10-23.json.
+Zápisové adaptéry pool/resource, produktové volby a 2B dosud nejsou dokončené.

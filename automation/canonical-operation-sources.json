@@ -66,6 +66,8 @@
     "groups/add_user_group_members_client_sync_v1.sql",
     "groups/group_member_read.sql",
     "inventory/get_inventory_pool_bundle.sql",
+    "inventory/inventory_catalog.sql",
+    "inventory/get_inventory_pools_by_occasion_link.sql",
     "inventory/update_inventory_pool_bundle_internal_v1.sql",
     "inventory/save_inventory_pool_client_sync_v1.sql",
     "inventory/update_inventory_pool_bundle.sql",

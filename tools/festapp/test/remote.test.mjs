@@ -507,6 +507,8 @@ test('product schedule tools require new explicit consent; old product grants st
  assert(!owner().allowedOperations.includes('product_schedules.list'));
  assert(!owner().allowedOperations.includes('product_schedules.change'));
  assert(!owner().allowedOperations.includes('inventory.prepare_standing'));
+ assert(!owner().allowedOperations.includes('inventory.pools.list'));
+ assert(!owner().allowedOperations.includes('inventory.contexts.list'));
  assert.throws(()=>verifyPermissions(['festapp:product-schedules:write'],MCP_SCOPES));
  const scheduled=['festapp:products:read','festapp:product-schedules:read','festapp:product-schedules:write'];
  assert.deepEqual(verifyPermissions(scheduled,MCP_SCOPES),scheduled);
@@ -520,4 +522,19 @@ test('product schedule tools require new explicit consent; old product grants st
  assert(owner().allowedOperations.includes('inventory.prepare_standing'));
  token.scope=READ_SCOPE+' festapp:products:read';
  assert(!owner().allowedOperations.includes('inventory.prepare_standing'),'standing preparation requires its explicit token scope');
+});
+
+
+test('inventory summaries require inventory consent in both grant and token',async t=>{
+ const f=await setup(t),id='inventory-read-permissions';
+ const grant={id,binding:'inventory-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:inventory:read'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:READ_SCOPE+' festapp:inventory:read',exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert.deepEqual(verifyPermissions(grant.permissions,MCP_SCOPES),grant.permissions);
+ for(const op of ['inventory.pools.list','inventory.contexts.list']) assert(owner().allowedOperations.includes(op));
+ assert(!owner().allowedOperations.includes('inventory.prepare_standing'));
+ token.scope=READ_SCOPE;assert(!owner().allowedOperations.includes('inventory.pools.list'));
+ token.scope=READ_SCOPE+' festapp:inventory:read';f.storage.put('Delegation',id,{...grant,permissions:['festapp:products:read']});
+ assert(!owner().allowedOperations.includes('inventory.contexts.list'));
 });

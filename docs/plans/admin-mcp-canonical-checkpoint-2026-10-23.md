@@ -197,3 +197,72 @@ Stage 2A is now locally validated on feat/admin-mcp-standing-20261023. Its
 completed source is being integrated with the frozen PR fixes; further inventory
 reads and operational seat commands remain separate pending cuts.
 Release remains gated on an approved, merged authoritative main revision.
+
+
+## Inventory read cut - boundary before implementation
+
+Frozen completed bundle is PR #564 head c6dea8392c6f56be2993447b970a28e46b9467b5;
+new work is isolated on feat/admin-mcp-inventory-read-20261023.
+Actual UI source: get_inventory_pools_by_occasion_link -> InventoryPoolsListBundle
+-> InventoryPoolsTab/InventoryPoolCard. Pool detail's selector uses only pool IDs
+and the actual occasion. Resource editing uses its separate existing resource RPC.
+
+UI card meanings: physical spots per context; allocated spots (OPT not null);
+unassigned allocated spots (resource null); saved sellable ceiling. These are
+slot allocations, not unique people/orders. Introduce shared SQL facts before
+projecting pool/context rows, so joining resources and contexts cannot multiply
+counts. Active holds are a separate disjoint count, never exposed as secrets.
+No new independent checkout-availability/revenue formula is introduced.
+
+Current UI will explicitly request complete summary mode; MCP gets bounded ID
+pages for pools and context rows. No raw spot list in either current adapter.
+Keep the released get_inventory_pools_by_occasion_link response shape and its
+existing permissions/spot fields as a documented compatibility boundary, reusing
+shared metadata projections; no new MCP access to that payload. New scoped
+reader uses live typed can_read_orders plus actual org/unit/occasion, including
+pool binding under lock. General pool/resource mutations follow after this
+read cut; editor options for unused product types/contexts remain a known next gap.
+
+Verification batch: actual old/current UI/MCP results on the same 100/1000-slot
+fixtures, bytes/entity counts, null/empty contexts, duplicate child joins,
+no secret/OPT leakage, bounded pages/foreign pool and ordinary role matrix;
+context-card and navigation widget contracts, source parity and catalog generation.
+
+## Inventory summary read cut - complete locally
+
+Shared SQL administration projection now supplies current UI stock cards and two
+bounded MCP readers (pool/context ID pages, max 100). Complete summary mode is
+explicit UI intent and includes no spot rows. Physical/allocated/unassigned/held
+counts are per context; independent resource/context aggregation prevents child
+multiplication, including slot-only resource assignments. Cards use each own
+context's physical count and the pool's actual resource supply. Saved sellable
+capacity is retained as its separate ceiling. No duplicate client spot counting.
+
+New explicit inventory read consent is required in both grant and OAuth token;
+old product/standing scopes gain no new access. Scope and live rights rechecked
+before return for inventory, product and wave reads. Context pages lock the
+actual pool. Released legacy full inventory RPC retains old response fields and
+its original permission gate; current UI no longer consumes its raw spot array.
+
+Final verification: 40 targeted PostgreSQL/MCP/remote tests PASS, zero skips,
+including 4 new inventory tests, actual two-connection revocation during each of
+five reads and a concurrent pool move, keysets, invalid modes/limits, role matrix,
+source parity for 10 read owners and regression receipts/retry/allocation tests.
+Consent UI: 24 PASS. Czech card/catalog group: 42 PASS in ordinary and reversed
+fixture order. Navigation behavior cases passed. Targeted Dart analysis has no
+errors or warnings (6 existing informational notices). No production fixtures.
+
+Final immutable evidence admin-inventory-summary-network-2026-10-23.json:
+100 spots: previous UI 13647 B -> current summary 668 B;
+1000 spots: previous UI 127947 B -> summary 672 B.
+MCP pool+context SQL responses total 789/791 B in two domain requests, projected
+DTOs 628/630 B. These are actual serialized SQL/DTO bytes, excluding HTTP/auth.
+Inner SQL plan retained; small local fixture uses a single spot scan, no speculative
+index. Preliminary admin-inventory-read-network report remains historical evidence.
+
+Next: finish scoped pool/resource read/save/delete adapters using InventoryCommands
+and extracted existing mutation owners; add bounded unused type/context choices
+for product editing. Operational seat cut 2B and stages 3-10 remain pending.
+PR #564 still requires one approving review; no production migrations/deployments
+have run. Frozen PR ticket text test was corrected to distinguish ordinary clipping
+from intentional adaptive full occasion titles, and current client-contract CI passed.

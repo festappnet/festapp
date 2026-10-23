@@ -7,7 +7,7 @@ import { openDisposableDatabase } from './postgres.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 const options={skip:!process.env.FESTAPP_MCP_TEST_DATABASE_URL};
 async function install(db) {
- for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql'])
+ for(const name of ['20261023163000_product_admin_read_semantics.sql','20261023170000_product_schedule_commands.sql','20261023180000_atomic_standing_inventory.sql','20261023190000_inventory_summary_reads.sql'])
   await db.query(await readFile(new URL('../../../supabase/migrations/'+name,import.meta.url),'utf8'));
 }
 async function productFixture(db) {

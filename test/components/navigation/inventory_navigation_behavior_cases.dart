@@ -74,7 +74,7 @@ void main() {
       return InventoryPoolsListBundle(occasion: bundle.occasion, pools: [
         ...bundle.pools,
         InventoryPoolModel(id: 43, title: 'Food pool', occasionId: 1)
-      ], inventoryContexts: [], spots: []);
+      ], contextStocks: []);
     };
     await mount(
         tester, router, '/occasion-a/reservations/inventory-pools/42/settings',
@@ -108,7 +108,7 @@ void main() {
       return InventoryPoolsListBundle(occasion: bundle.occasion, pools: [
         ...bundle.pools,
         InventoryPoolModel(id: 43, title: 'Food pool', occasionId: 1)
-      ], inventoryContexts: [], spots: []);
+      ], contextStocks: []);
     };
     await mount(
         tester, router, '/occasion-a/reservations/inventory-pools/42/settings',

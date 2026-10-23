@@ -3672,6 +3672,7 @@
     "productSchedulesRead": "Read product price waves and scheduled changes",
     "productSchedulesWrite": "Schedule, move and cancel product prices and visibility",
     "standingInventoryWrite": "Prepare standing admission inventory",
+    "inventoryRead": "Read inventory, capacity and context occupancy",
     "productsRead": "Read products, prices and inventory assignments",
     "productsWrite": "Create, edit and delete products",
     "ordersRead": "Read orders, contact details and ticket counts",

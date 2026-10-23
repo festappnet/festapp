@@ -31,28 +31,16 @@ class DbInventoryPools {
   static Future<InventoryPoolsListBundle> getInventoryPoolsByOccasionLink(
       String occasionLink) async {
     final response = await _supabase.rpc(
-      'get_inventory_pools_by_occasion_link',
-      params: {'p_occasion_link': occasionLink},
+      'get_inventory_catalog',
+      params: {
+        'p_occasion_link': occasionLink,
+        'p_organization': AppConfig.organization,
+        'p_mode': 'summary',
+        'p_limit': null
+      },
     );
-
-    if (response is Map &&
-        response.containsKey('code') &&
-        response['code'] != 200) {
-      throw Exception(
-          "Failed to fetch inventory pools: ${response['message']}");
-    }
-    final bundle = InventoryPoolsListBundle.fromJson(response);
-    final poolMap = {for (var p in bundle.pools) p.id: p};
-    final contextMap = {for (var c in bundle.inventoryContexts) c.id: c};
-    for (final context in bundle.inventoryContexts) {
-      context.inventoryPool = poolMap[context.inventoryPoolId];
-    }
-    for (final spot in bundle.spots) {
-      if (spot.inventoryContextId != null) {
-        spot.inventoryContext = contextMap[spot.inventoryContextId];
-      }
-    }
-    return bundle;
+    return InventoryPoolsListBundle.fromJson(
+        Map<String, dynamic>.from(response));
   }
 
   static Future<InventoryPoolBundle> getInventoryPoolBundle(int poolId) async {
