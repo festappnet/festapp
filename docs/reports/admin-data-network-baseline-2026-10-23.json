@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-23",
+  "sourceMain": "0fd16f4374b065c578ecee3f647fda40cb17b37b",
+  "scope": "marked, mail-fenced disposable PostgreSQL only; all fixture data and DDL rolled back",
+  "interpretation": "Actual product MCP executor and canonical catalog RPC. Bytes are serialized JSON and an illustrative gzip result, not measured HTTP wire traffic. Timing is one local sample, not a production performance claim. No orders, seats or planned changes in these synthetic catalogs. Session/delegation lookups are stubbed and excluded from domainRpcCalls.",
+  "measures": [
+    {
+      "fixtureProducts": 100,
+      "page": 1,
+      "requestedLimit": 50,
+      "domainRpcCalls": 1,
+      "databaseCallMsSingleSample": 10.665,
+      "databaseReturnedProducts": 100,
+      "databaseJsonBytes": 57664,
+      "databaseGzipBytes": 1157,
+      "mcpReturnedProducts": 50,
+      "mcpDataJsonBytes": 28488
+    },
+    {
+      "fixtureProducts": 100,
+      "page": 2,
+      "requestedLimit": 50,
+      "domainRpcCalls": 1,
+      "databaseCallMsSingleSample": 5.917,
+      "databaseReturnedProducts": 100,
+      "databaseJsonBytes": 57664,
+      "databaseGzipBytes": 1157,
+      "mcpReturnedProducts": 50,
+      "mcpDataJsonBytes": 28497
+    },
+    {
+      "fixtureProducts": 1000,
+      "page": 1,
+      "requestedLimit": 50,
+      "domainRpcCalls": 1,
+      "databaseCallMsSingleSample": 50.638,
+      "databaseReturnedProducts": 1000,
+      "databaseJsonBytes": 575165,
+      "databaseGzipBytes": 7427,
+      "mcpReturnedProducts": 50,
+      "mcpDataJsonBytes": 28488
+    },
+    {
+      "fixtureProducts": 1000,
+      "page": 2,
+      "requestedLimit": 50,
+      "domainRpcCalls": 1,
+      "databaseCallMsSingleSample": 53.696,
+      "databaseReturnedProducts": 1000,
+      "databaseJsonBytes": 575165,
+      "databaseGzipBytes": 7427,
+      "mcpReturnedProducts": 50,
+      "mcpDataJsonBytes": 28498
+    }
+  ]
+}

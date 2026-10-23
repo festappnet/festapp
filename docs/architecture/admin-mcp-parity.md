@@ -40,7 +40,16 @@ It never returns form keys, QR codes or customer records. `data` and stock lists
 are whole replacements: adapters must preserve entries outside the requested
 change. Immediate price edits never rewrite purchased order prices.
 
+The [MCP design practices](mcp-design-practices.md) distinguish protocol
+requirements, published implementation experience and Festapp decisions.
+
 ## Administration inventory and sequence
+
+The authoritative next-wave order, acceptance criteria and execution guidance
+are in the [canonical administration execution plan](../plans/admin-mcp-canonical-plan-2026-10-23.md).
+Those future waves are planned, not implemented. The [human-readable action
+catalog](../reports/admin-capabilities-2026-10-23.html) lists concrete UI actions,
+settings and current remote MCP tools separately.
 
 Inventory follows `AdministrationTabs` and the actual unit administration tabs.
 Features vary by tenant and occasion. This is a capability map, not a promise
