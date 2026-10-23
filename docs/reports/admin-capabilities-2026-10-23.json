@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "01ed297d0fdadf8319dde9e5bd9c5a8c7d140fb0",
+  "sourceMain": "d97835e798e48f17047de4b438a2db6b9e0f8a9c",
   "liveBaselineVersion": "0.20.365+859",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené. Nové produktové a skladové řezy jsou ověřené v kandidátovi PR #564, dosud nejsou nasazené.",
@@ -421,7 +421,7 @@
       "id": "action-023",
       "area": "Plánky a místa",
       "title": "Uvolnit dočasné rezervace míst",
-      "description": "UI a MCP sdílejí příkaz s potvrzeným celým výběrem a stavem rezervací. Retry vrací původní výsledek a nesmí uvolnit rezervaci nového zákazníka. SQL, MCP, oprávnění a souběh ověřeny; dokončuje se UI test potvrzovacího dialogu. Difovací Cloudflare cache se nezapíná.",
+      "description": "UI a MCP sdílejí jeden atomický příkaz s potvrzeným celým výběrem a stavem rezervací. Změna zákazníka nebo rozšířeného výběru vyžaduje nový náhled; retry vrací původní výsledek a zachová případnou novou rezervaci. Prodaná/použitá místa odmítne. Difovací Cloudflare cache se nezapíná.",
       "sources": [
         "lib/components/blueprint/views/blueprint_layout_host.dart",
         "lib/components/eshop/ticket_commands.dart",
@@ -438,7 +438,6 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "keywords": "rezervace držení hold holds release blueprint sedadla",
-      "verificationState": "pending",
       "deploymentState": "pending"
     },
     {
@@ -1458,10 +1457,10 @@
   ],
   "dataQualityReview": {
     "date": "2026-10-23",
-    "status": "První část 2B ověřena; celkový audit a nasazení pokračují.",
-    "finding": "Sedm cílených PostgreSQL regresí míst a 27 testů souhlasu prošlo. Širší sada má 113 úspěšných testů a 4 starší problémy, shodně potvrzené i na předchozím kandidátovi při obnově testovací databáze. U rozpracovaného uvolnění rezervací prošlo 12 PostgreSQL případů, 20 vzdálených testů a 28 testů souhlasu; UI model/transport 2 prošly, widget test zatím selhává.",
-    "nextStep": "Dokončit UI test uvolnění dočasných rezervací, potom přesuny míst a další 2B. Před celkovým dokončením vyřešit také zaznamenané starší problémy testovacích kontraktů.",
+    "status": "Uvolnění dočasných rezervací ověřeno v SQL, MCP i UI; čeká publikace a nasazení.",
+    "finding": "12 PostgreSQL případů nad místy, 20 vzdálených testů, 28 testů souhlasu a 3 cílené Flutter případy prošly. Celá MCP sada: 122 prošlo, 1 selhal, 0 přeskočeno. Jediný zbývající problém je dříve potvrzený drift PDF validační readiness; seal nebyl obejit. Tři starší problémy testovacích kontraktů a přípravy databáze byly opraveny proti schválenému SQL a skutečným produkčním vlastníkům.",
+    "nextStep": "Po dokončení aktuálního vydání publikovat ověřený řez uvolnění rezervací; navázat prohazováním míst přes společného vlastníka. PDF readiness vyřešit před dokončením celého plánu.",
     "evidence": "admin-seat-hold-release-evidence-2026-10-23.json"
   },
-  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby, inspekce a blokace/odblokace míst. Rozpracováno: uvolnění dočasných rezervací - databáze, MCP a souběh ověřeny, zbývá UI test zápisu s testovacím úložištěm. Nové řezy dosud nejsou nasazené. Dále přesuny míst a další operace 2B."
+  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby, inspekce a blokace/odblokace míst a uvolnění dočasných rezervací. Předchozí řezy jsou v main a jejich nasazení běží; nový řez uvolnění rezervací zatím není publikovaný ani nasazený. Dále přesuny míst a další operace 2B."
 }

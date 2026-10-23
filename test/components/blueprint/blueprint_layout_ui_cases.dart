@@ -780,8 +780,10 @@ void main() {
         };
       } else if (request.url.path.endsWith('/release_blueprint_holds')) {
         submittedReleases.add(body);
-        response = commandResponseFixture(body['p_command_id'] as String,
-            data: {'spotIds': [13, 14]});
+        response =
+            commandResponseFixture(body['p_command_id'] as String, data: {
+          'spotIds': [13, 14]
+        });
       } else {
         throw StateError('Unexpected UI operation: ${request.url.path}');
       }
@@ -791,6 +793,16 @@ void main() {
     final release = find.byKey(const ValueKey('commercial-release-holds'));
     await tester.ensureVisible(release);
     Future<void> openReleaseConfirmation() async {
+      for (var attempt = 0;
+          attempt < 10 &&
+              tester.widget<OutlinedButton>(release).onPressed == null;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      expect(tester.widget<OutlinedButton>(release).onPressed, isNotNull,
+          reason: 'The previous cancelled operation must finish before retry');
       // The real durable journal must start in the real async zone, just as
       // filesystem-backed fixture cases elsewhere in this suite.
       await tester.runAsync(() => tester.tap(release));
@@ -847,7 +859,14 @@ void main() {
     expect(submittedReleases.single['p_spots'], [13]);
     expect(submittedReleases.single['p_affected_spots'], [13, 14]);
     expect(submittedReleases.single['p_hold_snapshot'], snapshot);
-    expect(tester.widget<BlueprintEditorFeedback>(find.byType(BlueprintEditorFeedback)).message, isNull, reason: 'The command must complete its journal and refresh without a UI error');
+    expect(
+        tester
+            .widgetList<BlueprintEditorFeedback>(
+                find.byType(BlueprintEditorFeedback))
+            .map((feedback) => feedback.message),
+        everyElement(isNull),
+        reason:
+            'The command must complete its journal and refresh without a UI error');
     tester
         .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
         .onViewSelectionChanged!({for (final seat in seats) seat.id});

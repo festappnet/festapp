@@ -2,7 +2,7 @@
   "date": "2026-10-23",
   "migration": "20261023230000_confirmed_blueprint_hold_release.sql",
   "migrationSha256": "ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f",
-  "status": "In progress, not published or deployed; UI widget confirmation check still failing",
+  "status": "Verified locally on canonical main d97835e798e48f17047de4b438a2db6b9e0f8a9c; not published or deployed",
   "verification": {
     "postgresCasesPassed": 12,
     "remoteTestsPassed": 20,
@@ -10,21 +10,31 @@
     "rpcExtractorPassed": 1,
     "sourceOwnersCompared": 17,
     "flutterModelTransportPassed": 2,
-    "flutterWorkspaceFailed": 1,
+    "flutterWorkspaceFailed": 0,
     "dartErrors": 0,
     "dartWarnings": 0,
-    "dartStyleInfos": 24
+    "dartStyleInfos": 27,
+    "flutterWorkspacePassed": 1,
+    "fullMcp": {
+      "passed": 122,
+      "failed": 1,
+      "skipped": 0
+    },
+    "historicalAclAndBypassPassed": 2,
+    "authorizationRoleCombinations": 2048,
+    "ordersExecutorPassed": true
   },
   "proof": [
     "Exact expanded confirmation; foreign scope and ordered/used companion reject atomically",
     "Actual two-connection checkout race preserves later buyer hold",
     "Actual role revocation during lock wait rolls back release and receipt",
     "Lost response and legacy-receipt replay preserve later buyer",
-    "MCP does not receive checkout secrets or client sync payload"
+    "MCP does not receive checkout secrets or client sync payload",
+    "Actual UI preview/cancel/confirm sends original expanded IDs and snapshot after local overlay changes, using real disposable command journal and Supabase HTTP parser; refresh shows no command error"
   ],
   "remaining": [
-    "Rerun UI workspace with actual local durable journal fixture; preview/dialog/cancel now pass",
-    "No production migration or rollout of this cut"
+    "Publish after coordinator completes current production release; hold2300 is excluded from that release",
+    "Known preexisting PDF validator readiness seal mismatch still blocks its distinct artwork write tool"
   ],
   "serializedSqlJsonBytes": {
     "twoSeatPreview": 379,

@@ -564,3 +564,36 @@ seal mismatch) remain open. Do not call the whole suite passing or override seal
 Coordinator merged integrated PR569 incl frozen3513 to main d97835e798e48f17047de4b438a2db6b9e0f8a9c;
 current hold2300 and these fixture fixes are excluded from that production release.
 No main publication until coordinator completes rollout; rebase next cut afterward.
+
+
+Historical ACL test fixed from reviewed migration contracts, not a fresh snapshot:
+- Exact pre-cutover ACL JSON remains untouched. All old column grants are still
+  compared exactly; schema/default/role/member comparisons remain unchanged.
+- Only thirteen explicitly named Stripe tables from221600/221700 are allowed as
+  additions, and every table/column grant must be postgres-only. Additional API
+  column grants on these tables or an unexpected table still fail.
+- Only payment_info.payment_method/stripe_connection_id additions may inherit
+  their existing table's exact column privilege pattern.
+- get_unit_edit_data (212300) and get_occasion_seo_data (222255) are verified to
+  have only their documented PUBLIC/anon revocations, including full grant rows.
+Targeted historical ACL plus effective direct-write-bypass tests: 2 PASS. This
+resolves the third inherited fixture/expectation failure without loosening actual
+runtime permissions. Fresh full MCP batch on main d978+nextcut is now running;
+PDF validator readiness drift remains a real known failure, no seal regeneration.
+
+
+## 2B hold release - coherent slice verified
+
+Actual reservation workspace now PASS: first preview shows every companion and
+count, Escape sends no release, second confirmation sends exact original IDs/hash
+although local overlay changes, real durable journal completes and refreshed UI
+has no command error. Root-zone real I/O and completed cancellation are awaited
+explicitly; no production transport seam or bypass was introduced. Two immutable
+model/transport cases also PASS. Final targeted Dart analyze 0 errors/0 warnings,
+27 brace-style infos. Full MCP on canonical main d978+nextcut:123 tests, 122 PASS,
+1 FAIL, 0 skips. Sole remaining failure is known PDF readiness mismatch. Frozen
+prior release not modified, no new migration/deploy executed. Report 29 registered
+operations is updated, hold cut locally verified/pending publication. Next: same
+confirmed financial effects boundary for swaps. Current branch
+feat/admin-mcp-seat-holds-main-20261023, source40b135831 plus final fixture/docs
+updates; await preceding production rollout before publishing this next cut.

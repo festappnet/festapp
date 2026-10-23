@@ -67,15 +67,16 @@ Nové konkrétní důkazy pro provozní správu míst:
   ověřuje skutečné spot/occasion vazby a odmítá změnu blokace již objednaného
   místa nebo místa s aktivním dočasným držením (`BLUEPRINT_SEAT_PROTECTED`).
 - `BlueprintLayoutHost._releaseTemporaryHolds` vede přes
-  `TicketCommands.releaseHolds` do `release_blueprint_holds_client_sync_v1`.
-  Příkaz rozšiřuje nedělitelné výběrové celky a odmítá prodaná místa.
+  `TicketCommands.previewHoldRelease` a potvrzený `releaseHolds` do sdíleného
+  `release_blueprint_holds`. Celý rozšířený výběr, revize a hash stavu rezervací
+  jsou potvrzené před zápisem. Starší veřejný RPC je pouze adaptér téhož owneru.
 - `TicketCommands.swapSpots` používá `swap_spot_tickets_client_sync_v1`.
   Zrušení vstupenek má jiného vlastníka (`storno_tickets_client_sync_v1`).
 
 | Konkrétní operace / nastavení | Vlastník nebo doložená UI cesta | Zařazení |
 | --- | --- | --- |
 | Blokovat a odblokovat volná místa | Blueprint draft/controller + aggregate save, `blocked` binding | Provozní řez 2B |
-| Uvolnit dočasnou rezervaci | `release_blueprint_holds_client_sync_v1` | Provozní řez 2B |
+| Uvolnit dočasnou rezervaci | `preview_blueprint_hold_release` / `release_blueprint_holds` | 2B ověřeno lokálně; nasazení čeká |
 | Prohodit místa vstupenek | `swap_spot_tickets_client_sync_v1` | Provozní řez 2B |
 | Vytvořit objednávku z míst; zrušit vybrané vstupenky | `blueprint_create_order_dialog.dart`, `TicketCommands.cancel` | Provozní řez 2B, objednávkové vlastníky |
 | Geometrie, názvy, stoly, skupiny a nedělitelné výběry | Blueprint layout/controller/save | Etapa 7, samostatné řezy |
@@ -736,3 +737,17 @@ cílených PostgreSQL regresí a 27 testů souhlasu. Evidence výslovně zachycu
 zděděná selhání celé sady na čerstvé DB, potvrzená také na původním kandidátovi.
 Nesnižovat readiness ani nepřegenerovat hash jen kvůli testu. Dále zbývá zbytek
 2B a etapy 3-10. HTML/JSON průběžně zrcadlit na uživatelem zadanou recovery cestu.
+
+
+### Checkpoint: druhý provozní řez 2B - uvolnění rezervací
+
+UI a MCP používají potvrzený preview a společného receipt owneru. Starý veřejný
+RPC zachovává vydané klienty i jejich původní fingerprint/odpověď a neobsahuje
+druhou implementaci. Současné UI po potvrzení znovu nefiltruje výběr. Skutečný
+souběh s checkoutem, změna zákazníka, odebrání práv při čekání a retry po ztracené
+odpovědi jsou ověřené. Žádná difovací Cloudflare cache nebyla zapnuta.
+Viz [evidence](../reports/admin-seat-hold-release-evidence-2026-10-23.json).
+Cílené UI/SQL/MCP kontroly prošly; celá MCP sada má 122 úspěšných testů a 1 selhání, bez přeskočených testů, zbývá
+samostatný známý PDF validator readiness drift. Zdroj navazuje na main d97835e79;
+nový řez 2300 není součástí právě probíhajícího předchozího vydání. Následují
+prohození míst, objednávky z míst, zrušení vstupenek a etapy 3-10.

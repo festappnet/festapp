@@ -208,3 +208,34 @@ validation remains; narrow operations do not bypass it.
 checkout contention in both directions, live revocation, old/new source controls
 and the four inherited fresh-database suite failures. Release holds, swaps,
 seat-based order creation and selected-ticket cancellation remain separate cuts.
+
+
+## Operational seats 2B - confirmed temporary-hold release
+
+Current UI and MCP preview through `preview_blueprint_hold_release`, confirm all
+expanded atomic-unit seats and call `release_blueprint_holds`. Immutable preview
+captures actual scope, IDs, layout revision and an opaque digest of reservation
+identity/expiry. The single private `release_blueprint_holds_command_internal`
+owns the existing receipt, locks, release and finalizer. Replay precedes current
+snapshot validation so it preserves a subsequent buyer. Live scope/rights are
+checked again after execution/replay. Ordered/used members reject the whole intent.
+
+Removal ledger: current UI's post-confirmation re-filtering and unversioned input
+are removed. The deployed `release_blueprint_holds_client_sync_v1` name remains
+only a thin adapter for already-released clients and their original receipt hash;
+remove it only after their verified upgrade gate, not by breaking replay. No
+Cloudflare diff transport/flag is enabled. Existing receipt publication remains
+compatible; optional client projection failure cannot invalidate DB success.
+
+The new explicit seats:release-holds consent does not expand older order/block
+grants. MCP has no checkout secrets or private sync response. Each preview/write
+attempt is one scoped RPC; actual serialized two-seat SQL JSON was 379/347 bytes,
+excluding HTTP headers/TLS. See [hold evidence](../reports/admin-seat-hold-release-evidence-2026-10-23.json).
+Twelve seat PG cases, three selected Flutter cases and consent/transport tests
+pass; full MCP is 122 PASS/1 FAIL with no skips. The remaining failure is the known
+separate PDF validator readiness mismatch; its seal remains unchanged. Earlier
+three fixture/expectation failures were fixed with explicit approved additions
+and verified production function ownership, not a broad ACL rebaseline.
+New hold migration 2300 is locally verified on main d978; publication/deployment
+waits for the preceding release to finish. Swaps, seat orders and ticket
+cancellation remain next 2B cuts, and stages 3-10 are not complete.

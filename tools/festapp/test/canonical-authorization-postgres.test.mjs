@@ -608,14 +608,34 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const query=await readFile(new URL('../../../automation/authorization/catalog.sql',import.meta.url),'utf8');
     const responses=await db.query(query),after=responses.at(-1).rows[0].jsonb_build_object;
     const sorted=rows=>(rows??[]).map(r=>JSON.stringify(r)).sort();
-    for(const field of ['columnGrants','schemaGrants','defaultGrants','roles','roleMemberships']) {
+    for(const field of ['schemaGrants','defaultGrants','roles','roleMemberships']) {
         assert.deepEqual(sorted(after[field]),sorted(before[field]),field+' remains unchanged');
     }
     const removedDirectDelete=g=>g.table_schema==='public'&&['images','log_notifications'].includes(g.table_name)
         &&['anon','authenticated'].includes(g.grantee)&&g.privilege_type==='DELETE';
     assert.equal(before.tableGrants.filter(removedDirectDelete).length,4);
-    assert.deepEqual(sorted(after.tableGrants),sorted(before.tableGrants.filter(g=>!removedDirectDelete(g))),
-        'Only obsolete image/notification direct DELETE grants are removed');
+    // Approved additive Stripe schema (20261022160000/170000) explicitly owns
+    // these tables as postgres and revokes all API-role access. Do not replace
+    // the historical snapshot or ignore arbitrary new tables/column grants.
+    const stripeTables=['stripe_admission_decisions','stripe_capabilities','stripe_checkout_attempts',
+        'stripe_connection_audit','stripe_connection_flows','stripe_connections','stripe_disconnect_intents',
+        'stripe_disputes','stripe_event_inbox','stripe_payment_link_sources','stripe_payment_movements',
+        'stripe_runtime_policy','stripe_unit_features'];
+    const ownerTables=before.tableGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.grantee==='postgres');
+    const ownerColumns=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id'&&g.grantee==='postgres');
+    assert.equal(ownerTables.length,7);assert.equal(ownerColumns.length,4);
+    const expectedTables=stripeTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_name})));
+    assert.deepEqual(sorted(after.tableGrants),sorted([...before.tableGrants.filter(g=>!removedDirectDelete(g)),...expectedTables]),
+        'Only the four legacy DELETE grants are removed; approved Stripe tables remain postgres-only');
+    const stripeColumns=(await db.query("select table_name,column_name from information_schema.columns where table_schema='eshop' and table_name=any($1)",[stripeTables])).rows;
+    assert.deepEqual([...new Set(stripeColumns.map(c=>c.table_name))].sort(),[...stripeTables].sort());
+    const expectedColumns=stripeColumns.flatMap(({table_name,column_name})=>ownerColumns.map(g=>({...g,table_name,column_name})));
+    // The two additive payment_info columns inherit its unchanged table ACL.
+    // API access to any other new column or any private Stripe column still fails.
+    const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
+    for(const column_name of ['payment_method','stripe_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
+    assert.deepEqual(sorted(after.columnGrants),sorted([...before.columnGrants,...expectedColumns]),
+        'Every old column grant remains exact; additions match the reviewed Stripe ownership/inheritance');
     const old=new Map(before.functions.map(f=>[f.signature,f]));
     const configuration=JSON.parse(await readFile(new URL('../../../automation/canonical-source-contract.json',import.meta.url),'utf8'));
     const retired=new Set(configuration.retiredSignatures.map(s=>s.replace(/^public\./,'')));
@@ -626,9 +646,15 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     const changes=after.functions.filter(f=>old.has(f.signature)&&JSON.stringify(f.grants)!==JSON.stringify(old.get(f.signature).grants));
     assert.deepEqual(changes.map(f=>f.signature).sort(),[
         'delete_unit_user_internal_v1(uuid,bigint)',
+        'get_occasion_seo_data(text)',
+        'get_unit_edit_data(bigint)',
         'update_bank_account(bigint,text,text,text,text[],text,bigint,text)',
         'update_bank_account_user(bigint,text,boolean,boolean)',
     ]);
+    // Approved scope tightening: unit dashboard 20261021230000 and public SEO
+    // 20261022225500 remove ambient grants, without adding any new principal.
+    for(const [signature,removed] of [['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']]])
+        assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>!removed.includes(g.grantee))),signature+' has only its reviewed revocations');
     const grants=sig=>changes.find(f=>f.signature===sig).grants.map(g=>g.grantee).sort();
     assert.deepEqual(grants('delete_unit_user_internal_v1(uuid,bigint)'),['postgres']);
     assert.deepEqual(grants('update_bank_account(bigint,text,text,text,text[],text,bigint,text)'),['authenticated','postgres','service_role','supabase_admin']);
