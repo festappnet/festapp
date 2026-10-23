@@ -131,6 +131,18 @@ CREATE OR REPLACE FUNCTION public.notification_center_dto(e public.notification_
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE payload jsonb:=e.data-'bankConnectionId'; account bigint; un bigint; impacts jsonb; customer text; actual_state text;
 BEGIN
+ IF e.kind='email_problem' AND public.notification_center_allowed(e,auth.uid()) THEN
+  SELECT payload||jsonb_build_object('recipient',m.recipient,'customerName',coalesce(
+    nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),
+    nullif(trim(concat_ws(' ',u.name,u.surname)),''))) INTO payload
+  FROM public.email_messages m
+  LEFT JOIN eshop.orders o ON o.id=m.order_id AND o.occasion=m.occasion
+    AND EXISTS(SELECT 1 FROM public.occasions oc WHERE oc.id=o.occasion AND oc.organization=m.organization)
+  LEFT JOIN public.user_info u ON u.id=m.recipient_user AND u.organization=m.organization
+  WHERE m.message_id=(e.data->>'messageId')::uuid AND m.organization=e.organization
+    AND m.occasion IS NOT DISTINCT FROM e.occasion;
+  payload:=coalesce(payload,e.data-'bankConnectionId');
+ END IF;
  IF e.data ? 'orderId' AND e.occasion IS NOT NULL THEN
   SELECT nullif(trim(concat_ws(' ',o.data->>'name',o.data->>'surname')),''),o.state INTO customer,actual_state
    FROM eshop.orders o WHERE o.id=(e.data->>'orderId')::bigint AND o.occasion=e.occasion;

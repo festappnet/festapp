@@ -60,8 +60,10 @@ old pages and update hydration. Current occasion changes priority only.
 Order/capacity access follows actual order-view rights. Email access follows the
 reporting owner: tenant admins may inspect tenant mail, occasion order viewers
 may inspect occasion-scoped mail. Organization-only security mail is never
-shown to an occasion-only organizer. DTOs exclude recipient addresses, bodies,
-provider payloads, tokens and internal bank mappings. Authorized order names
+shown to an occasion-only organizer. Email DTOs include the recipient address
+and available order or recipient name, read from the authorized message scope
+at DTO creation. DTOs exclude bodies, provider payloads, tokens and internal
+bank mappings. Authorized order names
 and current states are read at DTO creation, not copied into the event log.
 Bank-account admins who also manage a linked unit receive their authorized account/unit target; organizers
 receive only their affected event links and a safe reason class.

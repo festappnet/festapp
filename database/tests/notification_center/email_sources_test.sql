@@ -2,7 +2,7 @@ BEGIN;
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
 DO $$
-DECLARE org bigint; un bigint; oc bigint; editor uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); kind text; msg jsonb; message_uuid uuid; old_id uuid; n bigint; result jsonb; paused_fact timestamptz;
+DECLARE org bigint; un bigint; oc bigint; editor uuid:=gen_random_uuid(); admin uuid:=gen_random_uuid(); kind text; msg jsonb; message_uuid uuid; old_id uuid; n bigint; result jsonb; paused_fact timestamptz; event_row public.notification_center_events; delivery_row public.notification_center_deliveries;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Email inbox ACL') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Email unit',org) RETURNING id INTO un;
@@ -30,6 +30,16 @@ BEGIN
  result:=public.open_notification_center(org);
  PERFORM assert_eq(jsonb_array_length(result->'groups'),2,'bulk mail compacts same cause into scoped groups');
  PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(result->'groups') g WHERE (g->>'count')::int=10),'occasion bulk group keeps exact per-message count');
+ UPDATE public.user_info SET name='Jana',surname='Nováková' WHERE id=admin;
+ UPDATE public.email_messages SET recipient_user=admin WHERE message_id=message_uuid;
+ SELECT * INTO event_row FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid;
+ SELECT * INTO delivery_row FROM public.notification_center_deliveries WHERE event_id=event_row.id AND recipient=admin LIMIT 1;
+ result:=public.notification_center_dto(event_row,delivery_row);
+ PERFORM assert_eq(result#>>'{data,recipient}','waitlist_offer@example.invalid','authorized email DTO identifies the actual recipient');
+ PERFORM assert_eq(result#>>'{data,customerName}','Jana Nováková','available recipient name is hydrated');
+ event_row.data:=event_row.data||jsonb_build_object('messageId',(SELECT message_id FROM public.email_messages WHERE organization=org AND message_kind='registration'));
+ result:=public.notification_center_dto(event_row,delivery_row);
+ PERFORM assert_false((result->'data') ? 'recipient','message from a different occasion scope cannot leak its recipient');
  UPDATE public.email_messages SET complained_at=clock_timestamp() WHERE message_id=message_uuid;
  PERFORM public.notification_center_email_internal(message_uuid);PERFORM public.notification_center_email_internal(message_uuid);PERFORM public.project_notification_center(100);
  PERFORM assert_eq((SELECT attention_revision FROM public.notification_center_events WHERE organization=org AND source_key='email:'||message_uuid),2::bigint,'new complaint impact advances once');
