@@ -5,6 +5,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT/web_client"
 node --test \
+  ../automation/tests/web_profile_contract.test.mjs \
   tests/core/browser_storage.test.js \
   tests/core/backend_activation_service.test.js \
   tests/core/supabase_client_config.test.js \

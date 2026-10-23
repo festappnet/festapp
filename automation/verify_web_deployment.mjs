@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
+import { webProfileContract } from './lib/web_profile_contract.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -18,12 +19,13 @@ const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]
   .trim()
   .replace(/^(['"])(.*)\1$/, '$2');
+const profile = webProfileContract(configValue);
 const legalRoutes = [
-  ['PRIVACY_URL', '/privacy/', /<nav aria-label="Právní informace">[\s\S]*<h1>[^<]+<\/h1>/],
-  ['PRIVACY_CHOICES_URL', '/privacy/choices/', /<nav aria-label="Právní informace">[\s\S]*<h1>[^<]+<\/h1>/],
-  ['TERMS_URL', '/terms/', /<nav aria-label="Právní informace">[\s\S]*<h1>[^<]+<\/h1>/],
-  ['SUPPORT_URL', '/support/', /<nav aria-label="Právní informace">[\s\S]*<h1>[^<]+<\/h1>/],
-  ['DELETE_ACCOUNT_URL', '/delete-account/', /<h1>Smazání účtu<\/h1>/],
+  ['PRIVACY_URL', '/privacy/', profile.legalPageMarker],
+  ['PRIVACY_CHOICES_URL', '/privacy/choices/', profile.legalPageMarker],
+  ['TERMS_URL', '/terms/', profile.legalPageMarker],
+  ['SUPPORT_URL', '/support/', profile.legalPageMarker],
+  ['DELETE_ACCOUNT_URL', '/delete-account/', profile.deletionPageMarker],
 ];
 for (const [key, expectedPath] of legalRoutes) {
   const value = configValue(key);

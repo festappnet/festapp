@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
+import { webProfileContract } from './lib/web_profile_contract.mjs';
 import { verifyManifest } from './generate_csp_policy.mjs';
-import { readFile, readdir } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import {
   parseSupabaseOrigin,
@@ -86,9 +87,17 @@ const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]
   .trim()
   .replace(/^(['"])(.*)\1$/, '$2');
+const profile = webProfileContract(configValue);
 const configuredDomain = configValue('DOMAIN');
-assert.equal(Boolean(cspManifest.documents['organizers-page']), configuredDomain === 'vstupenky.online',
+assert.equal(Boolean(cspManifest.documents['organizers-page']), profile.organizerEnabled,
   'organizer document must match the configured tenant');
+if (profile.organizerEnabled) {
+  const organizerHtml = await readFile(path.join(buildDir, 'organizers-page'), 'utf8');
+  const media = new Set([...organizerHtml.matchAll(/\/organizers-media\/[A-Za-z0-9._/-]+/g)].map(match => match[0]));
+  assert.ok(media.size > 0, 'organizer page lacks product media');
+  for (const asset of media) await access(path.join(buildDir, asset.slice(1)));
+}
+
 const configuredAppName = configValue('APP_NAME');
 const legalPages = [
   ['PRIVACY_URL', '/privacy/', 'privacy/index.html'],
@@ -107,7 +116,7 @@ for (const [key, expectedPath, output] of legalPages) {
   assert.equal(url.search, '', `${key} must not contain a query`);
   assert.equal(url.hash, '', `${key} must not contain a fragment`);
   const body = await readFile(path.join(buildDir, output), 'utf8');
-  assert.match(body, /<nav aria-label="Právní informace">/, `${output} is not a rendered legal page`);
+  assert.match(body, profile.legalNavigationMarker, `${output} is not a rendered legal page`);
   assert.match(body, /<h1>[^<]+<\/h1>/, `${output} lacks its legal heading`);
   assert.match(body, new RegExp(`<title>[^<]+ \\| ${configuredAppName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</title>`), `${output} has foreign tenant branding`);
   assert.doesNotMatch(body, /window\.__FESTAPP_BUILD_VERSION__/, `${output} resolved to the Flutter SPA shell`);
@@ -123,7 +132,7 @@ const parsedDeleteAccountUrl = new URL(deleteAccountUrl);
 assert.equal(parsedDeleteAccountUrl.origin, expectedLegalOrigin, 'DELETE_ACCOUNT_URL must use the configured deploy origin');
 assert.equal(parsedDeleteAccountUrl.pathname, '/delete-account/', 'DELETE_ACCOUNT_URL must use the canonical path');
 const deleteAccountBody = await readFile(path.join(buildDir, 'delete-account/index.html'), 'utf8');
-assert.match(deleteAccountBody, /<h1>Smazání účtu<\/h1>/, 'account deletion route lacks its confirmation page');
+assert.match(deleteAccountBody, profile.deletionPageMarker, 'account deletion route lacks its confirmation page');
 assert.match(deleteAccountBody, /href="\/privacy\/choices/, 'account deletion page lacks the privacy choices link');
 const supabaseUrl = configValue('SUPABASE_URL');
 const expectedAnonKey = configValue('SUPABASE_ANON_KEY');

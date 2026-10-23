@@ -224,7 +224,9 @@ printf '<title>Delete | %s</title>%s<h1>Smazání účtu</h1><a href="/privacy/c
   "$CONFIG_APP_NAME" "$LEGAL_NAV" "$DELETE_ACCOUNT_ORIGIN" "$DELETE_ACCOUNT_KEY" \
   > "$BUILD_DIR/delete-account/index.html"
 # The fixture follows the production order: final HTML, CSP manifest, Worker stamp.
-printf '<!doctype html><title>Organizer fixture</title>\n' > "$BUILD_DIR/organizers-page"
+mkdir -p "$BUILD_DIR/organizers-media"
+printf 'fixture media' > "$BUILD_DIR/organizers-media/fixture.webp"
+printf '<!doctype html><title>Organizer fixture</title><img src="/organizers-media/fixture.webp">\n' > "$BUILD_DIR/organizers-page"
 refresh_csp_fixture() {
   node "$PROJECT_ROOT/automation/generate_csp_policy.mjs" "$BUILD_DIR" cloudflare
   node --input-type=module - "$BUILD_DIR" <<'CSP'
