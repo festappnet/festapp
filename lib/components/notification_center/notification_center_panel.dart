@@ -136,15 +136,11 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                               child: Text(s('more'))),
                       ])),
           ]);
-          if (MediaQuery.sizeOf(context).width < 720)
-            return AppDialog.fullscreen(child: SafeArea(child: body));
           return AppDialog(
               alignment: Alignment.centerRight,
               insetPadding: const EdgeInsets.all(16),
-              child: SizedBox(
-                  width: 440,
-                  height: MediaQuery.sizeOf(context).height * .85,
-                  child: body));
+              child:
+                  SizedBox(width: 440, height: double.infinity, child: body));
         },
       );
   bool _hasDetail(NotificationItem item) =>

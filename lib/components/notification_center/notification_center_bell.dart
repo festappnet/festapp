@@ -1,3 +1,4 @@
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/route_visibility.dart';
 import 'dart:async';
@@ -12,6 +13,21 @@ import 'notification_center_controller.dart';
 import 'notification_center_panel.dart';
 import 'notification_center_strings.dart';
 import 'notification_center_rollout.dart';
+
+/// A dedicated asset avoids stale cached MaterialIcons subsets after a release.
+class NotificationBellIcon extends StatelessWidget {
+  const NotificationBellIcon({super.key, required this.color});
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => SvgPicture.asset(
+        'assets/icons/notification-bell.svg',
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        excludeFromSemantics: true,
+      );
+}
 
 class NotificationCenterBell extends StatefulWidget {
   const NotificationCenterBell({super.key, this.color});
@@ -186,7 +202,10 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
               icon: Badge(
                   isLabelVisible: controller.unread,
                   smallSize: 8,
-                  child: Icon(Icons.notifications_none, color: widget.color)),
+                  child: NotificationBellIcon(
+                      color: widget.color ??
+                          Theme.of(context).appBarTheme.foregroundColor ??
+                          Theme.of(context).colorScheme.onSurface)),
             ));
   @override
   void dispose() {
