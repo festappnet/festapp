@@ -1,4 +1,4 @@
-"""Record four paid dinners and a text question in one uninterrupted take.
+"""Record three paid dinners and a note question in one uninterrupted take.
 
 Use a fresh disposable form with one ticket/product group and no demo fields.
 CAPTURE_OUTPUT, CAPTURE_BROWSER_WRAPPER and PRODUCT_DEMO_SKILL select owned
@@ -6,7 +6,38 @@ runtime paths. Open its editor at 1000x1000 and select the ticket before running
 The selected ticket's Add product type button must be visible before start.
 """
 import sys
+import capture as capture_runtime
 from capture import *
+
+_raw_ab = ab
+
+
+def ab(*args):
+    if len(args) == 4 and args[:2] == ('mouse', 'move'):
+        destination = [float(args[2]), float(args[3])]
+        origin = json.loads(_raw_ab('eval', "(()=>{const e=document.querySelector('#take-cursor');return e?[parseFloat(e.style.left)||0,parseFloat(e.style.top)||0]:null})()"))
+        if origin and origin[0] >= 0:
+            script = """
+const [port,url,points]=process.argv.slice(1), [a,b]=JSON.parse(points);
+const pages=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+const page=pages.find(p=>p.type==='page'&&p.url===url);
+if(!page)throw Error('Owned capture page missing');
+const ws=new WebSocket(page.webSocketDebuggerUrl);
+await new Promise(r=>ws.addEventListener('open',r,{once:true}));
+for(let i=1;i<=18;i++){
+ ws.send(JSON.stringify({id:i,method:'Input.dispatchMouseEvent',params:{type:'mouseMoved',x:a[0]+(b[0]-a[0])*i/18,y:a[1]+(b[1]-a[1])*i/18}}));
+ await new Promise(r=>setTimeout(r,20));
+}
+await new Promise(r=>setTimeout(r,80));ws.close();
+"""
+            subprocess.run(['node', '--input-type=module', '-e', script, port(),
+                            _raw_ab('get', 'url'), json.dumps([origin, destination])], check=True)
+            return ''
+    return _raw_ab(*args)
+
+
+# Common UI helpers use the same continuous pointer path.
+capture_runtime.ab = ab
 
 
 def port():
@@ -67,45 +98,30 @@ Array.from(document.querySelectorAll({json.dumps(selector)})).at(-1).setAttribut
 def record():
     # Retain accessible inspection while routing native scroll to Flutter.
     js("(()=>{const s=document.createElement('style');s.textContent='flt-semantics-host,flt-semantics-host *{pointer-events:none!important}';document.head.append(s)})()")
-    start('form-continuous-cs')
-    cue('continuous-dinners-and-text')
-    hold(1.5)
+    install_pointer()
+    ab('mouse', 'move', 600, 700)
+    hold(1)
+    start('form-unbroken-cs')
+    cue('continuous-dinners-and-note')
     ui('Přidat typ produktu')
     if js("Array.from(document.querySelectorAll('[role=button]')).some(e=>(e.getAttribute('aria-label')||e.textContent).trim()==='Vytvořit nový typ produktu')"):
         ui('Vytvořit nový typ produktu')
     last_fill('input[aria-label="Název typu produktu"]', 'Večeře')
     for title, price in [('Kuřecí večeře', '180'), ('Vegetariánská večeře', '160'),
-                         ('Veganská večeře', '160'), ('Bezlepková večeře', '180')]:
+                         ('Veganská večeře', '160')]:
         ui('Přidat produkt', index=-1)
         last_fill('input[aria-label="Název"]', title)
         last_fill('input[aria-label="Cena"]', price)
         hold(.7)
     wheel(350)
     ab('mouse', 'move', 885, 850)
-    ab('screenshot', str(OUT / 'four-dinners.png'))
-    hold(3)
+    ab('screenshot', str(OUT / 'three-dinners.png'))
+    hold(2)
     ui('Přidat pole')
-    hold(.7)
-    ui('Text')
-    hold(.8)
-    # New card sits at the end of the real editor scroll content.
-    ab('mouse', 'move', 500, 790)
-    ab('mouse', 'down')
-    ab('mouse', 'up')
     hold(.5)
-    # Flutter merges the card's title/answer semantics into one oversized input.
-    # Focus the actual painted title, then send native keyboard events.
-    top = js("document.querySelector('input[aria-label^=\"Text\"]').getBoundingClientRect().y")
-    ab('mouse', 'move', 400, round(top + 65))
-    ab('mouse', 'down')
-    ab('mouse', 'up')
-    hold(.2)
-    ab('press', 'Meta+a' if sys.platform == 'darwin' else 'Control+a')
-    hold(.1)
-    ab('keyboard', 'type', 'Poznámka pro pořadatele')
-    ab('press', 'Tab')
+    ui('Poznámka')
     ab('mouse', 'move', 885, 850)
-    hold(3)
+    hold(2)
     end()
     result = stop()
     ab('screenshot', str(OUT / 'finished-question.png'))
