@@ -10,4 +10,4 @@ The organizer handles questions about an event, registration, orders, payments, 
 
 ## Legal information
 
-See <https://tickets.festap.net/privacy/>, <https://tickets.festap.net/privacy/choices/> and <https://tickets.festap.net/terms/>.
+See <https://tickets.festapp.net/privacy/>, <https://tickets.festapp.net/privacy/choices/> and <https://tickets.festapp.net/terms/>.

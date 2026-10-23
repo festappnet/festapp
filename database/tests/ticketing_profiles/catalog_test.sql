@@ -3,8 +3,8 @@ DECLARE en_org bigint; cs_org bigint; foreign_org bigint; en_unit bigint; cs_uni
  own_id bigint; foreign_id bigint; hidden_id bigint; src text:='catalog-'||gen_random_uuid(); other_src text:='catalog-other-'||gen_random_uuid();
  result jsonb; o_link text:='catalog-'||gen_random_uuid();
 BEGIN
- INSERT INTO public.organizations(title) VALUES('EN catalog test') RETURNING id INTO en_org;
- INSERT INTO public.organizations(title) VALUES('CS catalog test') RETURNING id INTO cs_org;
+ INSERT INTO public.organizations(title,data) VALUES('EN catalog test','{"CATALOG_SOURCE_POLICY":"explicit"}') RETURNING id INTO en_org;
+ INSERT INTO public.organizations(title,data) VALUES('CS catalog test','{"CATALOG_SOURCE_POLICY":"explicit"}') RETURNING id INTO cs_org;
  INSERT INTO public.organizations(title) VALUES('Foreign catalog test') RETURNING id INTO foreign_org;
  INSERT INTO public.units(title,organization) VALUES('EN',en_org) RETURNING id INTO en_unit;
  INSERT INTO public.units(title,organization) VALUES('CS',cs_org) RETURNING id INTO cs_unit;
@@ -26,6 +26,10 @@ BEGIN
  VALUES(now(),now()+interval '1 day','Hidden',en_org,en_unit,'hidden-'||gen_random_uuid(),true,true),(now(),now()+interval '1 day','Not promoted',en_org,en_unit,'unpromoted-'||gen_random_uuid(),false,false);
  IF jsonb_array_length(public.get_available_occasions(en_org)->'occasions')<>1 OR jsonb_array_length(public.get_public_occasions(en_org)->'occasions')<>1 THEN
   RAISE EXCEPTION 'EN own visibility changed'; END IF;
+ -- A tenant without the opt-in retains both original catalog projections.
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_available_occasions(foreign_org)->'occasions') x WHERE (x->>'id')::bigint=foreign_id)
+ OR EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_public_occasions(foreign_org)->'occasions') x WHERE (x->>'id')::bigint=foreign_id) THEN
+  RAISE EXCEPTION 'Existing tenant external catalog behavior changed'; END IF;
  -- Existing service-only source maps explicitly opt in one source.
  INSERT INTO public.external_sync_maps(source_name,target_org_id,target_unit_id,remote_link_base) VALUES(src,en_org,en_unit,'https://source.example.invalid');
  IF jsonb_array_length(public.get_available_occasions(en_org)->'occasions')<>2 OR jsonb_array_length(public.get_public_occasions(en_org)->'occasions')<>2 THEN

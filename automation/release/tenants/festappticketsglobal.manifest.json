@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "tenant": "festappticketsglobal",
   "status": "organization-provisioned-release-pending",
-  "proposedHostname": "tickets.festap.net",
+  "proposedHostname": "tickets.festapp.net",
   "hostnameApproved": false,
   "productionOrganizationId": 25,
   "productionUnitId": null,
@@ -23,7 +23,7 @@
   "testProfile": "automation/tests/fixtures/tenants/festappticketsglobal.conf",
   "testProfileMayProvisionProduction": false,
   "pendingApprovals": [
-    "Hostname ownership/routing for user-specified tickets.festap.net",
+    "Hostname ownership/routing for user-specified tickets.festapp.net",
     "Published legal/operator/contact information and refund/dispute policy",
     "Verified existing SES sender and reply-to identity",
     "Pilot merchant, event, form, currency and online-only admission acceptance",
@@ -60,7 +60,7 @@
     "backend": "canonical",
     "canonicalSupabaseUrl": "https://api.festapp.net",
     "canonicalOrganizationId": 25,
-    "webLink": "https://tickets.festap.net",
+    "webLink": "https://tickets.festapp.net",
     "published": false
   }
 }
