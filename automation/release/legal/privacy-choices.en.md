@@ -20,4 +20,4 @@ The English profile does not include a browser analytics script. Hosting and sec
 
 Account registration is not consent to a newsletter or optional tracking. You can remove saved sign-in details, preferences and cached data in your browser settings; doing so may sign you out.
 
-See <https://tickets.festap.net/privacy/>. Complete an account deletion already started at <https://tickets.festap.net/delete-account/>.
+See <https://tickets.festapp.net/privacy/>. Complete an account deletion already started at <https://tickets.festapp.net/delete-account/>.
