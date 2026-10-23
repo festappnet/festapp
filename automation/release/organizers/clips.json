@@ -5,18 +5,18 @@
     {
       "id": "layout-build",
       "label": "Sestavení",
-      "src": "/organizers-media/layout-build.mp4?v=dc7d8ba58ecc",
-      "poster": "/organizers-media/layout-build-start.jpg?v=021bdb8d0236",
+      "src": "/organizers-media/layout-build.mp4?v=eb11698aa0a0",
+      "poster": "/organizers-media/layout-build-start.jpg?v=1e108cf1247f",
       "width": 1140,
       "height": 792,
-      "duration": 14.666667,
-      "description": "Do připravené řady stolů přidejte další stůl a postupně doplňte sál.",
+      "duration": 12.266667,
+      "description": "K hotové řadě přidejte další stůl, zarovnejte ho a upravte počet židlí.",
       "boundary": "Ukázka editoru",
-      "mobileSrc": "/organizers-media/layout-build-mobile.mp4?v=0015dbd47796",
-      "mobilePoster": "/organizers-media/layout-build-mobile-start.jpg?v=445019d3d2b6",
+      "mobileSrc": "/organizers-media/layout-build-mobile.mp4?v=22569911d7bf",
+      "mobilePoster": "/organizers-media/layout-build-mobile-start.jpg?v=a6d64f43a6e8",
       "mobileWidth": 820,
       "mobileHeight": 792,
-      "mobileDuration": 14.666667
+      "mobileDuration": 12.266667
     },
     {
       "id": "layout-refine",
@@ -53,17 +53,17 @@
     {
       "id": "form-build",
       "label": "Pole",
-      "src": "/organizers-media/form-build.mp4?v=fbfeda0694f0",
-      "poster": "/organizers-media/form-build.webp?v=33f9cf218d3c",
+      "src": "/organizers-media/form-build.mp4?v=8ae1987ae895",
+      "poster": "/organizers-media/form-build.webp?v=798ceeb1d9a9",
       "width": 1200,
       "height": 804,
-      "duration": 45.933333,
-      "description": "Nastavte čtyři večeře s cenami a přidejte vlastní textovou otázku.",
-      "mobileSrc": "/organizers-media/form-build-mobile.mp4?v=ed9cf70813c0",
-      "mobilePoster": "/organizers-media/form-build-mobile.webp?v=a8a85b79bfcf",
+      "duration": 45.833333,
+      "description": "Nastavte tři večeře s cenami a přidejte pole pro poznámku.",
+      "mobileSrc": "/organizers-media/form-build-mobile.mp4?v=f9566ce3c148",
+      "mobilePoster": "/organizers-media/form-build-mobile.webp?v=dcb0fcc4e89f",
       "mobileWidth": 720,
       "mobileHeight": 638,
-      "mobileDuration": 45.933333
+      "mobileDuration": 45.833333
     },
     {
       "id": "form-style",

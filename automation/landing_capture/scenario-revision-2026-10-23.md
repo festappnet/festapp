@@ -1,5 +1,8 @@
 # Úprava scénáře: sestavení sálu a formulář
 
+Nahrazeno [souvislým přetočením](continuous-retake-2026-10-23.md). Následující
+text dokumentuje předchozí verzi, nikoli aktuální výstupy.
+
 Zadání a realizace z 2026-10-23. Tento scénář nahrazuje prázdný začátek
 `layout-build` a skokový střih `form-build`. Výstupy pro desktop i mobil mají
 společné skutečné zdrojové záběry. Ostatní videa nejsou součástí této úpravy.
