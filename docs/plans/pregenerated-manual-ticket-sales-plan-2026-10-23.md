@@ -1,6 +1,7 @@
 # Předgenerované vstupenky a ruční prodej
 
 Datum: 2026-10-23. Stav: lokálně implementováno a cíleně ověřeno; produkční nasazení není součástí zadání.
+Plný release check: [release zastaven kvůli neúspěšné plné sadě](pregenerated-manual-ticket-sales-release-check-2026-10-23.md).
 Výsledky a hranice ověření: [realizační evidence](pregenerated-manual-ticket-sales-evidence-2026-10-23.md).
 Ověřování implementace: **standard**. Návrh vznikl společným průzkumem hlavního
 agenta a výslovně vyžádaného subagenta **gpt-6-astra**, reasoning high.
@@ -12,8 +13,8 @@ Autoritativní dokument; realizační zadání je v
 - Dodatečný požadavek uživatele: kompletní dávku stáhnout jako jedno tiskové PDF
   s více kusy na A4 podle skutečné plochy a rozměrů vstupenky, nebo jako ZIP
   jednotlivých původních PDF. Export vychází výhradně z neměnných uložených
-  dokumentů; nevytváří další ticket/render/sale autoritu. Samostatná forward
-  migrace `20261024001000_ticket_batch_exports.sql` přidává autorizovaný manifest.
+  dokumentů; nevytváří další ticket/render/sale autoritu. Canonical forward
+  migrace `20261024020000_pregenerated_ticket_batches.sql` přidává autorizovaný manifest.
 
 - Uživatel při realizaci výslovně zúžil kompatibilitu: nepřidávat zvláštní
   podporu starších klientů. Společné serverové stock/admission guardy zůstávají.
@@ -590,7 +591,7 @@ aplikační testy neběží; jejich popis není passing evidence.
 
 Nasazení ani změny produkčního backendu nejsou autorizovány realizací.
 Budoucí release má jediný vybraný tenant. Před zpřístupněním atomické migrace
-`20261023200000_ticket_batches.sql` musí být připraven odpovídající Edge runtime
+`20261024020000_pregenerated_ticket_batches.sql` musí být připraven odpovídající Edge runtime
 a privátní dokumentové úložiště. Migrace instaluje schema, společné guardy,
 příkazy a nakonec grants v jedné transakci; UI následuje až po ověření backendu.
 Žádný stock nesmí vzniknout dříve, než jej všechny společné write/scan cesty
