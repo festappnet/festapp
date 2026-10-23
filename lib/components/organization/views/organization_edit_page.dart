@@ -179,8 +179,8 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                                     .openCloudflareAnalytics),
                                 trailing: const Icon(Icons.open_in_new),
                                 onTap: () => LaunchUrlService.openExternalUrl(
-                                  'https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/vstupenky.online/analytics/requests'
-                                  '?filters=%5B%5B%7B%22key%22%3A%22clientRequestHTTPHost%22%2C%22operator%22%3A%22eq%22%2C%22value%22%3A%22vstupenky.online%22%7D%5D%5D',
+                                  'https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview'
+                                  '?siteTag=4b64cee2415d4110b11abc4d56013278',
                                 ),
                               ),
                             ListTile(
