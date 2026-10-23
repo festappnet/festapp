@@ -12,7 +12,7 @@ Deno.test("actual send-email handler preserves automatic identity, explicit rese
     const url=new URL(input instanceof Request?input.url:String(input));
     if(url.hostname!=="cancellation-handler.invalid") throw new Error("Unexpected external request");
     if(url.pathname==="/auth/v1/user") return json({id:"00000000-0000-4000-8000-000000000001",aud:"authenticated",email:"fixture@example.invalid"});
-    if(url.pathname==="/rest/v1/occasion_users") return json({is_editor_order:editor});
+    if(url.pathname.endsWith("/can_write_orders")) return json(editor);
     const args=JSON.parse(String(init?.body??"{}"));
     if(url.pathname.endsWith("/get_order_details_for_email")) return json({code:200,data:{occasion:{id:12,organization:1,unit:2}}});
     if(url.pathname.endsWith("/is_demo_occasion")) return json(false);

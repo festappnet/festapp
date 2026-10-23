@@ -9,7 +9,7 @@ const hasDirectRevoke=(source,name)=>[...source.matchAll(/\bREVOKE\s+ALL\s+ON\s+
  .some(m=>new RegExp('(?:^|,)\\s*(?:public\\.)?'+name+'\\s*\\(','i').test(m[1]));
 test('forward security migrations agree with canonical SQL',()=>{
  assert.match(execFileSync('python3',['automation/assemble-server-security-migrations.py','--check'],{cwd:root,encoding:'utf8'}),/canonical/);
- assert.match(read('database/functions/inventory/update_spots_assignments.sql'),/REVOKE ALL ON FUNCTION public\.update_spot_assignments\(jsonb\) FROM PUBLIC, anon/);
+ assert.match(read('database/functions/inventory/update_spots_assignments.sql'),/REVOKE ALL ON FUNCTION public\.update_spot_assignments\(jsonb\) FROM PUBLIC,\s*anon/);
  assert.doesNotMatch(read('database/functions/security/server_security_retirement.sql'),/CASCADE\s*;/i);
 });
 test('security activation has digest, target, lock, validation and live readback gates',()=>{
@@ -60,7 +60,7 @@ test('new application definer headers require an explicit signature and ACL decl
    if(legacy.has(key))continue;
    const declared=contracts.declared[key];
    assert(declared,file+': undeclared definer '+m[1]);
-   assert.equal(declared.source,file);
+   assert.ok([declared.source,...(declared.additionalSources??[])].includes(file),file+': unreviewed source path');
    assert(manifest.entrypoints[declared.signature],file+': missing role ACL');
    assert.match(m[0],/SET\s+search_path/i,file);
    assert(hasDirectRevoke(source,m[1]),file+': explicit function REVOKE required');

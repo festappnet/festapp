@@ -148,6 +148,8 @@ for (const locale of ["cs", "en"] as const) {
           tone,
           values: {
             ...scalar,
+            // Delivery is optional; absent ticket content renders as an empty block.
+            tickets: "",
             deadline: formatDatetime(payment.deadline, locale),
             amount,
             remainingTime: tr.days_remaining(5),

@@ -1,3 +1,4 @@
+import '../../support/fixtures/widget_environment_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -14,6 +15,12 @@ import 'package:fstapp/components/ticket_layout/ticket_preview_assets.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_layout_canvas.dart';
 
 void main() {
+  WidgetEnvironmentFixture.register();
+  final environment = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations:
+          jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+              as Map<String, dynamic>);
   final manifest = jsonDecode(
       File('supabase/functions/_shared/ticket-assets/preview-manifest.json')
           .readAsStringSync()) as Map;
@@ -262,14 +269,16 @@ void main() {
         qrModules: r.qrModules,
         artworks: artwork);
     r.dispose();
-    await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-            body: SingleChildScrollView(
-                child: OccasionSetupTicketGallery(
-      appearance: Map.of(OccasionSetupAppearance.presets[1]),
-      loadResources: () async => ready,
-      onSelected: (selected) => choice = selected,
-    )))));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+                    child: OccasionSetupTicketGallery(
+          appearance: Map.of(OccasionSetupAppearance.presets[1]),
+          loadResources: () async => ready,
+          onSelected: (selected) => choice = selected,
+        )))));
     Future<void> settle() async {
       for (var i = 0; i < 12; i++) {
         await tester.pump();
@@ -317,6 +326,6 @@ void main() {
     expect(
         find.textContaining('Šablonu si můžete dále upravit'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
+    await environment.pumpWidget(tester, const SizedBox());
   });
 }

@@ -4,6 +4,7 @@ export interface Env {
   IMAGE_PROCESSING_SERVICE_SECRET?: string;
   ASSET_CLEANUP_SERVICE_SECRET?: string;
   TICKET_FONT_SERVICE_SECRET?: string;
+  TICKET_BATCH_SERVICE_SECRET?: string;
   IMAGE_READ_MISS_BUDGET?: { limit(input: { key: string }): Promise<{ success: boolean }> };
   IMAGES_BUCKET: R2Bucket;
   IMAGES_BUCKET_AKHWEB: R2Bucket;

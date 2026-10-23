@@ -1,7 +1,7 @@
 -- Requires owned local image pipeline to register at least one real asset first.
 -- Run in one rollback transaction; no synthetic claim of processed readiness.
 BEGIN;
-\ir fixtures.sql
+\ir ../../tests/blueprint/fixtures.sql
 DO $$
 DECLARE a public.blueprint_image_assets; f jsonb; req jsonb; r jsonb; bg jsonb; asset jsonb; initial_count bigint; copied bigint; copied_bp bigint; target_unit bigint; actual_revision bigint; variant jsonb; expected_reason text; public_read jsonb; ua public.blueprint_image_assets;
 BEGIN

@@ -148,3 +148,15 @@ BEGIN
  INSERT INTO public.scanner_conflict_resolutions(operation_id,actor_user_id,reason) VALUES(p_operation,auth.uid(),p_reason) ON CONFLICT DO NOTHING;
  RETURN jsonb_build_object('code',200,'server_time',now());
 END $$;
+REVOKE ALL ON FUNCTION public.lookup_scanner_ticket(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.lookup_scanner_ticket(uuid,text,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.search_scanner_tickets(uuid,text,text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.search_scanner_tickets(uuid,text,text,bigint) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.sync_scanner_operations(uuid,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.sync_scanner_operations(uuid,text,jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_scanner_receipts(uuid,text,uuid[]) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_receipts(uuid,text,uuid[]) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_scanner_summary(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_summary(uuid,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.resolve_scanner_conflict(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.resolve_scanner_conflict(uuid,text) TO authenticated,service_role;

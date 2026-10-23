@@ -27,8 +27,8 @@ BEGIN
         RAISE EXCEPTION 'duplicate_occasion_client_sync_v1 MUST be SECURITY DEFINER';
     END IF;
 
-    IF src NOT ILIKE '%get_is_manager_on_unit%' THEN
-        RAISE EXCEPTION 'duplicate_occasion_client_sync_v1 MUST contain an explicit manager guard';
+    IF src NOT ILIKE '%can_copy_occasion_target%' THEN
+        RAISE EXCEPTION 'duplicate_occasion_client_sync_v1 MUST contain an explicit copy-target operation guard';
     END IF;
 
     RAISE NOTICE '✅ duplicate_occasion_client_sync_v1 is DEFINER and guarded.';

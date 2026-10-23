@@ -51,3 +51,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.create_companion_client_sync_v1(p_occasion bigint, p_name text, p_command_id uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_companion_client_sync_v1(p_occasion bigint, p_name text, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_companion_client_sync_v1(bigint,text,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_companion_client_sync_v1(bigint,text,uuid) TO authenticated,service_role;

@@ -92,17 +92,24 @@ test('real PostgreSQL connections serialize physical aliases and same-source rep
    assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.payment_reference_reservations WHERE payment_info_id=$1',[paymentId])).rows[0].n),1);
    assert.equal(Number((await control.query('SELECT count(*) n FROM eshop.order_product_ticket WHERE "order"=$1 AND ticket=$2',[accepted.data.order.id,ticketIds[0]])).rows[0].n),1);
   }
+  await control.query(await fs.readFile(new URL('../../../database/tests/blueprint/fixtures.sql',import.meta.url),'utf8'));
+  await control.query(await fs.readFile(new URL('../../../database/tests/helpers/canonical_blueprint_order_fixture.sql',import.meta.url),'utf8'));
   const replacementFixture=(await control.query('SELECT pg_temp.fixture(NULL) x')).rows[0].x;
   const replacementBank=(await control.query('SELECT bank_account FROM eshop.unit_bank_accounts WHERE unit=$1',[replacementFixture.unit])).rows[0].bank_account;
   await control.query("UPDATE eshop.bank_accounts SET account_number='19-2000145399/0800' WHERE id=$1",[replacementBank]);
   await control.query('SELECT public.enroll_payment_reference_account($1)',[replacementBank]);
   await control.query("INSERT INTO eshop.payment_reference_scopes(organization_id,phase,manifest_sha256) VALUES($1,'active',$2)",[replacementFixture.organization,'a'.repeat(64)]);
   const spot=(await control.query('INSERT INTO eshop.spots(title,product,occasion) VALUES($1,$2,$3) RETURNING id',['Replacement fixture',replacementFixture.product,replacementFixture.occasion])).rows[0].id;
-  const original=(await control.query('SELECT public.create_ticket_order_client_sync_v1($1,$2,$3) r',[{form:replacementFixture.key,email:'replace@example.invalid',ticket:[{spot}]},randomUUID(),randomUUID()])).rows[0].r;
+  const original=(await control.query('SELECT public.create_ticket_order_client_sync_v1(pg_temp.prepare_order_fixture_input($1::jsonb),$2,$3) r',[{form:replacementFixture.key,email:'replace@example.invalid',ticket:[{spot}]},randomUUID(),randomUUID()])).rows[0].r;
   assert.equal(original.data.code,200);
-  const rejected=(await control.query('SELECT public.replace_blueprint_order_client_sync_v1($1,$2,$3) r',[[spot],{email:'replace@example.invalid',ticket:[{spot:999999999999}]},randomUUID()])).rows[0].r;
+  // Canonical replacement derives ticket selection from p_spot_ids. Inject an
+  // actual finalization failure after cancellation instead of an ignored input.
+  await control.query(`CREATE FUNCTION pg_temp.reject_replacement_payment() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture_payment_failure'; END $$;
+    CREATE TRIGGER test_replacement_failure BEFORE INSERT ON eshop.payment_info FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_replacement_payment()`);
+  const rejected=(await control.query('SELECT public.replace_blueprint_order_client_sync_v1($1,$2,$3) r',[[spot],{email:'replace@example.invalid'},randomUUID()])).rows[0].r;
   assert.equal(rejected.status,'rejected');
   assert.equal((await control.query('SELECT state FROM eshop.orders WHERE id=$1',[original.data.order.id])).rows[0].state,'ordered','failed finalization rolls source cancellation back');
+  await control.query('DROP TRIGGER test_replacement_failure ON eshop.payment_info');
   const replaced=(await control.query('SELECT public.replace_blueprint_order_client_sync_v1($1,$2,$3) r',[[spot],{email:'replace@example.invalid'},randomUUID()])).rows[0].r;
   assert.equal(replaced.data.code,200);
   assert.equal((await control.query('SELECT state FROM eshop.orders WHERE id=$1',[original.data.order.id])).rows[0].state,'storno');

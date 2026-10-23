@@ -120,6 +120,7 @@ BEGIN
  PERFORM create_user_for_test('reference-editor','reference-editor@example.invalid');actor:=get_user_id('reference-editor');
  INSERT INTO occasion_users(occasion,"user",is_editor_order,is_editor_order_view) VALUES((x->>'occasion')::bigint,actor,true,true);
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(bank,actor,true);
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES((x->>'unit')::bigint,actor,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  p:=pg_temp.reference_payment(f,bank);
  r:=public.reserve_draft_payment_reference(p,42,command);

@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { globSync } from 'glob';
 import { fileURLToPath } from 'url';
+import { assertLocalDatabaseUrl, assertDisposableDatabase } from '../tests/database/disposable_database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,8 @@ if (!DATABASE_URL) {
   console.error('   Set it in .env.local or pass it directly.');
   process.exit(1);
 }
+
+assertLocalDatabaseUrl(DATABASE_URL);
 
 // Filter tests based on CLI arguments
 const args = process.argv.slice(2);
@@ -134,6 +137,7 @@ async function runAll() {
 
   try {
     await setupClient.connect();
+    await assertDisposableDatabase(setupClient);
     await resetSequences(setupClient);
   } catch (err) {
     console.error(`Setup Failed: ${err.message}`);

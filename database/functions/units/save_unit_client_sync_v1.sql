@@ -68,3 +68,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.save_unit_client_sync_v1(p_unit bigint, p_command_id uuid, p_expected_version bigint, p_unit_data jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.save_unit_client_sync_v1(p_unit bigint, p_command_id uuid, p_expected_version bigint, p_unit_data jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.save_unit_client_sync_v1(bigint,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.save_unit_client_sync_v1(bigint,uuid,bigint,jsonb) TO authenticated,service_role;

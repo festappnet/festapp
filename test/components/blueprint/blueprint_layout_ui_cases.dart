@@ -2250,7 +2250,7 @@ void main() {
     final template = find
         .descendant(
             of: find.byType(Dialog), matching: find.byType(OutlinedButton))
-        .first;
+        .at(1);
     await tester.tap(template);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
@@ -2445,9 +2445,9 @@ void main() {
         find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
     pickerResponse = (request) {
       expect(
-          request.url.path, endsWith('/rpc/get_products_and_types_for_edit'));
+          request.url.path, endsWith('/rpc/get_product_catalog'));
       return http.Response(
-          jsonEncode({
+          jsonEncode({'catalog':{
             'server_time': '2026-10-21T10:00:00Z',
             'product_types': [
               {'id': 2, 'title': 'Admission', 'type': 'spot'},
@@ -2492,7 +2492,7 @@ void main() {
               {'product': 9, 'inventory_context': 6, 'quantity': 1}
             ],
             'forms': [],
-          }),
+          }}),
           200,
           headers: {'content-type': 'application/json'},
           request: request);

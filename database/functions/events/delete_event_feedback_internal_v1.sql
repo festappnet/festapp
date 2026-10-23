@@ -34,3 +34,5 @@ $function$
 ;
 
 REVOKE ALL ON FUNCTION public.delete_event_feedback_internal_v1(p_event bigint, p_client_id uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.delete_event_feedback_internal_v1(bigint,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_event_feedback_internal_v1(bigint,uuid) TO service_role;

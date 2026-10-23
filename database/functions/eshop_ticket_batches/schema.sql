@@ -49,6 +49,3 @@ ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_lease_actor u
 ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_lease_expires_at timestamptz;
 ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_error_code text;
 ALTER TABLE eshop.ticket_batch_document_parts ADD COLUMN IF NOT EXISTS lease_actor uuid REFERENCES auth.users(id);
-INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
- VALUES('ticket-batch-documents','ticket-batch-documents',false,16777216,ARRAY['application/pdf','application/octet-stream'])
- ON CONFLICT(id) DO NOTHING;

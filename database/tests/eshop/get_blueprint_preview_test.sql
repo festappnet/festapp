@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 DO $$
 DECLARE
     v_org bigint;
@@ -19,6 +21,7 @@ BEGIN
     VALUES (v_occasion, v_blueprint, 'Closed form', 'blueprint-form-' || gen_random_uuid(), false)
     RETURNING key INTO v_key;
 
+ PERFORM pg_temp.prepare_order_blueprint_fixture(v_key);
     PERFORM set_config('request.jwt.claim.sub', '', true);
     v_result := public.get_blueprint(NULL, v_key, v_blueprint);
     PERFORM assert_eq((v_result->>'code')::integer, 400, 'Anonymous users cannot preview a closed form');

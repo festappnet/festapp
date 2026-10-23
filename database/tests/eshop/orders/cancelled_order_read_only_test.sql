@@ -58,7 +58,6 @@ BEGIN
   format('SELECT public.update_ticket_note_hidden(%s,''changed'')',tid),
   format('SELECT public.update_order_responses(%s,''{}'')',oid),
   format('SELECT public.update_order_and_tickets_to_sent(%s,ARRAY[%s]::bigint[])',oid,tid),
-  format('SELECT public.update_order_and_tickets_to_storno_221(%s)',oid),
   format('SELECT public.set_payment_deadline(%s,now())',pi),
     format('SELECT public.enqueue_order_email(''TICKET_ORDER_UPDATE'',jsonb_build_object(''order_id'',%s),780::bigint,780::bigint,780::bigint)',oid)
  ] LOOP
@@ -66,6 +65,8 @@ BEGIN
  END LOOP;
  BEGIN PERFORM public.update_payment_info_variable_symbol(pi,123); RAISE EXCEPTION 'retired reference writer accepted';
  EXCEPTION WHEN OTHERS THEN PERFORM assert_eq(SQLERRM,'PAYMENT_REFERENCE_COMMAND_REQUIRED','raw reference mutation is retired for every order state'); END;
+ -- Trusted repeated cancellation is idempotent; all snapshots/history below must stay equal.
+ PERFORM public.update_order_and_tickets_to_storno_221(oid);
  result:=public.update_order_and_tickets_to_paid_ws(oid);
  PERFORM assert_true(result->>'code'<>'200','payment cannot reactivate cancelled order');
  PERFORM assert_eq((SELECT to_jsonb(o) FROM eshop.orders o WHERE id=oid),before_order,'rejected commands preserve complete order');

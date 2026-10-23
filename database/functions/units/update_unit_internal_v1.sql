@@ -24,3 +24,5 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.update_unit_internal_v1(p_unit_id bigint, p_title text, p_data jsonb) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.update_unit_internal_v1(bigint,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.update_unit_internal_v1(bigint,text,jsonb) TO service_role;

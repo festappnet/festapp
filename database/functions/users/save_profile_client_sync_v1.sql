@@ -66,3 +66,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.save_profile_client_sync_v1(p_occasion bigint, p_user uuid, p_command_id uuid, p_expected_version bigint, p_profile jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb) TO authenticated,service_role;

@@ -6,7 +6,7 @@ import { assertNewEvidencePaths, assertPrivateOutput, REPOSITORY_ROOT, sha256, s
 
 const INCLUDED_ROOTS = ['lib', 'web_client/src', 'web_client/scripts', 'supabase/functions', 'database', 'automation', 'workers'];
 const EXTENSIONS = new Set(['.dart', '.js', '.mjs', '.ts', '.sql', '.sh', '.rb', '.py']);
-const SKIP_NAMES = new Set(['node_modules', '.dart_tool', 'build', '.git', 'fixtures', 'test', 'tests']);
+const SKIP_NAMES = new Set(['acceptance','node_modules', '.dart_tool', 'build', '.git', 'fixtures', 'test', 'tests']);
 const SKIP_FILES = new Set([
   'automation/hetzner-supabase/merge/write-authority-inventory.mjs',
 ]);
@@ -75,6 +75,7 @@ export function classifyWriteEntry(relativePath, signals) {
     writeOwner = 'release-or-cutover-operator';
   } else if (relativePath.startsWith('database/')) {
     writeOwner = 'postgres-runtime';
+    if (signals.includes('payment-side-effect')) { lanes.add('application'); lanes.add('manual'); }
   }
 
   if (signals.includes('auth-mutation')) lanes.add('auth-refresh');

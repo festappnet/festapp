@@ -79,45 +79,81 @@ void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
   late TicketLayoutResources galleryResources;
-  var galleryContextCalls=0;
+  var galleryContextCalls = 0;
   setUpAll(() async {
-    final manifest=await TicketPreviewAssets.shared.manifest;
-    for(final id in (manifest['fonts'] as Map).keys) await TicketLayoutService().font(7,id);
-    final template=(manifest['presets'] as Map)['classic'];
-    final fixture=jsonDecode(File('test/fixtures/ticket_layout/resolve.json').readAsStringSync());
-    final service=TicketLayoutService(transport:(body) async {
-      galleryContextCalls++;expect(body['resourceProtocol'],3);
-      return {'resourceProtocol':3,'template':template,'preset':template,
-        'fontIds':[template['fontId']],'scenarios':fixture['scenarios'],
-        'catalog':[],'backgroundUrl':null,'logoUrl':null};
+    final manifest = await TicketPreviewAssets.shared.manifest;
+    for (final id in (manifest['fonts'] as Map).keys)
+      await TicketLayoutService().font(7, id);
+    final template = (manifest['presets'] as Map)['concert_stub'];
+    final fixture = jsonDecode(
+        File('test/fixtures/ticket_layout/resolve.json').readAsStringSync());
+    final service = TicketLayoutService(transport: (body) async {
+      galleryContextCalls++;
+      expect(body['resourceProtocol'], 3);
+      return {
+        'resourceProtocol': 3,
+        'template': template,
+        'preset': template,
+        'fontIds': [template['fontId']],
+        'scenarios': fixture['scenarios'],
+        'catalog': [],
+        'backgroundUrl': null,
+        'logoUrl': null
+      };
     });
-    galleryResources=await service.resolve(7,'wide',null,null);
-    for(final id in (manifest['fonts'] as Map).keys) galleryResources.fonts[id]=await service.font(7,id);
+    galleryResources = await service.resolve(7, 'wide', null, null);
+    for (final id in (manifest['fonts'] as Map).keys)
+      galleryResources.fonts[id] = await service.font(7, id);
     environment = WidgetEnvironmentFixture(
-      locale: const Locale('cs'),
-      translations:
-          jsonDecode(File('assets/translations/cs.json').readAsStringSync())
-              as Map<String, dynamic>);
+        locale: const Locale('cs'),
+        translations:
+            jsonDecode(File('assets/translations/cs.json').readAsStringSync())
+                as Map<String, dynamic>);
   });
 
   testWidgetsWithEnvironment(() => environment,
-      'setup ticket gallery uses local fonts and presets after one metadata request', (tester) async {
-    MapEntry<String,Map<String,dynamic>>? selected;
+      'setup ticket gallery uses local fonts and presets after one metadata request',
+      (tester) async {
+    OccasionSetupTicketChoice? selected;
     TicketLayoutResources? loaded;
-    await environment.pumpWidget(tester, MaterialApp(home:Scaffold(body:SingleChildScrollView(
-      child:OccasionSetupTicketGallery(
-        appearance:const {'id':'custom','preserveSource':true},
-        loadResources:() async => loaded=galleryResources.clone(),
-        onSelected:(value)=>selected=value)))));
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: SingleChildScrollView(
+                    child: OccasionSetupTicketGallery(
+                        appearance: const {
+              'id': 'custom',
+              'preserveSource': true
+            },
+                        loadResources: () async =>
+                            loaded = galleryResources.clone(),
+                        onSelected: (value) => selected = value)))));
+    // Drain the real asset/engine event loop while localization mounts the gallery.
+    for (var frame = 0; loaded == null && frame < 20; frame++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(loaded, isNotNull);
+    // Native image decoding runs outside Flutter's fake clock.
+    for (var frame = 0; frame < 100; frame++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump(const Duration(milliseconds: 20));
+      if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+    }
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    final card =
+        find.byKey(const ValueKey('setup-ticket-template-concert_stub'));
+    await tester.ensureVisible(card);
+    await tester.tap(card);
     await tester.pumpAndSettle();
-    final card=find.byKey(const ValueKey('setup-ticket-template-concert_stub'));
-    await tester.ensureVisible(card);await tester.tap(card);await tester.pumpAndSettle();
-    expect(selected!.key,'concert_stub');expect(galleryContextCalls,1);
-    expect(loaded!.artworks.values.every((a)=>a.image==null),true);
-    expect(tester.takeException(),null);
+    expect(selected!.key, 'concert_stub');
+    expect(galleryContextCalls, 1);
+    expect(galleryResources.artworks.values.every((a) => a.image == null), true);
+    expect(tester.takeException(), null);
   });
 
-  tearDownAll(()=>galleryResources.dispose());
+  tearDownAll(() => galleryResources.dispose());
 
   test('form replacement requires explicit product and ticket-group choices',
       () {

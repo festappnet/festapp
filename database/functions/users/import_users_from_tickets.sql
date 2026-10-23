@@ -57,7 +57,7 @@ BEGIN
         FROM public.user_info ui
         WHERE ui.id = storno_record."user";
 
-        PERFORM public.delete_occasion_user(storno_record."user", p_occasion_id);
+        PERFORM public.remove_occasion_user_domain_internal_v1(p_occasion_id, storno_record."user");
 
         deleted_users := array_append(deleted_users,
             jsonb_build_object(

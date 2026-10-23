@@ -1,6 +1,6 @@
 import { supabaseAdmin,createUserClient } from '../_shared/supabaseUtil.ts';
 import { batchObjectStore } from '../_shared/ticketBatchStorage.ts';
-import { batchBucket,sealBatchResources,renderBatchPart } from '../_shared/ticketBatchDocuments.ts';
+import { sealBatchResources,renderBatchPart,readBatchStoredPdf } from '../_shared/ticketBatchDocuments.ts';
 import { digest } from '../_shared/ticketFonts.ts';
 import { documentLimits,boundDocumentInput,boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { PDFDocument } from 'npm:pdf-lib';
@@ -27,10 +27,8 @@ Deno.serve(async req=>{
   if(result.error)return new Response(JSON.stringify({error:'document_access_denied'}),{status:403,headers});
   claim=result.data;
   if(claim.state==='ready'&&claim.objectKey){
-   const {data,error}=await supabaseAdmin.storage.from(batchBucket).createSignedUrl(claim.objectKey,60);
-   if(error)throw new Error('batch_download_unavailable');
-   const signed=new URL(data.signedUrl);
-   return new Response(JSON.stringify({state:'ready',url:signed.pathname+signed.search,digest:claim.digest}),{headers});
+   const bytes=await readBatchStoredPdf(claim,batchObjectStore);
+   return new Response(bytes,{headers:{...headers,'Content-Type':'application/octet-stream','Cache-Control':'no-store'}});
   }
   if(claim.state!=='claimed')return new Response(JSON.stringify(claim),{headers});
   const limits=documentLimits(claim);boundDocumentInput(claim,limits.inputBytes);

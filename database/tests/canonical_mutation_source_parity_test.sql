@@ -329,7 +329,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261023230000_ticketing_profiles.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.claim_stripe_sync_internal(text,boolean,uuid,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='78b1c3f22c267067ea5cb5c488bb8a68'),'current SQL source parity: public.claim_stripe_sync_internal(text,boolean,uuid,text,text)');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.claim_ticket_batch_document(uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='65d9f485575b88ffb0ff603f00f12cb3'),'current SQL source parity: public.claim_ticket_batch_document(uuid,uuid)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.claim_ticket_batch_document(uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='3943faefa9e34f8e83d6b7a244f3bc39'),'current SQL source parity: public.claim_ticket_batch_document(uuid,uuid)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cleaning_crew_navigation_rule(boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='30e845096d248f7112e1d570bb489e6a'),'current SQL source parity: public.cleaning_crew_navigation_rule(boolean)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -702,8 +702,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_fakturoid_ticket_order_state_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='cf0a1e38ef392d21baf4f734413ee784'),'current SQL source parity: public.get_fakturoid_ticket_order_state_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='878f552e916211825baa881a9fcbe5e1'),'current SQL source parity: public.get_form_for_authoring_v1(bigint)');
--- supabase/migrations/20261020120000_canonical_operations_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='5717b8d60960e2c869575d64bf3a5938'),'current SQL source parity: public.get_form_for_edit(text)');
+-- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_for_edit(text)') AND md5(btrim(prosrc,E' \n\r\t'))='6fe33ef8f2d3abe5f082db1ddeff8dce'),'current SQL source parity: public.get_form_for_edit(text)');
 -- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_stripe_recipient(bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='14863b93bf13fe504d26c6009c663a2f'),'current SQL source parity: public.get_form_stripe_recipient(bigint,bigint,boolean)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -911,7 +911,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261020150000_canonical_profile_ownership_cleanup.sql
  PERFORM assert_true(to_regprocedure('public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)') IS NULL,'retired SQL identity remains absent: public.import_profiles_companion_internal_v1(bigint,uuid,jsonb,jsonb)');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.import_ticket_profiles_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1492fe71d3c4f19a41063f39a6597371'),'current SQL source parity: public.import_ticket_profiles_internal_v1(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.import_ticket_profiles_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ee4a2f1149d8a3ef06e9255efadc9b67'),'current SQL source parity: public.import_ticket_profiles_internal_v1(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.import_user_group_assignments(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f19bc9de8bc62eb30c1894997d3e55fe'),'current SQL source parity: public.import_user_group_assignments(bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
@@ -1312,8 +1312,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_activities(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='ed5f73685e813b4546db7b331bee54e7'),'current SQL source parity: public.update_activities(bigint,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_blueprint_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='cef84f8d5db5ade979019ef085d8626b'),'current SQL source parity: public.update_blueprint_client_sync_v1(jsonb,uuid)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_entity_email_banner(text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='51e823df343ffd76709479b1d464979b'),'current SQL source parity: public.update_entity_email_banner(text,bigint,text)');
+-- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_entity_email_banner(text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='26f297404ce13a27deb951cdaefdcc31'),'current SQL source parity: public.update_entity_email_banner(text,bigint,text)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_form(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='486621cc5bd1a2586b65843903d43898'),'current SQL source parity: public.update_form(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql

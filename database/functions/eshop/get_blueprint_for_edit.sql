@@ -189,3 +189,5 @@ BEGIN
     );
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_blueprint_for_edit(text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_blueprint_for_edit(text) TO anon,authenticated,service_role;

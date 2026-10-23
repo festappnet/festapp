@@ -3,6 +3,7 @@
   "sources": [
     "database/functions/eshop_ticket_batches/schema.sql",
     "database/functions/eshop_ticket_batches/guards.sql",
+    "database/functions/blueprint/reviewed_migration_receipt.sql",
     "database/functions/blueprint/save.sql",
     "database/functions/eshop/materialize_ticket_products_internal_v1.sql",
     "database/functions/eshop/finalize_ticket_order.sql",
@@ -39,7 +40,9 @@
     "database/functions/eshop/update_ticket_note_hidden.sql",
     "database/functions/eshop_orders/update_order_note_hidden.sql",
     "database/functions/eshop_ticket_batches/exports.sql",
-    "database/functions/eshop_ticket_batches/access.sql"
+    "database/functions/eshop_ticket_batches/access.sql",
+    "database/functions/others/update_entity_email_banner.sql",
+    "database/functions/eshop_forms/get_form_for_edit.sql"
   ],
   "assembler": "automation/assemble-ticket-batches-migration.py"
 }

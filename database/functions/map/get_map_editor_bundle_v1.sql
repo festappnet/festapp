@@ -39,3 +39,5 @@ $function$
 
 REVOKE ALL ON FUNCTION public.get_map_editor_bundle_v1(p_occasion bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.get_map_editor_bundle_v1(p_occasion bigint) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_map_editor_bundle_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_map_editor_bundle_v1(bigint) TO authenticated,service_role;

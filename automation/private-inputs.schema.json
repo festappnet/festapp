@@ -31,9 +31,11 @@
       "FESTAPP_BACKUP_IDENTITY_FILE"
     ],
     "clientSyncPublisherSchedule": ["SUPABASE_ACCESS_TOKEN", "CLIENT_SYNC_PUBLISHER_WAKE_URL", "CLIENT_SYNC_PUBLISHER_WAKE_TOKEN"],
-    "clientSyncPrivateLoad": ["FESTAPP_TEST_ACCESS_TOKEN"]
+    "clientSyncPrivateLoad": ["FESTAPP_TEST_ACCESS_TOKEN"],
+    "ticketBatchDocuments": ["TICKET_BATCH_SERVICE_SECRET"]
   },
   "properties": {
+    "TICKET_BATCH_SERVICE_SECRET": {"type": "string", "minLength": 32, "description": "Dedicated private immutable ticket batch create/read capability, shared only by canonical Edge runtime and image Worker."},
     "STRIPE_MODE": {"type": "string", "enum": ["test", "live"]},
     "STRIPE_SECRET_KEY": {"type": "string", "minLength": 1},
     "STRIPE_PLATFORM_ACCOUNT_ID": {"type": "string", "minLength": 1},

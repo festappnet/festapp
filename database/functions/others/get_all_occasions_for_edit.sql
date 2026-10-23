@@ -133,3 +133,5 @@ BEGIN
 END;
 $function$
 ;
+REVOKE ALL ON FUNCTION public.get_all_occasions_for_edit_v212(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_all_occasions_for_edit_v212(bigint) TO anon,authenticated,service_role;

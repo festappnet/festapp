@@ -35,6 +35,7 @@ BEGIN
  INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
  VALUES('Bank operation fixture','FIO','8888/2010',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(bank,actor,true);
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
  UPDATE public.abuse_policy_rules SET base_limit=1 WHERE rule_key='bank.operation.actor.day';
  result:=public.begin_bank_sync_operation(op,bank,'sync',repeat('a',64));
  PERFORM public.begin_bank_sync_operation(op,bank,'sync',repeat('a',64));

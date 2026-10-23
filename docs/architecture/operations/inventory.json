@@ -17,7 +17,7 @@
       "Migration/baseline lookup is a fallback for missing authored definitions, not runtime precedence proof. Tests and operator automation are excluded. SQL declarations include internal helpers and overloads, not just callable APIs."
     ]
   },
-  "scannedFiles": 1285,
+  "scannedFiles": 1290,
   "rpc": [
     {
       "name": "abort_fakturoid_ticket_order_v1",
@@ -112,6 +112,11 @@
     {
       "name": "add_image_record",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 738,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/upload.ts",
           "line": 279,
@@ -239,6 +244,11 @@
       "name": "admit_image_storage_v1",
       "references": [
         {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 687,
+          "via": "http-path-reference"
+        },
+        {
           "file": "workers/image-worker/src/upload.ts",
           "line": 213,
           "via": "http-path-reference"
@@ -262,6 +272,11 @@
     {
       "name": "admit_image_upload_v1",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 645,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/upload.ts",
           "line": 174,
@@ -440,6 +455,11 @@
     {
       "name": "authorize_image_deletion",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 365,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/auth.ts",
           "line": 104,
@@ -957,7 +977,7 @@
       "references": [
         {
           "file": "supabase/functions/prepare-ticket-batch-document/index.ts",
-          "line": 48,
+          "line": 46,
           "via": "rpc"
         }
       ],
@@ -975,7 +995,7 @@
       "references": [
         {
           "file": "supabase/functions/prepare-ticket-batch-document/index.ts",
-          "line": 39,
+          "line": 37,
           "via": "rpc"
         }
       ],
@@ -2117,7 +2137,7 @@
       "references": [
         {
           "file": "supabase/functions/prepare-ticket-batch-document/index.ts",
-          "line": 53,
+          "line": 51,
           "via": "rpc"
         }
       ],
@@ -2691,6 +2711,11 @@
       "name": "get_blueprint_image_upload_access",
       "references": [
         {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 274,
+          "via": "http-path-reference"
+        },
+        {
           "file": "workers/image-worker/src/blueprint-assets.ts",
           "line": 10,
           "via": "http-path-reference"
@@ -2708,6 +2733,11 @@
     {
       "name": "get_can_manage_images",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 351,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/auth.ts",
           "line": 86,
@@ -3422,6 +3452,11 @@
     {
       "name": "get_image_project_access_v1",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 341,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/auth.ts",
           "line": 74,
@@ -4719,7 +4754,7 @@
       "references": [
         {
           "file": "supabase/functions/_shared/ticketBatchStorage.ts",
-          "line": 16,
+          "line": 5,
           "via": "rpc"
         }
       ],
@@ -6046,6 +6081,11 @@
       "name": "register_blueprint_image_asset",
       "references": [
         {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 315,
+          "via": "http-path-reference"
+        },
+        {
           "file": "workers/image-worker/src/blueprint-assets.ts",
           "line": 32,
           "via": "http-path-reference"
@@ -6132,6 +6172,11 @@
     {
       "name": "remove_image_records",
       "references": [
+        {
+          "file": "workers/image-worker/.wrangler/tmp/dev-JTnsvK/index.js",
+          "line": 380,
+          "via": "http-path-reference"
+        },
         {
           "file": "workers/image-worker/src/auth.ts",
           "line": 123,

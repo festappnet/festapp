@@ -48,3 +48,5 @@ BEGIN
 END; $function$
 ;
 REVOKE ALL ON FUNCTION public.begin_unit_client_mutation_v1(p_command_id uuid, p_command_name text, p_unit bigint, p_actor_id uuid, p_request_sha256 text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text) TO service_role;

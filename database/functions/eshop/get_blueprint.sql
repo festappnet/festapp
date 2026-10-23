@@ -111,3 +111,5 @@ BEGIN
     );
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_blueprint(uuid,uuid,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_blueprint(uuid,uuid,bigint) TO anon,authenticated,service_role;

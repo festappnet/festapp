@@ -1,8 +1,7 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
 -- B fixture and assertion helpers must be installed by the isolated harness.
 BEGIN;
-DO $$ BEGIN
- IF (SELECT project FROM festapp_test_support.disposable_environment WHERE singleton) NOT IN ('festapp-blueprint-1000-e2e-20261020','festapp-blueprint-1000-fresh-20261020','festapp-blueprint-mcp-closure-fresh-20261020') THEN RAISE EXCEPTION 'owned blueprint integrity environment required'; END IF;
-END $$;
+DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM festapp_test_support.disposable_environment WHERE singleton) THEN RAISE EXCEPTION 'disposable blueprint fixture database required'; END IF; END $$;
 DO $$
 DECLARE f jsonb; r jsonb; payload jsonb; hold uuid; sid bigint; foreign_bp bigint; scenario text; before_state jsonb; after_state jsonb; cmd uuid; replay jsonb; bank bigint; client uuid; foreign_occ bigint; foreign_form uuid; required_field bigint;
 BEGIN

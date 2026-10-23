@@ -8,3 +8,5 @@ BEGIN
  END IF;
  PERFORM public.delete_entity_email_template('occasion',p_occasion_id,p_code);
 END $$;
+REVOKE ALL ON FUNCTION public.delete_occasion_email_template(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_occasion_email_template(bigint,text) TO anon,authenticated,service_role;

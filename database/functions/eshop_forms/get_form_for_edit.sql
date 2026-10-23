@@ -185,7 +185,8 @@ BEGIN
             'account_number_human_readable', ba.account_number_human_readable,
             'title', ba.title,
             'supported_currencies', ba.supported_currencies,
-            'type', ba.type
+            'type', ba.type,
+            'bank_sync_warning', public.bank_sync_warning(ba.id)
         ) ORDER BY uba.priority ASC, ba.id ASC
     ), '[]'::jsonb)
     INTO availableBankAccountsData
@@ -206,3 +207,5 @@ BEGIN
     );
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_form_for_edit(text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_form_for_edit(text) TO anon,authenticated,service_role;

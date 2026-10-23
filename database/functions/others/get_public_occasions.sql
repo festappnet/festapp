@@ -163,3 +163,5 @@ BEGIN
   RETURN result_data;
 END;
 $$ LANGUAGE plpgsql;
+REVOKE ALL ON FUNCTION public.get_public_occasions(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_public_occasions(bigint,bigint) TO anon,authenticated,service_role;

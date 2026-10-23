@@ -437,6 +437,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/occasion-setup-email-preview/preview_test.ts"
+      ],
+      "abusePolicy": [
+        "document.output"
       ]
     },
     "stripe-connect": {
@@ -445,6 +448,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/stripe-connect/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "stripe.connect"
       ]
     },
     "stripe-connect-callback": {
@@ -461,6 +467,9 @@
       ],
       "behaviorTests": [
         "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "abusePolicy": [
+        "stripe.checkout"
       ]
     },
     "stripe-return": {
@@ -505,7 +514,7 @@
         "supabase/functions/_shared/ticketBatchExports_test.ts"
       ],
       "abusePolicy": [
-        "ticket.document",
+        "batch-document",
         "document.output"
       ]
     }

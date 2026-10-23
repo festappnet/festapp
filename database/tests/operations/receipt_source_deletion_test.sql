@@ -1,7 +1,8 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
 DO $$
 DECLARE actor uuid; org bigint; un bigint; oc bigint; pt bigint; product_id bigint; pool bigint; ctx bigint; bp bigint; form_id bigint; resource_id bigint; a bigint; b bigint;
  save_cmd uuid:=gen_random_uuid(); contexts_cmd uuid:=gen_random_uuid(); bp_cmd uuid:=gen_random_uuid(); form_cmd uuid:=gen_random_uuid(); assign_cmd uuid:=gen_random_uuid(); swap_cmd uuid:=gen_random_uuid();
- save_payload jsonb; contexts_payload jsonb; bp_payload jsonb; form_payload jsonb; assignment jsonb; saved jsonb; contexts_result jsonb; bp_result jsonb; form_result jsonb; assignment_result jsonb; swap_result jsonb;
+ fixture jsonb; save_payload jsonb; contexts_payload jsonb; bp_payload jsonb; form_payload jsonb; assignment jsonb; saved jsonb; contexts_result jsonb; bp_result jsonb; form_result jsonb; assignment_result jsonb; swap_result jsonb;
 BEGIN
  PERFORM public.create_user_for_test('receipt-source','receipt-source@example.invalid');actor:=public.get_user_id('receipt-source');
  INSERT INTO public.organizations(title) VALUES('Receipt source') RETURNING id INTO org;
@@ -28,8 +29,13 @@ BEGIN
  ASSERT public.update_product_inventory_contexts_client_sync_v1(product_id,contexts_payload,contexts_cmd)=contexts_result;
  EXECUTE 'RESET ROLE';
  INSERT INTO eshop.blueprints(occasion,organization,title,objects) VALUES(oc,org,'Blueprint','[]') RETURNING id INTO bp;
- bp_payload:=jsonb_build_object('id',bp,'occasion',oc,'organization',org,'title','Saved blueprint','objects','[]'::jsonb,'expected_aggregate_version',0);
- bp_result:=public.update_blueprint_client_sync_v1(bp_payload,bp_cmd);ASSERT bp_result->>'status'='applied';
+ fixture:=public.blueprint_test_fixture_internal(org);
+ -- Use the real canonical document/resource contract while testing receipt replay.
+ bp_payload:=jsonb_set(jsonb_set(fixture->'request','{layout,nodes}','[]'),'{seatChanges}','[]')||jsonb_build_object('id',bp,'occasion',oc,'organization',org,'title','Saved blueprint','expected_aggregate_version',0);
+ PERFORM set_config('request.jwt.claim.role','service_role',true);
+ PERFORM public.register_blueprint_text_resources(oc,NULL,public.blueprint_test_number_resources_internal());
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ bp_result:=public.update_blueprint_client_sync_v1(bp_payload,bp_cmd);ASSERT bp_result->>'status'='applied',bp_result::text;
  DELETE FROM eshop.blueprints WHERE id=bp;
  ASSERT public.update_blueprint_client_sync_v1(bp_payload,bp_cmd)=bp_result;
  INSERT INTO public.forms(occasion,title,link) VALUES(oc,'Form',gen_random_uuid()::text) RETURNING id INTO form_id;
@@ -37,10 +43,11 @@ BEGIN
  form_result:=public.update_form_client_sync_v1(form_payload,form_cmd);ASSERT form_result->>'status'='applied';
  ASSERT public.delete_form_client_sync_v1(form_id,gen_random_uuid(),1)->>'status'='applied';
  ASSERT public.update_form_client_sync_v1(form_payload,form_cmd)=form_result;
+ INSERT INTO eshop.products(occasion,title,product_type,price,currency_code) VALUES(oc,'Assignment product',pt,10,'CZK');
  INSERT INTO public.inventory_contexts(inventory_pool,title) VALUES(pool,'Assignments') RETURNING id INTO ctx;
  INSERT INTO public.resources(occasion,inventory_pool,title,capacity) VALUES(oc,pool,'Resource',1) RETURNING id INTO resource_id;
- INSERT INTO eshop.spots(occasion,inventory_context,resource) VALUES(oc,ctx,resource_id) RETURNING id INTO a;
- INSERT INTO eshop.spots(occasion,inventory_context) VALUES(oc,ctx) RETURNING id INTO b;
+ INSERT INTO eshop.spots(occasion,inventory_context,resource,product) VALUES(oc,ctx,resource_id,(SELECT id FROM eshop.products WHERE occasion=oc LIMIT 1)) RETURNING id INTO a;
+ INSERT INTO eshop.spots(occasion,inventory_context,product) VALUES(oc,ctx,(SELECT id FROM eshop.products WHERE occasion=oc LIMIT 1)) RETURNING id INTO b;
  assignment:=jsonb_build_array(jsonb_build_object('resource_id',resource_id,'old_spot_id',a,'new_spot_id',b,'inventory_context_id',ctx));
  EXECUTE 'SET LOCAL ROLE authenticated';
  assignment_result:=public.update_spot_assignments_client_sync_v1(assignment,assign_cmd);ASSERT assignment_result->>'status'='applied';

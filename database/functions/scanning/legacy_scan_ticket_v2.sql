@@ -205,3 +205,5 @@ EXCEPTION
 END;
 $function$
 ;
+REVOKE ALL ON FUNCTION public.scan_ticket_v2(text,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.scan_ticket_v2(text,text) TO anon,authenticated,service_role;

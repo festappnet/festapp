@@ -18,7 +18,7 @@ BEGIN
  ELSE SELECT * INTO STRICT part FROM eshop.ticket_batch_document_parts WHERE batch_id=b.id AND id=p_part FOR UPDATE;
  END IF;
  IF part.id IS NULL THEN RETURN jsonb_build_object('state',CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_document_parts WHERE batch_id=b.id AND state<>'ready') THEN 'pending' ELSE 'ready' END); END IF;
- IF part.state='ready' THEN RETURN jsonb_build_object('state','ready','partId',part.id,'objectKey',part.object_key,'digest',part.content_digest); END IF;
+ IF part.state='ready' THEN RETURN jsonb_build_object('state','ready','partId',part.id,'objectKey',part.object_key,'digest',part.content_digest,'bytes',part.byte_count); END IF;
  IF part.lease_expires_at>clock_timestamp() THEN RETURN jsonb_build_object('state','pending'); END IF;
  UPDATE eshop.ticket_batch_document_parts SET state='rendering',lease_token=token,lease_actor=auth.uid(),
  lease_expires_at=clock_timestamp()+interval '2 minutes',error_code=NULL WHERE id=part.id;

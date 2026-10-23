@@ -137,3 +137,5 @@ END; $function$
 ;
 
 REVOKE ALL ON FUNCTION public.set_saved_program_client_sync_v1_transactional(p_occasion bigint, p_event_ids bigint[], p_mode text, p_command_id uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.set_saved_program_client_sync_v1_transactional(bigint,bigint[],text,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_saved_program_client_sync_v1_transactional(bigint,bigint[],text,uuid) TO service_role;

@@ -56,3 +56,5 @@ $function$
 
 REVOKE ALL ON FUNCTION public.set_saved_program_client_sync_v1(p_occasion bigint, p_event_ids bigint[], p_mode text, p_command_id uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.set_saved_program_client_sync_v1(p_occasion bigint, p_event_ids bigint[], p_mode text, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.set_saved_program_client_sync_v1(bigint,bigint[],text,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_saved_program_client_sync_v1(bigint,bigint[],text,uuid) TO authenticated,service_role;

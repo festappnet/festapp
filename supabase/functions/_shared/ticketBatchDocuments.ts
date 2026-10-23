@@ -4,7 +4,6 @@ import { loadLayoutResources, prepareTicketRendererFromResources, type Resources
 import { boundDocumentOutput, documentLimits } from './documentLimits.ts';
 import { layoutFontIds } from './ticketLayout.ts';
 
-export const batchBucket = 'ticket-batch-documents';
 type Asset = {key:string;digest:string;bytes:number};
 export interface BatchObjectStore {
   read(key:string):Promise<Uint8Array|null>;

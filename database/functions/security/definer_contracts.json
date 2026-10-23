@@ -527,7 +527,7 @@
     },
     "0da7ee5db6f4a3d112c314f2293b78744e68d2d5fce002545f1b997347b6dee1": {
       "signature": "public.can_read_group_data_security_v1(bigint)",
-      "source": "database/functions/security/data_security_reads.sql"
+      "source": "database/functions/user_permissions/feature_operations.sql"
     },
     "cfd27bbd8acf111816e21d261c71c7ef0e4ec43c1903a7f6ae7542de56666ce3": {
       "signature": "public.mark_news_read_client_sync_v1(bigint,bigint,uuid)",
@@ -543,7 +543,7 @@
     },
     "3888c67c6531bcc86a78bc07599c5888053b7663a6048b469c08b7ea03dc6206": {
       "signature": "public.can_read_news_data_security_v1(bigint)",
-      "source": "database/functions/security/data_security_reads.sql"
+      "source": "database/functions/user_permissions/feature_operations.sql"
     },
     "ca3ae86744eb5ca6447d8a4f5c9ac78a2f05f56b9dedd8568475d5ca1229d2c8": {
       "signature": "public.confirm_blueprint_order_change_client_sync_v1(bigint[],jsonb,uuid)",
@@ -620,6 +620,1718 @@
     "558fb750392c30f0328ed3b646b1f616cd31b30c737d1a8342742660a07336d0": {
       "signature": "public.submit_unit_verification(bigint,bigint)",
       "source": "database/functions/organization_verification/profile_commands.sql"
+    },
+    "173a6433148d3c25b3cad805731deb2a82b171986bb68dc73032b544d200d915": {
+      "signature": "public.admit_image_upload_v1(bigint,bigint,bigint,text)",
+      "source": "database/functions/abuse/media.sql"
+    },
+    "326b680bcfd20ebf0edaa55c5f7ee823a7b1486a824c2c000f40f16473f96ccd": {
+      "signature": "public.admit_image_storage_v1(bigint,bigint,bigint,text)",
+      "source": "database/functions/abuse/media.sql"
+    },
+    "0612e5761ff9644db03e8d1e55f452afad14ede7be2d218004f8f7ea01c6a28e": {
+      "signature": "public.consume_selected_activity_draft_internal_v1(bigint,uuid,bigint,jsonb,jsonb)",
+      "source": "database/functions/activities/canonical_activity_history.sql"
+    },
+    "53132224c4821d6f6aee568bfd7edce5a9496319ac0e34e36a04d4d6af310b82": {
+      "signature": "public.update_activities(bigint,jsonb)",
+      "source": "database/functions/activities/legacy_activity_facades.sql"
+    },
+    "32b844626f589b25756c1deaa0060dd442d59d4e76a4a7402fc4c9d1fca9f340": {
+      "signature": "public.save_activity_history(bigint,jsonb,text,bigint,text)",
+      "source": "database/functions/activities/legacy_activity_facades.sql"
+    },
+    "3cdc95ccf8ec56e98e4e3a6848760732060895a72976db31892b64d4187232ad": {
+      "signature": "public.delete_autosave_history(bigint)",
+      "source": "database/functions/activities/legacy_activity_facades.sql"
+    },
+    "bed04d22b34d641a778a6a5b9b0b32f69ade0da23420a0b0d2eb5ebdeb2f3547": {
+      "signature": "public.get_blueprint_seats(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/blueprint/admin_seats.sql"
+    },
+    "16ff8c8d116703eb449bda80df092786f4632388479bb23a0803451b5cbcdd4f": {
+      "signature": "public.preview_blueprint_seat_block(bigint,bigint,bigint,bigint,bigint[],boolean)",
+      "source": "database/functions/blueprint/admin_seats.sql"
+    },
+    "3e11f2d0f8e4286256456ac8b448d2a09196073bafe84e858030e8c7e8cfab53": {
+      "signature": "public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)",
+      "source": "database/functions/blueprint/admin_seats.sql"
+    },
+    "12fcd0bb25510da1d37d93b43c7e6258754e6a8fde99295c3b29b7dc28749678": {
+      "signature": "public.get_blueprint_image_upload_access(bigint,text,bigint)",
+      "source": "database/functions/blueprint/image_assets.sql"
+    },
+    "0ad6c9413e44b25ea349e02f9190fe3eac47e2fe06ff84a5e48beafc4dbba6ea": {
+      "signature": "public.register_blueprint_image_asset(bigint,text,jsonb,bigint,text,bigint)",
+      "source": "database/functions/blueprint/image_assets.sql"
+    },
+    "758aa203ec56505442034a4ca2f54fb5672bfd490f3b3bae141145b7c07ab3e0": {
+      "signature": "public.blueprint_legacy_migration_source_internal(bigint)",
+      "source": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql"
+    },
+    "a81d29399d20c9e016c9e0b155bef2143f98745d6d5bcd7c007ca86b58173679": {
+      "signature": "public.migrate_blueprint_layout_reviewed_internal(text,text,jsonb,uuid)",
+      "source": "database/functions/blueprint/migrate_reviewed_legacy_layout.sql"
+    },
+    "7ed9924016c59efd083d72af3b27df18ff5d5c1ab3d06ad1c9ace59470a2950a": {
+      "signature": "public.preview_blueprint_swap(bigint,bigint)",
+      "source": "database/functions/blueprint/preview_blueprint_swap.sql"
+    },
+    "c7aede586e03f11d16a05493de93b1df69a2086beac0fe28f95bdcbf40842eda": {
+      "signature": "public.can_prepare_layout_resources(bigint)",
+      "source": "database/functions/blueprint/resource_admission.sql"
+    },
+    "889d52fda55a9d206f6fc1352f73563ad98553add18fcd3f12c542de7299c0f6": {
+      "signature": "public.admit_layout_resources_limits_v1(bigint,bigint)",
+      "source": "database/functions/blueprint/resource_admission.sql"
+    },
+    "98cbedfbed8c0ec36ce1f85c977ba94dc2dece6db6e78b42096f4872699bdd1d": {
+      "signature": "public.begin_client_mutation_reviewed_impl_internal(uuid,text,bigint,uuid,text,boolean)",
+      "source": "database/functions/blueprint/reviewed_migration_receipt.sql"
+    },
+    "a7ee70dc4947a31fa5ae3bea26336c4a30d208b686b5e049bddb73dbd0b44056": {
+      "signature": "public.begin_client_mutation_v1(uuid,text,bigint,uuid,text)",
+      "source": "database/functions/blueprint/reviewed_migration_receipt.sql"
+    },
+    "f0a35575953022b1d215035d370960bf32ff7fd113c9a685a30a039fe410b393": {
+      "signature": "public.save_blueprint_layout_impl_internal(jsonb,boolean)",
+      "source": "database/functions/blueprint/save.sql"
+    },
+    "37060e7a57913c2ac03e890c94c6ff5cd2d308754479d9770bc8f354775de0fc": {
+      "signature": "public.save_blueprint_layout_internal_v1(jsonb)",
+      "source": "database/functions/blueprint/save.sql"
+    },
+    "7a2ee91ef117b94c431676435693950606d02c906bc3eda55b78209754fc65c4": {
+      "signature": "public.swap_spot_tickets_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/blueprint/swap_spot_tickets_client_sync_v1.sql"
+    },
+    "073709be78f4bd3d674cb02ab530a35ab3590a9b7b1960c4dc6a527cf0a64198": {
+      "signature": "public.register_blueprint_text_resources(bigint,uuid,jsonb)",
+      "source": "database/functions/blueprint/text_resources.sql"
+    },
+    "e4fb1a900eb94dabb64c9180e55603310eee554706fa3e84d704156cd3f985c9": {
+      "signature": "public.update_blueprint_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/blueprint/update_blueprint_client_sync_v1.sql"
+    },
+    "b9eac483b6300d4471aede206a37bd502b7f99771bd154951391f94712edbcbb": {
+      "signature": "public.report_cleaning_issue_internal_v1(bigint,text,text)",
+      "source": "database/functions/cleaning/report_cleaning_issue.sql"
+    },
+    "46808c844580c2c9d5d6833aec3f3509f6375200a6bf8b75d225d1dd0de94b57": {
+      "signature": "public.report_cleaning_issue(bigint,text,text)",
+      "source": "database/functions/cleaning/report_cleaning_issue.sql"
+    },
+    "c64baf91511ca904d5e73762d5106676a87d1b043f01dfb5328cc7bd57b5c066": {
+      "signature": "public.report_cleaning_issue_client_sync_v1(bigint,text,text,uuid)",
+      "source": "database/functions/cleaning/report_cleaning_issue_client_sync_v1.sql"
+    },
+    "840e599603779b34435489e2d1445d87940333de58e63c182dc2ceb5fa4df686": {
+      "signature": "public.resolve_cleaning_place_internal_v1(bigint)",
+      "source": "database/functions/cleaning/resolve_cleaning_place.sql"
+    },
+    "cf38e403e5877ef447a4f372736092a138741aaf08ebfa6a4414f874abd18844": {
+      "signature": "public.resolve_cleaning_place(bigint)",
+      "source": "database/functions/cleaning/resolve_cleaning_place.sql"
+    },
+    "3a08cfc1f4b69aeb1261a5196804e37c25e4eed9c89aea4ae09d3e158ab93217": {
+      "signature": "public.resolve_cleaning_place_client_sync_v1(bigint,uuid)",
+      "source": "database/functions/cleaning/resolve_cleaning_place_client_sync_v1.sql"
+    },
+    "195393303bb11c2088760bc6535dc22f556de6fa40930b9c0ad6a7c8e28333d5": {
+      "signature": "public.set_cleaning_notifications_muted_internal_v1(bigint,boolean)",
+      "source": "database/functions/cleaning/set_cleaning_notifications_muted.sql"
+    },
+    "2fb9cb7d95d039514542dfbc5f69c89a952582c6ab51e0fd001835de4dda059d": {
+      "signature": "public.set_cleaning_notifications_muted(bigint,boolean)",
+      "source": "database/functions/cleaning/set_cleaning_notifications_muted.sql"
+    },
+    "9d008e27717e11638daf84a802ac0f0bcd4e6b960d4b3ffa43143a8df7a2b6e2": {
+      "signature": "public.set_cleaning_notifications_muted_client_sync_v1(bigint,boolean,uuid)",
+      "source": "database/functions/cleaning/set_cleaning_notifications_muted_client_sync_v1.sql"
+    },
+    "47700d87170746df94612b4c59a1c6c2b667e12b9fc2bbe4a4103a0fa478edfa": {
+      "signature": "public.set_cleaning_reporter_blocked_internal_v1(bigint,uuid,boolean)",
+      "source": "database/functions/cleaning/set_cleaning_reporter_blocked.sql"
+    },
+    "121107e790d546688dbf5a9330e24d42af06f5f37f992a398c579a266afe672f": {
+      "signature": "public.set_cleaning_reporter_blocked(bigint,uuid,boolean)",
+      "source": "database/functions/cleaning/set_cleaning_reporter_blocked.sql"
+    },
+    "dca9cc293aaf162cfb927b418d9c28b3ef51b2d8ee41159ae127f2cd08ba4dbd": {
+      "signature": "public.set_cleaning_reporter_blocked_client_sync_v1(bigint,uuid,boolean,uuid)",
+      "source": "database/functions/cleaning/set_cleaning_reporter_blocked_client_sync_v1.sql"
+    },
+    "1c0cd77fa318234d4dfce216f576710212a6f9b979efa61342d7c14d16f5566d": {
+      "signature": "public.delete_product_internal_v1(bigint)",
+      "source": "database/functions/eshop/delete_product.sql"
+    },
+    "7aac05bc18aa67c02bd0317cd3f23678b69dbdbe7c0b1c6ac61ea19a6b8960d8": {
+      "signature": "public.delete_product(bigint)",
+      "source": "database/functions/eshop/delete_product.sql"
+    },
+    "9c2f2e62fdfb6325f94f00298363a870e758697520d697c4b4302331d746cb4f": {
+      "signature": "public.delete_product_domain_command_internal_v1(bigint,uuid,bigint)",
+      "source": "database/functions/eshop/delete_product_client_sync_v1.sql"
+    },
+    "e1bbfd15f0ff7faf56a6b254db7edaa426dd3fc6c9a6f6eda9299787f581da9f": {
+      "signature": "public.delete_product_client_sync_v1(bigint,uuid,bigint)",
+      "source": "database/functions/eshop/delete_product_client_sync_v1.sql"
+    },
+    "6f64b80512bd94c86ef199ca21a19e42e2e899bf30668a771a6fc86cb900ea68": {
+      "signature": "public.delete_product_client_sync_v1(bigint,uuid)",
+      "source": "database/functions/eshop/delete_product_client_sync_v1.sql"
+    },
+    "e5a4043270c24fded814f89ce7e80b6f610221b25a753bff6e5e439d74cd97e3": {
+      "signature": "public.get_product_for_authoring_v1(bigint)",
+      "source": "database/functions/eshop/get_product_for_authoring_v1.sql"
+    },
+    "2551d9a3cc548df8b0645c986bd73f906803978bfe89958d2a088da2360a3fff": {
+      "signature": "public.get_products_and_types_for_edit(text)",
+      "source": "database/functions/eshop/get_products_and_types_for_occasion.sql"
+    },
+    "8f400a7b6339674c0fef2a87d12fe594c771eab8d4eea01a269dbb75b6915e5e": {
+      "signature": "public.get_product_catalog(bigint,bigint,bigint,text)",
+      "source": "database/functions/eshop/product_catalog.sql"
+    },
+    "1165cd61552bc044f47cfd0deca2917fea3a7a3964d8b0e23152493056675981": {
+      "signature": "public.get_product_catalog_page(bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/eshop/product_catalog.sql"
+    },
+    "d8903a1d3f90d342ed0d9760f68bc0e20e6d5ed3ed9392a74a943a07db103902": {
+      "signature": "public.manage_product(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/eshop/product_catalog.sql"
+    },
+    "e94bdef604dd340c78ed94d169561fc54c1616dcfc8afe49157338e14d08d93d": {
+      "signature": "public.get_product_catalog_options(bigint,bigint,bigint,text,bigint,integer)",
+      "source": "database/functions/eshop/product_catalog_options.sql"
+    },
+    "13524e14552eddc930257b562f772471fd54a8b9a9b93842a52857f85014b34d": {
+      "signature": "public.manage_product_schedule(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/eshop/product_schedule_commands.sql"
+    },
+    "f431e3e12d9f2cce2280a22ca77ea12160355dbd9c0b0d7dcf56aa54c9b65dae": {
+      "signature": "public.get_product_schedule(bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/eshop/product_schedule_commands.sql"
+    },
+    "f41dc14441f5ac5497fcac3b29aedaf14691d645800eeb692da6dd958636e4c6": {
+      "signature": "public.save_product_wave_target_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/eshop/save_product_wave_target_client_sync_v1.sql"
+    },
+    "ef91a6922d5ada0050455c06f4a13a403dbcd449e37c3e2077e71e85a366c5d9": {
+      "signature": "public.blueprint_hold_admission_internal(bigint,bigint[],uuid)",
+      "source": "database/functions/eshop/select_spot.sql"
+    },
+    "df9d0377b466aff474e9ce4f73b1af44c87b7a330661e531c06685246397184a": {
+      "signature": "public.select_spot_single_internal_v1(uuid,uuid,bigint,boolean)",
+      "source": "database/functions/eshop/select_spot.sql"
+    },
+    "f1232c84c8b54948bf4e528cb8679c3e98e8c294ed0029003bcc07ee841b9406": {
+      "signature": "public.swap_spot_pair_internal_v1(bigint,bigint)",
+      "source": "database/functions/eshop/swap_spot_tickets.sql"
+    },
+    "a8bdf8fc795291b405055aadf8449dd0f401aee76cfee5b42102a76941498308": {
+      "signature": "public.swap_spot_tickets_internal_v1(bigint,bigint)",
+      "source": "database/functions/eshop/swap_spot_tickets.sql"
+    },
+    "994a968405863b149e78746aba592c52558f757cf9dd7109eaad48391302b54b": {
+      "signature": "public.get_blueprint_for_authoring_v1(bigint)",
+      "source": "database/functions/eshop/ticketing_authoring_reads.sql"
+    },
+    "bcf0a696a8e8330bc3a5f721f7977d0ac77ba51fae89e4b512082257163cbd97": {
+      "signature": "public.get_form_for_authoring_v1(bigint)",
+      "source": "database/functions/eshop/ticketing_authoring_reads.sql"
+    },
+    "5784592458257ec73d4d29fb77f3f47cff99a60fe99e1868b0501578de6a6d1c": {
+      "signature": "public.update_product_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/eshop/update_product_client_sync_v1.sql"
+    },
+    "272fceaba9c3528392dbc87645da89fff683d523c7091829c94e736aca0b4a69": {
+      "signature": "public.delete_form_domain_command_internal_v1(bigint,uuid,bigint)",
+      "source": "database/functions/eshop_forms/delete_form_client_sync_v1.sql"
+    },
+    "6a48d38eed73d1a7cb97bd5b7746ea6d15652fc2d4253df2ad055d6555ef7a55": {
+      "signature": "public.delete_form_client_sync_v1(bigint,uuid,bigint)",
+      "source": "database/functions/eshop_forms/delete_form_client_sync_v1.sql"
+    },
+    "19e747124db458a73e693e71b801f3e80b15b03ebc284812038b7655893956f6": {
+      "signature": "public.delete_form_client_sync_v1(bigint,uuid)",
+      "source": "database/functions/eshop_forms/delete_form_client_sync_v1.sql"
+    },
+    "4486f8e7372c16e0ed81ffac486b8cd638d28985c84bd6f3388dbc1f99c73dbe": {
+      "signature": "public.duplicate_form_to_occasion_internal_v1(bigint,text,text)",
+      "source": "database/functions/eshop_forms/duplicate_form_to_occasion.sql"
+    },
+    "3d3caedee0e49d3ec2e5379bae5039f1a441d95aab87f80f81a6b249113b737e": {
+      "signature": "public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid,text)",
+      "source": "database/functions/eshop_forms/duplicate_form_to_occasion_client_sync_v1.sql"
+    },
+    "052cc84e0182a976e42a8a994b1428849c1b42a9e9af6482ba854f1f3f0a382c": {
+      "signature": "public.update_form_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/eshop_forms/update_form_client_sync_v1.sql"
+    },
+    "5146466e53b5ecfeaee6d390a62cefcdca36ce69144a86cc333903e254fb2806": {
+      "signature": "public.update_form(jsonb)",
+      "source": "database/functions/eshop_forms/update_form_client_sync_v1.sql"
+    },
+    "2a7260766319fd2328ae9a6290c948e8680fd9abbda9cd8afe52730728657c91": {
+      "signature": "public.get_operator_order_report_v1(bigint,bigint,bigint)",
+      "source": "database/functions/eshop_orders/operator_orders.sql"
+    },
+    "f530d1d64adde646bd2e1a8565118c28453a4f09dc709143e23db66f79be8a5f": {
+      "signature": "public.get_operator_orders_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)",
+      "source": "database/functions/eshop_orders/operator_orders.sql"
+    },
+    "ffcdb00b6fe7e500a9a4c7b79c33816c8bb808c2b512b6044e260bbeaf0a1ae4": {
+      "signature": "public.manage_operator_order_v1(bigint,bigint,bigint,bigint,uuid,text,text,jsonb)",
+      "source": "database/functions/eshop_orders/operator_orders.sql"
+    },
+    "246bb5ddb6ed120d92dbad412acbc9f44736702dae0920d238f03db084548e1e": {
+      "signature": "public.storno_tickets_bulk_internal_v1(bigint[],boolean)",
+      "source": "database/functions/eshop_orders/storno_tickets_bulk.sql"
+    },
+    "76352d908098dede49bbe14d2eaf720d5a0715de739d30332c65825316e716b2": {
+      "signature": "public.storno_tickets_client_sync_v1(bigint[],uuid)",
+      "source": "database/functions/eshop_orders/storno_tickets_client_sync_v1.sql"
+    },
+    "1bf64021cf057c7c87271d689423c7d6462a5562a6fdc31c5a6aef61afdf5fd3": {
+      "signature": "public.update_ticket_products_client_sync_v1(bigint,jsonb,uuid)",
+      "source": "database/functions/eshop_orders/update_ticket_products_client_sync_v1.sql"
+    },
+    "e91bff11b516c5ef7be104809fb56f97fb84c39fb5174f55af7ef34b6253dbae": {
+      "signature": "public.get_stripe_order_admin_detail(bigint)",
+      "source": "database/functions/eshop_stripe/admin_detail.sql"
+    },
+    "b3989a8555092080d1ba56fa50a4ab871cf9723559f193b22fdd98eac30c2550": {
+      "signature": "public.issue_stripe_capability_internal(bigint,text,timestamp with time zone,uuid)",
+      "source": "database/functions/eshop_stripe/capabilities.sql"
+    },
+    "74ef0a30f9ac4abae1c2daedfa5c99efd6aa02a61ae6a032082ade71e382a535": {
+      "signature": "public.authorize_stripe_capability_internal(text,text,bigint,uuid)",
+      "source": "database/functions/eshop_stripe/capabilities.sql"
+    },
+    "b17c7b51b36cdd074c1957d5cbc4b60c82b39d2264c14615317066bbcb3220a2": {
+      "signature": "public.claim_stripe_checkout_internal(text,boolean)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "163ef7e00722834ecf835684d8e33a4ef66136091692b5866a9aaecb2d9d89c4": {
+      "signature": "public.commit_stripe_checkout_session_internal(uuid,uuid,text,text,bigint)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "ca78334c45fb74819c14f4403dd77501fe58dfed83a65c4967f23347e5161c42": {
+      "signature": "public.fail_stripe_checkout_internal(uuid,uuid)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "a482e6575b45f263d75a647388ded08d1f866fdc3a23942aaca7eb81386e689f": {
+      "signature": "public.read_stripe_return_internal(text,boolean)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "a2478209d7c3f2280333edc746c5a51337129a0b1a613117e9685cdc94c90765": {
+      "signature": "public.read_stripe_pay_status_internal(text,boolean)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "140fe9a2ff711384501b2cbf73e1514f423a94c3fb30386e989d9ab5a3405a43": {
+      "signature": "public.claim_stripe_sync_internal(text,boolean,uuid,text,text)",
+      "source": "database/functions/eshop_stripe/checkout.sql"
+    },
+    "d6618c4a84bba1d1d8ce339ad9d790653a841158a09b018f94a348eb76c387ca": {
+      "signature": "public.claim_stripe_connection_status_internal(text,boolean)",
+      "source": "database/functions/eshop_stripe/connection_status.sql"
+    },
+    "81d54d4e5a36549d325e6cc022851e67586a2f5fc286c9b7345553a31dc68584": {
+      "signature": "public.commit_stripe_connection_status_internal(uuid,uuid,jsonb,jsonb)",
+      "source": "database/functions/eshop_stripe/connection_status.sql"
+    },
+    "627af49071c60bc33b8b2e0658144de5473ba3e1ebc69978d431faa6eb4a223a": {
+      "signature": "public.fail_stripe_connection_status_internal(uuid,uuid)",
+      "source": "database/functions/eshop_stripe/connection_status.sql"
+    },
+    "70489d83d546d3c0ca7eb206edc080dd7c2bfdc4996fa0b12805e8b59827046d": {
+      "signature": "public.get_recoverable_stripe_connections_internal(boolean)",
+      "source": "database/functions/eshop_stripe/connection_status.sql"
+    },
+    "ebec9a8b835bfb2ebb9c466d5c58499d81e2a2913a7735682fd7a392bf5d9a50": {
+      "signature": "public.begin_stripe_connection_flow(bigint,boolean)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "56029b1e761979d9d4f24918ca702df1d875116ff594e410e12b9b11702480b6": {
+      "signature": "public.claim_stripe_connection_flow_internal(text,uuid,boolean)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "ff158660b7169839968b35a4e4a807b183458b9661debd51cc9668e92432e512": {
+      "signature": "public.complete_stripe_connection_flow_internal(uuid,uuid,jsonb)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "bb3097f4b0b7f4b6a079e6684af4c7f462d73a43a365df7f9d16bf8d01290886": {
+      "signature": "public.finish_stripe_connection_flow_error_internal(uuid,uuid,boolean)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "b13c3d04ef783bcccb4cec46cbabc9f0f33a41912faa7eb900ed44cd80a6654c": {
+      "signature": "public.get_stripe_unit_connection(bigint,boolean)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "81bf26b2c0687560779d8bb1911533b794ba5f0ca7d55eb55fc1283ef4380155": {
+      "signature": "public.set_stripe_unit_paused(bigint,boolean,boolean)",
+      "source": "database/functions/eshop_stripe/connections.sql"
+    },
+    "363db61e746332dd2ec0d608ff438c04f717647a5818eb777ee86e4617be8f5c": {
+      "signature": "public.get_stripe_disconnect_impact(bigint,boolean)",
+      "source": "database/functions/eshop_stripe/disconnect.sql"
+    },
+    "681291f349a5a3e481820fe197ded75a998cf6c0db0613dffb6a8116dcac516d": {
+      "signature": "public.begin_stripe_disconnect(bigint,boolean,uuid)",
+      "source": "database/functions/eshop_stripe/disconnect.sql"
+    },
+    "5e6a6f2f1e6b0235bbea5f812782c04f8a98cc5f7072ebfd93094b43c0e7f957": {
+      "signature": "public.claim_stripe_disconnect_internal(uuid,uuid,boolean)",
+      "source": "database/functions/eshop_stripe/disconnect.sql"
+    },
+    "e0d2a7d71e2ff3f5addf73acc6abbd84935e788312edb5fdebe301a8a96319a1": {
+      "signature": "public.finish_stripe_disconnect_internal(uuid,boolean)",
+      "source": "database/functions/eshop_stripe/disconnect.sql"
+    },
+    "e3f555bf48acae6f06a2629141de1b3e57700754029f1899b0c0595eb6bdb043": {
+      "signature": "public.stripe_unit_feature_enabled_internal(bigint)",
+      "source": "database/functions/eshop_stripe/feature_settings.sql"
+    },
+    "721b132b6bf6be8b13d8cbea72d5c8b155ee9d0bb00add3c024c9f0ae9e15208": {
+      "signature": "public.set_stripe_unit_feature(bigint,boolean)",
+      "source": "database/functions/eshop_stripe/feature_settings.sql"
+    },
+    "1db06c9f2a4dd0eb4bed43cee16c186ab779e7bb37f19abfb4dbdae449c3b710": {
+      "signature": "public.get_form_stripe_recipient(bigint,bigint,boolean)",
+      "source": "database/functions/eshop_stripe/form_recipient.sql"
+    },
+    "48380f3b3c2f009d7ed60406d84126a64e3d3fa1413697e2d1e7c853cc93ce2e": {
+      "signature": "public.attach_stripe_handoff_internal(bigint,uuid,text,boolean)",
+      "source": "database/functions/eshop_stripe/handoff.sql"
+    },
+    "3aac18761a3a5ead400dc43547e32546786226942093eb1d22bb5385575b7bea": {
+      "signature": "public.read_stripe_handoff_internal(text,boolean,boolean)",
+      "source": "database/functions/eshop_stripe/handoff.sql"
+    },
+    "4a758d5dae4239728b8f949db78d739fd4a7023ceb5924476ae9f07153269187": {
+      "signature": "public.ingest_stripe_payment_internal(uuid,uuid,jsonb,jsonb)",
+      "source": "database/functions/eshop_stripe/ingest.sql"
+    },
+    "937162034f88017384bb02f848941e426c02dbc586a99b20bc1d60906e3159d9": {
+      "signature": "public.get_stripe_order_pay_source_internal(bigint,uuid)",
+      "source": "database/functions/eshop_stripe/order_creation.sql"
+    },
+    "fc5a76abe2c03d0b024da6c13d4a6f19b7d946050840951008b22f367bc5fac9": {
+      "signature": "public.get_recoverable_stripe_attempts_internal(boolean,integer)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "3914095f13b9d868cd27810d928a280a1232eb86d2f4cb6bad10950c55e7ade2": {
+      "signature": "public.fail_stripe_reconciliation_internal(uuid,uuid)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "88dae6b701b988791195e9cd07ecde60d6abaf4f832e0a01279abad31f1e67ae": {
+      "signature": "public.checkpoint_stripe_session_lookup_internal(uuid,uuid,text,text)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "fd353197dbb7ced1b677596e292a1a4189e947fef57bb18024495380c2550f10": {
+      "signature": "public.request_stripe_reconciliation(text)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "7534461b5636f509034072d7971a6997ba0f21a1e0ea06b57739c80a1beaf00c": {
+      "signature": "public.purge_expired_stripe_sources_internal(integer)",
+      "source": "database/functions/eshop_stripe/reconciliation.sql"
+    },
+    "1ceddbabce736f0d835b80e781c96fab015ef33c65ad35e640a7ab6a6194777f": {
+      "signature": "public.decide_stripe_partial_refund_client_sync_v1(bigint,text,bigint[],text,bigint,uuid)",
+      "source": "database/functions/eshop_stripe/refund_decisions.sql"
+    },
+    "e1c5b14198999ed584e8dd8d88bb4b4df30f10ed0e5ef6a9d228b0cca346aaf4": {
+      "signature": "public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid)",
+      "source": "database/functions/eshop_ticket_batches/create.sql"
+    },
+    "b213eb38ecbdcd02e67a988cd50c0753e1d24fec58ea32b31dfbdf2a2fd8280d": {
+      "signature": "public.claim_ticket_batch_document(uuid,uuid)",
+      "source": "database/functions/eshop_ticket_batches/documents.sql"
+    },
+    "5a09cefefe556fd87b93a3301d8b73a43fb99ed51a1a9e24ee9b905b49daee6a": {
+      "signature": "public.complete_ticket_batch_resources_internal(uuid,uuid,jsonb,integer)",
+      "source": "database/functions/eshop_ticket_batches/documents.sql"
+    },
+    "ecfb1bd1558cd3e341c1dece533faa4a3b96ad35e4ab11ee449ce1ca1ab38a88": {
+      "signature": "public.complete_ticket_batch_document_internal(uuid,uuid,text,bigint,integer)",
+      "source": "database/functions/eshop_ticket_batches/documents.sql"
+    },
+    "8085ba2ffce5209e0015037831373711d89770f87d65371316fe4afeb27e1307": {
+      "signature": "public.fail_ticket_batch_document_internal(uuid,uuid,uuid)",
+      "source": "database/functions/eshop_ticket_batches/documents.sql"
+    },
+    "6a3f5e5434c8a759684059c28551d214148cc8e21a400817db7d6c32eec0e683": {
+      "signature": "public.get_ticket_batch_stored_document(bigint)",
+      "source": "database/functions/eshop_ticket_batches/documents.sql"
+    },
+    "17c4e6d31f4f838b2c6b1d148819f4b52e09cddc3989256dd86ef70505677177": {
+      "signature": "public.get_ticket_batch_export_manifest(uuid)",
+      "source": "database/functions/eshop_ticket_batches/exports.sql"
+    },
+    "bc588c6f421f38b675f0747634aaad1bf1212bf32bc4d39f1400d36c31daacbb": {
+      "signature": "public.get_ticket_batch_detail(uuid,integer)",
+      "source": "database/functions/eshop_ticket_batches/reads.sql"
+    },
+    "f912a559dc153cdbac2e601493e1b8cf497a28aa1d8e5f49ec140cf79d2f6d85": {
+      "signature": "public.get_ticket_batches(bigint,timestamp with time zone)",
+      "source": "database/functions/eshop_ticket_batches/reads.sql"
+    },
+    "cf70f175836d0187d356b74a7eb7bc492eb15f4bf7f70e1af933cfd4e402cc5c": {
+      "signature": "public.preview_ticket_batch(bigint,jsonb)",
+      "source": "database/functions/eshop_ticket_batches/reads.sql"
+    },
+    "68a247d60d16cb2eac8e119910f34f08abd14c1cf125d7b48e29109b909e3614": {
+      "signature": "public.get_ticket_batch_create_options(bigint)",
+      "source": "database/functions/eshop_ticket_batches/reads.sql"
+    },
+    "c56997d744dc22e3ab06083aa623d0cad25ca4fbdb1bb651b4b35631146f8605": {
+      "signature": "public.sell_ticket_batch_items_client_sync_v1(uuid,bigint[],jsonb,boolean,uuid)",
+      "source": "database/functions/eshop_ticket_batches/sales.sql"
+    },
+    "3436cff83a5855d326fdfb3f518abaadb7f6edd4a038d4afa611435b9ae833cb": {
+      "signature": "public.void_ticket_batch_items_client_sync_v1(uuid,bigint[],text,uuid)",
+      "source": "database/functions/eshop_ticket_batches/sales.sql"
+    },
+    "c0a93484b74f18484226db577fd091dccf9a086d232a6588944981a0b05e91dd": {
+      "signature": "public.delete_event(bigint)",
+      "source": "database/functions/events/delete_event.sql"
+    },
+    "19d59d20ed89c482e90ed63acbe39a80f2394feac34641af84110b86d2a3c2cb": {
+      "signature": "public.delete_event_feedback(bigint,uuid)",
+      "source": "database/functions/events/delete_event_feedback.sql"
+    },
+    "b09edae7dc310f0bad217d90fc2a17807a47a9b6cb1bc5a95fd269f9794cc4d3": {
+      "signature": "public.get_event_command_data_v1(bigint)",
+      "source": "database/functions/events/get_event_command_data_v1.sql"
+    },
+    "d51102af77eee9f4e3ddfbf8b013be6618d5665031f376734fb463e72a4baefb": {
+      "signature": "public.get_event_editor_v1(bigint,bigint)",
+      "source": "database/functions/events/get_event_editor_v1.sql"
+    },
+    "4f45ec40e00b620a5448ef15abb9a103d750e52e248b7063ed5581cf6d7cc5b3": {
+      "signature": "public.save_event_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/events/save_event_client_sync_v1.sql"
+    },
+    "0610bdb7befe8a637311f8be893fac15d05d488c81db6c678412e4bf32f0c321": {
+      "signature": "public.save_event_domain_command_internal_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/events/save_event_domain_command_internal_v1.sql"
+    },
+    "81d681c66486fd74fc6061ceab45f33e19fe9d3b37802c44c20c7cc927dcb8f6": {
+      "signature": "public.save_event_speakers_client_sync_v1(bigint,bigint,uuid,bigint,bigint[])",
+      "source": "database/functions/events/save_event_speakers_client_sync_v1.sql"
+    },
+    "b56de5b55312dc754c69b6a7afaf01d5a9fd1212cf03c1247ffd51262dac59d1": {
+      "signature": "public.set_saved_program(bigint,bigint[],text)",
+      "source": "database/functions/events/set_saved_program.sql"
+    },
+    "9846d4607f8caac873934cddf4532e86ffea71dc1b7cdc43df8bac78fe287313": {
+      "signature": "public.sign_user_out_of_event(bigint,uuid)",
+      "source": "database/functions/events/sign_user_out_of_event.sql"
+    },
+    "a467694b83a5c2238f34c5ce2e3d8dbf8e129106554cc6c021f083b706cdad4c": {
+      "signature": "public.sign_user_to_event(bigint,uuid)",
+      "source": "database/functions/events/sign_user_to_event.sql"
+    },
+    "6c77f7285b3928398b0f03a0770707668521f2414870e120164877a295617d4c": {
+      "signature": "public.submit_event_feedback(bigint,text,text,uuid)",
+      "source": "database/functions/events/submit_event_feedback.sql"
+    },
+    "287e085c190805137182ad578bf086b6969f54b3dae2429137f09402b6fbc7df": {
+      "signature": "public.add_user_group_members_client_sync_v1(bigint,bigint,uuid[],uuid)",
+      "source": "database/functions/groups/add_user_group_members_client_sync_v1.sql"
+    },
+    "3fd9c51cdf47cf823377bbecaaf81d70a9c672741cf92734e17571610c13ad7c": {
+      "signature": "public.get_group_places_for_map_v1(bigint)",
+      "source": "database/functions/groups/get_group_places_for_map_v1.sql"
+    },
+    "2bafd3c94e839585abbba012247e216617d86d2aa19877f2a00357f2653be130": {
+      "signature": "public.get_user_groups_editor_bundle_v1(bigint,text)",
+      "source": "database/functions/groups/get_user_groups_editor_bundle_v1.sql"
+    },
+    "a466c0cf50f71d0e949481a91dd432291df9bc06c072c5d5a54014cf34520a28": {
+      "signature": "public.import_occasion_users_from_csv(bigint,jsonb,jsonb)",
+      "source": "database/functions/groups/legacy_group_facades.sql"
+    },
+    "9bd89785545b02533149091128b0320cf2dce2f8e09f494737040e9fefc36c38": {
+      "signature": "public.import_user_group_assignments(bigint,jsonb)",
+      "source": "database/functions/groups/legacy_group_facades.sql"
+    },
+    "87ce0111c611cb309719ed9a7f7b6f5970b25652ae2ccea7e2c61b8c2019af45": {
+      "signature": "public.delete_occasion_user_ws(uuid,bigint)",
+      "source": "database/functions/groups/legacy_group_facades.sql"
+    },
+    "70bfd614615918e3ba311b9addbc225b4f042b28a0b960d6c0be72f1f1c06dd2": {
+      "signature": "public.save_place_location(bigint,double precision,double precision)",
+      "source": "database/functions/groups/legacy_group_facades.sql"
+    },
+    "79b05dc58010453a0f0d1a75b91a1b13f217c05ebff3fb5d8aa0f9690ca39337": {
+      "signature": "public.game_guess(bigint,text)",
+      "source": "database/functions/groups/legacy_group_facades.sql"
+    },
+    "1f8866b24aeec53c888ceb51a1cdf1284ec262bfc7da5710ac2fe7d5963f62af": {
+      "signature": "public.delete_icon(bigint)",
+      "source": "database/functions/icons/delete_icon.sql"
+    },
+    "2851d1eb8c8f4f025fda4e09bd17b7ac1069925cf819e770d0c9b2c40c8f6a1a": {
+      "signature": "public.delete_icon_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/icons/delete_icon_client_sync_v1.sql"
+    },
+    "4e80aa3ded88b3f06266546b69a86db88a53ef6f1ec9f1144a9282726c7d32c7": {
+      "signature": "public.delete_unit_icon_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/icons/delete_unit_icon_client_sync_v1.sql"
+    },
+    "56a0b97912dc19cc2e8e5c785ebfc2c722d5adad4df6980d46a28287bbfc526d": {
+      "signature": "public.save_icon_client_sync_v1(bigint,uuid,jsonb)",
+      "source": "database/functions/icons/save_icon_client_sync_v1.sql"
+    },
+    "209e7dfecc4d9f88301ead208eda661978d3b6440c9aefede4839038330354f9": {
+      "signature": "public.save_unit_icon_client_sync_v1(bigint,uuid,jsonb)",
+      "source": "database/functions/icons/save_unit_icon_client_sync_v1.sql"
+    },
+    "995f34d031004e10e21e1b1fe2410efb031e4857e7b557a47846286c2a3976f8": {
+      "signature": "public.get_unit_information_for_edit_v1(bigint,text)",
+      "source": "database/functions/information/unit_information.sql"
+    },
+    "18229c544374f3ef9cdf6e85440b6debe533f101962ebd00523316657f0e3729": {
+      "signature": "public.save_unit_information_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/information/unit_information.sql"
+    },
+    "c2f0b4e4891f3c65f3cf6f1c376fe66a7ae5f6b2075d845ecf1992c1178d2170": {
+      "signature": "public.delete_unit_information_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/information/unit_information.sql"
+    },
+    "0d29a86493d84a99d184e96162d545d31ac8bf0025f1138ae5bdbf34a05e3264": {
+      "signature": "public.copy_inventory_resource_configuration_internal(bigint,bigint,bigint)",
+      "source": "database/functions/inventory/copy_resource_configuration.sql"
+    },
+    "e2dd0c381daf6fd13711e0de3c1950c50e8a2bb38d4768aac9f5aa73d734718c": {
+      "signature": "public.copy_empty_inventory_spot_internal(bigint,bigint,bigint,bigint,bigint,bigint,bigint)",
+      "source": "database/functions/inventory/copy_resource_configuration.sql"
+    },
+    "be53e9554c83c3ef6815bedb3f7db2e2b57d31dfc397764ece464e463db323bc": {
+      "signature": "public.delete_inventory_pool(bigint)",
+      "source": "database/functions/inventory/delete_inventory_pool.sql"
+    },
+    "2094c1fca4c5457b19209729ffbc2752df0e35a673d273726a98c1c8cbe22258": {
+      "signature": "public.delete_inventory_pool_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/inventory/delete_inventory_pool_client_sync_v1.sql"
+    },
+    "7dce886dec29d528d3d53f21520a248c339407bafdb7cd89643de459ce1bdfa4": {
+      "signature": "public.delete_resource(bigint)",
+      "source": "database/functions/inventory/delete_resource.sql"
+    },
+    "2bef8845e5f06f6c399782529d67766e76adf52e2db5d6b6cf6fa983d810f723": {
+      "signature": "public.delete_resource_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/inventory/delete_resource_client_sync_v1.sql"
+    },
+    "a83c83e09156428eb0d08666b8fa11bb2a1ca4e680ca591f87d7bd6df46bb1ae": {
+      "signature": "public.get_resources_for_inventory_pool_v1(bigint)",
+      "source": "database/functions/inventory/get_resources_for_inventory_pool_v1.sql"
+    },
+    "a04a26386a44d32fa4263fd7f0a1feae06cdd3afd5ddadbe740b187f413f1acc": {
+      "signature": "public.get_inventory_pool_settings(bigint,bigint,bigint,bigint)",
+      "source": "database/functions/inventory/inventory_authoring_reads.sql"
+    },
+    "da5c8b090eb28f470721f4c0027988b58435e4ecb96f9a4e9bbc83948310dcc9": {
+      "signature": "public.get_inventory_resources(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/inventory_authoring_reads.sql"
+    },
+    "1c292f20c1dd310515af3bd91abe49050187ff6398cbfd072974ee4ee539e2c5": {
+      "signature": "public.get_inventory_pool_for_edit(bigint,bigint,bigint,bigint)",
+      "source": "database/functions/inventory/inventory_authoring_reads.sql"
+    },
+    "3c98e4df10d6dd5c44566e466afe8417f9968875054025f1961df378121a7476": {
+      "signature": "public.get_inventory_catalog(bigint,bigint,bigint,text,bigint,integer,text)",
+      "source": "database/functions/inventory/inventory_catalog.sql"
+    },
+    "35ef4b7c527ecd41bfda775f0b621962027ae7462f802c03878a31cd4f216d1e": {
+      "signature": "public.get_inventory_context_catalog(bigint,bigint,bigint,bigint,bigint,integer)",
+      "source": "database/functions/inventory/inventory_catalog.sql"
+    },
+    "f9977773ff017217ae832b65be6af02698d906370f4b39b18a344a108d8c8f2a": {
+      "signature": "public.manage_inventory(bigint,bigint,bigint,text,jsonb,uuid,boolean)",
+      "source": "database/functions/inventory/manage_inventory.sql"
+    },
+    "efc9897a7d58b1c7651ea52b7af984eadb4a85a9ccf9e1bc8e5b070fbb06ec1c": {
+      "signature": "public.prepare_standing_inventory(bigint,bigint,bigint,bigint,bigint,integer,uuid)",
+      "source": "database/functions/inventory/prepare_standing_inventory.sql"
+    },
+    "2bd07c6b23829047d46320dc674d5a02b232480e25cb193f99c7b93374065070": {
+      "signature": "public.save_inventory_pool_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/inventory/save_inventory_pool_client_sync_v1.sql"
+    },
+    "719c80b3d73174bba3fe5d1584db67451e903231fe35abd8e818d9fbe2b7d722": {
+      "signature": "public.save_resource_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/inventory/save_resource_client_sync_v1.sql"
+    },
+    "d6412d9dcc889c3fd268451232560dec4b51f00370319ff7ed9ca339ee7ee405": {
+      "signature": "public.update_inventory_pool_bundle(jsonb)",
+      "source": "database/functions/inventory/update_inventory_pool_bundle.sql"
+    },
+    "5e02bd8284bfa744ec84b5dffe705bd8d226f9aad337f6a06ce6e2ced7e3912c": {
+      "signature": "public.update_inventory_pool_bundle_internal_v1(jsonb)",
+      "source": "database/functions/inventory/update_inventory_pool_bundle_internal_v1.sql"
+    },
+    "f174c16410eeca387a295aa9af396b9d39b864cd6fa88317563388a2f1ef6d02": {
+      "signature": "public.update_product_inventory_contexts_client_sync_v1(bigint,jsonb,uuid)",
+      "source": "database/functions/inventory/update_product_inventory_contexts_client_sync_v1.sql"
+    },
+    "f143d1250fa80c57290d13d72fbb6e53f2441b16997b835239fb663540c07815": {
+      "signature": "public.update_resource(jsonb)",
+      "source": "database/functions/inventory/update_resource.sql"
+    },
+    "65757a7b6b2c4ddd835a85f6124065e4c23429d602b35e2bd3365c131f0d025f": {
+      "signature": "public.update_spot_assignments_client_sync_v1(jsonb,uuid)",
+      "source": "database/functions/inventory/update_spot_assignments_client_sync_v1.sql"
+    },
+    "61f3d3a425dc33cc27f7a3ac8ff29d7698629cbbdf7787f8f5e5cb4c0f487479": {
+      "signature": "public.update_spot_assignments(jsonb)",
+      "source": "database/functions/inventory/update_spots_assignments.sql"
+    },
+    "9da1031fe1ba8b19ef77c4ce34f1b489de6d66ae92e9d60b5e4aff15d8974a9d": {
+      "signature": "public.get_news_with_versions_v1(bigint)",
+      "source": "database/functions/news/get_news_with_versions_v1.sql"
+    },
+    "72ddb24977b26ec6f8007691b70ea6852370ea07674cb1efcd8c98340c15b60b": {
+      "signature": "public.claim_notification_center_bank_health(integer)",
+      "source": "database/functions/notification_center/bank.sql"
+    },
+    "2aa9af714dbf720427eb55b481c7c3db1ca620477cbf86ea4b372a66a941f3d4": {
+      "signature": "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)",
+      "source": "database/functions/notification_center/bank.sql"
+    },
+    "451fc8b39be47c10765bea9a1e68c49de1d1ae1b8f9d5ded515b48652055e609": {
+      "signature": "public.project_notification_center(integer)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "863f5cf480cd4d16b5e522bd52a244f2ab5b1b106b2ef78a324850fbe86d5152": {
+      "signature": "public.get_notification_center_badge(bigint)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "979bc5653debc38b276ecca45b582ec1e1e027d50aea879034f05ee46b37dc47": {
+      "signature": "public.get_notification_center_group(bigint,text,bigint,bigint,integer)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "f9f9e18fc0a29fee348e0466a547d623ba9d8cb333e21a17c8908f4f8b40a7f6": {
+      "signature": "public.get_notification_center_page(bigint,bigint,integer,bigint,jsonb)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "c3b2872fef713156de0ba0d85bc7875b6c57212a7da482e51026cefe51392d12": {
+      "signature": "public.open_notification_center(bigint,bigint,integer)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "fb999e11d6b84de24afc39762fd01237aaeffae19537f77804b449dfdeb2f92a": {
+      "signature": "public.set_notification_center_muted(bigint,bigint,boolean)",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "09ca6e35bab266c6ad69753894eb88903877a50489747894a7ae21c42f80c68f": {
+      "signature": "public.get_notification_center_updates(bigint,bigint,uuid[])",
+      "source": "database/functions/notification_center/core.sql"
+    },
+    "2922a083cfef8174db896b0e980b54d44a5b497be2f22c88131773474bf3f104": {
+      "signature": "public.set_notification_center_activation(bigint,boolean,text)",
+      "source": "database/functions/notification_center/maintenance.sql"
+    },
+    "31e37ee6c9013ca94cebab1d0b003360b3084b96d80f559acb9c53fca6c14538": {
+      "signature": "public.maintain_notification_center(integer)",
+      "source": "database/functions/notification_center/maintenance.sql"
+    },
+    "dcb886e6d0fa4da47f2343c391e973ef52d6be455db577271af5716a571b18e9": {
+      "signature": "public.get_occasion_setup_bank_accounts(uuid)",
+      "source": "database/functions/occasion_setup/bank_accounts.sql"
+    },
+    "b72e00fe7d3984cd6a9d814064abbc7b693e417e8823e2a67932bcebdfe40bdb": {
+      "signature": "public.admit_occasion_setup_blueprint_resources_v1(uuid,bigint)",
+      "source": "database/functions/occasion_setup/blueprint_layout.sql"
+    },
+    "08baf843aba96e9009430abc64591f3bd3dfc21d1e49747468f0a39c2c28c715": {
+      "signature": "public.get_occasion_setup_blueprint_resources(uuid)",
+      "source": "database/functions/occasion_setup/blueprint_layout.sql"
+    },
+    "0fcaa51f1fcf253e5c5ce990b60f32611c80f0e9973f00795cafac80a24d6f6c": {
+      "signature": "public.copy_setup_area_inventory_internal(jsonb,jsonb,bigint,bigint)",
+      "source": "database/functions/occasion_setup/blueprint_layout.sql"
+    },
+    "7ef50a2b765731d3bef1786ae54f33d968e3ac1858894ee36b344329e9cbf5b3": {
+      "signature": "public.materialize_setup_area_inventory_internal(jsonb,bigint,bigint)",
+      "source": "database/functions/occasion_setup/blueprint_layout.sql"
+    },
+    "bc078a5de80be706efcb0b9ddcc9bfbe5821a671fa6f3f98354d9bee7bf3c27a": {
+      "signature": "public.materialize_setup_blueprint_layout_internal(jsonb,jsonb,bigint,bigint,bigint)",
+      "source": "database/functions/occasion_setup/blueprint_layout.sql"
+    },
+    "2e3ef340f0b5dcd2b88590920be05e161104982b1ce1383d0d3bfb918b3d5858": {
+      "signature": "public.get_occasion_setup_communication(uuid)",
+      "source": "database/functions/occasion_setup/communication.sql"
+    },
+    "1fe3cad3e533d440f308cb64b0991be354e5164e7a63091d381249652aab8b03": {
+      "signature": "public.get_occasion_setup_draft(uuid)",
+      "source": "database/functions/occasion_setup/drafts.sql"
+    },
+    "b2a2ee4586bdf048c970d12b9c9f07fcfd9c231bad6d93ded29144ae301f3ad7": {
+      "signature": "public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)",
+      "source": "database/functions/occasion_setup/email_preview.sql"
+    },
+    "88c377478deb6f5d389c6e2527fffb3e31690093e734c0e26445e6a3ddcc948f": {
+      "signature": "public.suggest_occasion_setup_form_link(uuid,text,text)",
+      "source": "database/functions/occasion_setup/form_link.sql"
+    },
+    "7299c8ab4c95ba4697970d01f069ed9867e71ea7b129175ef1e0ea353fbc4abd": {
+      "signature": "public.preview_occasion_setup_invitations(uuid,text[])",
+      "source": "database/functions/occasion_setup/invitations.sql"
+    },
+    "4083ceaf0c296f6c2e5778c15690eb7c49dfc14d8f7ab996aa8e12149eb6bdb4": {
+      "signature": "public.enqueue_occasion_setup_invitation(uuid,text,text,jsonb,text,text)",
+      "source": "database/functions/occasion_setup/invitations.sql"
+    },
+    "99dd9c61f4d8f5b25228b5d16ec521244706805bb1b93ff95eb03602957a9de0": {
+      "signature": "public.get_occasion_team_invitation(text)",
+      "source": "database/functions/occasion_setup/invitations.sql"
+    },
+    "94fb0381b6367b17d80a0417bee35d8dbd6f452069b0e0340f54609f01f0d1c7": {
+      "signature": "public.accept_occasion_team_invitation(text,text)",
+      "source": "database/functions/occasion_setup/invitations.sql"
+    },
+    "9a6a1ce294fca16614387cd3003840cf6484818c6cfa78f1ee74ec03d523c1c4": {
+      "signature": "public.materialize_occasion_setup_program_internal(jsonb,bigint,bigint)",
+      "source": "database/functions/occasion_setup/program.sql"
+    },
+    "dd34287dc53e170780e35bee181d837dd8585ad5b45c54e4d07f0d4badc238f2": {
+      "signature": "public.get_occasion_setup_source_list(bigint,bigint)",
+      "source": "database/functions/occasion_setup/sources.sql"
+    },
+    "86e5b0b5b62752dff1458db482dc1eebeb57dbd300fa6a4bea0465d48993054f": {
+      "signature": "public.get_occasion_setup_source(bigint,bigint)",
+      "source": "database/functions/occasion_setup/sources.sql"
+    },
+    "859ee850d7f9a6293eb9b15a0c9d20708a402b5875f7fe95ec9f0d91cf097f45": {
+      "signature": "public.create_occasion_client_sync_v1(uuid,jsonb)",
+      "source": "database/functions/others/create_occasion_client_sync_v1.sql"
+    },
+    "32772374096e06b83ade3c09d6aab9bb1645655eadb49a94c8486beb0df6dd38": {
+      "signature": "public.delete_occasion(bigint)",
+      "source": "database/functions/others/delete_occasion.sql"
+    },
+    "a9b43c0058d707be092bd1765447c3ceee2693a358fa657fe5ab266ad9db2c67": {
+      "signature": "public.delete_occasion_client_sync_v1(bigint,uuid)",
+      "source": "database/functions/others/delete_occasion_client_sync_v1.sql"
+    },
+    "72186be77f55cad995347c54266523e896ca6f240cf0faaf990471b83138e0af": {
+      "signature": "public.delete_occasion_domain_command_internal_v1(bigint,uuid)",
+      "source": "database/functions/others/delete_occasion_domain_command_internal_v1.sql"
+    },
+    "3547250d1fe68f7747e47536bde6ccb54a70c4f0e0bb5a002bbfcf806d196f34": {
+      "signature": "public.game_update_settings_internal_v1(bigint,timestamp with time zone,timestamp with time zone)",
+      "source": "database/functions/others/game_update_settings.sql"
+    },
+    "ac9ecfeac14952d7d44bc53e6e260a72b0195aca23bf6a9408bf9d61fd9a26b2": {
+      "signature": "public.game_update_settings(bigint,timestamp with time zone,timestamp with time zone)",
+      "source": "database/functions/others/game_update_settings.sql"
+    },
+    "da0c250f6ecfffc06d5cf48789aaee6b214cc5220f1ed27f8a2e57bfcef8b791": {
+      "signature": "public.game_update_settings_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,uuid)",
+      "source": "database/functions/others/game_update_settings_client_sync_v1.sql"
+    },
+    "83eb80c2d098755b9c24e1ac16f804f2a1e09b26b2e3f37641cbd9b54d59f510": {
+      "signature": "public.get_email_authoring_payment_accounts(bigint,bigint)",
+      "source": "database/functions/others/get_email_authoring_payment_accounts.sql"
+    },
+    "73e39efd9f26e5b1004d646adf638edbd8234feece762b69e0d0fa4098bec706": {
+      "signature": "public.get_occasion_for_authoring_v1(bigint)",
+      "source": "database/functions/others/get_occasion_for_authoring_v1.sql"
+    },
+    "fd57a67a8c8ab7148029961a4187a7e9a7a07786ac15727b0bb03ec07d9c54f6": {
+      "signature": "public.get_occasion_for_edit_v1(text)",
+      "source": "database/functions/others/get_occasion_for_edit_v1.sql"
+    },
+    "272b5d4e7d57213c3e5dea9bd9d3e5792ce811c9fe445771a95b37414904876f": {
+      "signature": "public.get_occasion_seo_data(text,text)",
+      "source": "database/functions/others/get_occasion_seo_data.sql"
+    },
+    "d372993ae0d7f8bb6ee92ccdb2391b9ab4460cc4392eaeb84ea1cbb23c1a7d23": {
+      "signature": "public.get_occasion_seo_data(text)",
+      "source": "database/functions/others/get_occasion_seo_data.sql"
+    },
+    "88dc4182f09342e1b0c72dc8fe9de4b9fd3c125ffb96adf04c5d4f2a90a95d82": {
+      "signature": "public.get_occasion_seo_data(text,text,bigint)",
+      "source": "database/functions/others/get_occasion_seo_data.sql"
+    },
+    "4f3e61e7ee34366c67e3597874e6a530fdd8b3c2c8156b5ac785fb39eff98e72": {
+      "signature": "public.get_operator_access_v1(bigint,bigint,bigint)",
+      "source": "database/functions/others/get_operator_access_v1.sql"
+    },
+    "86c4d0ef5547dc22aa87d81ba3d4185c9230d0b4de12a74518a00af44328887f": {
+      "signature": "public.get_ticket_layout_for_authoring_v1(bigint)",
+      "source": "database/functions/others/get_ticket_layout_for_authoring_v1.sql"
+    },
+    "7b826385ee8e03b6379533af8ea4ab4a22dbe6aaa87a7bacb04c511967ab1e4c": {
+      "signature": "public.get_ticket_layout_write_contract_v1()",
+      "source": "database/functions/others/get_ticket_layout_write_contract_v1.sql"
+    },
+    "b3ce2dadb20559cb23725c30f3de3d863160f6ae872782afe08a60978bb73553": {
+      "signature": "public.save_occasion_legacy_facade_internal_v1(jsonb)",
+      "source": "database/functions/others/legacy_occasion_facades.sql"
+    },
+    "5773158ea8f4316accac82d342984d70f6fc4d158bc7cdbeec2b5d3a4b894d09": {
+      "signature": "public.update_occasion_203(jsonb)",
+      "source": "database/functions/others/legacy_occasion_facades.sql"
+    },
+    "82ee2faa10b383d2a56aa9b8d8c5309eecccb08a7bddd2efe168b495575cbd27": {
+      "signature": "public.remove_image_records(text[])",
+      "source": "database/functions/others/remove_image_records.sql"
+    },
+    "21ae1042b235aafaf073d62087b99aedb08b52f1dd078ed6e6db964f7fc9813a": {
+      "signature": "public.scanner_can_manage_settings_internal(bigint)",
+      "source": "database/functions/scanning/settings.sql"
+    },
+    "c02f58d2a2f933c2b37265436567314c38db57c676aba7ad1eae3cb933a66b46": {
+      "signature": "public.reset_scanner_password(uuid,text,bigint,text)",
+      "source": "database/functions/scanning/support.sql"
+    },
+    "1ce7c93b744271123dddb6873509493404aaf9db0131047c39dbb34e8e678ba9": {
+      "signature": "public.get_scanner_event_history(bigint,timestamp with time zone)",
+      "source": "database/functions/scanning/support.sql"
+    },
+    "3008f83e9da5460c31aedd2cae14055b4dd2d92a382a9a6b970a5bc857a8cc41": {
+      "signature": "public.search_scanner_users(uuid,text,text,uuid)",
+      "source": "database/functions/scanning/support.sql"
+    },
+    "3f27d086112f7f88ba046e335d6ab50a5aa1d300fee66555f2553936f4ca34aa": {
+      "signature": "public.preview_scanner_ticket(bigint,jsonb,text)",
+      "source": "database/functions/scanning/support.sql"
+    },
+    "da8b25cc70aa2965ce6bf4cbf6e4fd6d8a73e2d0b4892492a181341e5b522c4d": {
+      "signature": "public.create_counseling_slots(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer)",
+      "source": "database/functions/speakers/counseling_legacy_facades.sql"
+    },
+    "497812dfa951df445e5a5280163eee9fea33b2c63e79e643882de7882677336e": {
+      "signature": "public.delete_empty_counseling_slots(bigint,timestamp with time zone)",
+      "source": "database/functions/speakers/counseling_legacy_facades.sql"
+    },
+    "74b2824c7fa431587a5c13af855719e562e081034160ac8ab906e3247911be06": {
+      "signature": "public.delete_speaker(bigint)",
+      "source": "database/functions/speakers/delete_speaker.sql"
+    },
+    "f9f9d74a2f568aef5ac7bd9fd848a433db9c735c95930af65dbf6d658bd54195": {
+      "signature": "public.delete_speaker_topic(bigint)",
+      "source": "database/functions/speakers/delete_speaker_topic.sql"
+    },
+    "c5bea1ffeeaef7f0481d8d442b92e18a49025f330b7db1b93725922adbdd6199": {
+      "signature": "public.set_event_speakers(bigint,bigint[])",
+      "source": "database/functions/speakers/set_event_speakers.sql"
+    },
+    "1e7c208b9bd96fa12330680a728cc4434b27b2caa27cc877f772596763861c35": {
+      "signature": "public.update_speaker(bigint,jsonb)",
+      "source": "database/functions/speakers/update_speaker.sql"
+    },
+    "2fc1d1b6d988cb8ff44e24cc22b0516e81f8e92860370d9940f4fbf465397944": {
+      "signature": "public.update_speaker_topic(bigint,jsonb)",
+      "source": "database/functions/speakers/update_speaker_topic.sql"
+    },
+    "76c28e704ca8bf03c321185a2bf777ded75107effb64c98a94ef68b500bf82c0": {
+      "signature": "public.get_client_commits_v1(bigint,timestamp with time zone,uuid,integer,jsonb)",
+      "source": "database/functions/synchronization/client_audit_reads.sql"
+    },
+    "69e0eaf08f640ef5d668f8ecee4fb2c2baf1021bacbad925444ce8bd7b48c771": {
+      "signature": "public.get_client_commit_v1(uuid)",
+      "source": "database/functions/synchronization/client_audit_reads.sql"
+    },
+    "1a00e741885f17e14e09736a35ad76f44ba62d7c6ae39305ea2abc7da3e72bcd": {
+      "signature": "public.get_private_client_sync_v1(jsonb,jsonb)",
+      "source": "database/functions/synchronization/private_client_sync.sql"
+    },
+    "54c93afcd947f50aeec0d3ebc214ac94baa7e9fc6d302474ecc6c34f7093ce3a": {
+      "signature": "public.complete_unit_mutation_internal_v1(uuid,bigint,text,text,bigint,text,jsonb)",
+      "source": "database/functions/units/complete_unit_mutation_internal_v1.sql"
+    },
+    "7a7a2895a0d296d816801bff4e679011570a19c6b3c816cd437c60064fd5b969": {
+      "signature": "public.create_unit_and_assign_manager(text)",
+      "source": "database/functions/units/create_unit_and_assign_manager.sql"
+    },
+    "8d2a574d9469c61ab25601b4336c51c664b8aa9eb1859a9611759aa78c542495": {
+      "signature": "public.fanout_unit_map_catalog_internal_v1(uuid,bigint)",
+      "source": "database/functions/units/fanout_unit_map_catalog_internal_v1.sql"
+    },
+    "51794408282263cfea8498de7428785c486fb32654ff53e55535ebb0e860abe4": {
+      "signature": "public.get_unit_edit_data(bigint)",
+      "source": "database/functions/units/get_unit_edit_data.sql"
+    },
+    "b09ba163df9fbc913aa7b4f517014f6c0a7681c20fcb374a9b7126e555b0f604": {
+      "signature": "public.get_unit_occasion_dashboard_internal(bigint)",
+      "source": "database/functions/units/occasion_dashboard.sql"
+    },
+    "9a6d1edf9fc01b647ec7b632f9eee12629d66a6bf5e837a9985cff602f83b471": {
+      "signature": "public.update_unit(bigint,text,jsonb)",
+      "source": "database/functions/units/update_unit.sql"
+    },
+    "838c2c3b3f9c44d3a17404751488d5ea1623ea91987c666bd67beb3be6aa4751": {
+      "signature": "public.get_is_admin_on_bank_account(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "64227bb1db99448cc285fde42f962caff31e868440ce05f58998dea20c8195e4": {
+      "signature": "public.can_manage_bank_account(bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "4f9269b2886c6c4c8f5edcf805f2502d8a2b2db032e258ff98963e1efa72aad1": {
+      "signature": "public.can_link_bank_account_to_unit(bigint,bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "cb34c49c58a6aaab3b9dcd2b9e83029e751a1f82b0b1d34780c3022a0cb9f27e": {
+      "signature": "public.can_read_bank_account_users(bigint,bigint)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "ebeea58a4ff7de5dafd2692ac4a9a73292ea1b946b43327fd30bb01ff601fff7": {
+      "signature": "public.get_bank_sync_connections_for_occasion(text)",
+      "source": "database/functions/user_permissions/bank_operations.sql"
+    },
+    "71b21f7f693d2ab6e1f6fefdb40ba6832312cd61f98fea557f3d780fb0151893": {
+      "signature": "public.get_sign_in_recipient_context_v1(uuid,bigint)",
+      "source": "database/functions/user_permissions/context_capabilities.sql"
+    },
+    "43e23ecc26a253c4cf627d632ca5f3f70bd5303004f77faa32cbfa8a639b1be7": {
+      "signature": "public.get_delegated_ticket_layout_for_authoring_v1(bigint,bigint,bigint)",
+      "source": "database/functions/user_permissions/delegated_operations.sql"
+    },
+    "661b34e3c9a7c85bd13887bf47a4ea61c88681043e78f105c53fefb53f5b6f9e": {
+      "signature": "public.create_delegated_occasion_client_sync_v1(uuid,jsonb)",
+      "source": "database/functions/user_permissions/delegated_operations.sql"
+    },
+    "91727b79b5b0acb3db07fe267468c5431f2d426b476435ee38acc68131e4108a": {
+      "signature": "public.can_read_orders(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "a83f24634f10e548b406a4b99d0c1d572108fec8211d344a66662975588e62cc": {
+      "signature": "public.can_write_orders(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "7f54974b8efd6225bce6e5252c2baf0bffbac821247a55de02ea57deb737b99c": {
+      "signature": "public.can_delete_orders(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "6be2e7883ea65feaeb6f1000ab06469c22aacfae5ebefa64fbe2a1f181bb0da4": {
+      "signature": "public.can_create_occasion(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "3b565655fec698984376df48810b9d7cea1da68455f448464fab2702c42c9880": {
+      "signature": "public.can_edit_occasion(bigint,bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "e91dc3c91e36093629495b186245dbd8ad500904a26efd5f8f6a661783ca99d0": {
+      "signature": "public.can_read_map_editor_bundle(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "7d23bc854a235f75526016a85cd9efd5daeff3883e2ef5b4f5750edc9ad3d724": {
+      "signature": "public.can_read_information_editor_bundle(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "d6baaa0d5812243f13d9984cf2605a264c4a36789c2bbd1d9e5a41f2f5434fc7": {
+      "signature": "public.can_preview_ticket_readonly(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "af07dc6211386c04c54a439779dad30720a3d84d6fea894d9aef34e0e1a7950f": {
+      "signature": "public.can_read_unit_users(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "f01b3ad74014a23ead65d69b165c9459eb91a80b0925b69b08aeaeb1584071e2": {
+      "signature": "public.can_manage_unit_users(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "79a07eb4d7be8229d07acf9b352d78b31e056eaad9cf7d7ee41ff73dca83c032": {
+      "signature": "public.can_manage_occasion_participants(bigint)",
+      "source": "database/functions/user_permissions/domain_operations.sql"
+    },
+    "67801c35dfe7e9480c56e41889c3e9acddfe5fff385e13b6d7ebbd5370c8f4c0": {
+      "signature": "public.can_send_custom_email_as_actor_internal_v1(uuid,bigint)",
+      "source": "database/functions/user_permissions/email_operations.sql"
+    },
+    "365670c26543fb67b6e393b955ba671e249f473153ec5ae6a190ac6b66c45bab": {
+      "signature": "public.can_send_custom_email(bigint)",
+      "source": "database/functions/user_permissions/email_operations.sql"
+    },
+    "3340ce8abc5d3f120294deec4380d34b7019685fc3e2e3cd1253dae395a2b80d": {
+      "signature": "public.enqueue_custom_email_for_actor_v1(uuid,text,jsonb,text,jsonb,text,text,text,timestamp with time zone)",
+      "source": "database/functions/user_permissions/email_operations.sql"
+    },
+    "62d79b34db00a670803925a9c2054fab03a791c452ace455a9869fae547b2ecb": {
+      "signature": "public.enqueue_participant_notice_for_actor_v1(uuid,text,jsonb,text,jsonb,text,text,text,timestamp with time zone)",
+      "source": "database/functions/user_permissions/email_operations.sql"
+    },
+    "4cddae5bccee0e183cdc6515e23a5b9ec47e7571896f03bc4ef1cdf3c52f72fc": {
+      "signature": "public.can_author_forms(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "5d7f03f008febc36b1a8741f434214828b21a16c5ff358a8f8e0a4d65378c0ee": {
+      "signature": "public.can_read_form_catalog(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "650c1559752cf5878a7969b51469340082b4434a2dd0e39045657442f78ebd1b": {
+      "signature": "public.can_copy_form_source(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "2e24ef3e59b430371faa76321f0a11ef7435ef6f025514e6d86680026985d980": {
+      "signature": "public.can_copy_form_target(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "b9d7b85dec1fd48ccaa2a171ba925f50209b43e3aab32e16ecdf2d39e42d04a8": {
+      "signature": "public.can_write_news(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "543dca391b297ebbc08554a0e60dd52395227de51a40bcd9a2f5dae4cb599322": {
+      "signature": "public.can_write_information(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "72c76f629eb499691b6c5f583bf1f093f16d01a02627b7caf8f4e37c6db3ee5c": {
+      "signature": "public.can_read_unit_information(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "8aae03dab5d74700760d36384f113c4eb74c5225988fd637965b7557528a4e40": {
+      "signature": "public.can_write_unit_information(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "d0a0b5db651d0d891482b90a17bc496b91fc4fbb5cb835546470106f7c7936fc": {
+      "signature": "public.can_read_schedule_participants(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "ef8da2d7ec72037395e95e85660fd8414f86737a938a41063de4316032df01ff": {
+      "signature": "public.can_read_schedule_feedback(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "4729efc5f43375651e054d3ea5f2577fc0f626a672f47de933890e496dab9e99": {
+      "signature": "public.can_read_participant_contacts(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "c5b402ecc8a864140a6b0cb072ebc636672125e25dae6d51b5bb5df5195ff02e": {
+      "signature": "public.can_import_group_assignments(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "723a5119ae272990503898135b90caf542a9d6eecbb0dcd17e8911408b705ebb": {
+      "signature": "public.can_write_blueprints(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "47e82616e1fc57a9ab9d96ca9051323ff532944fe00c19405aac72410c268914": {
+      "signature": "public.can_copy_inventory_target(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "d5b53499f5cc52cec152c4cffb7d9923123f9257ac785d5e07fbf3e779dac6b6": {
+      "signature": "public.can_read_activity_editor(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "b148b6642e76773c70d4df8fa1cec993944579099a09444b61c318e615c1841d": {
+      "signature": "public.can_write_group(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "e70ade7eaeb7ce38c15cddc16df15514c4ea620d92f09bb9b0c9359d2f9b2815": {
+      "signature": "public.can_read_group_editor(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "1c1be72668af2564f08a7dc16d57383865e99abced64be7f0d38ac459c567304": {
+      "signature": "public.can_read_groups_editor(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "93390673eb089bb7ba1dbea48192d9cc2a1745e53237e94e7a4006d3b3fe4c30": {
+      "signature": "public.can_write_places(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "86fdb417071c49d35b6a7f37880d33e862bfc83ae31f6d7a7396bb736036b2b4": {
+      "signature": "public.can_move_map_place(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "053e2900273c0e79d95c59ec75a4a367d3f9d4565359db805735f3d791076e02": {
+      "signature": "public.can_read_occasion_email_templates(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "09f4a1ec3928397c8dc048b2d96727a628202785c297a209e73c153df36b1f0b": {
+      "signature": "public.can_write_occasion_email_templates(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "de00126da535902d851a006a4ba3701a4a532bf57766eb39daa64341d166460b": {
+      "signature": "public.can_read_unit_email_templates(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "44ecff1a23ffaeb3aa854b2de859c0040dd0af38e6f0d7fe9fa8aa6ebac2d626": {
+      "signature": "public.can_write_unit_email_templates(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "9903eb7bf785dc7c0d5730465894897083fff263d97d0d7756319bfd4f1f79e9": {
+      "signature": "public.can_manage_organization_email_templates(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "257ba7499f72658227983d90e0be7e96ed469870ab09bd446804728134b4c43e": {
+      "signature": "public.can_upload_occasion_media(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "9edd3aa57458aed50b3145340a45c08ee17719e9a216c7707298aa8123b9295f": {
+      "signature": "public.can_upload_unit_media(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "ab9799771c2d0ca84b16f3726325ad77349b71e5bfabb15b78f58e51dbe4a8b4": {
+      "signature": "public.can_manage_unit_configuration(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "9bfa55fe003d38d9e507d892a6e6eaadcc0c8681d28ed9885be55d3b012ea170": {
+      "signature": "public.can_manage_unit_legal_profile(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "4fd12e971dfea35d276aa866dded829601e07c1fb02a56bfe909c738c732a483": {
+      "signature": "public.can_read_unit_administration(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "e6a434af7af1a141a5334e37244f3f8ebe87e2c48c8dfc89d8060bbedd71ddd4": {
+      "signature": "public.can_delete_schedule_feedback(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "546d1487d4673c743e3bcf46569584b9f3d2e242c2885ffa786d2bb8be9506f8": {
+      "signature": "public.can_delete_occasion_in_unit(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "a1848ac1a1947d84d9f74b780259a1f01e69b5f3436560761927df30f7ec02de": {
+      "signature": "public.can_delete_occasion(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "1cdcdc4592ba7b3f43253c21e4a471269ed67fa13a75add7bfd7c591e0f8821a": {
+      "signature": "public.can_manage_unit_bank_accounts(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "7c475d23e22797ce034d7e33f4ee83419fe6716e0fbae6a42522f6262a0e815c": {
+      "signature": "public.can_read_unit_bank_accounts(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "7381fe10683ddc0e5290115d80c671f3a8d2e3a5001bbe644a60d9d3ed74e2f1": {
+      "signature": "public.can_read_occasion_editor_data(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "6d418f229feb24b8ba0feeefa7386aedcc73ede0d7c02f5156aa49d0ad9f5f58": {
+      "signature": "public.can_upload_blueprint_background(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "72eb15dafdd09f07dcfbe1d822297c67d64af943041736960cc69c8c746e8e63": {
+      "signature": "public.can_read_unit_app_landing(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "bb41e962310c6dbaf7ca56f026fc861b84a0ab9eea19ec69c9af5d117e0a5cc4": {
+      "signature": "public.can_manage_unit_app_landing(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "58449a4a58255cddc39c715a027ea18510d4e229d94a6858a22b1dca16614fa0": {
+      "signature": "public.can_read_unit_abuse_policy(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "47cf79ae8b117e3d8e5f8f63f46c9755e4fee27c508722fd061aecb76d78e511": {
+      "signature": "public.can_read_client_activity(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "f70badf77ea4da2ca6ea15f3c8606772116d7b6b8558d3830bf4af3f81172717": {
+      "signature": "public.can_read_occasion_client_commits(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "77a91de179e4ed827f9e0d6565b74b7c9bebe2d88cd98535e6995bbb1d258dee": {
+      "signature": "public.can_read_unit_client_commits(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "93598eebc7512e68c96d1bc495729247267bf0919e88f185e1d5ba645014bbff": {
+      "signature": "public.can_read_organization_client_commits(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "931eef4578fb1f1d735d26bd10032071180bdcd4c374fd082e654c3d54a75a43": {
+      "signature": "public.can_read_client_commit(uuid)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "08998415c5c6c857c5e748333efb0fc11c81dc859fefec081e030bb38f354593": {
+      "signature": "public.can_read_private_client_sync(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "31fe6b03117ec62061cb7f1e20c318b0191b9228a51316bc0d7e08a628d48026": {
+      "signature": "public.can_read_occasion_context_row(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "27fa6c017e807ae4bd56cfc39ab912880dbbd7bd73f65cbce398ce9a0cc6e3f6": {
+      "signature": "public.can_read_group_members(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "bcd7396106cf5ecbea7b23e2405b8dc3155ac575d404b8a26c72200321d250d8": {
+      "signature": "public.can_materialize_public_occasion(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "b7e6c93a4edfc4cb06dbdb4dcaae920657952ed581f59590467c509ddd86a8e6": {
+      "signature": "public.can_migrate_reviewed_legacy_blueprint(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "7de9843d53084977edd4e6edf16fc3b367eab562dbad35f579796af64f0e54f5": {
+      "signature": "public.can_write_unit_icons(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "b26f4cae755b09dc6e4d03ffae004556034430b345534c7590afed87e0d0bf02": {
+      "signature": "public.can_copy_occasion_target(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "1c75ace5f346c5613b1bc6e884eea08757310a087d6a26c8de92af8e9c329a8a": {
+      "signature": "public.can_read_unit_legal_profile(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "c0bf45d7ea47e80504e972589b8828a02efe98213ff5d76e6723e8ac47a96d5a": {
+      "signature": "public.can_read_occasion_directory(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "700ba716ca2f250ebb8661a4c63643f3083cd4c501ccc40e2b43d879018c3a6a": {
+      "signature": "public.can_add_group_members(bigint,bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "5c71f3b0939d89525b5a8a63f9b9ac31df5b18770d8c887e3925ec3f1097d561": {
+      "signature": "public.can_read_group_places(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "56b097250025a56ac6169aab850e3a9ee45147a5d087ce06005c3baa447b2bca": {
+      "signature": "public.can_delete_legacy_occasion_email_template(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "f0bf3efebe0fee41648a39d0d52574e20f99645ff4fcb77e25ed3ef13c053652": {
+      "signature": "public.can_manage_organization_settings(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "7828001e907f121212d285862bafebae088e5d3751c4038f6139cb394f1f20ff": {
+      "signature": "public.can_read_unit_occasion_catalog(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "41baa4f43d07bbb38c01e8f4c7919e17ec4770adf36d8161f285b02c5f34b67d": {
+      "signature": "public.can_read_legacy_unit_occasion_catalog(bigint)",
+      "source": "database/functions/user_permissions/feature_operations.sql"
+    },
+    "e10e122d5bdabe1480645a7979adef89285b338298ce8fbd88fb6528572a3089": {
+      "signature": "public.can_manage_occasion_users_as_actor_internal_v1(uuid,bigint)",
+      "source": "database/functions/user_permissions/get_can_manage_occasion_users.sql"
+    },
+    "21fd18761d9666250fea6ef2964d34a45708ac6acd3897c62620817d54c7ee7f": {
+      "signature": "public.get_can_manage_occasion_users(bigint)",
+      "source": "database/functions/user_permissions/get_can_manage_occasion_users.sql"
+    },
+    "6c7b01207af33f8212e78061dc4c975380c1fe66fc48fa9b8eea513e8dfc4680": {
+      "signature": "public.can_read_ticket_layout(bigint)",
+      "source": "database/functions/user_permissions/ticket_layout.sql"
+    },
+    "f568c2bc593c18ad31d3e1df45197c794d16f735364a71abc40e992962b96a12": {
+      "signature": "public.create_service_item_internal_v1(bigint,text,text,text,bigint)",
+      "source": "database/functions/user_services/create_service_item.sql"
+    },
+    "cf79066d6532117bd1d725e77376eaf780841e57d85507016abaa3d7a43bc127": {
+      "signature": "public.create_service_item(bigint,text,text,text,bigint)",
+      "source": "database/functions/user_services/create_service_item.sql"
+    },
+    "f35ae43d0c46add1d00523b2b0930373d48045116512b26317a36a85d1e627d4": {
+      "signature": "public.create_service_item_client_sync_v1(bigint,text,text,text,bigint,uuid)",
+      "source": "database/functions/user_services/create_service_item_client_sync_v1.sql"
+    },
+    "019c5faf8e8cf2ad8255bd5860c68bb2ab335046b166719eefd98f12ec187b90": {
+      "signature": "public.delete_service_item_internal_v1(bigint,text,text,boolean)",
+      "source": "database/functions/user_services/delete_service_item.sql"
+    },
+    "5ed35f2cb1972035b86ead3ed947e49f938456cd4d13bc3c8acb2982fc154562": {
+      "signature": "public.delete_service_item(bigint,text,text,boolean)",
+      "source": "database/functions/user_services/delete_service_item.sql"
+    },
+    "a1f96d926c1e0e02ba42c2d57be3cce11959dace8654ceec38586537ac09fcc5": {
+      "signature": "public.delete_service_item_client_sync_v1(bigint,text,text,boolean,uuid)",
+      "source": "database/functions/user_services/delete_service_item_client_sync_v1.sql"
+    },
+    "f310d15b6f34486ca0c0875cbd32afba8c583e2641d04c9f0ca77f163f878f18": {
+      "signature": "public.update_service_item_internal_v1(bigint,text,text,text,bigint)",
+      "source": "database/functions/user_services/update_service_item.sql"
+    },
+    "708bf89c6fb861578674be03e3ceac669f0ade9d2caa233bcb1990b4c6d4accb": {
+      "signature": "public.update_service_item(bigint,text,text,text,bigint)",
+      "source": "database/functions/user_services/update_service_item.sql"
+    },
+    "208d0bdec3d01d351ed96007d2f936b0c307b382517d20fac6cfad7169e03f0a": {
+      "signature": "public.update_service_item_client_sync_v1(bigint,text,text,text,bigint,uuid)",
+      "source": "database/functions/user_services/update_service_item_client_sync_v1.sql"
+    },
+    "3269f95bc295e8bc7999ab95d5124b75fb201ddb1d8544cc01f222de25701414": {
+      "signature": "public.add_user_to_occasion(bigint,uuid)",
+      "source": "database/functions/users/add_user_to_occasion.sql"
+    },
+    "cb25fbf6dec8717403ca4d47fd434265f72decc1bfdbd2fb901f4557b111f8b3": {
+      "signature": "public.assign_existing_companion_client_sync_v1(bigint,uuid,uuid,uuid)",
+      "source": "database/functions/users/assign_existing_companion_client_sync_v1.sql"
+    },
+    "0a4cfbab2a47ec6eacf751b00b4efa5e5642ebc6bb5d93fa8321d079d49b21bd": {
+      "signature": "public.create_companion_in_organization(bigint,text)",
+      "source": "database/functions/users/create_companion_in_organization.sql"
+    },
+    "363abbfc3bd36757f7f28434b40c67e4d2f6154fb4ee9320660adf72f70bbd83": {
+      "signature": "public.delete_owned_companion_client_sync_v1(bigint,uuid,uuid)",
+      "source": "database/functions/users/delete_owned_companion_client_sync_v1.sql"
+    },
+    "6034a7794fa16746bb45841e0da0b37347e32de14b2a6ba45c0efe3f54470506": {
+      "signature": "public.delete_owned_companion_guard_v1(bigint,uuid)",
+      "source": "database/functions/users/delete_owned_companion_guard_v1.sql"
+    },
+    "b94c53d7c4e950e46deaac279f93e0575b86ce3fd0e49b2399871ac8639caf89": {
+      "signature": "public.get_occasion_membership_for_edit_v1(bigint,uuid)",
+      "source": "database/functions/users/get_occasion_membership_for_edit_v1.sql"
+    },
+    "1d8539d48819599f7db95a28d4a7c1eb33bc0f48be7b2ced725658ada037c3da": {
+      "signature": "public.import_occasion_users_from_csv_apply_v1(bigint,jsonb,jsonb)",
+      "source": "database/functions/users/import_occasion_users_from_csv.sql"
+    },
+    "753846ab7e6de6f5ba9028b60f6199e7c59e0d2725a77c14feee870e0becd35f": {
+      "signature": "public.import_users_from_tickets_ws_internal_v1(bigint)",
+      "source": "database/functions/users/import_users_from_tickets_ws.sql"
+    },
+    "ebdd91c7ebf85ea71e3bd3b48bc13dbae55dece4ce9090de7b39435daebee130": {
+      "signature": "public.import_users_from_tickets_ws(bigint)",
+      "source": "database/functions/users/import_users_from_tickets_ws.sql"
+    },
+    "b19f7aa798fb06c9c6048d7ee986ba4d4f0b732b15ecd9312d67bd9136cd6606": {
+      "signature": "public.get_occasion_users_for_edit_invitation_base_v1(bigint)",
+      "source": "database/functions/users/occasion_directory_reads.sql"
+    },
+    "56fbe81807f1f01f48a79fdbbfb59a77404c12eae373a830848d1a55c05ca23f": {
+      "signature": "public.get_occasion_users_for_edit_internal_companion_v1(bigint)",
+      "source": "database/functions/users/occasion_directory_reads.sql"
+    },
+    "568a2b061dadabd3c601b27f04fbb0c35ece4a56b694081889e86c88c1415c81": {
+      "signature": "public.get_occasion_users_for_editor(bigint)",
+      "source": "database/functions/users/occasion_directory_reads.sql"
+    },
+    "c6018ba4e5d63b950c83e811efb58f746d51f87e53ebb75c86eb8ea0f06d64d2": {
+      "signature": "public.add_user_to_occasion_internal_v1(bigint,uuid)",
+      "source": "database/functions/users/occasion_enrolment_internal.sql"
+    },
+    "9a29b3f5f4b3c061aae00828088de7b50ecff0cc7e76d528c95866b360a35a2a": {
+      "signature": "public.save_occasion_user_for_edit(jsonb)",
+      "source": "database/functions/users/save_occasion_user_for_edit.sql"
+    },
+    "3903b7adbc6199835f44998cc00302616c111a9556196ac3441e001f06f17810": {
+      "signature": "public.unassign_existing_companion_client_sync_v1(bigint,uuid,uuid,uuid)",
+      "source": "database/functions/users/unassign_existing_companion_client_sync_v1.sql"
+    },
+    "2b94be045d647ae0d108dd4272dd4a354a66e3285c5583a3939d7528421b02b1": {
+      "signature": "public.delete_unit_user_internal_v1(uuid,bigint)",
+      "source": "database/functions/users/unit_access_deletion.sql"
+    },
+    "8cb87d9ded3cdb66742575f78cad7052cc049b2062eab8706ff03fcd22969339": {
+      "signature": "public.delete_unit_user_client_sync_v1(uuid,bigint,uuid)",
+      "source": "database/functions/users/unit_access_deletion.sql"
+    },
+    "a02b6b994c5cfe808451ad0ad23b0c5a3fbd892f2b3baf8245bafa0e773ea5a5": {
+      "signature": "public.delete_unit_user(uuid,bigint)",
+      "source": "database/functions/users/unit_access_deletion.sql"
+    },
+    "eaee1d6476b4b588130806937f2bafa031717a4cd98a6bce4deafe8f7a3ecc3f": {
+      "signature": "public.update_user(jsonb)",
+      "source": "database/functions/users/update_user.sql"
+    },
+    "e8b7cd9a8879ba08c29376278e45fd92f545f92784b375a8ab1a001f8c215644": {
+      "signature": "public.delete_occasion_email_template(bigint,text)",
+      "source": "database/functions/emails/legacy_template_delete.sql"
+    },
+    "6d3854e3edca385152dc8ede32a50af846831781692f5d922fa7f81bcfcd9f70": {
+      "signature": "public.get_blueprint(uuid,uuid,bigint)",
+      "source": "database/functions/eshop/get_blueprint.sql"
+    },
+    "f678eea9d21a0e589aff1e5ccdc88d8f9c0e2b982025e052efe3467b46bb0107": {
+      "signature": "public.get_blueprint_for_edit(text)",
+      "source": "database/functions/eshop/get_blueprint_for_edit.sql"
+    },
+    "31c326f5f01bc089ae31f91e0b491452b92feb6163548064f00ce58d12106e07": {
+      "signature": "public.get_form_for_edit(text)",
+      "source": "database/functions/eshop_forms/get_form_for_edit.sql"
+    },
+    "02e45ed78bf22d647a6c373cdc0d8e4a432c8524474dd052f7a73d6f934d8928": {
+      "signature": "public.delete_event_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/events/delete_event_client_sync_v1.sql"
+    },
+    "c650364ddec815be04b8eeda25cebb7f2e0d17c31f8364a5dfe93f1a8fa5a1bb": {
+      "signature": "public.delete_event_feedback_client_sync_v1(bigint,bigint,uuid,uuid)",
+      "source": "database/functions/events/delete_event_feedback_client_sync_v1.sql"
+    },
+    "ec0243178866f66088590415154d365fcd3e075925c888be4362542efdd420e6": {
+      "signature": "public.delete_event_feedback_for_edit_client_sync_v1(bigint,bigint,uuid)",
+      "source": "database/functions/events/delete_event_feedback_for_edit.sql"
+    },
+    "ba4132679bfdb3831edcec671fdab1ed990dfaf31696145832b7857d42f228a3": {
+      "signature": "public.delete_event_feedback_internal_v1(bigint,uuid)",
+      "source": "database/functions/events/delete_event_feedback_internal_v1.sql"
+    },
+    "42c2604174f5b132cc10e1c53179cf0fbd9c46223de0ec6eede8a1ab7cc0344f": {
+      "signature": "public.delete_exclusive_group_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/events/delete_exclusive_group_client_sync_v1.sql"
+    },
+    "4a525a4e0ed29f22dc4c2e1d99e8c9dc4a6f46dab3660103c2248133d4e3b1c4": {
+      "signature": "public.get_exclusive_group_command_data_v1(bigint)",
+      "source": "database/functions/events/get_exclusive_group_command_data_v1.sql"
+    },
+    "d37b8e90c01213e950d8b66527ea69d5984d5ab60664f0967c9c4b7e9f4dfb82": {
+      "signature": "public.get_exclusive_groups_for_edit_v1(bigint)",
+      "source": "database/functions/events/get_exclusive_groups_for_edit_v1.sql"
+    },
+    "795c61f74c61497bb5439c39bbeddb49e197e4c876a38ac2936267b84c108011": {
+      "signature": "public.save_exclusive_group_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/events/save_exclusive_group_client_sync_v1.sql"
+    },
+    "bad7905b6e310be747d8a5e60de50426e573bfb3a5f8a1263407fbcc489ecf84": {
+      "signature": "public.set_event_attendance_client_sync_v1(bigint,uuid,text,uuid)",
+      "source": "database/functions/events/set_event_attendance_client_sync_v1.sql"
+    },
+    "1e4eaecba9d5f5f96af176105ec13e4e2402a44ea971223bfe3157e6eb1829b9": {
+      "signature": "public.set_saved_program_client_sync_v1(bigint,bigint[],text,uuid)",
+      "source": "database/functions/events/set_saved_program_client_sync_v1.sql"
+    },
+    "54a813afb6e772824c3942acef9aa7fbb0d05e50ab04efcd9d13b2199b88a245": {
+      "signature": "public.set_saved_program_client_sync_v1_transactional(bigint,bigint[],text,uuid)",
+      "source": "database/functions/events/set_saved_program_client_sync_v1_transactional.sql"
+    },
+    "306cea1987f6a018f164629e2deedc62a38adc65ac5f37192b40a9412034b21b": {
+      "signature": "public.submit_event_feedback_client_sync_v1(bigint,bigint,text,text,uuid,uuid)",
+      "source": "database/functions/events/submit_event_feedback_client_sync_v1.sql"
+    },
+    "43ecc7e15d16a22f7b0f3f8565faab32f201af70a0d2d29c363a8b2ca82e8863": {
+      "signature": "public.submit_event_feedback_internal_v1(bigint,text,text,uuid)",
+      "source": "database/functions/events/submit_event_feedback_internal_v1.sql"
+    },
+    "7ec6693bcadc4d77f3093ef8430ac89e99d7473b46f049f3e0c7f0439018698b": {
+      "signature": "public.delete_owned_companion_internal_v1(bigint,uuid,uuid)",
+      "source": "database/functions/groups/adjacent_group_lifecycle.sql"
+    },
+    "4c980b9d88736e6333da3e14356307795fdbe989dbbb9063e0a5122e89844413": {
+      "signature": "public.delete_information_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/information/delete_information_client_sync_v1.sql"
+    },
+    "4382f84f3171353d16972bffd3a16963017c65f0d713ddc5d4dda7cb9c44adbc": {
+      "signature": "public.get_information_command_data_v1(bigint)",
+      "source": "database/functions/information/get_information_command_data_v1.sql"
+    },
+    "c69fa027ed7f469840a89b41f2f083f97f21c7a8621d0a7f393cdb75ed4c5385": {
+      "signature": "public.get_information_editor_bundle_v1(bigint,text)",
+      "source": "database/functions/information/get_information_editor_bundle_v1.sql"
+    },
+    "dd8dc58fe6e6e8aa8110933e8fe1e5acf822a3c31eb93f91d2e937e75bf65140": {
+      "signature": "public.save_information_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/information/save_information_client_sync_v1.sql"
+    },
+    "becef5b0e2de7613e695915cac8269438de65b5d152e45b92c11359e87f6f732": {
+      "signature": "public.delete_path_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/map/delete_path_client_sync_v1.sql"
+    },
+    "e94099c67bc3a9846ead5f3219fda94c96b4ca45d867c24783de2a5fbb9cb84c": {
+      "signature": "public.delete_place_type_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/map/delete_place_type_client_sync_v1.sql"
+    },
+    "f40d6247878831b753a6449b8af87ec3a999e2923d8c0b71a25cf9eb8f469fd9": {
+      "signature": "public.get_map_editor_bundle_v1(bigint)",
+      "source": "database/functions/map/get_map_editor_bundle_v1.sql"
+    },
+    "d1a63e8dd8306b61aea54a26d615bd29a95ec33b24fbce4d18e958ba4c160696": {
+      "signature": "public.save_path_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/map/save_path_client_sync_v1.sql"
+    },
+    "c3e3396d4fd25975a071c6dbcdb46cdae54a7f9a34b2d40bcd7d8d689843245a": {
+      "signature": "public.save_place_type_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/map/save_place_type_client_sync_v1.sql"
+    },
+    "13c80968015b169ac60c9cc7bd39bc8a8e6b6f9cd869e7343c211ba2fd63ab57": {
+      "signature": "public.delete_news_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/news/delete_news_client_sync_v1.sql"
+    },
+    "f1424b8e6b60152f012a8f2f5e5fbd2d42e6dadc4f85288069daedc4fa270568": {
+      "signature": "public.save_news_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/news/save_news_client_sync_v1.sql"
+    },
+    "3a2f3609261309cef37ec9c3c850e3e17481d2fcd715ad966afb74335facb18f": {
+      "signature": "public.check_is_admin_of_organization(bigint)",
+      "source": "database/functions/organization/check_is_admin_of_organization.sql"
+    },
+    "fce31c8cefb00412eda8670af874adb9017c23a68ebb0e5b950e1130f71ad732": {
+      "signature": "public.get_all_occasions_for_edit_v212(bigint)",
+      "source": "database/functions/others/get_all_occasions_for_edit.sql"
+    },
+    "96ef5e420e30ef529dec3d83feffe19302099a101696bdd17ddb9d1e26be0074": {
+      "signature": "public.get_available_occasions(bigint,bigint)",
+      "source": "database/functions/others/get_available_occasions.sql"
+    },
+    "5c6704ec558b4c8f10c2731c082470a031ecf480b0dda92684b1ac413100d71d": {
+      "signature": "public.get_public_occasions(bigint,bigint)",
+      "source": "database/functions/others/get_public_occasions.sql"
+    },
+    "349c3c0031875dce13211e29cf61ca8ad243f1d3bf21207888355e0519d0f197": {
+      "signature": "public.get_unit_for_edit(bigint)",
+      "source": "database/functions/others/get_unit_for_edit.sql"
+    },
+    "5cedaf30b9353867c15a0b201a544fe2dad4b0e97fa4d3076e8cf055c9adb52c": {
+      "signature": "public.get_all_occasions_for_edit(bigint)",
+      "source": "database/functions/others/legacy_occasion_catalogs.sql"
+    },
+    "a0cea28585ef885e27bd840d34805716d1ff34959b77344fc59294294ea8555f": {
+      "signature": "public.get_all_occasions_for_edit_v182(bigint)",
+      "source": "database/functions/others/legacy_occasion_catalogs.sql"
+    },
+    "26b7c27f043a48b2d100c22d3df26023cfa28135cdb391cb513595207f1c3b2f": {
+      "signature": "public.lookup_scanner_ticket(uuid,text,text)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "cd7092db5de71f0cde2925e23ba21648d25c2d99b4607101b5c48380f29565b5": {
+      "signature": "public.search_scanner_tickets(uuid,text,text,bigint)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "49e5d29e0885eb77370940a4ea25cc519f51b861329eb11cd395d276f539d539": {
+      "signature": "public.sync_scanner_operations(uuid,text,jsonb)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "0decdb2d8050ed0206f73eb6c862bc49949201acfb3b326edee57e552d332821": {
+      "signature": "public.get_scanner_receipts(uuid,text,uuid[])",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "4b857ea44cd33e967393e48a90b692363468bb0653622b0068684e872c69ae57": {
+      "signature": "public.get_scanner_summary(uuid,text)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "d867f6dafe781e3a3b8d962f2e5521a7e0843a03e8b1c48eb1f671419ca8767b": {
+      "signature": "public.resolve_scanner_conflict(uuid,text)",
+      "source": "database/functions/scanning/admission.sql"
+    },
+    "19b0543e32f5f92011fab0ade80f8046fda4933f4047ff59a73171eba111a9c7": {
+      "signature": "public.scan_ticket_v2(text,text)",
+      "source": "database/functions/scanning/legacy_scan_ticket_v2.sql"
+    },
+    "6f5d0750cf2af56cdc71fe1309a7fdca6eefe901a8ff5aeac5442276bdb4cadd": {
+      "signature": "public.scanner_session_internal(uuid,text,boolean)",
+      "source": "database/functions/scanning/sessions.sql"
+    },
+    "e6df5b125d75b46db179569c7c1ac136c2610f11881796dd6b9f0ca9645b8399": {
+      "signature": "public.open_scanner_session(text,bigint,text)",
+      "source": "database/functions/scanning/sessions.sql"
+    },
+    "09227489da92c4fa5b08dea0c6d47af3158039cecade116dede57b231eae049c": {
+      "signature": "public.revoke_scanner_session(uuid,text)",
+      "source": "database/functions/scanning/sessions.sql"
+    },
+    "34ce3b3ee1c8cb97b0c5b8dd704d1b1cd3b1e591b501addd45cb6fe04017edb7": {
+      "signature": "public.get_scanner_settings(bigint)",
+      "source": "database/functions/scanning/settings.sql"
+    },
+    "e93fb9932fa361b7deb59f038049b71fbd350b845146539f70ab8dfe5b791760": {
+      "signature": "public.update_scanner_settings(bigint,bigint,jsonb)",
+      "source": "database/functions/scanning/settings.sql"
+    },
+    "9acfc4db20e240203936047d60a3816975648a79ae7121d9ab55302adbd451d6": {
+      "signature": "public.prepare_scanner_snapshot(uuid,text)",
+      "source": "database/functions/scanning/snapshots.sql"
+    },
+    "ef1922f95ef7b204f4cdd3b8a93cd5444044dc3646489b8f05aee8b2542f7861": {
+      "signature": "public.get_scanner_snapshot_page(uuid,text,uuid,integer)",
+      "source": "database/functions/scanning/snapshots.sql"
+    },
+    "d9bb8d15fcfe6fe2e09f94865591ed67a187ad3c061ad2fe5b4f40322a3346bc": {
+      "signature": "public.create_counseling_slots_client_sync_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer,uuid)",
+      "source": "database/functions/speakers/create_counseling_slots_client_sync_v1.sql"
+    },
+    "2cc8bcab18e3d5e104fc5735eb5afd13388aaea3742f6772144cd2abd6a2876f": {
+      "signature": "public.create_counseling_slots_domain_command_internal_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer,uuid)",
+      "source": "database/functions/speakers/create_counseling_slots_domain_command_internal_v1.sql"
+    },
+    "97abc45f9417651de78b7972646b87d3b9ae4f412af820ab4916fe512cbd5b68": {
+      "signature": "public.delete_empty_counseling_slots_client_sync_v1(bigint,timestamp with time zone,uuid)",
+      "source": "database/functions/speakers/delete_empty_counseling_slots_client_sync_v1.sql"
+    },
+    "b585b35e177c419b5eafe24aee43e27236e20ef0a8a9f97cdc414a8abaab1c1a": {
+      "signature": "public.delete_speaker_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/speakers/delete_speaker_client_sync_v1.sql"
+    },
+    "b2411d25301376db599a0d365c4b55cb7b1dfd26e5deecb9fb2474c080a39275": {
+      "signature": "public.delete_speaker_topic_client_sync_v1(bigint,bigint,uuid,bigint)",
+      "source": "database/functions/speakers/delete_speaker_topic_client_sync_v1.sql"
+    },
+    "3f193291314022cafb53388794639cd724d65e014883055e0bee11f00b9be8f2": {
+      "signature": "public.get_speaker_command_data_v1(bigint)",
+      "source": "database/functions/speakers/get_speaker_command_data_v1.sql"
+    },
+    "52932d4dce4ec87526d8a0ddf23adc8230e7176c9e986da0c55e309d49fc5fd4": {
+      "signature": "public.get_speakers_editor_bundle_v1(bigint)",
+      "source": "database/functions/speakers/get_speakers_editor_bundle_v1.sql"
+    },
+    "f259376fdffd757241c5431b9a89603463d28450f37ffb5b911716d4afd2b771": {
+      "signature": "public.save_speaker_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/speakers/save_speaker_client_sync_v1.sql"
+    },
+    "ab31fb19d8ec32e6eba08a8f5258c8ab0c8d9bc78639978634bea66987cd9ec8": {
+      "signature": "public.save_speaker_topic_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/speakers/save_speaker_topic_client_sync_v1.sql"
+    },
+    "b9279fe1d703257a059a35b0058ab29aa91ea8f71d2040b0aa0202249f77f184": {
+      "signature": "public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)",
+      "source": "database/functions/units/begin_unit_client_mutation_v1.sql"
+    },
+    "77486d6bb6026bd89d2a1d13d115b8f17453e0d5a491396a0e125e12c777fec8": {
+      "signature": "public.get_unit_edit_data_v1(bigint)",
+      "source": "database/functions/units/get_unit_edit_data_v1.sql"
+    },
+    "739e34ca2daf2debcdb38b89c4d457826c7067f4843ed7d22ba2024eda49a069": {
+      "signature": "public.save_unit_client_sync_v1(bigint,uuid,bigint,jsonb)",
+      "source": "database/functions/units/save_unit_client_sync_v1.sql"
+    },
+    "3f29eacebf656d300852f15480a661400cd3ae1bb6ec3050a533366a49145f10": {
+      "signature": "public.update_unit_internal_v1(bigint,text,jsonb)",
+      "source": "database/functions/units/update_unit_internal_v1.sql"
+    },
+    "ea27d346529db61476d932f1a16be1ca7bf17ee0b6589fc3daf68739b52d4c8a": {
+      "signature": "public.get_is_editor_on_occasion(bigint)",
+      "source": "database/functions/user_permissions/get_is_editor_on_occasion.sql"
+    },
+    "f012556af1b464eb1c27c0c27f8bbbb193f051c469101191cf4fe923c18108d5": {
+      "signature": "public.get_is_editor_on_unit(bigint)",
+      "source": "database/functions/user_permissions/get_is_editor_on_unit.sql"
+    },
+    "1d505f11c3c3046fdecc39cd3aadad3d9a32c775a4b7f906384bafcd483bdc46": {
+      "signature": "public.get_is_editor_order_on_occasion(bigint)",
+      "source": "database/functions/user_permissions/get_is_editor_order_on_occasion.sql"
+    },
+    "2bba3655615b243bab81de14aefc14c7e3c9eeac268f07fecd562031cfa7649e": {
+      "signature": "public.get_is_editor_order_view_on_occasion(bigint)",
+      "source": "database/functions/user_permissions/get_is_editor_order_view_on_occasion.sql"
+    },
+    "b1c06b5929363af26708ac8d39afdff72b7e6ce956146cac632e24ffa6d2cf5f": {
+      "signature": "public.get_is_editor_view_on_occasion(bigint)",
+      "source": "database/functions/user_permissions/get_is_editor_view_on_occasion.sql"
+    },
+    "0cfbdd40b7b3e56440432ffb02e82e101ec9422209d5aea7ea2379fef220cb07": {
+      "signature": "public.get_is_manager_on_occasion(bigint)",
+      "source": "database/functions/user_permissions/get_is_manager_on_occasion.sql"
+    },
+    "dc12604293b219c72177bc699e751f949307acabbc8450847cca94e92e59d373": {
+      "signature": "public.get_is_manager_on_unit(bigint)",
+      "source": "database/functions/user_permissions/get_is_manager_on_unit.sql"
+    },
+    "05f590359e51ee61740416b9013ac51b6f18ab5e7a75613eebfe514c9682cd24": {
+      "signature": "public.add_user_to_occasion_client_sync_v1(bigint,uuid,uuid)",
+      "source": "database/functions/users/add_user_to_occasion_client_sync_v1.sql"
+    },
+    "c3e8169d9b9e61374cc0f6915fee8ac250287555131e4f62dc8d63c79362815e": {
+      "signature": "public.create_companion_client_sync_v1(bigint,text,uuid)",
+      "source": "database/functions/users/create_companion_client_sync_v1.sql"
+    },
+    "68bf6a1cd742d64b729a08070089f23748d9e1203cffe7bedc12533863a8ccf7": {
+      "signature": "public.create_companion_in_organization_internal_v1(bigint,bigint,uuid,text)",
+      "source": "database/functions/users/create_companion_in_organization_internal_v1.sql"
+    },
+    "d9b4628c7cd404a51f8db85a1c9771ce78464b671242fd576271079857f9b0e9": {
+      "signature": "public.create_occasion_user_client_sync_v1(bigint,uuid,jsonb)",
+      "source": "database/functions/users/create_occasion_user_client_sync_v1.sql"
+    },
+    "e6452fbd2b7416499c0655618987a5b3c83069476118f690d7c3e5e6c7bdc779": {
+      "signature": "public.get_occasion_user_command_data_v1(bigint,uuid)",
+      "source": "database/functions/users/get_occasion_user_command_data_v1.sql"
+    },
+    "4d3bb018c4a185ba5f9e94a22d74a7bc6bd92e0da34ffb5246a711a362f27062": {
+      "signature": "public.get_occasion_users_editor_bundle_v1(bigint)",
+      "source": "database/functions/users/get_occasion_users_editor_bundle_v1.sql"
+    },
+    "a61f5732e6eed91b9d9ae5a69fd60083eb53ce3dc8c3f980022ad92a7386928d": {
+      "signature": "public.save_profile_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)",
+      "source": "database/functions/users/save_profile_client_sync_v1.sql"
+    },
+    "612bd54ebbc625aa4a42c0f19ab7fe3068a9559c7e90e5b1abb08cafb99ea438": {
+      "signature": "public.release_blueprint_holds_client_sync_v1(bigint[],uuid)",
+      "source": "database/functions/eshop/release_blueprint_holds_client_sync_v1.sql"
     }
   }
 }

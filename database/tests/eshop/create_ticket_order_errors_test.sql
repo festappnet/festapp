@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- Test: create_ticket_order_errors
 -- Goal: Verify that create_ticket_order correctly returns error codes for various invalid inputs and state violations.
 -- Note: The function CATCHES exceptions internally and returns them as JSON, so we check the result, we don't catch exceptions.
@@ -118,9 +120,9 @@ BEGIN
     ---------------------------------------------------------------------------
     UPDATE public.forms SET is_open = false WHERE id = v_form_id;
 
-    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email);
+    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email, 'ticket', '[]'::jsonb);
     v_result := create_ticket_order(v_input_data);
-    PERFORM assert_eq((v_result->>'code')::int, 1021, 'Error 1021 mismatch (Form closed)');
+    PERFORM assert_eq((v_result->>'code')::int, 1021, 'Error 1021 mismatch (Form closed): '||v_result::text);
 
     UPDATE public.forms SET is_open = true WHERE id = v_form_id; -- Restore
 
@@ -131,7 +133,7 @@ BEGIN
     SET data = jsonb_build_object('schedule', jsonb_build_object('start_time', NOW() + interval '1 hour'))
     WHERE id = v_form_id;
 
-    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email);
+    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email, 'ticket', '[]'::jsonb);
     v_result := create_ticket_order(v_input_data);
     PERFORM assert_eq((v_result->>'code')::int, 1019, 'Error 1019 mismatch (Future start time)');
 
@@ -145,13 +147,15 @@ BEGIN
     SET data = jsonb_build_object('schedule', jsonb_build_object('end_time', NOW() - interval '1 hour'))
     WHERE id = v_form_id;
 
-    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email);
+    v_input_data := jsonb_build_object('form', v_form_key, 'email', v_user_email, 'ticket', '[]'::jsonb);
     v_result := create_ticket_order(v_input_data);
     PERFORM assert_eq((v_result->>'code')::int, 1020, 'Error 1020 mismatch (Past end time)');
 
     UPDATE public.forms SET data = '{}'::jsonb WHERE id = v_form_id;
 
 
+    PERFORM pg_temp.prepare_order_blueprint_fixture(v_form_key);
+    UPDATE eshop.spots SET secret_expiration_time=clock_timestamp()+interval '10 minutes' WHERE id=v_spot_id;
     ---------------------------------------------------------------------------
     -- 1007: Invalid or unrelated spot
     ---------------------------------------------------------------------------

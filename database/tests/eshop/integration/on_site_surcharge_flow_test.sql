@@ -1,3 +1,5 @@
+-- test-setup: database/tests/blueprint/fixtures.sql
+-- test-setup: database/tests/helpers/canonical_blueprint_order_fixture.sql
 -- Test: On-site deposit deadline integration test
 -- Goal: Validate on_site deadline means no reminder, scan shows on_site type, report shows split
 -- Plan: 04-02, Task 2
@@ -75,6 +77,7 @@ BEGIN
         'secret', (SELECT secret FROM eshop.spots WHERE id = v_spot_id),
         'ticket', jsonb_build_array(jsonb_build_object('spot', v_spot_id))
     );
+    v_input_data:=pg_temp.prepare_order_fixture_input(v_input_data);
     SELECT create_ticket_order(v_input_data) INTO v_result;
     PERFORM assert_eq((v_result->>'code')::int, 200, 'Step 1: Order creation should succeed');
     v_order_id := (v_result->'order'->>'id')::bigint;

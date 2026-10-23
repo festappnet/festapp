@@ -63,3 +63,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.delete_empty_counseling_slots_client_sync_v1(p_speaker bigint, p_from timestamp with time zone, p_command_id uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.delete_empty_counseling_slots_client_sync_v1(p_speaker bigint, p_from timestamp with time zone, p_command_id uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.delete_empty_counseling_slots_client_sync_v1(bigint,timestamp with time zone,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_empty_counseling_slots_client_sync_v1(bigint,timestamp with time zone,uuid) TO authenticated,service_role;

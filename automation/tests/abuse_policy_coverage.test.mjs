@@ -15,8 +15,8 @@ test('abuse enforcement never introduces a business trigger', () => {
 test('production route changes require an explicit abuse disposition and evidence', () => {
   assert.deepEqual(inventory.edgeFunctions.map(r => r.name).sort(), Object.keys(coverage.production).sort());
   for (const route of inventory.edgeFunctions) {
-    assert.deepEqual(route.policies, coverage.production[route.name].abusePolicy);
-    assert.ok(route.policies.length && route.owner && route.reviewBy && route.reason.length > 30);
+    assert.deepEqual(route.policies, (coverage.production[route.name].abusePolicy ?? []));
+    assert.ok((route.policies.length || route.budgetDisposition === 'bounded-authenticated-protocol') && route.owner && route.reviewBy && route.reason.length > 30);
     assert.ok(fs.existsSync(route.path));
     for (const evidence of route.evidence) assert.ok(fs.existsSync(evidence));
   }

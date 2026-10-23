@@ -17,3 +17,5 @@ END; $function$
 ;
 REVOKE ALL ON FUNCTION public.get_exclusive_groups_for_edit_v1(p_occasion bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_exclusive_groups_for_edit_v1(p_occasion bigint) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_exclusive_groups_for_edit_v1(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_exclusive_groups_for_edit_v1(bigint) TO authenticated,service_role;

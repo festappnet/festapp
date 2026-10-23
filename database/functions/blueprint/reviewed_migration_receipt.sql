@@ -46,3 +46,5 @@ CREATE OR REPLACE FUNCTION public.begin_client_mutation_v1(p_command_id uuid,p_c
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT public.begin_client_mutation_reviewed_impl_internal(p_command_id,p_command_name,p_occasion,p_actor_id,p_request_sha256,false);
 $$;
+
+REVOKE ALL ON FUNCTION public.begin_client_mutation_v1(uuid,text,bigint,uuid,text) FROM PUBLIC,anon,authenticated,service_role;

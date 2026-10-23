@@ -412,11 +412,13 @@ uloženou šablonu bez zákaznického jména. Datum/místo, product labels, pric
 spot/table text a veřejná poznámka jsou snapshot. Hidden note není součástí tisku.
 Validátory QR/quiet-zone/font IDs/geometry zůstávají stejné v Dart/TS/SQL.
 
-**Nová nutná infrastruktura:** privátní Supabase Storage bucket
-`ticket-batch-documents` pro immutable zdroje a PDF. Současné ticket-fonts je vzor
-privátního storage adapteru, nikoli důkaz existence PDF archivu. Dokumenty se
-neposílají do veřejného image Workeru ani do public Client Sync bucketu.
-Nový bucket musí být v migrační/release konfiguraci i lokálním E2E setupu.
+**Dokumentová infrastruktura:** existující privátní R2 bucket za kanonickým image Workerem.
+Oddělená služební capability `TICKET_BATCH_SERVICE_SECRET` dovoluje pouze immutable
+create/read v namespace `ticket-batches/`; SQL řídí uživatelská oprávnění a manifesty.
+PDF ani zdroje nejsou veřejné. Nepřidává se Supabase Storage bucket ani veřejný
+Client Sync objekt. Stejný chráněný capability secret se provisionuje do Workeru
+a Edge runtime před aktivací UI. Zápis bez přepsání, měřený limit 16 MiB a kontrola
+uložených digestů jsou součástí transportní hranice.
 
 Příprava je bounded a obnovitelná po částech přes jedinou Edge hranici, s SQL
 claim/complete/fail a lease token fencing. Žádný trvale běžící nový worker ani
@@ -499,7 +501,7 @@ Příkazy zůstávají bez produkčního zpřístupnění, dokud nemají PDF př
 
 ### Vlna 3 - snapshot, privátní PDF a obnova
 
-**Změny:** nový storage bucket/ACL, schema pro parts, resource adapter stávajícího
+**Změny:** privátní R2 capability, schema pro parts, resource adapter stávajícího
 rendereru, Edge bounded claim/render/complete; batch dispatch v download-ticket
 A prepareTicketDelivery. Hranici zaregistrovat v self-hosted function runtime
 policy/bundle a Edge test inventory podle existujícího formátu, ne jen přidat index.ts.

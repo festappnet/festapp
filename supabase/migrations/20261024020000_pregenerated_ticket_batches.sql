@@ -53,9 +53,6 @@ ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_lease_actor u
 ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_lease_expires_at timestamptz;
 ALTER TABLE eshop.ticket_batches ADD COLUMN IF NOT EXISTS resource_error_code text;
 ALTER TABLE eshop.ticket_batch_document_parts ADD COLUMN IF NOT EXISTS lease_actor uuid REFERENCES auth.users(id);
-INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
- VALUES('ticket-batch-documents','ticket-batch-documents',false,16777216,ARRAY['application/pdf','application/octet-stream'])
- ON CONFLICT(id) DO NOTHING;
 
 -- Source: database/functions/eshop_ticket_batches/guards.sql
 -- Private invariant owners. Callers authorize and hold existing domain locks.
@@ -112,6 +109,58 @@ BEGIN
   RAISE EXCEPTION 'BATCH_TICKET_PRINT_IMMUTABLE' USING ERRCODE='55000'; END IF;
 END $$;
 REVOKE ALL ON FUNCTION public.check_batch_blueprint_print_immutable_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Source: database/functions/blueprint/reviewed_migration_receipt.sql
+-- Same canonical receipt implementation; runtime always preserves demo read-only.
+CREATE OR REPLACE FUNCTION public.begin_client_mutation_reviewed_impl_internal(p_command_id uuid, p_command_name text, p_occasion bigint, p_actor_id uuid, p_request_sha256 text, p_reviewed_demo boolean)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE v_receipt public.client_mutation_receipts%ROWTYPE; v_inserted integer;
+BEGIN
+  IF p_reviewed_demo AND public.is_demo_occasion(p_occasion) THEN
+    IF NOT public.can_migrate_reviewed_legacy_blueprint(p_occasion) THEN
+      RAISE insufficient_privilege USING MESSAGE='blueprint migration reviewer required'; END IF;
+  ELSE PERFORM public.check_occasion_writable(p_occasion); END IF;
+  IF p_command_id IS NULL OR p_actor_id IS NULL OR p_actor_id IS DISTINCT FROM auth.uid() THEN
+    RAISE insufficient_privilege USING MESSAGE='authenticated command actor required';
+  END IF;
+  IF p_command_name !~ '^[a-z][a-z0-9_.]{2,95}$'
+     OR p_request_sha256 !~ '^[0-9a-f]{64}$' THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid mutation receipt metadata';
+  END IF;
+  INSERT INTO public.client_mutation_receipts
+    (command_id,command_name,occasion,actor_id,request_sha256)
+  VALUES (p_command_id,p_command_name,p_occasion,p_actor_id,p_request_sha256)
+  ON CONFLICT (command_id) DO NOTHING;
+  GET DIAGNOSTICS v_inserted=ROW_COUNT;
+  SELECT * INTO STRICT v_receipt FROM public.client_mutation_receipts
+    WHERE command_id=p_command_id FOR UPDATE;
+  IF v_receipt.command_name IS DISTINCT FROM p_command_name
+     OR v_receipt.occasion IS DISTINCT FROM p_occasion
+     OR v_receipt.actor_id IS DISTINCT FROM p_actor_id
+     OR v_receipt.request_sha256 IS DISTINCT FROM p_request_sha256 THEN
+    RAISE invalid_parameter_value USING MESSAGE='command id was already used with different request data';
+  END IF;
+  IF v_receipt.status='completed' THEN
+    RETURN jsonb_build_object('disposition','replay','response',v_receipt.response);
+  ELSIF v_receipt.status='expired' THEN
+    RETURN jsonb_build_object('disposition','replay',
+      'response',public.expired_client_mutation_response_v1(v_receipt));
+  END IF;
+  IF v_inserted<>1 THEN RAISE serialization_failure
+    USING MESSAGE='incomplete mutation receipt cannot be resumed'; END IF;
+  RETURN jsonb_build_object('disposition','claimed');
+END; $function$;
+REVOKE ALL ON FUNCTION public.begin_client_mutation_reviewed_impl_internal(uuid,text,bigint,uuid,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.begin_client_mutation_v1(p_command_id uuid,p_command_name text,p_occasion bigint,p_actor_id uuid,p_request_sha256 text)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.begin_client_mutation_reviewed_impl_internal(p_command_id,p_command_name,p_occasion,p_actor_id,p_request_sha256,false);
+$$;
+
+REVOKE ALL ON FUNCTION public.begin_client_mutation_v1(uuid,text,bigint,uuid,text) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Source: database/functions/blueprint/save.sql
 CREATE OR REPLACE FUNCTION public.save_blueprint_layout_impl_internal(p_blueprint jsonb,p_reviewed_demo boolean)
@@ -1259,6 +1308,18 @@ BEGIN
  INSERT INTO public.scanner_conflict_resolutions(operation_id,actor_user_id,reason) VALUES(p_operation,auth.uid(),p_reason) ON CONFLICT DO NOTHING;
  RETURN jsonb_build_object('code',200,'server_time',now());
 END $$;
+REVOKE ALL ON FUNCTION public.lookup_scanner_ticket(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.lookup_scanner_ticket(uuid,text,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.search_scanner_tickets(uuid,text,text,bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.search_scanner_tickets(uuid,text,text,bigint) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.sync_scanner_operations(uuid,text,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.sync_scanner_operations(uuid,text,jsonb) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_scanner_receipts(uuid,text,uuid[]) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_receipts(uuid,text,uuid[]) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.get_scanner_summary(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_scanner_summary(uuid,text) TO anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.resolve_scanner_conflict(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.resolve_scanner_conflict(uuid,text) TO authenticated,service_role;
 
 -- Source: database/functions/eshop_orders/update_ticket_products_ws.sql
 CREATE OR REPLACE FUNCTION public.update_ticket_products_wsv2(
@@ -4230,7 +4291,7 @@ BEGIN
  ELSE SELECT * INTO STRICT part FROM eshop.ticket_batch_document_parts WHERE batch_id=b.id AND id=p_part FOR UPDATE;
  END IF;
  IF part.id IS NULL THEN RETURN jsonb_build_object('state',CASE WHEN EXISTS(SELECT 1 FROM eshop.ticket_batch_document_parts WHERE batch_id=b.id AND state<>'ready') THEN 'pending' ELSE 'ready' END); END IF;
- IF part.state='ready' THEN RETURN jsonb_build_object('state','ready','partId',part.id,'objectKey',part.object_key,'digest',part.content_digest); END IF;
+ IF part.state='ready' THEN RETURN jsonb_build_object('state','ready','partId',part.id,'objectKey',part.object_key,'digest',part.content_digest,'bytes',part.byte_count); END IF;
  IF part.lease_expires_at>clock_timestamp() THEN RETURN jsonb_build_object('state','pending'); END IF;
  UPDATE eshop.ticket_batch_document_parts SET state='rendering',lease_token=token,lease_actor=auth.uid(),
  lease_expires_at=clock_timestamp()+interval '2 minutes',error_code=NULL WHERE id=part.id;
@@ -4365,7 +4426,7 @@ BEGIN
         FROM public.user_info ui
         WHERE ui.id = storno_record."user";
 
-        PERFORM public.delete_occasion_user(storno_record."user", p_occasion_id);
+        PERFORM public.remove_occasion_user_domain_internal_v1(p_occasion_id, storno_record."user");
 
         deleted_users := array_append(deleted_users,
             jsonb_build_object(
@@ -4615,21 +4676,27 @@ REVOKE ALL ON FUNCTION public.import_ticket_profiles_internal_v1(bigint) FROM PU
 REVOKE ALL ON FUNCTION public.import_users_from_tickets(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Source: database/functions/eshop_ticket_batches/client_sync.sql
+-- New sources inherit the installed global cutover phase. A fresh additive
+-- bootstrap remains inactive; a fully activated production registry stays ready.
+WITH readiness AS MATERIALIZED (
+ SELECT coalesce(bool_and(cutover_ready),false) AS inherited_ready
+ FROM public.client_sync_component_sources WHERE registry_version=1
+)
 INSERT INTO public.client_sync_component_sources
  (registry_version,component,source_relation,scope_resolver,tracked_columns,canonical_writers,legacy_writers,disposition,test_factory,cutover_ready)
 VALUES
  (1,'private_inventory','eshop.ticket_batches','ticket_batches.occasion',ARRAY['stock_order_id','snapshot','manifest_hash'],
- ARRAY['create_ticket_batch_client_sync_v1','complete_ticket_batch_resources_internal'],'{}','migrate','ticket_batch_factory',false),
+ ARRAY['create_ticket_batch_client_sync_v1','complete_ticket_batch_resources_internal'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness)),
  (1,'private_inventory','eshop.ticket_batch_items','batch_id -> ticket_batches.occasion',ARRAY['ticket_id','ordinal','sale_order_id'],
- ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','ticket_batch_item_factory',false),
+ ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness)),
  (1,'private_inventory','eshop.ticket_batch_document_parts','batch_id -> ticket_batches.occasion',ARRAY['state','content_digest','byte_count'],
- ARRAY['complete_ticket_batch_resources_internal','claim_ticket_batch_document','complete_ticket_batch_document_internal','fail_ticket_batch_document_internal'],'{}','migrate','ticket_batch_document_factory',false),
+ ARRAY['complete_ticket_batch_resources_internal','claim_ticket_batch_document','complete_ticket_batch_document_internal','fail_ticket_batch_document_internal'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness)),
  (1,'private_inventory','eshop.orders','orders.occasion',ARRAY['state','data'],
- ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1'],'{}','migrate','ticket_batch_order_factory',false),
+ ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness)),
  (1,'private_inventory','eshop.order_product_ticket','order -> orders.occasion',ARRAY['order','ticket','product'],
- ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','ticket_batch_opt_factory',false),
+ ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness)),
  (1,'private_inventory','eshop.tickets','tickets.occasion',ARRAY['state'],
- ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','ticket_batch_ticket_factory',false)
+ ARRAY['create_ticket_batch_client_sync_v1','sell_ticket_batch_items_client_sync_v1','void_ticket_batch_items_client_sync_v1'],'{}','migrate','database/tests/eshop/ticket_batches/lifecycle_test.sql',(SELECT inherited_ready FROM readiness))
 ON CONFLICT(registry_version,component,source_relation) DO UPDATE SET
  tracked_columns=ARRAY(SELECT DISTINCT unnest(public.client_sync_component_sources.tracked_columns||excluded.tracked_columns)),
  canonical_writers=ARRAY(SELECT DISTINCT unnest(public.client_sync_component_sources.canonical_writers||excluded.canonical_writers));
@@ -4804,5 +4871,313 @@ GRANT EXECUTE ON FUNCTION public.get_ticket_batch_export_manifest(uuid) TO authe
 GRANT EXECUTE ON FUNCTION public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid),
  public.sell_ticket_batch_items_client_sync_v1(uuid,bigint[],jsonb,boolean,uuid),
  public.void_ticket_batch_items_client_sync_v1(uuid,bigint[],text,uuid) TO authenticated;
+
+-- Source: database/functions/others/update_entity_email_banner.sql
+create or replace function public.update_entity_email_banner(p_entity_type text, p_entity_id bigint, p_banner_url text)
+    returns void
+    language plpgsql
+    security definer
+SET search_path = public, extensions
+as
+$$
+declare
+    v_org_id bigint;
+    v_entity_title text;
+    v_new_html text;
+    v_before jsonb;
+begin
+    -- 1. Validate Entity Type and Permissions
+    if p_entity_type = 'occasion' then
+        if (public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE) then
+            perform public.raise_error('permission_denied');
+        end if;
+
+        SELECT data INTO v_before FROM public.occasions WHERE id=p_entity_id FOR UPDATE;
+        -- Update Occasion Data
+        update public.occasions
+        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', coalesce(to_jsonb(p_banner_url),'null'::jsonb))
+        where id = p_entity_id
+        returning organization, title into v_org_id, v_entity_title;
+
+    elsif p_entity_type = 'unit' then
+        if (public.can_write_unit_email_templates(p_entity_id) IS NOT TRUE) then
+            perform public.raise_error('permission_denied');
+        end if;
+
+        SELECT data INTO v_before FROM public.units WHERE id=p_entity_id FOR UPDATE;
+        -- Update Unit Data
+        update public.units
+        set data = jsonb_set(coalesce(data, '{}'), '{email_banner}', coalesce(to_jsonb(p_banner_url),'null'::jsonb))
+        where id = p_entity_id
+        returning organization, title into v_org_id, v_entity_title;
+
+    else
+        raise exception 'Invalid entity type: %', p_entity_type;
+    end if;
+
+    IF v_before IS DISTINCT FROM (CASE WHEN p_entity_type='occasion'
+      THEN (SELECT data FROM public.occasions WHERE id=p_entity_id)
+      ELSE (SELECT data FROM public.units WHERE id=p_entity_id) END) THEN
+      INSERT INTO public.client_aggregate_versions(aggregate_type,scope_type,scope_id,aggregate_id,version)
+      VALUES(p_entity_type,p_entity_type,p_entity_id,p_entity_id::text,1)
+      ON CONFLICT(aggregate_type,scope_type,scope_id,aggregate_id) DO UPDATE
+      SET version=public.client_aggregate_versions.version+1,updated_at=clock_timestamp();
+    END IF;
+
+    -- 2. Handle HTML Wrapper Logic
+    if p_banner_url is not null then
+        -- Construct Custom HTML
+        v_new_html := '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">';
+        v_new_html := v_new_html || '<div style="text-align: center;">';
+        v_new_html := v_new_html || '<img src="' || p_banner_url || '" alt="' || coalesce(v_entity_title, 'Banner') || '" style="width: 100%; height: auto; display: block;">';
+        v_new_html := v_new_html || '</div>';
+        v_new_html := v_new_html || '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">';
+        v_new_html := v_new_html || '{{content}}';
+        v_new_html := v_new_html || '</div></div>';
+
+        -- Upsert Wrapper
+        if p_entity_type = 'occasion' then
+             -- For occasion, check existing wrapper
+            if exists (select 1 from public.email_wrappers where occasion = p_entity_id) then
+                update public.email_wrappers set html = v_new_html where occasion = p_entity_id;
+            else
+                insert into public.email_wrappers (occasion, organization, unit, title, html)
+                values (p_entity_id, v_org_id, (select unit from occasions where id = p_entity_id), 'Occasion Banner Wrapper', v_new_html);
+            end if;
+        elsif p_entity_type = 'unit' then
+             -- For unit (occasion is null)
+            if exists (select 1 from public.email_wrappers where unit = p_entity_id and occasion is null) then
+                update public.email_wrappers set html = v_new_html where unit = p_entity_id and occasion is null;
+            else
+                insert into public.email_wrappers (occasion, organization, unit, title, html)
+                values (null, v_org_id, p_entity_id, 'Unit Banner Wrapper', v_new_html);
+            end if;
+        end if;
+    else
+        -- 3. Banner Removed -> Delete Wrapper
+        if p_entity_type = 'occasion' then
+            delete from public.email_wrappers where occasion = p_entity_id;
+        elsif p_entity_type = 'unit' then
+            delete from public.email_wrappers where unit = p_entity_id and occasion is null;
+        end if;
+    end if;
+end;
+$$;
+
+REVOKE ALL ON FUNCTION public.update_entity_email_banner(text,bigint,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_entity_email_banner(text,bigint,text) TO authenticated;
+
+-- Source: database/functions/eshop_forms/get_form_for_edit.sql
+-- Fix get_form_for_edit: Remove bigint = uuid comparison and add can_delete
+CREATE OR REPLACE FUNCTION public.get_form_for_edit(form_link text)
+ RETURNS jsonb
+ LANGUAGE plpgsql STABLE
+ SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_form_id BIGINT;
+    v_occasion_id BIGINT;
+    v_unit_id BIGINT;
+    formData JSONB;
+    formFieldsData JSONB;
+    productTypesData JSONB;
+    productsData JSONB;
+    availableBankAccountsData JSONB;
+    canDelete BOOLEAN;
+BEGIN
+    SELECT
+        f.id,
+        f.occasion,
+        o.unit
+    INTO
+        v_form_id,
+        v_occasion_id,
+        v_unit_id
+    FROM public.forms f
+    JOIN public.occasions o ON f.occasion = o.id
+    WHERE f.id = public.resolve_form_link_internal(form_link);
+
+    IF v_form_id IS NULL THEN
+        RETURN jsonb_build_object('code', 404, 'message', 'Form not found for the provided link.');
+    END IF;
+
+    PERFORM check_is_editor_order_view_via_form_link(form_link);
+
+    -- Calculate can_delete
+    -- FIXED: Compare form (bigint) with v_form_id (bigint) directly
+    SELECT NOT EXISTS (
+        SELECT 1 FROM eshop.orders WHERE form = v_form_id
+    ) INTO canDelete;
+
+    SELECT jsonb_build_object(
+        'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='form' AND scope_type='occasion' AND scope_id=f.occasion AND aggregate_id=f.id::text),0),
+        'id', f.id,'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+        'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+        'organizationIdentity',(SELECT CASE WHEN o.organization=u.organization THEN public.get_verified_unit_identity_internal(u.id) END FROM public.occasions o JOIN public.units u ON u.id=o.unit WHERE o.id=f.occasion),
+        'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
+        'key', f.key,
+        'is_open', f.is_open,
+        'created_at', f.created_at,
+        'data', f.data,
+        'type', f.type,
+        'title', f.title,
+        'header', f.header,
+        'header_off', f.header_off,
+        'occasion', f.occasion,
+        'blueprint', f.blueprint,
+        'link', f.link,
+        'bank_account', f.bank_account,
+        'deadline_duration_seconds', f.deadline_duration_seconds,
+        'can_delete', canDelete -- Added field
+    )
+    INTO formData
+    FROM public.forms f
+    WHERE f.id = v_form_id;
+
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', pt.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product_type' AND scope_type='occasion' AND scope_id=pt.occasion AND aggregate_id=pt.id::text),0),
+            'title', pt.title,
+            'description', pt.description,
+            'type', pt.type,
+            'data', pt.data,
+            'occasion', pt.occasion
+        ) ORDER BY pt.title
+    ), '[]'::jsonb)
+    INTO productTypesData
+    FROM eshop.product_types pt
+    WHERE pt.occasion = v_occasion_id;
+
+    -- Materialize occasion history once rather than scanning it for every
+    -- product and every field. Only current orders and current references determine eligibility.
+    WITH occasion_orders AS MATERIALIZED (
+      SELECT id, data FROM eshop.orders WHERE occasion = v_occasion_id
+    ), snapshots AS MATERIALIZED (
+      SELECT data FROM occasion_orders
+    ), used_products AS MATERIALIZED (
+      SELECT opt.product::text AS product FROM eshop.order_product_ticket opt
+      JOIN eshop.products p ON p.id = opt.product WHERE p.occasion = v_occasion_id
+      UNION
+      SELECT value #>> '{}' FROM snapshots s
+      CROSS JOIN LATERAL jsonb_path_query(s.data, '$.tickets[*].products[*].id') ids(value)
+    )
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', p.id,
+            'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions WHERE aggregate_type='product' AND scope_type='occasion' AND scope_id=p.occasion AND aggregate_id=p.id::text),0),
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
+            'occasion', p.occasion,
+            'title', p.title,
+            'description', p.description,
+            'price', p.price,
+            'currency_code', p.currency_code,
+            'is_hidden', p.is_hidden,
+            'order', p."order",
+            'product_type', p.product_type,
+            'ordered_count', (
+                SELECT count(*)
+                FROM eshop.order_product_ticket opt
+                JOIN eshop.orders o ON opt."order" = o.id
+                WHERE opt.product = p.id AND o.state <> 'storno'
+            ),
+            'maximum', p.maximum,
+            'data', p.data
+        ) ORDER BY COALESCE(p."order", 0)
+    ), '[]'::jsonb)
+    INTO productsData
+    FROM eshop.products p
+    CROSS JOIN LATERAL (SELECT CASE
+      WHEN EXISTS (SELECT 1 FROM used_products u WHERE u.product = p.id::text) THEN 'orders'
+      WHEN EXISTS (SELECT 1 FROM eshop.spots s WHERE s.product = p.id) THEN 'blueprint'
+      WHEN EXISTS (SELECT 1 FROM eshop.product_inventory_contexts pic WHERE pic.product = p.id) THEN 'inventory'
+      WHEN (SELECT count(*) FROM public.form_fields ref WHERE ref.product_type = p.product_type) > 1 THEN 'shared'
+    END AS reason) usage
+    WHERE p.product_type IN (SELECT id FROM eshop.product_types WHERE occasion = v_occasion_id);
+
+    WITH form_orders AS MATERIALIZED (
+      SELECT id, data FROM eshop.orders WHERE form = v_form_id
+    ), form_snapshots AS MATERIALIZED (
+      SELECT data FROM form_orders
+    ), form_tickets AS MATERIALIZED (
+      SELECT t.note FROM eshop.order_product_ticket opt
+      JOIN form_orders o ON o.id = opt."order"
+      JOIN eshop.tickets t ON t.id = opt.ticket
+    )
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', ff.id,
+            'can_delete', usage.reason IS NULL,
+            'delete_blocked_reason', usage.reason,
+            'form', ff.form,
+            'title', ff.title,
+            'description', ff.description,
+            'data', ff.data,
+            'type', ff.type,
+            'is_required', ff.is_required,
+            'is_hidden', ff.is_hidden,
+            'is_ticket_field', ff.is_ticket_field,
+            'order', ff."order",
+            'product_type', ff.product_type
+        ) ORDER BY COALESCE(ff."order", 0)
+    ), '[]'::jsonb)
+    INTO formFieldsData
+    FROM public.form_fields ff
+    CROSS JOIN LATERAL (SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM form_snapshots s WHERE
+        EXISTS (SELECT 1 FROM jsonb_array_elements(
+          CASE WHEN jsonb_typeof(s.data->'fields') = 'array' THEN s.data->'fields' ELSE '[]'::jsonb END) answer
+          WHERE answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb, '""'::jsonb, '[]'::jsonb, '{}'::jsonb))
+        OR (ff.type = 'ticket' AND jsonb_path_exists(s.data, '$.tickets[*]'))
+        OR (ff.type = 'note' AND ff.is_ticket_field AND jsonb_path_exists(s.data, '$.tickets[*] ? (@.note != null && @.note != "")'))
+    ) OR (ff.type = 'ticket' AND EXISTS (SELECT 1 FROM form_tickets))
+      OR (ff.type = 'note' AND ff.is_ticket_field AND EXISTS (SELECT 1 FROM form_tickets WHERE NULLIF(note, '') IS NOT NULL))
+      OR EXISTS(SELECT 1 FROM eshop.tickets person CROSS JOIN LATERAL jsonb_array_elements(
+        CASE WHEN jsonb_typeof(person.data->'fields')='array' THEN person.data->'fields' ELSE '[]' END) answer
+        WHERE EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket=person.id AND q.form=ff.form) AND answer ? ff.id::text AND answer->(ff.id::text) NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb))
+      OR (ff.type='ticket' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders q ON q.id=x."order" WHERE x.ticket IS NOT NULL AND q.form=ff.form))
+    THEN 'responses' ELSE (
+      SELECT p->>'delete_blocked_reason' FROM public.form_fields member
+      JOIN jsonb_array_elements(productsData) p ON (p->>'product_type')::bigint = member.product_type
+      WHERE (member.id = ff.id OR (ff.type = 'ticket' AND member.form = ff.form AND member.is_ticket_field))
+        AND p->>'delete_blocked_reason' IS NOT NULL
+      ORDER BY (p->>'id')::bigint LIMIT 1
+    ) END AS reason) usage
+    WHERE ff.form = v_form_id;
+
+    -- FIX: Exclude CASH accounts and ensure deterministic sorting by Priority
+    SELECT COALESCE(jsonb_agg(
+        jsonb_build_object(
+            'id', ba.id,
+            'account_number', ba.account_number,
+            'account_number_human_readable', ba.account_number_human_readable,
+            'title', ba.title,
+            'supported_currencies', ba.supported_currencies,
+            'type', ba.type,
+            'bank_sync_warning', public.bank_sync_warning(ba.id)
+        ) ORDER BY uba.priority ASC, ba.id ASC
+    ), '[]'::jsonb)
+    INTO availableBankAccountsData
+    FROM eshop.unit_bank_accounts uba
+    JOIN eshop.bank_accounts ba ON uba.bank_account = ba.id
+    WHERE uba.unit = v_unit_id
+      AND (ba.type IS DISTINCT FROM 'CASH'); -- EXCLUDE CASH ACCOUNTS
+
+    RETURN jsonb_build_object(
+        'code', 200,
+        'data', jsonb_build_object(
+            'form', formData,
+            'form_fields', formFieldsData,
+            'product_types', productTypesData,
+            'products', productsData,
+            'available_bank_accounts', availableBankAccountsData
+        )
+    );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_form_for_edit(text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_form_for_edit(text) TO anon,authenticated,service_role;
 
 COMMIT;

@@ -762,6 +762,83 @@
       "sources": [
         "test/components/eshop/ticket_batch_print_downloads_test.dart"
       ]
+    },
+    "test/components/bank_accounts/unit_bank_accounts_load_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/bank_accounts/unit_bank_accounts_load_test.dart"
+      ]
+    },
+    "test/components/eshop/order_history_seat_labels_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/eshop/order_history_seat_labels_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_appearance_panel_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_appearance_panel_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_appearance_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_appearance_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_email_document_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_email_document_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_email_templates_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_email_templates_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_ticket_gallery_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_ticket_gallery_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_ticket_loading_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_ticket_loading_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_setup_ticket_matrix_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/occasion_setup_ticket_matrix_test.dart"
+      ]
+    },
+    "test/components/occasion/ticket_email_delivery_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/occasion/ticket_email_delivery_test.dart"
+      ]
+    },
+    "test/components/ticket_layout/ticket_text_autofit_test.dart": {
+      "kind": "environment",
+      "reason": "Exercises actual application widgets and their SDK/locale environment; requires Flutter binding.",
+      "sources": [
+        "test/components/ticket_layout/ticket_text_autofit_test.dart"
+      ]
     }
   }
 }

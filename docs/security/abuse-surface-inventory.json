@@ -816,6 +816,142 @@
         "database/tests/occasion_setup/invitations_test.sql"
       ],
       "reason": "Manager-scoped draft confirmation gates invitation preparation and canonical SQL email admission. Stable retries retain the original proof; local tests do not certify live activation."
+    },
+    {
+      "name": "occasion-setup-email-preview",
+      "path": "supabase/functions/occasion-setup-email-preview/index.ts",
+      "policies": [
+        "document.output"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/occasion-setup-email-preview/preview_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-connect",
+      "path": "supabase/functions/stripe-connect/index.ts",
+      "policies": [
+        "stripe.connect"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/stripe-connect/handler_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-connect-callback",
+      "path": "supabase/functions/stripe-connect-callback/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/stripe-connect-callback/handler_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-checkout",
+      "path": "supabase/functions/stripe-checkout/index.ts",
+      "policies": [
+        "stripe.checkout"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-return",
+      "path": "supabase/functions/stripe-return/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-webhook",
+      "path": "supabase/functions/stripe-webhook/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "stripe-reconcile",
+      "path": "supabase/functions/stripe-reconcile/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/stripe/payments_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "notification-center-maintain",
+      "path": "supabase/functions/notification-center-maintain/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/notificationCenterHealth_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
+    },
+    {
+      "name": "prepare-ticket-batch-document",
+      "path": "supabase/functions/prepare-ticket-batch-document/index.ts",
+      "policies": [
+        "batch-document",
+        "document.output"
+      ],
+      "budgetDisposition": "sql-enforced",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-11-23",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/ticketBatchDocuments_test.ts",
+        "supabase/functions/_shared/ticketBatchExports_test.ts"
+      ],
+      "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
     }
   ],
   "workers": [
@@ -873,6 +1009,11 @@
           "policy": "reject-unregistered-service-routes",
           "status": "local-enforcement",
           "reason": "All other service paths return 404 before any storage operation."
+        },
+        {
+          "path": "/service/ticket-batches/",
+          "policy": "Dedicated server capability; immutable create/read of bounded 16 MiB private R2 objects, no list/delete or user token. SQL document admission and digests remain authoritative.",
+          "status": "implemented"
         }
       ],
       "evidence": [
@@ -885,7 +1026,8 @@
         "supabase/functions/_shared/emailWorkerEnvironment_test.ts",
         "workers/image-worker/tests/unit/account-assets.test.ts",
         "supabase/functions/_shared/accountAssets_test.ts",
-        "database/tests/account_asset_cleanup_test.sql"
+        "database/tests/account_asset_cleanup_test.sql",
+        "workers/image-worker/tests/unit/ticket-batches.test.ts"
       ]
     },
     {
