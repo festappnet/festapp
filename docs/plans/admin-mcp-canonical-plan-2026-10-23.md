@@ -71,14 +71,15 @@ Nové konkrétní důkazy pro provozní správu míst:
   `release_blueprint_holds`. Celý rozšířený výběr, revize a hash stavu rezervací
   jsou potvrzené před zápisem. Starší veřejný RPC je pouze adaptér téhož owneru.
 - `TicketCommands.swapSpots` potvrzuje immutable preview přes `swap_blueprint_seats`; staré veřejné RPC je pouze adaptér stejného vlastníka.
-  Zrušení vstupenek má jiného vlastníka (`storno_tickets_client_sync_v1`).
+  Zrušení vstupenek má samostatného společného vlastníka `cancel_tickets_command_internal`;
+  vydané `storno_tickets_client_sync_v1` zůstává tenkým kompatibilním adaptérem.
 
 | Konkrétní operace / nastavení | Vlastník nebo doložená UI cesta | Zařazení |
 | --- | --- | --- |
 | Blokovat a odblokovat volná místa | Blueprint draft/controller + aggregate save, `blocked` binding | Provozní řez 2B |
-| Uvolnit dočasnou rezervaci | `preview_blueprint_hold_release` / `release_blueprint_holds` | 2B ověřeno lokálně; nasazení čeká |
-| Prohodit místa vstupenek | `preview_blueprint_seat_swap` / `swap_blueprint_seats` | 2B SQL/MCP ověřeno, závěrečný UI gate čeká |
-| Vytvořit objednávku z míst; zrušit vybrané vstupenky | `blueprint_create_order_dialog.dart`, `TicketCommands.cancel` | Provozní řez 2B, objednávkové vlastníky |
+| Uvolnit dočasnou rezervaci | `preview_blueprint_hold_release` / `release_blueprint_holds` | 2B nasazeno v buildu869 |
+| Prohodit místa vstupenek | `preview_blueprint_seat_swap` / `swap_blueprint_seats` | 2B nasazeno v buildu869 |
+| Vytvořit objednávku z míst; zrušit vybrané vstupenky | `SeatOrderCommands`, `TicketCommands.previewCancellation/cancelSelection` | 2B nasazeno v buildu869 |
 | Geometrie, názvy, stoly, skupiny a nedělitelné výběry | Blueprint layout/controller/save | Etapa 7, samostatné řezy |
 | Produkt místa/skupiny a jeho dědičnost | Blueprint bindings + kanonické product rules | 2B/7 podle konkrétní změny |
 | Kapacita, zobrazování volných míst, čekací listina a délka nabídky | `form_capacity_settings.dart`, waitlist owner | Etapa 4 |
@@ -822,3 +823,18 @@ and their temporary rename was reverted before publication/application. Neither
 new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
 not deploy. Generated source parity follows actual current main; no PDF readiness
 seal changed. Final report marks swap locally verified/pending deployment.
+
+
+### Aktuální uzavření provozní etapy 2B - nasazeno
+
+Etapa2B je dokončená a nasazená pro festapptickets / org3, verze 0.20.371+869.
+Zdroj main `6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3`, tenant `0dd690d80b59eabf790322bd8723629695dc0d5a`.
+Tento stav nahrazuje dřívější průběžné checkpointy s čekajícím nasazením.
+Inspekce/blokace, release hold, swap, vytvoření/nahrazení objednávky z míst a
+zrušení vybraných vstupenek mají společné UI/MCP vlastníky a oddělené kontrakty.
+2320+2330+240230+240240 byly aplikované atomicky včetně ledgeru a reloadu.
+Doklad: `docs/reports/admin-seats-2b-release-2026-10-23.json`; cílené ověření
+68 PostgreSQL případů bez skipů a navazující SDK/UI/consent kontroly v souhrnné
+evidenci. Živé zdroje, ACL a zdraví Edge/MCP i webové verze jsou ověřené.
+Dle posledního pokynu uživatele zde skončit; neotevírat etapy3-10. Při pozdějším
+pokračování nejprve načíst aktuální autoritativní main a navázat etapou3.

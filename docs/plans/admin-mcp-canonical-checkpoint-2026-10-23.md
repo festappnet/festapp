@@ -1099,3 +1099,27 @@ probe saves134,732+3,799 bytes. Executable main/deferred identity/ASI/regex/stri
 and fail-before-write tests plus existing manifest/offline tests passed10/10
 (/tmp/festapp-2b-compact-tests.log). The release agent must build the new pipeline
 revision and verify its own final artifact; failed artifacts stay unshipped.
+
+
+### Final - operational2B completed and deployed; stop here
+
+Main `6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3`; tenant `0dd690d80b59eabf790322bd8723629695dc0d5a`; live `0.20.371+869`. Four SQL forwards applied with ledger+NOTIFY in one transaction,
+packet SHA `e744e2f131eaa3a2bd63dae4aeade50a93f28d86f9f4949eca23a1b0ce01468a`. Live source/ACL checks passed;
+retired swap internals are absent. Edge tree `0e351abf24fe8d70a2e9802fc262b8a46c407da1633e8f0bcc8dafeb6905e261` is healthy; only functions container changed. Web direct deploy
+`https://1aefc04e.vstupenkyonline.pages.dev` passed three consecutive coherent probes.
+MCP image `festapp-mcp-oauth@sha256:de6b8b6fdaec9ef695a00ba5c1bcafb7f50e34492ab892ec53c073eabda94958` is healthy; only mcp container changed,
+existing config/secrets/persistent OAuth state retained. New scopes are publicly
+discoverable and do not widen old grants. Root independently verified public
+web869/festapptickets activation generation1 and all six seat scopes.
+
+Recovery uses encrypted/off-host-verified operational backup20261023T143852Z
+plus freshly captured protected before-DDL/ACL snapshot. This is not an atomic
+RPO0 promotion backup. Independent newer full backup20261023T185845Z is still
+running under its own backup lock; no lock was bypassed. No production test
+orders/payments/customer emails were created. Exact public-safe evidence:
+`docs/reports/admin-seats-2b-release-2026-10-23.json`. Updated catalog is mirrored
+to the exact user-requested recovery HTML/JSON location.
+
+Stop after this completed/deployed stage as explicitly requested. No stage3 work
+started. Future continuation starts with fresh main, then stage3; retain evidence
+of earlier full-app browser input-method limits and historical receipt coverage.

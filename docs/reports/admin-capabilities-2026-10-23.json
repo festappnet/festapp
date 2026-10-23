@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
-  "liveBaselineVersion": "0.20.371+868",
+  "sourceMain": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "liveBaselineVersion": "0.20.371+869",
   "tenant": "festapptickets",
-  "scopeNote": "Provozní etapa2B má implementované a lokálně ověřené oddělené operace: blokace, uvolnění rezervací, prohození vstupenek, objednávky z míst a zrušení vybraných vstupenek. Publikace a koordinované nasazení festapptickets probíhají; současná živá verze je868. Etapy3-10 nejsou součástí tohoto dokončení.",
+  "scopeNote": "Provozní etapa 2B je dokončená a nasazená pro festapptickets / vstupenky.online: inspekce a blokace míst, uvolnění dočasných rezervací, prohození vstupenek, objednávky z míst a rušení vybraných vstupenek. UI i MCP používají společné doménové operace. Na žádost uživatele zde práce končí; etapy 3-10 zůstávají na později.",
   "actions": [
     {
       "id": "action-001",
@@ -371,7 +371,8 @@
       "effect": "read",
       "scope": "Akce",
       "certainty": "confirmed",
-      "deploymentState": "deployed"
+      "deploymentState": "deployed",
+      "verificationState": "verified"
     },
     {
       "id": "action-021",
@@ -393,7 +394,8 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
-      "deploymentState": "deployed"
+      "deploymentState": "deployed",
+      "verificationState": "verified"
     },
     {
       "id": "action-022",
@@ -415,7 +417,8 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla",
-      "deploymentState": "deployed"
+      "deploymentState": "deployed",
+      "verificationState": "verified"
     },
     {
       "id": "action-023",
@@ -438,7 +441,8 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "keywords": "rezervace držení hold holds release blueprint sedadla",
-      "deploymentState": "pending"
+      "deploymentState": "deployed",
+      "verificationState": "verified"
     },
     {
       "id": "action-024",
@@ -460,7 +464,8 @@
       "effect": "critical",
       "scope": "Akce",
       "certainty": "confirmed",
-      "deploymentState": "pending"
+      "deploymentState": "deployed",
+      "verificationState": "verified"
     },
     {
       "id": "action-025",
@@ -483,8 +488,8 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "verificationState": "verified",
-      "verificationNote": "Prošlo14 nových SQL scénářů a47 regresí,70 JS kontraktních/SDK testů,21 Edge testů,12 testů portu/obnovy a3 dialogové testy. Integrace aktuálních batch guards dokončena. Skutečný lokální browser/full-stack tok doložen na předchozí revizi63a242; přesné hranice v evidence JSON. Publikace a nasazení neproběhly.",
-      "deploymentState": "pending"
+      "verificationNote": "Lokální SQL/SDK/UI i skutečný lokální full-stack tok doloženy ve zdrojové evidenci. Koordinované SQL/Edge/web/MCP nasazení a živé kontroly dokončeny.",
+      "deploymentState": "deployed"
     },
     {
       "id": "action-026",
@@ -507,7 +512,7 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "verificationState": "verified",
-      "deploymentState": "pending"
+      "deploymentState": "deployed"
     },
     {
       "id": "action-027",
@@ -1484,10 +1489,10 @@
   ],
   "dataQualityReview": {
     "date": "2026-10-23",
-    "status": "Uvolnění dočasných rezervací ověřeno v SQL, MCP i UI; čeká publikace a nasazení.",
-    "finding": "12 PostgreSQL případů nad místy, 20 vzdálených testů, 28 testů souhlasu a 3 cílené Flutter případy prošly. Celá MCP sada: 122 prošlo, 1 selhal, 0 přeskočeno. Jediný zbývající problém je dříve potvrzený drift PDF validační readiness; seal nebyl obejit. Tři starší problémy testovacích kontraktů a přípravy databáze byly opraveny proti schválenému SQL a skutečným produkčním vlastníkům.",
-    "nextStep": "Po dokončení aktuálního vydání publikovat ověřený řez uvolnění rezervací; navázat prohazováním míst přes společného vlastníka. PDF readiness vyřešit před dokončením celého plánu.",
-    "evidence": "admin-seat-hold-release-evidence-2026-10-23.json"
+    "status": "Celá provozní etapa 2B ověřena a nasazena.",
+    "finding": "68 PostgreSQL testů prošlo bez skipů; dále 31 vzdálených/SDK testů, 37 testů souhlasu, 14 testů obnovy klienta a 3 cílené UI testy. Produkční kontrola potvrdila atomický ledger, shodu SQL zdrojů a ACL, zdravé Edge/MCP a koherentní web build869. Původní PWA limity zůstaly zachované. Historická PDF readiness evidence není důkazem živé PDF připravenosti; PDF editor není součástí tohoto řezu.",
+    "nextStep": "Práce zastavena po dokončené etapě 2B. Při pozdějším pokračování začít etapou 3 podle aktuálního main.",
+    "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
   "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací a prohození vstupenek: PR #571 má všech 6 CI kontrol zelených, čeká na povinné review. Objednávky z míst: ověřen společný SQL náhled a atomická náhrada, napojení UI/MCP se dokončuje."
 }

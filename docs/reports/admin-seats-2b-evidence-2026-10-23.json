@@ -1,8 +1,8 @@
 {
   "date": "2026-10-23",
   "stage": "2B",
-  "sourceMain": "067ad53fb9fd8706f7c930f6215fdd6fc69e8a06",
-  "status": "implemented and published; deployment in progress",
+  "sourceMain": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "status": "Complete and deployed; stop after stage2B requested by user",
   "tenant": "festapptickets",
   "operations": [
     "inspect seats",
@@ -88,7 +88,11 @@
   ],
   "production": {
     "previousLiveVersion": "0.20.371+868",
-    "deploymentVerified": false
+    "version": "0.20.371+869",
+    "deploymentVerified": true,
+    "tenantCommit": "0dd690d80b59eabf790322bd8723629695dc0d5a",
+    "releaseEvidence": "admin-seats-2b-release-2026-10-23.json",
+    "sideEffects": "No production test orders, provider payments or customer emails"
   },
   "buildGateCorrection": {
     "failedCandidateKnownBytes": 62945201,
@@ -99,6 +103,10 @@
     "testsPassed": 10,
     "actualFormattingProbeSavedBytes": 138531,
     "cachePolicyChanged": false,
-    "releaseCandidateRequiresRebuild": true
-  }
+    "releaseCandidateRequiresRebuild": false,
+    "verifiedCoreBytes": 24087472,
+    "verifiedKnownBytes": 62813947,
+    "knownHeadroomBytes": 100613
+  },
+  "implementationSourceMain": "067ad53fb9fd8706f7c930f6215fdd6fc69e8a06"
 }

@@ -1,7 +1,7 @@
 {
   "date": "2026-10-23",
-  "status": "Published on canonical main; full operational2B deployment in progress",
-  "sourceCommit": "067ad53fb9fd8706f7c930f6215fdd6fc69e8a06",
+  "status": "Operational2B complete and deployed",
+  "sourceCommit": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
   "migration": "20261024023000_confirmed_blueprint_seat_orders.sql",
   "migrationSha256": "41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2",
   "newPostgresCasesPassed": 14,
@@ -56,20 +56,19 @@
     "normalBankWrite": "One MCP-to-Edge call and one user-scoped aggregate SQL command; no provider metadata or invoice requests"
   },
   "liveBaseline": {
-    "version": "0.20.371+868",
+    "version": "0.20.371+869",
     "probe": "https://vstupenky.online/version.json",
-    "seatOrderMigrationApplied": false
+    "seatOrderMigrationApplied": true
   },
   "publication": {
     "previousSlicePr": "https://github.com/festappnet/festapp/pull/571",
     "previousSliceFrozenHead": "94d21814cd2da51623ef6b8fa1546a2bd0870910",
     "previousSliceChecks": "6 required checks passed; review still required, no approval",
     "mainAtLastReadOnlyCheck": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
-    "thisSlice": "Canonical main067ad53fb published by ordinary non-force push after fresh main fetch; deploy delegated to release agent"
+    "thisSlice": "Canonical main6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3 and tenant0dd690d80b59eabf790322bd8723629695dc0d5a deployed; verified release receipt admin-seats-2b-release-2026-10-23.json"
   },
   "remaining": [
-    "Verify coordinated festapptickets SQL/Edge/web/MCP rollout; stop after stage2B",
-    "Stages3-10 remain outside this requested release"
+    "Stop after completed operational2B as requested; stages3-10 require later resumption"
   ],
   "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
   "productionPrerequisites": {
