@@ -157,11 +157,12 @@ export class UserHeader extends HTMLElement {
              // ... Authenticated Logic ...
              const userInfo = RightsService.getUserDisplayInfo(this.user);
 
-             // 1. Admin Button (if applicable)
-             const canSeeAdmin = RightsService.canSeeAdmin();
-             const canSeeReservations = RightsService.canSeeReservations();
-             
-             if (canSeeAdmin || canSeeReservations) {
+             // My events is account navigation on the ticketing site. Opening
+             // it does not grant access to any unit or occasion; the destination
+             // resolves the signed-in workspace and checks its own capabilities.
+             const canOpenMyEvents = ticketBrand ||
+                 RightsService.canSeeAdmin() || RightsService.canSeeReservations();
+             if (canOpenMyEvents) {
                  const adminBtn = document.createElement('button');
                  adminBtn.className = 'btn-admin';
                  adminBtn.setAttribute('aria-label', CommonStrings.myEvents);
