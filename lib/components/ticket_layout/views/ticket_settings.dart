@@ -301,7 +301,7 @@ class _TicketSettingsState extends State<TicketSettings> {
                 _refresh(() => widget.feature.deliveryMode = mode);
                 if (mode.includesPdf && widget.showPreview) refresh();
               }),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
           if (widget.feature.isEnabled && widget.occasionId > 0)
             TicketDeliveryPreview(
                 revision: _contextKey,
@@ -315,7 +315,7 @@ class _TicketSettingsState extends State<TicketSettings> {
                   });
                   return Map<String, dynamic>.from(response.data as Map);
                 }),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
         if (widget.showScanningSettings) ...[
           TicketScanningSettings(

@@ -97,7 +97,9 @@ export async function renderDraftPreview(context: any) {
         id: i + 1,
         occasion: occasion.id,
         state: "paid",
-        ticket_symbol: `festapp-preview:INVALID-${i + 1}`,
+        ticket_symbol: `festapp-preview:UKAZKA-${
+          String(i + 1).padStart(3, "0")
+        }`,
       }),
     );
     delivery = await prepareTicketDelivery(occasion, {}, tickets, async () => {
@@ -117,6 +119,10 @@ export async function renderDraftPreview(context: any) {
         for (const element of template.elements) {
           if (element.binding === "qr") {
             data[element.id] = ticket.ticket_symbol;
+          } else if (element.binding === "ticketSymbol") {
+            data[element.id] = ticket.ticket_symbol.slice(
+              "festapp-preview:".length,
+            );
           }
         }
         return await generateTicketPdf(
@@ -128,6 +134,9 @@ export async function renderDraftPreview(context: any) {
         );
       };
     });
+    // Admission QR stays deliberately invalid; only its human-readable sample
+    // code is shown. Production delivery continues to show the real symbol.
+    delivery.html = delivery.html.replaceAll("festapp-preview:", "");
   }
   const ticketSubs = ticketEmailSubstitutions({
     order: {
@@ -164,7 +173,10 @@ export async function renderDraftPreview(context: any) {
   }, () => Promise.resolve(context.resolved));
   return {
     attachments: prepared.attachments.filter((a) => a.disposition !== "INLINE")
-      .map((a) => ({ filename: a.filename, contentType: a.contentType })),
+      .map((a, i) => ({
+        filename: isTickets ? `vstupenka-ukazka-${i + 1}.pdf` : a.filename,
+        contentType: a.contentType,
+      })),
     inlineImages: prepared.attachments.filter((a) => a.disposition === "INLINE")
       .map((a) => ({ contentId: a.contentId, content: a.content })),
     subject: prepared.subject,

@@ -301,7 +301,7 @@ class _OccasionSetupCommunicationState
                   })),
           if (widget.loadPreview != null &&
               (widget.data['ticketDraft'] as Map?)?['is_enabled'] != false) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
             TicketDeliveryPreview(
                 revision: jsonEncode(widget.data),
                 load: (count) => widget.loadPreview!({

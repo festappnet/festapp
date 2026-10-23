@@ -2163,7 +2163,7 @@
     "pdf_attachmentHelp": "Tickets werden als PDF-Anhänge versendet.",
     "inline_qr": "QR direkt in der E-Mail",
     "inline_qrHelp": "Die E-Mail enthält nur QR-Codes, ohne gestaltetes Ticket und ohne PDF.",
-    "both": "QR in der E-Mail und PDF im Anhang",
+    "both": "QR in der E-Mail + PDF",
     "bothHelp": "Die E-Mail enthält einfache QR-Codes und PDF-Tickets im Anhang.",
     "reviewTemplate": "Prüfen Sie die Vorschau und den Vorlagentext, insbesondere Hinweise auf PDF-Anhänge.",
     "sameTicket": "Der QR-Code in der E-Mail und im PDF gehört zum selben Ticket.",

@@ -3,6 +3,8 @@ import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
 import { previewHandler } from "./handler.ts";
 import defaults from "../_shared/emailPreviewDefaults.json" with {type:"json"};
+import { qrPng } from "../_shared/ticketDelivery.ts";
+import { encodeAttachment } from "../_shared/emailDelivery.ts";
 
 function assert(value: unknown, message = "assertion failed"): asserts value {
   if (!value) throw new Error(message);
@@ -169,9 +171,24 @@ Deno.test("ticket preview preserves catalog response and uses only synthetic inl
   assert(result.inlineImages.length === 3 && result.attachments.length === 0);
   assert((result.html.match(/<img /g) ?? []).length === 3);
   assert(!result.html.includes("festapp-preview:") && result.emailTemplates.length === 1);
+  assert(result.html.includes("Kód vstupenky:") && result.html.includes("UKAZKA-001"));
+  assert(result.html.includes("U vstupu ukažte tento QR kód."));
+  assert(result.inlineImages[0].content === encodeAttachment(await qrPng("festapp-preview:UKAZKA-001"), "binary"),
+    "Readable sample codes must never turn preview QR into valid admission identities");
   assert(result.emailScope.unit.id === 1);
   const disabled = await renderDraftPreview({ ...context, messageType: "order_tickets", deliveryMode: "inline_qr", ticketsEnabled: false });
   assert(disabled.inlineImages.length === 0 && disabled.attachments.length === 0);
+});
+
+Deno.test("PDF ticket preview displays a friendly sample attachment name", async () => {
+  const result = await renderDraftPreview({
+    ...context, messageType: "order_tickets", deliveryMode: "pdf_attachment",
+    ticketsEnabled: true, ticketFeature: { code: "ticket", is_enabled: true },
+    sampleTicketCount: 1,
+  });
+  assert(result.attachments.length === 1);
+  assert(result.attachments[0].filename === "vstupenka-ukazka-1.pdf");
+  assert(!JSON.stringify(result.attachments).includes("INVALID"));
 });
 Deno.test("existing-occasion preview forwards resource scope, and validates ticket options before context lookup", async () => {
   let calls=0;

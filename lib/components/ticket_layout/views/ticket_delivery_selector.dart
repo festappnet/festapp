@@ -14,25 +14,31 @@ class TicketDeliverySelector extends StatelessWidget {
   final ValueChanged<TicketDeliveryMode> onChanged;
 
   @override
-  Widget build(BuildContext context) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(TicketDeliveryStrings.text('title'),
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Text(TicketDeliveryStrings.text('scopeHelp')),
-        for (final mode in TicketDeliveryMode.values)
-          RadioListTile<TicketDeliveryMode>(
-              contentPadding: EdgeInsets.zero,
-              value: mode,
-              groupValue: value,
-              title: Text(TicketDeliveryStrings.label(mode)),
-              subtitle: Text(TicketDeliveryStrings.description(mode)),
-              onChanged: enabled ? (next) => onChanged(next!) : null),
-        if (value != TicketDeliveryMode.pdfAttachment) ...[
-          const SizedBox(height: 8),
-          Text(TicketDeliveryStrings.text('reviewTemplate')),
-        ],
-        if (value == TicketDeliveryMode.both)
-          Text(TicketDeliveryStrings.text('sameTicket')),
-      ]);
+  Widget build(BuildContext context) => Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            DropdownButtonFormField<TicketDeliveryMode>(
+              initialValue: value,
+              isExpanded: true,
+              decoration: InputDecoration(
+                  labelText: TicketDeliveryStrings.text('title'),
+                  border: const OutlineInputBorder(),
+                  isDense: true),
+              items: [
+                for (final mode in TicketDeliveryMode.values)
+                  DropdownMenuItem(
+                      value: mode,
+                      child: Text(TicketDeliveryStrings.label(mode))),
+              ],
+              onChanged: enabled ? (next) => onChanged(next!) : null,
+            ),
+            const SizedBox(height: 8),
+            Text(TicketDeliveryStrings.description(value),
+                style: Theme.of(context).textTheme.bodySmall),
+          ]),
+        ),
+      );
 }

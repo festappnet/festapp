@@ -51,7 +51,7 @@ export async function qrPng(symbol: string): Promise<Uint8Array> {
     color: { dark: "#000000ff", light: "#ffffffff" },
   });
 }
-/** No symbols or data-derived IDs are interpolated into the email markup. */
+/** Ticket codes appear only as escaped text; MIME identifiers are independent. */
 export async function inlineTicketBlock(
   symbols: string[],
   both = false,
@@ -60,9 +60,7 @@ export async function inlineTicketBlock(
   const attachments: EmailAttachment[] = [];
   // MIME Content-IDs are unique across messages; retries retain this in the snapshot.
   const messageId = crypto.randomUUID();
-  let html = both
-    ? "<p>QR v e-mailu a PDF v příloze patří ke stejné vstupence.</p>"
-    : "";
+  let html = both ? "<p>Stejné vstupenky najdete také v PDF příloze.</p>" : "";
   for (let i = 0; i < symbols.length; i++) {
     const contentId = `festapp-ticket-${messageId}-${
       i + 1
@@ -76,11 +74,12 @@ export async function inlineTicketBlock(
       contentId,
     });
     const label = symbols.length > 1
-      ? `QR ${i + 1} z ${symbols.length}`
-      : "QR vstupenky";
-    html += `${
-      symbols.length > 1 ? `<p>${label}</p>` : ""
-    }<p><img src="cid:${contentId}" alt="${label} - pro zobrazení povolte obrázky" width="256" height="256" style="display:block;width:256px;max-width:100%;height:auto;background:#ffffff" /></p>`;
+      ? `Vstupenka ${i + 1} z ${symbols.length}`
+      : "Vaše vstupenka";
+    html +=
+      `<div style="margin:24px 0"><h2 style="font-size:18px;margin:0 0 8px">${label}</h2><p>Toto je vaše vstupenka. U vstupu ukažte tento QR kód.</p><p><img src="cid:${contentId}" alt="QR kód vstupenky - pro zobrazení povolte obrázky" width="256" height="256" style="display:block;width:256px;max-width:100%;height:auto;background:#ffffff" /></p><p>Kód vstupenky: <strong style="overflow-wrap:anywhere;word-break:break-word">${
+        escapeTicketText(symbols[i])
+      }</strong></p></div>`;
   }
   return { html, attachments };
 }

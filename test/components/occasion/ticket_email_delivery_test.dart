@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/theme_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
@@ -8,6 +11,8 @@ import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_communication.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_appearance.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_delivery_selector.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_delivery_preview.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_email_preview.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
 import 'package:fstapp/components/ticket_layout/ticket_layout_service.dart';
@@ -27,7 +32,15 @@ class _NoPdfService extends TicketLayoutService {
 void main() {
   WidgetEnvironmentFixture.register();
   late WidgetEnvironmentFixture environment;
-  setUpAll(() {
+  setUpAll(() async {
+    if (const bool.fromEnvironment('CAPTURE_DELIVERY')) {
+      await (FontLoader('Futura')
+            ..addFont(rootBundle.load('fonts/Futura PT Book.ttf')))
+          .load();
+      await (FontLoader('MaterialIcons')
+            ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf')))
+          .load();
+    }
     environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
         translations:
@@ -136,10 +149,10 @@ void main() {
     expect(service.calls, 0);
     expect(
         tester
-            .widgetList<RadioListTile<TicketDeliveryMode>>(
-                find.byType(RadioListTile<TicketDeliveryMode>))
-            .every((choice) => choice.onChanged == null),
-        isTrue);
+            .widget<DropdownButtonFormField<TicketDeliveryMode>>(
+                find.byType(DropdownButtonFormField<TicketDeliveryMode>))
+            .onChanged,
+        isNull);
     expect(find.text('Upravit PDF pro tisk'), findsOneWidget);
   });
 
@@ -197,7 +210,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(requests.any((s) => s['previewMessageType'] == null), isTrue);
       expect(requests.any((s) => s['previewMessageType'] == 'order_tickets'),
-          enabled);
+          isFalse);
+      expect(find.byType(TicketEmailPreview), findsNothing);
       if (enabled) {
         final selector = tester.widget<TicketDeliverySelector>(
             find.byType(TicketDeliverySelector));
@@ -205,6 +219,14 @@ void main() {
         await tester.pumpAndSettle();
         expect((draft['ticketDraft'] as Map)['delivery_mode'], 'inline_qr');
         expect((draft['ticketDraft'] as Map)['layout'], isNotNull);
+        expect(requests.any((s) => s['previewMessageType'] == 'order_tickets'),
+            isFalse);
+        await tester.ensureVisible(find.byType(TicketDeliveryPreview));
+        await tester.tap(find.descendant(
+            of: find.byType(TicketDeliveryPreview),
+            matching: find.byType(TextButton)));
+        await tester.pumpAndSettle();
+        expect(find.byType(AppAlertDialog), findsOneWidget);
         expect(requests.last['previewMessageType'], 'order_tickets');
         expect((requests.last['ticketDraft'] as Map)['delivery_mode'],
             'inline_qr');
@@ -214,6 +236,131 @@ void main() {
           (draft['emailTemplateOverrides'] as Map)['TICKET_ORDER_PAYMENT_DONE']
               ['subject'],
           'Custom');
+    });
+  }
+  testWidgetsWithEnvironment(() => environment,
+      'open preview discards stale revision and retries failed loading',
+      (tester) async {
+    var revision = 0;
+    late StateSetter update;
+    final first = Completer<Map<String, dynamic>>();
+    final current = Completer<Map<String, dynamic>>();
+    var calls = 0;
+    await environment.pumpWidget(tester, MaterialApp(
+        home: Scaffold(body: StatefulBuilder(builder: (context, setState) {
+      update = setState;
+      return TicketDeliveryPreview(
+          revision: revision,
+          load: (_) {
+            calls++;
+            if (calls == 1) return first.future;
+            if (calls == 2) return current.future;
+            return Future.value(
+                {'subject': 'Retry result', 'html': '<p>OK</p>'});
+          });
+    }))));
+    await tester.pumpAndSettle();
+    expect(calls, 0);
+    await tester.tap(find.byType(TextButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(calls, 1);
+    update(() => revision++);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(calls, 2);
+    current.completeError(StateError('Preview unavailable'));
+    await tester.pumpAndSettle();
+    first.complete({'subject': 'Stale', 'html': '<p>Old</p>'});
+    await tester.pumpAndSettle();
+    expect(find.text('Stale'), findsNothing);
+    expect(find.text('Náhled se nepodařilo načíst.'), findsOneWidget);
+    await tester.tap(find.text('Zkusit znovu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry result'), findsOneWidget);
+  });
+
+  for (final width in [390.0, 1200.0]) {
+    testWidgetsWithEnvironment(() => environment,
+        'compact delivery controls and dialog fit width $width',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 850);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var mode = TicketDeliveryMode.both;
+      var calls = 0;
+      await environment.pumpWidget(
+          tester,
+          MaterialApp(
+              theme: ThemeConfig.theme(),
+              home: Scaffold(
+                  body: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: StatefulBuilder(
+                          builder: (context, update) => Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    TicketDeliverySelector(
+                                        value: mode,
+                                        enabled: true,
+                                        onChanged: (value) =>
+                                            update(() => mode = value)),
+                                    TicketDeliveryPreview(
+                                        revision: mode,
+                                        load: (count) async {
+                                          calls++;
+                                          return {
+                                            'subject': 'Vaše vstupenky',
+                                            'html':
+                                                '<h2>Vaše vstupenka</h2><p>U vstupu ukažte tento QR kód.</p>',
+                                            'attachments': [
+                                              {
+                                                'filename':
+                                                    'vstupenka-ukazka-1.pdf'
+                                              }
+                                            ]
+                                          };
+                                        }),
+                                  ]))))));
+      await tester.pumpAndSettle();
+      expect(calls, 0);
+      await tester
+          .tap(find.byType(DropdownButtonFormField<TicketDeliveryMode>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('QR přímo v e-mailu').last);
+      await tester.pumpAndSettle();
+      expect(mode, TicketDeliveryMode.inlineQr);
+      expect(calls, 0);
+      expect(tester.getSize(find.byType(TicketDeliverySelector)).height,
+          lessThan(150));
+      expect(find.byType(ChoiceChip), findsNothing);
+      expect(tester.takeException(), isNull);
+      const capture = bool.fromEnvironment('CAPTURE_DELIVERY');
+      if (capture) {
+        await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile(
+                '/tmp/ticket-delivery-settings-${width.toInt()}.png'));
+      }
+      await tester.tap(find.byType(TextButton));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      expect(find.byType(ChoiceChip), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+      if (capture) {
+        await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile(
+                '/tmp/ticket-delivery-dialog-${width.toInt()}.png'));
+      }
+      await tester.tap(find.text('3 vstupenky'));
+      await tester.pumpAndSettle();
+      expect(calls, 2);
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(find.byType(TicketEmailPreview), findsNothing);
     });
   }
 }

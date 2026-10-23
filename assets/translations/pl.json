@@ -2165,7 +2165,7 @@
     "pdf_attachmentHelp": "Bilety wyślemy jako załączniki PDF.",
     "inline_qr": "QR bezpośrednio w wiadomości",
     "inline_qrHelp": "W treści wiadomości umieścimy tylko kody QR, bez graficznego biletu i PDF.",
-    "both": "QR w wiadomości i PDF w załączniku",
+    "both": "QR w wiadomości + PDF",
     "bothHelp": "W wiadomości znajdą się proste kody QR, a w załączniku bilety PDF.",
     "reviewTemplate": "Sprawdź podgląd i treść szablonu, zwłaszcza wzmianki o załącznikach PDF.",
     "sameTicket": "QR w wiadomości i PDF należą do tego samego biletu.",
