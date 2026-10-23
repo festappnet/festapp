@@ -179,8 +179,9 @@ done
 # Social crawlers must always receive a real image asset. Event-specific images
 # still come from get_occasion_seo_data; this only validates the no-image
 # fallback shared by Cloudflare, Netlify, and the base web-client document.
+# Cloudflare embeds this canonical helper into _worker.js at build time.
 for social_source in \
-    "$BUILD_SH" \
+    "$PROJECT_ROOT/web_client/src/services/public_page_seo.js" \
     "$PROJECT_ROOT/netlify/edge-functions/inject-og.js" \
     "$PROJECT_ROOT/web_client/index.html"; do
     if grep -F -q 'android-chrome-512x512.png' "$social_source" &&
