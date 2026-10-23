@@ -115,7 +115,7 @@ test('switching users clears old rights immediately and discards the previous re
     await nextTask();
     assert.equal(RightsService.currentUser.id, 'user-2');
     assert.equal(header.querySelector('.avatar-circle').textContent, 'A');
-    assert.equal(header.querySelector('.btn-admin'), null);
+    assert.ok(header.querySelector('.btn-admin'), 'the new account keeps personal navigation without inheriting old rights');
 });
 
 test('explicit post-login refresh supersedes the queued auth refresh without cancelling the awaited result', async t => {
