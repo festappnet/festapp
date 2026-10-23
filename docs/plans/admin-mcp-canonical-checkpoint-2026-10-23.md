@@ -91,3 +91,25 @@ hash regenerated. No production writes, no publication or release yet.
    reusing the internal owners behind inventory pool/resource/product commands.
    Preserve actual existing-order allocations; inspect the relevant inventory
    administration RPCs and table meaning before extending MCP.
+
+
+## PR publication and deployment gate
+
+Published stages 0/0B/1 as PR https://github.com/festappnet/festapp/pull/564
+against refreshed authoritative main `9eef213f2b664b2b7f4978f51b43a90535ab7c8a`.
+One approving review is required by current GitHub branch protection; it is not
+bypassed. No production changes or release have run. Delegated read-only
+preflight confirmed canonical tenant activation generation 1 and organization 3,
+matching host/runtime/database assertions, healthy previous MCP image and
+absence of candidate versions from the live SQL ledger.
+
+CI image, seat-checkout and ticket-preview/delivery gates passed. Web-startup's
+static deployment test looked for the image fallback literally in cloudflare_build.sh,
+although that script now inlines the canonical public_page_seo.js. The guard now
+checks the shared source plus its actual build wiring. The corrected
+`bash automation/tests/deploy_workflow.test.sh` passed locally. Runtime source
+and the 87-test MCP result are unchanged by this test-only correction.
+
+Stage 2 development continues separately on feat/admin-mcp-standing-20261023;
+its unvalidated intermediate changes are excluded from this published bundle.
+Release remains gated on an approved, merged authoritative main revision.
