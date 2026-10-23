@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "ee0287419ed0950890763875089709df52fee25e",
+  "sourceMain": "061201c3dbc71a6d559989442ebce110a347c628",
   "liveBaselineVersion": "0.20.367+864",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění účtu ani audit všech tenant variant. Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Potvrzené uvolnění rezervací a prohození vstupenek čekají na publikaci a nasazení.",
@@ -460,8 +460,7 @@
       "effect": "critical",
       "scope": "Akce",
       "certainty": "confirmed",
-      "deploymentState": "pending",
-      "verificationState": "pending"
+      "deploymentState": "pending"
     },
     {
       "id": "action-025",
@@ -1471,5 +1470,5 @@
     "nextStep": "Po dokončení aktuálního vydání publikovat ověřený řez uvolnění rezervací; navázat prohazováním míst přes společného vlastníka. PDF readiness vyřešit před dokončením celého plánu.",
     "evidence": "admin-seat-hold-release-evidence-2026-10-23.json"
   },
-  "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací je ověřené, PR #571 čeká na review a doplnění opravy identity. Prohození vstupenek má společný atomický vlastník a ověřený souběh; dokončuje se závěrečná kontrola UI. Dále objednávky z míst a rušení vstupenek v etapě 2B."
+  "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací i prohození vstupenek jsou ověřené v UI, SQL a MCP; aktualizovaný kandidát čeká na povinné review a nasazení. Dále objednávky z míst a rušení vstupenek v etapě 2B."
 }

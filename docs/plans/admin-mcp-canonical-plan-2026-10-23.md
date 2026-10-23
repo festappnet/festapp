@@ -802,3 +802,23 @@ source, update PR571 with exact validated scope/revision and preserve required
 review. Rebase onto current authoritative main and rerun affected checks before
 publication. Then continue seat-order creation and ticket cancellation (2B),
 followed by stages3-10. This is not completion of the whole plan.
+
+
+## Final confirmed-seat local gate complete
+
+Final integrated Flutter batch7 PASS including real reservation workspace,
+immutable hold/swap confirmations and durable recovery. Targeted Dart analyze:
+0 errors,0 warnings,51 existing brace-style infos. Previous dedicated actor-change
+negative test remains PASS. Slot immediately returned to the coordinated queue.
+
+Before publication authoritative main advanced to061201c3d with ticket profiles.
+Rebase had no conflicts and no changes to the covered blueprint/ticket consumers;
+passing Flutter evidence retained. Detected duplicate migration version2300
+between our unpublished hold and newly authoritative profile migration. Moved
+ONLY our hold file to20261023232000_confirmed_blueprint_hold_release.sql (identical
+SQL digest ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f).
+Swap2330 remains after it. English owner confirmed profile2300 stays authoritative
+and their temporary rename was reverted before publication/application. Neither
+new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
+not deploy. Generated source parity follows actual current main; no PDF readiness
+seal changed. Final report marks swap locally verified/pending deployment.
