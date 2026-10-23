@@ -26,8 +26,8 @@ BEGIN
  VALUES(now(),now()+interval '1 day','Hidden',en_org,en_unit,'hidden-'||gen_random_uuid(),true,true),(now(),now()+interval '1 day','Not promoted',en_org,en_unit,'unpromoted-'||gen_random_uuid(),false,false);
  IF jsonb_array_length(public.get_available_occasions(en_org)->'occasions')<>1 OR jsonb_array_length(public.get_public_occasions(en_org)->'occasions')<>1 THEN
   RAISE EXCEPTION 'EN own visibility changed'; END IF;
- -- A tenant without the opt-in retains both original catalog projections.
- IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_available_occasions(foreign_org)->'occasions') x WHERE (x->>'id')::bigint=foreign_id)
+ -- A tenant without the opt-in retains both live own-organization projections.
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_available_occasions(foreign_org)->'occasions') x WHERE (x->>'id')::bigint=foreign_id)
  OR EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_public_occasions(foreign_org)->'occasions') x WHERE (x->>'id')::bigint=foreign_id) THEN
   RAISE EXCEPTION 'Existing tenant external catalog behavior changed'; END IF;
  -- Existing service-only source maps explicitly opt in one source.
