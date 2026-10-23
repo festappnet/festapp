@@ -31,7 +31,7 @@ BEGIN
  UPDATE public.forms SET data='{"payments":{"bankEnabled":false}}'::jsonb WHERE id=f;
  BEGIN
   PERFORM public.validate_form_payment_configuration_internal(f);RAISE EXCEPTION 'no configured payment method accepted';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'PAYMENT_CONFIGURATION_INVALID' THEN RAISE; END IF; END;
+ EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'PAYMENT_CONFIGURATION_INCOMPLETE' THEN RAISE; END IF; END;
  UPDATE public.forms SET data=jsonb_build_object('payments',jsonb_build_object('bankEnabled',true,'stripeConnectionId',conn)) WHERE id=f;
  PERFORM assert_true(NOT available::text LIKE '%acct_%','safe projection excludes provider account identity');
  PERFORM assert_eq(public.assert_stripe_form_payable_internal(f,conn,'web'),conn,'server checks receiver and surface');

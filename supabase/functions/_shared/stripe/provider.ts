@@ -96,6 +96,7 @@ export type CheckoutSnapshot = Readonly<{
   createdAt: number;
   idempotencyKey: string;
   returnUrl?: string;
+  locale?: "auto" | "cs" | "en" | "de" | "pl" | "sk";
 }>;
 export type ProviderOptions = {
   secretKey: string;
@@ -242,7 +243,9 @@ export class StripeProvider {
       fail("reservation_checkout_window_invalid");
     }
     if (s.expiresAt <= now) fail("reservation_expired");
+    if (s.locale && !["auto", "cs", "en", "de", "pl", "sk"].includes(s.locale)) fail("checkout_locale_invalid");
     const body = new URLSearchParams({
+      ...(s.locale && s.locale !== "auto" ? { locale: s.locale } : {}),
       mode: "payment",
       "payment_method_types[0]": "card",
       "line_items[0][price_data][currency]": s.currency.toLowerCase(),

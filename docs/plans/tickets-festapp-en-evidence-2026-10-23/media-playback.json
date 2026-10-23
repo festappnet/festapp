@@ -1,0 +1,150 @@
+{
+  "complete": true,
+  "clips": [
+    {
+      "id": "layout-build desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 12.9,
+      "width": 1140,
+      "height": 792,
+      "wallMs": 12976
+    },
+    {
+      "id": "layout-build mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 12.9,
+      "width": 821,
+      "height": 792,
+      "wallMs": 12976
+    },
+    {
+      "id": "layout-refine mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 21.366667,
+      "width": 821,
+      "height": 792,
+      "wallMs": 21662
+    },
+    {
+      "id": "layout-refine desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 21.366667,
+      "width": 1140,
+      "height": 792,
+      "wallMs": 21662
+    },
+    {
+      "id": "ticket-design mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 10.6,
+      "width": 900,
+      "height": 721,
+      "wallMs": 10841
+    },
+    {
+      "id": "ticket-design desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 10.6,
+      "width": 1200,
+      "height": 823,
+      "wallMs": 10841
+    },
+    {
+      "id": "form-build desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 37.6,
+      "width": 1200,
+      "height": 804,
+      "wallMs": 37680
+    },
+    {
+      "id": "form-build mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 37.6,
+      "width": 720,
+      "height": 638,
+      "wallMs": 37680
+    },
+    {
+      "id": "check-in mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 4.833333,
+      "width": 502,
+      "height": 1000,
+      "wallMs": 5114
+    },
+    {
+      "id": "check-in desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 4.833333,
+      "width": 1202,
+      "height": 800,
+      "wallMs": 5114
+    },
+    {
+      "id": "seat-select desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 7.766667,
+      "width": 1201,
+      "height": 804,
+      "wallMs": 7878
+    },
+    {
+      "id": "seat-select mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 7.766667,
+      "width": 720,
+      "height": 900,
+      "wallMs": 7875
+    },
+    {
+      "id": "layout-grid desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 15.033333,
+      "width": 1140,
+      "height": 792,
+      "wallMs": 15115
+    },
+    {
+      "id": "layout-grid mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 15.033333,
+      "width": 821,
+      "height": 792,
+      "wallMs": 15115
+    },
+    {
+      "id": "orders-overview desktop",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 31.166667,
+      "width": 1200,
+      "height": 900,
+      "wallMs": 31405
+    },
+    {
+      "id": "orders-overview mobile",
+      "fullPlayback": "pass",
+      "seek": "pass",
+      "duration": 31.166667,
+      "width": 720,
+      "height": 900,
+      "wallMs": 31405
+    }
+  ],
+  "transport": "file:// in isolated headless Chrome"
+}

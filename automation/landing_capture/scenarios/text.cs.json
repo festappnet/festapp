@@ -1,0 +1,13 @@
+{
+  "eventTitle": "Ples pod hvězdami",
+  "participant": "Jana Nováková",
+  "dinnerGroup": "Večeře",
+  "dinners": [
+    "Kuřecí večeře",
+    "Vegetariánská večeře",
+    "Veganská večeře"
+  ],
+  "note": "Poznámka",
+  "internalNote": "Příchod v 18:30",
+  "filterCustomer": "Anna"
+}

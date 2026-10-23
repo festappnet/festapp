@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -37,7 +38,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
     required this.onGradientChanged,
     required this.formPreview,
     this.fontStyle,
-    this.customLabel = 'Vlastní vzhled',
+    this.customLabel,
   });
 
   final List<OccasionSetupAppearancePreset> presets;
@@ -56,7 +57,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
 
   /// Resolves the loaded font alias; the owner handles loading and failures.
   final TextStyle Function(String family, TextStyle base)? fontStyle;
-  final String customLabel;
+  final String? customLabel;
 
   Widget _colorControl(BuildContext context, String label, Color color,
       ValueChanged<Color> onChanged) {
@@ -120,8 +121,9 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                     style: _fontStyle(family, theme.textTheme.bodyLarge)),
               ),
           ],
-          decoration: const InputDecoration(
-              labelText: 'Písmo', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+              labelText: OccasionSetupStrings.ui('font'),
+              border: OutlineInputBorder()),
           items: [
             for (final family in fontFamilies)
               DropdownMenuItem(
@@ -184,7 +186,7 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                         Text(preset.label,
                             style: _fontStyle(preset.fontFamily,
                                 theme.textTheme.titleMedium)),
-                        Text('Příběh naší akce',
+                        Text(OccasionSetupStrings.ui('our_event_story'),
                             style: _fontStyle(
                                 preset.fontFamily, theme.textTheme.bodyLarge)),
                         SizedBox(
@@ -205,11 +207,12 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
           key: ValueKey('appearance-custom-${selectedPresetId == null}'),
           initiallyExpanded: selectedPresetId == null,
           tilePadding: EdgeInsets.zero,
-          title: Text(customLabel),
+          title:
+              Text(customLabel ?? OccasionSetupStrings.ui('custom_appearance')),
           children: [
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Dvoubarevný přechod'),
+              title: Text(OccasionSetupStrings.ui('two_color_gradient')),
               value: gradient,
               onChanged: onGradientChanged,
             ),
@@ -217,9 +220,15 @@ class OccasionSetupAppearancePanel extends StatelessWidget {
                 alignment: AlignmentDirectional.centerStart,
                 child: Wrap(spacing: 12, runSpacing: 8, children: [
                   _colorControl(
-                      context, 'Hlavní barva', primaryColor, onPrimaryChanged),
+                      context,
+                      OccasionSetupStrings.ui('primary_color'),
+                      primaryColor,
+                      onPrimaryChanged),
                   if (gradient)
-                    _colorControl(context, 'Druhá barva', secondaryColor,
+                    _colorControl(
+                        context,
+                        OccasionSetupStrings.ui('secondary_color'),
+                        secondaryColor,
                         onSecondaryChanged),
                 ])),
             const SizedBox(height: 16),

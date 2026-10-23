@@ -68,7 +68,8 @@ BEGIN
         type,
         bank_account,
         deadline_duration_seconds,
-        is_open,
+        CASE WHEN source_unit_id IS DISTINCT FROM (SELECT unit FROM public.occasions WHERE id=target_occasion_id)
+          AND data#>'{payments,bankEnabled}'='false'::jsonb THEN false ELSE is_open END,
         NULL,
         blueprint,
         header,

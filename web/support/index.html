@@ -16,7 +16,7 @@
 <h2>Právní informace</h2>
 <p>Další informace najdete v dokumentech <a href="/privacy/" data-legal-link>Ochrana osobních údajů</a>, <a href="/privacy/choices/" data-legal-link>Vaše volby a práva</a> a <a href="/terms/" data-legal-link>Podmínky</a>.</p><footer><a href="/support/" data-legal-link>Kontakt a podpora</a></footer></main></div><script>(()=>{
 const toggle=document.querySelector('.theme-toggle');
-const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?'Světlý režim':'Tmavý režim';};updateToggle();
+const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?"Světlý režim":"Tmavý režim";};updateToggle();
 toggle.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('theme',dark?'dark':'light');}catch{}updateToggle();});
 const params=new URLSearchParams(window.location.search);const returnTo=params.get('returnTo');const close=document.querySelector('.app-close');
 if(!returnTo||!returnTo.startsWith('/')||returnTo.startsWith('//')){close.addEventListener('click',(event)=>{event.preventDefault();window.close();window.setTimeout(()=>window.location.assign(close.href),350);});return;}

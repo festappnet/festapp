@@ -1,0 +1,10 @@
+# Global differs only in deploy configuration and explicit branding assets.
+# Shared UI, translations, capture scenarios, media and release tools belong to main.
+automation/project.conf
+assets/icons/festappticketsglobal.svg
+assets/icons/festappticketsglobal.dark.svg
+web/android-chrome-*.png
+web/apple-touch-icon.png
+web/favicon*.png
+web/favicon.ico
+web_client/favicon.ico

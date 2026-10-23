@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class OccasionSetupStrings {
+  static String ui(String key, [Map<String, String> args = const {}]) =>
+      'OccasionSetup.ui.$key'.tr(namedArgs: args);
+
   static String copy(String key) => 'OccasionSetup.copy.$key'.tr();
   static String copyReference(String key, String title) =>
       'OccasionSetup.copy.$key'.tr(namedArgs: {'title': title});

@@ -1,0 +1,168 @@
+{
+  "pnpm": "11.24.0",
+  "releaseGatesPerformed": false,
+  "checks": {
+    "automation": {
+      "log": "/tmp/festapp-en-final-automation.log",
+      "tail": [
+        "\u2139 tests 35",
+        "\u2139 suites 0",
+        "\u2139 pass 35",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 702.99425"
+      ]
+    },
+    "javascript": {
+      "log": "/tmp/festapp-en-final-js.log",
+      "tail": [
+        "\u2139 tests 66",
+        "\u2139 suites 3",
+        "\u2139 pass 66",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 385.193209"
+      ]
+    },
+    "seoAccount": {
+      "log": "/tmp/festapp-en-final-marketing.log",
+      "tail": [
+        "\u2139 tests 5",
+        "\u2139 suites 0",
+        "\u2139 pass 5",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 380.510542"
+      ]
+    },
+    "stripeAndInitialTicket": {
+      "log": "/tmp/festapp-en-final-deno.log",
+      "tail": [
+        "currency symbols and prices match the shared canvas contract fixture ... ok (2ms)",
+        "catalog examples prefer visible positive prices with stable order and id fallback ... ok (769\u00b5s)",
+        "optional event fields use event timezone in preview and PDF data ... ok (6ms)",
+        "repeatable free text validates and projects unchanged into preview and real tickets ... ok (3ms)",
+        "English ticket retains admission QR, exact amount and event civil time ... ok (1ms)",
+        "",
+        "ok | 39 passed | 0 failed (748ms)",
+        ""
+      ]
+    },
+    "finalTicketData": {
+      "log": "/tmp/festapp-en-final-ticket.log",
+      "tail": [
+        "catalog examples prefer visible positive prices with stable order and id fallback ... ok (478\u00b5s)",
+        "optional event fields use event timezone in preview and PDF data ... ok (1ms)",
+        "repeatable free text validates and projects unchanged into preview and real tickets ... ok (1ms)",
+        "English ticket retains admission QR, exact amount and event civil time ... ok (677\u00b5s)",
+        "English date range keeps month before both days ... ok (212\u00b5s)",
+        "",
+        "ok | 11 passed | 0 failed (95ms)",
+        ""
+      ]
+    },
+    "sql": {
+      "log": "/tmp/festapp-en-final-sql.log",
+      "tail": [
+        "\u25b6 Running: database/tests/eshop/stripe/create_order_test.sql",
+        "  \u2714 PASSED",
+        "  \u2714 PASSED",
+        "  \u2714 PASSED",
+        "",
+        "==================================================",
+        "SUMMARY: 8 Passed, 0 Failed",
+        "=================================================="
+      ]
+    },
+    "localeAclSql": {
+      "log": "/tmp/festapp-en-locale-sql.log",
+      "tail": [
+        "",
+        "",
+        "\u25b6 Running: database/tests/ticketing_profiles/locale_access_test.sql",
+        "  \u2714 PASSED",
+        "",
+        "==================================================",
+        "SUMMARY: 1 Passed, 0 Failed",
+        "=================================================="
+      ]
+    },
+    "matrix": {
+      "log": "/tmp/festapp-en-config-matrix.log",
+      "tail": [
+        "Tenant config matrix passed"
+      ]
+    },
+    "legal": {
+      "log": "/tmp/festapp-en-legal.log",
+      "tail": [
+        "Required legal configuration tests passed"
+      ]
+    },
+    "migration": {
+      "log": "/tmp/festapp-en-migration-final.log",
+      "tail": [
+        "psql:supabase/migrations/20261023230000_ticketing_profiles.sql:367: NOTICE:  column \"checkout_locale\" of relation \"stripe_checkout_attempts\" already exists, skipping",
+        "psql:supabase/migrations/20261023230000_ticketing_profiles.sql:724: NOTICE:  relation \"occasion_setup_drafts\" already exists, skipping",
+        "psql:supabase/migrations/20261023230000_ticketing_profiles.sql:727: NOTICE:  relation \"occasion_setup_drafts_unit_idx\" already exists, skipping"
+      ]
+    },
+    "media": {
+      "log": "/tmp/festapp-en-media-verify.log",
+      "tail": [
+        "16 variants fully decoded; dimensions, durations and posters match"
+      ]
+    },
+    "englishWebBuild": {
+      "log": "/tmp/festapp-en-web-build-final.log",
+      "tail": [
+        "dist/web-assets/login_modal-B-l240e3.js                 31.46 kB \u2502 gzip:  8.46 kB",
+        "dist/web-assets/html-DfsRCLe8.js                        32.46 kB \u2502 gzip: 12.39 kB",
+        "dist/web-assets/blueprint_selector-D36bk4OW.js          39.00 kB \u2502 gzip: 12.89 kB",
+        "dist/web-assets/scan_page-CV1f6RHm.js                   46.72 kB \u2502 gzip: 14.31 kB",
+        "dist/web-assets/jsQR-DTXHP3BW.js                       130.73 kB \u2502 gzip: 47.29 kB",
+        "dist/web-assets/form_page-D6axgr70.js                  267.27 kB \u2502 gzip: 82.39 kB",
+        "dist/web-assets/initialize_core_services-Pgh3qJZm.js   281.79 kB \u2502 gzip: 75.36 kB",
+        "\u2713 built in 978ms"
+      ]
+    },
+    "dartParse": {
+      "log": "/tmp/festapp-en-final-dart-parse.log",
+      "tail": [
+        "Formatted 1 file (0 changed) in 0.18 seconds."
+      ]
+    },
+    "tenantDrift": {
+      "log": "/tmp/festapp-en-drift.log",
+      "tail": [
+        "Tenant branch drift tests passed"
+      ]
+    },
+    "sharedStoryboard": {
+      "log": "/tmp/festapp-global-scenario-tests.log",
+      "tail": [
+        "..................",
+        "----------------------------------------------------------------------",
+        "Ran 18 tests in 0.029s",
+        "",
+        "OK"
+      ]
+    },
+    "globalBrandOnlyDrift": {
+      "log": "/tmp/festapp-global-drift.log",
+      "tail": [
+        "Tenant branch drift tests passed"
+      ]
+    },
+    "currentCzechReference": {
+      "result": "32/32 live public video/poster hashes match pinned source",
+      "evidence": "automation/landing_capture/scenarios/reference-live.json"
+    }
+  }
+}

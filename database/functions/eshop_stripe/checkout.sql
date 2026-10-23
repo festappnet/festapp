@@ -37,7 +37,7 @@ BEGIN
   'snapshot',jsonb_build_object('attemptId',a.id,'accountId',c.account_id,'livemode',a.livemode,
    'amountMinor',a.amount_minor,'currency',a.currency,'orderReference','Order '||o.order_symbol,
    'createdAt',extract(epoch FROM a.created_at)::bigint,'expiresAt',extract(epoch FROM a.reservation_expires_at)::bigint,
-   'idempotencyKey',a.idempotency_key,'returnBaseUrl',a.return_base_url,'sessionId',a.session_id,'refundCursor',a.refund_cursor));
+   'idempotencyKey',a.idempotency_key,'locale',a.checkout_locale,'returnBaseUrl',a.return_base_url,'sessionId',a.session_id,'refundCursor',a.refund_cursor));
 END $$;
 REVOKE ALL ON FUNCTION public.claim_stripe_checkout_internal(text,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_stripe_checkout_internal(text,boolean) TO service_role;
@@ -138,7 +138,7 @@ BEGIN
   'snapshot',jsonb_build_object('attemptId',a.id,'accountId',c.account_id,'livemode',a.livemode,
    'amountMinor',a.amount_minor,'currency',a.currency,'orderReference','Order '||o.order_symbol,
    'createdAt',extract(epoch FROM a.created_at)::bigint,'expiresAt',extract(epoch FROM a.reservation_expires_at)::bigint,
-   'idempotencyKey',a.idempotency_key,'returnBaseUrl',a.return_base_url,'sessionId',coalesce(a.session_id,p_session),'refundCursor',a.refund_cursor,
+   'idempotencyKey',a.idempotency_key,'locale',a.checkout_locale,'returnBaseUrl',a.return_base_url,'sessionId',coalesce(a.session_id,p_session),'refundCursor',a.refund_cursor,
    'sessionLookupCursor',a.session_lookup_cursor,'sessionLookupFound',a.session_lookup_found));
 END $$;
 REVOKE ALL ON FUNCTION public.claim_stripe_sync_internal(text,boolean,uuid,text,text) FROM PUBLIC,anon,authenticated;

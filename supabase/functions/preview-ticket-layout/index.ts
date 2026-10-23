@@ -17,7 +17,9 @@ Deno.serve(req=>handlePreview(req,{
     const {data:row,error}=await client.rpc('get_occasion_setup_draft',{p_id:draftId});
     if(error||!row?.data||row.data.finalizedOccasion)throw new Error('Draft access denied');
     const d=row.data;
-    return {occasion:{id:0,title:d.title,start_time:d.start,end_time:d.end,
+    const {data:org,error:orgError}=await supabaseAdmin.from('organizations').select('data').eq('id',row.organization).single();
+    if(orgError)throw orgError;
+    return {occasion:{id:0,locale:org.data?.DEFAULT_LANGUAGE||'cs',title:d.title,start_time:d.start,end_time:d.end,
       data:{place_name:d.placeName},features:[{...d.ticketDraft,code:'ticket'}]},products:draftPreviewProducts(d)};
   },
   authorize:async(header,occasionId,bytes,readOnly=false,resourceMode)=>{
@@ -28,7 +30,7 @@ Deno.serve(req=>handlePreview(req,{
     if(error?.code==='PT429')throw Object.assign(new Error('Usage limited'),{status:429});
     return !error&&data?.abuseLimits?data:false;
   },
-  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data').eq('id',id).single();if(error)throw error;const {data:demo,error:demoError}=await supabaseAdmin.rpc('is_demo_occasion',{p_occasion:id});if(demoError)throw demoError;return {...data,demo_read_only:demo===true};},
+  occasion:async id=>{const {data,error}=await supabaseAdmin.from('occasions').select('id,organization,title,start_time,end_time,features,data,organizations(data)').eq('id',id).single();if(error)throw error;const {data:demo,error:demoError}=await supabaseAdmin.rpc('is_demo_occasion',{p_occasion:id});if(demoError)throw demoError;const {organizations,...occasion}=data;return {...occasion,locale:(organizations as any)?.data?.DEFAULT_LANGUAGE||'cs',demo_read_only:demo===true};},
   products:id=>loadPreviewProducts(supabaseAdmin,id),
   resources:loadLayoutResources,
   font:resolveTicketFont,layout:parseRegisteredTicketLayout,

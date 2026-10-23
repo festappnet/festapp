@@ -5,6 +5,7 @@ import 'package:fstapp/components/app_management/language_model.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
 
 class AppConfig {
+  static const bool organizerLandingEnabled = true;
   static const int maxTicketsPerOrder = 20;
   // The web build enables the optional step-by-step creation menu.
   static const bool occasionSetupEnabled =
@@ -89,6 +90,7 @@ class AppConfig {
 
   static List<LanguageModel> availableLanguages() => [
         LanguageModel(const Locale("cs"), "Čeština"),
+        LanguageModel(const Locale("en"), "English"),
       ];
 
   /// This is the single definition place for the prefix structure.

@@ -214,7 +214,7 @@ export class RouterService {
         // 1. Identify Route Type
         // Web Client Routes: / (Home), /index.html, /form/...
         const isWebClientRoute = path === '/' ||
-                                 (path === '/events' && new URL(AppConfig.webLink).hostname === 'vstupenky.online') ||
+                                 (path === '/events' && AppConfig.organizerLandingEnabled) ||
                                  path === '/index.html' ||
                                  path.startsWith(RouterService.FORM_PATH_PREFIX);
 

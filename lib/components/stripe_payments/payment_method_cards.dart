@@ -10,8 +10,10 @@ class PaymentMethodCards extends StatelessWidget {
     required this.value,
     required this.canSelectStripe,
     required this.onChanged,
+    this.stripeFirst = false,
   });
 
+  final bool stripeFirst;
   final FormPaymentMethod? value;
   final bool canSelectStripe;
   final ValueChanged<FormPaymentMethod> onChanged;
@@ -25,7 +27,13 @@ class PaymentMethodCards extends StatelessWidget {
                 : 1;
         final width = (size.maxWidth - (columns - 1) * 12) / columns;
         return Wrap(spacing: 12, runSpacing: 12, children: [
-          for (final method in FormPaymentMethod.values)
+          for (final method in (stripeFirst
+              ? const [
+                  FormPaymentMethod.stripe,
+                  FormPaymentMethod.bank,
+                  FormPaymentMethod.both
+                ]
+              : FormPaymentMethod.values))
             SizedBox(width: width, child: _card(context, method)),
         ]);
       });

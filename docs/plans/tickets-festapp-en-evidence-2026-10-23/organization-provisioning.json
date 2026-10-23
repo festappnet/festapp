@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-10-23T14:13:09.448494+00:00",
+  "authorization": "User explicitly requested a separate organization on 2026-10-23",
+  "organizationId": 25,
+  "title": "Festapp Tickets Global",
+  "publicBrand": "Festapp Tickets",
+  "hostname": "tickets.festap.net",
+  "locale": "en",
+  "defaultFormPaymentMethod": "stripe",
+  "sql": "automation/release/tenants/provision_festappticketsglobal.sql",
+  "sha256": "f114ea1cedd0c33652de91ad760ed40ad01348dc7376ef67a1c1a4a1c05e3009",
+  "transactionCommitted": true,
+  "verifiedCounts": {
+    "occasions": 0,
+    "units": 0,
+    "organizationUsers": 0,
+    "externalSourceMaps": 0
+  },
+  "stripeRuntimePolicy": {
+    "sandboxNewPaymentsEnabled": false,
+    "liveNewPaymentsEnabled": false
+  },
+  "czechOrganization": {
+    "id": 3,
+    "locale": "cs",
+    "mutated": false
+  },
+  "schemaMigrationApplied": false,
+  "deployed": false,
+  "dnsChanged": false
+}

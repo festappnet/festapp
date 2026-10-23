@@ -110,7 +110,9 @@ const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
-const ORGANIZERS_ENABLED = false; // stamped from tenant domain
+const ORGANIZERS_ENABLED = false; // stamped from explicit tenant capability
+const DEFAULT_LANGUAGE = "cs";
+function localized(cs, en) { return DEFAULT_LANGUAGE === "en" ? en : cs; }
 const SITE_NAME = "Festapp"; // replaced from project.conf after generation
 const IS_APP_SUPPORTED = true; // replaced from project.conf after generation
 // PUBLIC_OCCASION_ROUTE_POLICY
@@ -174,12 +176,12 @@ function occasionHref(occasion) {
 }
 
 async function publicCatalogue(env, unitId = null) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error("Public catalog is not configured");
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !Number.isSafeInteger(Number(env.ORGANIZATION_ID)) || Number(env.ORGANIZATION_ID) < 1) throw new Error("Public catalog is not configured");
   const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_available_occasions`, {
     method: "POST",
     headers: { "content-type": "application/json", apikey: env.SUPABASE_ANON_KEY,
       authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
-    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID || 1, p_unit_id: unitId }),
+    body: JSON.stringify({ p_organization_id: env.ORGANIZATION_ID, p_unit_id: unitId }),
     signal: AbortSignal.timeout(2500),
   });
   if (!rpc.ok) throw new Error(`Public catalog HTTP ${rpc.status}`);
@@ -207,13 +209,13 @@ async function handleHome(request, env) {
     const { occasions, title } = await publicCatalogue(env, unitMatch ? Number(unitMatch[1]) : null);
     if (unitMatch && title) {
       html = html.replace(/<section id="unit-introduction"[^>]*>[\s\S]*?<\/section>/,
-        () => `<section id="unit-introduction" class="unit-introduction"><h1>${escapeHtml(title)}</h1><p>Akce a vstupenky tohoto pořadatele</p></section>`);
+        () => `<section id="unit-introduction" class="unit-introduction"><h1>${escapeHtml(title)}</h1><p>${localized("Akce a vstupenky tohoto pořadatele", "Events and tickets from this organizer")}</p></section>`);
       html = html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${escapeHtml(title)} | ${escapeHtml(SITE_NAME)}</title>`);
     }
     const groups = classifyOccasions(occasions);
     const date = value => {
       if (!value || !Number.isFinite(new Date(value).getTime())) return "";
-      return `<time datetime="${escapeHtml(new Date(value).toISOString())}">${escapeHtml(new Date(value).toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" }))}</time>`;
+      return `<time datetime="${escapeHtml(new Date(value).toISOString())}">${escapeHtml(new Date(value).toLocaleDateString(DEFAULT_LANGUAGE, { timeZone: "Europe/Prague" }))}</time>`;
     };
     const section = (title, list, archive = false) => {
       if (!list.length) return "";
@@ -227,18 +229,18 @@ async function handleHome(request, env) {
         : `<ul>${links(list)}</ul>`;
       return `<section${archive ? ' class="catalog-archive"' : ""}><h2>${title}</h2>${body}</section>`;
     };
-    const content = section("Právě probíhá", groups.present) + section("Nadcházející akce", groups.upcoming) +
-      section("Další akce", groups.undated) + section("Proběhlé události", groups.past, true);
-    html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || '<p>Zatím zde nejsou žádné akce.</p>'}</div>`);
+    const content = section(localized("Právě probíhá", "Happening now"), groups.present) + section(localized("Nadcházející akce", "Upcoming events"), groups.upcoming) +
+      section(localized("Další akce", "More events"), groups.undated) + section(localized("Proběhlé události", "Past events"), groups.past, true);
+    html = html.replace('<div id="events-grid"></div>', () => `<div id="events-grid" data-server-catalog="ready">${content || `<p>${localized("Zatím zde nejsou žádné akce.", "No events have been published yet.")}</p>`}</div>`);
   } catch (error) {
     console.error("Public catalog HTML unavailable", error.message);
-    html = html.replace('<div id="events-grid"></div>', '<div id="events-grid" data-server-catalog="unavailable"><p role="status">Akce se nepodařilo načíst. Zkuste stránku znovu načíst.</p></div>');
+    html = html.replace('<div id="events-grid"></div>', `<div id="events-grid" data-server-catalog="unavailable"><p role="status">${localized("Akce se nepodařilo načíst. Zkuste stránku znovu načíst.", "Events could not be loaded. Please reload the page.")}</p></div>`);
   }
   return htmlResponse(html, base.headers);
 }
 
 function notFound() {
-  return htmlResponse('<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stránka nenalezena</title></head><body><main><h1>Stránka nenalezena</h1><p><a href="/">Zpět na hlavní stránku</a></p></main></body></html>', null, 404, "none");
+  return htmlResponse(`<!doctype html><html lang="${DEFAULT_LANGUAGE}"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${localized('Stránka nenalezena','Page not found')}</title></head><body><main><h1>${localized('Stránka nenalezena','Page not found')}</h1><p><a href="/">${localized('Zpět na hlavní stránku','Back to home')}</a></p></main></body></html>`, null, 404, "none");
 }
 
 function activationCorsHeaders(originHeaders) {
@@ -267,7 +269,7 @@ async function serveAsset(env, request, path) {
 async function handleSitemap(request, env) {
   const url = new URL(request.url);
   const baseUrl = CANONICAL_ORIGIN || url.origin;
-  const xmlHeaders = { "content-type": "application/xml", "cache-control": "public, max-age=0, s-maxage=3600" };
+  const xmlHeaders = { "content-type": "application/xml", "cache-control": "no-store, max-age=0" };
 
   const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "";
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
@@ -324,7 +326,7 @@ function publicSeoHtml(baseHtml, seo) {
 
 // A backend outage is temporary, never an unrelated successful catalog page.
 function publicSeoUnavailable(baseHtml, headers, url, kind) {
-  const seo = publicPageSeo({ title: 'Informace o akci jsou dočasně nedostupné' }, {
+  const seo = publicPageSeo({ title: localized("Informace o akci jsou dočasně nedostupné", "Event information is temporarily unavailable") }, {
     origin: CANONICAL_ORIGIN || url.origin, siteName: SITE_NAME, path: url.pathname, kind,
   });
   const response = htmlResponse(publicSeoHtml(baseHtml, seo), headers, 503, kind === "event" ? "flutter" : "webclient");
@@ -346,7 +348,7 @@ async function handlePublicPage(request, env, path, kind) {
     if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error('SEO backend configuration unavailable');
     const rpc = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/get_occasion_seo_data`, {
       method: 'POST', headers: { 'content-type': 'application/json', apikey: env.SUPABASE_ANON_KEY, authorization: `Bearer ${env.SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ p_link_slug: slug, p_route_type: kind }), signal: AbortSignal.timeout(2500),
+      body: JSON.stringify({ p_link_slug: slug, p_route_type: kind, p_organization_id: Number(env.ORGANIZATION_ID) }), signal: AbortSignal.timeout(2500),
     });
     if (!rpc.ok) throw new Error(`SEO backend HTTP ${rpc.status}`);
     const data = await rpc.json();
@@ -359,7 +361,7 @@ async function handlePublicPage(request, env, path, kind) {
       return Response.redirect(target.href, 308);
     }
     let page = publicSeoHtml(baseHtml, seo);
-    const summary = `<section id="public-seo-summary" style="max-width:48rem;margin:2rem auto;padding:1rem"><h1>${escapeHtml(seo.name)}</h1><p>${escapeHtml(seo.description)}</p>${data.start_time && Number.isFinite(Date.parse(data.start_time)) ? `<p><time datetime="${escapeHtml(data.start_time)}">${escapeHtml(new Intl.DateTimeFormat('cs-CZ', {dateStyle:'long', timeStyle:'short', timeZone:'Europe/Prague'}).format(new Date(data.start_time)))}</time></p>` : ''}</section>`;
+    const summary = `<section id="public-seo-summary" style="max-width:48rem;margin:2rem auto;padding:1rem"><h1>${escapeHtml(seo.name)}</h1><p>${escapeHtml(seo.description)}</p>${data.start_time && Number.isFinite(Date.parse(data.start_time)) ? `<p><time datetime="${escapeHtml(data.start_time)}">${escapeHtml(new Intl.DateTimeFormat(DEFAULT_LANGUAGE, {dateStyle:'long', timeStyle:'short', timeZone:'Europe/Prague'}).format(new Date(data.start_time)))}</time></p>` : ''}</section>`;
     page = page.replace(/<body\b[^>]*>/i, match => match + summary);
 
     return htmlResponse(page, baseRes.headers, 200, kind === "event" ? "flutter" : "webclient");
@@ -606,7 +608,15 @@ canonical = urlparse(web_link)
 if canonical.scheme != 'https' or not canonical.hostname or canonical.path or canonical.query or canonical.fragment or canonical.username or canonical.port:
     raise SystemExit("WEB_LINK must be a bare HTTPS origin for canonical routing")
 source = source.replace('const CANONICAL_ORIGIN = null;', 'const CANONICAL_ORIGIN = ' + json.dumps(web_link) + ';', 1)
-source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + ('true' if canonical.hostname == 'vstupenky.online' else 'false') + ';', 1)
+landing_match = re.search(r'^WEB_ORGANIZER_LANDING_ENABLED=(.*)$', config, re.MULTILINE)
+landing_enabled = landing_match.group(1).strip() if landing_match else 'false'
+if landing_enabled not in ('true', 'false'):
+    raise SystemExit('WEB_ORGANIZER_LANDING_ENABLED must be true or false')
+source = source.replace('const ORGANIZERS_ENABLED = false;', 'const ORGANIZERS_ENABLED = ' + landing_enabled + ';', 1)
+language_match = re.search(r'^WEB_SUPPORTED_LANGUAGES=(.*)$', config, re.MULTILINE)
+language = language_match.group(1).strip().strip('"').strip("'").split(',')[0] if language_match else 'cs'
+if not re.fullmatch('[a-z]{2}', language): raise SystemExit('Invalid default language')
+source = source.replace('const DEFAULT_LANGUAGE = "cs";', 'const DEFAULT_LANGUAGE = ' + json.dumps(language) + ';', 1)
 name_match = re.search(r'^APP_TITLE_SHORT=(.*)$', config, re.MULTILINE) or re.search(r'^APP_NAME=(.*)$', config, re.MULTILINE)
 site_name = name_match.group(1).strip().strip('"').strip("'") if name_match else 'Festapp'
 source = source.replace('const SITE_NAME = "Festapp";', 'const SITE_NAME = ' + json.dumps(site_name, ensure_ascii=False) + ';', 1)

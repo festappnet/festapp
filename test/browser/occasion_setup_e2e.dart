@@ -17,7 +17,8 @@ Future<void> main() async {
     throw StateError(
         'Wizard development requires the disposable loopback backend');
   }
-  AppConfig.organization = 1;
+  AppConfig.organization =
+      const int.fromEnvironment('FESTAPP_TEST_ORGANIZATION', defaultValue: 1);
   WidgetsFlutterBinding.ensureInitialized();
   WidgetsBinding.instance.ensureSemantics();
   void resolve(JSFunction success, JSFunction failure) {

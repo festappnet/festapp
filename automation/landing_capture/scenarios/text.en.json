@@ -1,0 +1,13 @@
+{
+  "eventTitle": "Ball under the stars",
+  "participant": "Jane Novak",
+  "dinnerGroup": "Dinner",
+  "dinners": [
+    "Chicken dinner",
+    "Vegetarian dinner",
+    "Vegan dinner"
+  ],
+  "note": "Note",
+  "internalNote": "Arrival at 18:30",
+  "filterCustomer": "Anna"
+}

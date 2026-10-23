@@ -1,6 +1,7 @@
 import { APP_VERSION } from './version.js';
 
 export class AppConfig {
+  static organizerLandingEnabled = true;
     static maxTicketsPerOrder = 20;
     static version = APP_VERSION;
     static appName = 'vstupenky.online';

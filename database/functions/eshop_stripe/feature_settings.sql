@@ -10,7 +10,9 @@ REVOKE ALL ON eshop.stripe_unit_features FROM PUBLIC,anon,authenticated,service_
 
 CREATE OR REPLACE FUNCTION public.stripe_unit_feature_enabled_internal(p_unit bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT coalesce((SELECT enabled FROM eshop.stripe_unit_features WHERE unit_id=p_unit),false)
+ SELECT coalesce(f.enabled,org.data->>'DEFAULT_FORM_PAYMENT_METHOD'='stripe',false)
+ FROM public.units u JOIN public.organizations org ON org.id=u.organization
+ LEFT JOIN eshop.stripe_unit_features f ON f.unit_id=u.id WHERE u.id=p_unit
 $$;
 REVOKE ALL ON FUNCTION public.stripe_unit_feature_enabled_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

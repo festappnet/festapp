@@ -38,3 +38,27 @@ SET search_path = public, extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.get_occasion_seo_data(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_occasion_seo_data(text) TO anon, authenticated, service_role;
+
+-- Host-scoped public projection. Keeps the saved-slug resolver and metadata
+-- owner above; a foreign object is never rebranded with this host's origin.
+CREATE OR REPLACE FUNCTION public.get_occasion_seo_data(
+  p_link_slug text, p_route_type text, p_organization_id bigint
+) RETURNS json LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions AS $$
+DECLARE v_id bigint; v_owner bigint; v_source text;
+BEGIN
+  IF p_route_type = 'form' THEN
+    SELECT occasion INTO v_id FROM public.forms WHERE id=public.resolve_form_link_internal(p_link_slug);
+  ELSIF p_route_type = 'event' THEN
+    v_id:=public.resolve_occasion_link_internal(p_link_slug);
+  ELSE
+    RAISE invalid_parameter_value USING MESSAGE='Invalid public SEO route';
+  END IF;
+  SELECT o.organization,c.source_name INTO v_owner,v_source
+  FROM public.occasions o LEFT JOIN public.external_occasions_cache c ON c.link=o.link WHERE o.id=v_id;
+  IF p_organization_id IS NULL OR v_owner IS NULL OR
+     NOT public.catalog_includes_occasion_internal(p_organization_id,v_owner,v_source) THEN RETURN NULL; END IF;
+  RETURN public.get_occasion_seo_data(p_link_slug,p_route_type);
+END $$;
+REVOKE ALL ON FUNCTION public.get_occasion_seo_data(text,text,bigint) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_occasion_seo_data(text,text,bigint) TO anon,authenticated,service_role;

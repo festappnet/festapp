@@ -1,0 +1,790 @@
+{
+  "schemaVersion": 1,
+  "reference": {
+    "gitRevision": "8a390d70c90f788b897f9ca621fe5e6d0c0a9663",
+    "manifestPath": "automation/release/organizers/clips.json",
+    "manifestSha256": "02727c2ada8f04a6515b227022eb440f08d743a184ae1e12933585d6830faafc",
+    "selection": "The intended production source was fetched and all 32 public video/poster bytes were independently verified in an isolated browser against the current Czech page.",
+    "liveEvidence": "reference-live.json"
+  },
+  "localeChangesAllowed": [
+    "UI labels",
+    "event and participant text",
+    "spoken/editorial captions"
+  ],
+  "localeChangesForbidden": [
+    "fixture geometry and inventory",
+    "numeric amounts and counts",
+    "action order",
+    "native gesture type",
+    "viewport, crop and camera movement",
+    "presentation and export dimensions",
+    "cuts, speed and holds"
+  ],
+  "clips": {
+    "layout-build": {
+      "version": 1,
+      "fixture": "ready-row",
+      "camera": {
+        "viewport": [
+          1440,
+          960
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": [
+          1128,
+          780,
+          0,
+          112
+        ],
+        "desktop": [
+          1140,
+          792
+        ],
+        "mobile": [
+          820,
+          792
+        ],
+        "presentation": "original-editor-composition",
+        "scaleContent": [
+          1128,
+          780
+        ]
+      },
+      "beats": [
+        "show-prepared-row",
+        "drag-table-from-palette",
+        "align-below-first-table",
+        "add-seat-one",
+        "add-seat-two",
+        "clear-and-hold"
+      ],
+      "before": {
+        "tables": 5,
+        "seats": 30
+      },
+      "after": {
+        "tables": 6,
+        "seats": 38
+      },
+      "notes": "One continuous take at 1x. Keep all five initial tables visible throughout both native drags.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/layout-build.mp4",
+            "sha256": "eb11698aa0a0ef4e2f54bbbc69d1ada654a04eac43107e8dbf253499afb92f9b"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/layout-build-mobile.mp4",
+            "sha256": "22569911d7bf127d4cb1bd3d7fadb730655cd74624b1844ad1b0348ca2d5b146"
+          },
+          "poster": {
+            "path": "/organizers-media/layout-build-start.jpg",
+            "sha256": "1e108cf1247f577ad7c0c49cfc9fb25f0a06e69ac3a35a0748f35ad709a22014"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/layout-build-mobile-start.jpg",
+            "sha256": "a6d64f43a6e84fb1c2fd27545e099f4c6933cf4365dc8eb9256a0e04da34b6e4"
+          }
+        },
+        "desktopDuration": 12.266667,
+        "mobileDuration": 12.266667
+      },
+      "gestures": [
+        {
+          "id": "drag-table-from-palette",
+          "points": [
+            [
+              170.0,
+              450.0
+            ],
+            [
+              211.25,
+              451.875
+            ],
+            [
+              252.5,
+              453.75
+            ],
+            [
+              293.75,
+              455.625
+            ],
+            [
+              335.0,
+              457.5
+            ],
+            [
+              376.25,
+              459.375
+            ],
+            [
+              417.5,
+              461.25
+            ],
+            [
+              458.75,
+              463.125
+            ],
+            [
+              500.0,
+              465.0
+            ]
+          ]
+        },
+        {
+          "id": "align-below-first-table",
+          "points": [
+            [
+              500,
+              465
+            ],
+            [
+              480,
+              465
+            ],
+            [
+              460,
+              465
+            ],
+            [
+              440,
+              465
+            ],
+            [
+              420,
+              465
+            ]
+          ]
+        }
+      ],
+      "edit": {
+        "speed": 1,
+        "internalCuts": 0,
+        "leadingTechnicalTrimOnly": true
+      },
+      "pointerStart": [
+        170,
+        450
+      ],
+      "pointerPark": [
+        1100,
+        850
+      ],
+      "holds": {
+        "before": 1,
+        "afterDrop": 0.5,
+        "afterAlignment": 0.5,
+        "afterSeat": 0.4,
+        "result": 1
+      }
+    },
+    "layout-refine": {
+      "version": 1,
+      "fixture": "original-refinement-hall",
+      "camera": {
+        "viewport": [
+          1440,
+          960
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": [
+          1128,
+          780,
+          0,
+          112
+        ],
+        "desktop": [
+          1140,
+          792
+        ],
+        "mobile": [
+          820,
+          792
+        ],
+        "presentation": "original-editor-composition"
+      },
+      "beats": [
+        "select-three-middle-tables",
+        "delete-selection",
+        "drag-round-table",
+        "resize-round-table",
+        "add-seat-one",
+        "add-seat-two",
+        "reverse-arc",
+        "restore-arc",
+        "clear-and-hold"
+      ],
+      "before": {
+        "tables": 17,
+        "seats": 142
+      },
+      "after": {
+        "tables": 15,
+        "seats": 132
+      },
+      "notes": "Preserve the original multi-selection, round-table replacement and two opposite arc-curvature edits.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/layout-refine.mp4",
+            "sha256": "b5999d90ab4f3500d21d35c745560f419b9400e23f2e0f9c2338ae854701523a"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/layout-refine-mobile.mp4",
+            "sha256": "8445ce05f1abf41c7def804ead294dffc9a1e81588567fa7771ad81ba2aad1d5"
+          },
+          "poster": {
+            "path": "/organizers-media/layout-refine.jpg",
+            "sha256": "4964e9ea4faaa9b7f40f418c62e70ef099096231dbf4d55b43ed85aa0eab088f"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/layout-refine-mobile.jpg",
+            "sha256": "8e94711588d248042a3154c620ab7297cb621edd9124a92693cf220107c16944"
+          }
+        },
+        "desktopDuration": 14.0,
+        "mobileDuration": 14.0
+      },
+      "gestures": [
+        {
+          "id": "select-three-middle-tables",
+          "points": [
+            [
+              555,
+              465
+            ],
+            [
+              690,
+              465
+            ],
+            [
+              825,
+              465
+            ]
+          ],
+          "modifier": "Shift"
+        },
+        {
+          "id": "drag-round-table",
+          "points": [
+            [
+              62,
+              560
+            ],
+            [
+              690,
+              465
+            ]
+          ]
+        }
+      ],
+      "data": {
+        "curvature": [
+          -9,
+          9
+        ],
+        "roundTableSeats": [
+          6,
+          8
+        ]
+      },
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "b5999d90ab4f3500d21d35c745560f419b9400e23f2e0f9c2338ae854701523a"
+      }
+    },
+    "form-build": {
+      "version": 1,
+      "fixture": "clean-ticket-form",
+      "camera": {
+        "viewport": [
+          1000,
+          1000
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": [
+          1000,
+          760,
+          0,
+          180
+        ],
+        "desktop": [
+          1200,
+          804
+        ],
+        "mobile": [
+          720,
+          638
+        ],
+        "presentation": "original-editor-composition",
+        "scaleContent": [
+          1176,
+          780
+        ]
+      },
+      "beats": [
+        "show-ticket",
+        "add-dinner-group",
+        "add-chicken",
+        "add-vegetarian",
+        "add-vegan",
+        "scroll-to-add-field",
+        "show-three-options",
+        "add-note",
+        "hold-question"
+      ],
+      "before": {
+        "dinnerProducts": 0
+      },
+      "after": {
+        "dinnerProducts": 3,
+        "noteFields": 1
+      },
+      "notes": "Stay inside the same expanded ticket. Add three priced products, then a separate optional Note. Save/read back after the take.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/form-build.mp4",
+            "sha256": "8ae1987ae89595fab408207f6d8bba27cc1c36a333754e056b2d14567a507f84"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/form-build-mobile.mp4",
+            "sha256": "f9566ce3c148ac467ae6a6e31e52a38b93a78b840d19fa6ac31dc71d45d0166b"
+          },
+          "poster": {
+            "path": "/organizers-media/form-build.webp",
+            "sha256": "798ceeb1d9a92b9675a5477f7ec9c58cd9a51d6116ddb9edf21c17ccfd1f97af"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/form-build-mobile.webp",
+            "sha256": "dcb0fcc4e89f663b6948bc51c2c3b35c52896fbdc3ca5358eef9b69b463b00f7"
+          }
+        },
+        "desktopDuration": 45.833333,
+        "mobileDuration": 45.833333
+      },
+      "data": {
+        "baseAdmissionPrice": 450,
+        "currency": "CZK",
+        "dinnerPrices": [
+          180,
+          160,
+          160
+        ],
+        "optionalNote": true
+      },
+      "edit": {
+        "speed": 1,
+        "internalCuts": 0,
+        "leadingTechnicalTrimOnly": true
+      }
+    },
+    "ticket-design": {
+      "version": 1,
+      "fixture": "original-concert-stub-ticket",
+      "camera": {
+        "viewport": [
+          1440,
+          1000
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": [
+          960,
+          600,
+          200,
+          260
+        ],
+        "desktop": [
+          1200,
+          822
+        ],
+        "mobile": [
+          900,
+          720
+        ],
+        "presentation": "original-editor-composition"
+      },
+      "beats": [
+        "show-original-ticket",
+        "drag-title",
+        "drag-name",
+        "drag-admission-qr",
+        "clear-and-hold"
+      ],
+      "before": {},
+      "after": {
+        "price": 450,
+        "currency": "CZK",
+        "table": 12
+      },
+      "notes": "Keep the original red concert-stub preset and positions. A different silk preset is not a locale-only variant.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/ticket-design.mp4",
+            "sha256": "cb50d4ae3a8d4d8036b967deeed308a48c6024333c64ee72c0b2b7c8dfa59763"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/ticket-design-mobile.mp4",
+            "sha256": "7de402bb47d6240f3f0f9f600d76ee3f13fb39b0e4bbe11d3bd9d1b1abe364ed"
+          },
+          "poster": {
+            "path": "/organizers-media/ticket-design.jpg",
+            "sha256": "f423c9fab4c208b7b8b0065446f51b6856fd15f1a782163417b243afc11e0484"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/ticket-design-mobile.jpg",
+            "sha256": "f8a290cbf523e95c3934442d76d7e218956ed1f63e9618d5e2140a28c83dad67"
+          }
+        },
+        "desktopDuration": 8.833,
+        "mobileDuration": 8.833
+      },
+      "gestures": [
+        {
+          "id": "drag-title",
+          "points": [
+            [
+              590,
+              540
+            ],
+            [
+              590,
+              505
+            ]
+          ]
+        },
+        {
+          "id": "drag-name",
+          "points": [
+            [
+              435,
+              650
+            ],
+            [
+              435,
+              620
+            ]
+          ]
+        },
+        {
+          "id": "drag-admission-qr",
+          "points": [
+            [
+              1002,
+              551
+            ],
+            [
+              1032,
+              520
+            ]
+          ]
+        }
+      ],
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "cb50d4ae3a8d4d8036b967deeed308a48c6024333c64ee72c0b2b7c8dfa59763"
+      },
+      "data": {
+        "calendarDates": [
+          "2027-02-20",
+          "2027-02-21"
+        ],
+        "price": 450,
+        "currency": "CZK",
+        "table": 12
+      }
+    },
+    "seat-select": {
+      "version": 1,
+      "fixture": "scout-ball-182",
+      "camera": {
+        "viewport": [
+          390,
+          844
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": null,
+        "desktop": [
+          426,
+          900
+        ],
+        "mobile": [
+          426,
+          900
+        ],
+        "presentation": "original-phone-composition"
+      },
+      "beats": [
+        "show-whole-hall",
+        "continuous-native-pinch",
+        "select-2A",
+        "select-2B",
+        "select-2C",
+        "select-2D",
+        "select-2E",
+        "select-2F",
+        "hold-selection"
+      ],
+      "before": {
+        "selectedSeats": 0
+      },
+      "after": {
+        "selectedSeats": 6,
+        "unitPrice": 650,
+        "total": 3900,
+        "currency": "CZK"
+      },
+      "notes": "Use the same original hall and a whole six-seat table. Native pinch and six visible selections; no substitution with one-seat/two-click footage.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/seat-select.mp4",
+            "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/seat-select-mobile.mp4",
+            "sha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8"
+          },
+          "poster": {
+            "path": "/organizers-media/seat-select.jpg",
+            "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/seat-select-mobile.jpg",
+            "sha256": "bbf955881b2d3b9eb1b43da8ac4cec9c54456ed0a8e2f37fafc4210909137905"
+          }
+        },
+        "desktopDuration": 10.566667,
+        "mobileDuration": 10.566667
+      },
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "a946bbd37e112e61881b29b4997b270a111d52b0b86fa5b5fbd755a19dcc24b8"
+      }
+    },
+    "check-in": {
+      "version": 1,
+      "fixture": "scanner-fresh-paid-ticket",
+      "camera": {
+        "viewport": [
+          430,
+          900
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": null,
+        "desktop": [
+          1200,
+          800
+        ],
+        "mobile": [
+          500,
+          1000
+        ],
+        "presentation": "original-phone-composition"
+      },
+      "beats": [
+        "show-blank-camera",
+        "reveal-real-qr",
+        "decode-and-show-valid",
+        "point-to-confirm",
+        "confirm-admission",
+        "hold-confirmation",
+        "next-ticket",
+        "reveal-same-qr",
+        "show-already-used"
+      ],
+      "before": {
+        "ticketState": "paid"
+      },
+      "after": {
+        "ticketState": "used",
+        "admissions": 1,
+        "duplicateRejected": true
+      },
+      "notes": "Keep the original confirmation AND repeated-scan rejection. Phone/SVG framing is shared editorial composition around actual UI.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/check-in.mp4",
+            "sha256": "468d23b6b1c6d454c724f5889d079f02dcedd5c9b4f540a0509bd24bb58c0391"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/check-in-mobile.mp4",
+            "sha256": "56270c23d2d18b5a7cf2f16b28bb64cb0f348d610776482241d1399e1d9c1a8d"
+          },
+          "poster": {
+            "path": "/organizers-media/check-in.webp",
+            "sha256": "148219adc82f2c9fb84d8278e7e2accf3ec35508ab231c47e7598a8cfb3fdd3a"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/check-in-mobile.webp",
+            "sha256": "0fd9063a0a842dd71f03e0429fdf5a752d4997b523c7106969f8004f03347b19"
+          }
+        },
+        "desktopDuration": 8.5,
+        "mobileDuration": 8.5
+      },
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "468d23b6b1c6d454c724f5889d079f02dcedd5c9b4f540a0509bd24bb58c0391"
+      }
+    },
+    "orders-overview": {
+      "version": 1,
+      "fixture": "original-editable-sales-fixture",
+      "camera": {
+        "viewport": [
+          1440,
+          1000
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": null,
+        "desktop": [
+          1200,
+          760
+        ],
+        "mobile": [
+          720,
+          900
+        ],
+        "presentation": "original-editor-composition"
+      },
+      "beats": [
+        "show-report",
+        "point-to-net-receipts",
+        "daily-chart",
+        "cumulative-chart",
+        "open-orders",
+        "filter-customer",
+        "show-filtered-orders",
+        "open-tickets",
+        "export-table",
+        "open-internal-note",
+        "type-internal-note",
+        "save-note",
+        "reload-and-confirm-note"
+      ],
+      "before": {
+        "orders": 95,
+        "tickets": 260,
+        "capacity": 300,
+        "netReceipts": 124950,
+        "currency": "CZK"
+      },
+      "after": {
+        "filteredOrders": 12,
+        "notePersisted": true,
+        "paymentStateUnchanged": true
+      },
+      "notes": "Keep report-first order and real fixture totals. Show order filtering, ticket export and persisted internal-note edit in the original sequence.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/orders-overview.mp4",
+            "sha256": "854d639b3ca1c2aa0627320c5799ba40d4fbce112336e0d837a4edf66e76fbc0"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/orders-overview-mobile.mp4",
+            "sha256": "b69d95b6f5f9c11fe7adbfa2ccc5528d7a3ef6cbe2b69b9b7bb233a72cf3133b"
+          },
+          "poster": {
+            "path": "/organizers-media/orders-overview.webp",
+            "sha256": "c6745f65383638ff3f05575dec360755f19feb67053f0cd59f8248be3cc4952a"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/orders-overview-mobile.webp",
+            "sha256": "2951c8e95f2400cbcc55af792fd98f3abbe12a720f0b2a9fbe449043bde4940e"
+          }
+        },
+        "desktopDuration": 19.1,
+        "mobileDuration": 19.1
+      },
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "854d639b3ca1c2aa0627320c5799ba40d4fbce112336e0d837a4edf66e76fbc0"
+      }
+    },
+    "layout-grid": {
+      "version": 1,
+      "fixture": "original-grid-hall",
+      "camera": {
+        "viewport": [
+          1440,
+          960
+        ],
+        "deviceScaleFactor": 1,
+        "theme": "light",
+        "crop": [
+          1128,
+          780,
+          0,
+          112
+        ],
+        "desktop": [
+          1140,
+          792
+        ],
+        "mobile": [
+          820,
+          792
+        ],
+        "presentation": "original-editor-composition"
+      },
+      "beats": [
+        "clear-original-hall",
+        "paint-custom-table",
+        "add-chairs",
+        "add-companion-tables",
+        "extend-inner-edge",
+        "extend-outer-edge",
+        "fill-grid-to-capacity",
+        "copy-wood-style",
+        "apply-to-all-tables",
+        "show-backdrop-and-hold"
+      ],
+      "before": {},
+      "after": {
+        "tables": 5,
+        "seats": 88,
+        "gridSeats": 64,
+        "material": "wood"
+      },
+      "notes": "Paint the original custom outline with a held pointer. Selecting an L preset or changing one rectangle is not equivalent.",
+      "reference": {
+        "assets": {
+          "src": {
+            "path": "/organizers-media/layout-grid.mp4",
+            "sha256": "6de789c1f3477789ed1fab9513d2bdec15656b0a83158532300cb2e4de7af084"
+          },
+          "mobileSrc": {
+            "path": "/organizers-media/layout-grid-mobile.mp4",
+            "sha256": "ae31ab5efe60f368a0c2f2add1cd1f7dc04ca39d8b97be8d52f08141c4abca05"
+          },
+          "poster": {
+            "path": "/organizers-media/layout-grid.jpg",
+            "sha256": "a529cabae8dc032da0df9940a0eada887c93ca90853a5e463276a8cd05b91ce0"
+          },
+          "mobilePoster": {
+            "path": "/organizers-media/layout-grid-mobile.jpg",
+            "sha256": "bd5ceb42aa0bd822697617078cfe8f21bee0d532c0207600afe5cd200fbc5786"
+          }
+        },
+        "desktopDuration": 45.866016,
+        "mobileDuration": 45.866667
+      },
+      "edit": {
+        "kind": "preserve-original-cue-assembly",
+        "referenceVideoSha256": "6de789c1f3477789ed1fab9513d2bdec15656b0a83158532300cb2e4de7af084"
+      }
+    }
+  }
+}

@@ -1,4 +1,7 @@
 import '../../ticket_layout/ticket_delivery_strings.dart';
+import 'package:fstapp/components/stripe_payments/payment_method_cards.dart';
+import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'occasion_setup_appearance.dart';
 import '../../fonts/form_font_catalog.dart';
@@ -261,7 +264,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       }
     } catch (_) {
       if (mounted)
-        setState(() => _sourceError = 'Předlohy se nepodařilo načíst.');
+        setState(() => _sourceError =
+            OccasionSetupStrings.ui('templates_could_not_be_loaded'));
     } finally {
       if (mounted) setState(() => _loadingSources = false);
     }
@@ -331,7 +335,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         setState(
           () => _sourceError = e is FormatException
               ? e.message
-              : 'Předlohu se nepodařilo načíst. Dosavadní nastavení zůstalo zachováno.',
+              : OccasionSetupStrings.ui(
+                  'the_template_could_not_be_loaded_your_previous_settings'),
         );
     } finally {
       if (mounted && request == _sourceRequest)
@@ -504,7 +509,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       return;
     }
     source ??= _selectedSource;
-    if (source == null) throw const FormatException('Předloha není načtená.');
+    if (source == null)
+      throw FormatException(
+          OccasionSetupStrings.ui('the_template_is_not_loaded'));
     draft['source'] = _sourceLabel(source);
     draft['sourceId'] = (source['occasion'] as Map)['id'];
     draft.putIfAbsent('copy_locale', () => context.locale.languageCode);
@@ -524,6 +531,15 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (forms.isNotEmpty) {
       draft['sourceFormId'] = (forms.first as Map)['id'];
       draft['formDraft'] = jsonDecode(jsonEncode(forms.first));
+      final sourcePayments =
+          ((draft['formDraft'] as Map)['data'] as Map?)?['payments'];
+      if (draft['paymentChoicesEnabled'] == true && sourcePayments is Map) {
+        final hasCard = sourcePayments['stripeConnectionId'] is String ||
+            sourcePayments['bankEnabled'] == false;
+        draft['paymentMethod'] = hasCard
+            ? (sourcePayments['bankEnabled'] == false ? 'stripe' : 'both')
+            : 'bank';
+      }
       (draft['formDraft'] as Map)['link'] = '';
       draft['formLinkAutomatic'] = true;
       draft['formOrigin'] = (source['occasion'] as Map)['title'];
@@ -905,7 +921,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   bool _paymentsReady(Map<String, dynamic> d) =>
       _deadlineReady(d) &&
       (!OccasionSetupStory.hasPaidProducts(d) ||
-          OccasionSetupStory.paymentAccountReady(d));
+          OccasionSetupStory.paymentSetupReady(d));
 
   bool _deadlineReady(Map<String, dynamic> d) =>
       (d['deadline'] as String? ?? '').trim().isEmpty ||
@@ -963,7 +979,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         includePayments: false,
         includeCommunication: false,
       );
-    if (q.key == 'payments') return OccasionSetupStory.paymentAccountReady(d);
+    if (q.key == 'payments') return OccasionSetupStory.paymentSetupReady(d);
     if (q.key == 'paymentTiming')
       return _deadlineReady(d) &&
           communicationDraftValid(d, includeReply: false);
@@ -1472,15 +1488,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   List<MapEntry<int, String>> _reviewIssues(Map<String, dynamic> d) {
     final issues = <MapEntry<int, String>>[];
     if ((d['title'] as String).trim().isEmpty) {
-      issues.add(const MapEntry(1, 'Chybí název události.'));
+      issues.add(MapEntry(1, OccasionSetupStrings.ui('enter_an_event_name')));
     }
     if (!isValidPublicSlug(d['link'] as String, allowEmpty: true)) {
-      issues.add(const MapEntry(1, 'Odkaz události není platný.'));
+      issues.add(
+          MapEntry(1, OccasionSetupStrings.ui('the_event_link_is_invalid')));
     }
     final start = DateTime.tryParse(d['start'] as String);
     final end = DateTime.tryParse(d['end'] as String);
     if (start == null || end == null || end.isBefore(start)) {
-      issues.add(const MapEntry(1, 'Začátek a konec události nejsou platné.'));
+      issues.add(MapEntry(
+          1, OccasionSetupStrings.ui('the_event_start_and_end_are_invalid')));
     }
     if (d['formEnabled'] == true) {
       if (!OccasionSetupStory.productPricesValid(d))
@@ -1504,9 +1522,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       final formData = d['formDraft'];
       if (formData is! Map) {
         issues.add(
-          const MapEntry(
+          MapEntry(
             3,
-            'Chybí formulář. Je nutné jej založit nebo převzít.',
+            OccasionSetupStrings.ui('create_or_copy_a_form_first'),
           ),
         );
       } else {
@@ -1517,20 +1535,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               allowEmpty: true,
             )) {
           issues.add(
-            const MapEntry(3, 'Chybí název nebo platný odkaz formuláře.'),
+            MapEntry(3,
+                OccasionSetupStrings.ui('enter_a_form_name_and_a_valid_link')),
           );
         }
         if (form.form.relatedFields
             .where((field) => field.definition.isTicketField != true)
             .isEmpty) {
-          issues.add(const MapEntry(3, 'Formulář nemá žádná pole.'));
+          issues.add(
+              MapEntry(3, OccasionSetupStrings.ui('the_form_has_no_fields')));
         }
         if (form.form.relatedFields.any(
               (field) => field.definition.type == FormMetadata.fieldTypeTicket,
             ) &&
             form.products.isEmpty) {
           issues.add(
-            const MapEntry(3, 'Formulář se vstupenkami nemá produkty.'),
+            MapEntry(
+                3, OccasionSetupStrings.ui('the_ticket_form_has_no_products')),
           );
         }
       }
@@ -1540,7 +1561,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         issues.add(
           MapEntry(
             AppConfig.isAppSupported ? 4 : 6,
-            'Plánek potřebuje formulář.',
+            OccasionSetupStrings.ui('a_seating_plan_requires_a_form'),
           ),
         );
       }
@@ -1548,7 +1569,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         issues.add(
           MapEntry(
             AppConfig.isAppSupported ? 4 : 6,
-            'Plánek zatím nemá žádná místa.',
+            OccasionSetupStrings.ui('the_seating_plan_has_no_seats_yet'),
           ),
         );
       }
@@ -1557,7 +1578,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(MapEntry(3, OccasionSetupStrings.copy('invalidReferences')));
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
-        !OccasionSetupStory.paymentAccountReady(d)) {
+        !OccasionSetupStory.paymentSetupReady(d)) {
       issues.add(
         MapEntry(
           AppConfig.isAppSupported ? 3 : 4,
@@ -1569,7 +1590,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       issues.add(
         MapEntry(
           AppConfig.isAppSupported ? 3 : 4,
-          'Splatnost musí být nezáporný počet dní, nebo pole ponechte prázdné.',
+          OccasionSetupStrings.ui(
+              'enter_a_non_negative_number_of_days_or_leave_the_deadli'),
         ),
       );
     }
@@ -1584,7 +1606,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       (q) => q.key == 'appearance' || q.key == 'ticket',
     )) {
       if (!_questionReady(d, q))
-        issues.add(MapEntry(q.step, 'Dokonči ${_shortLabel(q.key)}.'));
+        issues.add(MapEntry(
+            q.step,
+            OccasionSetupStrings.ui(
+                'complete_step', {'step': _shortLabel(q.key)})));
     }
     return issues;
   }
@@ -1721,7 +1746,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Co ještě doplnit',
+                  OccasionSetupStrings.ui('what_still_needs_attention'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 for (final issue in issues)
@@ -1741,15 +1766,16 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _reviewSection(
             d,
             0,
-            'Zdroj a převzetí',
+            OccasionSetupStrings.ui('source_and_copying'),
             [
-              _reviewRow('Zdrojová událost', d['source'] as String),
+              _reviewRow(OccasionSetupStrings.ui('source_event'),
+                  d['source'] as String),
             ],
             issues),
         _reviewSection(
             d,
             1,
-            'Událost',
+            OccasionSetupStrings.ui('event'),
             [
               _reviewRow(
                   AdministrationStrings.titleLabel, d['title'] as String),
@@ -1800,19 +1826,27 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               [
                 _reviewRow(
                   'FeatureForm.title'.tr(),
-                  d['formEnabled'] == true ? 'Zapnuto' : 'Vypnuto',
+                  d['formEnabled'] == true
+                      ? OccasionSetupStrings.ui('enabled')
+                      : OccasionSetupStrings.ui('disabled'),
                 ),
                 _reviewRow(
                   CommonStrings.schedule,
-                  d['copyProgram'] == true ? 'Převzít' : 'Bez převzetí',
+                  d['copyProgram'] == true
+                      ? OccasionSetupStrings.ui('copy')
+                      : OccasionSetupStrings.ui('do_not_copy'),
                 ),
                 _reviewRow(
                   'FeatureInformation.information'.tr(),
-                  d['copyInformation'] == true ? 'Převzít' : 'Bez převzetí',
+                  d['copyInformation'] == true
+                      ? OccasionSetupStrings.ui('copy')
+                      : OccasionSetupStrings.ui('do_not_copy'),
                 ),
                 _reviewRow(
-                  'Šablony e-mailů',
-                  d['copyEmails'] == true ? 'Převzít' : 'Bez převzetí',
+                  OccasionSetupStrings.ui('email_templates'),
+                  d['copyEmails'] == true
+                      ? OccasionSetupStrings.ui('copy')
+                      : OccasionSetupStrings.ui('do_not_copy'),
                 ),
               ],
               issues),
@@ -1822,15 +1856,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'FeatureForm.title'.tr(),
             [
               if (d['formEnabled'] != true)
-                const Text('Formulář není součástí události.')
+                Text(OccasionSetupStrings.ui(
+                    'this_event_does_not_include_a_form'))
               else if (form == null)
-                const Text('Formulář ještě nebyl vytvořen.')
+                Text(OccasionSetupStrings.ui(
+                    'the_form_has_not_been_created_yet'))
               else ...[
                 _reviewRow(
-                  'Původ',
+                  OccasionSetupStrings.ui('source'),
                   d['formOrigin'] == null
-                      ? 'Nový formulář'
-                      : 'Kopie z události ${d['formOrigin']}',
+                      ? OccasionSetupStrings.ui('new_form')
+                      : OccasionSetupStrings.ui(
+                          'copied_from_event', {'title': '${d['formOrigin']}'}),
                 ),
                 _reviewRow(
                   'FeatureFormSettings.labelFormTitle'.tr(),
@@ -1855,7 +1892,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   _dateForReview((d['saleEnd'] ?? d['end']) as String?),
                 ),
                 Text(
-                  'Pole formuláře (${form.form.relatedFields.where((field) => field.definition.isTicketField != true).length})',
+                  OccasionSetupStrings.ui('form_field_count', {
+                    'count':
+                        '${form.form.relatedFields.where((field) => field.definition.isTicketField != true).length}'
+                  }),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 for (final field in form.form.relatedFields.where(
@@ -1872,7 +1912,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   '${CommonStrings.products} (${form.products.length})',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                if (form.products.isEmpty) const Text('Žádné produkty'),
+                if (form.products.isEmpty)
+                  Text(OccasionSetupStrings.ui('no_products')),
                 for (final type in form.productTypes) ...[
                   Text(
                     type.title ?? '',
@@ -1881,17 +1922,22 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                   for (final product in type.products ?? <ProductModel>[])
                     _reviewRow(
                       product.title ?? '',
-                      '${product.price?.toStringAsFixed(0) ?? '0'} ${product.currencyCode ?? 'CZK'} · limit ${product.maximum?.toString() ?? 'bez limitu'}',
+                      '${product.price?.toStringAsFixed(d['paymentMethod'] == 'stripe' || d['paymentMethod'] == 'both' ? 2 : 0) ?? '0'} ${product.currencyCode ?? 'CZK'} · limit ${product.maximum?.toString() ?? 'Waitlist.unlimited'.tr()}',
                     ),
                 ],
                 const SizedBox(height: 6),
                 if (AppConfig.isAppSupported &&
                     OccasionSetupStory.hasPaidProducts(d)) ...[
                   _reviewRow(
-                    'BankAccount.bankAccount'.tr(),
-                    OccasionSetupStory.paymentAccountReady(d)
-                        ? (d['bankAccountLabel'] as String? ?? '')
-                        : OccasionSetupStrings.story('bankAccountNotConfirmed'),
+                    d['paymentMethod'] == 'stripe'
+                        ? PaymentMethodStrings.text('onlyStripe')
+                        : 'BankAccount.bankAccount'.tr(),
+                    d['paymentMethod'] == 'stripe'
+                        ? OccasionSetupStrings.story('stripeDraftHint')
+                        : OccasionSetupStory.paymentSetupReady(d)
+                            ? (d['bankAccountLabel'] as String? ?? '')
+                            : OccasionSetupStrings.story(
+                                'bankAccountNotConfirmed'),
                   ),
                   _reviewRow(
                     'FeatureFormSettings.labelDeadlineDays'.tr(),
@@ -1933,17 +1979,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           _reviewSection(
             d,
             2,
-            'Vstupenka',
+            OccasionSetupStrings.ui('ticket'),
             [
               _reviewRow(
                   TicketDeliveryStrings.text('title'),
                   TicketDeliveryStrings.label(
                       _ticketDraftFeature(d).deliveryMode)),
               _reviewRow(
-                'Vzhled',
+                OccasionSetupStrings.ui('appearance'),
                 (d['ticketDraft'] as Map?)?['layout'] == null
-                    ? 'Výchozí šablona'
-                    : 'Uložený návrh',
+                    ? OccasionSetupStrings.ui('default_template')
+                    : OccasionSetupStrings.ui('saved_design'),
               ),
             ],
             issues,
@@ -1953,13 +1999,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           _reviewSection(
               d,
               4,
-              'Nastavení plateb',
+              OccasionSetupStrings.ui('payment_settings'),
               [
                 _reviewRow(
-                  'BankAccount.bankAccount'.tr(),
-                  OccasionSetupStory.paymentAccountReady(d)
-                      ? (d['bankAccountLabel'] as String? ?? '')
-                      : OccasionSetupStrings.story('bankAccountNotConfirmed'),
+                  d['paymentMethod'] == 'stripe'
+                      ? PaymentMethodStrings.text('onlyStripe')
+                      : 'BankAccount.bankAccount'.tr(),
+                  d['paymentMethod'] == 'stripe'
+                      ? OccasionSetupStrings.story('stripeDraftHint')
+                      : OccasionSetupStory.paymentSetupReady(d)
+                          ? (d['bankAccountLabel'] as String? ?? '')
+                          : OccasionSetupStrings.story(
+                              'bankAccountNotConfirmed'),
                 ),
                 _reviewRow(
                   'FeatureFormSettings.labelDeadlineDays'.tr(),
@@ -1976,10 +2027,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             AppConfig.isAppSupported ? 4 : 6,
             CommonStrings.blueprint,
             [
-              _reviewRow('Způsob', SetupBlueprintConfiguration(d).label),
+              _reviewRow(OccasionSetupStrings.ui('method'),
+                  SetupBlueprintConfiguration(d).label),
               if (SetupBlueprintConfiguration(d).active) ...[
                 _reviewRow(
-                  'Rozměry',
+                  OccasionSetupStrings.ui('dimensions'),
                   '${canvas?['width'] ?? '-'} × ${canvas?['height'] ?? '-'}',
                 ),
                 _reviewRow(
@@ -1988,10 +2040,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                       .map((group) => (group as Map)['title']?.toString() ?? '')
                       .join(', '),
                 ),
-                _reviewRow('Místa', '$seatCount'),
+                _reviewRow(OccasionSetupStrings.ui('seats'), '$seatCount'),
                 _reviewRow(
-                  'Vazba na formulář',
-                  form?.form.definition.title ?? 'Chybí formulář',
+                  OccasionSetupStrings.ui('form_link'),
+                  form?.form.definition.title ??
+                      OccasionSetupStrings.ui('missing_form'),
                 ),
               ],
             ],
@@ -2009,7 +2062,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         _reviewSection(
             d,
             5,
-            'Soukromí a dokončení',
+            OccasionSetupStrings.ui('privacy_and_completion'),
             [
               Text(OccasionSetupSales.text(d, 'privacy')),
               if (d['formEnabled'] == true)
@@ -2079,6 +2132,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       );
     }
     if (_questions[_questionIndex(d)].key == 'paymentTiming') {
+      if (d['paymentMethod'] == 'stripe')
+        return Text(OccasionSetupStrings.story('stripeReservation'));
       return OccasionSetupCommunication(
         key: const ValueKey('payment-timing'),
         paymentTiming: true,
@@ -2144,7 +2199,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             if (_sourceError != null)
               TextButton(
                 onPressed: _loadSources,
-                child: Text('$_sourceError Zkusit znovu'),
+                child:
+                    Text('$_sourceError ${OccasionSetupStrings.ui('retry')}'),
               ),
             OccasionSetupSourcePicker(
               sources: _sources,
@@ -2174,11 +2230,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ],
             if (_loadingDetail) const LinearProgressIndicator(),
             if (_sources.isEmpty && !_loadingSources && _sourceError == null)
-              const Text(
-                'V této jednotce zatím nejsou žádné uložené předlohy.',
+              Text(
+                OccasionSetupStrings.ui(
+                    'this_organization_has_no_saved_templates_yet'),
               ),
-            const Text(
-              'Kopie přenese jen vybrané nastavení. Objednávky, účastníci a rezervace zůstanou ve zdroji.',
+            Text(
+              OccasionSetupStrings.ui(
+                  'copying_transfers_only_the_selected_settings_orders_par'),
             ),
           ],
         );
@@ -2191,7 +2249,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         );
       case 3:
         if (d['formEnabled'] == false) {
-          return const Text('Formulář je vypnutý.');
+          return Text(OccasionSetupStrings.ui('the_form_is_disabled'));
         }
         final formData = d['formDraft'];
         final formBundle = formData is Map
@@ -2219,7 +2277,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               )
             else ...[
               if (d['formOrigin'] != null)
-                Text('Převzato z události ${d['formOrigin']}'),
+                Text(OccasionSetupStrings.ui(
+                    'copied_from_event', {'title': '${d['formOrigin']}'})),
               const SizedBox(height: 10),
               OccasionSetupFormLink(
                 key: ValueKey('${d['id']}-form-link-$_formEpoch'),
@@ -2317,9 +2376,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         children: [
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Používat vstupenky'),
-            subtitle: const Text(
-                'Účastníci dostanou vstupenku s QR kódem. Vzhled převezme vybrané barvy a písmo.'),
+            title: Text(OccasionSetupStrings.ui('use_tickets')),
+            subtitle: Text(OccasionSetupStrings.ui(
+                'participants_receive_a_ticket_with_an_admission_qr_code')),
             value: OccasionSetupStory.hasTickets(d),
             onChanged: (enabled) => _change((x) {
               _inlineFormBundle = null;
@@ -2460,30 +2519,57 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   Widget _paymentSettings(Map<String, dynamic> d) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OccasionSetupBankAccount(
-            draftId: _stored.id,
-            unitId: _stored.unit,
-            data: d,
-            onChanged: (patch) =>
-                _change((x) => x.addAll(patch), changesConfiguration: true),
-          ),
-          const SizedBox(height: 24),
-          FormVariableSymbolSettings(
-            value: Map<String, dynamic>.from(
-              ((d['formDraft'] as Map?)?['data']
-                      as Map?)?[FormDefinition.metaVariableSymbol] as Map? ??
-                  {},
+          if (d['paymentChoicesEnabled'] == true) ...[
+            PaymentMethodCards(
+              value: FormPaymentMethod.values
+                  .firstWhere((m) => m.name == (d['paymentMethod'] ?? 'bank')),
+              canSelectStripe: true,
+              stripeFirst: true,
+              onChanged: (method) => _change(
+                  (x) => x['paymentMethod'] = method.name,
+                  changesConfiguration: true),
             ),
-            onChanged: (value) => _change((x) {
-              final form = x['formDraft'] as Map;
-              final meta =
-                  Map<String, dynamic>.from(form['data'] as Map? ?? {});
-              meta[FormDefinition.metaVariableSymbol] = value;
-              form['data'] = meta;
-              _inlineFormBundle?.form.definition =
-                  _inlineFormBundle!.form.definition.copyWith(data: meta);
-            }, changesConfiguration: true),
-          ),
+            const SizedBox(height: 16),
+          ],
+          if (d['paymentMethod'] == 'stripe' ||
+              d['paymentMethod'] == 'both') ...[
+            Text(OccasionSetupStrings.story('stripeDraftHint')),
+            if (StripeFeature.canManage)
+              TextButton(
+                  onPressed: () async {
+                    if (!await _flush() || !mounted) return;
+                    await RouterService.navigate(
+                        context, '/unit/${_stored.unit}/edit/card-payments');
+                  },
+                  child: Text(OccasionSetupStrings.story('setupStripe'))),
+            const SizedBox(height: 16),
+          ],
+          if (d['paymentMethod'] != 'stripe') ...[
+            OccasionSetupBankAccount(
+              draftId: _stored.id,
+              unitId: _stored.unit,
+              data: d,
+              onChanged: (patch) =>
+                  _change((x) => x.addAll(patch), changesConfiguration: true),
+            ),
+            const SizedBox(height: 24),
+            FormVariableSymbolSettings(
+              value: Map<String, dynamic>.from(
+                ((d['formDraft'] as Map?)?['data']
+                        as Map?)?[FormDefinition.metaVariableSymbol] as Map? ??
+                    {},
+              ),
+              onChanged: (value) => _change((x) {
+                final form = x['formDraft'] as Map;
+                final meta =
+                    Map<String, dynamic>.from(form['data'] as Map? ?? {});
+                meta[FormDefinition.metaVariableSymbol] = value;
+                form['data'] = meta;
+                _inlineFormBundle?.form.definition =
+                    _inlineFormBundle!.form.definition.copyWith(data: meta);
+              }, changesConfiguration: true),
+            ),
+          ],
         ],
       );
 
@@ -2518,14 +2604,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             onPressed: _loadingBlueprintCandidate
                 ? null
                 : () => _selectBlueprint(chooseAnother: true),
-            child: const Text('Vybrat jiný plánek'),
+            child: Text(OccasionSetupStrings.ui('choose_another_seating_plan')),
           ),
         if (_loadingBlueprintCandidate) const LinearProgressIndicator(),
         if (_blueprintError != null) ...[
           Text(_blueprintError!),
           TextButton(
             onPressed: _blueprintOpenFailed ? _openBlueprint : _selectBlueprint,
-            child: const Text('Zkusit znovu'),
+            child: Text(OccasionSetupStrings.ui('retry')),
           ),
         ],
         if (SetupBlueprintConfiguration(d).active) ...[
@@ -2542,7 +2628,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             label: Text(OccasionSetupStrings.story('editBlueprint')),
           ),
           const SizedBox(height: 12),
-          const Text('Úpravy plánku se ukládají do tohoto konceptu.'),
+          Text(OccasionSetupStrings.ui(
+              'seating_plan_changes_are_saved_in_this_draft')),
         ],
       ],
     );
@@ -2567,26 +2654,26 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
   }
 
   String _shortLabel(String key) =>
-      const {
-        'source': 'Kopie',
-        'name': 'Název',
-        'dates': 'Termín',
-        'appearance': 'Vzhled',
+      {
+        'source': OccasionSetupStrings.ui('copy_59'),
+        'name': OccasionSetupStrings.ui('name'),
+        'dates': OccasionSetupStrings.ui('dates'),
+        'appearance': OccasionSetupStrings.ui('appearance'),
         'ticket': 'Vstupenky',
-        'link': 'Odkaz',
-        'content': 'Obsah',
-        'form': 'Formulář',
-        'saleTiming': 'Otevření',
-        'payments': 'Platby',
-        'pricing': 'Ceny',
-        'presentation': 'Prezentace',
-        'promotion': 'Zveřejnění',
-        'team': 'Tým',
-        'paymentTiming': 'Splatnost',
-        'communication': 'Komunikace',
-        'blueprint': 'Sál',
-        'verification': 'Ověření',
-        'review': 'Kontrola',
+        'link': OccasionSetupStrings.ui('link'),
+        'content': OccasionSetupStrings.ui('content'),
+        'form': OccasionSetupStrings.ui('form'),
+        'saleTiming': OccasionSetupStrings.ui('opening'),
+        'payments': OccasionSetupStrings.ui('payments'),
+        'pricing': OccasionSetupStrings.ui('prices'),
+        'presentation': OccasionSetupStrings.ui('presentation'),
+        'promotion': OccasionSetupStrings.ui('publication'),
+        'team': OccasionSetupStrings.ui('team'),
+        'paymentTiming': OccasionSetupStrings.ui('payment_deadline'),
+        'communication': OccasionSetupStrings.ui('communication'),
+        'blueprint': OccasionSetupStrings.ui('venue'),
+        'verification': OccasionSetupStrings.ui('verification'),
+        'review': OccasionSetupStrings.ui('review'),
       }[key] ??
       key;
   Future<FormFontCatalog> _loadAppearanceFonts() async {
@@ -2608,7 +2695,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 onPressed: () => setState(() {
                       _appearanceFonts = _loadAppearanceFonts();
                     }),
-                child: const Text('Písma se nepodařilo načíst. Zkusit znovu'));
+                child: Text(OccasionSetupStrings.ui(
+                    'fonts_could_not_be_loaded_retry')));
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
           return _loadedAppearanceSettings(d, snapshot.data!);
@@ -2624,8 +2712,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     void apply(Map<String, dynamic> next) {
       if (!OccasionSetupAppearance.fonts.containsKey(next['fontFamily'])) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nejdřív vyber písmo podporované formulářem i PDF.'),
+          SnackBar(
+            content: Text(OccasionSetupStrings.ui(
+                'choose_a_font_supported_by_both_the_form_and_pdf_first')),
           ),
         );
         return;
@@ -2712,9 +2801,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             'source',
             'presentation',
           ].contains(q.key)
-              ? 'Základy'
+              ? OccasionSetupStrings.ui('basics')
               : q.step == 5
-                  ? 'Dokončení'
+                  ? OccasionSetupStrings.ui('finish')
                   : OccasionSetupStory.hasTickets(d)
                       ? 'Prodej'
                       : 'Registrace',
@@ -2726,26 +2815,28 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       visitedKeys:
           (d['visitedQuestions'] as List? ?? []).cast<String>().toSet(),
       readiness: OccasionSetupStrings.readiness(_readiness(d)),
-      introductionAction:
-          (_sources.isNotEmpty || _loadingSources || _sourceError != null)
-              ? TextButton(
-                  onPressed: () => _change((x) {
-                    x['storyQuestion'] = 'source';
-                    x['step'] = 0;
-                  }),
-                  child: Text(
-                    _loadingSources
-                        ? 'Načítání předloh'
-                        : _sourceError ?? 'Vytvořit kopii události',
-                  ),
-                )
-              : null,
+      introductionAction: (_sources.isNotEmpty ||
+              _loadingSources ||
+              _sourceError != null)
+          ? TextButton(
+              onPressed: () => _change((x) {
+                x['storyQuestion'] = 'source';
+                x['step'] = 0;
+              }),
+              child: Text(
+                _loadingSources
+                    ? OccasionSetupStrings.ui('loading_templates')
+                    : _sourceError ??
+                        OccasionSetupStrings.ui('create_a_copy_of_an_event'),
+              ),
+            )
+          : null,
       questionTitles: [
         for (final item in _questions)
           item.key == 'appearance'
-              ? 'Jak má akce vypadat?'
+              ? OccasionSetupStrings.ui('how_should_the_event_look')
               : item.key == 'ticket'
-                  ? 'Budou účastníci potřebovat vstupenku?'
+                  ? OccasionSetupStrings.ui('will_participants_need_a_ticket')
                   : item.key == 'team'
                       ? OccasionTeamInvitationStrings.text('question')
                       : item.key == 'saleTiming'
@@ -2764,7 +2855,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               ? OccasionSetupStrings.saving
               : OccasionSetupStrings.saved,
       questionCount: question.optional
-          ? 'Nepovinná část'
+          ? OccasionSetupStrings.ui('optional_section')
           : OccasionSetupStrings.questionNumber(
               numbered.indexWhere((q) => q.key == question.key) + 1,
               numbered.length,

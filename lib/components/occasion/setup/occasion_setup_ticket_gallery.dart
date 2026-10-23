@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'package:flutter/material.dart';
 import '../../ticket_layout/ticket_layout_service.dart';
 import '../../ticket_layout/ticket_layout_controller.dart';
@@ -90,7 +91,8 @@ class _OccasionSetupTicketGalleryState
             return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Náhledy vstupenek se nepodařilo načíst.'),
+                  Text(OccasionSetupStrings.ui(
+                      'ticket_previews_could_not_be_loaded')),
                   TextButton(
                       onPressed: () => setState(() {
                             _pending = Future(_load);
@@ -129,17 +131,20 @@ class _OccasionSetupTicketGalleryState
             return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Vyberte výchozí návrh vstupenky',
+                  Text(
+                      OccasionSetupStrings.ui(
+                          'choose_a_starting_ticket_design'),
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  const Text(
-                      'Vstupenka převezme vybrané barvy a písmo. Šablonu si můžete dále upravit v editoru - změnit texty, jejich rozmístění i pozadí.'),
+                  Text(OccasionSetupStrings.ui(
+                      'the_ticket_uses_your_colors_and_font_continue_editing_i')),
                   const SizedBox(height: 16),
                   Wrap(spacing: 8, runSpacing: 8, children: [
                     for (final option in {
-                      'all': 'Všechny (${resources.presets.length})',
-                      'named': 'Se jménem',
-                      'silk': 'Hedvábí'
+                      'all': OccasionSetupStrings.ui('all_ticket_templates',
+                          {'count': '${resources.presets.length}'}),
+                      'named': OccasionSetupStrings.ui('with_name'),
+                      'silk': OccasionSetupStrings.ui('silk')
                     }.entries)
                       ChoiceChip(
                           label: Text(option.value),
@@ -192,7 +197,7 @@ class _OccasionSetupTicketGalleryState
         resources.artworks[entry.key]?.background;
     final selected = current || widget.selectedId == entry.key;
     final label = current
-        ? 'Aktuální vstupenka'
+        ? OccasionSetupStrings.ui('current_ticket')
         : OccasionSetupAppearance.ticketCompositions[entry.key] ??
             resources.artworks[entry.key]?.label ??
             TicketLayoutStrings.binding('style_${entry.key}');
@@ -259,8 +264,8 @@ class _OccasionSetupTicketGalleryState
                           }),
                           builder: (context, snapshot) {
                             if (snapshot.hasError)
-                              return const Text(
-                                  'Náhled vstupenky se nepodařilo načíst.');
+                              return Text(OccasionSetupStrings.ui(
+                                  'the_ticket_preview_could_not_be_loaded'));
                             if (snapshot.connectionState !=
                                 ConnectionState.done)
                               return const Center(

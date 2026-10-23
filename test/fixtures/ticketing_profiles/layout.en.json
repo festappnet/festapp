@@ -1,0 +1,1011 @@
+{
+  "attachments": [
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "01f7d42a-f450-44aa-b0e3-f1f9134665cb",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "03645b41-3372-44de-9e1a-7f9bb4cb3687",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "092f369a-ffc3-4874-ac89-dd572672a080",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "0c585f8d-f2d9-4d48-abc2-9ffde1a8ed62",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "1127d767-cd88-455b-8e56-0da198850676",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "1ba7cbc6-700c-49d6-be75-b433d227c252",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "29231bc2-ba45-4cf7-9ef6-69c3479aefec",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "3e495ca5-a6d7-496a-a9c5-f69c60ab7f6d",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "3f641081-eccb-4068-b3f6-1fe3cbbd8eb9",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "47daa27d-326b-4c17-81c9-35eff1b02e16",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "4efd124a-2191-4785-9f81-d5d2e085de3d",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "4f6fb0e2-17cd-4fec-bf49-db491e138048",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "57c6ed6a-84d4-4ec9-ae50-e121561e68cb",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "5e44f32b-0c6d-4180-b740-0f6be1281f8a",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "6ce31ac1-e405-4ef0-91ae-dda44defbbe8",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "723d4a0b-db06-4cb5-878d-06798eab3181",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "7b727767-5e3a-414a-a3cc-3912ba2ed564",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "7d166013-3254-4e11-b834-c8e1c692454e",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "833e7ac6-7a5b-40bc-943e-8026d61b597f",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "951fbcb8-b491-453d-ab61-0b09b5e9e86b",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "9751afdb-b6bf-421a-a665-f38c16da2707",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "98c12bb4-971d-48bb-8953-a24b16a9486c",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "a619dba5-aa3b-418a-9f35-108b1913269f",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "c063dae1-123c-460f-b139-01dffc8c8c37",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "cb827a04-d369-487c-829c-e312918572f6",
+      "targetId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "cf48d0aa-cf93-45d1-9fa0-9474d6a395fc",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "e4cd0e1a-3d55-4898-abc2-08cf0b493093",
+      "targetId": "4e9c5dec-5a68-4266-be95-3e47554f5308"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "e725624b-d38d-4faf-abd0-38b322017c2f",
+      "targetId": "1811eea7-dae6-4139-8ba0-780448bfd8a0"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "f7454827-e6be-4eb0-b0e2-4be4ce90ab18",
+      "targetId": "e6de7e6f-91f4-4d91-891f-953a202f458b"
+    },
+    {
+      "placement": {
+        "mode": "automatic"
+      },
+      "rotationMode": "auto",
+      "seatId": "ff4cc65a-c9c8-4889-a0be-b9d24dc501f6",
+      "targetId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3"
+    }
+  ],
+  "background": null,
+  "canvas": {
+    "fill": "#EBF1F6FF",
+    "floorStyle": "plain",
+    "height": 3200,
+    "width": 3200,
+    "x": 0,
+    "y": 0
+  },
+  "nodes": [
+    {
+      "height": 77.5,
+      "id": "01f7d42a-f450-44aa-b0e3-f1f9134665cb",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 3,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": -87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "03645b41-3372-44de-9e1a-7f9bb4cb3687",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 5,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 90,
+        "x": -224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 193.75,
+      "id": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "kind": "table",
+      "label": "Table 4",
+      "seating": {
+        "edgePadding": 0,
+        "gap": 11.25,
+        "height": 77.5,
+        "spacing": 22.5,
+        "width": 77.5
+      },
+      "surface": {
+        "type": "rect"
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 2128.2431640625,
+        "y": 848.875
+      },
+      "width": 348.75,
+      "z": 3
+    },
+    {
+      "height": 77.5,
+      "id": "092f369a-ffc3-4874-ac89-dd572672a080",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 3,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": -87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "0c585f8d-f2d9-4d48-abc2-9ffde1a8ed62",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 5,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 90,
+        "x": -224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "1127d767-cd88-455b-8e56-0da198850676",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 0,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": -87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 193.75,
+      "id": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "kind": "table",
+      "label": "Table 5",
+      "seating": {
+        "edgePadding": 0,
+        "gap": 11.25,
+        "height": 77.5,
+        "spacing": 22.5,
+        "width": 77.5
+      },
+      "surface": {
+        "type": "rect"
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 2672.32421875,
+        "y": 848.875
+      },
+      "width": 348.75,
+      "z": 3
+    },
+    {
+      "height": 77.5,
+      "id": "1ba7cbc6-700c-49d6-be75-b433d227c252",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 4,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": 87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "29231bc2-ba45-4cf7-9ef6-69c3479aefec",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 0,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": -87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 304,
+      "id": "2fdb13ae-fef2-4241-9ec8-81c08f906059",
+      "kind": "shape",
+      "label": "Stage",
+      "points": [
+        [
+          -1056,
+          -152
+        ],
+        [
+          1056,
+          152
+        ]
+      ],
+      "shape": "rectangle",
+      "style": {
+        "fill": "#80BDF2FF",
+        "label": {
+          "size": 100
+        },
+        "stroke": "#334155FF",
+        "strokeWidth": 2
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 1552,
+        "y": 152
+      },
+      "width": 2112
+    },
+    {
+      "height": 77.5,
+      "id": "3e495ca5-a6d7-496a-a9c5-f69c60ab7f6d",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 3,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": -87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "3f641081-eccb-4068-b3f6-1fe3cbbd8eb9",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 1,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": 87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "47daa27d-326b-4c17-81c9-35eff1b02e16",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 3,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": -87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 193.75,
+      "id": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "kind": "table",
+      "label": "Table 1",
+      "seating": {
+        "edgePadding": 0,
+        "gap": 11.25,
+        "height": 77.5,
+        "spacing": 22.5,
+        "width": 77.5
+      },
+      "surface": {
+        "type": "rect"
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 496,
+        "y": 848.875
+      },
+      "width": 348.75,
+      "z": 1
+    },
+    {
+      "height": 77.5,
+      "id": "4efd124a-2191-4785-9f81-d5d2e085de3d",
+      "kind": "seat",
+      "label": "4",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 3,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": -87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "4f6fb0e2-17cd-4fec-bf49-db491e138048",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 0,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": -87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "57c6ed6a-84d4-4ec9-ae50-e121561e68cb",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 2,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 270,
+        "x": 224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "5e44f32b-0c6d-4180-b740-0f6be1281f8a",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 5,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 90,
+        "x": -224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "6ce31ac1-e405-4ef0-91ae-dda44defbbe8",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 0,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": -87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "723d4a0b-db06-4cb5-878d-06798eab3181",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 2,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 270,
+        "x": 224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 1,
+      "id": "754f0105-4752-435a-a3ce-8ed157d7501e",
+      "kind": "shape",
+      "points": [
+        [
+          -1368,
+          0
+        ],
+        [
+          1368,
+          0
+        ]
+      ],
+      "shape": "line",
+      "style": {
+        "fill": "#00000000",
+        "stroke": "#334155FF",
+        "strokeWidth": 2
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 1576,
+        "y": 3064
+      },
+      "width": 2736
+    },
+    {
+      "height": 77.5,
+      "id": "7b727767-5e3a-414a-a3cc-3912ba2ed564",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 1,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": 87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "7d166013-3254-4e11-b834-c8e1c692454e",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 5,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 90,
+        "x": -224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 1,
+      "id": "7f688666-d59f-4462-9944-fcd599c46a3f",
+      "kind": "shape",
+      "points": [
+        [
+          1368,
+          0
+        ],
+        [
+          -1368,
+          0
+        ]
+      ],
+      "shape": "line",
+      "style": {
+        "fill": "#00000000",
+        "stroke": "#334155FF",
+        "strokeWidth": 2
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 1576,
+        "y": 368
+      },
+      "width": 2736
+    },
+    {
+      "height": 77.5,
+      "id": "833e7ac6-7a5b-40bc-943e-8026d61b597f",
+      "kind": "seat",
+      "label": "1",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 0,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": -87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 2696,
+      "id": "867ea62f-cbf6-4d62-a861-6a72dc8411cf",
+      "kind": "shape",
+      "points": [
+        [
+          0,
+          1348
+        ],
+        [
+          0,
+          -1348
+        ]
+      ],
+      "shape": "line",
+      "style": {
+        "fill": "#00000000",
+        "stroke": "#334155FF",
+        "strokeWidth": 2
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 2944,
+        "y": 1716
+      },
+      "width": 1
+    },
+    {
+      "height": 77.5,
+      "id": "951fbcb8-b491-453d-ab61-0b09b5e9e86b",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 4,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": 87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "9751afdb-b6bf-421a-a665-f38c16da2707",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 4,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": 87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "98c12bb4-971d-48bb-8953-a24b16a9486c",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 4,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": 87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 2696,
+      "id": "9e93397f-0ff8-4564-a30c-a99cd32e08ba",
+      "kind": "shape",
+      "points": [
+        [
+          0,
+          -1348
+        ],
+        [
+          0,
+          1348
+        ]
+      ],
+      "shape": "line",
+      "style": {
+        "fill": "#00000000",
+        "stroke": "#334155FF",
+        "strokeWidth": 2
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 208,
+        "y": 1716
+      },
+      "width": 1
+    },
+    {
+      "height": 77.5,
+      "id": "a619dba5-aa3b-418a-9f35-108b1913269f",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 1,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": 87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 193.75,
+      "id": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "kind": "table",
+      "label": "Table 3",
+      "seating": {
+        "edgePadding": 0,
+        "gap": 11.25,
+        "height": 77.5,
+        "spacing": 22.5,
+        "width": 77.5
+      },
+      "surface": {
+        "type": "rect"
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 1584.162109375,
+        "y": 848.875
+      },
+      "width": 348.75,
+      "z": 2
+    },
+    {
+      "height": 77.5,
+      "id": "c063dae1-123c-460f-b139-01dffc8c8c37",
+      "kind": "seat",
+      "label": "6",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 5,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 90,
+        "x": -224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "cb827a04-d369-487c-829c-e312918572f6",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "07ccd17f-87a6-47f4-bb8c-a284b66fb5da",
+      "slot": 2,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 270,
+        "x": 224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "cf48d0aa-cf93-45d1-9fa0-9474d6a395fc",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 2,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 270,
+        "x": 224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "e4cd0e1a-3d55-4898-abc2-08cf0b493093",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "4e9c5dec-5a68-4266-be95-3e47554f5308",
+      "slot": 1,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": 87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 193.75,
+      "id": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "kind": "table",
+      "label": "Table 2",
+      "seating": {
+        "edgePadding": 0,
+        "gap": 11.25,
+        "height": 77.5,
+        "spacing": 22.5,
+        "width": 77.5
+      },
+      "surface": {
+        "type": "rect"
+      },
+      "transform": {
+        "rotation": 0,
+        "x": 1040.0810546875,
+        "y": 848.875
+      },
+      "width": 348.75,
+      "z": 1
+    },
+    {
+      "height": 77.5,
+      "id": "e725624b-d38d-4faf-abd0-38b322017c2f",
+      "kind": "seat",
+      "label": "5",
+      "parentId": "1811eea7-dae6-4139-8ba0-780448bfd8a0",
+      "slot": 4,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 0,
+        "x": 87.1875,
+        "y": 146.875
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "f7454827-e6be-4eb0-b0e2-4be4ce90ab18",
+      "kind": "seat",
+      "label": "3",
+      "parentId": "e6de7e6f-91f4-4d91-891f-953a202f458b",
+      "slot": 2,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 270,
+        "x": 224.375,
+        "y": 0
+      },
+      "width": 77.5
+    },
+    {
+      "height": 77.5,
+      "id": "ff4cc65a-c9c8-4889-a0be-b9d24dc501f6",
+      "kind": "seat",
+      "label": "2",
+      "parentId": "ad58b5c1-3f24-43ae-90c6-8f27104e02c3",
+      "slot": 1,
+      "symbol": "chair",
+      "transform": {
+        "rotation": 180,
+        "x": 87.1875,
+        "y": -146.875
+      },
+      "width": 77.5
+    }
+  ],
+  "presets": [],
+  "schemaVersion": 2,
+  "seatingDefaults": {
+    "edgePadding": 0,
+    "gap": 11.25,
+    "height": 77.5,
+    "spacing": 22.5,
+    "width": 77.5
+  },
+  "sections": [],
+  "selectionUnits": [],
+  "styles": {
+    "kinds": {
+      "seat": {
+        "cornerRadius": 20,
+        "fill": "#253759FF",
+        "material": "simple",
+        "seatStyle": "plain",
+        "stroke": "#253759FF",
+        "strokeWidth": 0
+      },
+      "table": {
+        "cornerRadius": 0,
+        "fill": "#80BDF2FF",
+        "label": {
+          "color": "#253759FF",
+          "fontFamilyId": "font-family:1ad255e344dade3427a6baaaf48aaaca6b18061a7476c73ebd27d8966dd37ea3",
+          "lineHeight": 1,
+          "size": 70,
+          "weight": 400
+        },
+        "material": "simple",
+        "stroke": "#253759FF",
+        "strokeWidth": 3
+      },
+      "text": {
+        "label": {
+          "color": "#000000FF"
+        }
+      }
+    },
+    "label": {
+      "color": "#253759FF",
+      "fontFamilyId": "font-family:1ad255e344dade3427a6baaaf48aaaca6b18061a7476c73ebd27d8966dd37ea3",
+      "weight": 400
+    }
+  },
+  "symbolSetVersion": 1,
+  "textPolicy": {
+    "direction": "auto",
+    "language": "und"
+  }
+}

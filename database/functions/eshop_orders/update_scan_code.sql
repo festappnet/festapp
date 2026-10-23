@@ -1,5 +1,3 @@
-DROP FUNCTION IF EXISTS update_scan_code(text, text);
-
 CREATE OR REPLACE FUNCTION update_scan_code(
     occasion_link TEXT,
     new_scan_code TEXT
@@ -76,3 +74,6 @@ EXCEPTION
         );
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.update_scan_code(text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.update_scan_code(text,text) TO authenticated,service_role;

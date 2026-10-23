@@ -8,6 +8,13 @@ The selected ticket's Add product type button must be visible before start.
 import sys
 import capture as capture_runtime
 from capture import *
+LOCALE = os.environ.get('CAPTURE_LOCALE', 'cs')
+if LOCALE not in ('cs','en'): raise ValueError('Unsupported capture locale')
+LABELS = {'Přidat typ produktu':'Add Product Type','Vytvořit nový typ produktu':'Create New Product Type','Název typu produktu':'Product Type Title','Přidat produkt':'Add Product','Název':'Title','Cena':'Price','Přidat pole':'Add Field','Poznámka':'Note'}
+def label(value): return LABELS.get(value,value) if LOCALE == 'en' else value
+_original_ui = ui
+def ui(value, *args, **kwargs): return _original_ui(label(value), *args, **kwargs)
+
 
 _raw_ab = ab
 
@@ -101,29 +108,33 @@ def record():
     install_pointer()
     ab('mouse', 'move', 600, 700)
     hold(1)
-    start('form-unbroken-cs')
+    start('form-unbroken-' + LOCALE)
     cue('continuous-dinners-and-note')
-    ui('Přidat typ produktu')
-    if js("Array.from(document.querySelectorAll('[role=button]')).some(e=>(e.getAttribute('aria-label')||e.textContent).trim()==='Vytvořit nový typ produktu')"):
-        ui('Vytvořit nový typ produktu')
-    last_fill('input[aria-label="Název typu produktu"]', 'Večeře')
-    for title, price in [('Kuřecí večeře', '180'), ('Vegetariánská večeře', '160'),
-                         ('Veganská večeře', '160')]:
-        ui('Přidat produkt', index=-1)
-        last_fill('input[aria-label="Název"]', title)
-        last_fill('input[aria-label="Cena"]', price)
-        hold(.7)
-    wheel(350)
-    ab('mouse', 'move', 885, 850)
-    ab('screenshot', str(OUT / 'three-dinners.png'))
-    hold(2)
-    ui('Přidat pole')
-    hold(.5)
-    ui('Poznámka')
-    ab('mouse', 'move', 885, 850)
-    hold(2)
-    end()
-    result = stop()
+    try:
+        story_beat('show-ticket');story_beat('add-dinner-group')
+        ui('Přidat typ produktu')
+        if js("Array.from(document.querySelectorAll('[role=button]')).some(e=>(e.getAttribute('aria-label')||e.textContent).trim()===" + json.dumps(label('Vytvořit nový typ produktu')) + ")"):
+            ui('Vytvořit nový typ produktu')
+        last_fill('input[aria-label=' + json.dumps(label('Název typu produktu')) + ']', scenario.text(LOCALE)['dinnerGroup'])
+        for step,title,price in zip(('add-chicken','add-vegetarian','add-vegan'),scenario.text(LOCALE)['dinners'],scenario.contract('form-build')['data']['dinnerPrices']):
+            story_beat(step)
+            ui('Přidat produkt', index=-1)
+            last_fill('input[aria-label=' + json.dumps(label('Název')) + ']', title)
+            last_fill('input[aria-label=' + json.dumps(label('Cena')) + ']', str(price))
+            hold(.7)
+        story_beat('scroll-to-add-field');wheel(350)
+        story_beat('show-three-options')
+        ab('mouse', 'move', 885, 850)
+        ab('screenshot', str(OUT / 'three-dinners.png'))
+        hold(2)
+        story_beat('add-note');ui('Přidat pole')
+        hold(.5)
+        ui('Poznámka')
+        ab('mouse', 'move', 885, 850)
+        hold(2)
+        story_beat('hold-question');end()
+    finally:
+        result = stop()
     ab('screenshot', str(OUT / 'finished-question.png'))
     print(json.dumps(dict(take=result['directory'], duration=result['cues'][0]['end']-result['cues'][0]['start'])))
 

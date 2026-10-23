@@ -1,0 +1,60 @@
+{
+  "reference": {
+    "gitRevision": "8a390d70c90f788b897f9ca621fe5e6d0c0a9663",
+    "manifestPath": "automation/release/organizers/clips.json",
+    "manifestSha256": "02727c2ada8f04a6515b227022eb440f08d743a184ae1e12933585d6830faafc",
+    "selection": "The intended production source was fetched and all 32 public video/poster bytes were independently verified in an isolated browser against the current Czech page.",
+    "liveEvidence": "reference-live.json"
+  },
+  "clips": [
+    {
+      "clip": "check-in",
+      "referenceScenarioSha256": "e9537c451c3b8e979410ad8557c1e1f94aa4e72462f592b7facafde866781491",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "form-build",
+      "referenceScenarioSha256": "2b62492ecdc3ca86c510e8451e2b80d96025ac2f57cc3f1174eebbea598e682c",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "layout-build",
+      "referenceScenarioSha256": "9bcc7ce0ca05aa33bc0a2f624420b67e29a841f1a213a43f474e54eb3de3cdc7",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "layout-grid",
+      "referenceScenarioSha256": "fe5983cb63d6c9f24acf2f5e56343b408ba7deede6efd81f2240ea8e7828ac72",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "layout-refine",
+      "referenceScenarioSha256": "1c4b544b797ac7139b0e100707f5a957cc1aa1a7fc5c3efd93a84c40d8378d8d",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "orders-overview",
+      "referenceScenarioSha256": "7f28e74d09f3b295fea27333160ab6fd028acc3d6444e5c2662f8c9d3f0ccbc7",
+      "dimensionsMatch": false,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "seat-select",
+      "referenceScenarioSha256": "308a4f08c9a2956d5f1ee5d50eb4d4861c45035b4aface8d15f686d57546282b",
+      "dimensionsMatch": false,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    },
+    {
+      "clip": "ticket-design",
+      "referenceScenarioSha256": "f7fbef301a6e8ba6bc84670f52791e18d9af011a3dd3cbd5c5e5c6fc9a5e11a4",
+      "dimensionsMatch": true,
+      "pairStatus": "not-proven-without-CS-and-EN-capture-receipts"
+    }
+  ],
+  "readyForOneToOnePublication": false
+}

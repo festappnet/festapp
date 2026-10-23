@@ -17,12 +17,19 @@ if (!appName) throw new Error(`${configPath} lacks APP_NAME`);
 if (!domain) throw new Error(`${configPath} lacks DOMAIN`);
 const checkOnly = process.argv.includes('--check');
 const validateOnly = process.argv.includes('--validate');
+const locale = (configValue('WEB_SUPPORTED_LANGUAGES') || 'cs').split(',')[0];
+const en = locale === 'en';
+const t = (cs, english) => en ? english : cs;
 const pages = [
   { key: 'PRIVACY_URL', source: 'privacy-policy.cs.md', output: 'privacy/index.html', pathname: '/privacy/', title: 'Ochrana osobních údajů', nav: 'Soukromí' },
   { key: 'PRIVACY_CHOICES_URL', source: 'privacy-choices.cs.md', output: 'privacy/choices/index.html', pathname: '/privacy/choices/', title: 'Vaše volby a práva', nav: 'Volby' },
   { key: 'TERMS_URL', source: 'terms.cs.md', output: 'terms/index.html', pathname: '/terms/', title: 'Podmínky', nav: 'Podmínky' },
   { key: 'SUPPORT_URL', source: 'support.cs.md', output: 'support/index.html', pathname: '/support/', title: 'Podpora', nav: 'Podpora' },
 ];
+if (en) {
+  const copy = [['Privacy','Privacy'],['Your choices and rights','Choices'],['Terms of use','Terms'],['Support','Support']];
+  pages.forEach((page, i) => { page.source = page.source.replace('.cs.md', '.en.md'); [page.title, page.nav] = copy[i]; });
+}
 const expectedOrigin = `https://${domain}`;
 const configuredUrls = new Map();
 for (const page of pages) {
@@ -93,7 +100,7 @@ function document(title, content) {
     `<a href="${configuredUrls.get(page.key).pathname}" data-legal-link${page.title === title ? ' aria-current="page"' : ''}>${page.nav}</a>`
   ).join('');
   return `<!doctype html>
-<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="${en ? 'en' : 'cs'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="index,follow"><meta name="color-scheme" content="light dark"><title>${escape(title)} | ${escape(appName)}</title>
 <script>try{const mode=localStorage.getItem('theme');if(mode==='dark'||(!mode&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.dataset.theme='dark';}catch{}</script>
 <style>
@@ -102,9 +109,9 @@ function document(title, content) {
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 system-ui,sans-serif}a{color:var(--primary);text-underline-offset:3px;overflow-wrap:anywhere}a:hover{text-decoration-thickness:2px}a:focus-visible,button:focus-visible{outline:2px solid var(--primary);outline-offset:4px;border-radius:4px}header{max-width:1040px;margin:auto;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:20px;font-weight:700;color:var(--ink);text-decoration:none}.header-actions{display:flex;gap:12px;align-items:center}.app-close,.theme-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:500 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}.app-close:hover,.theme-toggle:hover{background:var(--hover)}.layout{max-width:1040px;margin:8px auto 64px;display:grid;grid-template-columns:180px minmax(0,1fr);gap:32px;padding:0 32px}nav{display:flex;flex-direction:column;gap:4px;padding-top:28px;align-self:start}nav p{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 12px 12px}nav a{display:flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:8px;color:var(--muted);text-decoration:none}nav a:hover{background:var(--hover)}nav a[aria-current=page]{background:var(--surface);color:var(--primary);font-weight:600}main{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:40px 48px}h1{font-size:32px;font-weight:650;letter-spacing:-.7px;line-height:1.2;margin:0 0 16px}h2{font-size:19px;line-height:1.4;margin:32px 0 10px}p{margin:0 0 16px}code{font:inherit}.document-meta{font-size:13px;color:var(--muted);padding-bottom:24px;border-bottom:1px solid var(--line)}footer{border-top:1px solid var(--line);margin-top:36px;padding-top:20px;font-size:13px;color:var(--muted)}
 @media(max-width:700px){header{padding:16px}.brand{font-size:18px}.header-actions{gap:8px}.app-close,.theme-toggle{padding:8px 10px;font-size:12px}.layout{display:block;padding:0 16px;margin-top:0}nav{flex-direction:row;flex-wrap:wrap;gap:4px;margin-bottom:16px;padding:0}nav p{display:none}nav a{font-size:14px;padding:8px 10px}main{padding:28px 24px;border-radius:12px}h1{font-size:27px}h2{margin-top:28px}}
 </style></head>
-<body><header><a class="brand" href="/">${escape(appName)}</a><div class="header-actions"><button class="theme-toggle" type="button" aria-label="Přepnout barevný režim">Tmavý režim</button><a class="app-close" href="/login" aria-label="Zavřít a vrátit se do aplikace">Zpět do aplikace</a></div></header><div class="layout"><nav aria-label="Právní informace"><p>Právní informace</p>${navigation}</nav><main>${content}<footer><a href="${configuredUrls.get('SUPPORT_URL').pathname}" data-legal-link>Kontakt a podpora</a></footer></main></div><script>(()=>{
+<body><header><a class="brand" href="/">${escape(appName)}</a><div class="header-actions"><button class="theme-toggle" type="button" aria-label="${t('Přepnout barevný režim', 'Switch color theme')}">${t('Tmavý režim', 'Dark mode')}</button><a class="app-close" href="/login" aria-label="${t('Zavřít a vrátit se do aplikace', 'Close and return to app')}">${t('Zpět do aplikace', 'Back to app')}</a></div></header><div class="layout"><nav aria-label="${t('Právní informace', 'Legal information')}"><p>${t('Právní informace', 'Legal information')}</p>${navigation}</nav><main>${content}<footer><a href="${configuredUrls.get('SUPPORT_URL').pathname}" data-legal-link>${t('Kontakt a podpora', 'Contact and support')}</a></footer></main></div><script>(()=>{
 const toggle=document.querySelector('.theme-toggle');
-const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?'Světlý režim':'Tmavý režim';};updateToggle();
+const updateToggle=()=>{toggle.textContent=document.documentElement.dataset.theme==='dark'?${JSON.stringify(t('Světlý režim', 'Light mode'))}:${JSON.stringify(t('Tmavý režim', 'Dark mode'))};};updateToggle();
 toggle.addEventListener('click',()=>{const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('theme',dark?'dark':'light');}catch{}updateToggle();});
 const params=new URLSearchParams(window.location.search);const returnTo=params.get('returnTo');const close=document.querySelector('.app-close');
 if(!returnTo||!returnTo.startsWith('/')||returnTo.startsWith('//')){close.addEventListener('click',(event)=>{event.preventDefault();window.close();window.setTimeout(()=>window.location.assign(close.href),350);});return;}

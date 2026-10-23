@@ -404,3 +404,16 @@ Deno.test("loopback return origins are confined to sandbox and cannot enter live
     StripeBoundaryError,
   );
 });
+
+Deno.test('tenant Checkout locale is explicit while legacy attempts preserve their original body', async () => {
+  const bodies: URLSearchParams[] = [];
+  const p = provider(async (_url, init) => {
+    bodies.push(new URLSearchParams(String(init?.body)));
+    return Response.json(session());
+  });
+  await p.createCheckout({ ...attempt, locale: 'en' });
+  await p.createCheckout({ ...attempt, locale: 'auto' });
+  assert.equal(bodies[0].get('locale'), 'en');
+  assert.equal(bodies[1].has('locale'), false);
+  assert.equal(bodies[0].get('line_items[0][price_data][unit_amount]'), String(attempt.amountMinor));
+});

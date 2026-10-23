@@ -1,3 +1,4 @@
+import 'occasion_setup_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -51,7 +52,8 @@ class _OccasionSetupFormPreviewState extends State<OccasionSetupFormPreview> {
               onPressed: () => setState(() {
                 _fonts = _loadFonts();
               }),
-              child: const Text('Písmo se nepodařilo načíst. Zkusit znovu'),
+              child: Text(OccasionSetupStrings.ui(
+                  'the_font_could_not_be_loaded_retry')),
             );
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());

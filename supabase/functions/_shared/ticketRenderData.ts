@@ -36,6 +36,8 @@ export function validateProductReferences(t:Template,c:ProductCatalog) {
 }
 export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog?:ProductCatalog,template?:Template):RenderData {
   if(ticket.occasion!=null&&ticket.occasion!==occasion.id)throw new Error('ticket_cross_occasion');
+  const locale = ['cs','en','de','pl','sk','uk'].includes(occasion.locale) ? occasion.locale : 'cs';
+  const en = locale === 'en';
   const opts=[...(ticket.order_product_ticket??[])].sort((a,b)=>Number(a.id)-Number(b.id));
   const matches=new Map<number,string|null>();
   for(const opt of opts) {
@@ -46,18 +48,20 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     if(!matches.has(p.product_type))matches.set(p.product_type,productValue(p));
   }
   const spot=opts.find(o=>text(o.spot_group_title));
+  let timeZone=occasion.data?.timezone||'Europe/Prague';
+  try { new Intl.DateTimeFormat(locale,{timeZone}); } catch { timeZone='Europe/Prague'; }
   let date='';
   if(occasion.start_time) {
     const start=new Date(occasion.start_time),end=new Date(occasion.end_time||occasion.start_time);
-    if(Number.isFinite(start.getTime())&&Number.isFinite(end.getTime()))date=getMinimalisticDateRange(start,end);
+    if(Number.isFinite(start.getTime())&&Number.isFinite(end.getTime()))date=getMinimalisticDateRange(start,end,locale,timeZone);
   }
   let startTime:string|null=null;
   if(occasion.start_time && Number.isFinite(new Date(occasion.start_time).getTime())) {
-    const options:Intl.DateTimeFormatOptions={hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:occasion.data?.timezone||'Europe/Prague'};
-    try {startTime=new Intl.DateTimeFormat('cs-CZ',options).format(new Date(occasion.start_time));}
-    catch {startTime=new Intl.DateTimeFormat('cs-CZ',{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
+    const options:Intl.DateTimeFormatOptions={hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone};
+    try {startTime=new Intl.DateTimeFormat(locale,options).format(new Date(occasion.start_time));}
+    catch {startTime=new Intl.DateTimeFormat(locale,{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:spot?`Stůl: ${text(spot.spot_group_title)}`:null,note:text(ticket.note)?`Poznámka: ${text(ticket.note)}`:null,price:ticket.price!=null?`Cena: ${formatCurrency(ticket.price,ticket.currency_code||'CZK')}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?'UKÁZKA - NEPLATÍ PRO VSTUP • ':''}Vstupenka je nepřenosná${occasion.data?.link?' • '+occasion.data.link:''}`};
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:spot?`${en ? 'Table' : 'Stůl'}: ${text(spot.spot_group_title)}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${new Intl.NumberFormat(locale,{style:'currency',currency:ticket.currency_code||'CZK'}).format(ticket.price)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
   return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,matches.get(e.productTypeId!)??null):d[e.binding]]));
@@ -69,8 +73,10 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
     d.ticketSymbol=suffix(occasion.organization)+suffix(occasion.id)+'7K6M8R';
   }
   d.qr='festapp-preview:'+d.ticketSymbol;
-  d.spotGroup='Stůl: 12';
-  if(scenario==='long') {d.note='Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.orderName='Kateřina Šťastná Nováková';}
+  const en = occasion?.locale === 'en';
+  d.spotGroup=en?'Table: 12':'Stůl: 12';
+  if(en) { d.orderName='Alex Morgan'; if(!occasion?.title)d.occasionTitle='Evening under the stars'; }
+  if(scenario==='long') {d.note=en?'Note: '+('A long guest note with anExtraLongWordWithoutSpaces ').repeat(8):'Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.orderName=en?'Alexandra Morgan Taylor':'Kateřina Šťastná Nováková';}
   if(scenario==='missing'){d.note=null;d.spotGroup=null;d.orderName=null;}
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
@@ -83,6 +89,6 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   }
   const examples=[...selected.values()].filter((e):e is NonNullable<CatalogType['example']>=>!!e);
   const currencies=new Set(examples.map(e=>e.currency_code));
-  if(examples.length&&currencies.size===1&&examples.every(e=>e.price!=null&&e.currency_code!=null))d.price='Cena: '+formatCurrency(examples.reduce((sum,e)=>sum+Math.round(e.price!*100),0)/100,examples[0].currency_code!);
+  if(examples.length&&currencies.size===1&&examples.every(e=>e.price!=null&&e.currency_code!=null))d.price=(en?'Price: ':'Cena: ')+formatCurrency(examples.reduce((sum,e)=>sum+Math.round(e.price!*100),0)/100,examples[0].currency_code!);
   return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,scenario==='missing'?null:catalog?.types.get(e.productTypeId!)?.example?.value??null):d[e.binding]]));
 }

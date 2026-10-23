@@ -4,17 +4,46 @@
   "title": "Festapp production branch overlay metadata",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "tenantId", "baseMainSha"],
+  "required": [
+    "schemaVersion",
+    "tenantId",
+    "baseMainSha"
+  ],
   "properties": {
-    "schemaVersion": { "const": 1 },
-    "tenantId": { "enum": ["absolventskyvelehrad", "aksmcz", "cavfotofest", "csmostrava2026", "doobiscup", "farnostopava", "festapp", "festapptickets", "festivalslunovrat", "hvezdamorska", "jubileum2025"] },
-    "baseMainSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "schemaVersion": {
+      "const": 1
+    },
+    "tenantId": {
+      "enum": [
+        "absolventskyvelehrad",
+        "aksmcz",
+        "cavfotofest",
+        "csmostrava2026",
+        "doobiscup",
+        "farnostopava",
+        "festapp",
+        "festapptickets",
+        "festivalslunovrat",
+        "hvezdamorska",
+        "jubileum2025",
+        "festappticketsglobal"
+      ]
+    },
+    "baseMainSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
     "release": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "version": { "type": "string" },
-        "note": { "type": "string", "maxLength": 500 }
+        "version": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        }
       }
     }
   }

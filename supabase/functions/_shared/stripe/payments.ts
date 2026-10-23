@@ -66,6 +66,7 @@ async function preparedClaim(
     expiresAt: raw.expiresAt as number,
     createdAt: raw.createdAt as number,
     idempotencyKey: raw.idempotencyKey as string,
+    locale: raw.locale as CheckoutSnapshot["locale"],
     ...(creation ? { returnUrl: target!.toString() } : {}),
   };
   return { claim, raw, snapshot, lease: claim.lease as string };

@@ -27,7 +27,7 @@ hash_generated() {
   done < "$PROJECT_ROOT/automation/tenant-overlays/generated.paths"
 }
 
-for tenant in festapp festapptickets absolventskyvelehrad aksmcz cavfotofest csmostrava2026 doobiscup farnostopava festivalslunovrat hvezdamorska jubileum2025; do
+for tenant in festapp festapptickets festappticketsglobal absolventskyvelehrad aksmcz cavfotofest csmostrava2026 doobiscup farnostopava festivalslunovrat hvezdamorska jubileum2025; do
   root="$TMP_ROOT/$tenant"
   copy_worktree "$root"
   config="$PROJECT_ROOT/automation/tests/fixtures/tenants/$tenant.conf"
@@ -123,4 +123,12 @@ grep -qE 'fixturehm.supabase.co/functions/v1/confirm-account-deletion' "$TMP_ROO
 ! grep -qE 'fixturecsm|fixturehm|fixture_csm|fixture_hm|CSM Fixture|HM Fixture' "$TMP_ROOT/cavfotofest/lib/app_config.dart" "$TMP_ROOT/cavfotofest/web_client/src/app_config.js" "$TMP_ROOT/cavfotofest/web/index.html" "$TMP_ROOT/cavfotofest/web/delete-account/index.html"
 ! grep -qE 'fixturecsm|fixturehm|fixture_csm|fixture_hm|CSM Fixture|HM Fixture' "$TMP_ROOT/festivalslunovrat/lib/app_config.dart" "$TMP_ROOT/festivalslunovrat/web_client/src/app_config.js" "$TMP_ROOT/festivalslunovrat/web/index.html" "$TMP_ROOT/festivalslunovrat/web/delete-account/index.html"
 
+grep -qF 'static organizerLandingEnabled = true;' "$TMP_ROOT/festapptickets/web_client/src/app_config.js"
+grep -qF '<html lang="cs">' "$TMP_ROOT/festapptickets/web/organizers-page"
+grep -qF '<html lang="en">' "$TMP_ROOT/festappticketsglobal/web/organizers-page"
+grep -qF "supportedLanguages = ['en']" "$TMP_ROOT/festappticketsglobal/web_client/src/app_config.js"
+grep -qF 'organization = 900001' "$TMP_ROOT/festappticketsglobal/web_client/src/app_config.js"
+grep -qF 'aria-label="Legal information"' "$TMP_ROOT/festappticketsglobal/web_client/index.html"
+! grep -qF 'id="reference"' "$TMP_ROOT/festappticketsglobal/web/organizers-page"
+! grep -qF 'vstupenky.online' "$TMP_ROOT/festappticketsglobal/web/organizers-page"
 echo "Tenant config matrix passed"

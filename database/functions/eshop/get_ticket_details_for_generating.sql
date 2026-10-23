@@ -74,7 +74,7 @@ BEGIN
         ),
 
         -- 2. Build the 'occasion' key (dumps the whole occasion row including 'features')
-        'occasion', to_jsonb(o)||jsonb_build_object('demo_read_only',public.is_demo_occasion(o.id)),
+        'occasion', to_jsonb(o)||jsonb_build_object('demo_read_only',public.is_demo_occasion(o.id),'locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=o.organization),'cs')),
         'order_data', jsonb_build_object('name', ord.data->'name', 'surname', ord.data->'surname')
     )
     INTO result

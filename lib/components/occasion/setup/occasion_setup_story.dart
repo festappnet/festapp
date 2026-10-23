@@ -89,6 +89,9 @@ class OccasionSetupStory {
     return currencies;
   }
 
+  static bool paymentSetupReady(Map<String, dynamic> data) =>
+      data['paymentMethod'] == 'stripe' || paymentAccountReady(data);
+
   static bool paymentAccountReady(Map<String, dynamic> data) =>
       data['bankAccountId'] is int &&
       (data['bankAccountId'] as int) > 0 &&
