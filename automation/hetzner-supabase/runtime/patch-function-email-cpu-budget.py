@@ -12,17 +12,12 @@ old_option = '''      // PDF attachments share one worker CPU budget across all 
         cpuTimeHardLimitMs: 30_000,
       } : {}), // festapp-email-cpu-budget-v1
 '''
-previous_option = old_option.replace(
+option = old_option.replace(
     '// PDF attachments share one worker CPU budget across all tickets.',
     '// Document workers share a CPU budget across PDFs and font/gallery loading.',
 ).replace('service_name === "process-email-queue"',
           '["process-email-queue", "preview-ticket-layout"].includes(service_name)')
-option = previous_option.replace(
-    '["process-email-queue", "preview-ticket-layout"]',
-    '["process-email-queue", "preview-ticket-layout", "prepare-ticket-batch-document"]',
-)
-# Accept only the two exact installed policy stanzas when upgrading the router.
-source = source.replace(old_option, option).replace(previous_option, option)
+source = source.replace(old_option, option)
 if source.count(anchor) != 1:
     raise SystemExit('upstream Function worker contract changed')
 if option not in source:
