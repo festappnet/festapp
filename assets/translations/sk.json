@@ -1,4 +1,7 @@
 {
+  "FormsFeature": {
+    "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
+  },
   "FeatureBlueprint": {
     "protectedCount": "Obsadené miesta: {count}.",
     "cancelReservation": "Zrušiť vybrané rezervácie",
@@ -337,6 +340,12 @@
     "allowAdminAssign": "Administrátori môžu priraďovať existujúcich účastníkov"
   },
   "FeatureUser": {
+    "invitationSent": "Odoslané",
+    "invitationFailed": "Neúspešné",
+    "retryFailedInvitations": "Skontrolovať a zopakovať neodoslané",
+    "invitationQueued": "Vo fronte - čaká na potvrdenie odoslania",
+    "existingParticipantsScope": "Vyberáte účastníkov tejto jednotky, ktorí ešte nie sú pridaní do akcie.",
+    "noExistingParticipants": "Žiadni ďalší účastníci nie sú k dispozícii. Jednotka zatiaľ nemá účastníkov alebo už boli všetci pridaní. Vráťte sa do zoznamu a tlačidlom Pridať vytvorte nového účastníka.",
     "passwordResetLinkSent": "Odkaz na resetovanie hesla bol odoslaný na {email}. Skontrolujte si prosím svoju schránku a postupujte podľa pokynov na resetovanie hesla.",
     "passwordResetFailed": "E-mail na resetovanie hesla sa nepodarilo odoslať. Skúste to prosím neskôr.",
     "passwordResetEmailMissing": "Tento účet nemá e-mail na resetovanie hesla. Kontaktujte prosím podporu.",
@@ -603,6 +612,7 @@
     "bankSyncWarningManage": "Skontrolujte synchronizáciu v nastaveniach bankového účtu.",
     "bankSyncWarningOpenSettings": "Nastavenia bankového účtu",
     "bankSyncWarningSettingsUnavailable": "Účet sa nenašiel alebo nemáte oprávnenie na jeho správu.",
+    "bankSyncWarningDetailsHint": "Kliknite pre zobrazenie detailu",
     "bankSyncWarningContactShort": "Kontaktujte správcu bankového účtu:",
     "bankSyncPaymentPaused": "Synchronizácia bankového účtu pre túto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párovanie platieb nefunguje",

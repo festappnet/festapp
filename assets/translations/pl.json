@@ -1,4 +1,7 @@
 {
+  "FormsFeature": {
+    "selectionOptionsRequired": "Dodaj co najmniej jedną niepustą opcję lub usuń to pole."
+  },
   "FeatureBlueprint": {
     "protectedCount": "Zajęte miejsca: {count}.",
     "cancelReservation": "Anuluj wybrane rezerwacje",
@@ -319,6 +322,12 @@
     "allowAdminAssign": "Administratorzy mogą przypisywać istniejących uczestników"
   },
   "FeatureUser": {
+    "invitationSent": "Wysłano",
+    "invitationFailed": "Niepowodzenie",
+    "retryFailedInvitations": "Sprawdź i ponów niewysłane zaproszenia",
+    "invitationQueued": "W kolejce - oczekiwanie na potwierdzenie wysłania",
+    "existingParticipantsScope": "Wybierz uczestników tej jednostki, którzy nie zostali jeszcze dodani do wydarzenia.",
+    "noExistingParticipants": "Brak kolejnych uczestników. Jednostka nie ma jeszcze uczestników lub wszyscy zostali już dodani. Wróć do listy i użyj przycisku Dodaj, aby utworzyć nowego uczestnika.",
     "passwordResetLinkSent": "Link do resetowania hasła został wysłany na {email}. Sprawdź swoją skrzynkę odbiorczą i postępuj zgodnie z instrukcjami, aby zresetować hasło.",
     "passwordResetFailed": "Nie udało się wysłać wiadomości do resetowania hasła. Spróbuj ponownie później.",
     "passwordResetEmailMissing": "To konto nie ma adresu e-mail do resetowania hasła. Skontaktuj się z pomocą techniczną.",
@@ -585,6 +594,7 @@
     "bankSyncWarningManage": "Sprawdź synchronizację w ustawieniach konta bankowego.",
     "bankSyncWarningOpenSettings": "Ustawienia konta bankowego",
     "bankSyncWarningSettingsUnavailable": "Nie znaleziono konta lub nie masz uprawnień do zarządzania nim.",
+    "bankSyncWarningDetailsHint": "Kliknij, aby wyświetlić szczegóły",
     "bankSyncWarningContactShort": "Skontaktuj się z administratorem konta bankowego:",
     "bankSyncPaymentPaused": "Synchronizacja rachunku bankowego dla tej płatności jest wyłączona.",
     "bankSyncWarningTitle": "Automatyczne dopasowywanie płatności jest niedostępne",

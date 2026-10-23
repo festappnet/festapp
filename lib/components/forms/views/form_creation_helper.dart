@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
@@ -32,7 +33,9 @@ class FormCreationHelper {
       required VoidCallback onFormCreated}) async {
     try {
       await DbForms.duplicateFormToOccasion(
-          sourceFormId: form.definition.id!, targetOccasionLink: occasionLink);
+          sourceFormId: form.definition.id!,
+          targetOccasionLink: occasionLink,
+          locale: context.locale.languageCode);
       if (!context.mounted) return;
       ToastHelper.Show(context, FormStrings.duplicateSuccess,
           severity: ToastSeverity.Ok);

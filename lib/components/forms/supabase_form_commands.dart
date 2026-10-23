@@ -30,10 +30,12 @@ class SupabaseFormCommands implements FormCommands {
   Future<int> duplicate({
     required int sourceFormId,
     required String targetOccasionLink,
+    String locale = 'en',
   }) async {
     final data = await _invoke('duplicate_form_to_occasion_client_sync_v1', {
       'p_source_form_id': sourceFormId,
       'p_target_occasion_link': targetOccasionLink,
+      'p_locale': locale,
     });
     final id = data['formId'];
     if (id is! num) throw StateError('Form duplication returned no form ID');
@@ -42,7 +44,8 @@ class SupabaseFormCommands implements FormCommands {
 
   @override
   Future<void> delete(int formId, {required int expectedVersion}) async {
-    await _invoke('delete_form_client_sync_v1', {'p_form_id': formId, 'p_expected_version': expectedVersion});
+    await _invoke('delete_form_client_sync_v1',
+        {'p_form_id': formId, 'p_expected_version': expectedVersion});
   }
 
   @override
@@ -53,7 +56,8 @@ class SupabaseFormCommands implements FormCommands {
   Future<Map<String, dynamic>> saveBlueprint(
     Map<String, dynamic> blueprint,
   ) async {
-    if (blueprint['layout'] is! Map || blueprint['expected_layout_revision'] is! int) {
+    if (blueprint['layout'] is! Map ||
+        blueprint['expected_layout_revision'] is! int) {
       throw StateError('BLUEPRINT_LAYOUT_REQUIRED');
     }
     final parameters = {'p_blueprint': blueprint};
@@ -61,7 +65,7 @@ class SupabaseFormCommands implements FormCommands {
     final response = _blueprintReceipts[key] ??
         ClientCommandResponse.from(
           await _transport.invokeIntent('blueprint:${blueprint['id']}',
-                  'update_blueprint_client_sync_v1', parameters),
+              'update_blueprint_client_sync_v1', parameters),
         );
     if (response.code != 200) {
       _blueprintReceipts.remove(key);
@@ -69,7 +73,7 @@ class SupabaseFormCommands implements FormCommands {
     }
     _blueprintReceipts[key] = response;
     if (response.data['layout_revision'] is! num ||
-            response.data['seatBindings'] is! List) {
+        response.data['seatBindings'] is! List) {
       throw const FormatException('Invalid blueprint save acknowledgement');
     }
     await applyClientCommandReplacements(response);

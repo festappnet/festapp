@@ -276,6 +276,12 @@
     "ticketType": "Тип квитка"
   },
   "FeatureUser": {
+    "invitationSent": "Надіслано",
+    "invitationFailed": "Помилка",
+    "retryFailedInvitations": "Перевірити й повторити ненадіслані запрошення",
+    "invitationQueued": "У черзі - очікується підтвердження надсилання",
+    "existingParticipantsScope": "Виберіть учасників цього підрозділу, яких ще не додано до події.",
+    "noExistingParticipants": "Інших учасників немає. У підрозділі ще немає учасників або всіх уже додано. Поверніться до списку та натисніть Додати, щоб створити нового учасника.",
     "signupLegalNotice": "Натискаючи «{button}», ви погоджуєтеся з {terms} та ознайомлюєтеся з {privacy}.",
     "signupTerms": "умовами використання",
     "signupPrivacy": "політикою конфіденційності",
@@ -480,6 +486,7 @@
     "changeCopyTargetUnit": "Змінити цільову організацію"
   },
   "FormsFeature": {
+    "selectionOptionsRequired": "Додайте принаймні один непорожній варіант або видаліть це поле.",
     "addProduct": "Додати продукт",
     "addDescription": "Додати опис",
     "additionalSettings": "Додаткові налаштування",
@@ -644,6 +651,7 @@
     "bankSyncWarningManage": "Перевірте синхронізацію в налаштуваннях банківського рахунку.",
     "bankSyncWarningOpenSettings": "Налаштування банківського рахунку",
     "bankSyncWarningSettingsUnavailable": "Рахунок не знайдено або ви не маєте дозволу ним керувати.",
+    "bankSyncWarningDetailsHint": "Натисніть, щоб переглянути деталі",
     "bankSyncWarningContactShort": "Зверніться до адміністратора банківського рахунку:",
     "bankSyncPaymentPaused": "Синхронізацію банківського рахунку для цього платежу вимкнено.",
     "bankSyncWarningTitle": "Автоматичне зіставлення платежів недоступне",

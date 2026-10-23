@@ -712,6 +712,34 @@
       "sources": [
         "test/components/stripe_payments/stripe_feature_test.dart"
       ]
+    },
+    "test/components/forms/form_validation_test.dart": {
+      "kind": "environment",
+      "reason": "Actual Czech form settings/editor widgets and public form holders; validates draft repair and persisted decimal duration.",
+      "sources": [
+        "test/components/forms/form_validation_test.dart"
+      ]
+    },
+    "test/components/occasion/occasion_creation_recovery_test.dart": {
+      "kind": "environment",
+      "reason": "Actual occasion creation dialog with isolated HTTP backend; validates conflict and corrected retry.",
+      "sources": [
+        "test/components/occasion/occasion_creation_recovery_test.dart"
+      ]
+    },
+    "test/components/dialogs/responsive_search_empty_test.dart": {
+      "kind": "environment",
+      "reason": "Actual shared participant search dialog empty and no-match states.",
+      "sources": [
+        "test/components/dialogs/responsive_search_empty_test.dart"
+      ]
+    },
+    "test/services/batch_progress_dialog_test.dart": {
+      "kind": "environment",
+      "reason": "Actual batch progress dialog; validates truthful mixed outcomes and retry exclusions.",
+      "sources": [
+        "test/services/batch_progress_dialog_test.dart"
+      ]
     }
   }
 }

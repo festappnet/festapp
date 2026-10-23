@@ -534,12 +534,12 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.demo_unit_ids_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='947683c37c46bb285c95f6e3eaceef3f'),'current SQL source parity: public.demo_unit_ids_internal()');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9a63e603e28e62cfa19701432b83af12'),'current SQL source parity: public.discard_activity_draft_client_sync_v1(bigint,uuid,bigint)');
--- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
+-- supabase/migrations/20261023110000_qa_form_validation_and_copy_locale.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.duplicate_form_to_occasion(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='015c58bf1f482bf72de99e3093300a61'),'current SQL source parity: public.duplicate_form_to_occasion(bigint,text)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='9476f417c8f17f51e6817fbab0f37228'),'current SQL source parity: public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid)');
--- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.duplicate_form_to_occasion_internal_v1(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='1221de6069a0f88442fa137eba8733db'),'current SQL source parity: public.duplicate_form_to_occasion_internal_v1(bigint,text)');
+-- supabase/migrations/20261023110000_qa_form_validation_and_copy_locale.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='764f5a6d2faba047e525cc129a79232b'),'current SQL source parity: public.duplicate_form_to_occasion_client_sync_v1(bigint,text,uuid,text)');
+-- supabase/migrations/20261023110000_qa_form_validation_and_copy_locale.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.duplicate_form_to_occasion_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='4ed03586ae2f1e5d1ebdb769f947adf7'),'current SQL source parity: public.duplicate_form_to_occasion_internal_v1(bigint,text,text)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(to_regprocedure('public.duplicate_form_ws(bigint)') IS NULL,'retired SQL identity remains absent: public.duplicate_form_ws(bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1208,8 +1208,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_form(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='486621cc5bd1a2586b65843903d43898'),'current SQL source parity: public.update_form(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_form_client_sync_v1(jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='163836f8bdb9cfeb17573a906fb296e8'),'current SQL source parity: public.update_form_client_sync_v1(jsonb,uuid)');
--- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_form_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='73731df91da1ec38e244c946fffe304d'),'current SQL source parity: public.update_form_internal_v1(jsonb)');
+-- supabase/migrations/20261023110000_qa_form_validation_and_copy_locale.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_form_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='ce3934f43597d8957fb947da2bb5391d'),'current SQL source parity: public.update_form_internal_v1(jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(to_regprocedure('public.update_inclusion_type_group(jsonb)') IS NULL,'retired SQL identity remains absent: public.update_inclusion_type_group(jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql

@@ -652,7 +652,8 @@
     },
     "deleteSaveFailed": "The form was not saved. {} Your changes remain in the editor.",
     "defaultProductSelected": "Default option for customers. Click to clear the default.",
-    "setDefaultProduct": "Click to make this product the default option for customers."
+    "setDefaultProduct": "Click to make this product the default option for customers.",
+    "selectionOptionsRequired": "Add at least one non-empty option or remove this field."
   },
   "FeatureOrders": {
     "deleteOrderNotice": "The order will be permanently deleted and the customer will no longer see it. To keep the record, cancel the order instead.",
@@ -797,6 +798,7 @@
     "noWaves": "No price waves yet.",
     "waveNow": "Current",
     "waveHiddenState": "Hidden",
+    "bankSyncWarningDetailsHint": "Click to view details",
     "bankSyncWarningContactShort": "Contact a bank account administrator:",
     "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
     "bankSyncWarningTitle": "Automatic payment matching is unavailable",
@@ -1653,9 +1655,6 @@
     "submitRegistration": "Submit registration",
     "submitRegistration_informal": "Submit registration",
     "summary": "Summary",
-    "reservation_state_unknown": "We could not verify your seat reservation. Check your internet connection, return to the form and try submitting again. Your entered details have been kept.",
-    "reservation_expired": "Your seat reservation has expired. Return to the form and review your seat selection. Your entered details have been kept.",
-    "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
     "backToForm": "Back to Form",
     "orderFailed": "Order Failed",
     "orderError": "{code}: An error occurred while processing your order.",
@@ -1682,7 +1681,10 @@
     "copied": "Copied",
     "orderLabel": "Order",
     "paymentReference": "Payment reference",
-    "invalidEmailAddress": "The email address does not exist or is invalid. Your order was created; contact the organizer to correct the address."
+    "invalidEmailAddress": "The email address does not exist or is invalid. Your order was created; contact the organizer to correct the address.",
+    "reservation_state_unknown": "We could not verify your seat reservation. Check your internet connection, return to the form and try submitting again. Your entered details have been kept.",
+    "reservation_expired": "Your seat reservation has expired. Return to the form and review your seat selection. Your entered details have been kept.",
+    "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Enable Manual Ticket Scan",
@@ -1857,7 +1859,13 @@
     "existingAccountPrompt": "Already have an account?",
     "newAccountPrompt": "Don’t have an account yet?",
     "accountConnections": "Account connections",
-    "accountConnectionsHint": "Sign-in methods and app access"
+    "accountConnectionsHint": "Sign-in methods and app access",
+    "invitationSent": "Sent",
+    "invitationFailed": "Failed",
+    "retryFailedInvitations": "Check and retry unsent invitations",
+    "invitationQueued": "Queued - awaiting delivery confirmation",
+    "existingParticipantsScope": "Choose participants from this unit who have not yet been added to the event.",
+    "noExistingParticipants": "No more participants are available. This unit has no participants yet, or everyone has already been added. Return to the list and use Add to create a new participant."
   },
   "Common": {
     "fieldCannotBeEmpty": "Field cannot be empty",
@@ -2671,8 +2679,6 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
-    "style_silk_light": "Silk - light",
-    "style_silk_dark": "Silk - dark",
     "style_concert_stub": "Concert · admission stub",
     "style_ball_silk": "Ball · silk invitation",
     "style_festival_poster": "Festival · mini poster",
@@ -2857,7 +2863,9 @@
     "removeText": "Remove text",
     "addElement": "Add element",
     "occasionStartTime": "Event start time",
-    "occasionPlace": "Event venue"
+    "occasionPlace": "Event venue",
+    "style_silk_light": "Silk - light",
+    "style_silk_dark": "Silk - dark"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transactions with a currency different from their order are excluded from the chart",

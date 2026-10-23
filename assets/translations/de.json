@@ -1,4 +1,7 @@
 {
+  "FormsFeature": {
+    "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
+  },
   "FeatureBlueprint": {
     "protectedCount": "Belegte Plätze: {count}.",
     "cancelReservation": "Ausgewählte Reservierungen stornieren",
@@ -317,6 +320,12 @@
     "allowAdminAssign": "Administratoren dürfen bestehende Teilnehmer zuweisen"
   },
   "FeatureUser": {
+    "invitationSent": "Gesendet",
+    "invitationFailed": "Fehlgeschlagen",
+    "retryFailedInvitations": "Nicht gesendete Einladungen prüfen und wiederholen",
+    "invitationQueued": "In Warteschlange - Sendebestätigung steht aus",
+    "existingParticipantsScope": "Wählen Sie Teilnehmer dieser Einheit aus, die noch nicht zur Veranstaltung hinzugefügt wurden.",
+    "noExistingParticipants": "Keine weiteren Teilnehmer verfügbar. Die Einheit hat noch keine Teilnehmer oder alle wurden bereits hinzugefügt. Kehren Sie zur Liste zurück und erstellen Sie über Hinzufügen einen neuen Teilnehmer.",
     "passwordResetLinkSent": "Ein Link zum Zurücksetzen des Passworts wurde an {email} gesendet. Bitte überprüfen Sie Ihren Posteingang und folgen Sie den Anweisungen, um Ihr Passwort zurückzusetzen.",
     "passwordResetFailed": "Die E-Mail zum Zurücksetzen des Passworts konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.",
     "passwordResetEmailMissing": "Für dieses Konto ist keine E-Mail-Adresse zum Zurücksetzen des Passworts hinterlegt. Bitte kontaktieren Sie den Support.",
@@ -583,6 +592,7 @@
     "bankSyncWarningManage": "Prüfen Sie die Synchronisierung in den Bankkontoeinstellungen.",
     "bankSyncWarningOpenSettings": "Bankkontoeinstellungen",
     "bankSyncWarningSettingsUnavailable": "Das Konto wurde nicht gefunden oder Sie dürfen es nicht verwalten.",
+    "bankSyncWarningDetailsHint": "Klicken, um Details anzuzeigen",
     "bankSyncWarningContactShort": "Kontaktieren Sie einen Bankkonto-Administrator:",
     "bankSyncPaymentPaused": "Die Banksynchronisierung für das Empfängerkonto dieser Zahlung ist ausgeschaltet.",
     "bankSyncWarningTitle": "Automatischer Zahlungsabgleich nicht verfügbar",
