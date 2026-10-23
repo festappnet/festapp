@@ -1704,6 +1704,8 @@
     "individualOnlyHint": "Można wybrać tylko poszczególne wydarzenia.",
     "orderPermissions": "Uprawnienia do zamówień",
     "orderPermissionsHint": "Dotyczy tylko wybranych organizatorów i wydarzeń. Edycja, płatności i wysyłka obejmują też odczyt zamówień.",
+    "productsRead": "Odczytywać produkty, ceny i przypisania magazynowe",
+    "productsWrite": "Tworzyć, edytować i usuwać produkty",
     "ordersRead": "Odczytywać zamówienia, dane kontaktowe i liczbę biletów",
     "ordersWrite": "Zmieniać dane i produkty oraz anulować zamówienia",
     "paymentsWrite": "Rejestrować płatności ręczne i oznaczać zamówienia jako opłacone",

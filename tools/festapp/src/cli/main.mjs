@@ -7,7 +7,7 @@ import { loadProfile, importProfile } from '../context/profile.mjs';
 import { SessionOwner } from '../auth/session.mjs';
 import { Operations } from '../operations/catalog.mjs';
 import { safeError, check } from '../errors.mjs';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { createServer } from '../mcp/server.mjs';
 async function hiddenPassword() {
     check(
@@ -86,8 +86,7 @@ try {
             } } }, null, 2) + '\n');
         } else if (command === 'mcp serve') {
             await operations.prepare();
-            const server = createServer(operations);
-            await server.connect(new StdioServerTransport());
+            serveStdio(() => createServer(operations));
         } else if (command === 'auth login') {
             check(process.stdin.isTTY, 'INTERACTIVE_LOGIN_REQUIRED');
             const terminal = createInterface({

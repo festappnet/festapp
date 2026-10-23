@@ -4,8 +4,8 @@ import { openDisposableDatabase } from './postgres.mjs';
 import { fixture, reply, profile } from './fixture.mjs';
 import { canonicalPreview } from './render-fixture.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
-import { Client as McpClient } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { Client as McpClient } from '@modelcontextprotocol/client';
+import { InMemoryTransport } from '@modelcontextprotocol/client';
 import { createServer } from '../src/mcp/server.mjs';
 const connection = process.env.FESTAPP_MCP_TEST_DATABASE_URL;
 test(

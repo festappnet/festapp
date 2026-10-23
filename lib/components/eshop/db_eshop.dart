@@ -1,3 +1,5 @@
+import 'package:fstapp/app_config.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
@@ -24,7 +26,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DbEshop {
   static final _supabase = Supabase.instance.client;
-  static EshopCommands get commands => SupabaseEshopCommands(_supabase);
+  static EshopCommands get commands => SupabaseEshopCommands(_supabase,
+      productScope: () {
+        final occasion = RightsService.currentOccasionId();
+        if (occasion == null) throw StateError('Product occasion required');
+        return {
+          'p_occasion': occasion,
+          'p_organization': AppConfig.organization,
+          'p_unit': RightsService.currentUnit()?.id,
+        };
+      });
 
   static Future<FunctionResponse> sendTicketOrderUpdateEmail(
       int orderId) async {
@@ -200,10 +211,14 @@ class DbEshop {
 
   static Future<ProductsEditBundle> getProductsAndTypesForOccasion(
       String occasionLink) async {
-    final response = await _supabase.rpc(
-      'get_products_and_types_for_edit',
-      params: {'occasion_link': occasionLink},
+    final catalogResponse = await _supabase.rpc(
+      'get_product_catalog',
+      params: {
+        'p_occasion_link': occasionLink,
+        'p_organization': AppConfig.organization,
+      },
     );
+    final response = catalogResponse['catalog'];
 
     // Parse all data lists from the response
     final types = (response['product_types'] as List)

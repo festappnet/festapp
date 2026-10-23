@@ -3,7 +3,7 @@ import { timingSafeEqual, randomUUID } from 'node:crypto';
 import { check } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
 import { accessSelection } from '../operations/access.mjs';
-import { ORDER_SCOPES } from './config.mjs';
+import { MCP_SCOPES } from './config.mjs';
 
 /** Account management uses a transient ordinary-user proof, never a consent
  * request, a new backend session, or a second grant store. */
@@ -26,7 +26,7 @@ export function tenantConnections(app, { config, storage, brokerSecret, owner, a
                     .sort((a, b) => b.expiresAt - a.expiresAt || a.id.localeCompare(b.id))
                     .map(g => ({ id: g.id, client: config.clients.find(c => c.id === g.clientId)?.name ?? g.clientId,
                         expiresAt: new Date(g.expiresAt).toISOString(), access: accessSelection(g.access),
-                        permissions: ORDER_SCOPES.filter(p => g.permissions?.includes(p)) }));
+                        permissions: MCP_SCOPES.filter(p => g.permissions?.includes(p)) }));
                 return res.json({ connections });
             }
             check(typeof body.connectionId === 'string' && /^[A-Za-z0-9_-]{1,200}$/.test(body.connectionId), 'FORBIDDEN');

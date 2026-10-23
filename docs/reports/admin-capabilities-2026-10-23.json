@@ -1,0 +1,1370 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-23",
+  "sourceMain": "0fd16f4374b065c578ecee3f647fda40cb17b37b",
+  "liveBaselineVersion": "0.20.365+859",
+  "tenant": "festapptickets",
+  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění vašeho účtu ani o audit všech tenant variant. Některé funkce závisí na aktivaci feature. Nepotvrzené položky jsou oddělené.",
+  "actions": [
+    {
+      "id": "action-001",
+      "area": "Přístup a připojení",
+      "title": "Zjistit aktivní účet a kontext připojení",
+      "description": "Identita a tenant, povolené nástroje tohoto připojení.",
+      "sources": [
+        "tools/festapp/src/operations/catalog.mjs"
+      ],
+      "mcp": [
+        "context.inspect"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Účet",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-002",
+      "area": "Přístup a připojení",
+      "title": "Vypsat dostupné pořadatele a akce",
+      "description": "Průnik aktuálních práv a rozsahu souhlasu.",
+      "sources": [
+        "tools/festapp/src/operations/access.mjs"
+      ],
+      "mcp": [
+        "access.inspect"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Účet",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-003",
+      "area": "Přístup a připojení",
+      "title": "Zobrazit a odpojit aplikaci MCP",
+      "description": "Dostupné na /settings/connections; revokace ukončí delegovaný přístup.",
+      "sources": [
+        "web_client/src/components/users/account_connections_page.js"
+      ],
+      "mcp": [],
+      "phase": "hotovo",
+      "effect": "write",
+      "scope": "Účet",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-004",
+      "area": "Přístup a připojení",
+      "title": "Spravovat propojení účtu s Google",
+      "description": "Identita Google je oddělená od přístupu aplikací MCP.",
+      "sources": [
+        "web_client/src/components/users/account_connections_page.js"
+      ],
+      "mcp": [],
+      "phase": "hotovo",
+      "effect": "write",
+      "scope": "Účet",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-005",
+      "area": "Produkty",
+      "title": "Vypsat produkty, ceny, verze a skladové vazby",
+      "description": "Včetně produktových typů a naplánovaných změn.",
+      "sources": [
+        "tools/festapp/src/operations/products.mjs"
+      ],
+      "mcp": [
+        "products.list"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-006",
+      "area": "Produkty",
+      "title": "Vytvořit nebo upravit produkt",
+      "description": "Název, popis, cena, měna, pořadí, limit a související konfigurace.",
+      "sources": [
+        "tools/festapp/src/operations/products.mjs"
+      ],
+      "mcp": [
+        "products.save"
+      ],
+      "phase": "0",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-007",
+      "area": "Produkty",
+      "title": "Skrýt nebo znovu zobrazit produkt",
+      "description": "Okamžitá změna viditelnosti; plánování je samostatná oblast.",
+      "sources": [
+        "tools/festapp/src/operations/products.mjs"
+      ],
+      "mcp": [
+        "products.save"
+      ],
+      "phase": "0",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-008",
+      "area": "Produkty",
+      "title": "Přiřadit produktu sklady a množství",
+      "description": "Úplný seznam vazeb lze uložit společně s produktem atomicky.",
+      "sources": [
+        "tools/festapp/src/operations/products.mjs"
+      ],
+      "mcp": [
+        "products.save"
+      ],
+      "phase": "0",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-009",
+      "area": "Produkty",
+      "title": "Odstranit nepoužitý produkt",
+      "description": "Použití v objednávkách a další doménové vazby mohou odstranění odmítnout.",
+      "sources": [
+        "tools/festapp/src/operations/products.mjs"
+      ],
+      "mcp": [
+        "products.delete"
+      ],
+      "phase": "0",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-010",
+      "area": "Plánované ceny",
+      "title": "Vytvořit cenovou vlnu",
+      "description": "Společný termín plánovaných změn.",
+      "sources": [
+        "lib/components/eshop/db_eshop.dart"
+      ],
+      "mcp": [],
+      "phase": "1",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-011",
+      "area": "Plánované ceny",
+      "title": "Nastavit budoucí cenu a viditelnost produktu",
+      "description": "Založení vlny s prvním cílem má být jeden atomický krok.",
+      "sources": [
+        "lib/components/eshop/db_eshop.dart"
+      ],
+      "mcp": [],
+      "phase": "1",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-012",
+      "area": "Plánované ceny",
+      "title": "Změnit termín cenové vlny",
+      "description": "Původní revize vlny musí zůstat kontrolovaná.",
+      "sources": [
+        "lib/components/eshop/db_eshop.dart"
+      ],
+      "mcp": [],
+      "phase": "1",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-013",
+      "area": "Plánované ceny",
+      "title": "Zrušit cenovou vlnu nebo plánovanou změnu",
+      "description": "Nepřepisuje historické ceny prodaných vstupenek.",
+      "sources": [
+        "lib/components/eshop/db_eshop.dart"
+      ],
+      "mcp": [],
+      "phase": "1",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-014",
+      "area": "Sklady a kapacity",
+      "title": "Zobrazit sklady, kontexty a jejich obsazení",
+      "description": "Sklad není totéž jako produkt nebo jednotlivé místo.",
+      "sources": [
+        "lib/components/inventory/inventory_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-015",
+      "area": "Sklady a kapacity",
+      "title": "Vytvořit nebo upravit sklad a jeho kontexty",
+      "description": "Kapacitní stropy a automatické přiřazování zdrojů.",
+      "sources": [
+        "lib/components/inventory/inventory_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-016",
+      "area": "Sklady a kapacity",
+      "title": "Vytvořit nebo upravit zdroj a jeho kapacitu",
+      "description": "Skutečná dostupná nabídka, včetně již existujících alokací.",
+      "sources": [
+        "lib/components/inventory/inventory_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-017",
+      "area": "Sklady a kapacity",
+      "title": "Odstranit zdroj nebo sklad",
+      "description": "Ochrana používaných vazeb a očekávaná verze.",
+      "sources": [
+        "lib/components/inventory/inventory_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-018",
+      "area": "Sklady a kapacity",
+      "title": "Připravit skladovou kapacitu pro stání",
+      "description": "Dnes tři navazující zápisy: sklad s kontextem, zdroj a vazba produktu. Priorita pro atomický wrapper.",
+      "sources": [
+        "lib/components/blueprint/blueprint_standing_inventory.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-019",
+      "area": "Sklady a kapacity",
+      "title": "Přiřadit místo ke zdroji nebo kontextu",
+      "description": "Dávkové změny přiřazení přes existující SpotCommands.",
+      "sources": [
+        "lib/components/inventory/db_spots.dart"
+      ],
+      "mcp": [],
+      "phase": "2",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-020",
+      "area": "Plánky a místa",
+      "title": "Zobrazit plánek a stav míst",
+      "description": "Volná, blokovaná, dočasně držená a prodaná místa je nutné rozlišovat.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_layout_host.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-021",
+      "area": "Plánky a místa",
+      "title": "Zablokovat vybraná místa",
+      "description": "Administrativně vyřadit volná místa z nabídky. UI změnu drží v draftu do uložení. Chráněná místa nelze přepsat.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_layout_host.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+    },
+    {
+      "id": "action-022",
+      "area": "Plánky a místa",
+      "title": "Odblokovat vybraná místa",
+      "description": "Změnit administrativní blokaci; nesmí zrušit objednávku ani aktivní rezervaci.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_layout_host.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "keywords": "blokování blokovani blokace blokovat odblokování odblokovat blueprint sedadla"
+    },
+    {
+      "id": "action-023",
+      "area": "Plánky a místa",
+      "title": "Uvolnit dočasné rezervace míst",
+      "description": "Jiná operace než odblokování. Používá release_blueprint_holds_client_sync_v1; prodané místo odmítne.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_layout_host.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed",
+      "keywords": "rezervace držení hold holds release blueprint sedadla"
+    },
+    {
+      "id": "action-024",
+      "area": "Plánky a místa",
+      "title": "Prohodit místa vstupenek",
+      "description": "Kanonická swap operace, nikoliv ruční změna vazeb v tabulce.",
+      "sources": [
+        "lib/components/eshop/ticket_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-025",
+      "area": "Plánky a místa",
+      "title": "Vytvořit objednávku z vybraných míst",
+      "description": "Navazuje na formulář, produkty, objednávku a dostupnost míst.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_create_order_dialog.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-026",
+      "area": "Plánky a místa",
+      "title": "Zrušit vybrané vstupenky z plánku",
+      "description": "Samostatná objednávková operace s uvolněním kapacity; nejde o pouhé odblokování.",
+      "sources": [
+        "lib/components/blueprint/views/blueprint_layout_host.dart"
+      ],
+      "mcp": [],
+      "phase": "2B",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-027",
+      "area": "Plánky a místa",
+      "title": "Upravit geometrii a rozmístění objektů",
+      "description": "Přesný draft a jeho původní layout revision.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-028",
+      "area": "Plánky a místa",
+      "title": "Přejmenovat místa a obchodní skupiny",
+      "description": "Respektovat chráněná obsazená místa a obchodní identitu.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-029",
+      "area": "Plánky a místa",
+      "title": "Nastavit skupiny, stoly a společný výběr míst",
+      "description": "Některá místa se rezervují jako nedělitelný celek.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-030",
+      "area": "Plánky a místa",
+      "title": "Přiřadit produkt místu nebo skupině",
+      "description": "Zachovat dědičnost produktu a explicitní override.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-031",
+      "area": "Plánky a místa",
+      "title": "Připravit a přiřadit oblast stání",
+      "description": "Geometrie oblasti a skladová kapacita jsou odlišné domény.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-032",
+      "area": "Plánky a místa",
+      "title": "Uložit nebo zahodit rozpracovaný plánek",
+      "description": "Samotný výběr, přejmenování a náhled nesmí tiše publikovat draft.",
+      "sources": [
+        "lib/components/blueprint/blueprint_layout_controller.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-033",
+      "area": "Objednávky a platby",
+      "title": "Zjistit počty platných vstupenek a souhrn objednávek",
+      "description": "Počet objednávek není počet lidí. Výsledky uvádějí také stavy a měny.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.report"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-034",
+      "area": "Objednávky a platby",
+      "title": "Vyhledat a stránkovat objednávky",
+      "description": "Zákazník, stav, počet vstupenek a platební souhrn.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.list"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-035",
+      "area": "Objednávky a platby",
+      "title": "Zobrazit detail objednávky a povolené změny",
+      "description": "Včetně původní revize, odpovědí a produktů vstupenek.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.inspect"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-036",
+      "area": "Objednávky a platby",
+      "title": "Upravit odpovědi, poznámku a produkty vstupenek",
+      "description": "Schválená změna s původní revizí objednávky.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.update"
+      ],
+      "phase": "0",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-037",
+      "area": "Objednávky a platby",
+      "title": "Zrušit objednávku",
+      "description": "Není to automaticky refundace platebnímu providerovi.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.cancel"
+      ],
+      "phase": "0",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-038",
+      "area": "Objednávky a platby",
+      "title": "Označit objednávku jako zaplacenou",
+      "description": "Existující administrátorský přechod stavu; nevyrábí bankovní transakci.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.mark_paid"
+      ],
+      "phase": "0",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-039",
+      "area": "Objednávky a platby",
+      "title": "Zaznamenat ruční platbu",
+      "description": "Částka, měna a datum; nepředstavuje stržení platby kartou.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "payments.record"
+      ],
+      "phase": "0",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-040",
+      "area": "Objednávky a platby",
+      "title": "Zařadit odeslání vstupenek do fronty",
+      "description": "Queued potvrzuje zařazení, nikoliv doručení zákazníkovi.",
+      "sources": [
+        "tools/festapp/src/operations/orders.mjs"
+      ],
+      "mcp": [
+        "orders.send_tickets"
+      ],
+      "phase": "0",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-041",
+      "area": "Objednávky a platby",
+      "title": "Odstranit objednávku",
+      "description": "Odstranění je jiné než zrušení; nutno zachovat konkrétní doménové podmínky.",
+      "sources": [
+        "lib/components/eshop/order_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-042",
+      "area": "Vstupenky a skenování",
+      "title": "Zobrazit vzhled vstupenky a jeho podklady",
+      "description": "Dostupná MCP inspekce vzhledu; není to povolení měnit plánek.",
+      "sources": [
+        "tools/festapp/src/operations/catalog.mjs"
+      ],
+      "mcp": [
+        "ticket_layouts.inspect"
+      ],
+      "phase": "0",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-043",
+      "area": "Vstupenky a skenování",
+      "title": "Upravit a uložit vzhled vstupenky",
+      "description": "MCP zápis vzhledu není běžně zpřístupněný. Readiness kontrakt PDF vzhledu vyžaduje vlastní kvalifikaci.",
+      "sources": [
+        "lib/components/ticket_layout/views/ticket_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "7",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-044",
+      "area": "Vstupenky a skenování",
+      "title": "Povolit nebo zakázat ruční skenování",
+      "description": "Nastavení TicketFeature, ne samotné provedení check-in.",
+      "sources": [
+        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-045",
+      "area": "Vstupenky a skenování",
+      "title": "Zobrazovat skrytou poznámku při skenování",
+      "description": "Samostatná viditelnost interních informací při kontrole vstupenek.",
+      "sources": [
+        "lib/components/ticket_layout/views/ticket_scanning_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-046",
+      "area": "Formuláře a prodej",
+      "title": "Vytvořit, kopírovat a odstranit formulář",
+      "description": "Použít existující FormCommands a jejich doménové podmínky.",
+      "sources": [
+        "lib/components/forms/supabase_form_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-047",
+      "area": "Formuláře a prodej",
+      "title": "Upravit pole formuláře a produktové vazby",
+      "description": "Kompletní validní agregát místo řady nezávislých field zápisů.",
+      "sources": [
+        "lib/components/forms/supabase_form_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-048",
+      "area": "Formuláře a prodej",
+      "title": "Nastavit limit kapacity a zobrazování zbývajících míst",
+      "description": "Nezaměňovat prodané vstupenky, držení a nabídky čekací listiny.",
+      "sources": [
+        "lib/components/forms/views/form_capacity_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-049",
+      "area": "Formuláře a prodej",
+      "title": "Zapnout čekací listinu a délku nabídky místa",
+      "description": "Nabídka má vlastní životnost a kapacitní účinky.",
+      "sources": [
+        "lib/components/forms/views/form_capacity_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-050",
+      "area": "Formuláře a prodej",
+      "title": "Připravit a spravovat nabídky čekací listiny",
+      "description": "Přes existující waitlist command owner, nikoliv nový výpočet v MCP.",
+      "sources": [
+        "lib/components/forms/waitlist_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-051",
+      "area": "Formuláře a prodej",
+      "title": "Změnit název a veřejný odkaz formuláře",
+      "description": "Zachovat pravidla historie veřejných odkazů.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-052",
+      "area": "Formuláře a prodej",
+      "title": "Nastavit splatnost platby",
+      "description": "Respektovat zděděné hodnoty a explicitní override.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-053",
+      "area": "Formuláře a prodej",
+      "title": "Zapnout upomínky a nastavit interval",
+      "description": "Změna konfigurace není pokynem k okamžitému odeslání.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-054",
+      "area": "Formuláře a prodej",
+      "title": "Nastavit bankovní a kartovou platební metodu",
+      "description": "Zachovat ověřeného příjemce a dostupnost měn; bankovní oprávnění se neobcházejí.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-055",
+      "area": "Formuláře a prodej",
+      "title": "Vybrat platební účet a zprávu pro příjemce",
+      "description": "Konkrétní bankovní účet musí být pro formulář způsobilý.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-056",
+      "area": "Formuláře a prodej",
+      "title": "Nastavit formální nebo neformální komunikaci",
+      "description": "Podporovat explicitní hodnotu i dědičnost.",
+      "sources": [
+        "lib/components/forms/views/form_settings_content.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-057",
+      "area": "Formuláře a prodej",
+      "title": "Nastavit typ a počáteční číslo variabilního symbolu",
+      "description": "Náhodný symbol nebo posloupnost; zachovat unikátnost.",
+      "sources": [
+        "lib/components/forms/views/form_variable_symbol_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-058",
+      "area": "Formuláře a prodej",
+      "title": "Upravit barvy, typografii a vzhled formuláře",
+      "description": "Nastavení designu není změna obchodních pravidel.",
+      "sources": [
+        "lib/components/forms/views/form_design_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "4",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-059",
+      "area": "E-mailové šablony",
+      "title": "Zobrazit efektivní šablonu a její dědičnost",
+      "description": "Odlišit zdroj unit, occasion a systémovou šablonu.",
+      "sources": [
+        "lib/components/email_templates/db_email_templates.dart"
+      ],
+      "mcp": [],
+      "phase": "3",
+      "effect": "read",
+      "scope": "Pořadatel / akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-060",
+      "area": "E-mailové šablony",
+      "title": "Upravit předmět a obsah šablony",
+      "description": "Původní verze a zachování placeholderů.",
+      "sources": [
+        "lib/components/email_templates/db_email_templates.dart"
+      ],
+      "mcp": [],
+      "phase": "3",
+      "effect": "write",
+      "scope": "Pořadatel / akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-061",
+      "area": "E-mailové šablony",
+      "title": "Odstranit override a obnovit dědičnost",
+      "description": "Není to smazání nadřazené šablony.",
+      "sources": [
+        "lib/components/email_templates/db_email_templates.dart"
+      ],
+      "mcp": [],
+      "phase": "3",
+      "effect": "write",
+      "scope": "Pořadatel / akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-062",
+      "area": "E-mailové šablony",
+      "title": "Nastavit nebo odstranit e-mailový banner",
+      "description": "Změna může mít účinek v podřízených akcích.",
+      "sources": [
+        "lib/components/email_templates/db_email_templates.dart"
+      ],
+      "mcp": [],
+      "phase": "3",
+      "effect": "write",
+      "scope": "Pořadatel / akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-063",
+      "area": "E-mailové šablony",
+      "title": "Zobrazit náhled šablony",
+      "description": "Bez skutečných zákazníků a bez rozesílky.",
+      "sources": [
+        "lib/components/email_templates/db_email_templates.dart"
+      ],
+      "mcp": [],
+      "phase": "3",
+      "effect": "read",
+      "scope": "Pořadatel / akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-064",
+      "area": "Nastavení akce",
+      "title": "Založit skrytou akci u vybraného pořadatele",
+      "description": "Prodej je při založení uzavřen; vyžaduje souhlas i živé právo vytvořit akci.",
+      "sources": [
+        "tools/festapp/src/operations/occasion-create.mjs"
+      ],
+      "mcp": [
+        "occasions.create"
+      ],
+      "phase": "0",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-065",
+      "area": "Nastavení akce",
+      "title": "Změnit název, termín a viditelnost akce",
+      "description": "Zápis přes OccasionCommands a původní aggregate version.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_settings_model.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-066",
+      "area": "Nastavení akce",
+      "title": "Zapnout funkce akce a upravit jejich nastavení",
+      "description": "Konkrétní dostupné funkce určuje tenant a feature konfigurace.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_settings_model.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-067",
+      "area": "Nastavení akce",
+      "title": "Nastavit začátek a konec hry",
+      "description": "Součást nastavení akce, zachovat validní časové rozmezí.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_settings_model.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-068",
+      "area": "Nastavení akce",
+      "title": "Změnit veřejný odkaz akce",
+      "description": "Zachovat pravidla slugů a historie odkazů.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_advanced_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-069",
+      "area": "Nastavení akce",
+      "title": "Nastavit Reply-To akce nebo obnovit dědičnost",
+      "description": "Prázdná vlastní hodnota a zděděná hodnota nejsou totéž.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_advanced_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-070",
+      "area": "Nastavení akce",
+      "title": "Nastavit časové pásmo akce",
+      "description": "Změna nesmí posunout uložené okamžiky omylem.",
+      "sources": [
+        "lib/components/occasion_settings/occasion_advanced_settings.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-071",
+      "area": "Nastavení akce",
+      "title": "Kopírovat akci",
+      "description": "SQL data a kopie assetů mají vlastní recovery; nejde o jednu distribuovanou transakci.",
+      "sources": [
+        "lib/components/occasion/db_occasions.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-072",
+      "area": "Nastavení akce",
+      "title": "Odstranit akci",
+      "description": "Ochrana souvisejících dat a externích asset účinků.",
+      "sources": [
+        "lib/components/occasion/db_occasions.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-073",
+      "area": "Pořadatel",
+      "title": "Změnit název pořadatele",
+      "description": "Unit je skutečný pořadatel; organization je tenant.",
+      "sources": [
+        "lib/components/unit/views/unit_settings_screen.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-074",
+      "area": "Pořadatel",
+      "title": "Nastavit výchozí Reply-To a tón komunikace",
+      "description": "Akce a formuláře mohou hodnotu dědit nebo přepsat.",
+      "sources": [
+        "lib/components/unit/views/unit_settings_screen.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-075",
+      "area": "Pořadatel",
+      "title": "Nastavit výchozí časové pásmo",
+      "description": "Samostatná úroveň konfigurace nad akcemi.",
+      "sources": [
+        "lib/components/unit/views/unit_settings_screen.dart"
+      ],
+      "mcp": [],
+      "phase": "5",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-076",
+      "area": "Pořadatel",
+      "title": "Upravit a odeslat ověřovací údaje pořadatele",
+      "description": "Podání a interní posouzení jsou rozdílné role a operace.",
+      "sources": [
+        "lib/components/unit/verification/db_unit_verification.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "write",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-077",
+      "area": "Pořadatel",
+      "title": "Odstranit pořadatele",
+      "description": "UI chrání například pořadatele s akcemi a posledního pořadatele.",
+      "sources": [
+        "lib/components/unit/db_units.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-078",
+      "area": "Lidé a oprávnění",
+      "title": "Vytvořit a upravit účastníka",
+      "description": "Běžné profilové údaje v rozsahu akce.",
+      "sources": [
+        "lib/components/users/profile_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-079",
+      "area": "Lidé a oprávnění",
+      "title": "Importovat účastníky nebo členství ze vstupenek",
+      "description": "Použít existující import owner a jeho výsledek.",
+      "sources": [
+        "lib/components/users/profile_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-080",
+      "area": "Lidé a oprávnění",
+      "title": "Odebrat účastníka z akce",
+      "description": "Zachovat pravidla členství a návazné doménové účinky.",
+      "sources": [
+        "lib/components/users/profile_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-081",
+      "area": "Lidé a oprávnění",
+      "title": "Odebrat přístup člověka k pořadateli",
+      "description": "Změna práv je účinná i pro následující MCP požadavky a replay.",
+      "sources": [
+        "lib/components/unit/unit_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "critical",
+      "scope": "Pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-082",
+      "area": "Lidé a oprávnění",
+      "title": "Vytvořit, upravit a odstranit skupinu",
+      "description": "Zachovat jednoho vlastníka skupiny a původní verzi.",
+      "sources": [
+        "lib/components/groups/group_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-083",
+      "area": "Lidé a oprávnění",
+      "title": "Přidat členy a nahradit skupinová přiřazení",
+      "description": "Jedno potvrzení jedné změny má být atomické.",
+      "sources": [
+        "lib/components/groups/group_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "6",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-084",
+      "area": "Program a další funkce",
+      "title": "Upravit a odstranit událost programu",
+      "description": "Událost programu není celá occasion.",
+      "sources": [
+        "lib/components/schedule/event_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-085",
+      "area": "Program a další funkce",
+      "title": "Nastavit účast na události programu",
+      "description": "Zachovat aktuální práva a pravidla události.",
+      "sources": [
+        "lib/components/schedule/attendance_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-086",
+      "area": "Program a další funkce",
+      "title": "Spravovat vzájemně výlučné skupiny programu",
+      "description": "Volby mají společná doménová pravidla.",
+      "sources": [
+        "lib/components/schedule/exclusive_group_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-087",
+      "area": "Program a další funkce",
+      "title": "Uložit, zahodit a publikovat aktivity",
+      "description": "Draft a publikovaná verze zůstávají oddělené.",
+      "sources": [
+        "lib/components/activities/activity_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-088",
+      "area": "Program a další funkce",
+      "title": "Vytvořit, upravit nebo přesunout místo na mapě",
+      "description": "Souřadnice a vazby přes kanonický map owner.",
+      "sources": [
+        "lib/components/map/map_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-089",
+      "area": "Program a další funkce",
+      "title": "Upravit a odstranit řečníka",
+      "description": "Použít stejné příkazy jako současná administrace.",
+      "sources": [
+        "lib/components/speakers/speaker_commands.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-090",
+      "area": "Program a další funkce",
+      "title": "Spravovat položky služeb a hru",
+      "description": "Pouze pro podporované a povolené funkce akce.",
+      "sources": [
+        "lib/components/occasion/db_occasions.dart"
+      ],
+      "mcp": [],
+      "phase": "8",
+      "effect": "write",
+      "scope": "Akce",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-091",
+      "area": "Finance a citlivé operace",
+      "title": "Spravovat bankovní účty a propojení s pořadatelem",
+      "description": "Account-admin a manager propojené unit jsou samostatně kontrolované podmínky.",
+      "sources": [
+        "lib/components/bank_accounts/db_bank_accounts.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Účet / pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-092",
+      "area": "Finance a citlivé operace",
+      "title": "Spravovat přístup lidí k bankovnímu účtu",
+      "description": "Nelze odvodit pouze z tenant admin role.",
+      "sources": [
+        "lib/components/bank_accounts/db_bank_accounts.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Účet / pořadatel",
+      "certainty": "confirmed"
+    },
+    {
+      "id": "action-093",
+      "area": "Finance a citlivé operace",
+      "title": "Vrátit platbu přes kartového providera",
+      "description": "Existenci a rozsah konkrétního administrátorského refund toku je potřeba dohledat. Nelze ho považovat za podporovaný jen podle existence plateb.",
+      "sources": [
+        "lib/components/bank_accounts/db_bank_accounts.dart"
+      ],
+      "mcp": [],
+      "phase": "10",
+      "effect": "critical",
+      "scope": "Akce",
+      "certainty": "audit"
+    },
+    {
+      "id": "action-094",
+      "area": "Finance a citlivé operace",
+      "title": "Další reporty, exporty a hromadné rozesílky",
+      "description": "Přesné podporované operace, datové rozsahy a role je potřeba rozepsat. Tato souhrnná položka není potvrzená nová MCP schopnost.",
+      "sources": [
+        "lib/components/single_data_grid/admin_page_helper.dart"
+      ],
+      "mcp": [],
+      "phase": "9",
+      "effect": "read",
+      "scope": "Akce",
+      "certainty": "audit"
+    }
+  ],
+  "dataQualityReview": {
+    "date": "2026-10-23",
+    "status": "První datový a síťový průchod; nejde o dokončený audit celé administrace.",
+    "finding": "V lokální fixture s 1000 produkty databáze vrací celý katalog, i když MCP zobrazí jen 50 produktů. Pro další stránku se načítá znovu.",
+    "nextStep": "Před dalším rozšiřováním opravit serverové stránkování. U každé další oblasti posoudit také SQL, transakce, zámky, objem dat a duplicitní pravidla.",
+    "evidence": "admin-data-network-baseline-2026-10-23.json"
+  }
+}

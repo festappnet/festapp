@@ -4,23 +4,13 @@ import { parseProfile } from '../context/profile.mjs';
 
 export const READ_SCOPE = 'festapp:ticket-layouts:read';
 export const CREATE_SCOPE = 'festapp:occasions:create';
-export const ORDER_PERMISSIONS = Object.freeze({
-    'festapp:orders:read': ['orders.report', 'orders.list', 'orders.inspect'],
-    'festapp:orders:write': ['orders.update', 'orders.cancel'],
-    'festapp:payments:write': ['orders.mark_paid', 'payments.record'],
-    'festapp:tickets:send': ['orders.send_tickets'],
-});
-export const ORDER_SCOPES = Object.freeze(Object.keys(ORDER_PERMISSIONS));
-export function orderScopesFor(operation) {
-    const scope = ORDER_SCOPES.find(scope => ORDER_PERMISSIONS[scope].includes(operation));
-    return scope ? [...new Set(['festapp:orders:read', scope])] : [];
-}
-export function verifyOrderPermissions(raw, requested) {
-    const parsed = z.array(z.enum(ORDER_SCOPES)).max(4).safeParse(raw ?? []);
+export { MCP_PERMISSIONS, MCP_SCOPES, scopesForOperation } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { MCP_SCOPES, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+export function verifyPermissions(raw, requested) {
+    const parsed = z.array(z.enum(MCP_SCOPES)).max(MCP_SCOPES.length).safeParse(raw ?? []);
     check(parsed.success, 'FORBIDDEN');
     const permissions = [...new Set(parsed.data)];
-    check(permissions.every(p => requested.includes(p)) &&
-        (!permissions.length || permissions.includes('festapp:orders:read')), 'FORBIDDEN');
+    check(validPermissions(permissions) && permissions.every(p => requested.includes(p)), 'FORBIDDEN');
     return permissions;
 }
 

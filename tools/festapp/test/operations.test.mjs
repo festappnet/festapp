@@ -5,8 +5,7 @@ import { writeFile } from 'node:fs/promises';
 import { fixture, reply, actor } from './fixture.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { createServer } from '../src/mcp/server.mjs';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 test('SDK client sees only fixed schemas, shares CLI result, renders canonical PDF and reauthorizes resources', async (t) => {
     const generated = await canonicalPreview();
     const f = await fixture(t, {

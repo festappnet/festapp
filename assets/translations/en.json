@@ -3670,6 +3670,8 @@
     "individualOnlyHint": "Only individual occasions are available for selection.",
     "orderPermissions": "Order permissions",
     "orderPermissionsHint": "Applies only to selected organizers and occasions. Editing, payments and sending also include reading orders.",
+    "productsRead": "Read products, prices and inventory assignments",
+    "productsWrite": "Create, edit and delete products",
     "ordersRead": "Read orders, contact details and ticket counts",
     "ordersWrite": "Edit order details and products, and cancel orders",
     "paymentsWrite": "Record manual payments and mark orders paid",
