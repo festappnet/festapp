@@ -179,8 +179,16 @@ done
 # Social crawlers must always receive a real image asset. Event-specific images
 # still come from get_occasion_seo_data; this only validates the no-image
 # fallback shared by Cloudflare, Netlify, and the base web-client document.
+# Cloudflare embeds the shared SEO module when generating its worker.
+if grep -F -q 'source.replace("// SHARED_PUBLIC_PAGE_SEO", public_seo)' "$BUILD_SH" &&
+    grep -F -q 'pathlib.Path("web_client/src/services/public_page_seo.js").read_text' "$BUILD_SH"; then
+    echo "  ok: Cloudflare worker embeds the shared public SEO module"
+else
+    echo "  FAIL: Cloudflare worker is missing the shared public SEO module"
+    fail=1
+fi
 for social_source in \
-    "$BUILD_SH" \
+    "$PROJECT_ROOT/web_client/src/services/public_page_seo.js" \
     "$PROJECT_ROOT/netlify/edge-functions/inject-og.js" \
     "$PROJECT_ROOT/web_client/index.html"; do
     if grep -F -q 'android-chrome-512x512.png' "$social_source" &&
@@ -191,6 +199,13 @@ for social_source in \
         fail=1
     fi
 done
+
+if [ ! -s "$PROJECT_ROOT/web_client/public/android-chrome-512x512.png" ]; then
+    echo "  FAIL: social-image fallback asset is missing or empty"
+    fail=1
+fi
+
+node --test "$SCRIPT_DIR/public_seo.test.mjs" || fail=1
 
 # 8. A deploy is not successful until its active origin repeatedly serves one
 # coherent HTML/manifest/main/service-worker generation. External-DNS tenants
