@@ -202,3 +202,12 @@ Deno.test("payment notice using the shared paid template never issues inline tic
   assertEquals(prepared.html, "beforeafter");
   assertEquals(prepared.attachments, []);
 });
+
+Deno.test("inline MIME identifiers are unique across preparations and safe for HTML", async () => {
+  const first = await inlineTicketBlock(["existing-ticket-symbol"]);
+  const second = await inlineTicketBlock(["existing-ticket-symbol"]);
+  const cid = first.attachments[0].contentId!;
+  assertEquals(/^[a-z0-9@.-]+$/.test(cid), true);
+  assertEquals(cid === second.attachments[0].contentId, false);
+  assertEquals(first.html.includes(`cid:${cid}`), true);
+});

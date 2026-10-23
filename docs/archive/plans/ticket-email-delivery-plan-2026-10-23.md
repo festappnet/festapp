@@ -154,7 +154,7 @@ Původní lokální implementace vznikla ve staré rozpracované větvi. Pro pub
 Zachovány jsou nové typované autorizace, read-only a scanning nastavení, kontext náhledu, povinné/autorské odkazy, katalog pěti e-mailových šablon a draft overrides. Nový náhled rozšiřuje původní dvouargumentový SQL kontrakt; default stále vrací potvrzení a katalog. Explicitní `order_tickets` vrací CID PNG a seznam PDF. Náhled pro existující akci používá stejné oprávněné rozhraní a `can_read_ticket_layout`.
 
 - Default PDF, tři hodnoty, serializace a zachování vědomé volby při starších zápisech jsou implementovány v SQL/Dartu/TypeScriptu. Změna nastavení znovu nezařazuje paid objednávky.
-- Inline používá stávající symboly bez PDF zdrojů. Snapshoty zachovávají CID a disposition; staré snapshoty zůstávají kompatibilní. Renderer, globální fronta, send fencing a admission stav zůstávají společné.
+- Inline používá stávající symboly bez PDF zdrojů. MIME CID obsahují náhodný bezpečný identifikátor přípravy, aby byly jedinečné i mezi zprávami; retry uchová stejný identifikátor. Snapshoty zachovávají CID a disposition; staré snapshoty zůstávají kompatibilní. Renderer, globální fronta, send fencing a admission stav zůstávají společné.
 - Vzhled PDF, tisk a download se nemění. Přepnutí na inline zachová uložený návrh včetně jeho stylu. Nový selector sdílejí nastavení a Komunikace.
 - `{{tickets}}` je rezervovaný nerepetovatelný rich block. SQL chrání i draft overrides. V PDF a payment-notice zprávách je prázdný. Staré šablony bez markeru dostanou QR před wrapperem; vlastní text se nepřepisuje.
 - Pro běžný obsah ticket zprávy se znovu využívá aktuální `orderEmailPresentation.ts` a `generateFullOrder`, bez dalšího payment rendereru. Globální seed už netvrdí, že PDF vždy existuje.
@@ -162,7 +162,7 @@ Zachovány jsou nové typované autorizace, read-only a scanning nastavení, kon
 
 ### Cílené ověření canonical portu
 
-- 37 Deno testů: ticket delivery, SES/snapshoty, existující email delivery a oba druhy preview. Typecheck skutečného worker rendereru, preview endpointu a rehearsal adapteru prošel.
+- 38 Deno testů: ticket delivery, SES/snapshoty, existující email delivery a oba druhy preview. Typecheck skutečného worker rendereru, preview endpointu a rehearsal adapteru prošel.
 - 36 unikátních UI testů: 25 Flutter widget testů a 11 core authoring testů; relevantních osm widget testů po doplnění invalidace kontextu opět prošlo. Analyzer nemá chyby ani varování. UI/UX implementoval a posoudil `gpt-6-astra`, medium; design detector vrací prázdný seznam.
 - Osm cílených SQL souborů (draft/finalize/preview/ticket settings, nový kontrakt, fronta/post-actions a scanner) prošlo v samostatné lokální kopii `festapp_ticket_email_canonical_20261023`. Stávající preview test načítá SQL jako vlastník funkcí `supabase_admin`; ostatní běží jako místní `postgres` a testují skutečné authenticated hranice.
 - Integrovaný rollback-only rehearsal prošel pro PDF, inline i obojí: SQL paid transition -> canonical queue -> šifrovaná příprava -> SES stub -> post-actions -> sken 200/409. Storno po přípravě zabránilo send gate. Deno adapter nemá síťové oprávnění; reálná platba ani pošta nevznikla.

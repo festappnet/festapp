@@ -58,11 +58,15 @@ export async function inlineTicketBlock(
   png = qrPng,
 ) {
   const attachments: EmailAttachment[] = [];
+  // MIME Content-IDs are unique across messages; retries retain this in the snapshot.
+  const messageId = crypto.randomUUID();
   let html = both
     ? "<p>QR v e-mailu a PDF v příloze patří ke stejné vstupence.</p>"
     : "";
   for (let i = 0; i < symbols.length; i++) {
-    const contentId = `festapp-ticket-${i + 1}@inline`;
+    const contentId = `festapp-ticket-${messageId}-${
+      i + 1
+    }@tickets.festapp.net`;
     attachments.push({
       filename: `qr-${i + 1}.png`,
       content: await png(symbols[i]),
