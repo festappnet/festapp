@@ -2,7 +2,7 @@
   "date": "2026-10-23",
   "migration": "20261023233000_confirmed_blueprint_seat_swap.sql",
   "migrationSha256": "5b475bded0e14e702dfe64d71158c769ce8034c394604fa3cf4cd49ea02d5030",
-  "status": "SQL/MCP verified; final workspace UI rerun pending; not published or deployed",
+  "status": "Verified locally, including final actual workspace UI and integrated model/transport tests; awaiting required review and deployment",
   "verification": {
     "fullMcp": {
       "tests": 135,
@@ -16,7 +16,11 @@
     "consentUiPassed": 29,
     "recoveryIdentityPortPassed": 3,
     "priorWorkspaceUiPassed": 1,
-    "finalWorkspaceAfterIdentityGuard": "pending"
+    "finalWorkspaceAfterIdentityGuard": "PASS",
+    "finalFlutterCasesPassed": 7,
+    "dartErrors": 0,
+    "dartWarnings": 0,
+    "dartStyleInfos": 51
   },
   "proof": [
     "Atomic four-seat financial effects, no duplicate order aggregate",
@@ -46,12 +50,11 @@
     "readOnly": true
   },
   "remaining": [
-    "Final Flutter workspace/analyzer slot",
-    "Current main integration and required review before authorized festapptickets release",
+    "Required review and authorized festapptickets production release",
     "Separate preexisting PDF validator readiness mismatch; seal unchanged"
   ],
   "integration": {
-    "authoritativeMain": "ee0287419ed0950890763875089709df52fee25e",
+    "authoritativeMain": "061201c3dbc71a6d559989442ebce110a347c628",
     "branch": "feat/admin-mcp-confirmed-seats-main-20261023",
     "rebaseConflicts": 0,
     "postIntegrationMcp": {

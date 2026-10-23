@@ -2,7 +2,7 @@
   "date": "2026-10-23",
   "migration": "20261023232000_confirmed_blueprint_hold_release.sql",
   "migrationSha256": "ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f",
-  "status": "PR571 head0c1431d9678990536ed6235626967ef9b446fa68 has six green CI checks; required review pending; engineering stop until preview identity guard included",
+  "status": "Verified locally with preview identity guard and final workspace UI; PR571 update pending, required review and deployment remain",
   "verification": {
     "postgresCasesPassed": 12,
     "remoteTestsPassed": 20,
@@ -33,7 +33,7 @@
     "Actual UI preview/cancel/confirm sends original expanded IDs and snapshot after local overlay changes, using real disposable command journal and Supabase HTTP parser; refresh shows no command error"
   ],
   "remaining": [
-    "Include verified preview identity guard in final release source",
+    "Publish final integrated source to required-review PR571",
     "Required main review and festapptickets release",
     "Known preexisting PDF readiness mismatch remains separate"
   ],
