@@ -75,6 +75,7 @@ case "$FESTAPP_SETUP_ENABLED" in
 esac
 "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
+node automation/minify_web_translations.mjs build/web
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then
