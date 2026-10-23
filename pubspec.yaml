@@ -111,7 +111,7 @@ dependencies:
   venue_seat_picker:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: a821fe92f6314a6fd7894d954eb7b9136e2651b2
+      ref: 143026c6c733662d417471a3eb448dee0b0d7252
 
   cached_network_image: any
   cached_network_image_platform_interface: any
@@ -149,7 +149,7 @@ dependency_overrides:
   venue_layout_core:
     git:
       url: https://github.com/festappnet/venue_seat_picker.git
-      ref: a821fe92f6314a6fd7894d954eb7b9136e2651b2
+      ref: 143026c6c733662d417471a3eb448dee0b0d7252
       path: packages/venue_layout_core
   # Keep the adapter's hosted vector_map_tiles dependency on our verified 9.x
   # fork until compatible upstream releases are available for both packages.
