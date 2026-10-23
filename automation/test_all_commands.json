@@ -187,5 +187,10 @@
     "node",
     "--test",
     "automation/tests/repository_artifacts.test.mjs"
+  ],
+  [
+    "node",
+    "--test",
+    "automation/tests/web_translation_minification.test.mjs"
   ]
 ]
