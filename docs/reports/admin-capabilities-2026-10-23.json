@@ -1494,5 +1494,127 @@
     "nextStep": "Práce zastavena po dokončené etapě 2B. Při pozdějším pokračování začít etapou 3 podle aktuálního main.",
     "evidence": "admin-seats-2b-evidence-2026-10-23.json"
   },
-  "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací a prohození vstupenek: PR #571 má všech 6 CI kontrol zelených, čeká na povinné review. Objednávky z míst: ověřen společný SQL náhled a atomická náhrada, napojení UI/MCP se dokončuje."
+  "progress": "Etapy 0, 1 a 2 včetně provozního řezu 2B jsou nasazené. Poslední vydání: 0.20.371+869. Práce je zastavená po etapě 2B; další v pořadí je etapa 3. Starší čekání na review PR #571 už neplatí.",
+  "phases": [
+    {
+      "id": "0",
+      "title": "Produktový katalog a načítání dat",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
+      "purpose": "Načítat jen požadovanou stránku produktů a vracet údaje potřebné pro rozhodnutí v administraci.",
+      "example": "Vypsat prvních 25 produktů včetně cen a skladových vazeb a pokračovat další stránkou.",
+      "result": "UI a MCP čtou stejný doménový přehled. Další stránka znovu nestahuje celý katalog.",
+      "note": "V soupisu je etapou 0 označený také výchozí, dříve existující MCP katalog včetně objednávek."
+    },
+    {
+      "id": "1",
+      "title": "Ceny, viditelnost a cenové vlny",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
+      "purpose": "Sjednotit okamžité i plánované změny cen a dostupnosti produktů.",
+      "example": "Od pondělí změnit cenu vstupenky, upravit termín cenové vlny nebo ji zrušit.",
+      "result": "Stejný příkaz obsluhuje nový i existující plán změny a kontroluje jeho původní verzi.",
+      "note": ""
+    },
+    {
+      "id": "2",
+      "title": "Sklady, zdroje a kapacita",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
+      "purpose": "Spravovat prodejní kapacitu a její vazby na produkty bez částečně vytvořeného skladu.",
+      "example": "Připravit 150 míst k stání a navázat na ně produkt jedním potvrzeným krokem.",
+      "result": "Sklad, kontext, zdroj a potřebná vazba vzniknou společně. Opakování po výpadku nevytvoří druhý sklad.",
+      "note": "Provozní operace nad konkrétními místy jsou samostatný řez 2B níže."
+    },
+    {
+      "id": "2B",
+      "title": "Každodenní provoz míst a vstupenek",
+      "state": "deployed",
+      "status": "Hotovo a nasazeno",
+      "purpose": "Obsloužit existující plánek při prodeji a řešení rezervací či objednávek.",
+      "example": "Zablokovat místo, uvolnit dočasnou rezervaci, prohodit místa, vytvořit objednávku nebo zrušit vybrané vstupenky.",
+      "result": "Před potvrzením jsou vidět skutečně dotčená místa, vstupenky a finanční dopady. Jeden související zápis je atomický a lze jej bezpečně obnovit se stejným ID.",
+      "note": "Tady jsme skončili. Etapa 2B řeší provoz existujícího plánku; etapa 7 bude řešit jeho pokročilou tvorbu a vzhled vstupenek."
+    },
+    {
+      "id": "3",
+      "title": "E-mailové šablony a dědičnost",
+      "state": "next",
+      "status": "Další na řadě",
+      "purpose": "Sjednotit úpravy šablon pořadatele a akce, bannery a náhled výsledného e-mailu.",
+      "example": "Upravit potvrzení objednávky pro konkrétní akci nebo vrátit šablonu k výchozí podobě pořadatele.",
+      "result": "UI i MCP ukážou, odkud výsledná šablona pochází, a použijí stejné ukládání a renderer náhledu.",
+      "note": "Jde o správu obsahu e-mailů. Ověření doručení nebo stav odesílací fronty je samostatná otázka."
+    },
+    {
+      "id": "4",
+      "title": "Formuláře a prodejní nastavení",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Zpřístupnit pole formulářů a související pravidla prodeje přes společné operace.",
+      "example": "Přidat povinný údaj ke vstupence, nastavit limit, čekací listinu nebo platební nastavení formuláře.",
+      "result": "Související změny se potvrdí a uloží společně, včetně kontrol kapacity, produktů a finančních oprávnění.",
+      "note": ""
+    },
+    {
+      "id": "5",
+      "title": "Nastavení akce a pořadatele",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Sjednotit změny základních údajů, termínů, funkcí, publikace a prodeje.",
+      "example": "Posunout začátek akce nebo upravit její dostupné funkce.",
+      "result": "Změny půjdou přes existující společné ukládání. Práva k jedné akci automaticky nedávají právo měnit celého pořadatele.",
+      "note": ""
+    },
+    {
+      "id": "6",
+      "title": "Lidé, role, skupiny a dobrovolníci",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Sjednotit správu účastníků a jejich přístupů bez nechtěného rozšíření oprávnění.",
+      "example": "Přidat člověka do skupiny nebo změnit roli dobrovolníka v rámci konkrétní akce.",
+      "result": "Změna role se projeví v dostupných oprávněních a následné operace ověří aktuální stav.",
+      "note": ""
+    },
+    {
+      "id": "7",
+      "title": "Pokročilý editor plánků a vzhled vstupenek",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Řešit geometrii, uspořádání, skupiny míst, texty, obrázky a tiskový vzhled.",
+      "example": "Přesunout stoly, změnit nedělitelný výběr míst nebo upravit rozložení tištěné vstupenky.",
+      "result": "Editor zachová rozpracovaný návrh, Uložit a Zrušit. Změny ověří obchodní vazby; tiskový vzhled potřebuje také ověřený PDF renderer.",
+      "note": "Provozní zásahy jako uvolnění rezervace nebo prohození míst už pokrývá nasazená etapa 2B."
+    },
+    {
+      "id": "8",
+      "title": "Program a další oblasti akce",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Postupně sjednotit program, místa konání, řečníky, služby a herní funkce podle dostupnosti.",
+      "example": "Upravit čas programu, přiřadit řečníka nebo změnit místo konání.",
+      "result": "Každá oblast naváže na svůj existující doménový příkaz a zachová vlastní pravidla i oprávnění.",
+      "note": ""
+    },
+    {
+      "id": "9",
+      "title": "Reporty, historie a exporty",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Doplnit přehledy a exporty o zpřístupněné oblasti a sjednotit význam jejich souhrnů.",
+      "example": "Zjistit skutečný počet platných vstupenek, vývoj prodeje nebo historii změn.",
+      "result": "Součty, stavy a filtry budou mít stejný význam v tabulce administrace, exportu i odpovědi MCP.",
+      "note": "Část objednávkových reportů už existuje. Tato etapa rozšiřuje a sjednocuje další přehledy."
+    },
+    {
+      "id": "10",
+      "title": "Finance a životní cyklus akcí",
+      "state": "planned",
+      "status": "Plánováno",
+      "purpose": "Dokončit citlivé bankovní operace a zbývající agendu jako kopírování, finalizaci či mazání akce.",
+      "example": "Spravovat bankovní vazbu nebo bezpečně zkopírovat akci včetně souvisejících souborů.",
+      "result": "Citlivé kroky zachovají finanční oprávnění a ověří skutečný výsledek. Výpadek nesmí způsobit dvojí externí účinek.",
+      "note": "Tato oblast vyžaduje další konkrétní průzkum vlastníků. MCP nesmí samo vymýšlet stav platby ani refundaci."
+    }
+  ]
 }
