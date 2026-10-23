@@ -871,6 +871,10 @@ BEGIN
   p_data := p_data - 'finalizedOccasion' - 'finalizeResponse';
   IF p_data IS NULL OR jsonb_typeof(p_data) <> 'object' OR octet_length(p_data::text) > 262144 OR p_step IS NULL OR p_step NOT BETWEEN 0 AND 6 THEN
     RAISE EXCEPTION 'Invalid draft' USING ERRCODE = '22023'; END IF;
+  IF jsonb_typeof(p_data->'ticketDraft')='object' AND NOT ((p_data->'ticketDraft') ? 'delivery_mode')
+    AND (d.data->'ticketDraft') ? 'delivery_mode' AND p_data->>'sourceId' IS NOT DISTINCT FROM d.data->>'sourceId' THEN
+    p_data:=jsonb_set(p_data,'{ticketDraft,delivery_mode}',d.data#>'{ticketDraft,delivery_mode}'); END IF;
+  PERFORM public.ticket_delivery_mode(p_data->'ticketDraft');
   IF d.data ? 'copy_locale' THEN p_data := jsonb_set(p_data,'{copy_locale}',d.data->'copy_locale'); END IF;
   IF p_data ? 'copy_locale' AND p_data->>'sourceId' IS NOT NULL
      AND coalesce((p_data->>'copy_title_edited')::boolean,false)=false AND coalesce(p_data->>'title','')='' THEN
