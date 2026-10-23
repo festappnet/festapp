@@ -313,9 +313,10 @@ seal changed. Final report marks swap locally verified/pending deployment.
 
 ## Operational seats 2B - confirmed seat orders
 
-Current local candidate: `63a242287`, based on canonical main `c83df930`.
-Not published/deployed; full-app browser/release gates and ticket cancellation
-still remain before completing 2B. Migration2350 is additive and unapplied live.
+Current deployed source: `6aa9ec3fde54`, tenant `0dd690d80b59`, version `0.20.371+869`.
+Operational2B, including selected-ticket cancellation, is complete. Terminal
+240230 replaced the unpublished2350 prototype; all four owned forwards are applied.
+Earlier candidate evidence remains bound to its original source revision.
 
 | Boundary | Shared implementation |
 | --- | --- |
@@ -367,7 +368,8 @@ admin-seat-order-fullstack-2026-10-23.json in docs/reports.
 ## Operational seats2B - selected-ticket cancellation (current checkpoint)
 
 This section supersedes the earlier remaining-cancellation notes. The complete
-operational slice is implemented locally; deployment is recorded separately.
+operational slice is deployed; exact receipts are in
+`docs/reports/admin-seats-2b-release-2026-10-23.json`.
 `seats.preview_cancel` and `seats.cancel_tickets` share the Flutter TicketCommands
 preview/confirmation contract and `cancel_tickets_command_internal` receipt owner.
 The released two-argument storno RPC is a thin adapter preserving its historical

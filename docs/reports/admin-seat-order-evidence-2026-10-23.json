@@ -1,9 +1,9 @@
 {
   "date": "2026-10-23",
-  "status": "Checkpoint at user-requested stop: coherent seat-order slice locally verified; not published or deployed; whole stage2B remains incomplete",
-  "sourceCommit": "cb871dcb273ee6d065ea59d5455baa989ce0aa7c",
+  "status": "Operational2B complete and deployed",
+  "sourceCommit": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
   "migration": "20261024023000_confirmed_blueprint_seat_orders.sql",
-  "migrationSha256": "a57c3e85c9c6c26e7b984c2b41053440eb581677a39a30c362b0e3f9522c2664",
+  "migrationSha256": "41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2",
   "newPostgresCasesPassed": 14,
   "priorSeatRegressionsPassed": 23,
   "authorizationRegressionsPassed": 24,
@@ -56,22 +56,19 @@
     "normalBankWrite": "One MCP-to-Edge call and one user-scoped aggregate SQL command; no provider metadata or invoice requests"
   },
   "liveBaseline": {
-    "version": "0.20.371+868",
+    "version": "0.20.371+869",
     "probe": "https://vstupenky.online/version.json",
-    "seatOrderMigrationApplied": false
+    "seatOrderMigrationApplied": true
   },
   "publication": {
     "previousSlicePr": "https://github.com/festappnet/festapp/pull/571",
     "previousSliceFrozenHead": "94d21814cd2da51623ef6b8fa1546a2bd0870910",
     "previousSliceChecks": "6 required checks passed; review still required, no approval",
     "mainAtLastReadOnlyCheck": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
-    "thisSlice": "Local commits only. Publication and deployment intentionally deferred at user-requested checkpoint. Old94d packet is superseded and must not deploy alone."
+    "thisSlice": "Canonical main6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3 and tenant0dd690d80b59eabf790322bd8723629695dc0d5a deployed; verified release receipt admin-seats-2b-release-2026-10-23.json"
   },
   "remaining": [
-    "Publish only after fresh authoritative-main reconciliation and applicable repository gates",
-    "Back up and verify canonical org3; apply2320+2330+240230 with ledger in one transaction, then coordinated festapptickets-only release",
-    "Implement and verify selected-ticket cancellation before declaring stage2B complete",
-    "Stages3-10 remain outside this checkpoint"
+    "Stop after completed operational2B as requested; stages3-10 require later resumption"
   ],
   "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
   "productionPrerequisites": {

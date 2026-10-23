@@ -1,0 +1,85 @@
+{
+  "scope": "festapptickets only; canonical organization 3",
+  "mainSha": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "tenantBranch": "prod/festapptickets",
+  "tenantSha": "0dd690d80b59eabf790322bd8723629695dc0d5a",
+  "tenantBaseMainSha": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+  "web": {
+    "version": "0.20.371+869",
+    "deployUrl": "https://1aefc04e.vstupenkyonline.pages.dev",
+    "verification": "automation/verify_web_deployment.mjs: 3 consecutive coherent probes",
+    "publicVersion": "0.20.371+869",
+    "backendActivation": {
+      "tenantId": "festapptickets",
+      "generation": 1,
+      "backend": "canonical"
+    }
+  },
+  "migrations": [
+    {
+      "version": "20261023232000",
+      "sha256": "ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f"
+    },
+    {
+      "version": "20261023233000",
+      "sha256": "5b475bded0e14e702dfe64d71158c769ce8034c394604fa3cf4cd49ea02d5030"
+    },
+    {
+      "version": "20261024023000",
+      "sha256": "41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2"
+    },
+    {
+      "version": "20261024024000",
+      "sha256": "ba94848a412c2921af4b4f938e3e318734f42377b5e8c1e95cbec121ca5fdbb6"
+    }
+  ],
+  "atomicSqlPacketSha256": "e744e2f131eaa3a2bd63dae4aeade50a93f28d86f9f4949eca23a1b0ce01468a",
+  "edge": {
+    "sourceMainSha": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+    "archiveSha256": "f31f0ef078487cc2e32f5971a9f46584ab642e26aac9f33373dfdf368bd5fe2a",
+    "deployedFunctionTreeSha256": "0e351abf24fe8d70a2e9802fc262b8a46c407da1633e8f0bcc8dafeb6905e261",
+    "runtimeImage": "supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7",
+    "service": "supabase-edge-functions",
+    "health": "running healthy",
+    "containerDiff": "only functions container recreated"
+  },
+  "mcp": {
+    "sourceMainSha": "6aa9ec3fde541e43d30f6f13a40bedd3d2b669f3",
+    "image": "festapp-mcp-oauth@sha256:de6b8b6fdaec9ef695a00ba5c1bcafb7f50e34492ab892ec53c073eabda94958",
+    "imageArch": "linux/arm64",
+    "hostImageId": "sha256:de6b8b6fdaec9ef695a00ba5c1bcafb7f50e34492ab892ec53c073eabda94958",
+    "health": "running healthy",
+    "service": "mcp",
+    "mountsPreserved": [
+      "/opt/festapp-mcp/config.json",
+      "/opt/festapp-mcp/secrets/secrets.json",
+      "/opt/festapp-mcp/data"
+    ],
+    "discovery": "20 supported scopes; new create-orders/cancel-tickets/swap/release-holds present"
+  },
+  "databaseParity": {
+    "routineMd5Checks": [
+      "cancel_blueprint_tickets",
+      "confirm_blueprint_order_change_client_sync_v1",
+      "create_blueprint_seat_order",
+      "storno_tickets_client_sync_v1",
+      "swap_spot_tickets_client_sync_v1"
+    ],
+    "allMatched": true,
+    "privateLockAndCancelInternalUnexecutableByAnonAuthenticatedServiceRole": true,
+    "publicSeatRpcExecuteOnlyAuthenticated": true,
+    "retiredSwapInternalFunctionsAbsent": true,
+    "publicWrongLedgerRows": 0
+  },
+  "recovery": {
+    "usedVerifiedBackupRunId": "20261023T143852Z",
+    "encrypted": true,
+    "offHostVerified": true,
+    "captureAtomic": false,
+    "consistency": "online-operational-backup-not-promotion-rpo0",
+    "newConcurrentBackupRunId": "20261023T185845Z",
+    "stateAtReport": "still running; independent backup lock only"
+  },
+  "prohibitedProductionSideEffects": "none: no test orders, payments, or emails",
+  "beforeDdlAclSnapshotSha256": "c748a40684a30519503039da7c1a16abecb438a3da8d01faded174e6dbcdcc72"
+}
