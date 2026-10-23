@@ -1446,7 +1446,8 @@
     "groupSelection": "Vybrané akcie: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuté výberom organizátora. Pre výber jednotlivých akcií zrušte výber organizátora.",
     "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu.",
-    "seatsCreateOrders": "Vytvárať objednávky z miest a nahrádzať pôvodné vstupenky"
+    "seatsCreateOrders": "Vytvárať objednávky z miest a nahrádzať pôvodné vstupenky",
+    "seatsCancelTickets": "Rušiť vstupenky vybrané v plániku"
   },
   "AccountConnections": {
     "intro": "Spravujte prihlasovanie k svojmu účtu a aplikácie, ktorým ste udelili prístup.",

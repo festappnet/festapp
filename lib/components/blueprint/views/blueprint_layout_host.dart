@@ -12,7 +12,6 @@ import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
-import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../blueprint_text_preparation.dart';
 import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
 import 'package:fstapp/components/eshop/ticket_batch_strings.dart';
@@ -1263,31 +1262,68 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
   Future<void> _cancelSelectedTickets() async {
     if (!_canOrder || _busy) return;
     final session = controller;
-    final seatIds = Set<String>.from(_detailSeatIds);
-    final tickets = _ticketsForSeats(seatIds);
-    if (tickets.isEmpty) return;
-    final confirmed = await DataGridActionConfirmation.show<TicketModel>(
-      context: context,
-      title: BlueprintStrings.cancelReservation,
-      message: OrderItemStrings.cancelItemsConfirmationText,
-      items: tickets,
-      itemsLabel: OrderItemStrings.itemsPlural,
-      confirmButtonText: BlueprintStrings.cancelReservation,
-      groupBy: (ticket) => ticket.relatedOrder,
-    );
-    if (!mounted ||
-        !confirmed ||
-        !_canOrder ||
-        _busy ||
-        !identical(session, controller)) return;
-    final current =
-        _ticketsForSeats(seatIds).map((ticket) => ticket.id).toSet();
-    final ids =
-        tickets.map((ticket) => ticket.id!).where(current.contains).toList();
+    final blueprintId = session.snapshot.blueprintId;
+    if (blueprintId == null) return;
+    // Capture the complete selection. The server expands atomic units and
+    // rejects protected/free selections instead of silently narrowing a batch.
+    final ids = [
+      for (final node in _detailSeatIds)
+        if (controller.snapshot.seatBindings[node]?.spotId case final int id) id
+    ];
     if (ids.isEmpty) return;
     setState(() => _operationPending = true);
     try {
-      final outcome = await DbTickets.stornoTickets(ids);
+      final recovered = await DbTickets.recoverBlueprintCancellation(
+          session.snapshot.occasionId, blueprintId);
+      if (recovered != null) {
+        await _refresh();
+        if (mounted) await showTicketCancellationUpdates(context, recovered);
+        return;
+      }
+      final preview = await DbTickets.previewBlueprintCancellation(
+          session.snapshot.occasionId, blueprintId, ids);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
+      final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+                  title: Text(BlueprintStrings.cancelReservation),
+                  content: SizedBox(
+                      width: 560,
+                      child: SingleChildScrollView(
+                          child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(OrderItemStrings.cancelItemsConfirmationText),
+                            for (final seat in preview.seats)
+                              ListTile(
+                                  title: Text(seat['title'] as String? ??
+                                      '#${seat['spotId']}'),
+                                  subtitle: Text(
+                                      '${BlueprintStrings.ticketLabel}: ${seat['ticketId']} - ${BlueprintStrings.orderLabel} ${seat['orderId']} - #${seat['blueprintId']}')),
+                            for (final order in preview.orders)
+                              ListTile(
+                                  title: Text(
+                                      '${BlueprintStrings.orderLabel} ${order.orderId}'),
+                                  subtitle: Text(
+                                      '${Utilities.formatPrice(context, double.parse(order.beforeAmount), currencyCode: order.currencyCode)} → ${Utilities.formatPrice(context, double.parse(order.afterAmount), currencyCode: order.currencyCode)}'),
+                                  trailing: Text(Utilities.formatPrice(
+                                      context, double.parse(order.delta),
+                                      currencyCode: order.currencyCode))),
+                          ]))),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: Text(CommonStrings.storno)),
+                    FilledButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: Text(BlueprintStrings.cancelReservation))
+                  ]));
+      if (!mounted ||
+          confirmed != true ||
+          !_canOrder ||
+          !identical(session, controller)) return;
+      final outcome = await DbTickets.cancelBlueprintTickets(preview);
       await _refresh();
       if (mounted) await showTicketCancellationUpdates(context, outcome);
     } catch (error) {

@@ -22,7 +22,6 @@ import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/models/order_product_ticket_model.dart';
-import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -775,6 +774,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
     var previewReads = 0;
+    final cancellations = <Map<String, dynamic>>[];
     final submittedReleases = <Map<String, dynamic>>[];
     final snapshot = List.filled(64, 'a').join();
     pickerResponse = (request) {
@@ -797,6 +797,44 @@ void main() {
             {'spotId': 14, 'title': 'Confirmed companion', 'state': 'selected'},
           ],
         };
+      } else if (request.url.path
+          .endsWith('/preview_blueprint_ticket_cancellation')) {
+        response = {
+          'occasionId': 1,
+          'blueprintId': 1,
+          'requestedSpotIds': body['p_spots'],
+          'affectedSpotIds': [11],
+          'ticketIds': [51],
+          'blueprints': [
+            {'id': 1, 'revision': 1}
+          ],
+          'confirmationHash': snapshot,
+          'seats': [
+            {
+              'spotId': 11,
+              'blueprintId': 1,
+              'title': 'Reviewed ticket seat',
+              'ticketId': 51,
+              'orderId': 61,
+              'state': 'paid'
+            }
+          ],
+          'orders': [
+            {
+              'orderId': 61,
+              'beforeAmount': '100.00',
+              'afterAmount': '100.00',
+              'delta': '0.00',
+              'currencyCode': 'CZK',
+              'beforeState': 'paid',
+              'afterState': 'storno'
+            }
+          ]
+        };
+      } else if (request.url.path.endsWith('/cancel_blueprint_tickets')) {
+        cancellations.add(body);
+        response = commandResponseFixture(body['p_command_id'] as String,
+            data: {'cancelledOrderIds': [], 'updatedOrders': []});
       } else if (request.url.path.endsWith('/release_blueprint_holds')) {
         submittedReleases.add(body);
         response =
@@ -894,16 +932,20 @@ void main() {
     await tester.ensureVisible(action);
     await tester.tap(action);
     await tester.pumpAndSettle();
-    final summary = tester.widget<DataGridActionSummary<TicketModel>>(
-        find.byType(DataGridActionSummary<TicketModel>));
-    expect(summary.items.map((ticket) => ticket.id), [51]);
+    expect(find.text('Reviewed ticket seat'), findsOneWidget);
+    expect(find.textContaining('51'), findsWidgets);
     // Dismissal must not send cancellation I/O (only preview/release is allowed).
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(source.spots!.first.orderProductTicket, 101);
+    expect(cancellations, isEmpty);
     expect(tester.takeException(), isNull);
-    editor.onViewSelectionChanged!({for (final seat in seats) seat.id});
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({for (final seat in seats) seat.id});
     await tester.pumpAndSettle();
+    await tester
+        .ensureVisible(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.tap(find.byKey(const ValueKey('blueprint-start-order')));
     await tester.pumpAndSettle();
     expect(

@@ -4,7 +4,7 @@
   "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
   "liveBaselineVersion": "0.20.371+868",
   "tenant": "festapptickets",
-  "scopeNote": "Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Uvolnění rezervací, prohození vstupenek a objednávky z míst jsou lokálně ověřené, ale nejsou publikované ani nasazené. Práce je na žádost uživatele zastavena na checkpointu; etapa2B zůstává neúplná kvůli samostatnému rušení vybraných vstupenek.",
+  "scopeNote": "Provozní etapa2B má implementované a lokálně ověřené oddělené operace: blokace, uvolnění rezervací, prohození vstupenek, objednávky z míst a zrušení vybraných vstupenek. Publikace a koordinované nasazení festapptickets probíhají; současná živá verze je868. Etapy3-10 nejsou součástí tohoto dokončení.",
   "actions": [
     {
       "id": "action-001",
@@ -490,15 +490,24 @@
       "id": "action-026",
       "area": "Plánky a místa",
       "title": "Zrušit vybrané vstupenky z plánku",
-      "description": "Samostatná objednávková operace s uvolněním kapacity; nejde o pouhé odblokování.",
+      "description": "UI a MCP používají stejný náhled a atomický příkaz. Náhled rozšíří společné výběry, ukáže všechny uvolněné vazby vstupenek i na jiných pláncích a skutečné změny částek. Změna stavu zneplatní potvrzení; opakování používá původní UUID.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "lib/components/blueprint/views/blueprint_layout_host.dart",
+        "lib/components/eshop/ticket_commands.dart",
+        "database/functions/eshop_orders/storno_tickets_client_sync_v1.sql",
+        "database/functions/blueprint/ticket_cancellation.sql",
+        "tools/festapp/src/operations/seat-cancellations.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_cancel",
+        "seats.cancel_tickets"
+      ],
       "phase": "2B",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "verificationState": "verified",
+      "deploymentState": "pending"
     },
     {
       "id": "action-027",

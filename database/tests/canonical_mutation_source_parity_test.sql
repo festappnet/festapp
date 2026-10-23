@@ -52,6 +52,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_blueprint_seat_pair_locked_internal(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7df1bb0f88d903549a18c2fc44673f93'),'current SQL source parity: public.apply_blueprint_seat_pair_locked_internal(bigint,bigint)');
 -- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_blueprint_seat_swap_internal(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a1ed493c1252bdd5b3f08099681edc21'),'current SQL source parity: public.apply_blueprint_seat_swap_internal(bigint,bigint)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_blueprint_ticket_cancellation_internal(bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='d0a02567ca79236a9656ff1d5248a2f3'),'current SQL source parity: public.apply_blueprint_ticket_cancellation_internal(bigint,bigint,bigint[])');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.apply_email_post_actions(uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='dd1e19eae05493ddbeded22fbdad6625'),'current SQL source parity: public.apply_email_post_actions(uuid)');
 -- supabase/migrations/20261023170000_product_schedule_commands.sql
@@ -294,6 +296,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_write_unit_icons(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b792010bbce3e136d645b96376cb2b5b'),'current SQL source parity: public.can_write_unit_icons(bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.can_write_unit_information(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b792010bbce3e136d645b96376cb2b5b'),'current SQL source parity: public.can_write_unit_information(bigint)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_blueprint_tickets(bigint,bigint,bigint,bigint,bigint[],bigint[],text,uuid,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='b3d273eb20398343b4719f26b14b32c3'),'current SQL source parity: public.cancel_blueprint_tickets(bigint,bigint,bigint,bigint,bigint[],bigint[],text,uuid,boolean)');
 -- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_order_domain_internal_v1(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='3242df31e7f35aeb910029c421c14017'),'current SQL source parity: public.cancel_order_domain_internal_v1(bigint,boolean)');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
@@ -302,6 +306,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_product_price_wave(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6a9317de227bef00fbb440d7e190bd23'),'current SQL source parity: public.cancel_product_price_wave(bigint,bigint)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_reception_registration_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e936d78d7f0f3bc1accba438718e5e33'),'current SQL source parity: public.cancel_reception_registration_v1(bigint,uuid)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cancel_tickets_command_internal(bigint[],uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a2c603e8e00f0f2cf5436327dc5d462f'),'current SQL source parity: public.cancel_tickets_command_internal(bigint[],uuid,jsonb)');
 -- supabase/migrations/20261021100000_canonical_authorization.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_bank_account_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df39c0ba082b4e785792ee797388eb96'),'current SQL source parity: public.check_bank_account_writable(bigint)');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
@@ -1004,11 +1010,13 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_resource_pools_internal_v1(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='cdcb400626215c51bfa0de6847f2d341'),'current SQL source parity: public.lock_resource_pools_internal_v1(bigint,bigint)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_speaker_event_dependencies_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f3500e8692dd26f70ecdcc30d070d0b5'),'current SQL source parity: public.lock_speaker_event_dependencies_internal_v1(bigint)');
--- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='241500f6b698b73c358d9e5d1fa0f37d'),'current SQL source parity: public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean)');
--- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='9c4b20feddce45b4b0a2dd39746f6505'),'current SQL source parity: public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[])');
--- supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='81b704839ea4845e3931552f3406d242'),'current SQL source parity: public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[])');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='5a5a4c1bca799450c73711341c2f3c99'),'current SQL source parity: public.lock_spot_assignment_scope_internal(bigint[],bigint[],boolean,bigint[],boolean)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_spot_assignment_scope_internal_v1(bigint[],bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='58c7d48572da9a4665413a1dbed71f5d'),'current SQL source parity: public.lock_spot_assignment_scope_internal_v1(bigint[],bigint[])');
 -- supabase/migrations/20261021020000_blueprint_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.lock_ticket_order_products_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='563a6b4da3383de085da29f9830a269a'),'current SQL source parity: public.lock_ticket_order_products_internal(bigint,jsonb)');
@@ -1106,6 +1114,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_seat_swap(bigint,bigint,bigint,bigint,bigint,bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d704e535083273a4545aefd454574692'),'current SQL source parity: public.preview_blueprint_seat_swap(bigint,bigint,bigint,bigint,bigint,bigint,boolean)');
 -- supabase/migrations/20261023233000_confirmed_blueprint_seat_swap.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_swap(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6bc2f649ca6af0580e24d40a9a2a44ed'),'current SQL source parity: public.preview_blueprint_swap(bigint,bigint)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='4bc04afa7720cc11551b226ad2777443'),'current SQL source parity: public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])');
 -- supabase/migrations/20261024020000_pregenerated_ticket_batches.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_ticket_batch(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='afe04ea4698094566984981afc4a2fda'),'current SQL source parity: public.preview_ticket_batch(bigint,jsonb)');
 -- supabase/migrations/20261020120000_canonical_operations_foundation.sql
@@ -1318,8 +1328,8 @@ DO $$ BEGIN
  PERFORM assert_true(to_regprocedure('public.storno_ticket_221(bigint)') IS NULL,'retired SQL identity remains absent: public.storno_ticket_221(bigint)');
 -- supabase/migrations/20261022180000_stripe_checkout_ingest.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.storno_tickets_bulk_internal_v1(bigint[],boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='d3980b163084b4d6ed9f3848713cb1cc'),'current SQL source parity: public.storno_tickets_bulk_internal_v1(bigint[],boolean)');
--- supabase/migrations/20261021100000_canonical_authorization.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.storno_tickets_client_sync_v1(bigint[],uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='01235b2675fdecfded781bf3637ad798'),'current SQL source parity: public.storno_tickets_client_sync_v1(bigint[],uuid)');
+-- supabase/migrations/20261024024000_confirmed_blueprint_ticket_cancellation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.storno_tickets_client_sync_v1(bigint[],uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='cbfa5fd96741d0a71f17aca63f5eec9a'),'current SQL source parity: public.storno_tickets_client_sync_v1(bigint[],uuid)');
 -- supabase/migrations/20261023230000_ticketing_profiles.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.stripe_form_compatibility_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ef31f241d63b2cc37b9ba3543fd90432'),'current SQL source parity: public.stripe_form_compatibility_internal(bigint)');
 -- supabase/migrations/20261023230000_ticketing_profiles.sql

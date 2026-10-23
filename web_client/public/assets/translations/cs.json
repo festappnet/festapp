@@ -3731,7 +3731,8 @@
     "groupSelection": "Vybrané akce: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuto výběrem pořadatele. Pro výběr jednotlivých akcí zrušte výběr pořadatele.",
     "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci.",
-    "seatsCreateOrders": "Vytvářet objednávky z míst a nahrazovat původní vstupenky"
+    "seatsCreateOrders": "Vytvářet objednávky z míst a nahrazovat původní vstupenky",
+    "seatsCancelTickets": "Rušit vstupenky vybrané v plánku"
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",

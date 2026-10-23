@@ -3838,7 +3838,8 @@
     "groupSelection": "Selected events: {selected} of {count}",
     "inheritedSelectionHint": "Included through the organizer. Deselect the organizer to choose individual events.",
     "selectionRequired": "Select at least one organizer or event.",
-    "seatsCreateOrders": "Create orders from seats and replace original tickets"
+    "seatsCreateOrders": "Create orders from seats and replace original tickets",
+    "seatsCancelTickets": "Cancel tickets selected on a map"
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

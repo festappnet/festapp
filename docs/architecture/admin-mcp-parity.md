@@ -363,3 +363,25 @@ synthetic orders with exact replay and one queued confirmation per UUID. Its
 8 calls all returned200; no provider was connected and mail workers were paused.
 See admin-seat-order-evidence-2026-10-23.json and
 admin-seat-order-fullstack-2026-10-23.json in docs/reports.
+
+## Operational seats2B - selected-ticket cancellation (current checkpoint)
+
+This section supersedes the earlier remaining-cancellation notes. The complete
+operational slice is implemented locally; deployment is recorded separately.
+`seats.preview_cancel` and `seats.cancel_tickets` share the Flutter TicketCommands
+preview/confirmation contract and `cancel_tickets_command_internal` receipt owner.
+The released two-argument storno RPC is a thin adapter preserving its historical
+fingerprint. Atomic unit expansion and all other seats of selected tickets are
+shown before confirmation, including other maps. Actual bulk cancellation runs
+in rollback for the quote; shared order money projection supplies amounts.
+Confirmed effects must match the actor-bound hash before the transaction commits.
+No alternative cancellation maths, capacity writes or order-state rules in MCP.
+
+The private shared financial lock now explicitly distinguishes print-content
+mutations from canonical admission cancellation. Existing callers preserve print
+immutability; cancellation can void a sold printed ticket, retaining the original
+batch PDF/snapshot/QR and never returning it to stock. Canonical stock/Stripe/
+used-unit restrictions still apply. Scope/permissions are checked before replay
+and after the operation. A new explicit cancel-tickets consent requires seat and
+order reads, and does not expand prior grants. Optional order-update email remains
+an explicit follow-up; the cancellation does not execute a payment-provider refund.

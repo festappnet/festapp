@@ -1420,7 +1420,8 @@
     "groupSelection": "Ausgewählte Veranstaltungen: {selected} von {count}",
     "inheritedSelectionHint": "Über den Veranstalter eingeschlossen. Heben Sie dessen Auswahl auf, um einzelne Veranstaltungen auszuwählen.",
     "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung.",
-    "seatsCreateOrders": "Bestellungen aus Sitzplätzen erstellen und ursprüngliche Tickets ersetzen"
+    "seatsCreateOrders": "Bestellungen aus Sitzplätzen erstellen und ursprüngliche Tickets ersetzen",
+    "seatsCancelTickets": "Im Sitzplan ausgewählte Tickets stornieren"
   },
   "AccountConnections": {
     "intro": "Verwalten Sie Ihre Anmeldung und die Apps, denen Sie Zugriff gewährt haben.",
