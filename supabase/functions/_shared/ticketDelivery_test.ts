@@ -4,6 +4,7 @@ import {
   assertThrows,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
+  escapeTicketText,
   inlineTicketBlock,
   issuableTickets,
   prepareTicketDelivery,
@@ -210,4 +211,27 @@ Deno.test("inline MIME identifiers are unique across preparations and safe for H
   assertEquals(/^[a-z0-9@.-]+$/.test(cid), true);
   assertEquals(cid === second.attachments[0].contentId, false);
   assertEquals(first.html.includes(`cid:${cid}`), true);
+});
+
+Deno.test("inline admission tickets explain entry and show each escaped ticket code", async () => {
+  const symbols = ["A1B2C3", '<ticket code="unsafe">&'];
+  const block = await inlineTicketBlock(symbols);
+  assertEquals(block.html.includes("Vstupenka 1 z 2"), true);
+  assertEquals(block.html.includes("Vstupenka 2 z 2"), true);
+  assertEquals(block.html.includes("QR 1 z 2"), false);
+  assertEquals(
+    (block.html.match(/U vstupu ukažte tento QR kód/g) ?? []).length,
+    2,
+  );
+  assertEquals((block.html.match(/Kód vstupenky:/g) ?? []).length, 2);
+  for (const [i, symbol] of symbols.entries()) {
+    assertEquals(block.html.includes(escapeTicketText(symbol)), true);
+    assertEquals(block.attachments[i].content, await qrPng(symbol));
+    assertEquals(block.attachments[i].contentId?.includes(symbol), false);
+  }
+  assertEquals(block.html.includes('<ticket code="unsafe">'), false);
+  const single = await inlineTicketBlock(["A1B2C3"], true);
+  assertEquals(single.html.includes("Vaše vstupenka"), true);
+  assertEquals(single.html.includes("Toto je vaše vstupenka."), true);
+  assertEquals(single.html.includes("PDF příloze"), true);
 });
