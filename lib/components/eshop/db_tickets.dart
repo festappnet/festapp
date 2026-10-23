@@ -1,3 +1,5 @@
+import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
@@ -45,8 +47,16 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
-  static Future<void> releaseBlueprintHolds(List<int> spotIds) =>
-      _commands.releaseHolds(spotIds);
+  static Future<BlueprintHoldReleasePreview> previewBlueprintHolds(
+          int occasionId, List<int> spotIds) =>
+      _commands.previewHoldRelease(spotIds,
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id);
+
+  static Future<void> releaseBlueprintHolds(
+          BlueprintHoldReleasePreview preview) =>
+      _commands.releaseHolds(preview);
 
   /// One canonical mutation for the complete selection, including email outcomes.
   static Future<TicketCancellationOutcome> stornoTickets(

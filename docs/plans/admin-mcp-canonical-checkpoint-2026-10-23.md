@@ -452,3 +452,115 @@ parent are confirmed, not assumed. Do not overwrite or weaken ticket readiness
 for a green test. Their follow-up remains part of overall completion, separate
 from the locally passing first seat slice. User-facing report now links this
 explicit evidence and the pending-deployment state.
+
+## 2B hold release - boundary before implementation
+
+Current UI filters selected temporary holds again after confirmation and invokes
+an unversioned receipt. To avoid clearing a different buyer's newly acquired hold
+between preview/confirmation or during retry, bind the new UI/MCP intent to an
+opaque snapshot of the exact reservation state as well as full expanded IDs and
+layout revision. Hashes never expose checkout secrets; compare under canonical
+occasion/spot locks after receipt replay handling. Replay must return the original
+outcome even if a new buyer subsequently holds those seats. Extract the old
+release receipt into one private owner; retain its public legacy adapter/hash.
+New current UI previews before confirmation and must not silently refilter afterward.
+Order-editor rights govern release independently of blueprint-editor block rights.
+
+User clarification: `client_sync_v1` is not a request to reintroduce the old
+Cloudflare diff-cache path. It is an overloaded historical name covering the
+existing DB mutation receipts, audit/revision publication and optional client
+projection activation. New MCP writes call Supabase RPC directly; no sync feature
+flag is enabled and no Cloudflare worker/cache transport is introduced. Preserve
+canonical receipts and already-owned publication compatibility, but do not make
+domain success depend on external cache delivery. Explain the command/receipt
+boundary separately from cache terminology in future progress notes.
+
+Hold UI validation: first short Flutter window compiled all changed code; two
+port/model cases passed, one existing UI workspace assertion did not yet see the
+new async preview dialog. Its actual Supabase mock/JSON decode crosses native
+async scheduling; the case now uses the existing suite's runAsync handoff before
+assertions and records that preview completes before confirmation. Await the
+coordinator's next explicit Flutter slot before rerun/analyze; their archive and
+production tenant build take precedence. No Flutter task is currently owned here.
+Use applyConfirmedReplacements for this new UI receipt boundary so optional cache
+repair cannot turn confirmed DB success into an apparent release failure.
+
+
+Hold release targeted final Node batch: 31 PASS, 0 skips (11 actual PostgreSQL
+cases plus remote transport/consent cases). Expanded source parity covers all
+17 seat/hold owners. New negative case proves complete confirmation, actual unit
+scope, used-ticket protection with paid order unchanged, and helper/public ACL.
+Consent UI 28 PASS; RPC extraction regression 1 PASS; generated SQL contract and
+git diff whitespace checks pass. First invocation safely failed the disposable
+DB guard because its second explicit URL was omitted; rerun supplied both local
+URLs and verified the marked, email/cron-fenced fixture. No production SQL ran.
+Flutter UI rerun still awaits coordinator slot; the cut remains unverified as a
+whole and is not published or marked complete in the capability report.
+
+
+Hold cut additional actual two-connection test PASS: a checkout transaction clears
+buyer A and acquires buyer B; the administrative release demonstrably waits on
+that transaction, then rejects BLUEPRINT_HOLDS_CHANGED without touching buyer B.
+All 12 targeted PG cases PASS. Flutter rerun: two model/transport PASS, UI preview
+HTTP request count is 1 (not 0), but confirmation has not rendered at assertion.
+The fixture now explicitly advances fake-async work before real HTTP continuations
+and awaits the dialog with the suite's existing bounded condition-driven pattern;
+assertion includes rendered text to distinguish a domain/decoding error from
+scheduling. Not yet rerun. Targeted Dart analyze: 0 errors/warnings, 24 brace-style
+infos. Coordinator owns the slot again for archive/integration/release work.
+
+## Next 2B swap boundary - focused reconnaissance
+
+Current UI preview is DbForms.previewBlueprintSwap -> preview_blueprint_swap,
+which executes swap_spot_tickets_internal_v1 inside a rolled-back subtransaction.
+It returns actual before/after order amounts plus seat/ticket/customer facts.
+Commit currently re-reads controller.selectedSpotIds after confirmation and calls
+TicketCommands.swapSpots -> swap_spot_tickets_client_sync_v1. Thus the next cut
+must freeze original source/target and expanded atomic units, and bind the actual
+assignment and money effects shown to the editor, not merely layout revision.
+Do not copy price maths to MCP or introduce a second receipt. Preserve released
+adapter hash/replay via one extracted owner, as in the hold cut. Preserve actual
+order-capacity/product locking, used-ticket rejection, currency rules and Stripe
+price immutability from the existing swap domain owner. MCP needs no customer
+email/name in its default projection. Existing finance_integration_test.sql covers
+paid delta, currency and used companions and should accompany new scoped tests.
+Before implementing, resolve the current hold UI check; keep PR564 frozen3513
+and do not include unpublished2300 in the coordinator's current release.
+
+
+UI diagnosis resolved the preview failure: new mock response omitted request,
+which the real PostgREST parser dereferences. Added request exactly as existing
+pickerRead fixture. Dialog, expanded companion/count and Cancel assertions now
+pass. Next execution reaches the existing durable journal, but this formerly
+read-only workspace fixture lacks path_provider. Reused LocalAppStorageFixture
+in suite setup/teardown to own a real disposable journal. Pending rerun, no
+production code workaround or transport bypass. Slot returned to tenant release.
+Report now explicitly marks this action Probíhá ověření, alongside 29 registered
+operations, without claiming completion/deployment; exact requested HTML mirrored.
+
+
+With a real journal installed, confirm reached a pending Sembast write in the
+widget fake-async zone rather than an HTTP call. The test now starts the actual
+button taps inside tester.runAsync and advances virtual time while awaiting UI
+continuations, keeping real I/O out of fake timers. Previous failing test process
+was explicitly stopped (only owned Flutter/tool tester PIDs) to return the slot.
+Latest change awaits the next slot; do not claim the UI write passed yet.
+
+
+Independent inherited-fixture fixes while production build owns Flutter:
+- Truth-table now explicitly asserts the approved Stripe default feature flag,
+  then compares the remainder with the unchanged historical context reference.
+  Actual 2048 role combinations PASS; no permission assertion was removed.
+- Orders setup no longer recreates supabase_admin-owned functions as a different
+  non-owner postgres role. Read-only protected production check verified all four
+  relevant queue/command owners are postgres on canonical org3. Fixture now sets
+  only the eight exact2330 signatures to that production owner within its rolled-
+  back transaction before reinstalling; queue requires_service_role is unchanged.
+  Complete orders MCP scenario PASS (including queued email and idempotent replay).
+  Thus the intermediate local42501 was an ownership-fixture mismatch, not evidence
+  of a live production bug. All email/cron fences remain on; no mail is delivered.
+Other two older full-suite failures (ACL historical snapshot and real PDF validator
+seal mismatch) remain open. Do not call the whole suite passing or override seals.
+Coordinator merged integrated PR569 incl frozen3513 to main d97835e798e48f17047de4b438a2db6b9e0f8a9c;
+current hold2300 and these fixture fixes are excluded from that production release.
+No main publication until coordinator completes rollout; rebase next cut afterward.

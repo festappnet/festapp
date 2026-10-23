@@ -1,3 +1,4 @@
+import 'blueprint_command_rejection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../images/image_control_client.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
@@ -24,6 +25,9 @@ class BlueprintStrings {
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>
       'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
+  static String releaseTemporaryReservationPreview(int held, int total) =>
+      'FeatureBlueprint.releaseTemporaryReservationPreview'
+          .tr(namedArgs: {'held': '$held', 'total': '$total'});
   static String get standingUnavailable =>
       'FeatureBlueprint.viewer.standingUnavailable'.tr();
   static String get standingRequiresProduct =>
@@ -51,6 +55,15 @@ class BlueprintStrings {
   static String get seatProductRequired =>
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
+    if (error is BlueprintCommandRejection) {
+      if (error.reason == 'BLUEPRINT_HOLDS_CHANGED' ||
+          error.reason == 'BLUEPRINT_SELECTION_CHANGED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationChanged'.tr();
+      }
+      if (error.reason == 'BLUEPRINT_SEAT_ORDERED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationProtected'.tr();
+      }
+    }
     if (error is ImageUploadOutcomeUnknown)
       return 'FeatureBlueprint.imageUploadUncertain'.tr();
     if (error is ImageUploadRejected) return toastImageUploadFail;

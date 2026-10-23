@@ -1,3 +1,4 @@
+import '../blueprint_command_rejection.dart';
 import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
@@ -1160,23 +1161,47 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final seats = Set<String>.from(_detailSeatIds);
     final ids = _temporaryHolds(seats);
     if (ids.isEmpty) return;
-    final confirmed = await DialogHelper.showConfirmationDialog(
-      context,
-      BlueprintStrings.releaseTemporaryReservation,
-      BlueprintStrings.releaseTemporaryReservationConfirm,
-      confirmButtonMessage: BlueprintStrings.releaseTemporaryReservation,
-    );
-    if (!mounted ||
-        !confirmed ||
-        !_canOrder ||
-        _busy ||
-        !identical(session, controller)) return;
-    final current = _temporaryHolds(seats).toSet();
-    final selected = ids.where(current.contains).toList();
-    if (selected.isEmpty) return;
     setState(() => _operationPending = true);
     try {
-      await DbTickets.releaseBlueprintHolds(selected);
+      final preview = await DbTickets.previewBlueprintHolds(
+          session.snapshot.occasionId, ids);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
+      if (!preview.canApply)
+        throw BlueprintCommandRejection(
+            409, {'reason': 'BLUEPRINT_SEAT_ORDERED'});
+      if (preview.activeHoldCount == 0) {
+        await _refresh();
+        return;
+      }
+      final confirmed = await DialogHelper.showConfirmationDialogRich(
+        context: context,
+        title: BlueprintStrings.releaseTemporaryReservation,
+        confirmButtonText: BlueprintStrings.releaseTemporaryReservation,
+        content: SizedBox(
+            width: 360,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(BlueprintStrings.releaseTemporaryReservationConfirm),
+              const SizedBox(height: 12),
+              Text(BlueprintStrings.releaseTemporaryReservationPreview(
+                  preview.activeHoldCount, preview.affectedSpotIds.length)),
+              const SizedBox(height: 8),
+              SizedBox(
+                  height: (preview.seats.length * 28.0)
+                      .clamp(56.0, 240.0)
+                      .toDouble(),
+                  child: ListView.builder(
+                      itemCount: preview.seats.length,
+                      itemBuilder: (context, index) {
+                        final seat = preview.seats[index];
+                        return Text(seat.title ?? '#${seat.id}');
+                      })),
+            ])),
+      );
+      if (!mounted ||
+          !confirmed ||
+          !_canOrder ||
+          !identical(session, controller)) return;
+      await DbTickets.releaseBlueprintHolds(preview);
       await _refresh();
     } catch (error) {
       if (mounted)

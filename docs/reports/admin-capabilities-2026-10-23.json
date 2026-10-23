@@ -421,16 +421,25 @@
       "id": "action-023",
       "area": "Plánky a místa",
       "title": "Uvolnit dočasné rezervace míst",
-      "description": "Jiná operace než odblokování. Používá release_blueprint_holds_client_sync_v1; prodané místo odmítne.",
+      "description": "UI a MCP sdílejí příkaz s potvrzeným celým výběrem a stavem rezervací. Retry vrací původní výsledek a nesmí uvolnit rezervaci nového zákazníka. SQL, MCP, oprávnění a souběh ověřeny; dokončuje se UI test potvrzovacího dialogu. Difovací Cloudflare cache se nezapíná.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_layout_host.dart"
+        "lib/components/blueprint/views/blueprint_layout_host.dart",
+        "lib/components/eshop/ticket_commands.dart",
+        "database/functions/blueprint/hold_release.sql",
+        "database/functions/blueprint/release_holds_command_internal.sql",
+        "tools/festapp/src/operations/seat-holds.mjs"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_release",
+        "seats.release_holds"
+      ],
       "phase": "2B",
       "effect": "critical",
       "scope": "Akce",
       "certainty": "confirmed",
-      "keywords": "rezervace držení hold holds release blueprint sedadla"
+      "keywords": "rezervace držení hold holds release blueprint sedadla",
+      "verificationState": "pending",
+      "deploymentState": "pending"
     },
     {
       "id": "action-024",
@@ -1450,9 +1459,9 @@
   "dataQualityReview": {
     "date": "2026-10-23",
     "status": "První část 2B ověřena; celkový audit a nasazení pokračují.",
-    "finding": "Sedm cílených PostgreSQL regresí míst a 27 testů souhlasu prošlo. Širší sada má 113 úspěšných testů a 4 starší problémy, shodně potvrzené i na předchozím kandidátovi při obnově testovací databáze.",
-    "nextStep": "Uvolnění dočasných rezervací a další 2B; před celkovým dokončením vyřešit také zaznamenané starší problémy testovacích kontraktů.",
-    "evidence": "admin-seat-block-evidence-2026-10-23.json"
+    "finding": "Sedm cílených PostgreSQL regresí míst a 27 testů souhlasu prošlo. Širší sada má 113 úspěšných testů a 4 starší problémy, shodně potvrzené i na předchozím kandidátovi při obnově testovací databáze. U rozpracovaného uvolnění rezervací prošlo 12 PostgreSQL případů, 20 vzdálených testů a 28 testů souhlasu; UI model/transport 2 prošly, widget test zatím selhává.",
+    "nextStep": "Dokončit UI test uvolnění dočasných rezervací, potom přesuny míst a další 2B. Před celkovým dokončením vyřešit také zaznamenané starší problémy testovacích kontraktů.",
+    "evidence": "admin-seat-hold-release-evidence-2026-10-23.json"
   },
-  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby a první část 2B - inspekce a blokace/odblokace míst. Nové řezy dosud nejsou nasazené. Dále: uvolnění dočasných rezervací, přesuny míst a další operace 2B."
+  "progress": "Ověřeno: produkty, cenové vlny, atomická příprava stání, správa skladů a zdrojů, produktové volby, inspekce a blokace/odblokace míst. Rozpracováno: uvolnění dočasných rezervací - databáze, MCP a souběh ověřeny, zbývá UI test zápisu s testovacím úložištěm. Nové řezy dosud nejsou nasazené. Dále přesuny míst a další operace 2B."
 }

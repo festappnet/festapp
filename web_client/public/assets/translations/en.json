@@ -1272,6 +1272,9 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "releaseTemporaryReservationPreview": "Temporary seat holds: {held}. Seats in the complete selection: {total}.",
+    "releaseTemporaryReservationChanged": "The reservations or selection changed. Check the seats and preview the release again.",
+    "releaseTemporaryReservationProtected": "Some seats now belong to an order. Manage their tickets separately.",
     "zoomControls": "Map zoom",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
@@ -3684,6 +3687,7 @@
     "productOptionsRead": "Read available product types and stock choices",
     "seatsRead": "Read seats and their operational state",
     "seatsBlock": "Block and unblock selected seats",
+    "seatsReleaseHolds": "Release temporary holds on selected seats",
     "inventoryRead": "Read stock pools, capacity, settings and context occupancy",
     "inventoryWrite": "Edit stock pools, contexts and resources",
     "productsRead": "Read products, prices and inventory assignments",

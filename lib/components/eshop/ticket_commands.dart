@@ -1,3 +1,4 @@
+import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
 import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:festapp_core/sync.dart';
@@ -32,16 +33,22 @@ class TicketCancellationOutcome {
 abstract interface class TicketCommands {
   Future<void> swapSpots(int firstSpotId, int secondSpotId);
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds);
-  Future<void> releaseHolds(List<int> spotIds);
+  Future<BlueprintHoldReleasePreview> previewHoldRelease(List<int> spotIds,
+      {required int occasionId, required int organizationId, int? unitId});
+  Future<void> releaseHolds(BlueprintHoldReleasePreview preview);
 }
 
 class SupabaseTicketCommands implements TicketCommands {
   SupabaseTicketCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client, durable: true);
+      : _transport = ClientCommandTransport.supabase(client, durable: true),
+        _read = ((name, params) => client.rpc(name, params: params));
 
-  SupabaseTicketCommands.withTransport(this._transport);
+  SupabaseTicketCommands.withTransport(this._transport,
+      {ClientCommandRpc? readRpc})
+      : _read = readRpc;
 
   final ClientCommandTransport _transport;
+  final ClientCommandRpc? _read;
 
   @override
   Future<TicketCancellationOutcome> cancel(List<int> ticketIds) async {
@@ -58,15 +65,56 @@ class SupabaseTicketCommands implements TicketCommands {
   }
 
   @override
-  Future<void> releaseHolds(List<int> spotIds) async {
+  Future<BlueprintHoldReleasePreview> previewHoldRelease(List<int> spotIds,
+      {required int occasionId,
+      required int organizationId,
+      int? unitId}) async {
+    final requested = List<int>.unmodifiable(spotIds);
+    final raw = await _readRpc('preview_blueprint_hold_release', {
+      'p_occasion': occasionId,
+      'p_organization': organizationId,
+      'p_unit': unitId,
+      'p_spots': requested,
+      'p_editor': true,
+    });
+    final preview = BlueprintHoldReleasePreview.fromJson(
+        Map<String, dynamic>.from(raw as Map),
+        organizationId: organizationId,
+        unitId: unitId);
+    if (preview.occasionId != occasionId)
+      throw const FormatException('Reservation scope changed');
+    return preview;
+  }
+
+  Future<Object?> _readRpc(String name, Map<String, dynamic> parameters) {
+    final read = _read;
+    if (read == null)
+      throw StateError('Reservation preview transport required');
+    return read(name, parameters);
+  }
+
+  @override
+  Future<void> releaseHolds(BlueprintHoldReleasePreview preview) async {
     final response = ClientCommandResponse.from(await _transport.invoke(
-      'release_blueprint_holds_client_sync_v1',
-      {'p_spots': spotIds},
+      'release_blueprint_holds',
+      {
+        'p_occasion': preview.occasionId,
+        'p_organization': preview.organizationId,
+        'p_unit': preview.unitId,
+        'p_blueprint': preview.blueprintId,
+        'p_spots': preview.requestedSpotIds,
+        'p_affected_spots': preview.affectedSpotIds,
+        'p_expected_revision': preview.layoutRevision,
+        'p_hold_snapshot': preview.holdSnapshot,
+        'p_editor': true
+      },
     ));
     if (response.code != 200) {
       throw BlueprintCommandRejection(response.code, response.data);
     }
-    await applyClientCommandReplacements(response);
+    // The DB receipt is authoritative; optional projection repair cannot turn
+    // a completed release into an apparent domain failure.
+    await response.applyConfirmedReplacements();
   }
 
   @override

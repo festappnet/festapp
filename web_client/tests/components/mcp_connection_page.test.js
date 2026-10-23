@@ -281,3 +281,7 @@ test('product choices require the requested explicit authoring-read consent',asy
 test('seat consent distinguishes lifecycle reads from changing blocked bindings',async()=>{
  const permissions=['festapp:seats:read','festapp:seats:block'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Číst místa a jejich provozní stav/);assert.match(f.container.textContent,/Blokovat a odblokovat vybraná místa/);f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('temporary-hold release consent is distinct from blocking seats',async()=>{
+ const permissions=['festapp:seats:read','festapp:seats:release-holds'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Uvolňovat dočasné rezervace vybraných míst/);assert(!f.container.textContent.includes('Blokovat a odblokovat vybraná místa'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

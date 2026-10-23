@@ -1,3 +1,6 @@
+import '../../support/fixtures/client_command_response_fixture.dart';
+import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart';
+import '../../support/fixtures/local_app_storage_fixture.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_inline_name.dart';
@@ -93,14 +96,19 @@ http.Response pickerRead(http.Request request, String state,
 void main() {
   WidgetEnvironmentFixture.register();
   late RootSupabaseFixture backend;
+  late LocalAppStorageFixture commandStorage;
   setUpAll(() async {
+    commandStorage = await LocalAppStorageFixture.open();
     backend = await RootSupabaseFixture.open((request) =>
         pickerResponse?.call(request) ??
         (throw StateError('Unexpected UI fixture request')));
     // Resolve asset I/O before widget fake-async zones can cache a pending read.
     await TicketFontCatalog.loadFamilies();
   });
-  tearDownAll(() => backend.dispose());
+  tearDownAll(() async {
+    await backend.dispose();
+    await commandStorage.dispose();
+  });
   setUpAll(() {
     environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
@@ -747,15 +755,103 @@ void main() {
     editor.controller.undo();
     await tester.pumpAndSettle();
     expect(find.text(BlueprintStrings.blockSeats), findsOneWidget);
+    var previewReads = 0;
+    final submittedReleases = <Map<String, dynamic>>[];
+    final snapshot = List.filled(64, 'a').join();
+    pickerResponse = (request) {
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      late Map<String, dynamic> response;
+      if (request.url.path.endsWith('/preview_blueprint_hold_release')) {
+        previewReads++;
+        expect(body['p_spots'], [13]);
+        response = {
+          'occasionId': 1,
+          'blueprintId': 1,
+          'layoutRevision': 1,
+          'requestedSpotIds': [13],
+          'affectedSpotIds': [13, 14],
+          'holdSnapshot': snapshot,
+          'activeHoldCount': 2,
+          'canApply': true,
+          'seats': [
+            {'spotId': 13, 'title': 'Seat 3', 'state': 'selected'},
+            {'spotId': 14, 'title': 'Confirmed companion', 'state': 'selected'},
+          ],
+        };
+      } else if (request.url.path.endsWith('/release_blueprint_holds')) {
+        submittedReleases.add(body);
+        response = commandResponseFixture(body['p_command_id'] as String,
+            data: {'spotIds': [13, 14]});
+      } else {
+        throw StateError('Unexpected UI operation: ${request.url.path}');
+      }
+      return http.Response(jsonEncode(response), 200,
+          headers: {'content-type': 'application/json'}, request: request);
+    };
     final release = find.byKey(const ValueKey('commercial-release-holds'));
     await tester.ensureVisible(release);
-    await tester.tap(release);
-    await tester.pumpAndSettle();
+    Future<void> openReleaseConfirmation() async {
+      // The real durable journal must start in the real async zone, just as
+      // filesystem-backed fixture cases elsewhere in this suite.
+      await tester.runAsync(() => tester.tap(release));
+      // Advance fake-async work before yielding to the real HTTP continuation.
+      // pumpAndSettle alone can finish before an RPC schedules the dialog frame.
+      for (var attempt = 0;
+          attempt < 10 &&
+              find
+                  .text(BlueprintStrings.releaseTemporaryReservationConfirm)
+                  .evaluate()
+                  .isEmpty;
+          attempt++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        await tester.runAsync(
+            () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+      }
+      await tester.pumpAndSettle();
+    }
+
+    await openReleaseConfirmation();
+    expect(previewReads, 1,
+        reason: 'The actual RPC preview completes before confirmation');
     expect(find.text(BlueprintStrings.releaseTemporaryReservationConfirm),
+        findsOneWidget,
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .join(' | '));
+    expect(find.text('Confirmed companion'), findsOneWidget);
+    expect(find.text(BlueprintStrings.releaseTemporaryReservationPreview(2, 2)),
         findsOneWidget);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
+    expect(submittedReleases, isEmpty, reason: 'Cancel must keep every hold');
+    await openReleaseConfirmation();
+    // A local overlay change after confirmation cannot silently narrow the intent.
     source.spots!.last.setSeatState(BlueprintSeatState.available);
+    await tester.runAsync(() => tester.tap(find.widgetWithText(
+        ElevatedButton, BlueprintStrings.releaseTemporaryReservation)));
+    for (var attempt = 0;
+        attempt < 10 && submittedReleases.isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(
+          () async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(previewReads, 2);
+    expect(submittedReleases, hasLength(1),
+        reason: tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .join(' | '));
+    expect(submittedReleases.single['p_spots'], [13]);
+    expect(submittedReleases.single['p_affected_spots'], [13, 14]);
+    expect(submittedReleases.single['p_hold_snapshot'], snapshot);
+    expect(tester.widget<BlueprintEditorFeedback>(find.byType(BlueprintEditorFeedback)).message, isNull, reason: 'The command must complete its journal and refresh without a UI error');
+    tester
+        .widget<VenueLayoutEditor>(find.byType(VenueLayoutEditor))
+        .onViewSelectionChanged!({for (final seat in seats) seat.id});
+    await tester.pumpAndSettle();
     final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
     await tester.ensureVisible(action);
     await tester.tap(action);
@@ -763,7 +859,7 @@ void main() {
     final summary = tester.widget<DataGridActionSummary<TicketModel>>(
         find.byType(DataGridActionSummary<TicketModel>));
     expect(summary.items.map((ticket) => ticket.id), [51]);
-    // Dismissal must not send a cancellation command (the fixture rejects I/O).
+    // Dismissal must not send cancellation I/O (only preview/release is allowed).
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(source.spots!.first.orderProductTicket, 101);
@@ -1766,8 +1862,12 @@ void main() {
         'commercial-table-10000000-0000-4000-8000-000000000010'));
     final areaRow = find.byKey(
         const ValueKey('commercial-area-10000000-0000-4000-8000-000000000020'));
-    expect(find.descendant(of: areaRow, matching: find.byIcon(Icons.people_outline)), findsOneWidget);
-    expect(find.descendant(of: areaRow, matching: find.text('(20)')), findsOneWidget);
+    expect(
+        find.descendant(
+            of: areaRow, matching: find.byIcon(Icons.people_outline)),
+        findsOneWidget);
+    expect(find.descendant(of: areaRow, matching: find.text('(20)')),
+        findsOneWidget);
     expect(tester.getTopLeft(areaRow).dy,
         lessThan(tester.getTopLeft(groupRow).dy));
     await tester.tap(areaRow);

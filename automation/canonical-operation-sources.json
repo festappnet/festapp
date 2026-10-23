@@ -298,6 +298,8 @@
     "eshop/update_ticket_note_hidden.sql",
     "eshop_orders/update_order_note_hidden.sql",
     "eshop_ticket_batches/exports.sql",
-    "eshop_ticket_batches/access.sql"
+    "eshop_ticket_batches/access.sql",
+    "blueprint/hold_release.sql",
+    "blueprint/release_holds_command_internal.sql"
   ]
 }
