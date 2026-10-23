@@ -42,6 +42,9 @@ class FormStrings {
 
   static String saveError(Object error) {
     final message = error.toString();
+    if (message.contains('FORM_SELECTION_OPTIONS_REQUIRED')) {
+      return selectionOptionsRequired;
+    }
     for (final reason in [
       'responses',
       'orders',
@@ -410,6 +413,8 @@ class FormStrings {
       'FormsFeature.newProduct'.tr(); // "New Product"
   static String get noProducts =>
       'FormsFeature.noProducts'.tr(); // "No Products"
+  static String get selectionOptionsRequired =>
+      'FormsFeature.selectionOptionsRequired'.tr();
   static String get noOptions => 'FormsFeature.noOptions'.tr(); // "No options"
   static String get options => 'FormsFeature.options'.tr(); // "Options"
   static String get productQuantity =>

@@ -103,7 +103,10 @@ class OccasionCreationHelper {
         .add(Duration(days: 3))
         .copyWith(minute: 0, second: 0, millisecond: 0, microsecond: 0);
     String? linkError;
+    String? rejectedLink;
     bool isFormValid = true;
+    bool isSaving = false;
+    String? saveError;
 
     final TextEditingController titleController =
         TextEditingController(text: title);
@@ -113,7 +116,9 @@ class OccasionCreationHelper {
     ValueNotifier<String> linkNotifier = ValueNotifier<String>(link);
 
     void validateForm() {
-      linkError = _validateLink(link ?? "");
+      linkError = link == rejectedLink
+          ? FormStrings.validationLinkInUse
+          : _validateLink(link ?? "");
       isFormValid = title != null &&
           title!.trim().isNotEmpty &&
           linkError == null &&
@@ -123,9 +128,11 @@ class OccasionCreationHelper {
     }
 
     var useSetup = false;
+    ModalRoute<dynamic>? dialogRoute;
     final occasion = await showDialog<OccasionModel?>(
       context: context,
       builder: (BuildContext context) {
+        dialogRoute = ModalRoute.of(context);
         return MouseDetector(
           builder: (context, mouseIsConnected) {
             return StatefulBuilder(
@@ -133,6 +140,7 @@ class OccasionCreationHelper {
                 void handleTitleChange(String value) {
                   setState(() {
                     title = value;
+                    saveError = null;
                     validateForm();
                   });
                 }
@@ -140,152 +148,201 @@ class OccasionCreationHelper {
                 void handleLinkChange(String value) {
                   setState(() {
                     link = value;
+                    saveError = null;
                     validateForm();
                     linkNotifier.value = link ?? '';
                   });
                 }
 
-                return AppAlertDialog(
-                  title: Text(AdministrationStrings.addNewEventTitle),
-                  content: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Title field with validation
-                        TextFormField(
-                          controller: titleController,
-                          decoration: InputDecoration(
-                            labelText: AdministrationStrings.titleLabel,
-                            labelStyle: TextStyle(
-                              color: (title == null || title!.trim().isEmpty)
-                                  ? ThemeConfig.redColor(context)
-                                  : null,
-                            ),
-                          ),
-                          onChanged: handleTitleChange,
-                        ),
-                        // Event URLs only apply to tenants with the app.
-                        if (AppConfig.isAppSupported)
-                          TextFormField(
-                            controller: linkController,
-                            decoration: InputDecoration(
-                              labelText: AdministrationStrings.linkLabel,
-                              labelStyle: TextStyle(
-                                color: linkError != null
-                                    ? ThemeConfig.redColor(context)
-                                    : null,
+                return PopScope(
+                  canPop: !isSaving,
+                  child: AppAlertDialog(
+                    dismissible: !isSaving,
+                    title: Text(AdministrationStrings.addNewEventTitle),
+                    content: Form(
+                      key: formKey,
+                      child: AbsorbPointer(
+                        absorbing: isSaving,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (saveError != null)
+                              Text(saveError!,
+                                  style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.error)),
+                            // Title field with validation
+                            TextFormField(
+                              controller: titleController,
+                              decoration: InputDecoration(
+                                labelText: AdministrationStrings.titleLabel,
+                                labelStyle: TextStyle(
+                                  color:
+                                      (title == null || title!.trim().isEmpty)
+                                          ? ThemeConfig.redColor(context)
+                                          : null,
+                                ),
                               ),
-                              errorText: linkError,
+                              onChanged: handleTitleChange,
                             ),
-                            onChanged: handleLinkChange,
-                          ),
-                        const SizedBox(height: 16),
-                        TimeDateRangePicker(
-                          start: startDate,
-                          end: endDate,
-                          onStartChanged: (pickedStart) {
-                            setState(() {
-                              startDate = pickedStart;
-                              if (pickedStart != null &&
-                                  endDate != null &&
-                                  pickedStart.isAfter(endDate!)) {
-                                endDate = DateTime(
-                                  pickedStart.year,
-                                  pickedStart.month,
-                                  pickedStart.day,
-                                  endDate!.hour,
-                                  endDate!.minute,
-                                );
-                              }
-                              validateForm();
-                            });
-                          },
-                          onEndChanged: (pickedEnd) {
-                            setState(() {
-                              endDate = pickedEnd;
-                              if (pickedEnd != null &&
-                                  startDate != null &&
-                                  pickedEnd.isBefore(startDate!)) {
-                                startDate = DateTime(
-                                  pickedEnd.year,
-                                  pickedEnd.month,
-                                  pickedEnd.day,
-                                  startDate!.hour,
-                                  startDate!.minute,
-                                );
-                              }
-                              validateForm();
-                            });
-                          },
-                          minDate: DateTime(2000),
-                          maxDate: DateTime(2101),
+                            // Event URLs only apply to tenants with the app.
+                            if (AppConfig.isAppSupported)
+                              TextFormField(
+                                controller: linkController,
+                                decoration: InputDecoration(
+                                  labelText: AdministrationStrings.linkLabel,
+                                  labelStyle: TextStyle(
+                                    color: linkError != null
+                                        ? ThemeConfig.redColor(context)
+                                        : null,
+                                  ),
+                                  errorText: linkError,
+                                ),
+                                onChanged: handleLinkChange,
+                              ),
+                            const SizedBox(height: 16),
+                            TimeDateRangePicker(
+                              start: startDate,
+                              end: endDate,
+                              onStartChanged: (pickedStart) {
+                                setState(() {
+                                  startDate = pickedStart;
+                                  if (pickedStart != null &&
+                                      endDate != null &&
+                                      pickedStart.isAfter(endDate!)) {
+                                    endDate = DateTime(
+                                      pickedStart.year,
+                                      pickedStart.month,
+                                      pickedStart.day,
+                                      endDate!.hour,
+                                      endDate!.minute,
+                                    );
+                                  }
+                                  validateForm();
+                                });
+                              },
+                              onEndChanged: (pickedEnd) {
+                                setState(() {
+                                  endDate = pickedEnd;
+                                  if (pickedEnd != null &&
+                                      startDate != null &&
+                                      pickedEnd.isBefore(startDate!)) {
+                                    startDate = DateTime(
+                                      pickedEnd.year,
+                                      pickedEnd.month,
+                                      pickedEnd.day,
+                                      startDate!.hour,
+                                      startDate!.minute,
+                                    );
+                                  }
+                                  validateForm();
+                                });
+                              },
+                              minDate: DateTime(2000),
+                              maxDate: DateTime(2101),
+                            ),
+                            const SizedBox(height: 16),
+                            if (AppConfig.isAppSupported)
+                              ValueListenableBuilder<String>(
+                                valueListenable: linkNotifier,
+                                builder: (context, draftLink, child) {
+                                  return PublicLink(
+                                      link: draftLink, isForm: false);
+                                },
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        if (AppConfig.isAppSupported)
-                          ValueListenableBuilder<String>(
-                            valueListenable: linkNotifier,
-                            builder: (context, draftLink, child) {
-                              return PublicLink(link: draftLink, isForm: false);
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  actions: [
-                    if (AppConfig.occasionSetupEnabled)
-                      PopupMenuButton<String>(
-                        tooltip: CommonStrings.moreOptions,
-                        icon: const Icon(Icons.more_horiz),
-                        onSelected: (_) {
-                          useSetup = true;
-                          Navigator.of(context).pop();
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'setup',
-                            child: Text(OccasionSetupStrings.createStepByStep),
-                          ),
-                        ],
                       ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(null);
-                      },
-                      child: Text(AdministrationStrings.cancelButton),
                     ),
-                    ElevatedButton(
-                      onPressed: isFormValid
-                          ? () async {
-                              if (formKey.currentState!.validate()) {
-                                final startDateTime = startDate!;
-                                final endDateTime = endDate!;
+                    actions: [
+                      if (AppConfig.occasionSetupEnabled)
+                        PopupMenuButton<String>(
+                          tooltip: CommonStrings.moreOptions,
+                          icon: const Icon(Icons.more_horiz),
+                          enabled: !isSaving,
+                          onSelected: (_) {
+                            useSetup = true;
+                            Navigator.of(context).pop();
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 'setup',
+                              child:
+                                  Text(OccasionSetupStrings.createStepByStep),
+                            ),
+                          ],
+                        ),
+                      TextButton(
+                        onPressed: isSaving
+                            ? null
+                            : () {
+                                Navigator.of(context).pop(null);
+                              },
+                        child: Text(AdministrationStrings.cancelButton),
+                      ),
+                      ElevatedButton(
+                        onPressed: isFormValid && !isSaving
+                            ? () async {
+                                if (formKey.currentState!.validate()) {
+                                  final startDateTime = startDate!;
+                                  final endDateTime = endDate!;
 
-                                OccasionModel newOccasion = OccasionModel(
-                                  title: title,
-                                  startTime: startDateTime,
-                                  endTime: endDateTime,
-                                  link: link,
-                                  isOpen: true,
-                                  isHidden: false,
-                                  isPromoted: false,
-                                  unit: unit.id,
-                                  organization: AppConfig.organization,
-                                  data: {
-                                    Tb.occasions.data_timezone: unit.data?[
-                                            Tb.occasions.data_timezone] ??
-                                        TimeHelper.getSystemTimezoneName()
-                                  },
-                                );
+                                  OccasionModel newOccasion = OccasionModel(
+                                    title: title,
+                                    startTime: startDateTime,
+                                    endTime: endDateTime,
+                                    link: link,
+                                    isOpen: true,
+                                    isHidden: false,
+                                    isPromoted: false,
+                                    unit: unit.id,
+                                    organization: AppConfig.organization,
+                                    data: {
+                                      Tb.occasions.data_timezone: unit.data?[
+                                              Tb.occasions.data_timezone] ??
+                                          TimeHelper.getSystemTimezoneName()
+                                    },
+                                  );
 
-                                await DbOccasions.updateOccasion(newOccasion);
-                                Navigator.of(context).pop(newOccasion);
+                                  setState(() {
+                                    isSaving = true;
+                                    saveError = null;
+                                  });
+                                  try {
+                                    await DbOccasions.updateOccasion(
+                                        newOccasion);
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop(newOccasion);
+                                    }
+                                  } catch (error) {
+                                    if (!context.mounted) return;
+                                    setState(() {
+                                      if (error is PostgrestException &&
+                                          error.code == '23505' &&
+                                          error.message ==
+                                              'Public link is already in use') {
+                                        rejectedLink = link;
+                                        linkError =
+                                            FormStrings.validationLinkInUse;
+                                        isFormValid = false;
+                                      } else {
+                                        saveError =
+                                            ExceptionHandler.toFriendlyMessage(
+                                                error);
+                                      }
+                                    });
+                                  } finally {
+                                    if (context.mounted) {
+                                      setState(() => isSaving = false);
+                                    }
+                                  }
+                                }
                               }
-                            }
-                          : null,
-                      child: Text(AdministrationStrings.createButton),
-                    ),
-                  ],
+                            : null,
+                        child: Text(AdministrationStrings.createButton),
+                      ),
+                    ],
+                  ),
                 );
               },
             );
@@ -293,6 +350,12 @@ class OccasionCreationHelper {
         );
       },
     );
+    // The popped route still renders its exit transition. Release controllers
+    // only after its widgets have left the tree.
+    await dialogRoute?.completed;
+    titleController.dispose();
+    linkController.dispose();
+    linkNotifier.dispose();
     if (useSetup && context.mounted) {
       return _openSetup(context, unit, {
         'title': title ?? '',

@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion_internal_v1(
     source_form_id BIGINT,
-    target_occasion_link TEXT
+    target_occasion_link TEXT,
+    p_locale TEXT DEFAULT 'en'
 )
 RETURNS BIGINT -- Returns the ID of the new form
 LANGUAGE plpgsql
@@ -60,7 +61,7 @@ BEGIN
     -- Step 6: Copy the main form record to the target occasion.
     INSERT INTO public.forms (title, data, occasion, type, bank_account, deadline_duration_seconds, is_open, link, blueprint, header, header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds)
     SELECT
-        public.copy_occasion_title_internal(title,'en'),
+        public.copy_occasion_title_internal(title,p_locale),
         CASE WHEN source_unit_id IS DISTINCT FROM (SELECT unit FROM public.occasions WHERE id=target_occasion_id)
           THEN data #- '{payments,stripeConnectionId}' ELSE data END,
         target_occasion_id,
@@ -123,7 +124,7 @@ BEGIN
     RETURN new_form_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion_internal_v1(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.duplicate_form_to_occasion_internal_v1(bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.duplicate_form_to_occasion(source_form_id bigint,target_occasion_link text)
 RETURNS bigint LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
  SELECT (public.duplicate_form_to_occasion_client_sync_v1(source_form_id,target_occasion_link,gen_random_uuid())#>>'{data,formId}')::bigint;

@@ -44,21 +44,36 @@ void main() {
     final commands = SupabaseFormCommands.withTransport(
       ClientCommandTransport((name, params) async {
         calls.add(name);
-        if (name == 'delete_form_client_sync_v1') expect(params['p_expected_version'], 4);
+        if (name == 'duplicate_form_to_occasion_client_sync_v1')
+          expect(params['p_locale'], 'cs');
+        if (name == 'delete_form_client_sync_v1')
+          expect(params['p_expected_version'], 4);
         return {
           'status': 'applied',
           'code': 200,
           'mutation': {
-            'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
+            'commandId': params['p_command_id'],
+            'receiptId': params['p_command_id'],
             'commitId': '00000000-0000-4000-8000-000000000001',
-            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
+            'replayed': false,
+            'occurredAt': '2026-10-20T10:00:00Z',
           },
-          'data': {'code': 200,
-          'mutation': {
-            'commandId': params['p_command_id'], 'receiptId': params['p_command_id'],
-            'commitId': '00000000-0000-4000-8000-000000000001',
-            'replayed': false, 'occurredAt': '2026-10-20T10:00:00Z',
-          }, 'formId': 8, if (name == 'update_blueprint_client_sync_v1') ...{ 'blueprint_id': 2, 'layout_revision': 1, 'seatBindings': <Object>[] }},
+          'data': {
+            'code': 200,
+            'mutation': {
+              'commandId': params['p_command_id'],
+              'receiptId': params['p_command_id'],
+              'commitId': '00000000-0000-4000-8000-000000000001',
+              'replayed': false,
+              'occurredAt': '2026-10-20T10:00:00Z',
+            },
+            'formId': 8,
+            if (name == 'update_blueprint_client_sync_v1') ...{
+              'blueprint_id': 2,
+              'layout_revision': 1,
+              'seatBindings': <Object>[]
+            }
+          },
           'sync': {'replacements': <Object>[]},
         };
       }, maxAttempts: 1),
@@ -72,6 +87,7 @@ void main() {
       await commands.duplicate(
         sourceFormId: 3,
         targetOccasionLink: 'next-festival',
+        locale: 'cs',
       ),
       8,
     );

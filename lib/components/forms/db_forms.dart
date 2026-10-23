@@ -56,9 +56,12 @@ class DbForms {
   static Future<void> duplicateFormToOccasion({
     required int sourceFormId,
     required String targetOccasionLink,
+    required String locale,
   }) async {
     await _commands.duplicate(
-        sourceFormId: sourceFormId, targetOccasionLink: targetOccasionLink);
+        sourceFormId: sourceFormId,
+        targetOccasionLink: targetOccasionLink,
+        locale: locale);
   }
 
   static Future<List<FormBundle>> getAllFormsByOccasionLink(String occasionLink,
@@ -102,7 +105,8 @@ class DbForms {
     return form;
   }
 
-  static Future<void> deleteForm(int formId, {required int expectedVersion}) async {
+  static Future<void> deleteForm(int formId,
+      {required int expectedVersion}) async {
     await _commands.delete(formId, expectedVersion: expectedVersion);
   }
 

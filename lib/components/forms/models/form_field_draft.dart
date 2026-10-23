@@ -49,6 +49,11 @@ class FormFieldDraft {
         options = value.options.map(FormOptionDraft.fromDefinition).toList();
   factory FormFieldDraft.fromJson(Map<String, dynamic> json) =>
       FormFieldDraft.fromDefinition(FormFieldDefinition.fromJson(json));
+  bool get hasInvalidSelectionOptions =>
+      (definition.type == FormMetadata.fieldTypeSelectOne ||
+          definition.type == FormMetadata.fieldTypeSelectMany) &&
+      (options.isEmpty || options.any((option) => option.title.trim().isEmpty));
+
   FormFieldDefinition freeze() => definition.copyWith(
       options: options.map((option) => option.freeze()).toList());
   Map<String, dynamic> toJson() => freeze().toJson();

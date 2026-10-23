@@ -3,8 +3,9 @@ import { authorizeRequest } from "../_shared/auth.ts";
 import { sendTeamAccessNotice } from "./teamAccessNotice.ts";
 import { generateSignInCode } from "../_shared/signInCode.ts";
 import {
-  emailRpc,
   awaitEmailAccepted,
+  EmailAcceptancePendingError,
+  emailRpc,
   enqueueAndAwaitEmail,
   prepareAccountEmail,
 } from "../_shared/emailQueueClient.ts";
@@ -70,7 +71,10 @@ Deno.serve(async (req) => {
 
     // Retrieve occasion user data.
     const occasionUser = await supabaseAdmin
-      .rpc("get_sign_in_recipient_context_v1", { p_user: userId, p_occasion: occasionId });
+      .rpc("get_sign_in_recipient_context_v1", {
+        p_user: userId,
+        p_occasion: occasionId,
+      });
 
     if (!occasionUser.data) {
       console.error("User is not part of the occasion.");
@@ -154,7 +158,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (occasionUser.data.capabilities?.[AuthorizationCapabilities.emailsTeamAccessNotice] === true) {
+    if (
+      occasionUser.data.capabilities
+        ?.[AuthorizationCapabilities.emailsTeamAccessNotice] === true
+    ) {
       let noticeActorId: string;
       await sendTeamAccessNotice({
         access: occasionUser.data,
@@ -175,11 +182,14 @@ Deno.serve(async (req) => {
           });
           noticeActorId = identity.user.id;
         },
-        deliver: input => enqueueAndAwaitEmail(input, {
-          enqueuePrepared: parameters => emailRpc("enqueue_participant_notice_for_actor_v1", {
-            ...parameters, p_actor: noticeActorId,
+        deliver: (input) =>
+          enqueueAndAwaitEmail(input, {
+            enqueuePrepared: (parameters) =>
+              emailRpc("enqueue_participant_notice_for_actor_v1", {
+                ...parameters,
+                p_actor: noticeActorId,
+              }),
           }),
-        }),
       });
       return new Response(
         JSON.stringify({ user: userId, code: 200, status: "sent" }),
@@ -253,9 +263,23 @@ Deno.serve(async (req) => {
       },
     );
   } catch (error) {
+    if (error instanceof EmailAcceptancePendingError) {
+      return new Response(
+        JSON.stringify({
+          code: 202,
+          status: "queued",
+          messageId: error.messageId,
+        }),
+        {
+          status: 202,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
     if (error instanceof Error && "code" in error && error.code === "42501") {
-      return new Response(JSON.stringify({error: "forbidden"}), {
-        status: 403, headers: {...corsHeaders, "Content-Type": "application/json"},
+      return new Response(JSON.stringify({ error: "forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     console.error("Unexpected error:", error);

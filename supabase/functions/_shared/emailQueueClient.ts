@@ -12,9 +12,17 @@ export async function emailRpc(
 ) {
   const { supabaseAdmin } = await import("./supabaseUtil.ts");
   const { data, error } = await supabaseAdmin.rpc(name, args);
-  if (error) throw Object.assign(new Error(`email_rpc_${name}`), {code: error.code});
+  if (error) {
+    throw Object.assign(new Error(`email_rpc_${name}`), { code: error.code });
+  }
   return data;
 }
+export class EmailAcceptancePendingError extends Error {
+  constructor(readonly messageId: string) {
+    super("email_pending");
+  }
+}
+
 export async function awaitEmailAccepted(
   messageId: string,
   timeoutMs = 8000,
@@ -30,7 +38,7 @@ export async function awaitEmailAccepted(
     ) throw new Error(`email_${state}`);
     await new Promise((resolve) => setTimeout(resolve, 250));
   } while (Date.now() < deadline);
-  throw new Error("email_pending");
+  throw new EmailAcceptancePendingError(messageId);
 }
 /** Compatibility boundary: sent/email_sent is returned only after canonical accepted. */
 export async function enqueueAndAwaitEmail(
@@ -39,7 +47,11 @@ export async function enqueueAndAwaitEmail(
     kind?: EmailKind;
     expiresAt?: string;
   },
-  options: { enqueuePrepared?: (parameters: Record<string, unknown>) => Promise<{message_id: string}> } = {},
+  options: {
+    enqueuePrepared?: (
+      parameters: Record<string, unknown>,
+    ) => Promise<{ message_id: string }>;
+  } = {},
 ): Promise<EmailDeliveryResult> {
   const kind = input.kind ?? kindForTemplate(input.templateCode ?? "");
   await admitEmailPreparation(input);
@@ -63,8 +75,9 @@ export async function enqueueAndAwaitEmail(
   ).join("");
   const sealed = await sealEmail(prepared);
   // Dedupe hash derives from the plaintext digest; random encryption nonce must not cause collision.
-  const enqueue = options.enqueuePrepared ?? ((parameters: Record<string, unknown>) =>
-    emailRpc("enqueue_prepared_email", parameters));
+  const enqueue = options.enqueuePrepared ??
+    ((parameters: Record<string, unknown>) =>
+      emailRpc("enqueue_prepared_email", parameters));
   const message = await enqueue({
     p_kind: kind,
     p_context: { ...input.context, recipient_user: input.recipientUser },

@@ -25,6 +25,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:festapp_core/map.dart';
 import '../components/users/logout_flow.dart';
 
+enum InvitationDeliveryStatus { sent, queued }
+
 class AuthService {
   static final _supabase = Supabase.instance.client;
   static const _secureStorage = FlutterSecureStorage();
@@ -171,13 +173,19 @@ class AuthService {
         body: {"email": email, "organization": AppConfig.organization});
   }
 
-  static Future<bool> sendSignInCode(OccasionUserModel ou) async {
+  static Future<InvitationDeliveryStatus> sendSignInCode(OccasionUserModel ou,
+      {String? requestId}) async {
     final response =
         await _supabase.functions.invoke("send-sign-in-code", body: {
       "oc": ou.occasion,
       "usr": ou.user,
+      if (requestId != null) "requestId": requestId,
     });
-    return response.data?["status"] == "sent";
+    return switch (response.data?["status"]) {
+      "sent" => InvitationDeliveryStatus.sent,
+      "queued" => InvitationDeliveryStatus.queued,
+      _ => throw StateError('Invitation delivery was not confirmed'),
+    };
   }
 
   static Future<bool> sendAppLinks(OccasionUserModel ou) async {

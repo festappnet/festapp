@@ -1,3 +1,4 @@
+import 'package:fstapp/services/decimal_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -111,7 +112,8 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
     super.dispose();
   }
 
-  double? get _duration => double.tryParse(_hours.text.replaceAll(',', '.'));
+  int? get _durationSeconds =>
+      DecimalInput.positiveDurationSeconds(_hours.text, secondsPerUnit: 3600);
 
   void _apply() {
     if (!_key.currentState!.validate()) return;
@@ -120,7 +122,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
       waitlistEnabled: _limited && _waitlist,
       showRemainingCapacity: _showRemaining,
       waitlistOfferDurationSeconds:
-          _limited && _waitlist ? (_duration! * 3600).round() : null,
+          _limited && _waitlist ? _durationSeconds : null,
     );
     Navigator.of(context).pop(true);
   }
@@ -234,9 +236,8 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                             border: const OutlineInputBorder()),
                                         keyboardType: const TextInputType
                                             .numberWithOptions(decimal: true),
-                                        validator: (_) => _duration != null &&
-                                                _duration!.isFinite &&
-                                                (_duration! * 3600).round() > 0
+                                        validator: (_) => _durationSeconds !=
+                                                null
                                             ? null
                                             : WaitlistStrings.positiveNumber),
                                   ],

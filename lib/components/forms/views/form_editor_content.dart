@@ -163,6 +163,11 @@ class _FormEditorContentState extends State<FormEditorContent>
     // UPDATED: Check for bundle and use bundle.form
     if (_bundle == null) return;
     final form = _bundle!.form;
+    if (form.relatedFields.any((field) => field.hasInvalidSelectionOptions)) {
+      ToastHelper.Show(context, FormStrings.selectionOptionsRequired,
+          severity: ToastSeverity.NotOk);
+      return;
+    }
 
     if (form.definition.startTime != null && form.definition.endTime != null) {
       if (form.definition.endTime!.isBefore(form.definition.startTime!)) {
