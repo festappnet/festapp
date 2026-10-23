@@ -266,3 +266,12 @@ for product editing. Operational seat cut 2B and stages 3-10 remain pending.
 PR #564 still requires one approving review; no production migrations/deployments
 have run. Frozen PR ticket text test was corrected to distinguish ordinary clipping
 from intentional adaptive full occasion titles, and current client-contract CI passed.
+## Client CI contract correction
+
+Current canonical ticket text fitting (introduced by ef3005e22) intentionally
+shrinks occasionTitle below its preferred minimum to preserve the full title.
+The inherited long-text regression incorrectly expected title truncation.
+It now tests ellipsis on the ordinary orderName binding and separately proves
+that an occasion title stays complete, within its box, below the preferred
+minimum. Both focused Flutter cases passed. No renderer, font metrics, PDF
+readiness contract or readiness hash was changed.
