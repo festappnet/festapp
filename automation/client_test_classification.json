@@ -738,6 +738,13 @@
       "sources": [
         "test/services/batch_progress_dialog_test.dart"
       ]
+    },
+    "test/components/qa/program_qa_regression_test.dart": {
+      "kind": "environment",
+      "reason": "Program QA regressions exercise real routed app bars, form widgets and the cached DbSpeakers root Supabase client with a Czech catalog; isolate the root client from other sessions.",
+      "sources": [
+        "test/components/qa/program_qa_regression_test.dart"
+      ]
     }
   }
 }

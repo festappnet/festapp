@@ -519,6 +519,7 @@
     "news": "Новини"
   },
   "FeatureSchedule": {
+    "eventTypeCodeAlreadyUsed": "Інший тип події вже використовує цей код. Введіть унікальний код.",
     "programRemindersTitle": "Нагадування про програму",
     "programRemindersDescription": "Виберіть, коли отримувати сповіщення перед початком пунктів у Моїй програмі.",
     "programRemindersToggle": "Сповіщати перед початком програми",

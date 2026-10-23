@@ -783,6 +783,7 @@ class ScheduleContentState extends State<ScheduleContent> {
           title: CommonStrings.place,
           field: EventModel.placeColumn,
           type: TrinaColumnType.select(places,
+              defaultValue: PlaceModel.WithoutValue,
               itemToString: DataGridHelper.getValueFromFormatted),
           applyFormatterInEditing: true,
           formatter: DataGridHelper.getValueFromFormatted,

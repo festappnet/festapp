@@ -99,9 +99,9 @@ class AppPanelHelper {
     // Separator, Occasion Selector, and new Action Selector
     // Skip on unit-level pages (e.g. /unit/5/edit) where occasion context is stale
     // App-bar builders can inherit a different route scope than the page.
-    final currentRoutePath = originalContext.routeData.path;
-    final isUnitLevelPage = currentRoutePath.contains('/unit/') &&
-        currentRoutePath.contains('/edit');
+    final activeRoutes = originalContext.router.root.currentSegments;
+    final isUnitLevelPage =
+        activeRoutes.any((route) => route.name == UnitAdminRoute.name);
     if (currentOccasion != null && !isUnitLevelPage) {
       final onAppBarColor =
           Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
@@ -200,12 +200,9 @@ class AppPanelHelper {
 
         _ActionMenuItem currentAction;
 
-        final routeNames = originalContext.routeData.breadcrumbs
-            .map((route) => route.name)
-            .toSet();
-        if (routeNames.contains(ReservationsRoute.name)) {
+        if (activeRoutes.any((route) => route.name == ReservationsRoute.name)) {
           currentAction = reservationsAction;
-        } else if (routeNames.contains(AdminRoute.name)) {
+        } else if (activeRoutes.any((route) => route.name == AdminRoute.name)) {
           currentAction = adminAction;
         } else {
           currentAction = viewAppAction;

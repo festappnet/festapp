@@ -323,7 +323,8 @@
     "suspiciousReasonInvalidTimingDetail": "The end ({end}) is not later than the start ({start}).",
     "suspiciousReasonMultiDayDetail": "The event starts at {start} and ends at {end}, so it spans multiple calendar days.",
     "suspiciousReasonOutsideOccasionDetail": "The event time ({eventRange}) extends beyond the occasion dates ({occasionRange}).",
-    "suspiciousReasonExactDuplicateDetail": "At least one other event has the same title “{title}”, time {time}, and place “{place}”."
+    "suspiciousReasonExactDuplicateDetail": "At least one other event has the same title “{title}”, time {time}, and place “{place}”.",
+    "eventTypeCodeAlreadyUsed": "Another event type already uses this code. Enter a unique code."
   },
   "FeatureImport": {
     "importFeatureDescription": "Enables importing users from various sources like CSV files or from tickets.",
@@ -798,7 +799,6 @@
     "noWaves": "No price waves yet.",
     "waveNow": "Current",
     "waveHiddenState": "Hidden",
-    "bankSyncWarningDetailsHint": "Click to view details",
     "bankSyncWarningContactShort": "Contact a bank account administrator:",
     "bankSyncPaymentPaused": "Bank synchronization is off for the account receiving this payment.",
     "bankSyncWarningTitle": "Automatic payment matching is unavailable",
@@ -834,7 +834,8 @@
     "waveAvailabilityNoChange": "Keep availability",
     "cancellationEmailTitle": "Order cancelled",
     "cancellationEmailQuestion": "Send confirmation of the entire order cancellation to {email}?",
-    "skipCancellationEmail": "Not now"
+    "skipCancellationEmail": "Not now",
+    "bankSyncWarningDetailsHint": "Click to view details"
   },
   "UserColumns": {
     "id": "Id",
