@@ -33,6 +33,8 @@ class FeaturesStrings {
       'FeatureSchedule.buttonAddEventType'.tr();
   static String get eventTypeDefaultTitle =>
       'FeatureSchedule.eventTypeDefaultTitle'.tr();
+  static String get eventTypeCodeAlreadyUsed =>
+      'FeatureSchedule.eventTypeCodeAlreadyUsed'.tr();
   static String get labelEventTypeCode =>
       'FeatureSchedule.labelEventTypeCode'.tr();
   static String get labelEventTypeTitle =>

@@ -505,6 +505,7 @@
     "news": "Novinky"
   },
   "FeatureSchedule": {
+    "eventTypeCodeAlreadyUsed": "Tento kód už používa iný typ udalosti. Zadajte jedinečný kód.",
     "programRemindersTitle": "Pripomienky programu",
     "programRemindersDescription": "Nastavte si upozornenie pred začiatkom položiek v Mojom programe.",
     "programRemindersToggle": "Upozorniť pred začiatkom programu",
