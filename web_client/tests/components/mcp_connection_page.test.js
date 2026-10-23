@@ -228,3 +228,12 @@ test('organizers start collapsed above two groups; disclosure preserves selectio
   assert.match(f.container.textContent,/Vybrané akce: 1 z 1/);
  }
 });
+
+test('product-only consent displays and submits exactly the new catalog scopes without requiring order access', async () => {
+ const permissions=['festapp:products:read','festapp:products:write'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');
+ assert.match(f.container.textContent,/produkty/);
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

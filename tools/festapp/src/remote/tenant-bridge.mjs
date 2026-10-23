@@ -3,7 +3,7 @@ import express from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { digest } from '../context/profile.mjs';
 import { check } from '../errors.mjs';
-import { READ_SCOPE, ORDER_SCOPES } from './config.mjs';
+import { READ_SCOPE, MCP_SCOPES } from './config.mjs';
 
 const nonce = () => randomBytes(32).toString('base64url');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' &&
@@ -93,7 +93,7 @@ export function tenantBridge(app, { config, storage, brokerSecret, owner, availa
         let request = flow.request;
         if (!request) {
             request = nonce();
-            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), requestedPermissions: ORDER_SCOPES.filter(scope => String(d.params.scope ?? '').split(' ').includes(scope)), expiresAt: Date.now() + 600000 };
+            const pending = { ...flow, request, state: 'pending', clientId: d.params.client_id, canRequestCreate: canRequestCreate(d), requestedPermissions: MCP_SCOPES.filter(scope => String(d.params.scope ?? '').split(' ').includes(scope)), expiresAt: Date.now() + 600000 };
             save(d.uid, pending);
             storage.put('TenantRequest', digest(request), { uid: d.uid }, 600);
         }

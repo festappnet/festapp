@@ -1,11 +1,11 @@
+import { MCP_PERMISSIONS } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
 
-const permissionLabels = { 'festapp:orders:read': 'ordersRead', 'festapp:orders:write': 'ordersWrite',
-    'festapp:payments:write': 'paymentsWrite', 'festapp:tickets:send': 'ticketsSend' };
+
 
 /** One account surface, with independent identity and delegation owners. */
 export class AccountConnectionsPage {
@@ -55,7 +55,7 @@ export class AccountConnectionsPage {
                 !Number.isFinite(Date.parse(c.expiresAt)) || !Array.isArray(c.access?.units) || !Array.isArray(c.access?.occasionIds) ||
                 c.access.units.some(u => !u || !Number.isSafeInteger(u.unitId) || u.unitId <= 0 || typeof u.canCreateOccasions !== 'boolean') ||
                 c.access.occasionIds.some(id => !Number.isSafeInteger(id) || id <= 0) ||
-                !Array.isArray(c.permissions) || c.permissions.some(p => !Object.hasOwn(permissionLabels, p)))) throw new Error();
+                !Array.isArray(c.permissions) || c.permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p)))) throw new Error();
             this.connections = data.connections; this.appsState = 'ready';
         } catch { if (generation !== this.generation) return; this.connections = []; this.appsState = 'error'; }
         this.render();
@@ -140,7 +140,7 @@ export class AccountConnectionsPage {
                 for (const id of c.access.occasionIds) add('li', this.text('occasion', { id }), scope);
                 if (c.permissions.length) {
                     const permissions = add('ul', '', item);
-                    for (const p of c.permissions) add('li', LocalizationService.tr(`McpConnection.${permissionLabels[p]}`), permissions);
+                    for (const p of c.permissions) add('li', LocalizationService.tr(`McpConnection.${MCP_PERMISSIONS[p].label}`), permissions);
                 }
                 if (this.pendingRevoke === c.id) {
                     add('p', this.text('revokeConfirm', { client: c.client }), item);

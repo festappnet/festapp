@@ -56,6 +56,7 @@
     "inventory/update_product_inventory_contexts.sql",
     "eshop/update_product.sql",
     "eshop/update_product_client_sync_v1.sql",
+    "eshop/product_catalog.sql",
     "inventory/update_product_inventory_contexts_client_sync_v1.sql",
     "eshop/product_price_waves.sql",
     "eshop/save_product_wave_target_client_sync_v1.sql",

@@ -9,7 +9,7 @@ import { createServer } from '../mcp/server.mjs';
 import { check, safeError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
 import { operatorAccess, verifySelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_SCOPE, CREATE_SCOPE, ORDER_SCOPES, verifyOrderPermissions } from './config.mjs';
+import { READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions } from './config.mjs';
 import { DelegatedOwner, boundOwner, connectionBinding } from './delegation.mjs';
 import { loginForm, consentForm, connectionsPage, page } from './views.mjs';
 
@@ -30,7 +30,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             redirect_uris: c.redirectUris, response_types: ['code'],
             grant_types: ['authorization_code', 'refresh_token'], token_endpoint_auth_method: 'none', })),
         cookies: { keys: cookieKeys }, jwks,
-        scopes: ['openid', 'offline_access', READ_SCOPE, CREATE_SCOPE, ...ORDER_SCOPES], responseTypes: ['code'],
+        scopes: ['openid', 'offline_access', READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES], responseTypes: ['code'],
         pkce: { required: () => true },
         features: {
             devInteractions: { enabled: false },
@@ -41,7 +41,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                 useGrantedResource: () => true,
                 getResourceServerInfo: async (_ctx, resource) => {
                     if (resource !== config.resource) throw new errors.InvalidTarget();
-                    return { scope: [READ_SCOPE, CREATE_SCOPE, ...ORDER_SCOPES].join(' '), audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
+                    return { scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '), audience: config.resource, accessTokenTTL: 300, accessTokenFormat: 'opaque' };
                 },
             },
         },
@@ -97,7 +97,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         try { limit(`http:${req.socket.remoteAddress}`, 240); next(); } catch { res.sendStatus(429); }
     });
     app.get('/healthz', (_req, res) => res.json({ ok: true }));
-    const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE, CREATE_SCOPE, ...ORDER_SCOPES] };
+    const metadata = { resource: config.resource, authorization_servers: [config.issuer], scopes_supported: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES] };
     for (const route of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'])
         app.get(route, (_req, res) => res.set('Access-Control-Allow-Origin', '*').json(metadata));
     // OAuth metadata can be discovered without assuming OIDC URL conventions.
@@ -127,7 +127,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     const completeConsent = async (req, res, d, f, selection) => {
         const access = await loginOwner(d.uid).authorized(async backend =>
             verifySelection(selection, await availableAccess(null, backend), canRequestCreate(d)));
-        const permissions = verifyOrderPermissions(f.permissions, String(d.params.scope ?? '').split(' '));
+        const permissions = verifyPermissions(f.permissions, String(d.params.scope ?? '').split(' '));
         const scopes = [READ_SCOPE, ...(canCreateWithAccess(access) ? [CREATE_SCOPE] : []), ...permissions].join(' ');
         const grant = new provider.Grant({ accountId: f.userId, clientId: d.params.client_id });
         grant.addOIDCScope(`openid offline_access ${scopes}`);

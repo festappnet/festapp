@@ -8,7 +8,7 @@ import { randomBytes, createHash, generateKeyPairSync } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { fixture, profile, actor, token as supabaseToken, reply } from './fixture.mjs';
-import { parseRemoteConfig, READ_SCOPE, CREATE_SCOPE, ORDER_SCOPES, verifyOrderPermissions } from '../src/remote/config.mjs';
+import { parseRemoteConfig, READ_SCOPE, CREATE_SCOPE, MCP_SCOPES, verifyPermissions } from '../src/remote/config.mjs';
 import { openRemoteStorage } from '../src/remote/storage.mjs';
 import { createRemoteApp } from '../src/remote/server.mjs';
 import { DelegatedOwner, boundOwner } from '../src/remote/delegation.mjs';
@@ -123,7 +123,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     const f = await setup(t, { tenant: true });
     const verifier = 'v'.repeat(43);
     const query = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
-        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: [READ_SCOPE, CREATE_SCOPE, ...ORDER_SCOPES].join(' '),
+        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
     let r = await f.browser('/auth?' + query);
     const connectPath = r.headers.get('location');
@@ -148,7 +148,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     // Merely displaying consent never mints or adopts a backend refresh session.
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, 0);
     assert.equal(f.storage.values('Delegation').length, 0);
-    r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: ORDER_SCOPES } });
+    r = await broker('prepare', { accessToken: supabaseToken, access: { consentVersion: 2, selection: { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] }, permissions: MCP_SCOPES } });
     const prepared = await r.json();
     assert.equal(prepared.userId, actor);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
@@ -177,8 +177,8 @@ test('tenant consent uses app access proof, an independent session and the origi
     const tokens = await r.json();
     assert(tokens.access_token);
     assert(tokens.scope.split(' ').includes(CREATE_SCOPE));
-    assert(ORDER_SCOPES.every(scope => tokens.scope.split(' ').includes(scope)));
-    assert.deepEqual(f.storage.values('Delegation')[0].permissions, ORDER_SCOPES);
+    assert(MCP_SCOPES.every(scope => tokens.scope.split(' ').includes(scope)));
+    assert.deepEqual(f.storage.values('Delegation')[0].permissions, MCP_SCOPES);
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     assert.equal(f.storage.values('Delegation').length, 1);
     assert.deepEqual(f.storage.values('Delegation')[0].access, { type: 'selection', units: [{ unitId: 3, canCreateOccasions: true }], occasionIds: [] });
@@ -190,6 +190,8 @@ test('tenant consent uses app access proof, an independent session and the origi
     const tools = await client.listTools();
     assert(tools.tools.some(t => t.name === 'festapp_orders_update' && t.annotations.destructiveHint === true));
     assert(tools.tools.some(t => t.name === 'festapp_orders_report' && t.annotations.readOnlyHint === true));
+    assert(tools.tools.some(t => t.name === 'festapp_products_list' && t.annotations.readOnlyHint === true));
+    assert(tools.tools.some(t => t.name === 'festapp_products_save' && t.annotations.destructiveHint === true));
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'connected' });
     const result = await client.callTool({ name: 'festapp_context_inspect', arguments: {} });
     assert.equal(result.isError, undefined);
@@ -211,7 +213,7 @@ test('tenant consent uses app access proof, an independent session and the origi
     const listed = await (await manage('list')).json();
     assert.deepEqual(listed.connections.map(c => c.id), [own.id]);
     assert.equal(listed.connections[0].client, 'ChatGPT fixture');
-    assert.deepEqual(listed.connections[0].permissions, ORDER_SCOPES);
+    assert.deepEqual(listed.connections[0].permissions, MCP_SCOPES);
     assert.doesNotMatch(JSON.stringify(listed), /refresh_token|accessToken|profileBinding|binding|userId/);
     assert.equal((await manage('revoke', { connectionId: 'foreign-grant' })).status, 403);
     assert.equal((await manage('revoke', { connectionId: 'foreign-profile' })).status, 403);
@@ -466,25 +468,28 @@ test('tree grant includes future occasions only in selected organizers and keeps
 
 
 test('order permissions require explicit requested consent and both persisted grant and OAuth token scopes', async t => {
-    assert.deepEqual(verifyOrderPermissions(undefined,ORDER_SCOPES),[]);
+    assert.deepEqual(verifyPermissions(undefined,MCP_SCOPES),[]);
     const available={units:[],occasions:[{id:7}]};
     const selected={type:'occasions',occasionIds:[7]};
-    assert.deepEqual(verifyConsent(selected,available,false,ORDER_SCOPES).permissions,[]);
-    for(const raw of [{consentVersion:3,selection:selected,permissions:[]},{consentVersion:2,selection:selected,permissions:[],admin:true},{consentVersion:2,selection:selected,permissions:['festapp:orders:write']}]) assert.throws(()=>verifyConsent(raw,available,false,ORDER_SCOPES),/FORBIDDEN/);
-    assert.throws(()=>verifyOrderPermissions(['festapp:orders:write'],ORDER_SCOPES),/FORBIDDEN/);
-    assert.throws(()=>verifyOrderPermissions(['festapp:orders:read'],[]),/FORBIDDEN/);
-    assert.throws(()=>verifyOrderPermissions(['arbitrary:admin'],ORDER_SCOPES),/FORBIDDEN/);
+    assert.deepEqual(verifyConsent(selected,available,false,MCP_SCOPES).permissions,[]);
+    for(const raw of [{consentVersion:3,selection:selected,permissions:[]},{consentVersion:2,selection:selected,permissions:[],admin:true},{consentVersion:2,selection:selected,permissions:['festapp:orders:write']}]) assert.throws(()=>verifyConsent(raw,available,false,MCP_SCOPES),/FORBIDDEN/);
+    assert.throws(()=>verifyPermissions(['festapp:orders:write'],MCP_SCOPES),/FORBIDDEN/);
+    assert.throws(()=>verifyPermissions(['festapp:orders:read'],[]),/FORBIDDEN/);
+    assert.throws(()=>verifyPermissions(['arbitrary:admin'],MCP_SCOPES),/FORBIDDEN/);
+    assert.throws(()=>verifyPermissions(['festapp:products:write'],MCP_SCOPES),/FORBIDDEN/);
+    assert.deepEqual(verifyPermissions(['festapp:products:read'],MCP_SCOPES),['festapp:products:read']);
     const f=await setup(t);
     const id='order-permissions';const binding='order-permissions-session';
     const grant={id,binding,userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},expiresAt:Date.now()+60000,revoked:false};
-    const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...ORDER_SCOPES].join(' '),exp:Date.now()/1000+300};
+    const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
     const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
     f.storage.put('Delegation',id,grant);
     assert(!owner().allowedOperations.includes('orders.list'),'old consent never acquires order access from a broader token');
     f.storage.put('Delegation',id,{...grant,permissions:['festapp:orders:read']});
     const readOnly=owner();assert(readOnly.allowedOperations.includes('orders.report'));assert(!readOnly.allowedOperations.includes('orders.update'));
-    f.storage.put('Delegation',id,{...grant,permissions:ORDER_SCOPES});
-    const all=owner();assert(all.allowedOperations.includes('payments.record'));assert(all.allowedOperations.includes('orders.send_tickets'));
+    f.storage.put('Delegation',id,{...grant,permissions:MCP_SCOPES});
+    assert(!readOnly.allowedOperations.includes('products.list'), 'order consent never expands to catalog administration');
+    const all=owner();assert(all.allowedOperations.includes('products.save'));assert(all.allowedOperations.includes('payments.record'));assert(all.allowedOperations.includes('orders.send_tickets'));
     assert.throws(()=>all.authorizeOperation('orders.list',{occasionId:8}),/FORBIDDEN/);
-    token.scope=READ_SCOPE;assert(!owner().allowedOperations.includes('orders.list'),'grant cannot exceed the current OAuth token');
+    token.scope=READ_SCOPE;assert(!owner().allowedOperations.includes('products.list'));assert(!owner().allowedOperations.includes('orders.list'),'grant cannot exceed the current OAuth token');
 });

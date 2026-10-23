@@ -1,10 +1,11 @@
+import { MCP_PERMISSIONS, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
 import { SupabaseService } from '../../services/supabase_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 
-const orderPermissions = { 'festapp:orders:read': 'ordersRead', 'festapp:orders:write': 'ordersWrite', 'festapp:payments:write': 'paymentsWrite', 'festapp:tickets:send': 'ticketsSend' };
+
 
 export const MCP_CONNECTION_PATH = '/settings/mcp-connect';
 
@@ -103,8 +104,8 @@ export class McpConnectionPage {
                     else this.selectedUnits.set(id, create && this.details.canRequestCreate === true && unit.canCreateOccasions === true);
                 }
                 const permissions = this.details.requestedPermissions ?? [];
-                if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(orderPermissions, p))) throw new Error('Invalid permissions');
-                if (permissions.length && !permissions.includes('festapp:orders:read')) throw new Error('Invalid permissions');
+                if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p))) throw new Error('Invalid permissions');
+                if (!validPermissions(permissions)) throw new Error('Invalid permissions');
                 // The displayed capability summary and single approval cover exactly
                 // these requested scopes. Existing issued grants are never changed.
                 this.selectedPermissions = new Set(permissions);
@@ -282,7 +283,7 @@ export class McpConnectionPage {
             add('p', this.text('sameRights'), summary);
             const capabilities = add('ul', '', summary);
             add('li', this.text('baseAccess'), capabilities);
-            for (const scope of this.selectedPermissions) add('li', this.text(orderPermissions[scope]), capabilities);
+            for (const scope of this.selectedPermissions) add('li', this.text(MCP_PERMISSIONS[scope].label), capabilities);
             if ([...this.selectedPermissions].some(scope => scope !== 'festapp:orders:read')) {
                 add('p', this.text('sensitiveActionsHint'), summary);
             }

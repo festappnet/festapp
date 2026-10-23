@@ -391,3 +391,9 @@ The page loads both sections independently. One unavailable owner does not hide
 the other. Signing out clears private data and invalidates in-flight results.
 App revocation uses an explicit inline confirmation for the named connection;
 Google unlink continues through the existing verification flow.
+
+Catalog administration uses the shared UI/MCP product boundary described in
+[administration parity](../admin-mcp-parity.md). Product read/write scopes are
+separate from order scopes. Existing delegations remain unchanged; a new consent
+is required before these tools appear. The issuer and tenant UI import the same
+functional permission registry from `packages/festapp_contracts`.

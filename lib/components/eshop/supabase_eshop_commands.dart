@@ -5,17 +5,36 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 
 class SupabaseEshopCommands implements EshopCommands {
-  SupabaseEshopCommands(SupabaseClient client)
-      : _transport = ClientCommandTransport.supabase(client, durable: true);
-  SupabaseEshopCommands.withTransport(this._transport);
+  SupabaseEshopCommands(
+    SupabaseClient client, {
+    required Map<String, dynamic> Function() productScope,
+  }) : _productScope = productScope,
+       _transport = ClientCommandTransport.supabase(client, durable: true);
+  SupabaseEshopCommands.withTransport(
+    this._transport, {
+    required Map<String, dynamic> Function() productScope,
+  }) : _productScope = productScope;
+  final Map<String, dynamic> Function() _productScope;
+  Map<String, dynamic> _productCommand(
+    String action,
+    Map<String, dynamic> product,
+  ) => {..._productScope(), 'p_action': action, 'p_product': product};
   final ClientCommandTransport _transport;
 
   @override
-  Future<void> deleteProduct(int productId, {required int expectedVersion}) async {
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'delete_product_client_sync_v1',
-      {'p_product_id': productId, 'p_expected_version': expectedVersion},
-    ));
+  Future<void> deleteProduct(
+    int productId, {
+    required int expectedVersion,
+  }) async {
+    final response = ClientCommandResponse.from(
+      await _transport.invoke(
+        'manage_product',
+        _productCommand('delete', {
+          'id': productId,
+          'expected_aggregate_version': expectedVersion,
+        }),
+      ),
+    );
     if (response.code != 200) {
       throw StateError(
         response.data['message']?.toString() ?? 'Product deletion was rejected',
@@ -29,10 +48,12 @@ class SupabaseEshopCommands implements EshopCommands {
     int ticketId,
     List<Map<String, dynamic>> products,
   ) async {
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'update_ticket_products_client_sync_v1',
-      {'p_ticket': ticketId, 'p_products': products},
-    ));
+    final response = ClientCommandResponse.from(
+      await _transport.invoke('update_ticket_products_client_sync_v1', {
+        'p_ticket': ticketId,
+        'p_products': products,
+      }),
+    );
     if (response.code != 200) {
       throw StateError('Ticket product update was rejected');
     }
@@ -49,14 +70,19 @@ class SupabaseEshopCommands implements EshopCommands {
     if (product['inventory_contexts'] is List) {
       final contexts =
           List<Map<String, dynamic>>.from(product['inventory_contexts'] as List)
-            ..sort((a, b) => (a['inventory_context_id'] as int)
-                .compareTo(b['inventory_context_id'] as int));
+            ..sort(
+              (a, b) => (a['inventory_context_id'] as int).compareTo(
+                b['inventory_context_id'] as int,
+              ),
+            );
       product = {...product, 'inventory_contexts': contexts};
     }
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'update_product_client_sync_v1',
-      {'p_product': product},
-    ));
+    final response = ClientCommandResponse.from(
+      await _transport.invoke(
+        'manage_product',
+        _productCommand('save', product),
+      ),
+    );
     if (response.status == 'conflict') {
       throw StateError('Product was changed by another editor');
     }
@@ -66,27 +92,34 @@ class SupabaseEshopCommands implements EshopCommands {
       throw StateError('Product save was rejected');
     }
     await applyClientCommandReplacements(response);
-    return SavedProduct((response.data['productId'] as num).toInt(),
-        (response.data['aggregate_version'] as num).toInt());
+    return SavedProduct(
+      (response.data['productId'] as num).toInt(),
+      (response.data['aggregate_version'] as num).toInt(),
+    );
   }
 
   @override
   Future<void> updateProductInventoryContexts(
-      int productId, List<Map<String, dynamic>> contexts,
-      {required int expectedVersion}) async {
+    int productId,
+    List<Map<String, dynamic>> contexts, {
+    required int expectedVersion,
+  }) async {
     final normalized = List<Map<String, dynamic>>.of(contexts)
-      ..sort((a, b) => (a['inventory_context_id'] as int)
-          .compareTo(b['inventory_context_id'] as int));
-    final response = ClientCommandResponse.from(await _transport.invoke(
-      'update_product_inventory_contexts_client_sync_v1',
-      {
-        'p_product_id': productId,
-        'p_contexts': {
+      ..sort(
+        (a, b) => (a['inventory_context_id'] as int).compareTo(
+          b['inventory_context_id'] as int,
+        ),
+      );
+    final response = ClientCommandResponse.from(
+      await _transport.invoke(
+        'manage_product',
+        _productCommand('contexts', {
+          'id': productId,
           'expected_aggregate_version': expectedVersion,
-          'contexts': normalized
-        }
-      },
-    ));
+          'inventory_contexts': normalized,
+        }),
+      ),
+    );
     if (response.code != 200) {
       throw StateError('Product inventory context update was rejected');
     }

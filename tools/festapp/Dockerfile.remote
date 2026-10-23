@@ -5,6 +5,7 @@ COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 RUN pnpm --dir tools/festapp install --frozen-lockfile --prod --ignore-scripts
 COPY tools/festapp/src ./tools/festapp/src
+COPY packages/festapp_contracts/mcp-permissions.mjs ./packages/festapp_contracts/mcp-permissions.mjs
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
 USER node
 CMD ["node", "--max-old-space-size=192", "tools/festapp/src/remote/main.mjs", "serve", "/run/festapp/config.json", "--secrets", "/run/festapp/secrets.json", "--data", "/var/lib/festapp-mcp", "--port", "3399"]
