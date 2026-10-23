@@ -41,8 +41,9 @@ class DemoPrices extends LayoutHistoryParticipant {
     required LayoutEditIntent intent,
   }) {
     final proposed = restoring ? checkpoint : capture();
-    if (proposed is! Map)
+    if (proposed is! Map) {
       throw const FormatException('Invalid price checkpoint');
+    }
     final ids = {
       for (final n in after.nodes)
         if (const {
@@ -59,12 +60,14 @@ class DemoPrices extends LayoutHistoryParticipant {
       if (entry.key is! String ||
           entry.value is! int ||
           entry.value < 0 ||
-          entry.value > 100000000)
+          entry.value > 100000000) {
         throw const FormatException('Invalid sample price');
-      if (ids.contains(entry.key))
+      }
+      if (ids.contains(entry.key)) {
         next[entry.key as String] = entry.value;
-      else if (restoring)
+      } else if (restoring) {
         throw const FormatException('Orphaned price checkpoint');
+      }
     }
     return frozenMap(next);
   }
@@ -620,12 +623,16 @@ class _ExamplePageState extends State<ExamplePage> {
       ]) {
         final old = resources[key] as Map? ?? {},
             next = imported.resources[key] as Map? ?? {};
-        for (final id in next.keys)
+        for (final id in next.keys) {
           if (old.containsKey(id) &&
-              canonicalContractJson(old[id]) != canonicalContractJson(next[id]))
+              canonicalContractJson(old[id]) !=
+                  canonicalContractJson(next[id])) {
             throw FormatException('Immutable resource collision: $key/$id');
-        if (old.isNotEmpty || next.isNotEmpty)
+          }
+        }
+        if (old.isNotEmpty || next.isNotEmpty) {
           importedResources[key] = {...old, ...next};
+        }
       }
       DemoBundle(imported.document, importedResources, imported.host).encode();
       if (!await _protectDraft() || !mounted) return;
@@ -939,13 +946,14 @@ class _ExamplePageState extends State<ExamplePage> {
     final original = resources;
     final staleRequest = ++fontRequest;
     final slow = Future<void>.delayed(const Duration(milliseconds: 160), () {
-      if (staleRequest == fontRequest)
+      if (staleRequest == fontRequest) {
         controller.setResources({
           'protocol': 2,
           'fontFamilies': {},
           'textLayouts': {},
           'numberSymbols': {},
         });
+      }
     });
     final latestRequest = ++fontRequest;
     await Future<void>.delayed(const Duration(milliseconds: 20));

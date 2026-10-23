@@ -26,7 +26,7 @@ void main() {
           home: Scaffold(
             body: AnimatedBuilder(
               animation: c,
-              builder: (_, __) => LayoutInspector(
+              builder: (_, _) => LayoutInspector(
                 controller: c,
                 cornerPivot: false,
                 onPivotChanged: (_) {},
@@ -140,6 +140,8 @@ void main() {
           await tester.pump();
           expect(c.document.toJson(), isNot(chosen));
           expect(
+            // Retain compatibility with the declared Flutter 3.32 minimum.
+            // ignore: deprecated_member_use
             tester.widget<RadioListTile<String>>(round).groupValue,
             'round',
           );
@@ -188,6 +190,8 @@ void main() {
           (w) => w is RadioListTile<String> && w.value == 'wood',
         ),
       );
+      // Retain compatibility with the declared Flutter 3.32 minimum.
+      // ignore: deprecated_member_use
       choice.onChanged!('wood');
       await tester.pump();
       expect(c.document.nodes.single.style['material'], 'wood');
@@ -545,7 +549,7 @@ void main() {
               width: 400,
               child: ListenableBuilder(
                 listenable: c,
-                builder: (_, __) => LayoutInspector(
+                builder: (_, _) => LayoutInspector(
                   controller: c,
                   cornerPivot: false,
                   onPivotChanged: (_) {},

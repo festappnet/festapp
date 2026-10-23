@@ -1,5 +1,4 @@
 import 'support/style.dart';
-import 'dart:math';
 import 'package:test/test.dart';
 import 'package:venue_layout_core/venue_layout_core.dart';
 
@@ -50,8 +49,9 @@ void main() {
         expect(d.canvas, base.canvas);
         expect(LayoutSpatialIndex(d).hitTest(200, 200), n.id);
         // Empty corners of the styled chair must not remain a rectangular target.
-        if (style != 'simple')
+        if (style != 'simple') {
           expect(LayoutSpatialIndex(d).hitTest(229, 171), isNull);
+        }
         final scene = compileScene(d)['items'] as List;
         expect(scene.where((i) => i.containsKey('hitPath')).length, 1);
         expect(compileSceneNodes(d, {n.id})['items'], scene);
@@ -128,16 +128,15 @@ void main() {
           transformNodes(d, {seat.id}, dx: 30, dy: 20),
         ]) {
           final current = doc.nodes.firstWhere((n) => n.id == seat.id);
-          final m = worldMatrix(doc, current), t = worldMatrix(doc, table);
-          final dx = m[4] - t[4], dy = m[5] - t[5];
-          final length = sqrt(dx * dx + dy * dy);
+          final m = worldMatrix(doc, current);
           expect(current.rotation, 270);
           expect(item(doc, seat.id)['matrix'], m.map(quantize).toList());
           final detached = detachSeat(doc, seat.id);
           final free = detached.nodes.firstWhere((n) => n.id == seat.id);
           final freeMatrix = worldMatrix(detached, free);
-          for (var i = 0; i < 6; i++)
+          for (var i = 0; i < 6; i++) {
             expect(freeMatrix[i], closeTo(m[i], .001));
+          }
         }
       }
     },
@@ -179,8 +178,11 @@ void main() {
       final seat = d.nodes
           .firstWhere((n) => n.kind == 'seat')
           .copyWith(rotation: 37, properties: {}, style: {'seatStyle': 'wood'});
-      final resolved=seat.copyWith(properties:effectiveNodeProperties(d,seat));
-      final explicit=nodePath(resolved,parent:table),standalone=nodePath(resolved);
+      final resolved = seat.copyWith(
+        properties: effectiveNodeProperties(d, seat),
+      );
+      final explicit = nodePath(resolved, parent: table),
+          standalone = nodePath(resolved);
       expect(explicit, standalone);
       final updated = d.copyWith(
         nodes: [for (final n in d.nodes) n.id == seat.id ? seat : n],
@@ -196,8 +198,8 @@ void main() {
         final basic = item(d, table.id)['path'];
         for (final style in ['wood', 'lounge']) {
           final themed = family(d, style);
-          if(shape!='rect')expect(item(themed,table.id)['path'],basic);
-          expect(themed.nodes.first.surface,table.surface);
+          if (shape != 'rect') expect(item(themed, table.id)['path'], basic);
+          expect(themed.nodes.first.surface, table.surface);
           final rim = item(themed, '${table.id}:table-style');
           expect((rim['path'] as List).length, greaterThan(4));
           expect(

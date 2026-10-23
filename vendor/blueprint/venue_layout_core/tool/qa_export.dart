@@ -23,11 +23,12 @@ void main(List<String> args) {
             ).readAsStringSync(),
           )
           as Map;
-  for (final key in ['fontFamilies', 'textLayouts', 'numberSymbols'])
+  for (final key in ['fontFamilies', 'textLayouts', 'numberSymbols']) {
     resources[key] = {
       ...resources[key] as Map? ?? {},
       ...canonical['resources'][key] as Map? ?? {},
     };
+  }
   const hash =
       '623f3779d56f23b2f7498643cec8cb1a7976abd7b0df640903b92616a501fbb9';
   const raster =
@@ -265,24 +266,26 @@ void exportTextQuality(Directory output) {
     );
     final issues = validateDocument(doc);
     if (issues.isNotEmpty) throw StateError('$issues');
-    for (final request in collectTextRequests(doc, families).values)
+    for (final request in collectTextRequests(doc, families).values) {
       requests[request.id] = request.toJson();
+    }
     final scene = resources == null
         ? null
         : compileScene(doc, resources: resources);
-    if (scene != null && (scene['issues'] as List).isNotEmpty)
+    if (scene != null && (scene['issues'] as List).isNotEmpty) {
       throw StateError('${scene['issues']}');
+    }
     motion.add({
       't': zoom,
       'zoom': zoom,
       'document': doc.toJson(),
-      if (scene != null) 'scene': scene,
+      'scene': ?scene,
     });
   }
   File(
     '${output.path}/quality-requests.json',
   ).writeAsStringSync(jsonEncode(requests.values.toList()));
-  if (resources != null)
+  if (resources != null) {
     File('${output.path}/report.json').writeAsStringSync(
       jsonEncode({
         'protocol': 2,
@@ -306,6 +309,7 @@ void exportTextQuality(Directory output) {
         ],
       }),
     );
+  }
   print(
     'Text quality: ${requests.length} whole-text requests; ${resources == null ? 'preparation required' : '48 labels x 4 zooms x 3 DPR ready'}',
   );

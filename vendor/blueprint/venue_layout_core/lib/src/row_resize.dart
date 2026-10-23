@@ -65,8 +65,9 @@ VenueLayoutDocument resizeRowAssembly(
   }
   final baselineBounds = rowAssemblyBounds(document, id);
   if ((baselineBounds['width']! - width).abs() < 1 / 1024 &&
-      (baselineBounds['height']! - height).abs() < 1 / 1024)
+      (baselineBounds['height']! - height).abs() < 1 / 1024) {
     return document;
+  }
   final params = rowLayoutParameters(document, id);
   final spacing = params['spacing']!.toDouble();
   final rowSpacing = params['rowSpacing']!.toDouble();
@@ -89,8 +90,9 @@ VenueLayoutDocument resizeRowAssembly(
       final row = components[0]!,
           block = components[1]!,
           column = components[2]!;
-      if (row < rows && block < blocks && column < columns)
+      if (row < rows && block < blocks && column < columns) {
         slots[node.id] = (row, block, column);
+      }
     }
   }
   if (slots.isEmpty) return document;
@@ -182,7 +184,7 @@ VenueLayoutDocument resizeRowAssembly(
                       math.pi,
           );
         }
-        if (node.id == id)
+        if (node.id == id) {
           return node.copyWith(
             assembly: {
               'kind': 'rows',
@@ -194,6 +196,7 @@ VenueLayoutDocument resizeRowAssembly(
             },
             properties: node.properties,
           );
+        }
         return node;
       }).toList(),
     );
@@ -214,8 +217,9 @@ VenueLayoutDocument resizeRowAssembly(
         ? math.max(.000001, scaleY + errorY / spanY)
         : scaleY;
     if ((errorX.abs() < .002 || spanX <= 1e-9) &&
-        (errorY.abs() < .002 || spanY <= 1e-9))
+        (errorY.abs() < .002 || spanY <= 1e-9)) {
       break;
+    }
     if ((nextX - scaleX).abs() < 1e-9 && (nextY - scaleY).abs() < 1e-9) break;
     scaleX = nextX;
     scaleY = nextY;
@@ -244,7 +248,8 @@ VenueLayoutDocument resizeRowAssembly(
         )
         .toList(),
   );
-  if (layoutCollisions(local).isNotEmpty)
+  if (layoutCollisions(local).isNotEmpty) {
     throw StateError('Row dimensions would overlap chairs or manual overrides');
+  }
   return result;
 }

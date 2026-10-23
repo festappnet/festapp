@@ -16,13 +16,14 @@ class EditorFieldHistory extends StatelessWidget {
   void _history(bool redo) {
     if (hasUncommittedChanges()) {
       final focused = FocusManager.instance.primaryFocus?.context;
-      if (focused != null)
+      if (focused != null) {
         Actions.maybeInvoke(
           focused,
           redo
               ? const RedoTextIntent(SelectionChangedCause.keyboard)
               : const UndoTextIntent(SelectionChangedCause.keyboard),
         );
+      }
     } else {
       redo ? onRedo() : onUndo();
     }

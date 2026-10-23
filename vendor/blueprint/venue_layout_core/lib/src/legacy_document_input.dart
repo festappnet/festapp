@@ -48,8 +48,9 @@ class _LegacyLayoutInput {
     List<Map<String, dynamic>> records(String key) {
       final value = source[key];
       if (value == null) return const [];
-      if (value is! List || value.any((item) => item is! Map))
+      if (value is! List || value.any((item) => item is! Map)) {
         throw FormatException('invalid_legacy_$key');
+      }
       return List.unmodifiable(
         value.map((item) => frozenMap(Map<String, dynamic>.from(item))),
       );
@@ -59,8 +60,9 @@ class _LegacyLayoutInput {
       for (final node in records('nodes')) LayoutNode.fromJson(node),
     ];
     if (nodes.length > layoutMaxNodes ||
-        nodes.map((node) => node.id).toSet().length != nodes.length)
+        nodes.map((node) => node.id).toSet().length != nodes.length) {
       throw const FormatException('invalid_legacy_nodes');
+    }
     return _LegacyLayoutInput._(
       List.unmodifiable(nodes),
       map('canvas'),
@@ -176,11 +178,12 @@ Map<String, num> _legacyRowParameters(_LegacyLayoutInput d, String rootId) {
           : kind == 'rowSpacing'
           ? slot.$2 - previous.$2
           : slot.$3 - previous.$3;
-      if (index != 0)
+      if (index != 0) {
         return (kind == 'rowSpacing'
                 ? slot.$1.y - previous.$1.y
                 : slot.$1.x - previous.$1.x) /
             index;
+      }
     }
     return double.nan;
   }
@@ -215,7 +218,7 @@ Map<String, num> _legacyRowParameters(_LegacyLayoutInput d, String rootId) {
 Map<String, int> _legacyBusParameters(_LegacyLayoutInput document, String id) {
   final root = document.nodes.firstWhere((n) => n.id == id),
       p = root.properties;
-  if (p['decks'] is int)
+  if (p['decks'] is int) {
     return {
       for (final key in [
         'rows',
@@ -228,6 +231,7 @@ Map<String, int> _legacyBusParameters(_LegacyLayoutInput document, String id) {
       ])
         key: p[key] as int,
     };
+  }
   final seats = document.nodes
       .where((n) => n.parentId == id && n.kind == 'seat')
       .toList();
@@ -244,10 +248,11 @@ Map<String, int> _legacyBusParameters(_LegacyLayoutInput document, String id) {
     } else if (slot.startsWith('rear:'))
       rear++;
   }
-  if (first.isEmpty)
+  if (first.isEmpty) {
     throw StateError(
       'Legacy bus layout requires explicit row and seat-block parameters.',
     );
+  }
   first.sort((a, b) => a.x.compareTo(b.x));
   var left = total, right = 0;
   var largest = 0.0, index = -1;
@@ -282,11 +287,12 @@ Map<String, int> _legacyCompartmentParameters(
 ) {
   final root = document.nodes.firstWhere((n) => n.id == id),
       p = root.properties;
-  if (p['compartments'] is int && p['seats'] is int)
+  if (p['compartments'] is int && p['seats'] is int) {
     return {
       'compartments': p['compartments'] as int,
       'seats': p['seats'] as int,
     };
+  }
   var compartments = 0, seats = 0;
   for (final node in document.nodes.where(
     (n) => n.parentId == id && n.kind == 'seat',
@@ -299,10 +305,11 @@ Map<String, int> _legacyCompartmentParameters(
       seats = math.max(seats, int.parse(match[2]!) + 1);
     }
   }
-  if (compartments == 0 || seats < 2)
+  if (compartments == 0 || seats < 2) {
     throw StateError(
       'Legacy carriage requires explicit compartment parameters.',
     );
+  }
   return {'compartments': compartments, 'seats': seats};
 }
 
@@ -310,12 +317,14 @@ Map<String, int> _legacyCompartmentParameters(
 /// manual placement changes position, not the attachment's facing constraint.
 /// A detached chair retains its authored rotation.
 double _legacyTableSeatFacingRotation(LayoutNode seat, LayoutNode? table) {
-  if (table?.surface != null)
+  if (table?.surface != null) {
     table = table!.copyWith(properties: surfaceGeometryProperties(table));
+  }
   if (seat.kind != 'seat' ||
       table?.kind != 'table' ||
-      seat.properties['manualRotation'] == true)
+      seat.properties['manualRotation'] == true) {
     return seat.rotation;
+  }
   var dx = seat.x, dy = seat.y;
   if (!const [
     'circle',

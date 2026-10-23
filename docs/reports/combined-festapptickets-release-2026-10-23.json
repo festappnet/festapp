@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-23",
+  "scope": {
+    "tenant": "festapptickets",
+    "domain": "vstupenky.online",
+    "pullRequests": [
+      561,
+      563,
+      564,
+      568
+    ]
+  },
+  "blueprint": {
+    "sourceCommit": "daaa5bb3cf19ae19cafe97b4c1ff87d8606f2fe1",
+    "archiveGate": "vendor/blueprint/archive-result.json",
+    "packageCoreTests": 286,
+    "hostIntegrationTests": 13,
+    "demoChecks": 2,
+    "demoFailures": 0
+  },
+  "media": {
+    "capture": "continuous real UI at 1x; immediate movement; seeded first row; three paid dinner options then note",
+    "variants": 4,
+    "allVariantsDecode": true
+  },
+  "verification": {
+    "artifactIntegrity": "passed",
+    "webStartupAndBrowser": "passed",
+    "deploymentGuards": "passed before final package integration; unchanged guards",
+    "packageAnalysis": "No issues found"
+  },
+  "backend": {
+    "alreadyAppliedDoNotReplay": "docs/operations/blueprints/uniform-table-label-defaults-20261022.sql",
+    "pendingMigrations": [
+      "20261023110000",
+      "20261023160000",
+      "20261023163000",
+      "20261023170000",
+      "20261023180000",
+      "20261023190000",
+      "20261023200000",
+      "20261023210000",
+      "20261023220000"
+    ],
+    "order": [
+      "verified encrypted backup and recovery evidence",
+      "atomic canonical SQL and migration ledger",
+      "canonical Function bundle",
+      "tenant web",
+      "MCP issuer"
+    ]
+  },
+  "knownBaselineLimitations": [
+    "Full MCP local suite: 113/117. Four failures also reproduced before PR564: stale Stripe envelope fixture, historical ACL snapshot, order test postgres ownership assumption, and pre-existing live ticket-layout validator seal drift.",
+    "Ticket-layout artwork writes remain fail-closed on the existing validator seal; no seal or validator override is included."
+  ]
+}

@@ -1,3 +1,9 @@
+## Unreleased production v2 fixes
+
+- Preserve the opposite table edge while resizing, including rotated nesting and canvas boundaries.
+- Convert free chair poses to automatic seating after footprint edits; preserve explicit side pins and protected seat identities.
+- Keep one undo entry per resize and reuse immutable spatial indexes during preview.
+
 ## 0.3.1
 
 - Restore the exact SDK fixes shipped in Festapp 35e421e27 to canonical source.

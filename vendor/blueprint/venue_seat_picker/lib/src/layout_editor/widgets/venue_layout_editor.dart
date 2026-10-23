@@ -651,8 +651,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
               c.selection.contains(node.id) &&
               node.kind == 'group' &&
               layoutSubtree(c.document, {node.id}).contains(id),
-        ))
+        )) {
       return;
+    }
     final target = _selectionTarget(id);
     final node = c.document.nodes.firstWhere((n) => n.id == target);
     if (node.kind == 'group' || target != id) {
@@ -1472,6 +1473,24 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
       final dimensions = c.constrainTableDimensions(n, width, height);
       width = dimensions.width;
       height = dimensions.height;
+      if (n.kind == 'table' && n.surface?['type'] != 'grid') {
+        if (c.previewTableResize(
+          start,
+          n.id,
+          width,
+          height,
+          handle: direction,
+        )) {
+          _resizeRemovedSeats =
+              start.nodes
+                  .where((node) => node.kind == 'seat' && node.parentId == n.id)
+                  .length -
+              c.document.nodes
+                  .where((node) => node.kind == 'seat' && node.parentId == n.id)
+                  .length;
+        }
+        return;
+      }
       final resizeBase = start;
       final resized = isRows
           ? resizeRowAssembly(start, n.id, width, height)
@@ -1781,6 +1800,8 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     // History belongs to the visible editor route, even when surrounding
     // controls own focus. Dialogs, inactive tabs and text inputs retain theirs.
     if (!mounted ||
+        // Retain compatibility with the declared Flutter 3.32 minimum.
+        // ignore: deprecated_member_use
         !TickerMode.of(context) ||
         ModalRoute.of(context)?.isCurrent != true) {
       return KeyEventResult.ignored;
@@ -1989,8 +2010,9 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
     }
     final previous = _previews[kind];
     if (previous != null &&
-        !sameLayoutValue(previous.seatingDefaults, c.document.seatingDefaults))
+        !sameLayoutValue(previous.seatingDefaults, c.document.seatingDefaults)) {
       _previews.remove(kind);
+    }
     final base = _previews.putIfAbsent(kind, () {
       final fragment = _fragment(kind, Offset.zero);
       return fragment.copyWith(
@@ -3477,8 +3499,7 @@ class _VenueLayoutEditorState extends State<VenueLayoutEditor> {
                                               : widget.viewSelectableIds,
                                           highlightedIds: {
                                             ...c.hoveredIds,
-                                            if (_seatTargetId != null)
-                                              _seatTargetId!,
+                                            ?_seatTargetId,
                                           },
                                           warningIds: c.placementWarningIds,
                                           blockedPlacementHulls:

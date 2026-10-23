@@ -24,8 +24,9 @@ class LayoutVectorGraphic {
     if (value.keys.any(
           (k) => !const {'version', 'width', 'height', 'commands'}.contains(k),
         ) ||
-        value['version'] != 1)
+        value['version'] != 1) {
       fail();
+    }
     final width = value['width'],
         height = value['height'],
         commands = value['commands'];
@@ -38,8 +39,9 @@ class LayoutVectorGraphic {
         width > 1000000 ||
         height > 1000000 ||
         commands is! List ||
-        commands.length > 10000)
+        commands.length > 10000) {
       fail();
+    }
     var depth = 0, segments = 0;
     for (final raw in commands as List) {
       if (raw is! Map) fail();
@@ -73,8 +75,9 @@ class LayoutVectorGraphic {
       } else {
         if (op == 'clip') depth++;
         final path = raw['path'];
-        if (path is! List || !['nonzero', 'evenodd'].contains(raw['fillRule']))
+        if (path is! List || !['nonzero', 'evenodd'].contains(raw['fillRule'])) {
           fail();
+        }
         for (final command in path as List) {
           if (command is! List || command.isEmpty) fail();
           final arity = canonicalPathArities[(command as List).first];
@@ -82,37 +85,45 @@ class LayoutVectorGraphic {
               command.length != arity + 1 ||
               command
                   .skip(1)
-                  .any((v) => v is! num || !v.isFinite || v.abs() > 1000000000))
+                  .any((v) => v is! num || !v.isFinite || v.abs() > 1000000000)) {
             fail();
+          }
         }
         segments += path.length;
         if (segments > 200000) fail();
         if (op == 'path') {
-          for (final key in ['fill', 'stroke'])
+          for (final key in ['fill', 'stroke']) {
             if (raw[key] != null &&
                 (raw[key] is! String ||
-                    !RegExp(r'^#[0-9a-fA-F]{8}$').hasMatch(raw[key] as String)))
+                    !RegExp(r'^#[0-9a-fA-F]{8}$').hasMatch(raw[key] as String))) {
               fail();
+          }
+            }
           final stroke = raw['strokeWidth'];
           if (stroke is! num ||
               !stroke.isFinite ||
               stroke < 0 ||
-              stroke > 1000000000)
+              stroke > 1000000000) {
             fail();
+          }
           if (!['butt', 'round', 'square'].contains(raw['strokeCap']) ||
-              !['miter', 'round', 'bevel'].contains(raw['strokeJoin']))
+              !['miter', 'round', 'bevel'].contains(raw['strokeJoin'])) {
             fail();
+          }
           final miter = raw['miterLimit'];
-          if (miter is! num || !miter.isFinite || miter < 1 || miter > 1000000)
+          if (miter is! num || !miter.isFinite || miter < 1 || miter > 1000000) {
             fail();
-          for (final key in ['fillGradient', 'strokeGradient'])
+          }
+          for (final key in ['fillGradient', 'strokeGradient']) {
             if (raw[key] != null && !_validGradient(raw[key])) fail();
+          }
         }
       }
       if (depth > 32) fail();
     }
-    if (depth != 0 || utf8.encode(jsonEncode(value)).length > 8 * 1024 * 1024)
+    if (depth != 0 || utf8.encode(jsonEncode(value)).length > 8 * 1024 * 1024) {
       fail();
+    }
     return LayoutVectorGraphic._(
       (width as num).toDouble(),
       (height as num).toDouble(),
@@ -150,8 +161,9 @@ bool _validGradient(Object? raw) {
     ],
   };
   if (raw.keys.any((k) => !keys.contains(k)) ||
-      !['pad', 'reflect', 'repeat'].contains(raw['spread']))
+      !['pad', 'reflect', 'repeat'].contains(raw['spread'])) {
     return false;
+  }
   bool pair(Object? v) =>
       v is List &&
       v.length == 2 &&
@@ -165,10 +177,12 @@ bool _validGradient(Object? raw) {
       colors.any(
         (c) => c is! String || !RegExp(r'^#[0-9a-fA-F]{8}$').hasMatch(c),
       ) ||
-      stops.any((v) => v is! num || !v.isFinite || v < 0 || v > 1))
+      stops.any((v) => v is! num || !v.isFinite || v < 0 || v > 1)) {
     return false;
-  for (var i = 1; i < stops.length; i++)
+  }
+  for (var i = 1; i < stops.length; i++) {
     if ((stops[i] as num) < (stops[i - 1] as num)) return false;
+  }
   if (!radial) return pair(raw['from']) && pair(raw['to']);
   final radius = raw['radius'], matrix = raw['matrix'];
   return pair(raw['center']) &&
@@ -212,10 +226,12 @@ class SvgGraphicImport {
 /// curves and the identical pure Dart import runs on desktop and in the JS core.
 SvgGraphicImport importSvgGraphic(String source) {
   if (utf8.encode(source).length > 2 * 1024 * 1024 ||
-      RegExp('<').allMatches(source).length > 20000)
+      RegExp('<').allMatches(source).length > 20000) {
     throw const GraphicImportFailure('svg_input_limit');
-  if (RegExp(r'<!\s*(DOCTYPE|ENTITY)', caseSensitive: false).hasMatch(source))
+  }
+  if (RegExp(r'<!\s*(DOCTYPE|ENTITY)', caseSensitive: false).hasMatch(source)) {
     throw const GraphicImportFailure('svg_document_type_unsupported');
+  }
   XmlDocument xml;
   try {
     xml = XmlDocument.parse(source);
@@ -224,8 +240,9 @@ SvgGraphicImport importSvgGraphic(String source) {
   }
   if (xml.rootElement.name.local != 'svg' ||
       (xml.rootElement.namespaceUri != null &&
-          xml.rootElement.namespaceUri != 'http://www.w3.org/2000/svg'))
+          xml.rootElement.namespaceUri != 'http://www.w3.org/2000/svg')) {
     throw const GraphicImportFailure('svg_root_required');
+  }
   void paintDeclaration(String name, String value) {
     final defaults = {
       'filter': 'none',
@@ -237,40 +254,47 @@ SvgGraphicImport importSvgGraphic(String source) {
       'color-interpolation': 'sRGB',
     };
     final normal = defaults[name.toLowerCase()];
-    if (normal != null && value.trim().toLowerCase() != normal.toLowerCase())
+    if (normal != null && value.trim().toLowerCase() != normal.toLowerCase()) {
       throw GraphicImportFailure('svg_paint_attribute_unsupported', name);
-    if (RegExp(r'\bvar\s*\(', caseSensitive: false).hasMatch(value))
+    }
+    if (RegExp(r'\bvar\s*\(', caseSensitive: false).hasMatch(value)) {
       throw const GraphicImportFailure(
         'svg_paint_attribute_unsupported',
         'CSS variables',
       );
+    }
   }
 
   void paintDeclarations(String css) {
     final plain = css.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
     for (final declaration in RegExp(
       r'(?:^|[;{}])\s*([A-Za-z-]+)\s*:\s*([^;{}]+)',
-    ).allMatches(plain))
+    ).allMatches(plain)) {
       paintDeclaration(declaration[1]!, declaration[2]!);
+    }
   }
 
   var elements = 0;
   for (final element in xml.descendants.whereType<XmlElement>()) {
-    if (++elements > 10000)
+    if (++elements > 10000) {
       throw const GraphicImportFailure('svg_element_limit');
-    if (element.ancestors.whereType<XmlElement>().length > 32)
+    }
+    if (element.ancestors.whereType<XmlElement>().length > 32) {
       throw const GraphicImportFailure('svg_depth_limit');
+    }
     if (element.name.local == 'style') {
       paintDeclarations(element.innerText);
-      if (RegExp(r'@import', caseSensitive: false).hasMatch(element.innerText))
+      if (RegExp(r'@import', caseSensitive: false).hasMatch(element.innerText)) {
         throw const GraphicImportFailure('svg_external_resource');
+      }
       for (final match in RegExp(
         r'url\s*\(([^)]+)\)',
         caseSensitive: false,
       ).allMatches(element.innerText)) {
         final target = match[1]!.trim().replaceAll('"', '').replaceAll("'", '');
-        if (!target.startsWith('#'))
+        if (!target.startsWith('#')) {
           throw const GraphicImportFailure('svg_external_resource');
+        }
       }
     }
     if (const {
@@ -283,8 +307,9 @@ SvgGraphicImport importSvgGraphic(String source) {
       'animateMotion',
       'animateTransform',
       'set',
-    }.contains(element.name.local))
+    }.contains(element.name.local)) {
       throw GraphicImportFailure('svg_element_unsupported', element.name.local);
+    }
     for (final attribute in element.attributes) {
       final name = attribute.name.local.toLowerCase(),
           value = attribute.value.trim();
@@ -293,17 +318,20 @@ SvgGraphicImport importSvgGraphic(String source) {
       } else {
         paintDeclaration(name, value);
       }
-      if (name.startsWith('on'))
+      if (name.startsWith('on')) {
         throw const GraphicImportFailure('svg_executable_content');
-      if ((name == 'href' || name == 'src') && !value.startsWith('#'))
+      }
+      if ((name == 'href' || name == 'src') && !value.startsWith('#')) {
         throw const GraphicImportFailure('svg_external_resource');
+      }
       for (final match in RegExp(
         r'url\s*\(([^)]+)\)',
         caseSensitive: false,
       ).allMatches(value)) {
         final target = match[1]!.trim().replaceAll(RegExp('[\'\"]'), '');
-        if (!target.startsWith('#'))
+        if (!target.startsWith('#')) {
           throw const GraphicImportFailure('svg_external_resource');
+        }
       }
     }
   }
@@ -313,24 +341,27 @@ SvgGraphicImport importSvgGraphic(String source) {
   } catch (error) {
     throw GraphicImportFailure('svg_conversion_failed', error.toString());
   }
-  if (parsed.text.isNotEmpty)
+  if (parsed.text.isNotEmpty) {
     throw const GraphicImportFailure('svg_text_preparation_required');
-  if (parsed.images.isNotEmpty || parsed.drawImages.isNotEmpty)
+  }
+  if (parsed.images.isNotEmpty || parsed.drawImages.isNotEmpty) {
     throw const GraphicImportFailure('svg_embedded_image_unsupported');
+  }
   String color(svg.Color c) =>
       '#${c.r.toRadixString(16).padLeft(2, '0')}${c.g.toRadixString(16).padLeft(2, '0')}${c.b.toRadixString(16).padLeft(2, '0')}${c.a.toRadixString(16).padLeft(2, '0')}';
   Map<String, dynamic>? gradient(svg.Gradient? g) {
     if (g == null) return null;
     final colors = g.colors, stops = g.offsets;
-    if (colors == null || stops == null)
+    if (colors == null || stops == null) {
       throw const GraphicImportFailure('svg_gradient_invalid');
+    }
     final spread = switch (g.tileMode?.name) {
       'clamp' || null => 'pad',
       'mirror' => 'reflect',
       'repeated' => 'repeat',
       _ => throw const GraphicImportFailure('svg_gradient_unsupported'),
     };
-    if (g is svg.LinearGradient)
+    if (g is svg.LinearGradient) {
       return {
         'type': 'linear',
         'from': [g.from.x, g.from.y],
@@ -339,6 +370,7 @@ SvgGraphicImport importSvgGraphic(String source) {
         'stops': stops,
         'spread': spread,
       };
+    }
     if (g is svg.RadialGradient) {
       final m = g.transform ?? svg.AffineMatrix.identity;
       return {
@@ -373,8 +405,9 @@ SvgGraphicImport importSvgGraphic(String source) {
             paint = parsed.paints[command.paintId!],
             stroke = paint.stroke,
             fill = paint.fill;
-        if (paint.blendMode != svg.BlendMode.srcOver)
+        if (paint.blendMode != svg.BlendMode.srcOver) {
           throw const GraphicImportFailure('svg_blend_unsupported');
+        }
         commands.add({
           'op': 'path',
           'path': path(p),
@@ -404,8 +437,9 @@ SvgGraphicImport importSvgGraphic(String source) {
         final paint = parsed.paints[command.paintId!];
         if (paint.blendMode != svg.BlendMode.srcOver ||
             paint.fill == null ||
-            paint.fill!.shader != null)
+            paint.fill!.shader != null) {
           throw const GraphicImportFailure('svg_layer_unsupported');
+        }
         commands.add({'op': 'layer', 'opacity': paint.fill!.color.a / 255});
       case svg.DrawCommandType.restore:
         commands.add({'op': 'restore'});
@@ -482,8 +516,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
     final values = {for (final a in e.attributes) a.name.local: a.value};
     for (final rule in (e.getAttribute('style') ?? '').split(';')) {
       final at = rule.indexOf(':');
-      if (at > 0)
+      if (at > 0) {
         values[rule.substring(0, at).trim()] = rule.substring(at + 1).trim();
+      }
     }
     return values;
   }
@@ -493,8 +528,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
     final match = RegExp(
       r'^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*(px|pt|pc|in|cm|mm)?\s*$',
     ).firstMatch(value);
-    if (match == null)
+    if (match == null) {
       throw const GraphicImportFailure('svg_text_position_unsupported');
+    }
     final scale = switch (match[2]) {
       'pt' => 96 / 72,
       'pc' => 16.0,
@@ -504,8 +540,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
       _ => 1.0,
     };
     final v = double.parse(match[1]!) * scale;
-    if (!v.isFinite || v.abs() > 1e9)
+    if (!v.isFinite || v.abs() > 1e9) {
       throw const GraphicImportFailure('svg_text_position_unsupported');
+    }
     return v;
   }
 
@@ -517,8 +554,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
   for (final element in texts) {
     if (element.descendants.whereType<XmlElement>().any(
       (e) => e.name.local != 'tspan' || e.attributes.isNotEmpty,
-    ))
+    )) {
       throw const GraphicImportFailure('svg_mixed_text_unsupported');
+    }
     final inherited = <String, String>{};
     for (final parent
         in element.ancestors.whereType<XmlElement>().toList().reversed) {
@@ -532,8 +570,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
       );
     }
     if (inherited.containsKey('textLength') ||
-        inherited.containsKey('lengthAdjust'))
+        inherited.containsKey('lengthAdjust')) {
       throw const GraphicImportFailure('svg_text_length_unsupported');
+    }
     for (final key in [
       'textLength',
       'lengthAdjust',
@@ -542,19 +581,24 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
       'dominant-baseline',
       'alignment-baseline',
       'baseline-shift',
-    ])
+    ]) {
       if (inherited.containsKey(key) &&
-          !{'baseline', 'auto', '0', 'horizontal-tb'}.contains(inherited[key]))
+          !{'baseline', 'auto', '0', 'horizontal-tb'}.contains(inherited[key])) {
         throw GraphicImportFailure('svg_text_attribute_unsupported', key);
-    for (final key in ['letter-spacing', 'word-spacing'])
+    }
+      }
+    for (final key in ['letter-spacing', 'word-spacing']) {
       if (inherited.containsKey(key) &&
-          !{'normal', '0', '0px'}.contains(inherited[key]))
+          !{'normal', '0', '0px'}.contains(inherited[key])) {
         throw const GraphicImportFailure('svg_text_spacing_unsupported');
+    }
+      }
     if (element.getAttribute('class') != null ||
         document.descendants.whereType<XmlElement>().any(
           (e) => e.name.local == 'style',
-        ))
+        )) {
       throw const GraphicImportFailure('svg_text_stylesheet_unsupported');
+    }
     final preserve =
         inherited['space'] == 'preserve' || inherited['white-space'] == 'pre';
     final text = preserve
@@ -566,8 +610,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
         direction = inherited['direction'] ?? 'ltr',
         anchor = inherited['text-anchor'] ?? 'start';
     if (!{'ltr', 'rtl'}.contains(direction) ||
-        !{'start', 'middle', 'end'}.contains(anchor))
+        !{'start', 'middle', 'end'}.contains(anchor)) {
       throw const GraphicImportFailure('svg_text_direction_unsupported');
+    }
     final request = SvgTextRequest(
       text: text,
       family: inherited['font-family'] ?? 'sans-serif',
@@ -585,8 +630,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
       direction: direction,
     );
     final outline = await prepareText(request);
-    if (!outline.advance.isFinite || outline.advance < 0)
+    if (!outline.advance.isFinite || outline.advance < 0) {
       throw const GraphicImportFailure('svg_text_outline_invalid');
+    }
     final offset = anchor == 'middle'
         ? -outline.advance / 2
         : (anchor == 'end') != (direction == 'rtl')
@@ -606,8 +652,9 @@ Future<SvgGraphicImport> importSvgGraphicWithText(
           : canonicalPathArities[command.first];
       if (arity == null ||
           command.length != arity + 1 ||
-          command.skip(1).any((v) => v is! num || !v.isFinite || v.abs() > 1e9))
+          command.skip(1).any((v) => v is! num || !v.isFinite || v.abs() > 1e9)) {
         throw const GraphicImportFailure('svg_text_outline_invalid');
+      }
       path.add([
         command.first,
         for (var i = 1; i < command.length; i += 2) ...[

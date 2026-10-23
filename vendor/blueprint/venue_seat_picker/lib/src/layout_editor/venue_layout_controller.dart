@@ -657,6 +657,27 @@ class VenueLayoutController extends ChangeNotifier {
     return _apply(next, reflowTables: false);
   }
 
+  bool previewTableResize(
+    VenueLayoutDocument baseline,
+    String id,
+    double width,
+    double height, {
+    required String handle,
+  }) {
+    if (_gesture == null) beginGesture();
+    if (_gesture == null) return false;
+    final next = resizeNode(
+      baseline,
+      id,
+      width,
+      height,
+      handle: handle,
+      protectedSeatIds: protectedSeatIds?.call() ?? const {},
+    );
+    if (identical(next, baseline)) return false;
+    return _apply(next, reflowTables: false);
+  }
+
   void commitGesture() {
     final original = _gesture;
     if (original == null) return;
@@ -1032,8 +1053,9 @@ class VenueLayoutController extends ChangeNotifier {
     raw['nodes'] = _document.nodes.where((n) => ids.contains(n.id)).map((n) {
       final m = n.toJson();
       if (!ids.contains(n.parentId)) {
-        if (n.kind == 'seat' && n.parentId != null)
+        if (n.kind == 'seat' && n.parentId != null) {
           m['style'] = materializedNodeStyle(_document, n);
+        }
         final world = worldMatrix(_document, n);
         m['parentId'] = null;
         m['transform'] = {

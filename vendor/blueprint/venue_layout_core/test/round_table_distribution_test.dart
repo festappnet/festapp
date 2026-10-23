@@ -193,7 +193,9 @@ void main() {
         nodes: packed.nodes.where((node) => node.id != blocker.id).toList(),
       );
       final restored = moveLayoutWithinCanvas(reflowTable(free,table.id,8),{table.id},dx:10);
-      for (final gap in gaps(restored)) expect(gap, closeTo(pi / 4, .0001));
+      for (final gap in gaps(restored)) {
+        expect(gap, closeTo(pi / 4, .0001));
+      }
       expect(layoutCollisions(restored), isEmpty);
       expect(
         restored.nodes.map((node) => node.id).toSet(),

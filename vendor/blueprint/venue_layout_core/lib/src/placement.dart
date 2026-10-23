@@ -32,8 +32,9 @@ VenueLayoutDocument reflowCanonicalPins(
     final seat = document.nodes.firstWhere((n) => n.id == attachment['seatId']);
     var x = 0.0, y = 0.0, nx = 0.0, ny = 0.0;
     if (p['cell'] case final List cell) {
-      if (!canonicalGridPinOnBoundary(table, cell, '${p['face']}'))
+      if (!canonicalGridPinOnBoundary(table, cell, '${p['face']}')) {
         throw StateError('invalid_grid_pin');
+      }
       final face = p['face'];
       final delta = switch (face) {
         'top' => [0, -1],
@@ -55,8 +56,9 @@ VenueLayoutDocument reflowCanonicalPins(
         x = nx * table.width / 2;
         y = ny * table.height / 2;
       } else {
-        if (table.surface?['type'] != 'rect' || side == 'perimeter')
+        if (table.surface?['type'] != 'rect' || side == 'perimeter') {
           throw StateError('invalid_surface_pin');
+        }
         nx = side == 'left'
             ? -1
             : side == 'right'
@@ -80,8 +82,9 @@ VenueLayoutDocument reflowCanonicalPins(
           ? seat.rotation
           : quantize(atan2(-nx, ny) * 180 / pi),
     );
-    if (seat.locked && !sameLayoutNode(seat, next))
+    if (seat.locked && !sameLayoutNode(seat, next)) {
       throw StateError('locked_seat');
+    }
     replacements[seat.id] = next;
   }
   return replacements.isEmpty

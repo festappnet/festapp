@@ -30,6 +30,25 @@ void main() {
 
       Finder tool(String name) => find.byKey(ValueKey('layout-tool-$name'));
       await mount(true);
+      if (width < 700) {
+        final compact = find.byKey(
+          const ValueKey('layout-mobile-pointer-tool'),
+        );
+        final before = tester.getRect(compact);
+        await tester.tap(compact);
+        await tester.pumpAndSettle();
+        expect(
+          find.widgetWithText(PopupMenuItem<String>, 'Select'),
+          findsOneWidget,
+        );
+        await tester.tap(find.widgetWithText(PopupMenuItem<String>, 'Pan'));
+        await tester.pumpAndSettle();
+        expect(tester.getRect(compact), before);
+        expect(find.byTooltip('Pan'), findsOneWidget);
+        await mount(false);
+        expect(compact, findsNothing);
+        return;
+      }
       final select = tester.getRect(tool('Select'));
       final pan = tester.getRect(tool('Pan'));
       final toolbar = find.byKey(const ValueKey('layout-editor-toolbar'));

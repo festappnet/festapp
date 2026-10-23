@@ -16,13 +16,13 @@ Map<String, dynamic> canonicalDocumentSchema() {
   Map<String, dynamic> array(Object items, {int? min, int? max}) => {
     'type': 'array',
     'items': items,
-    if (min != null) 'minItems': min,
-    if (max != null) 'maxItems': max,
+    'minItems': ?min,
+    'maxItems': ?max,
   };
   Map<String, dynamic> number({num? min, num? max, bool integer = false}) => {
     'type': integer ? 'integer' : 'number',
-    if (min != null) 'minimum': min,
-    if (max != null) 'maximum': max,
+    'minimum': ?min,
+    'maximum': ?max,
   };
   Map<String, dynamic> ref(String name) => {r'$ref': '#/' + r'$defs/' + name};
   const string = {'type': 'string'}, boolean = {'type': 'boolean'};
