@@ -122,6 +122,7 @@ function boot({
                         return true;
                     },
                 };
+                window.__registration = registration;
                 const serviceWorker = new window.EventTarget();
                 serviceWorker.getRegistrations = async () => [registration];
                 serviceWorker.getRegistration = async () => registration;
@@ -280,6 +281,66 @@ describe('festapp_update_prompt.js', () => {
             'a user interaction must not be interrupted by an automatic reload');
         assert.ok(banner(window),
             'the ready app should offer an explicit coherent-shell refresh');
+    });
+
+    for (const latestVersion of ['1.0.0+1', '1.0.0+2']) {
+        test(`startup update to ${latestVersion} stops if the app becomes ready during preparation`, async (t) => {
+            const { window } = boot({
+                latestVersion,
+                activeWorkerVersion: '0.9.0+1',
+                waitingWorker: true,
+            });
+            t.after(() => window.close());
+            let updates = 0;
+            window.__registration.update = async () => {
+                updates++;
+                // A newer manifest prepares once before entering cutover.
+                if (updates === (latestVersion === '1.0.0+1' ? 1 : 2)) {
+                    window.__FESTAPP_APP_READY__ = true;
+                }
+            };
+            window.dispatchEvent(new window.Event('focus'));
+            await flush();
+
+            assert.deepStrictEqual([...window.__skipWaitingMessages], [],
+                'a background download must not activate over a now-interactive page');
+            assert.strictEqual(window.__navigationErrors.length, 0);
+            assert.ok(banner(window), 'offer the prepared update for an explicit refresh');
+        });
+    }
+
+    test('startup cutover cannot reload a page that became ready during controller handoff', async (t) => {
+        const { window } = boot({
+            latestVersion: '1.0.0+2',
+            waitingWorker: true,
+            delayedControllerChange: true,
+        });
+        t.after(() => window.close());
+        window.dispatchEvent(new window.Event('focus'));
+        await flush();
+        assert.deepStrictEqual([...window.__skipWaitingMessages], ['SKIP_WAITING']);
+
+        window.__FESTAPP_APP_READY__ = true;
+        window.__activateWaitingController();
+        await flush();
+
+        assert.strictEqual(window.__navigationErrors.length, 0,
+            'finishing installation must not restart an already-visible application');
+        assert.strictEqual(window.sessionStorage.getItem('festappCutoverVersion'), null);
+        assert.ok(banner(window));
+    });
+
+    test('startup recovery cannot reload an app that became ready while the worker updated', async (t) => {
+        const { window } = boot({ activeWorkerWithoutUpdate: true });
+        t.after(() => window.close());
+        window.__registration.update = async () => {
+            window.__FESTAPP_APP_READY__ = true;
+            window.dispatchEvent(new window.Event('festapp-app-ready'));
+        };
+        await window.recoverFestappStartup('module-error');
+
+        assert.strictEqual(window.__navigationErrors.length, 0,
+            'a recovered startup must cancel its pending reload');
     });
 
     test('Reload preserves the working shell through the mobile controller handoff', async () => {

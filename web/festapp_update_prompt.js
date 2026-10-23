@@ -469,10 +469,16 @@
     document.body.appendChild(banner);
   }
 
-  async function activateWaitingFestappWorker(expectedVersion) {
+  async function activateWaitingFestappWorker(expectedVersion, onlyIfStalled = false) {
     try {
       const ready = await getReadyWorkerForVersion(expectedVersion);
       if (!ready) return false;
+      // Installation may finish after the first usable frame. A background
+      // update must yield before replacing the now-interactive controller.
+      if (onlyIfStalled && window.__FESTAPP_APP_READY__ === true) {
+        showUpdateBanner(expectedVersion, 'new-version');
+        return false;
+      }
       const registration = ready.registration;
       const candidate = ready.worker;
       if (candidate === registration.active && candidate.state === 'activated') return true;
@@ -519,8 +525,13 @@
 
   async function cutOverToVersion(latestVersion, repair = false, onlyIfStalled = false) {
     if (!latestVersion) return false;
-    const ready = await activateWaitingFestappWorker(latestVersion);
-    if (!ready || (onlyIfStalled && window.__FESTAPP_APP_READY__ === true)) return false;
+    const ready = await activateWaitingFestappWorker(latestVersion, onlyIfStalled);
+    if (!ready) return false;
+    // The first frame can also arrive while the controller is changing.
+    if (onlyIfStalled && window.__FESTAPP_APP_READY__ === true) {
+      showUpdateBanner(latestVersion, 'new-version');
+      return false;
+    }
     if (repair && !(await repairActiveAppShell(latestVersion))) return false;
     if (onlyIfStalled && window.__FESTAPP_APP_READY__ === true) return false;
     sessionStorage.setItem(cutoverStorageKey, latestVersion);
@@ -646,7 +657,7 @@
             }
             return;
           }
-          if (await cutOverToVersion(currentVersion)) return;
+          if (await cutOverToVersion(currentVersion, false, true)) return;
         }
         sessionStorage.removeItem(cutoverStorageKey);
         sessionStorage.removeItem(cleanRecoveryStorageKey);
@@ -674,7 +685,7 @@
       // shell, so recover it automatically. Once Flutter is running, preserve
       // in-progress form edits and let the user choose when to reload.
       if (window.__FESTAPP_APP_READY__ !== true &&
-          await cutOverToVersion(latestVersion)) return;
+          await cutOverToVersion(latestVersion, false, true)) return;
       showUpdateBanner(latestVersion, 'new-version');
     } catch (error) {
       console.warn('Festapp version check failed:', error);
