@@ -1167,6 +1167,7 @@
     "no_matching_answers": "Žiadne ďalšie zodpovedajúce údaje."
   },
   "FeatureBlueprint": {
+    "orderBatchImmutable": "Vstupenky z tlačovej dávky nemožno presunúť ani nahradiť inou objednávkou.",
     "orderReview": "Skontrolovať objednávku",
     "orderAffectedSeats": "Všetky dotknuté miesta",
     "orderNoAutomaticRefund": "Zmena ceny pôvodnej objednávky neznamená automatické vrátenie peňazí.",

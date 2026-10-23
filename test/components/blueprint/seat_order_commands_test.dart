@@ -13,7 +13,13 @@ import '../../support/fixtures/local_app_storage_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  for (final failure in ['network', 'http', 'relay', 'authorization'])
+  for (final failure in [
+    'network',
+    'http',
+    'relay',
+    'authorization',
+    'relay-authorization'
+  ])
     test(
         'production Supabase binding resumes original confirmed Edge HTTP payload ($failure)',
         () async {
@@ -42,11 +48,12 @@ void main() {
         if (lose) {
           if (failure == 'network')
             throw http.ClientException('Synthetic lost HTTP acknowledgement');
-          return http.Response('{}', failure == 'authorization' ? 401 : 503,
+          return http.Response(
+              '{}', failure.endsWith('authorization') ? 401 : 503,
               request: request,
               headers: {
                 'content-type': 'application/json',
-                if (failure == 'relay') 'x-relay-error': 'true'
+                if (failure.startsWith('relay')) 'x-relay-error': 'true'
               });
         }
         return http.Response(
@@ -71,11 +78,11 @@ void main() {
       input['email'] = 'later@example.invalid';
       await expectLater(
           commands.create(preview),
-          throwsA(failure == 'authorization'
+          throwsA(failure.endsWith('authorization')
               ? isA<PostgrestException>()
                   .having((e) => e.code, 'SQL authorization code', '42501')
               : isA<http.ClientException>()));
-      final attempts = failure == 'authorization' ? 1 : 2;
+      final attempts = failure.endsWith('authorization') ? 1 : 2;
       expect(writes, hasLength(attempts));
       lose = false;
       expect(

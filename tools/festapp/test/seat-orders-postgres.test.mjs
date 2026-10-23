@@ -182,7 +182,7 @@ test('an actual pre-cutover receipt survives the forward migration and uncertain
  const historical=await call();assert.equal(historical.status,'applied',JSON.stringify(historical));assert.equal(historical.data.paymentPreparationPolicy,undefined);
  const before=await state(s),order=Number(historical.data.order.id);assert.equal(before.orders.find(o=>Number(o.id)===order).state,'preparing_payment');
  await s.db.query('RESET ROLE');
- await s.db.query(await readFile(new URL('../../../supabase/migrations/20261023235000_confirmed_blueprint_seat_orders.sql',import.meta.url),'utf8'));
+ await s.db.query(await readFile(new URL('../../../supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql',import.meta.url),'utf8'));
  await s.db.query('SET LOCAL ROLE authenticated');assert.deepEqual(await call(),historical);assert.deepEqual(await state(s),before);
  const client=invoiceClient(s),claim=await client.rpc('claim_replacement_invoice_preparation',{p_order:order,p_command:command});
  assert.equal(claim.error,null);assert.equal(claim.data.status,'claimed');assert.equal(claim.data.allowCreate,false,'historical absence of a local dispatch marker never proves the invoice was not created');
@@ -195,12 +195,12 @@ test('current main notification producers roll back with the seat-order quote an
  // Install current authored owners in this transaction only. Never run cron
  // registration or a BEGIN/COMMIT-wrapped migration inside another fixture.
  const sources=['notification_center/schema.sql','notification_center/core.sql','notification_center/orders.sql',
-  'notification_center/capacity.sql','notification_center/email.sql','eshop/create_ticket_order.sql',
+  'notification_center/capacity.sql','notification_center/email.sql','eshop/create_ticket_order.sql','eshop/materialize_ticket_products_internal_v1.sql',
   'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql',
   'eshop_orders/recalculate_order_payment_status.sql','inventory/apply_allocations.sql',
   'inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql'];
  const declared=new Set();
- for(const file of sources){const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await s.db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ for(const file of sources){if(file==='notification_center/schema.sql'&&(await s.db.query("select to_regclass('public.notification_center_activation') present")).rows[0].present)continue;const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await s.db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  for(const row of (await s.db.query("select format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure) statement from pg_proc p where p.pronamespace='public'::regnamespace and p.proname=any($1)",[[...declared]])).rows)await s.db.query(row.statement);
  for(const row of (await s.db.query("select format('ALTER TABLE public.%I OWNER TO postgres',tablename) statement from pg_tables where schemaname='public' and tablename like 'notification_center_%'")).rows)await s.db.query(row.statement);
  await s.db.query('insert into notification_center_activation(organization,enabled,collection_started_at) values($1,true,clock_timestamp())',[s.f.org]);
@@ -213,4 +213,38 @@ test('current main notification producers roll back with the seat-order quote an
  await s.db.query('RESET ROLE');const committed=await snapshot();assert.equal(committed.filter(e=>e.kind==='order_created').length,1);assert.equal(committed.filter(e=>e.kind==='order_cancelled').length,1);await s.db.query('SET LOCAL ROLE authenticated');
  assert.deepEqual(await apply(s,p,input,command),done);
  await s.db.query('RESET ROLE');assert.deepEqual(await snapshot(),committed,'original intent replay never publishes a second notification');
+});
+
+test('current printed-batch guards reject approved replacement and swap atomically, including released adapters',options,async t=>{
+ const s=await paidAtomicSwap(t);await bank(s);
+ await s.db.query('RESET ROLE');
+ const appliedBatch=await readFile(new URL('../../../supabase/migrations/20261024020000_pregenerated_ticket_batches.sql',import.meta.url),'utf8');
+ const oldSwap=appliedBatch.split('-- Source: database/functions/eshop/swap_spot_tickets.sql\n')[1]?.split('\n-- Source:')[0];
+ assert(oldSwap,'use exact installed batch-era swap owners');await s.db.query(oldSwap);
+ assert((await s.db.query("select to_regprocedure('public.swap_spot_tickets_internal_v1(bigint,bigint)') present")).rows[0].present);
+ await s.db.query(await readFile(new URL('../../../supabase/migrations/20261024023000_confirmed_blueprint_seat_orders.sql',import.meta.url),'utf8'));
+ for(const name of ['swap_spot_tickets_internal_v1(bigint,bigint)','swap_spot_pair_internal_v1(bigint,bigint)'])assert.equal((await s.db.query('select to_regprocedure($1) present',['public.'+name])).rows[0].present,null,'terminal forward removes resurrected retired owner');
+ await s.db.query('SET LOCAL ROLE authenticated');
+ const input={email:'printed-guard@example.invalid',form_key:s.fx.formKey};
+ const p=await preview(s,[s.first],input),swapResponse=await s.ex.previewSwap(s.first,s.second);assert.equal(p.code,200,JSON.stringify(p));assert.equal(swapResponse.error,undefined,JSON.stringify(swapResponse));const swap=swapResponse.data;
+ await s.db.query('RESET ROLE');
+ // A valid sold-batch lineage appears after both approvals. The original paid
+ // ticket remains the admission identity; its stock parent carries no finance.
+ const stock=Number((await s.db.query('select allocate_ticket_order_identity_internal($1) id',[s.fx.form])).rows[0].id);
+ await s.db.query("update eshop.orders set state='stock',price=null,payment_info=null where id=$1",[stock]);
+ const batch=(await s.db.query("insert into eshop.ticket_batches(occasion,form,stock_order_id,title,created_by,currency_code,snapshot) values($1,$2,$3,'Synthetic printed batch',$4,'CZK','{\"fixture\":true}') returning id",[s.f.occasion,s.fx.form,stock,s.f.actor])).rows[0].id;
+ const ticket=(await s.db.query('select i.ticket from eshop.spots s join eshop.order_product_ticket i on i.id=s.order_product_ticket where s.id=$1',[s.first])).rows[0].ticket;
+ await s.db.query('insert into eshop.ticket_batch_items(batch_id,ticket_id,ordinal,sale_order_id) values($1,$2,1,$3)',[batch,ticket,s.order]);
+ await s.db.query('SET LOCAL ROLE authenticated');const before=await state(s);
+ const blockedPreview=await preview(s,[s.first],input,false);assert.equal(blockedPreview.code,409);assert.equal(blockedPreview.reason,'BATCH_TICKET_PRINT_IMMUTABLE');
+ const mcpPreview=await s.ex.previewOrder([s.first],input);assert.equal(mcpPreview.error,undefined);assert.equal(mcpPreview.data.mode,'rejected');assert.equal(mcpPreview.data.reason,'BATCH_TICKET_PRINT_IMMUTABLE');
+ const replacement=await apply(s,p,input);assert.equal(replacement.status,'rejected',JSON.stringify(replacement));assert.equal(replacement.data.reason,'BATCH_TICKET_PRINT_IMMUTABLE');
+ const swapped=await s.ex.swap(swap);assert.equal(swapped.error?.code,'SEAT_SWAP_REJECTED_NEW_PREVIEW_REQUIRED',JSON.stringify(swapped));assert.deepEqual(await state(s),before);
+ await s.db.query('SAVEPOINT legacy_printed');
+ await assert.rejects(s.db.query('select replace_blueprint_order_client_sync_v1($1,$2,$3)',[p.quote.spotIds,input,randomUUID()]),error=>error.code==='55000');
+ await s.db.query('ROLLBACK TO SAVEPOINT legacy_printed');await s.db.query('RELEASE SAVEPOINT legacy_printed');
+ await s.db.query('SAVEPOINT legacy_swap_printed');
+ await assert.rejects(s.db.query('select swap_spot_tickets_client_sync_v1($1,$2,$3)',[s.first,s.second,randomUUID()]),error=>error.code==='55000');
+ await s.db.query('ROLLBACK TO SAVEPOINT legacy_swap_printed');await s.db.query('RELEASE SAVEPOINT legacy_swap_printed');
+ assert.deepEqual(await state(s),before,'neither new nor released paths may alter printed ticket allocations, money, history or notices');
 });

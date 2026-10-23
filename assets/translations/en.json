@@ -1272,6 +1272,7 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "orderBatchImmutable": "Tickets from a print batch cannot be moved or replaced with another order.",
     "orderReview": "Review order",
     "orderAffectedSeats": "All affected seats",
     "orderNoAutomaticRefund": "Changing the original order amount does not automatically refund a payment.",

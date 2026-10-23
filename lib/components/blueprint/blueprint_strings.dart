@@ -56,6 +56,9 @@ class BlueprintStrings {
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
     if (error is BlueprintCommandRejection) {
+      if (error.reason == 'BATCH_TICKET_PRINT_IMMUTABLE') {
+        return 'FeatureBlueprint.orderBatchImmutable'.tr();
+      }
       if (error.reason.startsWith('BLUEPRINT_ORDER_')) {
         return error.reason == 'BLUEPRINT_ORDER_CHANGED'
             ? 'FeatureBlueprint.swapChanged'.tr()

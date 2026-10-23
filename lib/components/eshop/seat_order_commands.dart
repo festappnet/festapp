@@ -120,7 +120,10 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
     } on FunctionsFetchException {
       throw http.ClientException(
           'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND');
-    } on FunctionsRelayException {
+    } on FunctionsRelayException catch (error) {
+      if (error.status == 401 || error.status == 403)
+        throw const PostgrestException(
+            message: 'Seat order authorization denied', code: '42501');
       throw http.ClientException(
           'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND');
     } on FunctionsHttpException catch (error) {

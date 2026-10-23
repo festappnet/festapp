@@ -1161,6 +1161,7 @@
     "no_matching_answers": "Brak kolejnych pasujących pól."
   },
   "FeatureBlueprint": {
+    "orderBatchImmutable": "Biletów z partii do druku nie można przenosić ani zastępować innym zamówieniem.",
     "orderReview": "Sprawdź zamówienie",
     "orderAffectedSeats": "Wszystkie objęte zmianą miejsca",
     "orderNoAutomaticRefund": "Zmiana kwoty pierwotnego zamówienia nie powoduje automatycznego zwrotu płatności.",

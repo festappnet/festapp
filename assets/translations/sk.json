@@ -3,6 +3,7 @@
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
   },
   "FeatureBlueprint": {
+    "orderBatchImmutable": "Vstupenky z tlačovej dávky nemožno presunúť ani nahradiť inou objednávkou.",
     "orderReview": "Skontrolovať objednávku",
     "orderAffectedSeats": "Všetky dotknuté miesta",
     "orderNoAutomaticRefund": "Zmena ceny pôvodnej objednávky neznamená automatické vrátenie peňazí.",

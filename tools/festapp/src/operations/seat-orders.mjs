@@ -42,6 +42,9 @@ export async function invokeSeatOrderOperation(owner,client,operation,args,conte
  if(!write)({data,error}=await client.rpc('preview_blueprint_seat_order',{p_occasion:args.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId,p_blueprint:args.blueprintId,p_spots:args.spotIds,p_input:args.inputData??null,p_editor:false}));
  else ({data,error}=await client.functions.invoke('send-ticket-order',{body:{commandId:args.commandId,clientId:owner.profile.binding,replacement:{spotIds:args.spotIds,inputData:args.inputData,confirmation:{actorId:args.actorId,occasionId:args.occasionId,organizationId:scope.organizationId,unitId:scope.unitId,blueprintId:args.blueprintId,targetSpotIds:args.targetSpotIds,affectedSpotIds:args.affectedSpotIds,blueprints:args.blueprints,confirmationHash:args.confirmationHash,editor:false}}}}));
  if(['40001','40P01'].includes(error?.code??data?.errorCode))throw new OperationError('TEMPORARY_CONCURRENCY_RETRY_SAME_COMMAND',true);
+ if(write&&error&&![401,403].includes(Number(error.status??error.context?.status))&&(['FunctionsFetchError','FunctionsRelayError'].includes(error.name)
+  ||[408,429].includes(Number(error.status??error.context?.status))||Number(error.status??error.context?.status)>=500))
+  throw new OperationError('TEMPORARY_FAILURE_RETRY_SAME_COMMAND',true);
  if(data?.errorCode==='42501')throw new OperationError('FORBIDDEN');
  if(write&&data?.code===503&&data.committed){check(data.committed.mutation?.commandId===args.commandId);data=data.committed;}
  if(data?.code===503)throw new OperationError(data.errorCode==='PAYMENT_PREPARATION_PENDING_RETRY_SAME_COMMAND'?data.errorCode:'TEMPORARY_FAILURE_RETRY_SAME_COMMAND',true);

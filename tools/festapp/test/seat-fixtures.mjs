@@ -7,7 +7,22 @@ import {Operations} from '../src/operations/catalog.mjs';
 export async function install(db){
  await db.query('RESET ROLE');
  const declared=new Set();
- for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261023235000_confirmed_blueprint_seat_orders.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ // Current main domain guards/producers must exist before the final forward
+ // owner is exercised. Schema is additive and remains inside each fixture TX.
+ const prerequisites=['notification_center/schema.sql','notification_center/core.sql','notification_center/orders.sql',
+  'notification_center/capacity.sql','notification_center/email.sql','notification_center/maintenance.sql','notification_center/bank.sql',
+  'eshop_ticket_batches/schema.sql','eshop_ticket_batches/guards.sql','eshop_orders/check_order_is_mutable.sql'];
+ for(const file of prerequisites){
+  let sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');
+  if(file==='notification_center/schema.sql'&&(await db.query("select to_regclass('public.notification_center_activation') present")).rows[0].present)continue;
+  if(file==='notification_center/maintenance.sql'&&(await db.query("select to_regclass('public.notification_center_maintenance') present")).rows[0].present)sql=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION'));
+  await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);
+ }
+ for(const file of ['20261023220000_blueprint_seat_operations.sql','20261023232000_confirmed_blueprint_hold_release.sql','20261023233000_confirmed_blueprint_seat_swap.sql','20261024023000_confirmed_blueprint_seat_orders.sql']){const sql=await readFile(new URL('../../../supabase/migrations/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ const currentOwners=['blueprint/save.sql','eshop/materialize_ticket_products_internal_v1.sql','eshop/create_ticket_order.sql',
+  'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql','eshop_orders/recalculate_order_payment_status.sql',
+  'inventory/apply_allocations.sql','inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql','eshop_waitlist/fakturoid_recovery.sql'];
+ for(const file of currentOwners){const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
  // Every declaration in this cut is installed by postgres on production.
  // The disposable postgres role cannot replace supabase_admin-owned routines;
  // install with the fixture owner, then align only these declared owners.
@@ -18,6 +33,8 @@ export async function install(db){
  // access: these eight existing functions are postgres-owned. New definer
  // wrappers also use the actual production migration role, not a queue bypass.
  await db.query('ALTER TABLE eshop.replacement_invoice_preparations OWNER TO postgres');
+ for(const table of ['ticket_batches','ticket_batch_items','ticket_batch_document_parts']){await db.query(`ALTER TABLE eshop.${table} OWNER TO postgres`);await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON eshop.${table} TO service_role`);}
+ for(const row of (await db.query("select format('ALTER TABLE public.%I OWNER TO postgres',tablename) statement from pg_tables where schemaname='public' and tablename like 'notification_center_%'")).rows)await db.query(row.statement);
  const signatures=['confirm_blueprint_order_change_internal_v1(bigint[],jsonb)','storno_tickets_bulk_internal_v1(bigint[],boolean)',
   'update_order_and_tickets_to_storno(bigint)','create_ticket_order_internal_v1(jsonb)',
   'enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)','enqueue_paid_order_tickets(bigint)',

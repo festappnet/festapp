@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/seat_order_commands.dart';
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import '../../support/fixtures/blueprint_order_preview_fixture.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../support/fixtures/blueprint_swap_preview_fixture.dart';
@@ -487,6 +489,35 @@ void main() {
       ]
     });
     expect(submitted!['form_key'], '00000000-0000-4000-8000-000000000001');
+  });
+  testWidgetsWithEnvironment(() => environment,
+      'seat order shows printed-batch rejection without exposing a confirmation or writing',
+      (tester) async {
+    var writes = 0;
+    final commands = SupabaseSeatOrderCommands.withTransport(
+        ClientCommandTransport((_, __) async {
+      writes++;
+      return null;
+    }),
+        readRpc: (_, params) async => params['p_input'] == null
+            ? seatOrderRequirementsJson()
+            : {'code': 409, 'reason': 'BATCH_TICKET_PRINT_IMMUTABLE'});
+    await environment.pumpWidget(
+        tester,
+        MaterialApp(
+            home: Scaffold(
+                body: BlueprintCreateOrderDialog(
+                    request: seatOrderRequestFixture(), commands: commands))));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'local@example.invalid');
+    await tester.tap(find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr()));
+    await tester.pumpAndSettle();
+    expect(
+        find.text('FeatureBlueprint.orderBatchImmutable'.tr()), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder),
+        findsNothing);
+    expect(writes, 0);
   });
   testWidgetsWithEnvironment(() => environment,
       'whole order cancellation email is an optional follow-up',
@@ -2643,55 +2674,56 @@ void main() {
     expect(
         find.text(BlueprintStrings.standingAvailability(0, 100)), findsNothing);
     pickerResponse = (request) {
-      expect(
-          request.url.path, endsWith('/rpc/get_product_catalog'));
+      expect(request.url.path, endsWith('/rpc/get_product_catalog'));
       return http.Response(
-          jsonEncode({'catalog':{
-            'server_time': '2026-10-21T10:00:00Z',
-            'product_types': [
-              {'id': 2, 'title': 'Admission', 'type': 'spot'},
-              {'id': 3, 'title': 'Extras', 'type': 'other'}
-            ],
-            'products': [
-              {
-                'id': 9,
-                'title': 'Standing ticket',
-                'price': 80,
-                'currency_code': 'CZK',
-                'product_type': 2,
-                'ordered_count': 1
-              },
-              {
-                'id': 10,
-                'title': 'Table ticket',
-                'price': 500,
-                'currency_code': 'CZK',
-                'product_type': 2,
-                'ordered_count': 4
-              },
-              {
-                'id': 11,
-                'title': 'Non-admission product',
-                'price': 50,
-                'product_type': 3
-              }
-            ],
-            'inventory_pools': [
-              {
-                'id': 5,
-                'occasion': 1,
-                'title': 'Standing',
-                'sellable_capacity': 25
-              }
-            ],
-            'inventory_contexts': [
-              {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
-            ],
-            'product_inventory_contexts': [
-              {'product': 9, 'inventory_context': 6, 'quantity': 1}
-            ],
-            'forms': [],
-          }}),
+          jsonEncode({
+            'catalog': {
+              'server_time': '2026-10-21T10:00:00Z',
+              'product_types': [
+                {'id': 2, 'title': 'Admission', 'type': 'spot'},
+                {'id': 3, 'title': 'Extras', 'type': 'other'}
+              ],
+              'products': [
+                {
+                  'id': 9,
+                  'title': 'Standing ticket',
+                  'price': 80,
+                  'currency_code': 'CZK',
+                  'product_type': 2,
+                  'ordered_count': 1
+                },
+                {
+                  'id': 10,
+                  'title': 'Table ticket',
+                  'price': 500,
+                  'currency_code': 'CZK',
+                  'product_type': 2,
+                  'ordered_count': 4
+                },
+                {
+                  'id': 11,
+                  'title': 'Non-admission product',
+                  'price': 50,
+                  'product_type': 3
+                }
+              ],
+              'inventory_pools': [
+                {
+                  'id': 5,
+                  'occasion': 1,
+                  'title': 'Standing',
+                  'sellable_capacity': 25
+                }
+              ],
+              'inventory_contexts': [
+                {'id': 6, 'inventory_pool': 5, 'title': 'Admission'}
+              ],
+              'product_inventory_contexts': [
+                {'product': 9, 'inventory_context': 6, 'quantity': 1}
+              ],
+              'forms': [],
+            }
+          }),
           200,
           headers: {'content-type': 'application/json'},
           request: request);
