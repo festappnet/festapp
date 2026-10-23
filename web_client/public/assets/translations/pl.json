@@ -1161,6 +1161,13 @@
     "no_matching_answers": "Brak kolejnych pasujących pól."
   },
   "FeatureBlueprint": {
+    "orderReview": "Sprawdź zamówienie",
+    "orderAffectedSeats": "Wszystkie objęte zmianą miejsca",
+    "orderNoAutomaticRefund": "Zmiana kwoty pierwotnego zamówienia nie powoduje automatycznego zwrotu płatności.",
+    "orderPriceUnavailable": "Cena niedostępna",
+    "orderPaymentPending": "Utworzono zamówienie {order}. Trwa przygotowanie płatności. Ponów to żądanie.",
+    "orderLegacyRecovery": "Aby odzyskać poprzednie zamówienie, wprowadź pierwotne miejsca i dane klienta.",
+    "orderLabel": "Zamówienie",
     "releaseTemporaryReservationPreview": "Tymczasowe rezerwacje: {held}. Miejsca w całym wyborze: {total}.",
     "swapSourceSeats": "Z miejsc",
     "swapTargetSeats": "Na miejsca",
@@ -1412,7 +1419,8 @@
     "wholeOrganizerSelected": "Cały organizator",
     "groupSelection": "Wybrane wydarzenia: {selected} z {count}",
     "inheritedSelectionHint": "Uwzględnione przez wybór organizatora. Odznacz organizatora, aby wybrać pojedyncze wydarzenia.",
-    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie."
+    "selectionRequired": "Wybierz co najmniej jednego organizatora lub wydarzenie.",
+    "seatsCreateOrders": "Tworzyć zamówienia z miejsc i zastępować pierwotne bilety"
   },
   "AccountConnections": {
     "intro": "Zarządzaj logowaniem do konta i aplikacjami, którym przyznano dostęp.",

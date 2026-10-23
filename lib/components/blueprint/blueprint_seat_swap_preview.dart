@@ -1,3 +1,5 @@
+import 'package:fstapp/components/eshop/order_amount_change.dart';
+
 /// The exact seat assignments and financial effects approved by an operator.
 /// Prices are authoritative decimal strings from the shared SQL owner.
 class BlueprintSeatSwapPreview {
@@ -13,7 +15,7 @@ class BlueprintSeatSwapPreview {
     required List<int> targetSpotIds,
     required this.confirmationHash,
     required List<BlueprintSwapSeat> seats,
-    required List<BlueprintSwapMoney> orders,
+    required List<OrderAmountChange> orders,
   })  : sourceSpotIds = List.unmodifiable(sourceSpotIds),
         targetSpotIds = List.unmodifiable(targetSpotIds),
         sourceIds = Set.unmodifiable(sourceSpotIds),
@@ -27,7 +29,7 @@ class BlueprintSeatSwapPreview {
   final Set<int> sourceIds;
   final String confirmationHash;
   final List<BlueprintSwapSeat> seats;
-  final List<BlueprintSwapMoney> orders;
+  final List<OrderAmountChange> orders;
 
   factory BlueprintSeatSwapPreview.fromJson(Map<String, dynamic> json,
       {required int organizationId, int? unitId}) {
@@ -40,7 +42,7 @@ class BlueprintSeatSwapPreview {
         .toList();
     final orders = (json['orders'] as List)
         .map((row) =>
-            BlueprintSwapMoney.fromJson(Map<String, dynamic>.from(row as Map)))
+            OrderAmountChange.fromJson(Map<String, dynamic>.from(row as Map)))
         .toList();
     final affectedOrders = seats.map((s) => s.orderId).whereType<int>().toSet();
     final hash = json['confirmationHash'] as String;
@@ -116,43 +118,5 @@ class BlueprintSwapSeat {
         customerName: customer?['name'] as String?,
         customerSurname: customer?['surname'] as String?,
         customerEmail: customer?['email'] as String?);
-  }
-}
-
-class BlueprintSwapMoney {
-  const BlueprintSwapMoney(
-      {required this.orderId,
-      required this.beforeAmount,
-      required this.afterAmount,
-      required this.delta,
-      required this.currencyCode,
-      required this.beforeState,
-      required this.afterState});
-  final int orderId;
-  final String beforeAmount,
-      afterAmount,
-      delta,
-      currencyCode,
-      beforeState,
-      afterState;
-
-  factory BlueprintSwapMoney.fromJson(Map<String, dynamic> json) {
-    final before = json['beforeAmount'] as String;
-    final after = json['afterAmount'] as String;
-    final delta = json['delta'] as String;
-    final currency = json['currencyCode'] as String;
-    if ([before, after, delta].any(
-            (v) => v.length > 40 || !RegExp(r'^-?\d+(\.\d+)?$').hasMatch(v)) ||
-        !RegExp(r'^[A-Z]{3}$').hasMatch(currency)) {
-      throw const FormatException('Invalid authoritative swap amount');
-    }
-    return BlueprintSwapMoney(
-        orderId: json['orderId'] as int,
-        beforeAmount: before,
-        afterAmount: after,
-        delta: delta,
-        currencyCode: currency,
-        beforeState: json['beforeState'] as String,
-        afterState: json['afterState'] as String);
   }
 }

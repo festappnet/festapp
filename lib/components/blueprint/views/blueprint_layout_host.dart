@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import '../blueprint_command_rejection.dart';
 import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
@@ -37,6 +38,10 @@ import '../blueprint_layout_controller.dart';
 import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_create_order_dialog.dart';
+import '../blueprint_seat_order_preview.dart';
+import 'package:fstapp/components/eshop/seat_order_commands.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'blueprint_layout_legend.dart';
 import 'blueprint_editor_feedback.dart';
 import 'blueprint_product_dialogs.dart';
@@ -434,20 +439,44 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
 
   Future<void> _order() async {
     if (!_canOrder || _busy || controller.selectedSpotIds.isEmpty) return;
+    final session = controller;
+    final blueprint = session.snapshot.blueprintId;
+    if (blueprint == null) return;
     setState(() => _operationPending = true);
     try {
-      final selected = List<int>.of(controller.selectedSpotIds);
-      final analysis = await DbEshop.analyzeNewOrderSpots(selected);
-      if (!mounted) return;
+      final request = BlueprintSeatOrderRequest(
+          occasionId: session.snapshot.occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprint,
+          spotIds: session.selectedSpotIds);
+      final commands = SupabaseSeatOrderCommands(Supabase.instance.client);
+      final recovered = await commands.recover(request);
+      if (!mounted || !identical(session, controller)) return;
+      if (recovered != null) {
+        await _refresh();
+        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+        return;
+      }
+      final requirements = await commands.requirements(request);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
       final done = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (_) => BlueprintCreateOrderDialog(
-              selectedSpotIds: selected, initialAnalysis: analysis));
-      if (done == true) {
+              request: request,
+              commands: commands,
+              initialRequirements: requirements));
+      if (done == true && mounted && identical(session, controller)) {
         await _refresh();
         if (mounted) controller.setMode(BlueprintLayoutMode.manage);
       }
+    } catch (error) {
+      if (mounted && identical(session, controller))
+        setState(() => _message = error is SeatOrderPreparationPending
+            ? 'FeatureBlueprint.orderPaymentPending'
+                .tr(namedArgs: {'order': '${error.orderId}'})
+            : BlueprintStrings.layoutErrorMessage(error));
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }

@@ -17,12 +17,13 @@ export async function install(db){
  // Exact production metadata verified through protected read-only canonical
  // access: these eight existing functions are postgres-owned. New definer
  // wrappers also use the actual production migration role, not a queue bypass.
+ await db.query('ALTER TABLE eshop.replacement_invoice_preparations OWNER TO postgres');
  const signatures=['confirm_blueprint_order_change_internal_v1(bigint[],jsonb)','storno_tickets_bulk_internal_v1(bigint[],boolean)',
   'update_order_and_tickets_to_storno(bigint)','create_ticket_order_internal_v1(jsonb)',
   'enqueue_ticket_order_confirmation_v1(uuid,bigint,jsonb,text)','enqueue_paid_order_tickets(bigint)',
   'cancel_order_email_intents(bigint)','replace_blueprint_order_client_sync_v1(bigint[],jsonb,uuid)',
   'preview_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,boolean)',
-  'create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean)'];
+  'create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)'];
  const rows=(await db.query("select format('ALTER FUNCTION %s OWNER TO postgres',to_regprocedure('public.'||signature)) statement from unnest($1::text[]) signature where to_regprocedure('public.'||signature) is not null",[signatures])).rows;
  assert.equal(rows.length,signatures.length);for(const row of rows)await db.query(row.statement);
 }
@@ -32,25 +33,62 @@ export async function setup(t,persistent=false){let root,f;const db=await openDi
  await db.query('RESET ROLE');const bindings=(await db.query('select blueprint_binding_projection_internal($1) value',[f.blueprint])).rows[0].value.seatBindings;
  const unit=randomUUID();const doc={...fx.request.layout,selectionUnits:[{id:unit,kind:'atomic',nodeIds:bindings.slice(0,2).map(b=>b.nodeId)}]};await db.query('update eshop.blueprints set layout=$2 where id=$1',[f.blueprint,doc]);await db.query('update eshop.blueprint_seat_bindings set selection_unit=$2 where blueprint=$1 and spot=any($3)',[f.blueprint,unit,bindings.slice(0,2).map(b=>b.spotId)]);await db.query('SET LOCAL ROLE authenticated');return{db,f,bindings,doc,fx,ex:executor(db,f)};}
 
-export function executor(db,f){const stats={calls:0,lose:false,payloadBytes:[]};const owner={root:'/tmp/festapp-seat-operations',profile:{organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:['seats.list','seats.preview_block','seats.block','seats.preview_release','seats.release_holds','seats.preview_swap','seats.swap'],delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action({rpc:async(name,a)=>{stats.calls++;await db.query('SAVEPOINT rpc');try{let data;
- if(name==='get_blueprint_seats')data=(await db.query('select get_blueprint_seats($1,$2,$3,$4,$5,$6) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_after,a.p_limit])).rows[0].value;
- else if(name==='preview_blueprint_seat_block')data=(await db.query('select preview_blueprint_seat_block($1,$2,$3,$4,$5,$6) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_blocked])).rows[0].value;
- else if(name==='preview_blueprint_seat_swap')data=(await db.query('select preview_blueprint_seat_swap($1,$2,$3,$4,$5,$6,$7) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_first,a.p_second,a.p_editor])).rows[0].value;
- else if(name==='swap_blueprint_seats'){data=(await db.query('select swap_blueprint_seats($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_first,a.p_second,a.p_source_spots,a.p_target_spots,a.p_expected_revision,a.p_confirmation_hash,a.p_command_id,a.p_editor])).rows[0].value;assert.equal(data.sync,undefined);}
- else if(name==='preview_blueprint_hold_release')data=(await db.query('select preview_blueprint_hold_release($1,$2,$3,$4,$5) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_spots,a.p_editor])).rows[0].value;
- else if(name==='release_blueprint_holds'){data=(await db.query('select release_blueprint_holds($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_affected_spots,a.p_expected_revision,a.p_hold_snapshot,a.p_command_id,a.p_editor])).rows[0].value;assert.equal(data.sync,undefined);}
- else{assert.equal(name,'block_blueprint_seats');data=(await db.query('select block_blueprint_seats($1,$2,$3,$4,$5,$6,$7,$8,$9) value',[a.p_occasion,a.p_organization,a.p_unit,a.p_blueprint,a.p_spots,a.p_affected_spots,a.p_expected_revision,a.p_blocked,a.p_command_id])).rows[0].value;assert.equal(data.sync,undefined);}
- stats.payloadBytes.push({rpc:name,bytes:Buffer.byteLength(JSON.stringify(data),'utf8')});await db.query('RELEASE SAVEPOINT rpc');if(stats.lose&&['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats'].includes(name)){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}return{data,error:null};}catch(e){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{error:{code:e.code,status:e.code==='42501'?403:400}};} }},{userId:f.actor})};const ops=new Operations(owner);return{stats,owner,previewSwap:(firstSpotId,secondSpotId)=>ops.invoke('seats.preview_swap',{occasionId:f.occasion,blueprintId:f.blueprint,firstSpotId,secondSpotId}),swap:(preview,commandId=randomUUID())=>ops.invoke('seats.swap',{occasionId:f.occasion,blueprintId:preview.blueprintId,firstSpotId:preview.firstSpotId,secondSpotId:preview.secondSpotId,sourceSpotIds:preview.sourceSpotIds,targetSpotIds:preview.targetSpotIds,layoutRevision:preview.layoutRevision,confirmationHash:preview.confirmationHash,commandId}),previewRelease:spotIds=>ops.invoke('seats.preview_release',{occasionId:f.occasion,spotIds}),release:(preview,commandId=randomUUID())=>ops.invoke('seats.release_holds',{occasionId:f.occasion,blueprintId:preview.blueprintId,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,holdSnapshot:preview.holdSnapshot,commandId}),list:(after)=>ops.invoke('seats.list',{occasionId:f.occasion,blueprintId:f.blueprint,limit:2,...(after?{after}:{})}),preview:(spotIds,blocked)=>ops.invoke('seats.preview_block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds,blocked}),block:(preview,commandId=randomUUID())=>ops.invoke('seats.block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,blocked:preview.blocked,commandId})};}
+export function executor(db,f,{invokeEdge}={}){
+ const stats={calls:0,lose:false,payloadBytes:[]};
+ const params={
+  get_blueprint_seats:['p_occasion','p_organization','p_unit','p_blueprint','p_after','p_limit'],
+  preview_blueprint_seat_block:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_blocked'],
+  block_blueprint_seats:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_affected_spots','p_expected_revision','p_blocked','p_command_id'],
+  preview_blueprint_hold_release:['p_occasion','p_organization','p_unit','p_spots','p_editor'],
+  release_blueprint_holds:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_affected_spots','p_expected_revision','p_hold_snapshot','p_command_id','p_editor'],
+  preview_blueprint_seat_swap:['p_occasion','p_organization','p_unit','p_blueprint','p_first','p_second','p_editor'],
+  swap_blueprint_seats:['p_occasion','p_organization','p_unit','p_blueprint','p_first','p_second','p_source_spots','p_target_spots','p_expected_revision','p_confirmation_hash','p_command_id','p_editor'],
+  preview_blueprint_seat_order:['p_occasion','p_organization','p_unit','p_blueprint','p_spots','p_input','p_editor'],
+ };
+ const client={rpc:async(name,a)=>{
+  assert(Object.hasOwn(params,name),'known real seat RPC');stats.calls++;await db.query('SAVEPOINT rpc');
+  try{const values=params[name].map(k=>a[k]??null),sql=`select ${name}(${values.map((_,i)=>'$'+(i+1)).join(',')}) value`;
+   const data=(await db.query(sql,values)).rows[0].value;
+   if(['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats'].includes(name))assert.equal(data.sync,undefined);
+   stats.payloadBytes.push({rpc:name,bytes:Buffer.byteLength(JSON.stringify(data),'utf8')});await db.query('RELEASE SAVEPOINT rpc');
+   if(stats.lose&&['block_blueprint_seats','release_blueprint_holds','swap_blueprint_seats'].includes(name)){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}
+   return{data,error:null};
+  }catch(error){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return{data:null,error:{code:error.code,status:error.code==='42501'?403:400}};}
+ },functions:{invoke:async(name,options)=>{
+   assert(invokeEdge,'Edge adapter must be explicitly provided; no live HTTP fallback');stats.calls++;
+   const response=await invokeEdge(name,options);if(response.data)stats.payloadBytes.push({rpc:name,bytes:Buffer.byteLength(JSON.stringify(response.data),'utf8')});
+   if(stats.lose){stats.lose=false;return{error:{code:'ECONNRESET',status:503}};}return response;
+ }}};
+ const owner={root:'/tmp/festapp-seat-operations',profile:{binding:'seat-fixture:'+f.actor,organizationId:f.org,tenantId:'fixture',name:'fixture',backendOrigin:'http://127.0.0.1:61022'},
+  allowedOperations:['seats.list','seats.preview_block','seats.block','seats.preview_release','seats.release_holds','seats.preview_swap','seats.swap','seats.preview_order','seats.create_order'],
+  delegatedContext:async()=>({organizationId:f.org,unitId:f.unit}),authorized:action=>action(client,{userId:f.actor})};
+ const ops=new Operations(owner);
+ return{stats,owner,ops,
+  previewOrder:(spotIds,inputData)=>ops.invoke('seats.preview_order',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds,...(inputData?{inputData}:{})}),
+  createOrder:(preview,inputData,commandId=randomUUID())=>ops.invoke('seats.create_order',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds:preview.requestedSpotIds,actorId:preview.actorId,inputData,targetSpotIds:preview.quote.spotIds,affectedSpotIds:preview.quote.affectedSpotIds,blueprints:preview.quote.blueprints,confirmationHash:preview.confirmationHash,commandId}),
+  previewSwap:(firstSpotId,secondSpotId)=>ops.invoke('seats.preview_swap',{occasionId:f.occasion,blueprintId:f.blueprint,firstSpotId,secondSpotId}),
+  swap:(preview,commandId=randomUUID())=>ops.invoke('seats.swap',{occasionId:f.occasion,blueprintId:preview.blueprintId,firstSpotId:preview.firstSpotId,secondSpotId:preview.secondSpotId,sourceSpotIds:preview.sourceSpotIds,targetSpotIds:preview.targetSpotIds,layoutRevision:preview.layoutRevision,confirmationHash:preview.confirmationHash,commandId}),
+  previewRelease:spotIds=>ops.invoke('seats.preview_release',{occasionId:f.occasion,spotIds}),
+  release:(preview,commandId=randomUUID())=>ops.invoke('seats.release_holds',{occasionId:f.occasion,blueprintId:preview.blueprintId,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,holdSnapshot:preview.holdSnapshot,commandId}),
+  list:after=>ops.invoke('seats.list',{occasionId:f.occasion,blueprintId:f.blueprint,limit:2,...(after?{after}:{})}),
+  preview:(spotIds,blocked)=>ops.invoke('seats.preview_block',{occasionId:f.occasion,blueprintId:f.blueprint,spotIds,blocked}),
+  block:(preview,commandId=randomUUID())=>ops.invoke('seats.block',{occasionId:f.occasion,blueprintId:preview.blueprintId,spotIds:preview.requestedSpotIds,affectedSpotIds:preview.affectedSpotIds,layoutRevision:preview.layoutRevision,blocked:preview.blocked,commandId})};
+}
 
 export async function cleanup(db,f,root){
  await db.query('BEGIN');await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[f.actor]);
  const occasions=[f.occasion,root.occasion];
+ // Only this fenced fixture's synthetic pending orders are aborted for teardown.
+ // No live provider is configured and the email worker is paused by the harness.
+ await db.query("select set_config('request.jwt.claim.sub','',true),set_config('request.jwt.claim.role','service_role',true)");
+ for(const row of (await db.query("select o.id,q.data->>'command_id' command from eshop.orders o join email_messages q on (q.data#>>'{ticket_order,order,id}')::bigint=o.id where o.occasion=any($1::bigint[]) and o.state='preparing_payment' and q.code='TICKET_ORDER_CONFIRMATION' and q.data->>'fakturoid_pending'='true'",[occasions])).rows)await db.query('select abort_fakturoid_ticket_order_v1($1,$2)',[row.id,row.command]);
+ await db.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[f.actor]);
  await db.query('insert into unit_users(unit,"user",is_manager) values($1,$2,true) on conflict(unit,"user") do update set is_manager=true',[f.unit,f.actor]);
  for(const row of (await db.query('select id from eshop.orders where occasion=any($1::bigint[]) order by id',[occasions])).rows)await db.query('select delete_order_internal_v1($1)',[row.id]);
  await db.query('delete from client_mutation_receipts where occasion=any($1::bigint[])',[occasions]);
  for(const table of ['client_commit_items','client_commit_components'])await db.query(`delete from ${table} where commit_id in(select commit_id from client_commits where occasion=any($1::bigint[]))`,[occasions]);await db.query('delete from client_commits where occasion=any($1::bigint[])',[occasions]);await db.query("delete from client_aggregate_versions where scope_type='occasion' and scope_id=any($1::bigint[])",[occasions]);
  for(const oc of occasions)await db.query('select delete_occasion_internal_v1($1)',[oc]);
- await db.query("delete from abuse_policy_overrides where (target_kind='unit' and target_id=$1) or (target_kind='organization' and target_id=$2)",[root.unit,f.org]);await db.query('delete from unit_users where unit=any($1::bigint[])',[[f.unit,root.unit]]);await db.query('delete from units where organization=$1',[f.org]);await db.query('delete from user_info where id=$1',[f.actor]);await db.query('delete from auth.users where id=$1',[f.actor]);await db.query('delete from organizations where id=$1',[f.org]);await db.query('COMMIT');
+ await db.query("delete from abuse_policy_overrides where (target_kind='unit' and target_id=$1) or (target_kind='organization' and target_id=$2)",[root.unit,f.org]);await db.query('delete from unit_users where unit=any($1::bigint[])',[[f.unit,root.unit]]);const accounts=(await db.query('delete from eshop.unit_bank_accounts where unit=any($1::bigint[]) returning bank_account',[[f.unit,root.unit]])).rows.map(r=>r.bank_account);await db.query('delete from eshop.bank_accounts where id=any($1::bigint[]) and not exists(select 1 from eshop.unit_bank_accounts u where u.bank_account=eshop.bank_accounts.id)',[accounts]);await db.query('delete from eshop.external_services where unit=any($1::bigint[])',[[f.unit,root.unit]]);await db.query('delete from units where organization=$1',[f.org]);await db.query('delete from user_info where id=$1',[f.actor]);await db.query('delete from auth.users where id=$1',[f.actor]);await db.query('delete from organizations where id=$1',[f.org]);await db.query('COMMIT');
 }
 
 

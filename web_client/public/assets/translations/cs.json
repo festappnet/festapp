@@ -1272,6 +1272,13 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "orderReview": "Zkontrolovat objednávku",
+    "orderAffectedSeats": "Všechna dotčená místa",
+    "orderNoAutomaticRefund": "Změna ceny původní objednávky neznamená automatické vrácení peněz.",
+    "orderPriceUnavailable": "Cena není dostupná",
+    "orderPaymentPending": "Objednávka {order} byla vytvořena. Příprava platby pokračuje. Opakujte tento požadavek.",
+    "orderLegacyRecovery": "Pro obnovení předchozí objednávky zadejte původní místa a údaje zákazníka.",
+    "orderLabel": "Objednávka",
     "zoomControls": "Přiblížení plánku",
     "zoomIn": "Přiblížit",
     "zoomOut": "Oddálit",
@@ -3721,7 +3728,8 @@
     "wholeOrganizerSelected": "Celý pořadatel",
     "groupSelection": "Vybrané akce: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuto výběrem pořadatele. Pro výběr jednotlivých akcí zrušte výběr pořadatele.",
-    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci."
+    "selectionRequired": "Vyberte alespoň jednoho pořadatele nebo akci.",
+    "seatsCreateOrders": "Vytvářet objednávky z míst a nahrazovat původní vstupenky"
   },
   "OccasionTeamInvitation": {
     "title": "Pozvánka ke spoluorganizaci",

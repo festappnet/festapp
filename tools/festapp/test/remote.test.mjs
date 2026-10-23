@@ -575,3 +575,18 @@ test('seat swaps require their own financial-effect consent and both seat/order 
  for(const missing of ['festapp:seats:read','festapp:orders:read'])assert.throws(()=>verifyPermissions(['festapp:seats:read','festapp:orders:read','festapp:seats:swap'].filter(p=>p!==missing),MCP_SCOPES));
  f.storage.put('Delegation',id,{...grant,permissions:['festapp:seats:read','festapp:orders:read','festapp:seats:swap']});assert(owner().allowedOperations.includes('seats.preview_swap'));assert(owner().allowedOperations.includes('seats.swap'));assert(!owner().allowedOperations.includes('seats.release_holds'));token.scope=READ_SCOPE+' festapp:seats:read festapp:orders:read';assert(!owner().allowedOperations.includes('seats.swap'));
 });
+
+test('seat order creation requires explicit consent and both semantic preview reads',async t=>{
+ const f=await setup(t),id='seat-order-permissions';
+ const grant={id,binding:'seat-order-session',userId:actor,clientId:'chatgpt-fixture',profileBinding:f.config.profile.binding,access:{type:'occasions',occasionIds:[7]},permissions:['festapp:seats:read','festapp:orders:read','festapp:orders:write','festapp:seats:swap'],expiresAt:Date.now()+60000,revoked:false};
+ f.storage.put('Delegation',id,grant);
+ const token={grantId:id,accountId:actor,clientId:'chatgpt-fixture',aud:f.config.resource,scope:[READ_SCOPE,...MCP_SCOPES].join(' '),exp:Date.now()/1000+300};
+ const owner=()=>new DelegatedOwner(f.config,f.storage,token,{fetchImpl:f.owner.fetch});
+ assert(!owner().allowedOperations.includes('seats.create_order'));
+ const explicit=['festapp:seats:read','festapp:orders:read','festapp:seats:create-orders'];
+ for(const missing of explicit.slice(0,2))assert.throws(()=>verifyPermissions(explicit.filter(p=>p!==missing),MCP_SCOPES));
+ f.storage.put('Delegation',id,{...grant,permissions:explicit});
+ assert(owner().allowedOperations.includes('seats.preview_order'));assert(owner().allowedOperations.includes('seats.create_order'));
+ assert(!owner().allowedOperations.includes('seats.swap'));
+ token.scope=READ_SCOPE+' festapp:seats:read festapp:orders:read';assert(!owner().allowedOperations.includes('seats.create_order'));
+});

@@ -75,11 +75,11 @@ BEGIN
  INTO new_products FROM jsonb_array_elements(new_order.data->'tickets') t
  JOIN ticket_spots s ON s.ticket=(t->>'id')::bigint CROSS JOIN LATERAL jsonb_array_elements(t->'products') p;
  WITH lifecycle AS MATERIALIZED (SELECT * FROM public.blueprint_spot_facts_internal(occ,affected))
- SELECT coalesce(jsonb_agg(jsonb_build_object('spotId',s.id,'blueprintId',s.blueprint,'title',s.title,
+ SELECT coalesce(jsonb_agg(jsonb_build_object('spotId',s.id,'blueprintId',s.blueprint,'blueprintTitle',b.title,'title',s.title,
   'stateBefore',before_facts->s.id::text->'state','stateAfter',f.state,
   'previousOrderId',before_facts->s.id::text->'order','previousTicketId',before_facts->s.id::text->'ticket',
   'productId',s.product,'productTitle',p.title) ORDER BY s.id),'[]')
- INTO seats FROM eshop.spots s LEFT JOIN eshop.products p ON p.id=s.product LEFT JOIN lifecycle f ON f.id=s.id WHERE s.id=ANY(affected);
+ INTO seats FROM eshop.spots s LEFT JOIN eshop.products p ON p.id=s.product LEFT JOIN eshop.blueprints b ON b.id=s.blueprint LEFT JOIN lifecycle f ON f.id=s.id WHERE s.id=ANY(affected);
  semantic:=jsonb_build_object('spotIds',ids,'affectedSpotIds',affected,
   'releasedSpotIds',ARRAY(SELECT id FROM unnest(affected) id WHERE NOT id=ANY(ids)),
   'seats',seats,'blueprints',revision,'formKey',details->'form','orders',effects,
@@ -90,7 +90,11 @@ BEGIN
  PERFORM public.check_occasion_writable(occ);
  IF public.can_write_orders(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
  RETURN jsonb_build_object('result',created,'quote',semantic,'analysis',analysis,
-  'confirmationHash',encode(extensions.digest(convert_to(jsonb_build_object('quote',semantic,
-   'input',p_input,'beforeOrders',before_orders,'facts',before_facts,'analysis',analysis,'form',form_facts)::text,'UTF8'),'sha256'),'hex'));
+  'confirmationHash',encode(extensions.digest(convert_to(jsonb_build_object('actor',auth.uid(),'quote',semantic,
+   'input',p_input,'beforeOrders',before_orders,'facts',before_facts,'analysis',analysis,'form',form_facts,
+   'paymentRecipient',jsonb_build_object('account',created#>'{order,payment_info,account_number}',
+    'accountLabel',created#>'{order,payment_info,account_number_human_readable}',
+    'creditor',created#>'{order,payment_info,creditor_name}','deposit',created#>'{order,payment_info,deposit_amount}'),
+   'effectiveForm',created#>'{order,form,data}','occasionFeatures',created#>'{order,occasion,features}')::text,'UTF8'),'sha256'),'hex'));
 END $$;
 REVOKE ALL ON FUNCTION public.apply_blueprint_seat_order_internal(bigint[],jsonb,uuid) FROM PUBLIC,anon,authenticated,service_role;

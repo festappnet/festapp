@@ -313,6 +313,8 @@
     "blueprint/order_command_internal.sql",
     "eshop_orders/replace_blueprint_order_client_sync_v1.sql",
     "blueprint/seat_orders.sql",
-    "blueprint/order_rejection.sql"
+    "blueprint/order_rejection.sql",
+    "eshop_orders/replacement_invoice_preparation.sql",
+    "blueprint/order_conflicts.sql"
   ]
 }

@@ -1,9 +1,9 @@
 import {z} from 'zod';
+import {orderAmountChangeSchema as money} from './order-money.mjs';
 import {check,upstream,OperationError} from '../errors.mjs';
 const id=z.number().int().positive().max(Number.MAX_SAFE_INTEGER),revision=z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 const ids=z.array(id).min(1).max(1000).refine(a=>new Set(a).size===a.length);
-const hash=z.string().regex(/^[0-9a-f]{64}$/),amount=z.string().max(40).regex(/^-?\d+(\.\d+)?$/);
-const money=z.strictObject({orderId:id,beforeAmount:amount,afterAmount:amount,delta:amount,currencyCode:z.string().regex(/^[A-Z]{3}$/),beforeState:z.string().min(1).max(64),afterState:z.string().min(1).max(64)});
+const hash=z.string().regex(/^[0-9a-f]{64}$/);
 const seat=z.strictObject({spotId:id,title:z.string().nullable(),state:z.enum(['available','selected','ordered','used']),productId:id.nullable(),productTitle:z.string().nullable(),orderId:id.nullable(),ticketId:id.nullable()});
 const selection={occasionId:id,blueprintId:id,firstSpotId:id,secondSpotId:id};
 const confirmation={...selection,sourceSpotIds:ids,targetSpotIds:ids,layoutRevision:revision,confirmationHash:hash};

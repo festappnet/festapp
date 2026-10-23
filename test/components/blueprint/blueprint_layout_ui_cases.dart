@@ -1,3 +1,5 @@
+import '../../support/fixtures/blueprint_order_preview_fixture.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../support/fixtures/blueprint_swap_preview_fixture.dart';
 import '../../support/fixtures/client_command_response_fixture.dart';
 import 'package:fstapp/components/blueprint/views/blueprint_editor_feedback.dart';
@@ -430,22 +432,9 @@ void main() {
         MaterialApp(
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
-          selectedSpotIds: const [71],
-          initialAnalysis: {
-            'total_price': 100,
-            'currency': 'CZK',
-            'conflicts': [],
-            'new_order_items': [
-              {
-                'spot_id': 71,
-                'spot_title': 'A1',
-                'product_title': 'Seat',
-                'price': 100
-              }
-            ],
-            'order_form': {
-              'key': '00000000-0000-4000-8000-000000000001',
-              'fields': [
+          request: seatOrderRequestFixture(),
+          commands: seatOrderCommandsFixture(
+              fields: [
                 {
                   'id': 601,
                   'type': 'name',
@@ -462,20 +451,18 @@ void main() {
                   'is_hidden': false,
                   'is_ticket_field': true
                 },
-              ]
-            },
-          },
-          submit: (_, data) async {
-            submitted = data;
-            throw StateError('test_stop');
-          },
+              ],
+              onQuote: (data) async {
+                submitted = data;
+                throw StateError('test_stop');
+              }),
         ))));
     await tester.pumpAndSettle();
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     await tester.enterText(find.byType(TextFormField), 'local@example.test');
-    final confirm =
-        find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder);
+    final confirm = find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr());
     await tester.ensureVisible(confirm);
     await tester.tap(confirm);
     await tester.pumpAndSettle();
@@ -1482,48 +1469,44 @@ void main() {
         MaterialApp(
             home: Scaffold(
                 body: BlueprintCreateOrderDialog(
-          selectedSpotIds: const [71],
-          analyze: (_) async {
+          request: seatOrderRequestFixture(),
+          commands: seatOrderCommandsFixture(onRequirements: () async {
             if (++analyses == 1) throw StateError('offline');
-            return {
-              'total_price': 100,
-              'currency': 'CZK',
-              'conflicts': [],
-              'new_order_items': [
-                {
-                  'spot_id': 71,
-                  'spot_title': 'A1',
-                  'product_title': 'Standard',
-                  'price': 100
-                }
-              ]
-            };
-          },
-          submit: (_, __) {
+          }, onCreate: (_) {
             submissions++;
             return pending.future;
-          },
+          }),
         ))));
     await tester.pumpAndSettle();
-    expect(find.text(BlueprintStrings.analysisFailed), findsOneWidget);
+    expect(analyses, 1);
     await tester.tap(find.text(CommonStrings.retry));
     await tester.pumpAndSettle();
     expect(analyses, 2);
-    await tester.enterText(find.byType(TextFormField), 'local@example.test');
+    await tester.enterText(
+        find.byType(TextFormField, skipOffstage: false), 'local@example.test');
+    await tester.tap(find.widgetWithText(
+        ElevatedButton, 'FeatureBlueprint.orderReview'.tr()));
+    await tester.pumpAndSettle();
     await tester.tap(
         find.widgetWithText(ElevatedButton, BlueprintStrings.confirmOrder));
     await tester.pump();
     expect(submissions, 1);
     expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
         isNull);
-    expect(tester.widget<TextFormField>(find.byType(TextFormField)).enabled,
+    expect(
+        tester
+            .widget<TextFormField>(
+                find.byType(TextFormField, skipOffstage: false))
+            .enabled,
         isFalse);
     pending.completeError(StateError('reservation changed'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('reservation changed'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, CommonStrings.retry),
+        findsOneWidget);
     expect(
         tester
-            .widget<TextFormField>(find.byType(TextFormField))
+            .widget<TextFormField>(
+                find.byType(TextFormField, skipOffstage: false))
             .controller!
             .text,
         'local@example.test');

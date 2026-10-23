@@ -289,3 +289,14 @@ test('temporary-hold release consent is distinct from blocking seats',async()=>{
 test('seat swap consent explicitly includes changing the order total',async()=>{
  const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:swap'];const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});await f.page.init();assert.equal(f.page.state,'consent');assert.match(f.container.textContent,/Prohazovat místa vstupenek a upravovat cenu objednávky/);assert(!f.container.textContent.includes('Uvolňovat dočasné rezervace vybraných míst'));f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
 });
+
+test('seat order consent includes original ticket replacement and customer reads without broader writes',async()=>{
+ const permissions=['festapp:seats:read','festapp:orders:read','festapp:seats:create-orders'];
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Codex',occasions:[{id:99,title:'Event'}],requestedPermissions:permissions}:{resumeUrl:resume}})});
+ await f.page.init();assert.equal(f.page.state,'consent');
+ assert.match(f.container.textContent,/Vytvářet objednávky z míst a nahrazovat původní vstupenky/);
+ assert.match(f.container.textContent,/kontaktní údaje/);
+ assert(!f.container.textContent.includes('Prohazovat místa vstupenek a upravovat cenu objednávky'));
+ f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,permissions);
+});

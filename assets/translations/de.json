@@ -3,6 +3,13 @@
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },
   "FeatureBlueprint": {
+    "orderReview": "Bestellung prüfen",
+    "orderAffectedSeats": "Alle betroffenen Plätze",
+    "orderNoAutomaticRefund": "Eine Änderung des ursprünglichen Bestellbetrags erstattet keine Zahlung automatisch.",
+    "orderPriceUnavailable": "Preis nicht verfügbar",
+    "orderPaymentPending": "Bestellung {order} wurde erstellt. Die Zahlung wird vorbereitet. Wiederholen Sie diese Anfrage.",
+    "orderLegacyRecovery": "Geben Sie die ursprünglichen Plätze und Kundendaten ein, um die vorherige Bestellung wiederherzustellen.",
+    "orderLabel": "Bestellung",
     "releaseTemporaryReservationPreview": "Temporäre Reservierungen: {held}. Plätze in der gesamten Auswahl: {total}.",
     "swapSourceSeats": "Von Plätzen",
     "swapTargetSeats": "Zu Plätzen",
@@ -1863,7 +1870,8 @@
     "wholeOrganizerSelected": "Gesamter Veranstalter",
     "groupSelection": "Ausgewählte Veranstaltungen: {selected} von {count}",
     "inheritedSelectionHint": "Über den Veranstalter eingeschlossen. Heben Sie dessen Auswahl auf, um einzelne Veranstaltungen auszuwählen.",
-    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung."
+    "selectionRequired": "Wählen Sie mindestens einen Veranstalter oder eine Veranstaltung.",
+    "seatsCreateOrders": "Bestellungen aus Sitzplätzen erstellen und ursprüngliche Tickets ersetzen"
   },
   "EditorFileDrop": {
     "hint": "Bild ablegen, um den Hintergrund zu ersetzen",

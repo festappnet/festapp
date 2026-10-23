@@ -36,7 +36,10 @@ class ClientCommandIdentity {
     String? principalBinding,
     String scopeBinding,
   ) =>
-      'client_command_active:$namespace:${fingerprint([principalBinding, scopeBinding])}';
+      'client_command_active:$namespace:${fingerprint([
+            principalBinding,
+            scopeBinding
+          ])}';
 
   static String newCommandId() => const Uuid().v4();
 
@@ -56,9 +59,8 @@ class ClientCommandIdentity {
       final store = StoreRef.main();
       var commandId = await store.record(key).get(transaction) as String?;
       if (principalBinding != null) {
-        final previousBinding = await store
-            .record('$key:principal')
-            .get(transaction);
+        final previousBinding =
+            await store.record('$key:principal').get(transaction);
         if (commandId != null && previousBinding != principalBinding) {
           throw StateError('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
         }
@@ -86,9 +88,7 @@ class ClientCommandIdentity {
         await store.record('$key:scope').put(transaction, activeKey);
       }
       if (requestJson != null) {
-        await store
-            .record('$key:request')
-            .put(
+        await store.record('$key:request').put(
               transaction,
               jsonEncode(_canonicalize(jsonDecode(requestJson))),
             );
@@ -177,6 +177,35 @@ class ClientCommandIdentity {
     });
   }
 
+  /// Released order replacements stored only a payload digest, not its bytes.
+  /// They can be resumed only when the original form values are supplied again.
+  /// Never let a new replacement silently bypass an uncertain legacy intent.
+  static Future<String?> pendingLegacyOrderReplacement(Object payload,
+      {required String principalBinding}) async {
+    const namespace = 'ticket_order_replace';
+    final exactKey = _pendingKey(namespace, payload);
+    final db = await StorageHelper.openDatabase();
+    return db.transaction((transaction) async {
+      final store = StoreRef.main();
+      final keys = await store.findKeys(transaction);
+      String? exact;
+      for (final key in keys.whereType<String>().where((key) =>
+          key.startsWith('client_command_pending:$namespace:') &&
+          !key
+              .substring('client_command_pending:$namespace:'.length)
+              .contains(':'))) {
+        if (await store.record('$key:principal').get(transaction) !=
+            principalBinding) continue;
+        final id = await store.record(key).get(transaction);
+        if (id is! String || id.isEmpty) continue;
+        if (key != exactKey)
+          throw StateError('LEGACY_ORDER_RECOVERY_REQUIRES_ORIGINAL_INPUT');
+        exact = id;
+      }
+      return exact;
+    });
+  }
+
   // Original version controls survive transport/process loss without persisting
   // customer payloads. The key's digest binds the entire normalized request.
   static Map<String, Object?> _expectedRevisions(
@@ -211,14 +240,13 @@ class ClientCommandIdentity {
 
   static Object? _canonicalize(Object? value) {
     if (value is Map) {
-      final entries =
-          value.entries
-              .map(
-                (entry) =>
-                    MapEntry(entry.key.toString(), _canonicalize(entry.value)),
-              )
-              .toList()
-            ..sort((left, right) => left.key.compareTo(right.key));
+      final entries = value.entries
+          .map(
+            (entry) =>
+                MapEntry(entry.key.toString(), _canonicalize(entry.value)),
+          )
+          .toList()
+        ..sort((left, right) => left.key.compareTo(right.key));
       return {for (final entry in entries) entry.key: entry.value};
     }
     if (value is Iterable) return value.map(_canonicalize).toList();

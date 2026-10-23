@@ -968,6 +968,13 @@
     "description": "Можна перевіряти користувачів за QR‑кодом на майстер‑класах чи інших обмежених подіях."
   },
   "FeatureBlueprint": {
+    "orderReview": "Перевірити замовлення",
+    "orderAffectedSeats": "Усі місця, яких стосуються зміни",
+    "orderNoAutomaticRefund": "Зміна суми початкового замовлення не означає автоматичного повернення коштів.",
+    "orderPriceUnavailable": "Ціна недоступна",
+    "orderPaymentPending": "Замовлення {order} створено. Триває підготовка платежу. Повторіть цей запит.",
+    "orderLegacyRecovery": "Щоб відновити попереднє замовлення, введіть початкові місця та дані клієнта.",
+    "orderLabel": "Замовлення",
     "releaseTemporaryReservationPreview": "Тимчасові бронювання: {held}. Місця в повному виборі: {total}.",
     "swapSourceSeats": "З місць",
     "swapTargetSeats": "На місця",
@@ -2035,7 +2042,8 @@
     "wholeOrganizerSelected": "Увесь організатор",
     "groupSelection": "Вибрані події: {selected} з {count}",
     "inheritedSelectionHint": "Включено через вибір організатора. Скасуйте вибір організатора, щоб вибрати окремі події.",
-    "selectionRequired": "Виберіть принаймні одного організатора або подію."
+    "selectionRequired": "Виберіть принаймні одного організатора або подію.",
+    "seatsCreateOrders": "Створювати замовлення з місць і замінювати початкові квитки"
   },
   "EditorFileDrop": {
     "hint": "Перетягніть зображення, щоб замінити тло",

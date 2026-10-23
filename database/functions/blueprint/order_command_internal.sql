@@ -21,7 +21,7 @@ BEGIN
   ids:=CASE WHEN p_confirmation IS NULL THEN p_spot_ids ELSE
    public.blueprint_seat_order_selection_internal(occ,(p_confirmation->>'blueprint')::bigint,p_spot_ids,20000) END;
   effect:=public.apply_blueprint_seat_order_internal(ids,p_input_data,p_command_id);
-  result:=effect->'result';
+  result:=effect->'result'||jsonb_build_object('paymentPreparationPolicy','leased_keep_pending');
   IF p_confirmation IS NOT NULL THEN
    quote:=public.blueprint_seat_order_quote_internal(effect);
    IF effect->>'confirmationHash' IS DISTINCT FROM p_confirmation->>'hash'

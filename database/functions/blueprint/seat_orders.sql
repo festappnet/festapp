@@ -16,20 +16,22 @@ BEGIN
   RAISE program_limit_exceeded USING MESSAGE='affected order seats exceed operation limit'; END IF;
  PERFORM public.check_blueprint_swap_scope_internal(p_occasion,affected);
  IF p_input IS NULL THEN
-  analysis:=public.analyze_new_order_spots(ids);
-  SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',c->'order_id','ticketId',c->'ticket_id',
-   'selectedSpotIds',c->'selected_spot_ids','ticketSymbol',c->'ticket_symbol',
-   'entireOrder',c->'is_fully_cancelled','ticketAmount',c->>'total_price','products',
-     (SELECT coalesce(jsonb_agg(jsonb_build_object('productId',p->'id','title',p->'title','amount',p->>'price','currencyCode',p->'currency_code')),'[]')
-      FROM jsonb_array_elements(coalesce(c->'products','[]')) p))
-   ||CASE WHEN p_editor THEN jsonb_build_object('customer',jsonb_build_object('email',c->'email','name',c->'name','surname',c->'surname')) ELSE '{}'::jsonb END
-   ORDER BY (c->>'order_id')::bigint,(c->>'ticket_id')::bigint),'[]')
-  INTO conflicts FROM jsonb_array_elements(analysis->'conflicts') c;
+  BEGIN
+   analysis:=public.analyze_new_order_spots(ids);
+  EXCEPTION WHEN serialization_failure OR deadlock_detected OR insufficient_privilege THEN RAISE;
+  WHEN OTHERS THEN
+   PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,true,true);
+   GET STACKED DIAGNOSTICS failure=PG_EXCEPTION_DETAIL;
+   RETURN public.blueprint_order_rejection_internal(SQLERRM,failure);
+  END;
+  conflicts:=public.blueprint_order_conflicts_internal(analysis);
   SELECT coalesce(jsonb_agg(jsonb_build_object('spotId',i->'spot_id','title',i->'spot_title','productTitle',i->'product_title',
-   'amount',i->>'price','currencyCode',i->'currency') ORDER BY (i->>'spot_id')::bigint),'[]')
+   'amount',i->>'price','currencyCode',upper(btrim(i->>'currency'))) ORDER BY (i->>'spot_id')::bigint),'[]')
   INTO items FROM jsonb_array_elements(analysis->'new_order_items') i;
-  result:=jsonb_build_object('code',200,'mode','requirements','occasionId',p_occasion,'blueprintId',p_blueprint,
+  result:=jsonb_build_object('code',200,'mode','requirements','actorId',auth.uid(),'occasionId',p_occasion,'blueprintId',p_blueprint,
    'requestedSpotIds',p_spots,'spotIds',ids,'affectedSpotIds',affected,'conflicts',conflicts,'items',items,
+   'seatSubtotal',CASE WHEN EXISTS(SELECT 1 FROM jsonb_array_elements(analysis->'new_order_items') i WHERE i->>'price' IS NULL OR i->>'currency' IS NULL)
+     THEN NULL ELSE analysis->>'total_price' END,'currencyCode',upper(btrim(analysis->>'currency')),
    'formKey',analysis#>'{order_form,key}','requiredFields',coalesce(analysis#>'{order_form,fields}','[]'),
    'phonePrefixes',analysis#>'{order_form,phone_prefixes}');
  ELSE
@@ -46,8 +48,9 @@ BEGIN
    GET STACKED DIAGNOSTICS failure=PG_EXCEPTION_DETAIL;
    RETURN public.blueprint_order_rejection_internal(SQLERRM,failure);
   END;
-  result:=jsonb_build_object('code',200,'mode','quote','occasionId',p_occasion,'blueprintId',p_blueprint,
-   'requestedSpotIds',p_spots,'confirmationHash',effect->>'confirmationHash','quote',quote);
+  result:=jsonb_build_object('code',200,'mode','quote','actorId',auth.uid(),'occasionId',p_occasion,'blueprintId',p_blueprint,
+   'requestedSpotIds',p_spots,'confirmationHash',effect->>'confirmationHash','quote',quote,
+   'conflicts',public.blueprint_order_conflicts_internal(effect->'analysis',quote->'orders'));
  END IF;
  PERFORM public.check_product_catalog_scope_internal(p_occasion,p_organization,p_unit,true,true);
  IF octet_length(result::text)>(CASE WHEN p_editor THEN 8388608 ELSE 1048576 END) THEN
@@ -59,10 +62,12 @@ GRANT EXECUTE ON FUNCTION public.preview_blueprint_seat_order(bigint,bigint,bigi
 
 CREATE OR REPLACE FUNCTION public.create_blueprint_seat_order(p_occasion bigint,p_organization bigint,p_unit bigint,
  p_blueprint bigint,p_spots bigint[],p_input jsonb,p_target_spots bigint[],p_affected_spots bigint[],p_blueprints jsonb,
- p_confirmation_hash text,p_command_id uuid,p_editor boolean DEFAULT false)
+ p_confirmation_hash text,p_command_id uuid,p_editor boolean DEFAULT false,p_expected_actor uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE result jsonb;max_seats integer:=CASE WHEN p_editor THEN 20000 ELSE 1000 END;
 BEGIN
+ IF p_expected_actor IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN
+  RAISE insufficient_privilege USING MESSAGE='confirmed order actor changed'; END IF;
  IF p_editor IS NULL OR p_command_id IS NULL OR p_confirmation_hash IS NULL OR p_confirmation_hash!~'^[0-9a-f]{64}$'
   OR jsonb_typeof(p_input) IS DISTINCT FROM 'object' OR octet_length(p_input::text)>(CASE WHEN p_editor THEN 4194304 ELSE 1048576 END)
   OR coalesce(cardinality(p_spots),0)=0 OR cardinality(p_spots)>max_seats
@@ -84,10 +89,10 @@ BEGIN
   result:=result-'sync';
   IF result->>'status' IN('applied','unchanged') THEN
    result:=jsonb_set(result,'{data}',jsonb_build_object('code',result#>'{data,code}',
-    'orderId',result#>'{data,order,id}','orderSymbol',result#>'{data,order,order_symbol}','quote',result#>'{data,quote}'));
+    'orderId',result#>'{data,order,id}','orderSymbol',result#>'{data,order,order_symbol}','quote',jsonb_set((result#>'{data,quote}')-'seats','{newOrder}',(result#>'{data,quote,newOrder}')-'products')));
   END IF;
  END IF;
  RETURN result;
 END $$;
-REVOKE ALL ON FUNCTION public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean) FROM PUBLIC,anon,service_role;
-GRANT EXECUTE ON FUNCTION public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid) TO authenticated;

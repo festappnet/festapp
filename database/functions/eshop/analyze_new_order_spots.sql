@@ -109,10 +109,11 @@ BEGIN
       -- The products array from the JSON (Spot + Extras)
       'products', ie.ticket_json->'products',
       -- Sum the price (safely handle nulls)
-      'total_price', (
-         SELECT COALESCE(SUM((prod->>'price')::numeric), 0)
-         FROM jsonb_array_elements(ie.ticket_json->'products') prod
-      )
+      'total_price', CASE WHEN jsonb_typeof(ie.ticket_json->'products')='array'
+        AND jsonb_array_length(ie.ticket_json->'products')>0
+        AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(ie.ticket_json->'products') prod WHERE prod->>'price' IS NULL)
+        THEN (SELECT SUM((prod->>'price')::numeric) FROM jsonb_array_elements(ie.ticket_json->'products') prod)
+        ELSE NULL END
     )
   )
   INTO v_conflicts

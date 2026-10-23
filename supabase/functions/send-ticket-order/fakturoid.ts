@@ -44,6 +44,15 @@ type InvoiceRequest = {
   commandId: string;
 };
 
+// Only documented provider rejections prove that invoice creation did not run.
+export class FakturoidInvoiceCreateRejected extends Error {
+  readonly definitelyNotCreated: boolean;
+  constructor(status: number) {
+    super(`Fakturoid create failed ${status}`);
+    this.definitelyNotCreated = [402, 403, 422, 429].includes(status);
+  }
+}
+
 /** The checkout phase alone may create an invoice; the email phase only reads it. */
 export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
   // Finish API failures inside the checkout worker so it can cancel the order.
@@ -51,16 +60,21 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     fetcher(input, { ...init, signal: AbortSignal.timeout(30_000) });
 
   async function access(config: FakturoidConfig) {
-    const response = await request("https://app.fakturoid.cz/api/v3/oauth/token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${btoa(`${config.client_id}:${config.client_secret}`)}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "User-Agent": "Festapp (no-reply@festapp.net)",
+    const response = await request(
+      "https://app.fakturoid.cz/api/v3/oauth/token",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${
+            btoa(`${config.client_id}:${config.client_secret}`)
+          }`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "User-Agent": "Festapp (no-reply@festapp.net)",
+        },
+        body: JSON.stringify({ grant_type: "client_credentials" }),
       },
-      body: JSON.stringify({ grant_type: "client_credentials" }),
-    });
+    );
     if (!response.ok) throw new Error(`Token failed ${response.status}`);
     const { access_token } = await response.json();
     if (!access_token) throw new Error("FAKTUROID_TOKEN_MISSING");
@@ -88,7 +102,10 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       throw new Error(`Fakturoid lookup failed ${response.status}`);
     }
     const invoices = await response.json();
-    if (!Array.isArray(invoices) || invoices.length > 1 || response.headers.get("Link")?.includes('rel="next"')) {
+    if (
+      !Array.isArray(invoices) || invoices.length > 1 ||
+      response.headers.get("Link")?.includes('rel="next"')
+    ) {
       throw new Error("FAKTUROID_INVOICE_LOOKUP_AMBIGUOUS");
     }
     return invoices[0];
@@ -104,13 +121,21 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
   }
 
   async function preparePayment(
-    { config, order, commandId, unitName }: InvoiceRequest & {
-      unitName: string;
-    },
+    { config, order, commandId, unitName, allowCreate = true, beforeCreate }:
+      & InvoiceRequest
+      & {
+        unitName: string;
+        allowCreate?: boolean;
+        beforeCreate?: () => Promise<void>;
+      },
   ): Promise<string> {
     const { headers } = await access(config);
     let invoice = await findInvoice(config, commandId, headers);
     if (!invoice) {
+      if (!allowCreate) {
+        throw new Error("FAKTUROID_OUTCOME_UNKNOWN_RECONCILE_FIRST");
+      }
+      if (beforeCreate) await beforeCreate();
       const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices.json`,
         {
@@ -126,7 +151,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         },
       );
       if (!response.ok) {
-        throw new Error(`Fakturoid create failed ${response.status}`);
+        throw new FakturoidInvoiceCreateRejected(response.status);
       }
       invoice = await response.json();
     }
@@ -149,7 +174,9 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
         { method: "PUT", headers, body: JSON.stringify(patchBody) },
       );
-      if (!response.ok) throw new Error(`Fakturoid patch failed ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Fakturoid patch failed ${response.status}`);
+      }
       invoice = await response.json();
     }
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
@@ -163,9 +190,10 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     const invoice = await findInvoice(config, commandId, headers);
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
 
-    const result: { variableSymbol: string; attachment?: FakturoidAttachment } = {
-      variableSymbol: variableSymbol(invoice, order),
-    };
+    const result: { variableSymbol: string; attachment?: FakturoidAttachment } =
+      {
+        variableSymbol: variableSymbol(invoice, order),
+      };
     if (invoice.pdf_url) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       let response = await request(invoice.pdf_url, {
@@ -191,11 +219,13 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     return result;
   }
 
-  async function deleteInvoice({ config, commandId, variableSymbol: expected }: {
-    config: FakturoidConfig;
-    commandId?: string | null;
-    variableSymbol: string | number;
-  }): Promise<void> {
+  async function deleteInvoice(
+    { config, commandId, variableSymbol: expected }: {
+      config: FakturoidConfig;
+      commandId?: string | null;
+      variableSymbol: string | number;
+    },
+  ): Promise<void> {
     const { headers } = await access(config);
     let invoice: Invoice | undefined;
     if (commandId) {
@@ -210,22 +240,30 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       );
       url.searchParams.set("query", String(expected));
       const response = await request(url, { headers });
-      if (!response.ok) throw new Error(`Fakturoid lookup failed ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Fakturoid lookup failed ${response.status}`);
+      }
       const invoices = await response.json();
-      if (!Array.isArray(invoices) || invoices.length > 1 ||
-        response.headers.get("Link")?.includes('rel="next"')) {
+      if (
+        !Array.isArray(invoices) || invoices.length > 1 ||
+        response.headers.get("Link")?.includes('rel="next"')
+      ) {
         throw new Error("FAKTUROID_INVOICE_LOOKUP_AMBIGUOUS");
       }
       if (invoices[0]) {
         const id = invoices[0].id;
-        if (!Number.isSafeInteger(id) || id <= 0) throw new Error("FAKTUROID_INVOICE_ID_INVALID");
+        if (!Number.isSafeInteger(id) || id <= 0) {
+          throw new Error("FAKTUROID_INVOICE_ID_INVALID");
+        }
         const detail = await request(
           `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${id}.json`,
           { headers },
         );
         // It may have been removed independently after the search returned it.
         if (detail.status === 404) return;
-        if (!detail.ok) throw new Error(`Fakturoid lookup failed ${detail.status}`);
+        if (!detail.ok) {
+          throw new Error(`Fakturoid lookup failed ${detail.status}`);
+        }
         invoice = await detail.json();
       }
     }

@@ -1272,6 +1272,13 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "orderReview": "Review order",
+    "orderAffectedSeats": "All affected seats",
+    "orderNoAutomaticRefund": "Changing the original order amount does not automatically refund a payment.",
+    "orderPriceUnavailable": "Price unavailable",
+    "orderPaymentPending": "Order {order} was created. Payment preparation is pending. Retry this request.",
+    "orderLegacyRecovery": "To recover the previous order, enter its original seats and customer details.",
+    "orderLabel": "Order",
     "releaseTemporaryReservationPreview": "Temporary seat holds: {held}. Seats in the complete selection: {total}.",
     "swapSourceSeats": "From seats",
     "swapTargetSeats": "To seats",
@@ -3828,7 +3835,8 @@
     "wholeOrganizerSelected": "Entire organizer",
     "groupSelection": "Selected events: {selected} of {count}",
     "inheritedSelectionHint": "Included through the organizer. Deselect the organizer to choose individual events.",
-    "selectionRequired": "Select at least one organizer or event."
+    "selectionRequired": "Select at least one organizer or event.",
+    "seatsCreateOrders": "Create orders from seats and replace original tickets"
   },
   "OccasionTeamInvitation": {
     "title": "Co-organizer invitation",

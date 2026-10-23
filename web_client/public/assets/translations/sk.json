@@ -1167,6 +1167,13 @@
     "no_matching_answers": "Žiadne ďalšie zodpovedajúce údaje."
   },
   "FeatureBlueprint": {
+    "orderReview": "Skontrolovať objednávku",
+    "orderAffectedSeats": "Všetky dotknuté miesta",
+    "orderNoAutomaticRefund": "Zmena ceny pôvodnej objednávky neznamená automatické vrátenie peňazí.",
+    "orderPriceUnavailable": "Cena nie je dostupná",
+    "orderPaymentPending": "Objednávka {order} bola vytvorená. Príprava platby pokračuje. Zopakujte túto požiadavku.",
+    "orderLegacyRecovery": "Na obnovenie predchádzajúcej objednávky zadajte pôvodné miesta a údaje zákazníka.",
+    "orderLabel": "Objednávka",
     "releaseTemporaryReservationPreview": "Dočasných rezervácií: {held}. Dotknutých miest v celom výbere: {total}.",
     "swapSourceSeats": "Z miest",
     "swapTargetSeats": "Na miesta",
@@ -1436,7 +1443,8 @@
     "wholeOrganizerSelected": "Celý organizátor",
     "groupSelection": "Vybrané akcie: {selected} z {count}",
     "inheritedSelectionHint": "Zahrnuté výberom organizátora. Pre výber jednotlivých akcií zrušte výber organizátora.",
-    "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu."
+    "selectionRequired": "Vyberte aspoň jedného organizátora alebo akciu.",
+    "seatsCreateOrders": "Vytvárať objednávky z miest a nahrádzať pôvodné vstupenky"
   },
   "AccountConnections": {
     "intro": "Spravujte prihlasovanie k svojmu účtu a aplikácie, ktorým ste udelili prístup.",
