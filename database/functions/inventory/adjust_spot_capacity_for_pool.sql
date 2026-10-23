@@ -145,6 +145,7 @@ BEGIN
         END IF;
     END LOOP;
 
+    PERFORM public.notification_center_inventory_capacity_internal(id) FROM public.inventory_contexts WHERE inventory_pool=p_inventory_pool_id;
     RETURN v_net_change;
 
 END;

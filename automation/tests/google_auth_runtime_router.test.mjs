@@ -16,7 +16,7 @@ test('runtime exposes Google and signed email proof endpoints and fails on upstr
     assert.match(source,/process-email-queue/);assert.match(source,/auth-email-hook/);assert.match(source,/email-provider-events/);assert.match(source,/email-confirmation-status/);
     assert.match(source,/mcp-session-exchange/);
     assert.match(source,/emailWorkerEnvironment\(service_name, envVarsObj\)/);
-    for(const route of ['stripe-checkout','stripe-return','stripe-webhook','stripe-reconcile'])assert.match(source,new RegExp(`"${route}"`));
+    for(const route of ['stripe-checkout','stripe-return','stripe-webhook','stripe-reconcile','notification-center-maintain'])assert.match(source,new RegExp(`"${route}"`));
     assert.doesNotMatch(source,/"stripe-connect"|"stripe-connect-callback"/);
     assert.doesNotMatch(source,/send-email-gateway/);
     assert.doesNotMatch(source,/"register"|"send-email"/);

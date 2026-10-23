@@ -632,6 +632,7 @@ BEGIN
         END;
     END;
 
+    PERFORM public.notification_center_form_capacity_internal(form_id);
     RETURN result;
 END;
 $$;

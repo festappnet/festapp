@@ -146,6 +146,17 @@ BEGIN
    END IF;
    entity_changes:=entity_changes||jsonb_build_array(jsonb_build_object('entityType','order','entityId',oid,'operation','update','safeLabel','Waitlist order','changedFields',jsonb_build_array('waitlistSummary','tickets')));
   END IF;
+  IF p_operation='register' THEN
+   PERFORM public.notification_center_order_internal(oid,'waitlist_registered','created',p_actor);
+  ELSIF p_operation='accept' THEN
+   PERFORM public.notification_center_order_internal((result#>>'{order,id}')::bigint,'offer_accepted',offer::text||':'||p_command_id,p_actor,
+    jsonb_build_object('offerId',offer,'count',jsonb_array_length(p_payload->'ticketIds')));
+  ELSIF p_operation='withdraw' THEN
+   PERFORM public.notification_center_order_internal(oid,'order_cancelled','withdraw:'||p_command_id,p_actor,jsonb_build_object('count',n));
+  ELSIF p_operation='decline' THEN
+   PERFORM public.notification_center_order_internal(oid,'offer_declined',offer::text||':'||p_command_id,p_actor,jsonb_build_object('offerId',offer,'count',n));
+  END IF;
+  PERFORM public.notification_center_form_capacity_internal(fid,p_actor);
   result:=result||jsonb_build_object('capacity',public.get_form_capacity_snapshot_internal(fid));
  EXCEPTION WHEN OTHERS THEN
   result:=CASE WHEN left(SQLERRM,1)='{' THEN SQLERRM::jsonb ELSE jsonb_build_object('code',409,'errorCode',SQLERRM,'message',SQLERRM) END;

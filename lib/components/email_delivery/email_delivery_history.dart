@@ -1,3 +1,5 @@
+import 'package:fstapp/components/notification_center/notification_detail_target.dart';
+import 'package:fstapp/components/notification_center/notification_center_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/eshop/eshop_columns.dart';
 import 'package:fstapp/components/eshop/views/order_state_display.dart';
@@ -20,10 +22,12 @@ class EmailDeliveryHistory extends StatefulWidget {
   final bool embedded;
   final bool ordersOnly;
   final int? orderId;
+  final String? messageId;
   final Future<dynamic> Function(String, Map<String, dynamic>)? read;
   const EmailDeliveryHistory(
       {super.key,
       this.occasionId,
+      this.messageId,
       this.orderId,
       this.organizationId,
       this.userId,
@@ -36,6 +40,48 @@ class EmailDeliveryHistory extends StatefulWidget {
 
 class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   bool _organizationScope = false;
+  String? _openedTarget;
+  void _openTarget() {
+    final target = widget.messageId;
+    if (target == null) {
+      _openedTarget = null;
+      return;
+    }
+    if (_openedTarget == target) return;
+    _openedTarget = target;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openScopedTarget(target);
+    });
+  }
+
+  Future<void> _openScopedTarget(String target) async {
+    final generation = _generation;
+    try {
+      final rows = await EmailDeliveryModel.loadHistory(
+          (name, params) => _read(name, params: params), {
+        'p_occasion': widget.occasionId,
+        'p_organization': widget.organizationId,
+        'p_order': widget.orderId,
+        'p_user': widget.userId,
+        if (widget.ordersOnly) 'p_orders_only': true,
+      });
+      if (!mounted || generation != _generation || target != widget.messageId)
+        return;
+      if (rows.any((row) => row.messageId == target)) {
+        await _detail(target);
+        if (mounted && target == widget.messageId)
+          await clearNotificationDetailTarget(context, 'messageId', target);
+        return;
+      }
+    } catch (_) {
+      /* Use the same unavailable result for revoked and deleted targets. */
+    }
+    if (mounted && generation == _generation && target == widget.messageId) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(NotificationCenterStrings.text('unavailable'))));
+    }
+  }
+
   int _generation = 0;
   Map<String, dynamic>? _overview;
   SingleDataGridController<EmailDeliveryModel>? _controller;
@@ -47,11 +93,13 @@ class _EmailDeliveryHistoryState extends State<EmailDeliveryHistory> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller ??= _createController();
+    _openTarget();
   }
 
   @override
   void didUpdateWidget(covariant EmailDeliveryHistory oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _openTarget();
     if (oldWidget.occasionId != widget.occasionId ||
         oldWidget.organizationId != widget.organizationId ||
         oldWidget.orderId != widget.orderId ||

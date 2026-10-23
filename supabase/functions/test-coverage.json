@@ -486,6 +486,15 @@
       "behaviorTests": [
         "supabase/functions/_shared/stripe/payments_test.ts"
       ]
+    },
+    "notification-center-maintain": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/notificationCenterHealth_test.ts"
+      ],
+      "abusePolicy": []
     }
   },
   "excluded": {

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_navigation.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_strings.dart';
@@ -66,7 +67,8 @@ class AppPanelHelper {
 
     // Unit Selector
     if (currentUnit != null) {
-      breadcrumbItems.add(_buildBreadcrumbSegment<UnitModel>(
+      breadcrumbItems.add(Flexible(
+          child: _buildBreadcrumbSegment<UnitModel>(
         context: context,
         title: currentUnit.title ?? '---',
         isBold: currentOccasion == null,
@@ -93,7 +95,7 @@ class AppPanelHelper {
             originalContext, currentUnit),
         searchHintText: AdministrationStrings.findUnitHint,
         createNewText: AdministrationStrings.newUnitButton,
-      ));
+      )));
     }
 
     // Separator, Occasion Selector, and new Action Selector
@@ -115,49 +117,53 @@ class AppPanelHelper {
         ));
 
       // Occasion Selector
-      breadcrumbItems.add(_buildBreadcrumbSegment<OccasionModel>(
-        context: context,
-        title: RightsService.isDemoReadOnly
-            ? '${currentOccasion.title} (${DemoOccasionStrings.badge})'
-            : currentOccasion.title ?? '---',
-        isBold: true,
-        items: occasionsInCurrentUnit,
-        selectedItem: currentOccasion,
-        itemTitleBuilder: (item) => item.title ?? '---',
-        itemIdBuilder: (item) => item.id,
-        itemDateBuilder: (item) => item.startTime,
-        onItemSelected: (item) async {
-          if (item.link != null) {
-            await RouterService.navigateToOccasionAdministration(
-                originalContext,
-                occasion: item);
-          }
-        },
-        onCreateNew: currentUnit == null ||
-                !RightsService.hasCapability(
-                    AuthorizationCapabilities.occasionsCreate)
-            ? null
-            : () async {
-                final newOccasion =
-                    await OccasionCreationHelper.createNewOccasion(
-                        originalContext, currentUnit, occasionsInCurrentUnit);
-                if (newOccasion != null && newOccasion.link != null) {
-                  await RouterService.navigateToOccasionAdministration(
-                      originalContext,
-                      occasionLink: newOccasion.link!);
-                }
-              },
-        onTitleTap: () async {
-          if (currentOccasion.link != null) {
-            await RouterService.navigateToOccasionAdministration(
-                originalContext,
-                occasionLink: currentOccasion.link!,
-                occasion: currentOccasion);
-          }
-        },
-        searchHintText: AdministrationStrings.findOccasionHint,
-        createNewText: AdministrationStrings.newOccasionButton,
-      ));
+      breadcrumbItems.add(Flexible(
+          flex: 4,
+          child: _buildBreadcrumbSegment<OccasionModel>(
+            context: context,
+            title: RightsService.isDemoReadOnly
+                ? '${currentOccasion.title} (${DemoOccasionStrings.badge})'
+                : currentOccasion.title ?? '---',
+            isBold: true,
+            items: occasionsInCurrentUnit,
+            selectedItem: currentOccasion,
+            itemTitleBuilder: (item) => item.title ?? '---',
+            itemIdBuilder: (item) => item.id,
+            itemDateBuilder: (item) => item.startTime,
+            onItemSelected: (item) async {
+              if (item.link != null) {
+                await RouterService.navigateToOccasionAdministration(
+                    originalContext,
+                    occasion: item);
+              }
+            },
+            onCreateNew: currentUnit == null ||
+                    !RightsService.hasCapability(
+                        AuthorizationCapabilities.occasionsCreate)
+                ? null
+                : () async {
+                    final newOccasion =
+                        await OccasionCreationHelper.createNewOccasion(
+                            originalContext,
+                            currentUnit,
+                            occasionsInCurrentUnit);
+                    if (newOccasion != null && newOccasion.link != null) {
+                      await RouterService.navigateToOccasionAdministration(
+                          originalContext,
+                          occasionLink: newOccasion.link!);
+                    }
+                  },
+            onTitleTap: () async {
+              if (currentOccasion.link != null) {
+                await RouterService.navigateToOccasionAdministration(
+                    originalContext,
+                    occasionLink: currentOccasion.link!,
+                    occasion: currentOccasion);
+              }
+            },
+            searchHintText: AdministrationStrings.findOccasionHint,
+            createNewText: AdministrationStrings.newOccasionButton,
+          )));
 
       // Build the state-aware action menu
       if (AppConfig.isAppSupported) {
@@ -349,6 +355,7 @@ class AppPanelHelper {
           child: Text(title,
               style: textStyle,
               strutStyle: titleStrut,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ),
       );
@@ -359,7 +366,8 @@ class AppPanelHelper {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          InkWell(
+          Flexible(
+              child: InkWell(
             onTap: onTitleTap,
             hoverColor: hoverColor,
             child: Padding(
@@ -369,10 +377,11 @@ class AppPanelHelper {
                 title,
                 style: textStyle,
                 strutStyle: titleStrut,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
+          )),
           Builder(
             builder: (BuildContext inkWellContext) {
               return InkWell(
@@ -575,6 +584,7 @@ class AppPanelHelper {
       ),
 
       actions: [
+        const NotificationCenterBell(color: Colors.white),
         Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
             child: UserHeaderWidget(
@@ -769,6 +779,7 @@ class AppPanelHelper {
         },
       ),
       actions: [
+        NotificationCenterBell(color: iconColor),
         ValueListenableBuilder<OccasionLinkModel?>(
           valueListenable: RightsService.occasionLinkModelNotifier,
           builder: (listenableContext, _, __) {

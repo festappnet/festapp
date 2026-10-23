@@ -61,14 +61,6 @@
       ],
       "mutates_authority": true
     },
-    "exchange-sign-in-code": {
-      "trigger": "client-http",
-      "effects": [
-        "database-rpc",
-        "auth-session-create"
-      ],
-      "mutates_authority": true
-    },
     "fetch-http-data": {
       "trigger": "client-http",
       "effects": [
@@ -297,7 +289,9 @@
     },
     "occasion-setup-email-preview": {
       "trigger": "client-http",
-      "effects": ["database-read"],
+      "effects": [
+        "database-read"
+      ],
       "mutates_authority": false
     },
     "stripe-connect": {
@@ -345,6 +339,14 @@
       "effects": [
         "database-rpc",
         "stripe-api"
+      ],
+      "mutates_authority": true
+    },
+    "notification-center-maintain": {
+      "trigger": "canonical-cron",
+      "effects": [
+        "database-rpc",
+        "banksync-tenant-control"
       ],
       "mutates_authority": true
     }
@@ -416,7 +418,8 @@
       "stripe-checkout": "scoped-expiring-order-pay-or-single-use-handoff-capability-immutable-recipient",
       "stripe-return": "scoped-expiring-return-read-capability-no-payment-write",
       "stripe-webhook": "bounded-raw-body-signature-timestamp-connected-account-mode-binding-atomic-inbox",
-      "stripe-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery"
+      "stripe-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery",
+      "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

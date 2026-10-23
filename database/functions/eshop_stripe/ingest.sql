@@ -153,6 +153,8 @@ BEGIN
    'safeLabel','Card payment update','changedFields',jsonb_build_array('payment','state','tickets','admission','allocations'))) ELSE '[]'::jsonb END,
   before_users,jsonb_build_object('committed',true,'payment',projection),'service');
  UPDATE eshop.stripe_event_inbox SET committed_at=clock_timestamp(),receipt=v_receipt WHERE connection_id=c.id AND event_id=p_event->>'id';
+ PERFORM public.notification_center_order_state_internal(o.id);
+ PERFORM public.notification_center_order_capacity_internal(o.id);
  RETURN v_receipt;
 END $$;
 REVOKE ALL ON FUNCTION public.ingest_stripe_payment_internal(uuid,uuid,jsonb,jsonb) FROM PUBLIC,anon,authenticated;

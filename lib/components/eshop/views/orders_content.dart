@@ -1,3 +1,8 @@
+import 'package:fstapp/components/notification_center/notification_detail_target.dart';
+import 'package:fstapp/components/navigation/route_visibility.dart';
+import 'order_history_dialog.dart';
+import 'waitlist_order_detail.dart';
+import 'package:fstapp/components/notification_center/notification_center_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'order_delete_dialog.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
@@ -193,6 +198,8 @@ class _OrdersContentState extends State<OrdersContent> {
   SingleDataGridController<OrderModel>? controller;
   int? unitId;
   bool loadFailed = false;
+  int? _openedOrder;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -233,6 +240,11 @@ class _OrdersContentState extends State<OrdersContent> {
     if (occasionLink == null) {
       occasionLink = newOccasionLink;
       _initializeController();
+    } else {
+      final target = int.tryParse(
+          context.routeData.queryParams.optString('orderId') ?? '');
+      if (target == null) _openedOrder = null;
+      if (target != null && target != _openedOrder) _initializeController();
     }
   }
 
@@ -249,6 +261,7 @@ class _OrdersContentState extends State<OrdersContent> {
   Future<void> _loadController() async {
     if (occasionLink == null) return;
 
+    final generation = ++_loadGeneration;
     // Fetch all data in one request
     var futures = await Future.wait([
       DbOrders.getOrdersTabData(occasionLink: occasionLink!),
@@ -259,7 +272,35 @@ class _OrdersContentState extends State<OrdersContent> {
     final occasion = futures[1] as OccasionModel;
     unitId = occasion.unit;
 
-    if (!mounted) return;
+    if (!mounted || generation != _loadGeneration) return;
+
+    final requestedOrder =
+        int.tryParse(context.routeData.queryParams.optString('orderId') ?? '');
+    if (requestedOrder != null && _openedOrder != requestedOrder) {
+      _openedOrder = requestedOrder;
+      final matches =
+          bundle.orders.where((order) => order.id == requestedOrder);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted ||
+            generation != _loadGeneration ||
+            !isVisibleRouteInstance(context)) return;
+        if (matches.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(NotificationCenterStrings.text('unavailable'))));
+        } else {
+          final order = matches.first;
+          await showDialog<void>(
+              context: context,
+              builder: (_) => order.waitlistSummary == null
+                  ? OrderHistoryDialog(orderId: requestedOrder)
+                  : WaitlistOrderDetail(order: order));
+          if (mounted && isVisibleRouteInstance(context)) {
+            await clearNotificationDetailTarget(
+                context, 'orderId', '$requestedOrder');
+          }
+        }
+      });
+    }
 
     var forms = bundle.forms;
     bool waitlistEnabled() =>

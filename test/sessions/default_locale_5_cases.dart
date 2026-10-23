@@ -1,3 +1,5 @@
+import '../components/notification_center/notification_center_cases.dart'
+    as notificationCenter;
 import '../support/register_client_suites.dart';
 import '../components/eshop/order_grid_filters_cases.dart' as suite0;
 import '../components/news/news_presentation_widget_cases.dart' as suite1;
@@ -12,6 +14,7 @@ import '../components/cleaning/admin_contract_cases.dart' as suite9;
 
 void main() {
   registerClientSuites({
+    'notification_center': notificationCenter.main,
     'order_grid_filters': suite0.main,
     'news_presentation_widget': suite1.main,
     'occasion_navigation_bar': suite2.main,

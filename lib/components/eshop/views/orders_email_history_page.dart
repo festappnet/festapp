@@ -10,7 +10,9 @@ class OrdersEmailHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EmailDeliveryHistory(
         occasionId: RightsService.currentOccasion()?.id,
-        ordersOnly: true,
+        messageId: context.routeData.queryParams.optString('messageId'),
+        ordersOnly:
+            context.routeData.queryParams.optString('messageId') == null,
         embedded: true,
       );
 }

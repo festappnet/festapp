@@ -45,6 +45,8 @@ BEGIN
  UPDATE eshop.waitlist_acceptance_attempts SET state='aborted',updated_at=clock_timestamp() WHERE command_id=p_command;
  UPDATE public.forms SET capacity_revision=capacity_revision+1 WHERE id=(SELECT form FROM eshop.orders WHERE id=a.source_order_id);
  INSERT INTO eshop.orders_history("order",state,data) VALUES(a.source_order_id,'waitlisted',jsonb_build_object('action','acceptance_aborted','commandId',p_command,'targetOrderId',a.target_order_id));
+ PERFORM public.notification_center_order_capacity_internal(a.source_order_id);
+ PERFORM public.notification_center_order_state_internal(p_order);
  RETURN true;
 END $$;
 CREATE OR REPLACE FUNCTION public.expire_waitlist_offers(p_batch_size integer DEFAULT 100)
