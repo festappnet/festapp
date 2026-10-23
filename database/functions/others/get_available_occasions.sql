@@ -68,7 +68,7 @@ BEGIN
   FROM public.occasions o
   LEFT JOIN public.external_occasions_cache c ON o.link = c.link
   WHERE 
-    -- Preserve the live own-organization catalog; external sources require explicit opt-in.
+    -- Use the same explicit source-map policy as the other public projection.
     public.catalog_includes_occasion_internal(p_organization_id, o.organization, c.source_name)
     -- Unit Filter (Optional)
     AND (p_unit_id IS NULL OR o.unit = p_unit_id)
