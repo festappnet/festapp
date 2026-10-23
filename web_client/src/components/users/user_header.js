@@ -48,6 +48,7 @@ export class UserHeader extends HTMLElement {
     disconnectedCallback() {
         RightsService.removeListener(this._handleContextChange);
         window.removeEventListener('scroll', this._onScroll);
+        this.querySelector('#user-popover-wrapper')?.remove();
     }
 
     _handleContextChange(context) {
@@ -100,6 +101,7 @@ export class UserHeader extends HTMLElement {
 
 
     render() {
+        this.querySelector('#user-popover-wrapper')?.remove();
         this.innerHTML = '';
 
         const container = document.createElement('div');
@@ -170,10 +172,15 @@ export class UserHeader extends HTMLElement {
              }
 
              // 2. User Info (Avatar)
-             const userContainer = document.createElement('div');
+             const userContainer = document.createElement('button');
+             userContainer.type = 'button';
              userContainer.className = 'user-info-container';
+             userContainer.setAttribute('aria-label', CommonStrings.settings);
+             userContainer.setAttribute('aria-haspopup', 'dialog');
+             userContainer.setAttribute('aria-expanded', 'false');
+             userContainer.setAttribute('aria-controls', 'user-popover');
              
-             const avatar = document.createElement('div');
+             const avatar = document.createElement('span');
              avatar.className = 'avatar-circle';
              
              avatar.textContent = userInfo.initial;
@@ -233,7 +240,12 @@ export class UserHeader extends HTMLElement {
             actions.appendChild(signInBtn);
 
             // Settings Icon (for guests)
-            const settingsBtn = document.createElement('i');
+            const settingsBtn = document.createElement('button');
+            settingsBtn.type = 'button';
+            settingsBtn.setAttribute('aria-label', CommonStrings.settings);
+            settingsBtn.setAttribute('aria-haspopup', 'dialog');
+            settingsBtn.setAttribute('aria-expanded', 'false');
+            settingsBtn.setAttribute('aria-controls', 'user-popover');
             settingsBtn.className = 'material-icons settings-icon-btn';
             settingsBtn.textContent = 'settings';
             settingsBtn.onclick = (e) => {
@@ -272,9 +284,14 @@ export class UserHeader extends HTMLElement {
         const popover = document.createElement('div');
         popover.id = 'user-popover';
         popover.className = 'user-popover';
+        popover.setAttribute('role', 'dialog');
+        popover.setAttribute('aria-label', CommonStrings.settings);
+        target.setAttribute('aria-expanded', 'true');
 
         // --- Close Button ---
-        const closeBtn = document.createElement('i');
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', CommonStrings.close);
         closeBtn.className = 'material-icons popover-close-btn';
         closeBtn.textContent = 'close';
         closeBtn.onclick = () => wrapper.remove();
@@ -288,7 +305,7 @@ export class UserHeader extends HTMLElement {
             headerSection.className = 'popover-header-section';
 
             // Large Avatar
-            const avatar = document.createElement('div');
+            const avatar = document.createElement('span');
             avatar.className = 'popover-avatar-large';
             avatar.textContent = userInfo.initial;
             headerSection.appendChild(avatar);
@@ -433,6 +450,8 @@ export class UserHeader extends HTMLElement {
         wrapper.remove = () => {
              document.removeEventListener('keydown', escHandler);
              originalRemove();
+             target.setAttribute('aria-expanded', 'false');
+             if (target.isConnected) target.focus();
         };
 
         // Inject Shared Styles
@@ -441,6 +460,7 @@ export class UserHeader extends HTMLElement {
         wrapper.appendChild(style);
 
         this.appendChild(wrapper);
+        closeBtn.focus();
 
         // Global click listener to close if clicked outside (redundant with backdrop but good fallback)
         const closeHandler = (e) => {

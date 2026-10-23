@@ -8,6 +8,8 @@ export class FeedbackDialog {
         const root = document.createElement('div');
         root.id = 'feedback-dialog-root';
         root.className = 'feedback-dialog-overlay';
+        root.setAttribute('role', 'dialog');
+        root.setAttribute('aria-labelledby', 'fd-title');
         root.innerHTML = `
             <div class="feedback-dialog">
                 <div class="fd-header">
@@ -79,6 +81,7 @@ export class FeedbackDialog {
 
     static show(subject, hint) {
         FeedbackDialog.init();
+        FeedbackDialog.returnFocus = document.activeElement;
         const tr = LocalizationService.tr;
         const appName = "Festapp";
 
@@ -107,6 +110,15 @@ export class FeedbackDialog {
 
         const root = document.getElementById('feedback-dialog-root');
         root.classList.add('open');
+        const close = document.getElementById('fd-close-btn');
+        close.type = 'button';
+        close.setAttribute('aria-label', tr('Feedback.close'));
+        close.querySelector('i').setAttribute('aria-hidden', 'true');
+        root.querySelectorAll('.copy-btn').forEach(button => {
+            button.type = 'button';
+            button.setAttribute('aria-label', tr('Feedback.copyToClipboard'));
+        });
+        close.focus();
 
         // Close on Esc key
         FeedbackDialog.escListener = (e) => {
@@ -120,6 +132,8 @@ export class FeedbackDialog {
     static close() {
         const root = document.getElementById('feedback-dialog-root');
         if (root) root.classList.remove('open');
+        if (FeedbackDialog.returnFocus?.isConnected) FeedbackDialog.returnFocus.focus();
+        FeedbackDialog.returnFocus = null;
         
         if (FeedbackDialog.escListener) {
             document.removeEventListener('keydown', FeedbackDialog.escListener);

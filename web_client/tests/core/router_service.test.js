@@ -357,8 +357,8 @@ test('RouterService.handleInitialLoad', async (t) => {
 
         const handled = await RouterService.handleInitialLoad();
 
-        // Should handle it by returning true (stopping main app load)
-        assert.strictEqual(handled, true);
+        // Main must continue loading and reveal the catalogue at the new URL.
+        assert.strictEqual(handled, false);
         assert.strictEqual(historyReplaced, true);
         assert.strictEqual(replacePath, '/');
     });
