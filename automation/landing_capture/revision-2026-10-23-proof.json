@@ -1,0 +1,122 @@
+{
+  "locale": "cs",
+  "captureRoot": "/Users/miakh/Downloads/festapp-video-revision-20261023",
+  "layout": {
+    "sourceTake": "/Users/miakh/Downloads/festapp-video-revision-20261023/layout-row-ready-cs-1792748121",
+    "cues": [
+      {
+        "cue": "ready-row",
+        "sourceStart": 1792748121.738763,
+        "sourceEnd": 1792748123.844115,
+        "speed": 1,
+        "encodedDuration": 2.1
+      },
+      {
+        "cue": "add-table",
+        "sourceStart": 1792748123.844314,
+        "sourceEnd": 1792748128.514923,
+        "speed": 1,
+        "encodedDuration": 4.666667
+      },
+      {
+        "cue": "complete-second-row",
+        "sourceStart": 1792748129.791789,
+        "sourceEnd": 1792748138.607771,
+        "speed": 1.5,
+        "encodedDuration": 5.866667
+      },
+      {
+        "cue": "finished",
+        "sourceStart": 1792748139.08562,
+        "sourceEnd": 1792748142.114827,
+        "speed": 1,
+        "encodedDuration": 3.033333
+      }
+    ],
+    "outputs": {
+      "layout-build.mp4": {
+        "width": 1140,
+        "height": 792,
+        "duration": 14.666667,
+        "decode": "PASS"
+      },
+      "layout-build-mobile.mp4": {
+        "width": 820,
+        "height": 792,
+        "duration": 14.666667,
+        "decode": "PASS"
+      }
+    },
+    "mobilePresentation": "scaled desktop authoring, not native mobile UI"
+  },
+  "form": {
+    "sourceTake": "/Users/miakh/Downloads/festapp-video-revision-20261023/form/form-continuous-cs-1792749482",
+    "cues": [
+      {
+        "cue": "continuous-form",
+        "sourceStart": 1792749482.9682078,
+        "sourceEnd": 1792749528.892033,
+        "speed": 1,
+        "encodedDuration": 45.933333
+      }
+    ],
+    "outputs": {
+      "form-build.mp4": {
+        "width": 1200,
+        "height": 804,
+        "duration": 45.933333,
+        "decode": "PASS"
+      },
+      "form-build-mobile.mp4": {
+        "width": 720,
+        "height": 638,
+        "duration": 45.933333,
+        "decode": "PASS"
+      }
+    },
+    "mobilePresentation": "scaled desktop authoring, not native mobile UI"
+  },
+  "savedLocalForm": {
+    "products": [
+      {
+        "title": "Bezlepková večeře",
+        "price": 180.0
+      },
+      {
+        "title": "Kuřecí večeře",
+        "price": 180.0
+      },
+      {
+        "title": "Veganská večeře",
+        "price": 160.0
+      },
+      {
+        "title": "Vegetariánská večeře",
+        "price": 160.0
+      }
+    ],
+    "question": "Poznámka pro pořadatele",
+    "orders": 0
+  },
+  "layoutStart": {
+    "tables": 5,
+    "seats": 30
+  },
+  "layoutEnd": {
+    "tables": 10,
+    "seats": 60
+  },
+  "visualInspection": [
+    "actual prepared hall first frame",
+    "native first table drag and copy results",
+    "four dinner names/prices",
+    "finished text question"
+  ],
+  "sha256": {
+    "layout-build.mp4": "dc7d8ba58eccfff721d2727705d380ee36599d1b29e30a177390ffc5b15e31f0",
+    "layout-build-mobile.mp4": "0015dbd47796502a493f0b1b0f170b0064749ef28957893ad8d2b55c043c9ab5",
+    "form-build.mp4": "fbfeda0694f0d4a7e6f651dfbca900ba42fb8537732c3ef05d5e3a818d12f212",
+    "form-build-mobile.mp4": "ed9cf70813c01c1ea9d1565b63160db4a5cfacce6b3ac12680cdd5ea1947eadf"
+  },
+  "publication": "Source ready; deployment receipt is separate from capture evidence"
+}
