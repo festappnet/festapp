@@ -17,6 +17,7 @@ class OrganizationAdminGuard extends StatefulWidget {
 
 class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
   bool _isLoading = true;
+  bool _loadingContext = false;
   bool _hasAccess = false;
   int? _organizationId;
   String? _errorMessage;
@@ -25,7 +26,34 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
   void initState() {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_checkAccess);
-    _checkAccess();
+    _initializeAccess();
+  }
+
+  Future<void> _initializeAccess() async {
+    // Direct entry skips the startup fetch, but cached settings can still
+    // restore a context without capabilities. Absence is not a checked denial.
+    if (Supabase.instance.client.auth.currentUser != null &&
+        (RightsService.occasionLinkModel?.capabilities.containsKey(
+                    AuthorizationCapabilities.organizationSettingsWrite) !=
+                true ||
+            RightsService.pendingContextUpdate != null)) {
+      _loadingContext = true;
+      try {
+        await (RightsService.pendingContextUpdate ??
+            RightsService.updateAppData(force: true, refreshOffline: false));
+      } catch (error) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = error.toString();
+          });
+        }
+        return;
+      } finally {
+        _loadingContext = false;
+      }
+    }
+    if (mounted) _checkAccess();
   }
 
   @override
@@ -43,6 +71,7 @@ class _OrganizationAdminGuardState extends State<OrganizationAdminGuard> {
   }
 
   void _checkAccess() {
+    if (_loadingContext) return;
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
