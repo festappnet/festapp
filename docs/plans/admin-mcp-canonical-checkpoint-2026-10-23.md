@@ -197,3 +197,14 @@ Stage 2A is now locally validated on feat/admin-mcp-standing-20261023. Its
 completed source is being integrated with the frozen PR fixes; further inventory
 reads and operational seat commands remain separate pending cuts.
 Release remains gated on an approved, merged authoritative main revision.
+
+
+## Client CI contract correction
+
+Current canonical ticket text fitting (introduced by ef3005e22) intentionally
+shrinks occasionTitle below its preferred minimum to preserve the full title.
+The inherited long-text regression incorrectly expected title truncation.
+It now tests ellipsis on the ordinary orderName binding and separately proves
+that an occasion title stays complete, within its box, below the preferred
+minimum. Both focused Flutter cases passed. No renderer, font metrics, PDF
+readiness contract or readiness hash was changed.

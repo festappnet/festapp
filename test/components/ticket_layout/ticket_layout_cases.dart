@@ -2407,13 +2407,24 @@ void main() {
       'long text and missing data use bounded boxes without leaking hidden notes',
       () {
     final d = document();
-    final e = d.elements.firstWhere((e) => e.binding == 'occasionTitle');
+    final e = d.elements.firstWhere((e) => e.binding == 'orderName');
     final r = resources();
     final fit = fitTicketText(
         List.filled(50, 'PřílišDlouhéSlovoBezMezer').join(), e, r.metrics);
     expect(fit.overflow, isTrue);
     expect(fit.lines.last.endsWith('…'), isTrue);
     expect(fit.widths.every((w) => w <= e.box.width), isTrue);
+    r.dispose();
+  });
+  test('long occasion titles preserve complete text below the preferred minimum', () {
+    final title = document().elements.firstWhere((e) => e.binding == 'occasionTitle');
+    final r = resources();
+    final text = List.filled(50, 'LongOccasionTitle').join();
+    final fit = fitTicketText(text, title, r.metrics);
+    expect(fit.overflow, isFalse);
+    expect(fit.size, lessThan(title.minFontSize));
+    expect(fit.lines.join(), text);
+    expect(fit.widths.every((width) => width <= title.box.width), isTrue);
     r.dispose();
   });
   testWidgetsWithEnvironment(() => _environment,
