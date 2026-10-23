@@ -51,7 +51,11 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(html.includes('info@vstupenky.online'));
   assert.ok(html.includes('https://cal.com/michael-bujnovsky-5srszz/ukazka'));
   assert.equal((html.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
-  assert.ok(html.includes('10a70df3585344258adf7bb3b6611a84'));
+  // The apex and catalog belong to the vstupenky.online site, not the balls subdomain.
+  for (const document of [html, catalog]) {
+    assert.ok(document.includes('e2b62eb2e6824423b457214e0b286f0a'));
+    assert.ok(!document.includes('10a70df3585344258adf7bb3b6611a84'));
+  }
   assert.equal((catalog.match(/src="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"/g)||[]).length,1);
   assert.ok(!html.includes('internalSources'));
   assert.ok(!html.includes('&amp;amp;'));
