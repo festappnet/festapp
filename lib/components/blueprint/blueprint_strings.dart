@@ -56,6 +56,11 @@ class BlueprintStrings {
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
     if (error is BlueprintCommandRejection) {
+      if (error.reason.startsWith('BLUEPRINT_ORDER_')) {
+        return error.reason == 'BLUEPRINT_ORDER_CHANGED'
+            ? 'FeatureBlueprint.swapChanged'.tr()
+            : analysisFailed;
+      }
       final swapMessage = const {
         'BLUEPRINT_SWAP_CHANGED': 'swapChanged',
         'BLUEPRINT_SWAP_REJECTED': 'swapRejected',

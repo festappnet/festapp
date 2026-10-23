@@ -37,8 +37,7 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
           (name, params) async {
             if (name != _operation)
               throw StateError('Unsupported seat order command');
-            final response =
-                await client.functions.invoke('send-ticket-order', body: {
+            final response = await _invokeEdge(client, {
               'commandId': params['p_command_id'],
               'clientId': await ClientCommandIdentity.clientId(),
               'replacement': {
@@ -80,8 +79,7 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
           if (command == null) return null;
           FunctionResponse response;
           try {
-            response =
-                await client.functions.invoke('send-ticket-order', body: {
+            response = await _invokeEdge(client, {
               'replacement': payload,
               'commandId': command,
               'clientId': await ClientCommandIdentity.clientId()
@@ -115,6 +113,29 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
       : _read = readRpc,
         _legacyRecovery = legacyRecovery;
   static const _operation = 'create_blueprint_seat_order';
+  static Future<FunctionResponse> _invokeEdge(
+      SupabaseClient client, Map<String, dynamic> body) async {
+    try {
+      return await client.functions.invoke('send-ticket-order', body: body);
+    } on FunctionsFetchException {
+      throw http.ClientException(
+          'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND');
+    } on FunctionsRelayException {
+      throw http.ClientException(
+          'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND');
+    } on FunctionsHttpException catch (error) {
+      if (error.status == 401 || error.status == 403) {
+        throw const PostgrestException(
+            message: 'Seat order authorization denied', code: '42501');
+      }
+      if (error.status >= 500 || error.status == 408 || error.status == 429) {
+        throw http.ClientException(
+            'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND');
+      }
+      rethrow;
+    }
+  }
+
   final ClientCommandTransport _transport;
   final ClientCommandRpc _read;
   final Future<SeatOrderOutcome?> Function(BlueprintSeatOrderPreview)?

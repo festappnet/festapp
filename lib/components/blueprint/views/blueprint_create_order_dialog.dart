@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/blueprint/blueprint_seat_order_preview.dart';
+import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import 'package:fstapp/components/blueprint/blueprint_strings.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
@@ -92,8 +93,7 @@ class _BlueprintCreateOrderDialogState
       final requirements = await widget.commands.requirements(widget.request);
       if (mounted) setState(() => _accept(requirements));
     } catch (error) {
-      if (mounted)
-        setState(() => _error = _message(error));
+      if (mounted) setState(() => _error = _message(error));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -177,6 +177,16 @@ class _BlueprintCreateOrderDialogState
   }
 
   String _message(Object error) {
+    if (error is BlueprintCommandRejection &&
+        error.reason == 'REQUIRED_FIELD_MISSING') {
+      for (final field
+          in _requirements?.requiredFields ?? const <Map<String, dynamic>>[]) {
+        if (field['id'] == error.data['fieldId'] && field['title'] is String) {
+          return '${CommonStrings.fieldCannotBeEmpty}: ${field['title']}';
+        }
+      }
+      return CommonStrings.fieldCannotBeEmpty;
+    }
     if (error is SeatOrderPreparationPending)
       return 'FeatureBlueprint.orderPaymentPending'
           .tr(namedArgs: {'order': '${error.orderId}'});
