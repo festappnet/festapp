@@ -720,3 +720,20 @@ and their temporary rename was reverted before publication/application. Neither
 new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
 not deploy. Generated source parity follows actual current main; no PDF readiness
 seal changed. Final report marks swap locally verified/pending deployment.
+
+
+## PR571 publication and current main reconciliation
+
+PR571 was published at4a32f7e1e with all6 required CI checks green and no approving
+review. Review remains a real repository gate. Main then merged PR573 containing
+the identical deployment guard and ticket-layout fixture corrections. Rebased
+onto c02bb2d0129f5675244213cd1c5444fa99abe350; git dropped both equivalent patches.
+No owned seat SQL/UI/MCP implementation changed. Source contract regeneration
+and deployment shell gate PASS; passing targeted evidence retained for unchanged
+inputs. New freeze/publication must replace old4a32 head; do not release old base.
+
+Ticket-email owner completed festapptickets0.20.368+865, tenant39fed12f, mainbase
+c607614b, backendf7b34bc1, migration2310 only. English profile2300 is not part of
+that release. Our hold2320 and swap2330 remain unapplied; any profile prerequisite
+before next UI release belongs to its owning rollout, never an automatic extra
+tenant migration. Report live baseline updated; no production test data created.

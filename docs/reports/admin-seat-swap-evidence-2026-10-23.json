@@ -54,7 +54,7 @@
     "Separate preexisting PDF validator readiness mismatch; seal unchanged"
   ],
   "integration": {
-    "authoritativeMain": "061201c3dbc71a6d559989442ebce110a347c628",
+    "authoritativeMain": "c02bb2d0129f5675244213cd1c5444fa99abe350",
     "branch": "feat/admin-mcp-confirmed-seats-main-20261023",
     "rebaseConflicts": 0,
     "postIntegrationMcp": {
@@ -65,5 +65,13 @@
     },
     "postIntegrationConsentPassed": 29,
     "sourceParityRegenerated": "Ticket-delivery2310 changes only; no readiness seal update"
+  },
+  "publication": {
+    "pullRequest": "https://github.com/festappnet/festapp/pull/571",
+    "previousHead": "4a32f7e1e213b386671a7bf0545ec099d33e34c7",
+    "previousRequiredChecksPassed": 6,
+    "approvingReviews": 0,
+    "rebasedToMain": "c02bb2d0129f5675244213cd1c5444fa99abe350",
+    "status": "Exact duplicate upstream test fixes dropped by rebase; new source awaits publication/checks and required review"
   }
 }
