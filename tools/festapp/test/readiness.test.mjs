@@ -6,7 +6,8 @@ import { canonicalBackendProfileSha256 } from '../../../automation/lib/backend_a
 import { request, receipt } from './layout-fixture.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 import { createServer } from '../src/mcp/server.mjs';
-import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 function canonicalProfile() {
     const { binding, ...value } = profile();
     Object.assign(value, {

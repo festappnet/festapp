@@ -3,8 +3,7 @@ import { tenantConnections } from './management.mjs';
 import { tenantBridge } from './tenant-bridge.mjs';
 import { Provider, errors } from 'oidc-provider';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { createMcpHandler } from '@modelcontextprotocol/server';
-import { toNodeHandler } from '@modelcontextprotocol/node';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { Operations } from '../operations/catalog.mjs';
 import { createServer } from '../mcp/server.mjs';
 import { check, safeError } from '../errors.mjs';
@@ -261,7 +260,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         if (count >= 2 || totalActive >= 16) return res.sendStatus(429);
         try { limit(`grant:${token.grantId}`, 60); } catch { return res.sendStatus(429); }
         active.set(token.grantId, count + 1); totalActive++;
-        let handler;
+        let server, transport;
         const requestId = randomUUID();
         try {
             const owner = new DelegatedOwner(config, storage, token, { fetchImpl });
@@ -275,15 +274,15 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
                     operation: id, outcome: result.ok ? 'ok' : result.error.code });
                 return result;
             };
-            // The SDK owns modern per-request serving and the stateless legacy
-            // boundary. Both use this same authenticated domain catalog.
-            handler = createMcpHandler(() => createServer(operations));
-            await toNodeHandler(handler)(req, res, req.body);
+            server = createServer(operations);
+            transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+            await server.connect(transport);
+            await transport.handleRequest(req, res, req.body);
             audit({ event: 'request', requestId, connection: digest(token.grantId), status: res.statusCode });
         } finally {
             active.set(token.grantId, (active.get(token.grantId) ?? 1) - 1); totalActive--;
             if (!active.get(token.grantId)) active.delete(token.grantId);
-            await handler?.close();
+            await transport?.close(); await server?.close();
         }
     });
     app.all('/mcp', (_req, res) => res.sendStatus(405));

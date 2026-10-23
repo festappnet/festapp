@@ -1,7 +1,7 @@
 import {
     McpServer,
     ResourceTemplate,
-} from '@modelcontextprotocol/server';
+} from '@modelcontextprotocol/sdk/server/mcp.js';
 export function createServer(operations) {
     const server = new McpServer({
         name: 'festapp-operator',
