@@ -1,0 +1,56 @@
+{
+  "sourceCommit": "63a242287b37c336bf393f9797421577616a8e5a",
+  "backend": "Owned loopback Auth/REST/Kong/Edge/PostgreSQL; all forward migrations; production-style owners",
+  "cases": [
+    "Actual local password Auth",
+    "Scoped requirements and real rollback quote",
+    "Actual Deno send-ticket-order HTTP binding and canonical SQL aggregate",
+    "Existing-order replacement with one old conflict and one atomic cancellation/new allocation",
+    "Exact HTTP acknowledgement replay and one receipt/confirmation intent per UUID"
+  ],
+  "ordersCreated": 2,
+  "paidProviderCalls": 0,
+  "emailWorkerPaused": true,
+  "metrics": [
+    {
+      "path": "/rest/v1/rpc/preview_blueprint_seat_order",
+      "httpStatus": 200,
+      "serializedBytes": 458
+    },
+    {
+      "path": "/rest/v1/rpc/preview_blueprint_seat_order",
+      "httpStatus": 200,
+      "serializedBytes": 884
+    },
+    {
+      "path": "/functions/v1/send-ticket-order",
+      "httpStatus": 200,
+      "serializedBytes": 2641
+    },
+    {
+      "path": "/functions/v1/send-ticket-order",
+      "httpStatus": 200,
+      "serializedBytes": 2641
+    },
+    {
+      "path": "/rest/v1/rpc/preview_blueprint_seat_order",
+      "httpStatus": 200,
+      "serializedBytes": 813
+    },
+    {
+      "path": "/rest/v1/rpc/preview_blueprint_seat_order",
+      "httpStatus": 200,
+      "serializedBytes": 1391
+    },
+    {
+      "path": "/functions/v1/send-ticket-order",
+      "httpStatus": 200,
+      "serializedBytes": 2781
+    },
+    {
+      "path": "/functions/v1/send-ticket-order",
+      "httpStatus": 200,
+      "serializedBytes": 2781
+    }
+  ]
+}

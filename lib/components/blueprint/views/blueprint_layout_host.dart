@@ -1,3 +1,5 @@
+import 'package:easy_localization/easy_localization.dart';
+import '../blueprint_command_rejection.dart';
 import 'blueprint_standing_setup_dialog.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
 import 'blueprint_inline_name.dart';
@@ -36,6 +38,10 @@ import '../blueprint_layout_controller.dart';
 import '../blueprint_model.dart';
 import '../blueprint_strings.dart';
 import 'blueprint_create_order_dialog.dart';
+import '../blueprint_seat_order_preview.dart';
+import 'package:fstapp/components/eshop/seat_order_commands.dart';
+import 'package:fstapp/app_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'blueprint_layout_legend.dart';
 import 'blueprint_editor_feedback.dart';
 import 'blueprint_product_dialogs.dart';
@@ -433,20 +439,44 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
 
   Future<void> _order() async {
     if (!_canOrder || _busy || controller.selectedSpotIds.isEmpty) return;
+    final session = controller;
+    final blueprint = session.snapshot.blueprintId;
+    if (blueprint == null) return;
     setState(() => _operationPending = true);
     try {
-      final selected = List<int>.of(controller.selectedSpotIds);
-      final analysis = await DbEshop.analyzeNewOrderSpots(selected);
-      if (!mounted) return;
+      final request = BlueprintSeatOrderRequest(
+          occasionId: session.snapshot.occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprint,
+          spotIds: session.selectedSpotIds);
+      final commands = SupabaseSeatOrderCommands(Supabase.instance.client);
+      final recovered = await commands.recover(request);
+      if (!mounted || !identical(session, controller)) return;
+      if (recovered != null) {
+        await _refresh();
+        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+        return;
+      }
+      final requirements = await commands.requirements(request);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
       final done = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (_) => BlueprintCreateOrderDialog(
-              selectedSpotIds: selected, initialAnalysis: analysis));
-      if (done == true) {
+              request: request,
+              commands: commands,
+              initialRequirements: requirements));
+      if (done == true && mounted && identical(session, controller)) {
         await _refresh();
         if (mounted) controller.setMode(BlueprintLayoutMode.manage);
       }
+    } catch (error) {
+      if (mounted && identical(session, controller))
+        setState(() => _message = error is SeatOrderPreparationPending
+            ? 'FeatureBlueprint.orderPaymentPending'
+                .tr(namedArgs: {'order': '${error.orderId}'})
+            : BlueprintStrings.layoutErrorMessage(error));
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }
@@ -473,64 +503,84 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
 
   Future<void> _swap() async {
     if (!_canOrder || _busy || controller.selectedSpotIds.length != 2) return;
+    final session = controller;
     setState(() {
       _operationPending = true;
       _message = null;
     });
     try {
-      final preview = await controller.previewSwap();
-      if (!mounted) return;
-      final sides = (preview['sides'] as List? ?? const []).cast<Map>();
-      final orders = (preview['orders'] as List? ?? const []).cast<Map>();
+      if (await session.recoverSwap()) {
+        if (mounted && identical(session, controller)) {
+          await _refresh();
+          if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+        }
+        return;
+      }
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
+      final preview = await session.previewSwap();
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
       final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AppAlertDialog(
                 title: Text(BlueprintStrings.legendSwapSeats),
                 content: SizedBox(
                     width: 520,
-                    child: SingleChildScrollView(
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          for (final side in sides)
-                            ListTile(
-                                title: Text('${side['title'] ?? ''}'),
+                    height: (MediaQuery.sizeOf(context).height * .6)
+                        .clamp(240.0, 520.0)
+                        .toDouble(),
+                    child: ListView.builder(
+                        itemCount:
+                            preview.seats.length + preview.orders.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index < preview.seats.length) {
+                            final seat = preview.seats[index];
+                            return ListTile(
+                                title: Text(seat.title ?? '#${seat.id}'),
                                 subtitle: Text([
-                                  if (side['customer'] is Map)
-                                    ...[
-                                      side['customer']['name'],
-                                      side['customer']['surname'],
-                                      side['customer']['email']
-                                    ].where(
-                                        (v) => v != null && '$v'.isNotEmpty),
-                                  if (side['ticketId'] != null)
-                                    '${BlueprintStrings.ticketLabel}: ${side['ticketId']}',
-                                ].join(' '))),
-                          for (final order in orders)
-                            ListTile(
+                                  preview.sourceIds.contains(seat.id)
+                                      ? BlueprintStrings.swapSourceSeats
+                                      : BlueprintStrings.swapTargetSeats,
+                                  BlueprintStrings.seatState(seat.state),
+                                  seat.productTitle,
+                                  seat.customerName,
+                                  seat.customerSurname,
+                                  seat.customerEmail,
+                                  if (seat.ticketId != null)
+                                    '${BlueprintStrings.ticketLabel}: ${seat.ticketId}',
+                                ]
+                                    .whereType<String>()
+                                    .where((s) => s.isNotEmpty)
+                                    .join(' - ')));
+                          }
+                          final moneyIndex = index - preview.seats.length;
+                          if (moneyIndex < preview.orders.length) {
+                            final order = preview.orders[moneyIndex];
+                            return ListTile(
                                 title: Text(
-                                    '${BlueprintStrings.orderLabel} ${order['orderId']}'),
+                                    '${BlueprintStrings.orderLabel} ${order.orderId}'),
                                 subtitle: Text(
-                                    '${Utilities.formatPrice(context, (order['beforeAmount'] as num).toDouble(), currencyCode: order['currencyCode'] as String?)} → '
-                                    '${Utilities.formatPrice(context, (order['afterAmount'] as num).toDouble(), currencyCode: order['currencyCode'] as String?)}'),
+                                    '${Utilities.formatPrice(context, double.parse(order.beforeAmount), currencyCode: order.currencyCode)} → '
+                                    '${Utilities.formatPrice(context, double.parse(order.afterAmount), currencyCode: order.currencyCode)}'),
                                 trailing: Text(Utilities.formatPrice(
-                                    context, (order['delta'] as num).toDouble(),
-                                    currencyCode:
-                                        order['currencyCode'] as String?))),
-                          Text(BlueprintStrings.swapServerNotice),
-                        ]))),
+                                    context, double.parse(order.delta),
+                                    currencyCode: order.currencyCode)));
+                          }
+                          return Text(BlueprintStrings.swapServerNotice);
+                        })),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialogContext, false),
                       child: Text(CommonStrings.storno)),
                   FilledButton(
                       onPressed: () => Navigator.pop(dialogContext, true),
-                      child: Text(BlueprintStrings.legendSwapSeats))
+                      child: Text(BlueprintStrings.legendSwapSeats)),
                 ],
               ));
-      if (confirmed == true && mounted && _canOrder) {
-        await controller.swapSelected();
+      if (confirmed == true &&
+          mounted &&
+          _canOrder &&
+          identical(session, controller)) {
+        await session.swapSelected(preview);
         await _refresh();
         if (mounted) controller.setMode(BlueprintLayoutMode.manage);
       }
@@ -539,7 +589,7 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
         setState(() => _message =
             error is http.ClientException || error is TimeoutException
                 ? BlueprintStrings.operationNetworkError
-                : error.toString());
+                : BlueprintStrings.layoutErrorMessage(error));
     } finally {
       if (mounted) setState(() => _operationPending = false);
     }
@@ -1160,23 +1210,47 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
     final seats = Set<String>.from(_detailSeatIds);
     final ids = _temporaryHolds(seats);
     if (ids.isEmpty) return;
-    final confirmed = await DialogHelper.showConfirmationDialog(
-      context,
-      BlueprintStrings.releaseTemporaryReservation,
-      BlueprintStrings.releaseTemporaryReservationConfirm,
-      confirmButtonMessage: BlueprintStrings.releaseTemporaryReservation,
-    );
-    if (!mounted ||
-        !confirmed ||
-        !_canOrder ||
-        _busy ||
-        !identical(session, controller)) return;
-    final current = _temporaryHolds(seats).toSet();
-    final selected = ids.where(current.contains).toList();
-    if (selected.isEmpty) return;
     setState(() => _operationPending = true);
     try {
-      await DbTickets.releaseBlueprintHolds(selected);
+      final preview = await DbTickets.previewBlueprintHolds(
+          session.snapshot.occasionId, ids);
+      if (!mounted || !_canOrder || !identical(session, controller)) return;
+      if (!preview.canApply)
+        throw BlueprintCommandRejection(
+            409, {'reason': 'BLUEPRINT_SEAT_ORDERED'});
+      if (preview.activeHoldCount == 0) {
+        await _refresh();
+        return;
+      }
+      final confirmed = await DialogHelper.showConfirmationDialogRich(
+        context: context,
+        title: BlueprintStrings.releaseTemporaryReservation,
+        confirmButtonText: BlueprintStrings.releaseTemporaryReservation,
+        content: SizedBox(
+            width: 360,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(BlueprintStrings.releaseTemporaryReservationConfirm),
+              const SizedBox(height: 12),
+              Text(BlueprintStrings.releaseTemporaryReservationPreview(
+                  preview.activeHoldCount, preview.affectedSpotIds.length)),
+              const SizedBox(height: 8),
+              SizedBox(
+                  height: (preview.seats.length * 28.0)
+                      .clamp(56.0, 240.0)
+                      .toDouble(),
+                  child: ListView.builder(
+                      itemCount: preview.seats.length,
+                      itemBuilder: (context, index) {
+                        final seat = preview.seats[index];
+                        return Text(seat.title ?? '#${seat.id}');
+                      })),
+            ])),
+      );
+      if (!mounted ||
+          !confirmed ||
+          !_canOrder ||
+          !identical(session, controller)) return;
+      await DbTickets.releaseBlueprintHolds(preview);
       await _refresh();
     } catch (error) {
       if (mounted)

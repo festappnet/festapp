@@ -1,7 +1,12 @@
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { presentPayment } from "../_shared/paymentPresentation.ts";
-import { resolveTicketOrderCommandIdentity } from "./commandIdentity.ts";
+import {
+  hasSingleTicketOrderPayload,
+  resolveTicketOrderCommandIdentity,
+} from "./commandIdentity.ts";
+import { executeConfirmedSeatOrder } from "./confirmedReplacement.ts";
+import { prepareFakturoidTicketOrder } from "./fakturoidPreparation.ts";
 import { fakturoidGateway } from "./fakturoid.ts";
 import { prepareStripePaySource } from "../_shared/stripe/paySource.ts";
 import { prepareStripeOrderDelivery } from "../_shared/stripe/orderDelivery.ts";
@@ -28,6 +33,18 @@ Deno.serve(async (req) => {
       commandId: requestedCommandId,
       clientId: requestedClientId,
     } = await req.json();
+    if (
+      !hasSingleTicketOrderPayload({
+        orderDetails: directOrderDetails,
+        replacement,
+        waitlistAcceptance,
+      })
+    ) {
+      return Response.json({
+        code: 400,
+        errorCode: "INVALID_TICKET_ORDER_INTENT",
+      }, { status: 400, headers: corsHeaders });
+    }
     if (waitlistAcceptance && (!requestedCommandId || !requestedClientId)) {
       return new Response(
         JSON.stringify({ error: "Missing command identity" }),
@@ -83,6 +100,16 @@ Deno.serve(async (req) => {
           status: 401,
         },
       );
+    }
+    if (replacement?.confirmation != null) {
+      const result = await executeConfirmedSeatOrder({
+        replacement,
+        commandId,
+        client: createUserClient(authorizationHeader!),
+        serviceClient: supabaseAdmin,
+        gateway: fakturoidGateway,
+      });
+      return Response.json(result, { headers: corsHeaders, status: 200 });
     }
     const rpcName = waitlistAcceptance
       ? "execute_waitlist_command_client_sync_v1"
@@ -238,83 +265,25 @@ Deno.serve(async (req) => {
       order?.payment_info?.payment_method !== "stripe" &&
       Number(order?.payment_info?.amount) > 0
     ) {
-      const { data: services, error: servicesError } = await supabaseAdmin.rpc(
-        "get_external_services",
-        { p_order_id: order.id },
-      );
-      if (servicesError) throw servicesError;
-      const fakturoid = services?.find((service: any) =>
-        service.type === "FAKTUROID"
-      );
-      if (fakturoid) {
-        const config = fakturoid.data;
-        const { data: orderState, error: stateError } = await supabaseAdmin.rpc(
-          "get_fakturoid_ticket_order_state_v1",
-          { p_order_id: order.id },
-        );
-        if (stateError) throw stateError;
-        if (["storno", "waitlisted"].includes(orderState)) {
-          return new Response(
-            JSON.stringify(
-              waitlistAcceptance
-                ? acceptanceFailure("Fakturoid could not complete this order")
-                : {
-                  code: 503,
-                  message: "Fakturoid could not complete this order",
-                },
-            ),
-            {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-              status: 200,
+      const preparation = await prepareFakturoidTicketOrder({
+        client: supabaseAdmin,
+        gateway: fakturoidGateway,
+        order,
+        commandId,
+        unitName: order.occasion.title,
+        replacement: !!replacement,
+      });
+      if (!preparation.ok) {
+        return Response.json(
+          waitlistAcceptance
+            ? acceptanceFailure("Fakturoid could not complete this order")
+            : {
+              code: 503,
+              errorCode: preparation.reason,
+              message: "Fakturoid could not complete this order",
             },
-          );
-        }
-        let variableSymbol = String(order.payment_info.variable_symbol);
-        if (orderState === "preparing_payment") {
-          try {
-            variableSymbol = await fakturoidGateway.preparePayment({
-              config: {
-                client_id: config.client_id,
-                client_secret: config.client_secret,
-                slug: config.slug,
-                subject_id: config.subject_id,
-                note: config.note,
-              },
-              order,
-              unitName: order.occasion.title,
-              commandId,
-            });
-          } catch (error) {
-            console.error("Fakturoid order preparation failed:", error);
-            const { error: abortError } = await supabaseAdmin.rpc(
-              "abort_fakturoid_ticket_order_v1",
-              { p_order_id: order.id, p_command_id: commandId },
-            );
-            if (abortError) throw abortError;
-            return new Response(
-              JSON.stringify(
-                waitlistAcceptance
-                  ? acceptanceFailure("Fakturoid could not complete this order")
-                  : {
-                    code: 503,
-                    message: "Fakturoid could not complete this order",
-                  },
-              ),
-              {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 200,
-              },
-            );
-          }
-        }
-        const { data: confirmedSymbol, error: completionError } =
-          await supabaseAdmin.rpc("complete_fakturoid_ticket_order_v1", {
-            p_order_id: order.id,
-            p_command_id: commandId,
-            p_variable_symbol: Number(variableSymbol),
-          });
-        if (completionError) throw completionError;
-        order.payment_info.variable_symbol = String(confirmedSymbol);
+          { headers: corsHeaders, status: 200 },
+        );
       }
     }
 

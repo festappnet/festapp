@@ -184,143 +184,28 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION public.swap_spot_pair_internal_v1(spot_id_1 BIGINT, spot_id_2 BIGINT)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-    spot1 RECORD;
-    spot2 RECORD;
-    occasion_id_common BIGINT;
-    has_permission BOOLEAN;
-    now_time TIMESTAMP WITH TIME ZONE := NOW();
+-- Only the aggregate applier calls this worker, after locking the complete
+-- assignment graph and checking scope, holds and atomic-unit eligibility.
+-- The price/order helper remains the sole financial calculation.
+CREATE OR REPLACE FUNCTION public.apply_blueprint_seat_pair_locked_internal(p_first bigint,p_second bigint)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE first_spot eshop.spots;second_spot eshop.spots;
 BEGIN
-    -- 1. Input Validation
-    IF spot_id_1 IS NULL OR spot_id_2 IS NULL THEN
-        RAISE EXCEPTION 'Both spot_id_1 and spot_id_2 must be provided' USING ERRCODE = '22023';
-    END IF;
-    IF spot_id_1 = spot_id_2 THEN
-        RAISE EXCEPTION 'Cannot swap a spot with itself' USING ERRCODE = '22023';
-    END IF;
-
-    PERFORM public.lock_spot_assignment_scope_internal_v1(ARRAY[spot_id_1,spot_id_2]);
-
-    -- 2. Fetch Spot Data
-    SELECT * INTO spot1 FROM eshop.spots WHERE id = spot_id_1 FOR UPDATE;
-    IF NOT FOUND THEN RAISE EXCEPTION 'Spot 1 not found (ID: %)', spot_id_1 USING ERRCODE = 'P0002'; END IF;
-    SELECT * INTO spot2 FROM eshop.spots WHERE id = spot_id_2 FOR UPDATE;
-    IF NOT FOUND THEN RAISE EXCEPTION 'Spot 2 not found (ID: %)', spot_id_2 USING ERRCODE = 'P0002'; END IF;
-
-    -- 3. Permission and Occasion Check
-    IF spot1.occasion IS NULL OR spot2.occasion IS NULL THEN
-         RAISE EXCEPTION 'Spots are missing occasion information' USING ERRCODE = '22004';
-    END IF;
-    IF spot1.occasion <> spot2.occasion THEN
-        RAISE EXCEPTION 'Spots do not belong to the same occasion (Spot1: %, Spot2: %)', spot1.occasion, spot2.occasion USING ERRCODE = 'P0001';
-    END IF;
-    occasion_id_common := spot1.occasion;
-
-    -- Check permission
-    BEGIN
-        SELECT can_write_orders(occasion_id_common) INTO has_permission;
-    EXCEPTION
-        WHEN undefined_function THEN RAISE EXCEPTION 'Permission check function can_write_orders() does not exist.' USING ERRCODE = '42883';
-        WHEN OTHERS THEN RAISE EXCEPTION 'Error during permission check: %', SQLERRM;
-    END;
-    IF has_permission <> TRUE THEN
-        RAISE EXCEPTION 'User is not authorized to edit order_ids for this occasion' USING ERRCODE = '42501';
-    END IF;
-
-    IF EXISTS(SELECT 1 FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2)
-      AND secret IS NOT NULL AND secret_expiration_time>clock_timestamp()) THEN
-      RAISE object_not_in_prerequisite_state USING MESSAGE='SPOT_HELD'; END IF;
-    -- Ticket locks follow the already locked order parents, in a stable order.
-    PERFORM 1 FROM eshop.tickets WHERE id IN(SELECT ticket FROM eshop.order_product_ticket
-      WHERE id IN(spot1.order_product_ticket,spot2.order_product_ticket)) ORDER BY id FOR UPDATE;
-
-    -- 4. Main Swap Logic: Branch based on assignment status
-    -- This logic is now greatly simplified by the helper functions.
-
-    IF spot1.order_product_ticket IS NOT NULL AND spot2.order_product_ticket IS NOT NULL THEN
-        -- ----------------------------------------------------------------
-        -- CASE A: BOTH SPOTS ARE ASSIGNED
-        -- ----------------------------------------------------------------
-
-        -- Ticket 1 (from spot 1) moves to Spot 2, so it must adopt Spot 2's product.
-        PERFORM public._swap_spots_update_ticket(spot1.order_product_ticket, spot2.product, spot_id_2);
-
-        -- Ticket 2 (from spot 2) moves to Spot 1, so it must adopt Spot 1's product.
-        PERFORM public._swap_spots_update_ticket(spot2.order_product_ticket, spot1.product, spot_id_1);
-
-    ELSIF spot1.order_product_ticket IS NOT NULL OR spot2.order_product_ticket IS NOT NULL THEN
-        -- ----------------------------------------------------------------
-        -- CASE B/C: ONE SPOT IS ASSIGNED, ONE IS UNASSIGNED
-        -- ----------------------------------------------------------------
-
-        IF spot1.order_product_ticket IS NOT NULL THEN
-            -- Spot 1 is assigned, Spot 2 is unassigned.
-            -- Ticket 1 moves to Spot 2 and adopts Spot 2's product.
-            PERFORM public._swap_spots_update_ticket(spot1.order_product_ticket, spot2.product, spot_id_2);
-        ELSE
-            -- Spot 2 is assigned, Spot 1 is unassigned.
-            -- Ticket 2 moves to Spot 1 and adopts Spot 1's product.
-            PERFORM public._swap_spots_update_ticket(spot2.order_product_ticket, spot1.product, spot_id_1);
-        END IF;
-
-    ELSE
-        -- ----------------------------------------------------------------
-        -- CASE D: BOTH SPOTS ARE UNASSIGNED
-        -- ----------------------------------------------------------------
-        -- Nothing to do.
-        RETURN;
-    END IF;
-
-    -- 5. Final Spot Update
-    -- This block runs for Cases A, B, and C.
-    -- We ONLY swap the 'order_product_ticket' FK. The 'product' column
-    -- on the spot (spot1.product, spot2.product) never changes.
-    UPDATE eshop.spots
-    SET
-        order_product_ticket = CASE
-            WHEN id = spot_id_1 THEN spot2.order_product_ticket -- Spot 1 gets Ticket 2
-            WHEN id = spot_id_2 THEN spot1.order_product_ticket -- Spot 2 gets Ticket 1
-        END
-    WHERE id IN (spot_id_1, spot_id_2);
-
-END;
-$$;
-REVOKE ALL ON FUNCTION public.swap_spot_pair_internal_v1(bigint,bigint)
-  FROM PUBLIC,anon,authenticated,service_role;
-
-CREATE OR REPLACE FUNCTION public.swap_spot_tickets_internal_v1(spot_id_1 bigint,spot_id_2 bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE ids1 bigint[]; ids2 bigint[]; order_ids bigint[]; occ bigint; i integer;
-BEGIN
- SELECT min(occasion) INTO occ FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2);
- IF occ IS NULL OR (SELECT count(*) FROM eshop.spots WHERE id IN(spot_id_1,spot_id_2) AND occasion=occ)<>2 THEN
-  RAISE EXCEPTION 'BLUEPRINT_SPOT_SCOPE_MISMATCH'; END IF;
- IF public.can_write_orders(occ) IS NOT TRUE THEN RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
- PERFORM public.check_occasion_writable(occ);
- PERFORM public.lock_blueprint_scope_internal(ARRAY[occ]);
- ids1:=public.blueprint_selection_unit_spots_internal(spot_id_1);
- ids2:=public.blueprint_selection_unit_spots_internal(spot_id_2);
- IF cardinality(ids1)<>cardinality(ids2) OR ids1 && ids2 THEN RAISE EXCEPTION 'BLUEPRINT_UNIT_SIZE_MISMATCH'; END IF;
- PERFORM public.check_blueprint_selection_units_internal(ids1||ids2);
- SELECT array_agg(DISTINCT opt."order") INTO order_ids FROM eshop.spots s JOIN eshop.order_product_ticket opt ON opt.id=s.order_product_ticket WHERE s.id=ANY(ids1||ids2);
- PERFORM public.lock_order_capacity_scope_internal(order_ids);
- PERFORM public.lock_ticket_order_products_internal(o.id) FROM eshop.orders o WHERE id=ANY(order_ids) ORDER BY id;
- -- Destination products may differ from products currently held by those order_ids.
- PERFORM 1 FROM eshop.products WHERE id IN(SELECT product FROM eshop.spots WHERE id=ANY(ids1||ids2)) ORDER BY id FOR UPDATE;
- PERFORM 1 FROM eshop.payment_info WHERE id IN(SELECT payment_info FROM eshop.orders WHERE id=ANY(order_ids)) ORDER BY id FOR UPDATE;
- PERFORM 1 FROM eshop.spots WHERE id=ANY(ids1||ids2) ORDER BY id FOR UPDATE;
- IF EXISTS(SELECT 1 FROM eshop.spots s LEFT JOIN eshop.blueprint_seat_bindings b ON b.spot=s.id
-  WHERE s.id=ANY(ids1||ids2) AND (b.blocked OR s.product IS NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>statement_timestamp()))) THEN
-  RAISE EXCEPTION 'BLUEPRINT_SEAT_PROTECTED'; END IF;
- FOR i IN 1..cardinality(ids1) LOOP PERFORM public.swap_spot_pair_internal_v1(ids1[i],ids2[i]); END LOOP;
+ SELECT * INTO STRICT first_spot FROM eshop.spots WHERE id=p_first;
+ SELECT * INTO STRICT second_spot FROM eshop.spots WHERE id=p_second;
+ IF first_spot.order_product_ticket IS NOT NULL AND second_spot.order_product_ticket IS NOT NULL THEN
+  PERFORM public._swap_spots_update_ticket(first_spot.order_product_ticket,second_spot.product,p_second);
+  PERFORM public._swap_spots_update_ticket(second_spot.order_product_ticket,first_spot.product,p_first);
+ ELSIF first_spot.order_product_ticket IS NOT NULL THEN
+  PERFORM public._swap_spots_update_ticket(first_spot.order_product_ticket,second_spot.product,p_second);
+ ELSIF second_spot.order_product_ticket IS NOT NULL THEN
+  PERFORM public._swap_spots_update_ticket(second_spot.order_product_ticket,first_spot.product,p_first);
+ ELSE RETURN;
+ END IF;
+ UPDATE eshop.spots SET order_product_ticket=CASE WHEN id=p_first THEN second_spot.order_product_ticket ELSE first_spot.order_product_ticket END
+ WHERE id IN(p_first,p_second);
 END $$;
-REVOKE ALL ON FUNCTION public.swap_spot_tickets_internal_v1(bigint,bigint) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.apply_blueprint_seat_pair_locked_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.swap_spot_tickets(spot_id_1 bigint,spot_id_2 bigint)
 RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER
