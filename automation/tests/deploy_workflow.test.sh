@@ -253,7 +253,7 @@ for branch_mapping in \
     fi
 done
 
-if grep -F -q 'aksmcz|cavfotofest|csmostrava2026|doobiscup|farnostopava|festapp|festapptickets|festivalslunovrat|hvezdamorska|jubileum2025' \
+if grep -F -q 'aksmcz|cavfotofest|csmostrava2026|doobiscup|farnostopava|festapp|festapptickets|festappticketsglobal|festivalslunovrat|hvezdamorska|jubileum2025' \
     "$PROJECT_ROOT/automation/check_tenant_branch_drift.sh"; then
     echo "  ok: tenant drift checker recognizes the original Festapp tenant"
 else

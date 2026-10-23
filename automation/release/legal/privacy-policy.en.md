@@ -48,4 +48,4 @@ Account data is retained while the account is used. Registrations and orders rem
 
 Depending on the processing, you may request access, correction, erasure, restriction or portability, object or withdraw consent. Withdrawal does not affect the lawfulness of earlier processing. Write to `info@festapp.net`, and to the organizer for event data. We normally respond within one month and inform you of any lawful extension. You may complain to the Czech supervisory authority at <https://uoou.gov.cz/>.
 
-Start account deletion in your profile and confirm the email link. See <https://tickets.festap.net/privacy/choices/>.
+Start account deletion in your profile and confirm the email link. See <https://tickets.festapp.net/privacy/choices/>.
