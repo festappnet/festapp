@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-23",
   "sourceMain": "c02bb2d0129f5675244213cd1c5444fa99abe350",
-  "liveBaselineVersion": "0.20.368+865",
+  "liveBaselineVersion": "0.20.370+867",
   "tenant": "festapptickets",
   "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění účtu ani audit všech tenant variant. Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Potvrzené uvolnění rezervací a prohození vstupenek čekají na publikaci a nasazení.",
   "actions": [
@@ -466,15 +466,25 @@
       "id": "action-025",
       "area": "Plánky a místa",
       "title": "Vytvořit objednávku z vybraných míst",
-      "description": "Navazuje na formulář, produkty, objednávku a dostupnost míst.",
+      "description": "UI a MCP používají společný potvrzovaný příkaz. Náhled zahrnuje původního zákazníka, vstupenky a produkty, všechna dotčená a uvolněná místa i skutečné částky původních a nové objednávky. Nejistá příprava faktury obnovuje tentýž požadavek.",
       "sources": [
-        "lib/components/blueprint/views/blueprint_create_order_dialog.dart"
+        "lib/components/blueprint/views/blueprint_create_order_dialog.dart",
+        "database/functions/blueprint/apply_seat_order_internal.sql",
+        "database/functions/blueprint/seat_orders.sql",
+        "tools/festapp/src/operations/seat-orders.mjs",
+        "supabase/functions/send-ticket-order/fakturoidPreparation.ts"
       ],
-      "mcp": [],
+      "mcp": [
+        "seats.preview_order",
+        "seats.create_order"
+      ],
       "phase": "2B",
       "effect": "critical",
       "scope": "Akce",
-      "certainty": "confirmed"
+      "certainty": "confirmed",
+      "verificationState": "pending",
+      "verificationNote": "Prošlo 11 SQL integračních scénářů, souběh checkoutu a odebrání práv, 4 testy obnovy UI požadavku a 2 dialogové testy. Zbývá průchod skutečným workspace a release gates; kandidát není nasazen.",
+      "deploymentState": "pending"
     },
     {
       "id": "action-026",
@@ -1470,5 +1480,5 @@
     "nextStep": "Po dokončení aktuálního vydání publikovat ověřený řez uvolnění rezervací; navázat prohazováním míst přes společného vlastníka. PDF readiness vyřešit před dokončením celého plánu.",
     "evidence": "admin-seat-hold-release-evidence-2026-10-23.json"
   },
-  "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací i prohození vstupenek jsou ověřené v UI, SQL a MCP; aktualizovaný kandidát čeká na povinné review a nasazení. Dále objednávky z míst a rušení vstupenek v etapě 2B."
+  "progress": "Nasazeno: produkty, cenové vlny, příprava stání, sklady a zdroje, produktové volby, inspekce a blokace míst. Uvolnění rezervací a prohození vstupenek: PR #571 má všech 6 CI kontrol zelených, čeká na povinné review. Objednávky z míst: ověřen společný SQL náhled a atomická náhrada, napojení UI/MCP se dokončuje."
 }

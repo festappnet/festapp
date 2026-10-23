@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-23",
+  "status": "UI/MCP integrated and targeted checks passed; actual workspace/browser and release gates pending; not published or deployed",
+  "sourceCommit": "290bbceae32ac9cdd28d7c2e51cfb7b44b20387b",
+  "migration": "20261023235000_confirmed_blueprint_seat_orders.sql",
+  "migrationSha256": "6c1fb216f075a79747191adba4904dad2e297108e51a27c4abf7ad2dcbb467db",
+  "newPostgresCasesPassed": 11,
+  "priorSeatRegressionsPassed": 23,
+  "authorizationRegressionsPassed": 24,
+  "remotePermissionCasesPassed": 22,
+  "consentCasesPassed": 30,
+  "edgeCasesPassed": 21,
+  "flutterPortRecoveryCasesPassed": 4,
+  "flutterDialogCasesPassed": 2,
+  "dartAnalysis": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 77
+  },
+  "sourceAudit": {
+    "passed": 7,
+    "failed": 1,
+    "remainingFailure": "Known preexisting ticket-layout runtime readiness contract mismatch; seal was not regenerated"
+  },
+  "proof": [
+    "Requirements and final quote include original buyer contacts once per order, distinct affected tickets, product history and all released seat bindings",
+    "Quote runs the real cancellation, new order, payment, history and queued confirmation inside rollback; generated identities never change the approval hash",
+    "A changed actor cannot claim the approved UUID; changed bank recipient rejects and rolls back every allocation and delivery effect",
+    "Concurrent checkout hold survives stale order approval; role revocation after the actual lock wait denies before receipt or financial mutation",
+    "Partial cancellation preserves unselected tickets and received money; missing second-ticket required answers identify the real field",
+    "Actual production Edge coordinator, real SQL and provider-only stub preserve a committed replacement after an uncertain invoice POST; negative lookup never permits a second POST",
+    "Two real connections fence invoice lease expiry and stale completion; API roles cannot access private job state",
+    "UI and MCP use send-ticket-order, the same SQL receipt owner and the same invoice preparation owner",
+    "Durable UI journal reopens with identical UUID and approved payload after lost acknowledgement and pending invoice; account changes suppress prior-account response details",
+    "Released replacement adapter keeps its original fingerprint; exact replay creates no additional order or confirmation",
+    "Old local legacy journal entries retain original identity; a different payload cannot silently create another replacement",
+    "Removed Flutter DbEshop.analyzeNewOrderSpots/createOrderFromSpots and DbOrders.replaceTicketOrder fresh producers; retained released backend adapter delegates to one owner",
+    "One shared order amount projection is used by swaps and seat orders; removed the superseded private swap-money owner"
+  ],
+  "network": {
+    "fixture": "Actual MCP executor -> production Edge coordinator -> real disposable PostgreSQL; synthetic provider only",
+    "requirementsSerializedBytes": 1057,
+    "finalQuoteSerializedBytes": 1806,
+    "writeAckSerializedBytes": 793,
+    "replayAckSerializedBytes": 793,
+    "scopeDenialSerializedBytes": 32,
+    "excludes": "HTTP/TLS overhead; these are serialized domain responses, not packet captures",
+    "normalBankWrite": "One MCP-to-Edge call and one user-scoped aggregate SQL command; no provider metadata or invoice requests"
+  },
+  "liveBaseline": {
+    "version": "0.20.370+867",
+    "probe": "https://vstupenky.online/version.json",
+    "seatOrderMigrationApplied": false
+  },
+  "publication": {
+    "previousSlicePr": "https://github.com/festappnet/festapp/pull/571",
+    "previousSliceFrozenHead": "94d21814cd2da51623ef6b8fa1546a2bd0870910",
+    "previousSliceChecks": "6 required checks passed; review still required, no approval",
+    "mainAtLastReadOnlyCheck": "c83df930c93f81497474954282cf1a6d57ffd805",
+    "thisSlice": "Local commits only; must reconcile fresh authoritative main before publishing"
+  },
+  "remaining": [
+    "Actual workspace/browser flow and final affected release checks",
+    "Historical pre-2350 receipt recovery evidence beyond unchanged fingerprint/current released-adapter replay",
+    "Reconcile authoritative main, required review, publication and authorized festapptickets rollout",
+    "Complete selected-ticket cancellation and later plan stages; stage 2B remains incomplete"
+  ]
+}
