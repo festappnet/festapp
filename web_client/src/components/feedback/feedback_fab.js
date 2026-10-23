@@ -9,6 +9,7 @@ export class FeedbackFab {
     static items = [];
 
     static init(containerId) {
+        if (FeedbackFab.isOpen) FeedbackFab.setOpen(false);
         const appName = "Festapp";
 
         FeedbackFab.items = [
@@ -50,20 +51,22 @@ export class FeedbackFab {
             <div id="fab-menu" class="fab-menu hidden">
                  <div class="fab-help-title">${FeedbackStrings.helpTitle}</div>
                  ${FeedbackFab.items.map((item, index) => `
-                    <div class="fab-item" data-index="${index}">
+                    <button type="button" class="fab-item" data-index="${index}">
                         <span class="fab-label">${item.label}</span>
-                        <div class="fab-mini-btn" style="color: ${item.color}">
+                        <span class="fab-mini-btn" aria-hidden="true" style="color: ${item.color}">
                             <i class="material-icons">${item.icon}</i>
-                        </div>
-                    </div>
+                        </span>
+                    </button>
                  `).join('')}
             </div>
-            <div id="fab-button" class="fab-button">
-                <i class="material-icons" id="fab-icon">chat_bubble</i>
-            </div>
+            <button type="button" id="fab-button" class="fab-button" aria-controls="fab-menu" aria-expanded="false">
+                <i class="material-icons" id="fab-icon" aria-hidden="true">chat_bubble</i>
+            </button>
         `;
         
-        document.getElementById('fab-button').onclick = FeedbackFab.toggle;
+        const button = container.querySelector('#fab-button');
+        button.setAttribute('aria-label', FeedbackStrings.helpTitle);
+        button.onclick = FeedbackFab.toggle;
 
         // Bind Menu Item Clicks
         container.querySelectorAll('.fab-item').forEach(el => {
@@ -82,50 +85,45 @@ export class FeedbackFab {
     static escListener = null;
 
     static toggle() {
-        FeedbackFab.isOpen = !FeedbackFab.isOpen;
+        FeedbackFab.setOpen(!FeedbackFab.isOpen);
+    }
+
+    static setOpen(open, { restoreFocus = false } = {}) {
         const menu = document.getElementById('fab-menu');
         const icon = document.getElementById('fab-icon');
         const btn = document.getElementById('fab-button');
-        const container = document.getElementById('feedback-fab'); // We need the container for outside click check
+        if (!menu || !btn || !icon) return;
+        FeedbackFab.isOpen = open;
+        menu.classList.toggle('hidden', !open);
+        icon.innerText = open ? 'close' : 'chat_bubble';
+        btn.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', String(open));
+        btn.setAttribute('aria-label', open ? LocalizationService.tr('Feedback.close') : FeedbackStrings.helpTitle);
 
-        if (FeedbackFab.isOpen) {
-            menu.classList.remove('hidden');
-            icon.innerText = 'close';
-            btn.classList.add('open');
-            
-            // Close on outside click
-            setTimeout(() => {
-                FeedbackFab.clickOutsideListener = (e) => {
-                    // Check if click is outside the FAB container (menu + button)
-                    if (container && !container.contains(e.target)) {
-                         FeedbackFab.toggle();
-                    }
-                };
-                document.addEventListener('click', FeedbackFab.clickOutsideListener);
-            }, 0);
-
-            // Close on Esc key
-            FeedbackFab.escListener = (e) => {
-                if (e.key === 'Escape') {
-                    FeedbackFab.toggle();
+        if (FeedbackFab.clickOutsideListener) {
+            document.removeEventListener('click', FeedbackFab.clickOutsideListener);
+            FeedbackFab.clickOutsideListener = null;
+        }
+        if (FeedbackFab.escListener) {
+            document.removeEventListener('keydown', FeedbackFab.escListener);
+            FeedbackFab.escListener = null;
+        }
+        if (open) {
+            // The opening click is inside this container, so no delayed listener is needed.
+            const container = btn.parentElement;
+            FeedbackFab.clickOutsideListener = event => {
+                if (!container.contains(event.target)) FeedbackFab.setOpen(false);
+            };
+            FeedbackFab.escListener = event => {
+                if (event.key === 'Escape') {
+                    FeedbackFab.setOpen(false, { restoreFocus: true });
                 }
             };
+            document.addEventListener('click', FeedbackFab.clickOutsideListener);
             document.addEventListener('keydown', FeedbackFab.escListener);
-
-        } else {
-            menu.classList.add('hidden');
-            icon.innerText = 'chat_bubble';
-            btn.classList.remove('open');
-            
-            if (FeedbackFab.clickOutsideListener) {
-                document.removeEventListener('click', FeedbackFab.clickOutsideListener);
-                FeedbackFab.clickOutsideListener = null; // Ensure listener is cleared
-            }
-            if (FeedbackFab.escListener) {
-                document.removeEventListener('keydown', FeedbackFab.escListener);
-                FeedbackFab.escListener = null;
-            }
+            menu.querySelector('button')?.focus();
+        } else if (restoreFocus || menu.contains(document.activeElement)) {
+            btn.focus();
         }
     }
-
 }

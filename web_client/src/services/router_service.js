@@ -205,7 +205,8 @@ export class RouterService {
             if (redirect === '/') {
                 window.history.replaceState(null, '', '/');
                 RouterService._lastPath = '/';
-                return true;
+                // Main still owns rendering and revealing the catalogue.
+                return false;
             }
             if (redirect) path = redirect;
         }
@@ -301,7 +302,8 @@ export class RouterService {
                 // Unknown route -> Home
                 window.history.replaceState(null, '', '/');
                 RouterService._lastPath = '/';
-                return true;
+                // Main still owns rendering and revealing the catalogue.
+                return false;
             }
         }
 

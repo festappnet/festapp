@@ -188,3 +188,8 @@
     opacity: 0.9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
+.feedback-dialog .icon-btn:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+}

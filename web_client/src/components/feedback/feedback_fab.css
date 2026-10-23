@@ -84,3 +84,14 @@
     justify-content: center;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
+
+.fab-button, .fab-item {
+    border: 0;
+    padding: 0;
+    font: inherit;
+}
+.fab-item { background: transparent; color: inherit; }
+.fab-button:focus-visible, .fab-item:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 4px;
+}
