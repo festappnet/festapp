@@ -208,3 +208,180 @@ validation remains; narrow operations do not bypass it.
 checkout contention in both directions, live revocation, old/new source controls
 and the four inherited fresh-database suite failures. Release holds, swaps,
 seat-based order creation and selected-ticket cancellation remain separate cuts.
+
+
+## Operational seats 2B - confirmed temporary-hold release
+
+Current UI and MCP preview through `preview_blueprint_hold_release`, confirm all
+expanded atomic-unit seats and call `release_blueprint_holds`. Immutable preview
+captures actual scope, IDs, layout revision and an opaque digest of reservation
+identity/expiry. The single private `release_blueprint_holds_command_internal`
+owns the existing receipt, locks, release and finalizer. Replay precedes current
+snapshot validation so it preserves a subsequent buyer. Live scope/rights are
+checked again after execution/replay. Ordered/used members reject the whole intent.
+
+Removal ledger: current UI's post-confirmation re-filtering and unversioned input
+are removed. The deployed `release_blueprint_holds_client_sync_v1` name remains
+only a thin adapter for already-released clients and their original receipt hash;
+remove it only after their verified upgrade gate, not by breaking replay. No
+Cloudflare diff transport/flag is enabled. Existing receipt publication remains
+compatible; optional client projection failure cannot invalidate DB success.
+
+The new explicit seats:release-holds consent does not expand older order/block
+grants. MCP has no checkout secrets or private sync response. Each preview/write
+attempt is one scoped RPC; actual serialized two-seat SQL JSON was 379/347 bytes,
+excluding HTTP headers/TLS. See [hold evidence](../reports/admin-seat-hold-release-evidence-2026-10-23.json).
+Twelve seat PG cases, three selected Flutter cases and consent/transport tests
+pass; full MCP is 122 PASS/1 FAIL with no skips. The remaining failure is the known
+separate PDF validator readiness mismatch; its seal remains unchanged. Earlier
+three fixture/expectation failures were fixed with explicit approved additions
+and verified production function ownership, not a broad ACL rebaseline.
+New hold migration 2300 is locally verified on main d978; publication/deployment
+waits for the preceding release to finish. Swaps, seat orders and ticket
+cancellation remain next 2B cuts, and stages 3-10 are not complete.
+
+
+## Operational seats 2B - confirmed financial swaps
+
+Current source: feat/admin-mcp-confirmed-swap-20261023, parent546d37f90.
+Authoritative origin/main fetched: ee0287419 (ticket-delivery changes use2310;
+no swap helper/financial owner overlap; translation additions require merging).
+Migration2330 is NOT deployed. Hold PR571 head0c1431d9 has six green CI checks
+but remains review-gated and engineering-stopped until the preview identity fix
+is included in a newly validated source. Earlier bundle is deployed as
+festapptickets0.20.367+864, tenant8a390d70/main d97835e.
+
+One aggregate apply_blueprint_seat_swap_internal owns actual price/order updates,
+full atomic groups, lifecycle and semantic money projection. Preview executes it
+inside rollback. Confirmed command validates original hash/IDs/revision inside
+an effect rollback scope, then finalizes the existing inventory.spots.swap receipt.
+Old public adapters preserve fingerprints/replay. Both superseded private swap
+owners are dropped; the two-argument private lock helper is only a thin arity
+adapter to the single canonical parent-graph implementation. Existing financial
+calculation helpers remain unchanged. Missing order header money rejects the new
+quote/confirmed write, never defaults to zero or commits before typed decoding.
+
+Final real disposable PostgreSQL MCP batch:135 tests,134 PASS,1 known PDF readiness
+FAIL,0 skips. Seat suite23 PASS including three inherited blueprint SQL regressions.
+Source parity28 owners, helper ACL, legacy pre-upgrade receipts, checkout and role
+revocation, actual used-ticket race, foreign parent rejection and four-seat
+second-member rollback all PASS. Actual form/order-before-blueprint deadlock
+regression reproduced RED (57014), then GREEN after aggregate lock correction.
+Measured four-seat preview parent-graph calls3->1, pair applications2; no latency
+claim. Actual serialized SQL JSON preview653/write530/replay530 bytes (no HTTP/TLS).
+
+UI uses immutable complete preview and displays affected seats/products/tickets,
+customer facts only in authorized editor mode, and actual per-order price changes.
+MCP omits customer facts. Dedicated seats:swap consent requires seats:read and
+orders:read. Normal path is one preview RPC and one write RPC. Uncertain durable
+write is resumed with original UUID/payload before a new preview; expired recovery
+retains the original intent. Changed local selection cannot alter approved input.
+Preview discards a response after actor identity changes (RED/GREEN verified).
+Three final recovery/identity port cases PASS; prior actual workspace UI PASS.
+Final workspace UI rerun after identity guard awaits the shared Flutter slot.
+No Cloudflare diff-cache flag/transport has been enabled.
+
+Protected production read-only scope audit:4182 org3 spots on canonical layouts,
+zero occasion/product/product-type/order/ticket parent mismatches; no IDs or PII
+returned. No production fixture or new migration was executed.
+
+Next: final short UI/analyzer gate when workstation slot is released, freeze
+source, update PR571 with exact validated scope/revision and preserve required
+review. Rebase onto current authoritative main and rerun affected checks before
+publication. Then continue seat-order creation and ticket cancellation (2B),
+followed by stages3-10. This is not completion of the whole plan.
+
+
+## Final confirmed-seat local gate complete
+
+Final integrated Flutter batch7 PASS including real reservation workspace,
+immutable hold/swap confirmations and durable recovery. Targeted Dart analyze:
+0 errors,0 warnings,51 existing brace-style infos. Previous dedicated actor-change
+negative test remains PASS. Slot immediately returned to the coordinated queue.
+
+Before publication authoritative main advanced to061201c3d with ticket profiles.
+Rebase had no conflicts and no changes to the covered blueprint/ticket consumers;
+passing Flutter evidence retained. Detected duplicate migration version2300
+between our unpublished hold and newly authoritative profile migration. Moved
+ONLY our hold file to20261023232000_confirmed_blueprint_hold_release.sql (identical
+SQL digest ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f).
+Swap2330 remains after it. English owner confirmed profile2300 stays authoritative
+and their temporary rename was reverted before publication/application. Neither
+new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
+not deploy. Generated source parity follows actual current main; no PDF readiness
+seal changed. Final report marks swap locally verified/pending deployment.
+
+## Operational seats 2B - confirmed seat orders
+
+Current local candidate: `63a242287`, based on canonical main `c83df930`.
+Not published/deployed; full-app browser/release gates and ticket cancellation
+still remain before completing 2B. Migration2350 is additive and unapplied live.
+
+| Boundary | Shared implementation |
+| --- | --- |
+| UI caller | BlueprintLayoutHost -> typed SeatOrderCommands -> send-ticket-order |
+| MCP callers | seats.preview_order, seats.create_order -> same Edge coordinator |
+| Requirements/final quote | preview_blueprint_seat_order; actual aggregate executes inside rollback |
+| Database intent | replace_blueprint_order_command_internal -> apply_blueprint_seat_order_internal |
+| Receipt | Existing inventory.order.replace, one original UUID and immutable acknowledgement |
+| External preparation | Same prepareFakturoidTicketOrder, private service-only dispatch lease |
+| Permission | New festapp:seats:create-orders requires seats:read and orders:read; no old grant widens |
+
+The view exposes administration meaning: expanded atomic selections, distinct
+original tickets and historical products, original buyer contacts once per
+order, every additionally released binding and its blueprint, actual before/after
+order amounts and the actual new ticket total. Contacts use the explicit existing
+orders-read consent. Requirements identify real customer/per-ticket field IDs;
+final approval binds the actual normalized form answers and current bank
+recipient, actor, all affected blueprint revisions and state. The confirmation dialog and MCP do no
+financial sums or refund calculations; the existing selection toolbar retains
+its provisional catalog subtotal. Swaps and seat orders share the same
+private order-money projection and typed Dart/Node money representation.
+
+The quote runs the actual cancellation, creation and confirmation producers,
+including current-main organization notifications, within rollback. Confirmed
+execution repeats the same aggregate and rejects changed effects before keeping
+any mutation. Generated order IDs do not enter the confirmation hash. Received
+money stays in its original order; a reduced order amount never claims a refund.
+A provider failure after replacement cannot cancel its new allocation. Unknown
+invoice POST outcome stays lookup-only, even after lease expiry or a negative
+provider GET; Fakturoid custom_id is not treated as guaranteed idempotency.
+
+Removed current Flutter analyzeNewOrderSpots/createOrderFromSpots and
+replaceTicketOrder producers. Issued backend replacement remains a thin adapter
+with the original request fingerprint. Existing local legacy recovery digests
+can resume only their exact original payload and UUID. They cannot be silently
+replaced with a newly confirmed intent. The current durable UI journal retains
+original parameters through network/process loss; actual SDK fetch, relay and
+HTTP errors use the same retry owner. Actor changes fail closed on reads, errors
+and before the server claims the command UUID.
+
+Evidence: 13 new real-PostgreSQL scenarios, 8 actual SDK/journal cases and 2
+changed-dialog cases; 23 prior seat and 24 authorization scenarios retained.
+An unmocked local Auth/REST/Kong/Deno Edge/PostgreSQL probe created and replaced
+synthetic orders with exact replay and one queued confirmation per UUID. Its
+8 calls all returned200; no provider was connected and mail workers were paused.
+See admin-seat-order-evidence-2026-10-23.json and
+admin-seat-order-fullstack-2026-10-23.json in docs/reports.
+
+## Operational seats2B - selected-ticket cancellation (current checkpoint)
+
+This section supersedes the earlier remaining-cancellation notes. The complete
+operational slice is implemented locally; deployment is recorded separately.
+`seats.preview_cancel` and `seats.cancel_tickets` share the Flutter TicketCommands
+preview/confirmation contract and `cancel_tickets_command_internal` receipt owner.
+The released two-argument storno RPC is a thin adapter preserving its historical
+fingerprint. Atomic unit expansion and all other seats of selected tickets are
+shown before confirmation, including other maps. Actual bulk cancellation runs
+in rollback for the quote; shared order money projection supplies amounts.
+Confirmed effects must match the actor-bound hash before the transaction commits.
+No alternative cancellation maths, capacity writes or order-state rules in MCP.
+
+The private shared financial lock now explicitly distinguishes print-content
+mutations from canonical admission cancellation. Existing callers preserve print
+immutability; cancellation can void a sold printed ticket, retaining the original
+batch PDF/snapshot/QR and never returning it to stock. Canonical stock/Stripe/
+used-unit restrictions still apply. Scope/permissions are checked before replay
+and after the operation. A new explicit cancel-tickets consent requires seat and
+order reads, and does not expand prior grants. Optional order-update email remains
+an explicit follow-up; the cancellation does not execute a payment-provider refund.

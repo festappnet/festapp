@@ -1,8 +1,8 @@
-CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(
-  p_tickets bigint[],p_command_id uuid
+CREATE OR REPLACE FUNCTION public.cancel_tickets_command_internal(
+  p_tickets bigint[],p_command_id uuid,p_confirmation jsonb
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_request_tickets bigint[]:=p_tickets; v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
-  v_unchanged boolean:=false; v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb;
+  v_unchanged boolean:=false; v_before_users uuid[]; v_changed_orders bigint[]; v_cancelled jsonb; v_updated jsonb; v_effect jsonb;
 BEGIN
   p_tickets:=ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id ORDER BY id);
   PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(p_tickets)));
@@ -15,12 +15,12 @@ BEGIN
       <>cardinality(ARRAY(SELECT DISTINCT id FROM unnest(p_tickets) id))
     OR NOT public.can_write_orders(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
-  v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
-    'tickets',v_request_tickets)::text,'UTF8'),'sha256'),'hex');
+  v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
+    'tickets',v_request_tickets)||CASE WHEN p_confirmation IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('confirmation',p_confirmation) END)::text,'UTF8'),'sha256'),'hex');
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.tickets.cancel',v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
-  IF NOT EXISTS(SELECT 1 FROM eshop.tickets WHERE id=ANY(p_tickets) AND state IS DISTINCT FROM 'storno') THEN
+  IF p_confirmation IS NULL AND NOT EXISTS(SELECT 1 FROM eshop.tickets WHERE id=ANY(p_tickets) AND state IS DISTINCT FROM 'storno') THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,
       jsonb_build_object('ticketIds',to_jsonb(p_tickets),'cancelledOrderIds','[]'::jsonb,'updatedOrders','[]'::jsonb));
   END IF;
@@ -38,13 +38,23 @@ BEGIN
     FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
     WHERE t.id=ANY(p_tickets) AND t.state IS DISTINCT FROM 'storno';
   IF coalesce(cardinality(v_changed_orders),0)=0 THEN
+    IF p_confirmation IS NOT NULL THEN RAISE SQLSTATE 'BC002' USING MESSAGE='confirmed cancellation changed'; END IF;
     RAISE SQLSTATE 'P0C01' USING MESSAGE='cancellation already committed'; END IF;
-  PERFORM public.storno_tickets_bulk_internal_v1(p_tickets, false);
+  IF p_confirmation IS NULL THEN
+    PERFORM public.storno_tickets_bulk_internal_v1(p_tickets, false);
+  ELSE
+    v_effect:=public.apply_blueprint_ticket_cancellation_internal(v_occasion,(p_confirmation->>'blueprint')::bigint,
+      ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(p_confirmation->'spots')));
+    IF v_effect->>'confirmationHash' IS DISTINCT FROM p_confirmation->>'hash' OR v_effect->'ticketIds' IS DISTINCT FROM to_jsonb(p_tickets) THEN
+      RAISE SQLSTATE 'BC002' USING MESSAGE='confirmed cancellation changed'; END IF;
+  END IF;
   SELECT coalesce(jsonb_agg(o.id ORDER BY o.id) FILTER(WHERE o.state='storno'),'[]'::jsonb),
     coalesce(jsonb_agg(jsonb_build_object('id',o.id,'email',o.data->>'email') ORDER BY o.id)
       FILTER(WHERE o.state IS DISTINCT FROM 'storno'),'[]'::jsonb)
     INTO v_cancelled,v_updated FROM eshop.orders o WHERE o.id=ANY(v_changed_orders);
-  EXCEPTION WHEN SQLSTATE 'P0C01' THEN v_unchanged:=true;
+  EXCEPTION WHEN SQLSTATE 'BC002' THEN
+    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',409,jsonb_build_object('reason','BLUEPRINT_CANCELLATION_CHANGED'));
+  WHEN SQLSTATE 'P0C01' THEN v_unchanged:=true;
   END;
   IF v_unchanged THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'unchanged',200,
@@ -56,9 +66,14 @@ BEGIN
       'operation','update','safeLabel','Ticket cancellation',
       'changedFields',jsonb_build_array('state','membership','allocations'))),
     v_before_users,jsonb_build_object('ticketIds',to_jsonb(p_tickets),
-      'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated));
+      'cancelledOrderIds',v_cancelled,'updatedOrders',v_updated)||coalesce(v_effect,'{}'::jsonb));
 END; $$;
-REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid)
-  TO authenticated;
+REVOKE ALL ON FUNCTION public.cancel_tickets_command_internal(bigint[],uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Released clients keep the original receipt fingerprint through this adapter.
+CREATE OR REPLACE FUNCTION public.storno_tickets_client_sync_v1(p_tickets bigint[],p_command_id uuid)
+RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.cancel_tickets_command_internal(p_tickets,p_command_id,NULL)
+$$;
+REVOKE ALL ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.storno_tickets_client_sync_v1(bigint[],uuid) TO authenticated;

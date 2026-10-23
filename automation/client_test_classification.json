@@ -839,6 +839,13 @@
       "sources": [
         "test/components/ticket_layout/ticket_text_autofit_test.dart"
       ]
+    },
+    "test/components/blueprint/seat_order_commands_test.dart": {
+      "kind": "environment",
+      "reason": "Actual Supabase HTTP binding and durable Sembast journal use an isolated platform path-provider fixture; covers order retry identity and actor changes.",
+      "sources": [
+        "test/components/blueprint/seat_order_commands_test.dart"
+      ]
     }
   }
 }

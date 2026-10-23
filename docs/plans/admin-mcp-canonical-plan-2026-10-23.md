@@ -67,16 +67,17 @@ Nové konkrétní důkazy pro provozní správu míst:
   ověřuje skutečné spot/occasion vazby a odmítá změnu blokace již objednaného
   místa nebo místa s aktivním dočasným držením (`BLUEPRINT_SEAT_PROTECTED`).
 - `BlueprintLayoutHost._releaseTemporaryHolds` vede přes
-  `TicketCommands.releaseHolds` do `release_blueprint_holds_client_sync_v1`.
-  Příkaz rozšiřuje nedělitelné výběrové celky a odmítá prodaná místa.
-- `TicketCommands.swapSpots` používá `swap_spot_tickets_client_sync_v1`.
+  `TicketCommands.previewHoldRelease` a potvrzený `releaseHolds` do sdíleného
+  `release_blueprint_holds`. Celý rozšířený výběr, revize a hash stavu rezervací
+  jsou potvrzené před zápisem. Starší veřejný RPC je pouze adaptér téhož owneru.
+- `TicketCommands.swapSpots` potvrzuje immutable preview přes `swap_blueprint_seats`; staré veřejné RPC je pouze adaptér stejného vlastníka.
   Zrušení vstupenek má jiného vlastníka (`storno_tickets_client_sync_v1`).
 
 | Konkrétní operace / nastavení | Vlastník nebo doložená UI cesta | Zařazení |
 | --- | --- | --- |
 | Blokovat a odblokovat volná místa | Blueprint draft/controller + aggregate save, `blocked` binding | Provozní řez 2B |
-| Uvolnit dočasnou rezervaci | `release_blueprint_holds_client_sync_v1` | Provozní řez 2B |
-| Prohodit místa vstupenek | `swap_spot_tickets_client_sync_v1` | Provozní řez 2B |
+| Uvolnit dočasnou rezervaci | `preview_blueprint_hold_release` / `release_blueprint_holds` | 2B ověřeno lokálně; nasazení čeká |
+| Prohodit místa vstupenek | `preview_blueprint_seat_swap` / `swap_blueprint_seats` | 2B SQL/MCP ověřeno, závěrečný UI gate čeká |
 | Vytvořit objednávku z míst; zrušit vybrané vstupenky | `blueprint_create_order_dialog.dart`, `TicketCommands.cancel` | Provozní řez 2B, objednávkové vlastníky |
 | Geometrie, názvy, stoly, skupiny a nedělitelné výběry | Blueprint layout/controller/save | Etapa 7, samostatné řezy |
 | Produkt místa/skupiny a jeho dědičnost | Blueprint bindings + kanonické product rules | 2B/7 podle konkrétní změny |
@@ -736,3 +737,88 @@ cílených PostgreSQL regresí a 27 testů souhlasu. Evidence výslovně zachycu
 zděděná selhání celé sady na čerstvé DB, potvrzená také na původním kandidátovi.
 Nesnižovat readiness ani nepřegenerovat hash jen kvůli testu. Dále zbývá zbytek
 2B a etapy 3-10. HTML/JSON průběžně zrcadlit na uživatelem zadanou recovery cestu.
+
+
+### Checkpoint: druhý provozní řez 2B - uvolnění rezervací
+
+UI a MCP používají potvrzený preview a společného receipt owneru. Starý veřejný
+RPC zachovává vydané klienty i jejich původní fingerprint/odpověď a neobsahuje
+druhou implementaci. Současné UI po potvrzení znovu nefiltruje výběr. Skutečný
+souběh s checkoutem, změna zákazníka, odebrání práv při čekání a retry po ztracené
+odpovědi jsou ověřené. Žádná difovací Cloudflare cache nebyla zapnuta.
+Viz [evidence](../reports/admin-seat-hold-release-evidence-2026-10-23.json).
+Cílené UI/SQL/MCP kontroly prošly; celá MCP sada má 122 úspěšných testů a 1 selhání, bez přeskočených testů, zbývá
+samostatný známý PDF validator readiness drift. Zdroj navazuje na main d97835e79;
+nový řez 2300 není součástí právě probíhajícího předchozího vydání. Následují
+prohození míst, objednávky z míst, zrušení vstupenek a etapy 3-10.
+
+
+## 2B confirmed seat swap - final SQL/MCP batch verified, final UI gate pending
+
+Current source: feat/admin-mcp-confirmed-swap-20261023, parent546d37f90.
+Authoritative origin/main fetched: ee0287419 (ticket-delivery changes use2310;
+no swap helper/financial owner overlap; translation additions require merging).
+Migration2330 is NOT deployed. Hold PR571 head0c1431d9 has six green CI checks
+but remains review-gated and engineering-stopped until the preview identity fix
+is included in a newly validated source. Earlier bundle is deployed as
+festapptickets0.20.367+864, tenant8a390d70/main d97835e.
+
+One aggregate apply_blueprint_seat_swap_internal owns actual price/order updates,
+full atomic groups, lifecycle and semantic money projection. Preview executes it
+inside rollback. Confirmed command validates original hash/IDs/revision inside
+an effect rollback scope, then finalizes the existing inventory.spots.swap receipt.
+Old public adapters preserve fingerprints/replay. Both superseded private swap
+owners are dropped; the two-argument private lock helper is only a thin arity
+adapter to the single canonical parent-graph implementation. Existing financial
+calculation helpers remain unchanged. Missing order header money rejects the new
+quote/confirmed write, never defaults to zero or commits before typed decoding.
+
+Final real disposable PostgreSQL MCP batch:135 tests,134 PASS,1 known PDF readiness
+FAIL,0 skips. Seat suite23 PASS including three inherited blueprint SQL regressions.
+Source parity28 owners, helper ACL, legacy pre-upgrade receipts, checkout and role
+revocation, actual used-ticket race, foreign parent rejection and four-seat
+second-member rollback all PASS. Actual form/order-before-blueprint deadlock
+regression reproduced RED (57014), then GREEN after aggregate lock correction.
+Measured four-seat preview parent-graph calls3->1, pair applications2; no latency
+claim. Actual serialized SQL JSON preview653/write530/replay530 bytes (no HTTP/TLS).
+
+UI uses immutable complete preview and displays affected seats/products/tickets,
+customer facts only in authorized editor mode, and actual per-order price changes.
+MCP omits customer facts. Dedicated seats:swap consent requires seats:read and
+orders:read. Normal path is one preview RPC and one write RPC. Uncertain durable
+write is resumed with original UUID/payload before a new preview; expired recovery
+retains the original intent. Changed local selection cannot alter approved input.
+Preview discards a response after actor identity changes (RED/GREEN verified).
+Three final recovery/identity port cases PASS; prior actual workspace UI PASS.
+Final workspace UI rerun after identity guard awaits the shared Flutter slot.
+No Cloudflare diff-cache flag/transport has been enabled.
+
+Protected production read-only scope audit:4182 org3 spots on canonical layouts,
+zero occasion/product/product-type/order/ticket parent mismatches; no IDs or PII
+returned. No production fixture or new migration was executed.
+
+Next: final short UI/analyzer gate when workstation slot is released, freeze
+source, update PR571 with exact validated scope/revision and preserve required
+review. Rebase onto current authoritative main and rerun affected checks before
+publication. Then continue seat-order creation and ticket cancellation (2B),
+followed by stages3-10. This is not completion of the whole plan.
+
+
+## Final confirmed-seat local gate complete
+
+Final integrated Flutter batch7 PASS including real reservation workspace,
+immutable hold/swap confirmations and durable recovery. Targeted Dart analyze:
+0 errors,0 warnings,51 existing brace-style infos. Previous dedicated actor-change
+negative test remains PASS. Slot immediately returned to the coordinated queue.
+
+Before publication authoritative main advanced to061201c3d with ticket profiles.
+Rebase had no conflicts and no changes to the covered blueprint/ticket consumers;
+passing Flutter evidence retained. Detected duplicate migration version2300
+between our unpublished hold and newly authoritative profile migration. Moved
+ONLY our hold file to20261023232000_confirmed_blueprint_hold_release.sql (identical
+SQL digest ac66b3559a038aa2c53ae6d8c36a61778ebd82f9dd0f3d46e81a69cd43fc124f).
+Swap2330 remains after it. English owner confirmed profile2300 stays authoritative
+and their temporary rename was reverted before publication/application. Neither
+new hold nor swap migration has run on production. Old PR571 source0c1431d9 must
+not deploy. Generated source parity follows actual current main; no PDF readiness
+seal changed. Final report marks swap locally verified/pending deployment.

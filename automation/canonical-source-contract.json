@@ -123,6 +123,10 @@
     "public.get_organization_context_capabilities_v1(bigint)",
     "public.create_spots_for_inventory_pool(bigint)",
     "public.update_inclusion_type_group(jsonb)",
-    "public.upsert_event_user(integer,uuid)"
+    "public.upsert_event_user(integer,uuid)",
+    "public.swap_spot_tickets_internal_v1(bigint,bigint)",
+    "public.swap_spot_pair_internal_v1(bigint,bigint)",
+    "public.get_blueprint_swap_money_internal(jsonb)",
+    "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean)"
   ]
 }

@@ -28,15 +28,6 @@ class FormEditBundle {
 }
 
 class DbForms {
-  static Future<Map<String, dynamic>> previewBlueprintSwap(
-      int firstSpot, int secondSpot) async {
-    final response = await _supabase.rpc('preview_blueprint_swap', params: {
-      'p_spot_1': firstSpot,
-      'p_spot_2': secondSpot,
-    });
-    return Map<String, dynamic>.from(response as Map);
-  }
-
   static Future<BlueprintLayoutSaveResult> saveLayoutSnapshot(
           BlueprintLayoutSaveRequest request) async =>
       BlueprintLayoutSaveResult.fromJson(

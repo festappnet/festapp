@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:fstapp/components/eshop/eshop_commands.dart';
 import 'package:fstapp/components/eshop/supabase_eshop_commands.dart';
 import 'package:fstapp/components/eshop/supabase_product_schedule_commands.dart';
-import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/inventory/models/inventory_context_model.dart';
 import 'package:fstapp/components/inventory/models/inventory_pool_model.dart';
 import 'package:fstapp/components/inventory/models/resource_model.dart';
@@ -116,26 +115,6 @@ class DbEshop {
     } catch (e) {
       ToastHelper.Show(context, e.toString());
       rethrow;
-    }
-  }
-
-  static Future<Map<String, dynamic>> analyzeNewOrderSpots(
-      List<int> spotIds) async {
-    final response = await _supabase.rpc(
-      'analyze_new_order_spots',
-      params: {'p_spot_ids': spotIds},
-    );
-    return response as Map<String, dynamic>;
-  }
-
-  static Future<void> createOrderFromSpots(
-      List<int> spotIds, Map<String, dynamic> inputData) async {
-    final edgeResponse = await DbOrders.replaceTicketOrder(spotIds, inputData);
-
-    if (edgeResponse.status != 200 ||
-        edgeResponse.data is! Map ||
-        edgeResponse.data['code'] != 200) {
-      throw Exception("Order creation failed: ${edgeResponse.data}");
     }
   }
 

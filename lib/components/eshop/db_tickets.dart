@@ -1,3 +1,7 @@
+import '../blueprint/blueprint_ticket_cancellation_preview.dart';
+import 'package:fstapp/components/blueprint/blueprint_seat_swap_preview.dart';
+import 'package:fstapp/components/blueprint/blueprint_hold_release_preview.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
@@ -45,8 +49,16 @@ class DbTickets {
   static final _supabase = Supabase.instance.client;
   static TicketCommands get _commands => SupabaseTicketCommands(_supabase);
 
-  static Future<void> releaseBlueprintHolds(List<int> spotIds) =>
-      _commands.releaseHolds(spotIds);
+  static Future<BlueprintHoldReleasePreview> previewBlueprintHolds(
+          int occasionId, List<int> spotIds) =>
+      _commands.previewHoldRelease(spotIds,
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id);
+
+  static Future<void> releaseBlueprintHolds(
+          BlueprintHoldReleasePreview preview) =>
+      _commands.releaseHolds(preview);
 
   /// One canonical mutation for the complete selection, including email outcomes.
   static Future<TicketCancellationOutcome> stornoTickets(
@@ -54,6 +66,26 @@ class DbTickets {
     if (ticketIds.isEmpty) return const TicketCancellationOutcome();
     return _commands.cancel(ticketIds);
   }
+
+  static Future<BlueprintTicketCancellationPreview>
+      previewBlueprintCancellation(
+              int occasionId, int blueprintId, List<int> spotIds) =>
+          _commands.previewCancellation(
+              occasionId: occasionId,
+              organizationId: AppConfig.organization,
+              unitId: RightsService.currentUnit()?.id,
+              blueprintId: blueprintId,
+              spotIds: spotIds);
+  static Future<TicketCancellationOutcome> cancelBlueprintTickets(
+          BlueprintTicketCancellationPreview preview) =>
+      _commands.cancelSelection(preview);
+  static Future<TicketCancellationOutcome?> recoverBlueprintCancellation(
+          int occasionId, int blueprintId) =>
+      _commands.recoverCancellation(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId);
 
   static Future<List<TicketModel>> getAllTickets(String occasionLink) async {
     var ordersBundle = await DbOrders.getAllOrdersBundle(
@@ -290,16 +322,29 @@ class DbTickets {
     }
   }
 
-  /// Blueprint V2 always uses the receipted command authority.
-  static Future<void> swapBlueprintSpots(int firstSpotId, int secondSpotId) =>
-      _commands.swapSpots(firstSpotId, secondSpotId);
+  static Future<BlueprintSeatSwapPreview> previewBlueprintSwap(
+          {required int occasionId,
+          required int blueprintId,
+          required int firstSpotId,
+          required int secondSpotId}) =>
+      _commands.previewSwap(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId,
+          firstSpotId: firstSpotId,
+          secondSpotId: secondSpotId);
 
-  static Future<void> swapSpotTickets(
-    int spotId1,
-    int spotId2,
-  ) async {
-    await _commands.swapSpots(spotId1, spotId2);
-  }
+  static Future<bool> recoverBlueprintSwap(
+          {required int occasionId, required int blueprintId}) =>
+      _commands.recoverSwap(
+          occasionId: occasionId,
+          organizationId: AppConfig.organization,
+          unitId: RightsService.currentUnit()?.id,
+          blueprintId: blueprintId);
+
+  static Future<void> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
+      _commands.swapSpots(preview);
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(
       String scanCode) async {

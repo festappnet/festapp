@@ -1,3 +1,5 @@
+import 'blueprint_command_rejection.dart';
+import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
 import '../images/image_control_client.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
@@ -24,6 +26,9 @@ class BlueprintStrings {
       'FeatureBlueprint.releaseTemporaryReservation'.tr();
   static String get releaseTemporaryReservationConfirm =>
       'FeatureBlueprint.releaseTemporaryReservationConfirm'.tr();
+  static String releaseTemporaryReservationPreview(int held, int total) =>
+      'FeatureBlueprint.releaseTemporaryReservationPreview'
+          .tr(namedArgs: {'held': '$held', 'total': '$total'});
   static String get standingUnavailable =>
       'FeatureBlueprint.viewer.standingUnavailable'.tr();
   static String get standingRequiresProduct =>
@@ -51,6 +56,45 @@ class BlueprintStrings {
   static String get seatProductRequired =>
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
+    if (error is http.ClientException &&
+        (error.message ==
+                'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND' ||
+            error.message == 'LEGACY_ORDER_RECOVERY_PENDING')) {
+      return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+    }
+    if (error is BlueprintCommandRejection) {
+      if (error.reason == 'BATCH_TICKET_PRINT_IMMUTABLE') {
+        return 'FeatureBlueprint.orderBatchImmutable'.tr();
+      }
+      if (error.reason.startsWith('BLUEPRINT_ORDER_')) {
+        if (error.reason == 'BLUEPRINT_ORDER_RECOVERY_REQUIRED') {
+          return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+        }
+        return error.reason == 'BLUEPRINT_ORDER_CHANGED'
+            ? 'FeatureBlueprint.swapChanged'.tr()
+            : analysisFailed;
+      }
+      final swapMessage = const {
+        'BLUEPRINT_SWAP_CHANGED': 'swapChanged',
+        'BLUEPRINT_SWAP_REJECTED': 'swapRejected',
+        'BLUEPRINT_SWAP_MONEY_UNAVAILABLE': 'swapMoneyUnavailable',
+        'BLUEPRINT_SWAP_RECOVERY_REQUIRED': 'swapRecoveryRequired',
+        'BLUEPRINT_UNIT_SIZE_MISMATCH': 'swapGroupSize',
+        'BLUEPRINT_SELECTION_UNIT_USED': 'swapUsedGroup',
+        'BLUEPRINT_CURRENCY_MISMATCH': 'swapCurrencyMismatch',
+        'STRIPE_ORDER_PRICE_IMMUTABLE': 'swapStripePriceImmutable',
+        'BLUEPRINT_SEAT_PROTECTED': 'swapSeatProtected',
+        'SPOT_HELD': 'swapSeatProtected',
+      }[error.reason];
+      if (swapMessage != null) return 'FeatureBlueprint.$swapMessage'.tr();
+      if (error.reason == 'BLUEPRINT_HOLDS_CHANGED' ||
+          error.reason == 'BLUEPRINT_SELECTION_CHANGED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationChanged'.tr();
+      }
+      if (error.reason == 'BLUEPRINT_SEAT_ORDERED') {
+        return 'FeatureBlueprint.releaseTemporaryReservationProtected'.tr();
+      }
+    }
     if (error is ImageUploadOutcomeUnknown)
       return 'FeatureBlueprint.imageUploadUncertain'.tr();
     if (error is ImageUploadRejected) return toastImageUploadFail;
@@ -148,6 +192,8 @@ class BlueprintStrings {
   static String get saveConflict => 'FeatureBlueprint.saveConflict'.tr();
   static String get copyDraft => 'FeatureBlueprint.copyDraft'.tr();
   static String get reloadSaved => 'FeatureBlueprint.reloadSaved'.tr();
+  static String get swapSourceSeats => 'FeatureBlueprint.swapSourceSeats'.tr();
+  static String get swapTargetSeats => 'FeatureBlueprint.swapTargetSeats'.tr();
   static String get swapServerNotice =>
       'FeatureBlueprint.swapServerNotice'.tr();
   static String get layoutUnavailable =>
