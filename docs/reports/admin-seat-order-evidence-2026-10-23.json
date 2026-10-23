@@ -1,6 +1,6 @@
 {
   "date": "2026-10-23",
-  "status": "UI/MCP integrated and targeted checks passed; actual workspace/browser and release gates pending; not published or deployed",
+  "status": "Targeted SQL/SDK/dialog checks and actual local full-app creation/cancel-confirm flow passed; current-main batch-guard integration and publication/release gates next",
   "sourceCommit": "63a242287b37c336bf393f9797421577616a8e5a",
   "migration": "20261023235000_confirmed_blueprint_seat_orders.sql",
   "migrationSha256": "6c1fb216f075a79747191adba4904dad2e297108e51a27c4abf7ad2dcbb467db",
@@ -65,9 +65,10 @@
     "thisSlice": "Local commits only; must reconcile fresh authoritative main before publishing"
   },
   "remaining": [
-    "Actual full-app workspace/browser flow and final affected release checks",
+    "Reconcile newer authoritative main fdbc1fc90 and preserve new printed-batch immutability guards",
+    "Retimestamp unpublished seat-order forward after applied240200/240210;240230 reserved with owner",
     "Required review/publication and authorized festapptickets rollout",
-    "Complete selected-ticket cancellation and later plan stages; stage 2B remains incomplete"
+    "Complete selected-ticket cancellation and later plan stages; stage2B remains incomplete"
   ],
   "sourceMain": "c83df930c93f81497474954282cf1a6d57ffd805",
   "productionPrerequisites": {
@@ -90,8 +91,26 @@
     "project": "festapp-wizard-seat-orders-20261023",
     "apiPort": 56821,
     "databasePort": 56822,
-    "status": "Fresh owned backend ready; all canonical migrations applied, production-style canonical owner roles aligned, synthetic fixture created, mail workers paused. Actual Auth/REST/Kong/Edge order creation and replacement with exact receipt replay passed. Flutter/browser pending.",
+    "status": "Completed and cleaned up; own containers stopped, no active SDK/browser/Edge process",
     "externalFlutterTask": "Unrelated organizer E2E server on59802 owns workstation Flutter task; not stopped"
   },
-  "fullStackEvidence": "docs/reports/admin-seat-order-fullstack-2026-10-23.json"
+  "fullStackEvidence": "docs/reports/admin-seat-order-fullstack-2026-10-23.json",
+  "fullAppBrowser": {
+    "sourceCommit": "63a242287b37c336bf393f9797421577616a8e5a",
+    "session": "festapp-seat-order-20261023",
+    "backend": "Owned local project on56821; no mocks at Auth/REST/Edge/SQL boundary",
+    "casesPassed": [
+      "Local login and actual order grid",
+      "Blueprint route and live available/ordered counts",
+      "Real Order toolbar and renderer seat-selection handlers",
+      "Input -> server final quote -> Cancel preserves2 original orders",
+      "Reopen -> review -> Confirm creates exactly1 order, receipt and queued confirmation",
+      "Canvas refresh changes available3->2 and ordered1->2"
+    ],
+    "inputMethod": "CDP refs for login/input; exact DOM semantic button.click fallback and PointerEvent dispatch to the real Flutter glass pane for canvas. No direct Dart controller/router calls. Native CDP canvas tapping was ineffective with forced semantics and is not claimed as coverage.",
+    "databaseReadback": "1 order / 1 receipt / 1 queued confirmation for synthetic UI buyer",
+    "providerCalls": 0,
+    "emailWorkerPaused": true,
+    "cleanup": "Both owned Flutter sessions quit, named headless browser closed, own Edge serve stopped and own Supabase project stopped with --no-backup; bootstrap/fixture markers removed to prevent stale reuse."
+  }
 }

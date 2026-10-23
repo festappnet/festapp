@@ -333,8 +333,9 @@ order, every additionally released binding and its blueprint, actual before/afte
 order amounts and the actual new ticket total. Contacts use the explicit existing
 orders-read consent. Requirements identify real customer/per-ticket field IDs;
 final approval binds the actual normalized form answers and current bank
-recipient, actor, all affected blueprint revisions and state. UI and MCP do no
-financial sums or refund calculations. Swaps and seat orders share the same
+recipient, actor, all affected blueprint revisions and state. The confirmation dialog and MCP do no
+financial sums or refund calculations; the existing selection toolbar retains
+its provisional catalog subtotal. Swaps and seat orders share the same
 private order-money projection and typed Dart/Node money representation.
 
 The quote runs the actual cancellation, creation and confirmation producers,

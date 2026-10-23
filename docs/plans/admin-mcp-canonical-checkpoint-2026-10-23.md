@@ -989,3 +989,44 @@ The WordPress thread01a1691a-c897-7290-81fb-c27bba27092f was asked to coordinate
 release of its existing organizer server; do not terminate that other session.
 The batch release thread01a168be likewise knows this thread is not publishing
 or deploying. Next: actual browser UI when the shared Flutter task is available.
+
+
+### Actual full-app browser order flow - passed; newer main reconciliation next
+
+Real entry `test/browser/full_app_e2e.dart` ran against the owned56821 backend
+on57580 with loopback overrides and external push callbacks stubbed. No real
+provider or email worker was enabled. The native app logged in, rendered the
+real orders grid and blueprint, selected a seat, showed required input and the
+real server quote. Cancel left2 original orders. Reopen/review/Confirm created
+exactly1 additional synthetic order,1 receipt and1 confirmation intent. The
+blueprint refreshed available3->2 and ordered1->2. Readback is `1|1|1` for the
+synthetic UI buyer. Screenshots and review text are in /tmp/festapp-seat-order-*.
+The synthetic fixture needed form/ticket/blueprint flags enabled before the route
+was visible. This was fixture setup only, no production/application-code change.
+
+Input boundary is explicit: CDP refs worked for login and text. Forced Flutter
+semantics intercepted ordinary CDP canvas/button taps, so exact semantic DOM
+button.click and PointerEvent dispatch to the real Flutter glass pane invoked
+actual widget handlers. No direct controller mutation, router invocation or
+mocked backend result was used. Physical native canvas tapping with forced
+semantics is not proven; the real rendered/component/RPC/order flow is proven.
+DDC cold compile was~54s/~45s; wait for ready and a Flutter view before snapshots.
+
+Cleanup complete: owned Flutter21457 and94961 exited viaq; named browser closed;
+owned Edge1751 exited; only the named Supabase project was stopped with
+--no-backup. Removed its bootstrap-complete/seat-order-fixture markers so the
+supported launcher cannot mistake an empty recreated database for a seeded one.
+Other sessions were never stopped. All SDK slot handoffs were explicit.
+
+New authoritative main `fdbc1fc9020da88a3a27cb4aa2103529d940c5f6` now includes
+printed-ticket batch guards (240200) and explicit ACLs (240210), plus verified
+festapptickets868 release documentation. It changes shared private confirmation
+and swap helpers. Before our publication, integrate these guards into the
+canonical owners and move the still-unpublished2350 seat-order forward after
+240210. Batch owner reserved `20261024023000` for this cut. Do not overwrite its
+applied historical migration or deploy old2320/2330 without a final current-owner
+forward in the same atomic apply. Previous runtime/UI evidence above is retained
+at its exact source; rerun checks affected by this main integration. The next
+work is this concrete integration, then selected-ticket cancellation; whole2B
+and stages3-10 are not complete. Confirmation dialogue/MCP use server amounts;
+the pre-existing selection toolbar still shows its catalog-price estimate.

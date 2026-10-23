@@ -483,7 +483,7 @@
       "scope": "Akce",
       "certainty": "confirmed",
       "verificationState": "pending",
-      "verificationNote": "Prošlo 13 SQL integračních scénářů včetně notifikací nového main, 8 testů portu a obnovy (včetně skutečného Supabase HTTP klienta) a 2 dialogové testy. Připravuje se průchod skutečnou aplikací; kandidát není nasazen. Prošel i skutečný lokální Auth/REST/Edge/SQL průchod vytvořením a nahrazením objednávky.",
+      "verificationNote": "Prošlo 13 SQL scénářů, 8 testů portu/obnovy, 2 dialogové testy i skutečné lokální UI: výběr, serverový náhled, Cancel bez zápisu a potvrzení právě jedné objednávky. Nyní se integrují nové ochrany vytištěných dávek z aktuálního main; nasazení čeká.",
       "deploymentState": "pending"
     },
     {
