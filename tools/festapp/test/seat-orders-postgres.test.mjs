@@ -189,3 +189,28 @@ test('an actual pre-cutover receipt survives the forward migration and uncertain
  const dispatch=await client.rpc('mark_replacement_invoice_dispatch',{p_order:order,p_command:command,p_token:claim.data.token});assert.equal(dispatch.error?.code,'23514');
  assert.deepEqual(await state(s),before,'historical recovery cannot cancel the replacement or enqueue another delivery');
 });
+
+test('current main notification producers roll back with the seat-order quote and publish once with the same committed intent',options,async t=>{
+ const s=await paidAtomicSwap(t);await bank(s);await s.db.query('RESET ROLE');
+ // Install current authored owners in this transaction only. Never run cron
+ // registration or a BEGIN/COMMIT-wrapped migration inside another fixture.
+ const sources=['notification_center/schema.sql','notification_center/core.sql','notification_center/orders.sql',
+  'notification_center/capacity.sql','notification_center/email.sql','eshop/create_ticket_order.sql',
+  'eshop/finalize_ticket_order.sql','eshop_orders/internal_storno_tickets_221.sql',
+  'eshop_orders/recalculate_order_payment_status.sql','inventory/apply_allocations.sql',
+  'inventory/adjust_spot_capacity_for_pool.sql','emails/email_queue.sql'];
+ const declared=new Set();
+ for(const file of sources){const sql=await readFile(new URL('../../../database/functions/'+file,import.meta.url),'utf8');await s.db.query(sql);for(const match of sql.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\s*\(/gi))declared.add(match[1]);}
+ for(const row of (await s.db.query("select format('ALTER FUNCTION %s OWNER TO postgres',p.oid::regprocedure) statement from pg_proc p where p.pronamespace='public'::regnamespace and p.proname=any($1)",[[...declared]])).rows)await s.db.query(row.statement);
+ for(const row of (await s.db.query("select format('ALTER TABLE public.%I OWNER TO postgres',tablename) statement from pg_tables where schemaname='public' and tablename like 'notification_center_%'")).rows)await s.db.query(row.statement);
+ await s.db.query('insert into notification_center_activation(organization,enabled,collection_started_at) values($1,true,clock_timestamp())',[s.f.org]);
+ const snapshot=async()=>(await s.db.query("select coalesce(jsonb_agg(to_jsonb(e) order by e.id),'[]') value from notification_center_events e where organization=$1",[s.f.org])).rows[0].value;
+ const input={email:'notification-order@example.invalid',form_key:s.fx.formKey};
+ await s.db.query('SET LOCAL ROLE authenticated');const before=await state(s);await s.db.query('RESET ROLE');const events=await snapshot();await s.db.query('SET LOCAL ROLE authenticated');
+ const p=await preview(s,[s.first],input);assert.equal(p.code,200,JSON.stringify(p));assert.deepEqual(await state(s),before);
+ await s.db.query('RESET ROLE');assert.deepEqual(await snapshot(),events,'quote rolls actual notification producers back too');await s.db.query('SET LOCAL ROLE authenticated');
+ const command=randomUUID(),done=await apply(s,p,input,command);assert.equal(done.status,'applied',JSON.stringify(done));
+ await s.db.query('RESET ROLE');const committed=await snapshot();assert.equal(committed.filter(e=>e.kind==='order_created').length,1);assert.equal(committed.filter(e=>e.kind==='order_cancelled').length,1);await s.db.query('SET LOCAL ROLE authenticated');
+ assert.deepEqual(await apply(s,p,input,command),done);
+ await s.db.query('RESET ROLE');assert.deepEqual(await snapshot(),committed,'original intent replay never publishes a second notification');
+});
