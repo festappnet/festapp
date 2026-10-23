@@ -71,7 +71,11 @@ test('canonical truth table preserves server operation rights across 2048 role c
         const original=(await db.query('select authorization_context_before_for_test($1::jsonb) c',
           [JSON.stringify({organization:f.org,link:f.link,platform:{platform:'web'}})])).rows[0].c;
         const {capabilities,bank_capabilities,...currentEnvelope}=c;
-        assert.deepEqual(currentEnvelope,original,`unchanged context envelope, roles ${bits}`);
+        // The approved Stripe checkout migration adds this feature projection;
+        // keep the historical reference exact and assert the addition separately.
+        const {stripe_preview_enabled,...unitEnvelope}=currentEnvelope.unit;
+        assert.equal(stripe_preview_enabled,false,`fixture Stripe feature default, roles ${bits}`);
+        assert.deepEqual({...currentEnvelope,unit:unitEnvelope},original,`unchanged context envelope, roles ${bits}`);
         for(const [key,expected] of Object.entries({
           'orders.read':r.read,'orders.write':r.write,'orders.delete':r.delete,
           'ticket_layouts.read':r.layout,'ticket_layouts.write':r.layout,
