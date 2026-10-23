@@ -50,7 +50,7 @@ class BankSyncWarningButton extends StatelessWidget {
       tooltip: canManage
           ? null
           : [
-              reason,
+              '$reason (${OrdersStrings.bankSyncWarningDetailsHint})',
               contacts.isEmpty
                   ? OrdersStrings.bankSyncWarningFallback
                   : '${OrdersStrings.bankSyncWarningContactShort} ${contacts.map((contact) => contact.name.isNotEmpty ? contact.name : contact.email ?? '').join(', ')}',
@@ -131,7 +131,8 @@ class BankSyncWarningButton extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Tooltip(
       richMessage: TextSpan(children: [
-        TextSpan(text: '$reason\n$guidance\n'),
+        TextSpan(
+            text: '$reason (${OrdersStrings.bankSyncWarningDetailsHint})\n$guidance\n'),
         WidgetSpan(child: settingsLink()),
       ]),
       ignorePointer: false,

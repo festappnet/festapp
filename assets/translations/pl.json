@@ -594,6 +594,7 @@
     "bankSyncWarningManage": "Sprawdź synchronizację w ustawieniach konta bankowego.",
     "bankSyncWarningOpenSettings": "Ustawienia konta bankowego",
     "bankSyncWarningSettingsUnavailable": "Nie znaleziono konta lub nie masz uprawnień do zarządzania nim.",
+    "bankSyncWarningDetailsHint": "Kliknij, aby wyświetlić szczegóły",
     "bankSyncWarningContactShort": "Skontaktuj się z administratorem konta bankowego:",
     "bankSyncPaymentPaused": "Synchronizacja rachunku bankowego dla tej płatności jest wyłączona.",
     "bankSyncWarningTitle": "Automatyczne dopasowywanie płatności jest niedostępne",

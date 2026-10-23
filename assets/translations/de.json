@@ -592,6 +592,7 @@
     "bankSyncWarningManage": "Prüfen Sie die Synchronisierung in den Bankkontoeinstellungen.",
     "bankSyncWarningOpenSettings": "Bankkontoeinstellungen",
     "bankSyncWarningSettingsUnavailable": "Das Konto wurde nicht gefunden oder Sie dürfen es nicht verwalten.",
+    "bankSyncWarningDetailsHint": "Klicken, um Details anzuzeigen",
     "bankSyncWarningContactShort": "Kontaktieren Sie einen Bankkonto-Administrator:",
     "bankSyncPaymentPaused": "Die Banksynchronisierung für das Empfängerkonto dieser Zahlung ist ausgeschaltet.",
     "bankSyncWarningTitle": "Automatischer Zahlungsabgleich nicht verfügbar",

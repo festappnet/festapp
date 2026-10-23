@@ -613,6 +613,7 @@
     "bankSyncWarningManage": "Skontrolujte synchronizáciu v nastaveniach bankového účtu.",
     "bankSyncWarningOpenSettings": "Nastavenia bankového účtu",
     "bankSyncWarningSettingsUnavailable": "Účet sa nenašiel alebo nemáte oprávnenie na jeho správu.",
+    "bankSyncWarningDetailsHint": "Kliknite pre zobrazenie detailu",
     "bankSyncWarningContactShort": "Kontaktujte správcu bankového účtu:",
     "bankSyncPaymentPaused": "Synchronizácia bankového účtu pre túto platbu je vypnutá.",
     "bankSyncWarningTitle": "Automatické párovanie platieb nefunguje",
