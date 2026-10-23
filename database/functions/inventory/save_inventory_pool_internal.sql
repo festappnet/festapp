@@ -51,6 +51,9 @@ BEGIN
         IF (v_pool_data->>'sellable_capacity')::bigint < (SELECT count(*) FROM eshop.spots s JOIN public.inventory_contexts ic ON ic.id=s.inventory_context
           WHERE ic.inventory_pool=v_pool_id AND (s.order_product_ticket IS NOT NULL OR (s.secret IS NOT NULL AND s.secret_expiration_time>clock_timestamp()))) THEN
           RAISE EXCEPTION 'INVENTORY_CAPACITY_BELOW_COMMITTED'; END IF;
+        PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+          JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket JOIN public.inventory_contexts c ON c.id=s.inventory_context
+          WHERE c.inventory_pool=v_pool_id));
         -- Update the existing pool
         UPDATE public.inventory_pools
         SET

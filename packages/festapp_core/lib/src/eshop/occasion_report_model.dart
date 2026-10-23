@@ -125,6 +125,10 @@ class OccasionReport {
   final List<ReportMoney> money;
   final List<ReportProduct> products;
   final Map<String, int> warnings;
+  Map<String, int> get ticketBatches => Map.unmodifiable({
+    for (final entry in (_source['ticket_batches'] as Map? ?? const {}).entries)
+      entry.key as String: entry.value as int,
+  });
   final List<ReportOrderDay> orderDays;
   final List<ReportOrderDay> ticketDays;
   final bool hasTicketTimeline;

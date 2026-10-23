@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:festapp_core/eshop.dart';
 import '../report_strings.dart';
+import '../ticket_batch_strings.dart';
 
 /// Localized display and export of the same report snapshot, without a new RPC.
 String formatReportText(OccasionReport report, {String? locale}) {
@@ -22,6 +23,16 @@ String formatReportText(OccasionReport report, {String? locale}) {
     ..writeln(
         '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
     ..writeln('${ReportStrings.free}: ${report.spotsFree}');
+  if ((report.ticketBatches['total'] ?? 0) > 0) {
+    text.writeln(
+        '${TicketBatchStrings.title}: ${report.ticketBatches['total']}');
+    text.writeln(
+        '${TicketBatchStrings.available}: ${report.ticketBatches['available']}');
+    text.writeln(
+        '${TicketBatchStrings.sold}: ${report.ticketBatches['sold_active']}');
+    text.writeln(
+        '${TicketBatchStrings.voided}: ${report.ticketBatches['voided_unsold']}');
+  }
   for (final money in report.money) {
     text
       ..writeln()

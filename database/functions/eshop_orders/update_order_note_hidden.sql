@@ -19,7 +19,7 @@ SET search_path = public, extensions AS $$
         END IF;
 
         PERFORM public.lock_order_capacity_scope_internal(ARRAY[order_id]);
-        IF (SELECT state FROM eshop.orders WHERE id=order_id)<>'waitlisted' THEN
+        IF (SELECT state FROM eshop.orders WHERE id=order_id)NOT IN ('waitlisted','stock') THEN
           PERFORM public.check_order_is_mutable(order_id);
         END IF;
 

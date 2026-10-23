@@ -10,6 +10,11 @@ BEGIN
     END LOOP;
   END LOOP;
   result := result || 'Místa (obsazená / celkem): ' || (report->'spots'->>'occupied') || ' / ' || (report->'spots'->>'total') || E'\n';
+  IF coalesce((report#>>'{ticket_batches,total}')::bigint,0)>0 THEN
+    result:=result||'Předgenerované - neprodáno: '||(report#>>'{ticket_batches,available}')||E'\n'
+      ||'Předgenerované - prodáno: '||(report#>>'{ticket_batches,sold_active}')||E'\n'
+      ||'Předgenerované - zneplatněno: '||(report#>>'{ticket_batches,voided_unsold}')||E'\n';
+  END IF;
   FOR item IN SELECT value FROM jsonb_array_elements(report->'money_by_currency') LOOP
     result := result || E'\n' || (item->>'currency') || E'\n'
       || 'Aktuální hodnota objednávek: ' || (item->>'current_order_value') || E'\n'

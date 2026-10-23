@@ -81,6 +81,7 @@ BEGIN
         LEFT JOIN public.occasion_users ou ON t.id = ou.ticket
         WHERE t.occasion = p_occasion_id
           AND t.state IN ('ordered', 'sent', 'used', 'paid')
+          AND NOT EXISTS(SELECT 1 FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id)
         ORDER BY t.id, o.id DESC
     LOOP
         order_data := ticket_record.order_data;

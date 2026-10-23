@@ -55,6 +55,9 @@ BEGIN
         AND (order_product_ticket IS NOT NULL OR (secret IS NOT NULL AND secret_expiration_time>clock_timestamp()))
         GROUP BY inventory_context HAVING count(*)>(p_resource->>'capacity')::integer) THEN
       RETURN jsonb_build_object('status','rejected','code',409,'data',jsonb_build_object('version',v_version,'resourceId',v_id,'message','resource capacity or move conflicts with reserved spots')); END IF;
+    PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+      JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.resource=v_id
+      OR s.resource_slot IN(SELECT id FROM public.resource_slots WHERE resource=v_id)));
     IF v_origin_pool IS DISTINCT FROM v_pool THEN
       DELETE FROM eshop.spots WHERE resource=v_id OR resource_slot IN(SELECT id FROM public.resource_slots WHERE resource=v_id);
     END IF;

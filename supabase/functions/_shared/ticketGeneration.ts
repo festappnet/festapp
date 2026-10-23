@@ -56,14 +56,25 @@ export async function prepareTicketRenderer(occasion:any,_ticket:any,order:any={
     const {data,error}=await supabaseAdmin.rpc('get_products_and_types',{p_occasion_id:id});if(error)throw new Error('Failed to load ticket products');return data;
   }
 }) {
+  if(_ticket?.batch_id) {
+    const {storedBatchTicketPdf}=await import('./ticketBatchStorage.ts');
+    return async(t:any)=> {
+      const bytes=await storedBatchTicketPdf(t.id);
+      if(!bytes)throw new Error('batch_document_missing');
+      return {bytes};
+    };
+  }
   const feature=occasion.features?.find((f:any)=>f.code==='ticket');
   if(feature?.is_enabled===false)throw new Error('Admission tickets are disabled for this occasion');
   const layout=feature?.layout;
   if(layout)await parseRegisteredTicketLayout(layout);
-  const resources={...await dependencies.load(occasion)};
+  return prepareTicketRendererFromResources(occasion,order,await dependencies.load(occasion),await dependencies.products(occasion.id));
+}
+/** Immutable batch documents and ordinary checkout share this renderer. */
+export async function prepareTicketRendererFromResources(occasion:any,order:any,loaded:Resources,products:any) {
+  const resources={...loaded};
   if(resources.background)resources.preparedBackground=await prepareTicketBackground(resources.background);
   const template=await resolveTicketTemplate(occasion,resources);
-  const products=await dependencies.products(occasion.id);
   resources.catalog=indexProductCatalog(products,occasion.id);
   validateProductReferences(template,resources.catalog);
   return async(t:any)=>{

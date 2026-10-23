@@ -22,6 +22,7 @@ BEGIN
           RAISE EXCEPTION 'get_all_forms_with_fields failed: %', v_forms_data->>'message';
     END IF;
 
+    v_orders_data:=jsonb_set(v_orders_data,'{data,orders}',coalesce((SELECT jsonb_agg(o) FROM jsonb_array_elements(v_orders_data#>'{data,orders}') o WHERE o->>'state' IS DISTINCT FROM 'stock'),'[]'));
     -- No orders means no delivery status. Do not resolve an ambiguous event slug.
     RETURN (v_orders_data->'data') || jsonb_build_object('forms', v_forms_data->'data', 'email_delivery',
       CASE WHEN jsonb_array_length(v_orders_data#>'{data,orders}') = 0

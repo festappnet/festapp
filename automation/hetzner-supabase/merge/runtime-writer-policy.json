@@ -349,6 +349,16 @@
         "banksync-tenant-control"
       ],
       "mutates_authority": true
+    },
+    "prepare-ticket-batch-document": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc",
+        "private-storage-write",
+        "private-storage-read",
+        "remote-asset-read"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -419,7 +429,8 @@
       "stripe-return": "scoped-expiring-return-read-capability-no-payment-write",
       "stripe-webhook": "bounded-raw-body-signature-timestamp-connected-account-mode-binding-atomic-inbox",
       "stripe-reconcile": "short-lived-vault-machine-proof-bounded-leased-recovery",
-      "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel"
+      "notification-center-maintain": "private-machine-proof-bounded-health-and-personal-projection-no-outbound-channel",
+      "prepare-ticket-batch-document": "user-jwt-occasion-order-viewer-private-immutable-storage-service-attested-fenced-completion"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

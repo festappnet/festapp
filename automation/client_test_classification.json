@@ -748,6 +748,20 @@
       "sources": [
         "test/components/qa/program_qa_regression_test.dart"
       ]
+    },
+    "test/components/eshop/ticket_batch_commands_test.dart": {
+      "kind": "environment",
+      "reason": "Actual durable client command transport and Supabase exception adapter; verifies stable identity, recovery and validation before persisted intent.",
+      "sources": [
+        "test/components/eshop/ticket_batch_commands_test.dart"
+      ]
+    },
+    "test/components/eshop/ticket_batch_print_downloads_test.dart": {
+      "kind": "environment",
+      "reason": "Actual Material batch download menu in a narrow viewport; verifies compact layout and the packed A4 PDF versus individual PDF ZIP choices.",
+      "sources": [
+        "test/components/eshop/ticket_batch_print_downloads_test.dart"
+      ]
     }
   }
 }

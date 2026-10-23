@@ -50,8 +50,9 @@ test('current order callers reach the command and have no automatic email follow
   assert.match(read('database/functions/eshop_orders/delete_order_client_sync_v1.sql'),/r\.actor_id=v_actor AND r\.request_sha256=v_hash/);
 });
 test('pool and cleaning facade graphs terminate in private owners without recursion', () => {
-  assert.match(read('database/functions/inventory/save_inventory_pool_client_sync_v1.sql'),/public\.update_inventory_pool_bundle_internal_v1\(p_bundle\)/);
+  assert.match(read('database/functions/inventory/save_inventory_pool_client_sync_v1.sql'),/public\.save_inventory_pool_command_internal\(p_occasion,p_command_id,p_expected_version,p_bundle,true\)/);
   assert.doesNotMatch(read('database/functions/inventory/update_inventory_pool_bundle_internal_v1.sql'),/save_inventory_pool_client_sync_v1/);
+  assert.match(read('database/functions/inventory/save_inventory_pool_command_internal.sql'), /public\.save_inventory_pool_internal\(p_bundle\)/);
   assert.match(read('database/functions/cleaning/report_cleaning_issue_client_sync_v1.sql'),/public\.report_cleaning_issue_internal_v1\(/);
   const report=read('database/functions/cleaning/report_cleaning_issue.sql');
   assert.doesNotMatch(report.split('CREATE OR REPLACE FUNCTION public.report_cleaning_issue(place_id')[0],/report_cleaning_issue_client_sync_v1\(/);

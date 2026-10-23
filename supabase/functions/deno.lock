@@ -6,6 +6,7 @@
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "npm:@festapp/banksync@0.2.2": "0.2.2",
     "npm:bidi-js@1.1.0": "1.1.0",
+    "npm:fflate@0.8.2": "0.8.2",
     "npm:fontkit@*": "2.0.4",
     "npm:fontkit@2.0.4": "2.0.4",
     "npm:harfbuzzjs@1.6.3": "1.6.3",
@@ -128,6 +129,9 @@
     },
     "fast-sha256@1.3.0": {
       "integrity": "sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ=="
+    },
+    "fflate@0.8.2": {
+      "integrity": "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A=="
     },
     "fflate@0.8.3": {
       "integrity": "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA=="
@@ -307,7 +311,7 @@
     "unicode-trie@3.0.0": {
       "integrity": "sha512-Cy+7EIpopVQ7ZCVZ8dFo1fmTk1lHMNxY62SeEhxsVEmISZEryEGgKSLzz6z6pquJXXopamfpi2AzsDCJ7KmAOA==",
       "dependencies": [
-        "fflate"
+        "fflate@0.8.3"
       ]
     },
     "valibot@1.5.0": {

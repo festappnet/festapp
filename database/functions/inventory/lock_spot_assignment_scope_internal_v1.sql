@@ -24,6 +24,8 @@ BEGIN
  PERFORM 1 FROM eshop.spots WHERE id=ANY(p_spots) ORDER BY id FOR UPDATE;
  SELECT coalesce(jsonb_agg(jsonb_build_array(s.id,s.occasion,s.product,s.blueprint,s.inventory_context,s.resource,s.resource_slot,s.order_product_ticket) ORDER BY s.id),'[]')
  INTO after_spots FROM eshop.spots s WHERE s.id=ANY(p_spots);
+ PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+ JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spots)));
  IF before_spots IS DISTINCT FROM after_spots THEN RAISE serialization_failure USING MESSAGE='spot parent changed; retry the same command'; END IF;
 END $$;
 REVOKE ALL ON FUNCTION public.lock_spot_assignment_scope_internal_v1(bigint[],bigint[]) FROM PUBLIC,anon,authenticated,service_role;

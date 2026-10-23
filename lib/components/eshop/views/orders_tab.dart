@@ -6,6 +6,7 @@ import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/eshop/views/orders_history_content.dart';
 import 'package:fstapp/components/eshop/views/orders_content.dart';
 import '../orders_strings.dart';
+import '../ticket_batch_strings.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
 
 @RoutePage(name: 'OrdersTabsRoute')
@@ -20,6 +21,11 @@ class OrdersTab extends StatelessWidget {
           route: const OrdersCurrentRoute(),
           label: OrdersStrings.ordersTab,
           icon: Icons.shopping_cart),
+      RoutedTabDefinition(
+          slug: NavigationPaths.pregenerated,
+          route: const TicketBatchesRoute(),
+          label: TicketBatchStrings.title,
+          icon: Icons.confirmation_number_outlined),
       RoutedTabDefinition(
           slug: NavigationPaths.history,
           route: const OrdersHistoryRoute(),

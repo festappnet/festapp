@@ -8,6 +8,7 @@ import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:trina_grid/trina_grid.dart';
 import '../eshop_columns.dart';
+import '../ticket_batch_strings.dart';
 import 'order_model.dart';
 import '../../blueprint/blueprint_object_model.dart';
 import 'package:festapp_core/eshop.dart';
@@ -21,6 +22,8 @@ class TicketModel extends ITrinaRowModel {
   String? ticketSymbol;
   String? state;
   int? occasion;
+  Map<String, dynamic>? batch;
+  Set<String>? allowedActions;
   String? note;
   String? noteHidden;
   double? totalPrice;
@@ -42,6 +45,8 @@ class TicketModel extends ITrinaRowModel {
     this.ticketSymbol,
     this.state,
     this.occasion,
+    this.batch,
+    this.allowedActions,
     this.note,
     this.noteHidden,
     this.relatedSpot,
@@ -53,6 +58,10 @@ class TicketModel extends ITrinaRowModel {
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
     return TicketModel(
+      allowedActions: (json['allowedActions'] as List?)?.cast<String>().toSet(),
+      batch: json['batch'] == null
+          ? null
+          : Map<String, dynamic>.from(json['batch']),
       id: json[TbEshop.tickets.id],
       createdAt: json[TbEshop.tickets.created_at] != null
           ? DateTime.parse(json[TbEshop.tickets.created_at]).toOccasionTime()
@@ -76,6 +85,17 @@ class TicketModel extends ITrinaRowModel {
   @override
   TrinaRow toTrinaRow(BuildContext context) {
     Map<String, TrinaCell> cells = {
+      EshopColumnIds.TICKET_ORIGIN: TrinaCell(
+          value: TicketBatchStrings.text(batch == null ? 'ordinary' : 'title')),
+      EshopColumnIds.TICKET_BATCH: TrinaCell(value: batch?['title'] ?? ''),
+      EshopColumnIds.TICKET_SALE_STATE: TrinaCell(
+          value: batch == null
+              ? ''
+              : TicketBatchStrings.text(state == 'storno'
+                  ? 'voided'
+                  : batch?['saleOrderId'] == null
+                      ? 'available'
+                      : 'sold')),
       EshopColumnIds.TICKET_ID: TrinaCell(value: id ?? 0),
       EshopColumnIds.TICKET_MODEL_REFERENCE: TrinaCell(value: this),
       EshopColumnIds.TICKET_CREATED_AT: TrinaCell(
@@ -111,7 +131,8 @@ class TicketModel extends ITrinaRowModel {
       EshopColumnIds.TICKET_TOTAL_PRICE: TrinaCell(
           value: totalPrice != null
               ? Utilities.formatPrice(context, totalPrice!,
-                  currencyCode: relatedOrder?.currencyCode, decimalDigits: relatedOrder?.amountDecimalDigits ?? 0)
+                  currencyCode: relatedOrder?.currencyCode,
+                  decimalDigits: relatedOrder?.amountDecimalDigits ?? 0)
               : ""),
       EshopColumnIds.TICKET_PRODUCTS_EDIT: TrinaCell(value: ""),
       EshopColumnIds.TICKET_CONFIRM: TrinaCell(value: ""),

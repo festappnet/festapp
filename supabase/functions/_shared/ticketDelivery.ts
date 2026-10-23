@@ -102,7 +102,13 @@ export async function prepareTicketDelivery(
   if (feature?.is_enabled) {
     const mode = ticketDeliveryMode(feature);
     if (mode !== "inline_qr") {
-      const render = await pdf(occasion, tickets[0], order);
+      const batchOrigin=order?.ticketBatchOrigin??order?.data?.ticketBatchOrigin;
+      const render = batchOrigin ? async(ticket:any)=> {
+        const {storedBatchTicketPdf}=await import('./ticketBatchStorage.ts');
+        const bytes=await storedBatchTicketPdf(ticket.id);
+        if(!bytes)throw new Error('batch_document_missing');
+        return {bytes};
+      } : await pdf(occasion, tickets[0], order);
       for (const ticket of tickets) {
         const { bytes } = await render(ticket);
         attachments.push({

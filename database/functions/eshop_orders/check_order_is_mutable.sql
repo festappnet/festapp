@@ -9,7 +9,7 @@ BEGIN
   PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
   SELECT state INTO v_state FROM eshop.orders WHERE id=p_order FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'ORDER_NOT_FOUND' USING ERRCODE='P0002'; END IF;
-  IF v_state IN ('waitlisted','preparing_payment') THEN
+  IF v_state IN ('stock','waitlisted','preparing_payment') THEN
     RAISE EXCEPTION 'ORDER_ACTION_NOT_ALLOWED' USING ERRCODE='55000';
   END IF;
   IF v_state='storno' THEN
@@ -22,6 +22,7 @@ RETURNS void LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = public, extensions AS $$
 DECLARE v_order bigint; v_state text;
 BEGIN
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT x."order" FROM eshop.order_product_ticket x WHERE x.ticket=p_ticket));
   FOR v_order IN SELECT DISTINCT opt."order" FROM eshop.order_product_ticket opt
     WHERE opt.ticket=p_ticket ORDER BY opt."order" LOOP
     PERFORM public.check_order_is_mutable(v_order);

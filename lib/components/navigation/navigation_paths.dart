@@ -29,6 +29,7 @@ abstract final class NavigationPaths {
   static const occasions = 'occasions';
   static const occupancy = 'occupancy';
   static const orders = 'orders';
+  static const pregenerated = 'pregenerated';
   static const paths = 'paths';
   static const places = 'places';
   static const products = 'products';

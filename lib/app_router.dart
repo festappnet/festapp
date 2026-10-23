@@ -232,6 +232,18 @@ class AppRouter extends RootStackRouter {
                                     page: OrdersCurrentRoute.page,
                                     path: NavigationPaths.current),
                                 AutoRoute(
+                                    page: TicketBatchesRoute.page,
+                                    path: NavigationPaths.pregenerated,
+                                    children: [
+                                      AutoRoute(
+                                          page: TicketBatchListRoute.page,
+                                          path: '',
+                                          initial: true),
+                                      AutoRoute(
+                                          page: TicketBatchDetailRoute.page,
+                                          path: ':batchId'),
+                                    ]),
+                                AutoRoute(
                                     page: OrdersHistoryRoute.page,
                                     path: NavigationPaths.history),
                                 AutoRoute(

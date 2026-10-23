@@ -42,6 +42,10 @@ BEGIN
       (SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=p_product_id UNION SELECT (x->>'inventory_context_id')::bigint FROM jsonb_array_elements(p_contexts) x)) ORDER BY id FOR UPDATE;
     PERFORM 1 FROM public.inventory_contexts WHERE id IN
       (SELECT inventory_context FROM eshop.product_inventory_contexts WHERE product=p_product_id UNION SELECT (x->>'inventory_context_id')::bigint FROM jsonb_array_elements(p_contexts) x) ORDER BY id FOR UPDATE;
+    IF coalesce((SELECT jsonb_agg(jsonb_build_object('inventory_context_id',inventory_context,'quantity',quantity) ORDER BY inventory_context)
+      FROM eshop.product_inventory_contexts WHERE product=p_product_id),'[]') =
+      coalesce((SELECT jsonb_agg(x ORDER BY (x->>'inventory_context_id')::bigint) FROM jsonb_array_elements(p_contexts) x),'[]') THEN RETURN; END IF;
+    PERFORM public.check_batch_product_allocation_immutable_internal(ARRAY[p_product_id]);
     -- If permission check passes, proceed with the update.
     -- First, remove all existing inventory context associations.
     DELETE FROM eshop.product_inventory_contexts

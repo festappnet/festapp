@@ -131,7 +131,7 @@ BEGIN
  WITH eligible AS MATERIALIZED (
  SELECT t.id,t.state FROM eshop.tickets t WHERE t.occasion=s.occasion_id AND t.ticket_symbol IS NOT NULL
  AND t.state IN ('used','paid','sent','ordered') AND EXISTS(SELECT 1 FROM eshop.order_product_ticket z WHERE z.ticket=t.id)
- AND NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket z JOIN eshop.orders o ON o.id=z."order" WHERE z.ticket=t.id AND (o.state IN ('storno','waitlisted','preparing_payment') OR o.occasion<>s.occasion_id)))
+ AND NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket z JOIN eshop.orders o ON o.id=z."order" WHERE z.ticket=t.id AND (o.state IN ('stock','storno','waitlisted','preparing_payment') OR o.occasion<>s.occasion_id)))
  SELECT jsonb_build_object('used_current',count(*) FILTER(WHERE state='used'),'unused_eligible',count(*) FILTER(WHERE state IN ('paid','sent')),
  'eligible_total',count(*) FILTER(WHERE state IN ('used','paid','sent')),'unpaid_conditional',count(*) FILTER(WHERE state='ordered'),
  'definition_version',1,'definition','used + paid/sent; excludes conditional unpaid, cancelled and waitlisted',

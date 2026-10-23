@@ -64,6 +64,7 @@ BEGIN
     -- Coordinate response validation/writes with form saves and field removal.
     PERFORM 1 FROM public.forms WHERE id = v_order_form_id FOR SHARE;
     PERFORM public.check_order_is_mutable(p_order_id);
+    PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT ticket FROM eshop.order_product_ticket WHERE "order"=p_order_id));
     SELECT data INTO v_current_data FROM eshop.orders WHERE id=p_order_id;
 
     -- Fetch all field definitions for this form into a JSONB map { "field_id": "field_type" }

@@ -13,6 +13,7 @@ BEGIN
             FROM (
                 SELECT
                     t.id,
+                    (SELECT i.batch_id FROM eshop.ticket_batch_items i WHERE i.ticket_id=t.id) AS batch_id,
                     t.ticket_symbol,
                     t.occasion,
                     t.note,

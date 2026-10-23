@@ -12,6 +12,8 @@ import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
 import '../blueprint_text_preparation.dart';
+import 'package:fstapp/components/eshop/views/ticket_batches_page.dart';
+import 'package:fstapp/components/eshop/ticket_batch_strings.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -442,6 +444,25 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
           builder: (_) => BlueprintCreateOrderDialog(
               selectedSpotIds: selected, initialAnalysis: analysis));
       if (done == true) {
+        await _refresh();
+        if (mounted) controller.setMode(BlueprintLayoutMode.manage);
+      }
+    } finally {
+      if (mounted) setState(() => _operationPending = false);
+    }
+  }
+
+  Future<void> _createBatch() async {
+    if (!_canOrder ||
+        _busy ||
+        controller.selectedSpotIds.isEmpty ||
+        controller.selectedSpotIds.length > 200) return;
+    setState(() => _operationPending = true);
+    try {
+      final done = await createTicketBatchFromSpots(context,
+          blueprintId: widget.source.id!,
+          spotIds: List<int>.of(controller.selectedSpotIds));
+      if (done) {
         await _refresh();
         if (mounted) controller.setMode(BlueprintLayoutMode.manage);
       }
@@ -949,7 +970,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
       key: _commercialRowKeys.putIfAbsent(node.id, () => GlobalKey()),
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: MouseRegion(
-        onEnter: (_) => controller.layout.highlightObjects(highlighted ?? {node.id}),
+        onEnter: (_) =>
+            controller.layout.highlightObjects(highlighted ?? {node.id}),
         onExit: (_) => controller.layout.highlightObjects({}),
         child: Ink(
           decoration: BoxDecoration(
@@ -963,7 +985,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                 : null,
           ),
           child: ListTile(
-            key: ValueKey('commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
+            key: ValueKey(
+                'commercial-${node.kind == 'capacityArea' ? 'area' : 'table'}-${node.id}'),
             dense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             minLeadingWidth: 18,
@@ -971,10 +994,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
             selected: selected,
             leading: Icon(icon, size: 18),
             title: Text(node.label.isEmpty
-                ? (node.kind == 'capacityArea' ? BlueprintStrings.standingAreas : BlueprintStrings.tablesTitle)
+                ? (node.kind == 'capacityArea'
+                    ? BlueprintStrings.standingAreas
+                    : BlueprintStrings.tablesTitle)
                 : node.label),
-            subtitle: Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
-            trailing: Text('($count)', style: Theme.of(context).textTheme.bodySmall),
+            subtitle:
+                Text(summary, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing:
+                Text('($count)', style: Theme.of(context).textTheme.bodySmall),
             onTap: _busy ? null : () => _selectCommercialRow(node.id),
           ),
         ),
@@ -1340,7 +1367,8 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                     _commercialNodeRow(
                       node: area,
                       selected: _commercialSelection.contains(area.id),
-                      summary: _productText(controller.snapshot.areaBindings[area.id]?.productId),
+                      summary: _productText(
+                          controller.snapshot.areaBindings[area.id]?.productId),
                       count: controller.areaCapacity(area.id),
                       icon: Icons.people_outline,
                     ),
@@ -1749,6 +1777,14 @@ class _BlueprintLayoutHostState extends State<BlueprintLayoutHost> {
                       key: const ValueKey('blueprint-cancel-operation'),
                       onPressed: _busy ? null : _cancelOperation,
                       child: Text(CommonStrings.storno)),
+                  if (ordering)
+                    OutlinedButton.icon(
+                        onPressed:
+                            valid && controller.selectedSpotIds.length <= 200
+                                ? _createBatch
+                                : null,
+                        icon: const Icon(Icons.confirmation_number_outlined),
+                        label: Text(TicketBatchStrings.create)),
                   FilledButton(
                       key: const ValueKey('blueprint-confirm-operation'),
                       onPressed: !valid

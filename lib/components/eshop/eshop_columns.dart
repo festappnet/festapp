@@ -1,4 +1,7 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:fstapp/app_router.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'ticket_batch_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import '../forms/waitlist_commands.dart';
 import '../forms/order_overview_strings.dart';
@@ -380,6 +383,42 @@ class EshopColumns {
             renderer: (rendererContext) =>
                 DataGridHelper.idRenderer(rendererContext),
           ),
+        ],
+        for (final entry in {
+          EshopColumnIds.TICKET_ORIGIN: 'origin',
+          EshopColumnIds.TICKET_SALE_STATE: 'saleState',
+        }.entries)
+          entry.key: [
+            TrinaColumn(
+                readOnly: true,
+                enableEditingMode: false,
+                title: TicketBatchStrings.text(entry.value),
+                field: entry.key,
+                type: TrinaColumnType.text(),
+                width: 150)
+          ],
+        EshopColumnIds.TICKET_BATCH: [
+          TrinaColumn(
+              readOnly: true,
+              enableEditingMode: false,
+              title: TicketBatchStrings.text('batch'),
+              field: EshopColumnIds.TICKET_BATCH,
+              type: TrinaColumnType.text(),
+              width: 180,
+              renderer: (r) {
+                final ticket = r
+                    .row
+                    .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
+                    ?.value as TicketModel?;
+                final batch = ticket?.batch;
+                if (batch == null) {
+                  return const SizedBox.shrink();
+                }
+                return TextButton(
+                    onPressed: () => context.router.navigatePath(
+                        '/${context.routeData.inheritedPathParams.getString(AppRouter.linkFormatted)}/reservations/orders/pregenerated/${batch['id']}'),
+                    child: Text(batch['title'] as String));
+              })
         ],
         EshopColumnIds.TICKET_SYMBOL: [
           TrinaColumn(
@@ -864,8 +903,16 @@ class EshopColumns {
                 width: 150,
                 renderer: (rendererContext) {
                   return ElevatedButton(
-                    onPressed: OrderGridFilters.ticketIsNonCancelled(
-                            rendererContext.row)
+                    onPressed: (((rendererContext
+                                        .row
+                                        .cells[EshopColumnIds
+                                            .TICKET_MODEL_REFERENCE]
+                                        ?.value as TicketModel?)
+                                    ?.allowedActions
+                                    ?.contains('products') ??
+                                true) &&
+                            OrderGridFilters.ticketIsNonCancelled(
+                                rendererContext.row))
                         ? () async {
                             final ticketId = rendererContext.row
                                 .cells[EshopColumnIds.TICKET_ID]!.value as int;
@@ -905,7 +952,14 @@ class EshopColumns {
                       .row.cells[EshopColumnIds.TICKET_STATE]?.value as String?;
                   final isUsed =
                       formattedState?.split(';').first == OrderModel.usedState;
-                  final canToggleUsage = canToggleTicketUsage(formattedState) &&
+                  final canToggleUsage = ((rendererContext
+                                  .row
+                                  .cells[EshopColumnIds.TICKET_MODEL_REFERENCE]
+                                  ?.value as TicketModel?)
+                              ?.allowedActions
+                              ?.contains(isUsed ? 'reset' : 'use') ??
+                          true) &&
+                      canToggleTicketUsage(formattedState) &&
                       OrderGridFilters.ticketIsNonCancelled(
                           rendererContext.row);
                   final actionLabel = isUsed

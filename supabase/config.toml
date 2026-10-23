@@ -352,3 +352,7 @@ verify_jwt = false
 
 [functions.notification-center-maintain]
 verify_jwt = false
+
+[functions.prepare-ticket-batch-document]
+verify_jwt = false
+static_files = ["./functions/_shared/ticket-assets/*.ttf", "./functions/_shared/ticket-assets/gallery-fonts/*.ttf"]

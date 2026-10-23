@@ -40,6 +40,11 @@ BEGIN
     WHERE s.id=ANY(p_spot_ids) AND pi.payment_method='stripe') THEN
     RAISE EXCEPTION 'STRIPE_REPLACEMENT_UNSUPPORTED'; END IF;
 
+  PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT x."order" FROM eshop.spots s
+    JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids)));
+  PERFORM 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) ORDER BY id FOR UPDATE;
+  PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY(SELECT x.ticket FROM eshop.spots s
+    JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids)));
   -- 2. Extract Ticket IDs for Storno
   SELECT ARRAY_AGG((elem->>'ticket_id')::BIGINT)
   INTO v_ticket_ids_to_cancel

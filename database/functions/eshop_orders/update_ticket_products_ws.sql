@@ -50,6 +50,7 @@ BEGIN
   END IF;
 
   PERFORM public.check_ticket_is_mutable(p_ticket_id);
+  PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[p_ticket_id]);
   IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND payment_method='stripe') THEN
     RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
 
