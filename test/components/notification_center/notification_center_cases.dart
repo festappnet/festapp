@@ -1,3 +1,6 @@
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:fstapp/components/notification_center/notification_center_bell.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/notification_center/notification_center_rollout.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -427,5 +430,85 @@ void main() {
         find.textContaining('EmailDelivery.kind.registration'), findsOneWidget);
     expect(find.textContaining('EmailDelivery.kind.reset_password'),
         findsOneWidget);
+  });
+  testWidgets('bell asset paints with contrast without an icon font',
+      (tester) async {
+    final boundaryKey = GlobalKey();
+    for (final dark in [true, false]) {
+      final foreground = dark ? Colors.white : Colors.black;
+      final background = dark ? Colors.black : Colors.white;
+      await tester.pumpWidget(MaterialApp(
+          home: Center(
+              child: RepaintBoundary(
+        key: boundaryKey,
+        child: ColoredBox(
+            color: background,
+            child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(child: NotificationBellIcon(color: foreground)))),
+      ))));
+      await tester.pumpAndSettle();
+      expect(find.byType(Icon), findsNothing);
+      final painted = await tester.runAsync(() async {
+        final boundary = boundaryKey.currentContext!.findRenderObject()
+            as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 1);
+        final bytes =
+            await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        final pixels = bytes!.buffer.asUint8List();
+        var contrastPixels = 0;
+        for (var offset = 0; offset < pixels.length; offset += 4) {
+          final visible = dark ? pixels[offset] > 200 : pixels[offset] < 55;
+          if (visible && pixels[offset + 3] == 255) contrastPixels++;
+        }
+        image.dispose();
+        return contrastPixels;
+      });
+      expect(painted, greaterThan(40),
+          reason:
+              'The vector outline must actually paint against the app bar surface');
+    }
+  });
+  testWidgets('panel fills available height while keeping modal margins',
+      (tester) async {
+    final controller =
+        NotificationCenterController(read: (_, params) async => {});
+    addTearDown(controller.dispose);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    for (final size in [
+      const Size(320, 360),
+      const Size(390, 844),
+      const Size(720, 600),
+      const Size(1280, 1200)
+    ]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(MaterialApp(
+          home: Builder(
+              builder: (context) => Scaffold(
+                    body: TextButton(
+                        onPressed: () => showDialog<void>(
+                            context: context,
+                            builder: (_) => NotificationCenterPanel(
+                                controller: controller, onDetail: (_) {})),
+                        child: const Text('Open')),
+                  ))));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      final surface = find.byWidgetPredicate(
+          (widget) => widget is Material && widget.type == MaterialType.card);
+      expect(surface, findsOneWidget);
+      final rect = tester.getRect(surface);
+      expect(rect.top, closeTo(16, .01));
+      expect(rect.bottom, closeTo(size.height - 16, .01));
+      expect(rect.left, greaterThanOrEqualTo(16));
+      expect(rect.right, lessThanOrEqualTo(size.width - 16));
+      expect(rect.width, lessThanOrEqualTo(440));
+      expect(tester.takeException(), isNull);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+    }
   });
 }

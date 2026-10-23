@@ -149,9 +149,9 @@ void main() {
     expect(service.calls, 0);
     expect(
         tester
-            .widget<DropdownButtonFormField<TicketDeliveryMode>>(
-                find.byType(DropdownButtonFormField<TicketDeliveryMode>))
-            .onChanged,
+            .widget<DropdownMenu<TicketDeliveryMode>>(
+                find.byType(DropdownMenu<TicketDeliveryMode>))
+            .onSelected,
         isNull);
     expect(find.text('Upravit PDF pro tisk'), findsOneWidget);
   });
@@ -326,9 +326,16 @@ void main() {
                                   ]))))));
       await tester.pumpAndSettle();
       expect(calls, 0);
-      await tester
-          .tap(find.byType(DropdownButtonFormField<TicketDeliveryMode>));
+      await tester.tap(find.byType(DropdownMenu<TicketDeliveryMode>));
       await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      if (const bool.fromEnvironment('CAPTURE_DELIVERY')) {
+        await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile(
+                '/tmp/ticket-delivery-menu-${width.toInt()}.png'));
+      }
       await tester.tap(find.text('QR přímo v e-mailu').last);
       await tester.pumpAndSettle();
       expect(mode, TicketDeliveryMode.inlineQr);
