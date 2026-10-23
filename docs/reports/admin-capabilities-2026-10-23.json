@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-23",
-  "sourceMain": "c83df930c93f81497474954282cf1a6d57ffd805",
-  "liveBaselineVersion": "0.20.370+867",
+  "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
+  "liveBaselineVersion": "0.20.371+868",
   "tenant": "festapptickets",
-  "scopeNote": "Soupis doložených administrátorských operací a nastavení z kódu. Nejde o živý výpis oprávnění účtu ani audit všech tenant variant. Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Potvrzené uvolnění rezervací a prohození vstupenek čekají na publikaci a nasazení.",
+  "scopeNote": "Produktové a skladové řezy a inspekce/blokace míst jsou nasazené. Uvolnění rezervací, prohození vstupenek a objednávky z míst jsou lokálně ověřené, ale nejsou publikované ani nasazené. Práce je na žádost uživatele zastavena na checkpointu; etapa2B zůstává neúplná kvůli samostatnému rušení vybraných vstupenek.",
   "actions": [
     {
       "id": "action-001",
@@ -482,8 +482,8 @@
       "effect": "critical",
       "scope": "Akce",
       "certainty": "confirmed",
-      "verificationState": "pending",
-      "verificationNote": "Prošlo 13 SQL scénářů, 8 testů portu/obnovy, 2 dialogové testy i skutečné lokální UI: výběr, serverový náhled, Cancel bez zápisu a potvrzení právě jedné objednávky. Nyní se integrují nové ochrany vytištěných dávek z aktuálního main; nasazení čeká.",
+      "verificationState": "verified",
+      "verificationNote": "Prošlo14 nových SQL scénářů a47 regresí,70 JS kontraktních/SDK testů,21 Edge testů,12 testů portu/obnovy a3 dialogové testy. Integrace aktuálních batch guards dokončena. Skutečný lokální browser/full-stack tok doložen na předchozí revizi63a242; přesné hranice v evidence JSON. Publikace a nasazení neproběhly.",
       "deploymentState": "pending"
     },
     {

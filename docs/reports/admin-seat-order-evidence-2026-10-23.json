@@ -1,22 +1,22 @@
 {
   "date": "2026-10-23",
-  "status": "Targeted SQL/SDK/dialog checks and actual local full-app creation/cancel-confirm flow passed; current-main batch-guard integration and publication/release gates next",
-  "sourceCommit": "63a242287b37c336bf393f9797421577616a8e5a",
-  "migration": "20261023235000_confirmed_blueprint_seat_orders.sql",
-  "migrationSha256": "6c1fb216f075a79747191adba4904dad2e297108e51a27c4abf7ad2dcbb467db",
-  "newPostgresCasesPassed": 13,
+  "status": "Checkpoint at user-requested stop: coherent seat-order slice locally verified; not published or deployed; whole stage2B remains incomplete",
+  "sourceCommit": "cb871dcb273ee6d065ea59d5455baa989ce0aa7c",
+  "migration": "20261024023000_confirmed_blueprint_seat_orders.sql",
+  "migrationSha256": "a57c3e85c9c6c26e7b984c2b41053440eb581677a39a30c362b0e3f9522c2664",
+  "newPostgresCasesPassed": 14,
   "priorSeatRegressionsPassed": 23,
   "authorizationRegressionsPassed": 24,
   "remotePermissionCasesPassed": 22,
   "consentCasesPassed": 30,
   "edgeCasesPassed": 21,
-  "flutterPortRecoveryCasesPassed": 8,
-  "flutterDialogCasesPassed": 2,
+  "flutterPortRecoveryCasesPassed": 12,
+  "flutterDialogCasesPassed": 3,
   "dartAnalysis": {
     "errors": 0,
     "warnings": 0,
-    "infos": 27,
-    "scope": "Final changed command port, dialog/strings and transport test; earlier wider analysis preserved separately"
+    "infos": 25,
+    "scope": "Final recovery port, identity journal, localized errors and port tests; /tmp/festapp-seat-recovery-final-analysis.log"
   },
   "sourceAudit": {
     "passed": 8,
@@ -37,10 +37,13 @@
     "Old local legacy journal entries retain original identity; a different payload cannot silently create another replacement",
     "Removed Flutter DbEshop.analyzeNewOrderSpots/createOrderFromSpots and DbOrders.replaceTicketOrder fresh producers; retained released backend adapter delegates to one owner",
     "One shared order amount projection is used by swaps and seat orders; removed the superseded private swap-money owner",
-    "Real issued replacement owner from immutable 20261021100000 migration creates a historical receipt; applying actual 2350 preserves its exact replay and keeps unknown historical invoice dispatch lookup-only",
+    "Real issued replacement owner from immutable 20261021100000 migration creates a historical receipt; applying actual terminal240230 preserves its exact replay and keeps unknown historical invoice dispatch lookup-only",
     "Current-main notification creation and cancellation producers participate in quote rollback and publish once with the same confirmed order intent",
     "Actual Supabase SDK and production Dart factory retain exact Edge payload/UUID after network failure, HTTP503 and relay failure; HTTP401 maps to authorization denial without automatic replay, and later explicit recovery uses the same intent",
-    "Unmocked local full-stack Auth/REST/Kong/actual Deno Edge/PostgreSQL: scoped requirements/quote, initial order and replacement, one receipt/confirmation per UUID and exact HTTP replay; eight calls allHTTP200, zero payment-provider calls, email workers paused"
+    "Unmocked local full-stack Auth/REST/Kong/actual Deno Edge/PostgreSQL: scoped requirements/quote, initial order and replacement, one receipt/confirmation per UUID and exact HTTP replay; eight calls allHTTP200, zero payment-provider calls, email workers paused",
+    "Actual MCP SDK protocol call confirms scoped seat tools remain usable independently of PDF readiness",
+    "Terminal240230 retires resurrected swap owners and preserves printed-batch guards across UI/MCP/legacy entrypoints",
+    "Legacy matching intents remain recoverable even with multiple historical pending inputs; expired410 receipts retain the original UUID and require reconciliation"
   ],
   "network": {
     "fixture": "Actual MCP executor -> production Edge coordinator -> real disposable PostgreSQL; synthetic provider only",
@@ -53,7 +56,7 @@
     "normalBankWrite": "One MCP-to-Edge call and one user-scoped aggregate SQL command; no provider metadata or invoice requests"
   },
   "liveBaseline": {
-    "version": "0.20.370+867",
+    "version": "0.20.371+868",
     "probe": "https://vstupenky.online/version.json",
     "seatOrderMigrationApplied": false
   },
@@ -61,28 +64,31 @@
     "previousSlicePr": "https://github.com/festappnet/festapp/pull/571",
     "previousSliceFrozenHead": "94d21814cd2da51623ef6b8fa1546a2bd0870910",
     "previousSliceChecks": "6 required checks passed; review still required, no approval",
-    "mainAtLastReadOnlyCheck": "c83df930c93f81497474954282cf1a6d57ffd805",
-    "thisSlice": "Local commits only; must reconcile fresh authoritative main before publishing"
+    "mainAtLastReadOnlyCheck": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
+    "thisSlice": "Local commits only. Publication and deployment intentionally deferred at user-requested checkpoint. Old94d packet is superseded and must not deploy alone."
   },
   "remaining": [
-    "Reconcile newer authoritative main fdbc1fc90 and preserve new printed-batch immutability guards",
-    "Retimestamp unpublished seat-order forward after applied240200/240210;240230 reserved with owner",
-    "Required review/publication and authorized festapptickets rollout",
-    "Complete selected-ticket cancellation and later plan stages; stage2B remains incomplete"
+    "Publish only after fresh authoritative-main reconciliation and applicable repository gates",
+    "Back up and verify canonical org3; apply2320+2330+240230 with ledger in one transaction, then coordinated festapptickets-only release",
+    "Implement and verify selected-ticket cancellation before declaring stage2B complete",
+    "Stages3-10 remain outside this checkpoint"
   ],
-  "sourceMain": "c83df930c93f81497474954282cf1a6d57ffd805",
+  "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
   "productionPrerequisites": {
     "verified": "Protected read-only canonical org3 identity; independent repair readback",
     "presentVersions": [
       "20261023230000",
       "20261023231000",
       "20261023234000",
-      "20261024010000"
+      "20261024010000",
+      "20261024011000",
+      "20261024020000",
+      "20261024021000"
     ],
     "unappliedOwnedVersions": [
       "20261023232000",
       "20261023233000",
-      "20261023235000"
+      "20261024023000"
     ],
     "ledgerRepair": "Prior release owner repaired metadata-only wrong public ledger entries for2300/2340; canonical rows independently verified and obsolete rows absent; no DDL reapplied"
   },
@@ -112,5 +118,6 @@
     "providerCalls": 0,
     "emailWorkerPaused": true,
     "cleanup": "Both owned Flutter sessions quit, named headless browser closed, own Edge serve stopped and own Supabase project stopped with --no-backup; bootstrap/fixture markers removed to prevent stale reuse."
-  }
+  },
+  "javascriptCasesPassed": 70
 }

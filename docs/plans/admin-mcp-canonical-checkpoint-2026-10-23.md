@@ -1030,3 +1030,35 @@ at its exact source; rerun checks affected by this main integration. The next
 work is this concrete integration, then selected-ticket cancellation; whole2B
 and stages3-10 are not complete. Confirmation dialogue/MCP use server amounts;
 the pre-existing selection toolbar still shows its catalog-price estimate.
+
+### User-requested stop - coherent seat-order checkpoint, whole2B incomplete
+
+User explicitly requested stopping at a coherent stage boundary and an explanation
+whether partial work is safe to leave. Current local runtime is
+`cb871dcb273ee6d065ea59d5455baa989ce0aa7c`, based on authoritative main
+`fdbc1fc9020da88a3a27cb4aa2103529d940c5f6`. Current-main batch guards and ACLs
+are integrated. Unpublished2350 was replaced by terminal240230; immutable applied
+240200 remains byte-for-byte unchanged. Do not deploy historical94d by itself.
+
+Verified current integration:14 new real-PG cases +23 seat regressions +24 ACL
+regressions;70 JS cases including actual MCP SDK;21 Edge cases;3 dialog cases.
+Final recovery closure adds exact legacy-input recovery among multiple pending
+intents, keeps original UUID on410 tombstones and gives localized recovery guidance.
+Final port suite12/12 passed (/tmp/festapp-seat-recovery-final-tests.log); targeted
+analysis0 errors/0 warnings/25 infos. Real browser/full-stack evidence remains
+explicitly bound to earlier63a242, not relabeled as a current production release.
+See updated admin-seat-order-evidence JSON for migration digest and boundaries.
+
+Safe interruption state: this slice exists only in the isolated feature branch;
+no owned2320/2330/240230 production migrations applied, no candidate frontend or MCP
+published. Live baseline is festapptickets0.20.371+868. No owned dev server,
+Flutter task, browser or disposable backend is intentionally left running.
+This is a resumable development checkpoint, not a completed or deployed stage2B.
+Selected-ticket cancellation remains required; stages3-10 are still outstanding.
+Do not start further implementation or deployment after this requested stop.
+
+Resume: fetch fresh authoritative main, reconcile any new owners, then publish
+under applicable repository gates. Deployment requires backup/target/digest gates
+and2320+2330+240230+ledger in one atomic transaction, preserving newest domain
+owners, plus coordinated festapptickets-only runtime release. Routine release
+execution goes to the cheaper deployment agent. Do not deploy another tenant.
