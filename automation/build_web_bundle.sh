@@ -75,7 +75,6 @@ case "$FESTAPP_SETUP_ENABLED" in
 esac
 "${FLUTTER_CMD[@]}" build web --release --base-href / --no-web-resources-cdn --no-wasm-dry-run "${FESTAPP_SETUP_BUILD_ARGS[@]}"
 node automation/optimize_web_fonts.mjs build/web automation/project.conf
-node automation/minify_web_translations.mjs build/web
 bash automation/emit_version_manifest.sh build/web
 
 if [ "$TARGET" = cloudflare ]; then
@@ -90,6 +89,7 @@ fi
 bash automation/test_web_startup.sh
 (cd web_client && pnpm run build)
 cp -R web_client/dist/. build/web/
+node automation/minify_web_translations.mjs build/web
 # The standalone organizer document shares the compiled tenant theme and fonts.
 node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
 
