@@ -57,9 +57,18 @@ class FormFieldDefinition {
     if ((type == FormMetadata.fieldTypeSelectOne ||
             type == FormMetadata.fieldTypeSelectMany) &&
         data is Map) {
-      options = data[FormMetadata.metaOptions].map<FormOptionDefinition>((e) {
-        return FormOptionDefinition.fromJson(e);
-      }).toList();
+      final rawOptions = data[FormMetadata.metaOptions];
+      if (rawOptions is List) {
+        options = rawOptions
+            .whereType<Map>()
+            .where((option) => option[FormOptionDefinition.metaValue] is String)
+            .map(
+              (option) => FormOptionDefinition.fromJson(
+                Map<String, dynamic>.from(option),
+              ),
+            )
+            .toList();
+      }
     }
     return FormFieldDefinition(
       id: json['id'],
@@ -88,7 +97,9 @@ class FormFieldDefinition {
   Map<String, dynamic> toJson() {
     final jsonData = Map<String, dynamic>.from(data ?? {});
 
-    if (options.isNotEmpty) {
+    if (type == FormMetadata.fieldTypeSelectOne ||
+        type == FormMetadata.fieldTypeSelectMany ||
+        options.isNotEmpty) {
       jsonData[FormMetadata.metaOptions] = options.map((option) {
         final optionData = {FormOptionDefinition.metaValue: option.title};
         if (option.description != null &&

@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart';
+import 'package:fstapp/services/batch_progress_dialog.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:flutter/material.dart';
@@ -74,13 +76,16 @@ class UsersTabHelper {
     var nonAdded = existing
         .where((u) => !currentUsers.any((cu) => cu.id == u.id))
         .toList();
-    DialogHelper.chooseUser(context, (chosenUser) async {
+    if (!context.mounted) return;
+    await DialogHelper.chooseUser(context, (chosenUser) async {
       await DbUsers.addUserToOccasion(
           chosenUser.id!, RightsService.currentOccasionId()!);
       ToastHelper.Show(
           context, CommonStrings.updatedItem(item: chosenUser.toString()));
       await reloadUsers();
-    }, nonAdded, CommonStrings.add);
+    }, nonAdded, CommonStrings.add,
+        description: UserStrings.existingParticipantsScope,
+        emptyMessage: UserStrings.noExistingParticipants);
   }
 
   static Future<void> addExistingToUnit(
@@ -131,6 +136,7 @@ class UsersTabHelper {
   static Future<void> processInvites(
       BuildContext context, List<OccasionUserModel> users,
       {int retryLimit = 3}) async {
+    if (users.isEmpty) return;
     var confirm = await DialogHelper.showConfirmationDialog(
       context,
       UserStrings.invite,
@@ -139,52 +145,44 @@ class UsersTabHelper {
 
     if (!confirm) return;
 
-    Map<OccasionUserModel, int> retryAttempts = {
-      for (var user in users) user: 0
-    };
-    List<Future<void> Function()> inviteFutures = users.map((user) {
-      return () async {
-        while (retryAttempts[user]! < retryLimit) {
-          try {
-            final statusRecorded = await AuthService.sendSignInCode(user);
-            if (!statusRecorded) {
-              ToastHelper.Show(
-                context,
-                UserStrings.invitationStatusFailed(
-                    user: user.data![Tb.occasion_users.data_email]),
-                severity: ToastSeverity.NotOk,
-              );
-              return;
+    if (!context.mounted) return;
+    final tasks = users.map((user) {
+      // Transport retries and queued checks share an intent. A terminal failure
+      // permits a new attempt; SQL still joins any unresolved queued message.
+      var requestId = const Uuid().v4();
+      return BatchTask(
+        label: user.toBasicString(),
+        run: () async {
+          for (var attempt = 0; attempt < retryLimit; attempt++) {
+            try {
+              final status =
+                  await AuthService.sendSignInCode(user, requestId: requestId);
+              return status == InvitationDeliveryStatus.sent
+                  ? BatchTaskOutcome.completed
+                  : BatchTaskOutcome.deferred;
+            } catch (_) {
+              if (attempt + 1 >= retryLimit) {
+                requestId = const Uuid().v4();
+                rethrow;
+              }
+              await Future<void>.delayed(const Duration(milliseconds: 500));
             }
-            ToastHelper.Show(
-              context,
-              UserStrings.invitedUser(
-                  user: user.data![Tb.occasion_users.data_email]),
-            );
-            return;
-          } catch (_) {
-            retryAttempts[user] = retryAttempts[user]! + 1;
-            if (retryAttempts[user]! >= retryLimit) {
-              ToastHelper.Show(
-                context,
-                UserStrings.inviteFailed(
-                    user: user.data![Tb.occasion_users.data_email],
-                    retries: retryLimit.toString()),
-                severity: ToastSeverity.NotOk,
-              );
-            }
-            await Future.delayed(Duration(milliseconds: 500));
           }
-        }
-      };
+          throw StateError('Invitation retry limit exhausted');
+        },
+      );
     }).toList();
-
-    await DialogHelper.showProgressDialogAsync(
-      context,
-      UserStrings.invite,
-      inviteFutures.length,
-      futures: inviteFutures,
-      delay: Duration(milliseconds: 500),
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => BatchProgressDialog(
+        title: UserStrings.invite,
+        tasks: tasks,
+        successLabel: UserStrings.invitationSent,
+        failureLabel: UserStrings.invitationFailed,
+        retryLabel: UserStrings.retryFailedInvitations,
+        deferredLabel: UserStrings.invitationQueued,
+      ),
     );
   }
 

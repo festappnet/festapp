@@ -24,7 +24,8 @@ class FormHolderController {
     capability = await capabilityStore?.remember(secret!, reservationExpiresAt);
   }
 
-  Future<void> updateReservationSession(String nextSecret, DateTime? expiresAt) async {
+  Future<void> updateReservationSession(
+      String nextSecret, DateTime? expiresAt) async {
     secret = nextSecret;
     reservationExpiresAt = expiresAt;
     if (expiresAt == null) {
@@ -159,7 +160,9 @@ class FormHolder {
     } else if (fieldType == FormMetadata.fieldTypeSelectOne ||
         fieldType == FormMetadata.fieldTypeSelectMany) {
       // Safely extract the options list from ffm.data.
-      List<dynamic> optionsData = ffm.data[FormMetadata.metaOptions] ?? [];
+      final rawOptions =
+          ffm.data is Map ? (ffm.data as Map)[FormMetadata.metaOptions] : null;
+      final optionsData = rawOptions is List ? rawOptions : const [];
 
       // Convert each option to a FormOptionDefinition.
       List<FormOptionDefinition> formOptions =

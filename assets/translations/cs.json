@@ -652,7 +652,8 @@
     },
     "deleteSaveFailed": "Formulář nebyl uložen. {} Rozpracované změny zůstaly v editoru.",
     "defaultProductSelected": "Výchozí volba pro zákazníka. Kliknutím předvolení zrušíte.",
-    "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka."
+    "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka.",
+    "selectionOptionsRequired": "Přidejte alespoň jednu neprázdnou možnost nebo pole odstraňte."
   },
   "FeatureOrders": {
     "deleteOrderNotice": "Objednávka bude trvale smazána a zákazník ji už neuvidí. Pokud chcete záznam zachovat, zvolte storno.",
@@ -1381,7 +1382,6 @@
     "catalogAffectedSeats": "Tento sdílený produkt používá {count} míst. Ceny již prodaných vstupenek spravuje server.",
     "viewer": {
       "placeCount_one": "{count} místo",
-      "placeCount_few": "{count} místa",
       "placeCount_other": "{count} míst",
       "viewerLabel": "Plánek sálu",
       "places": "Místa",
@@ -1410,7 +1410,8 @@
       "standingNotConfigured": "Stání ještě není v prodeji - není přiřazená vstupenka.",
       "standingUnavailable": "Místa ke stání již nejsou dostupná.",
       "standingSaleClosed": "Prodej míst ke stání není dostupný.",
-      "chooseQuantity": "Vybrat počet"
+      "chooseQuantity": "Vybrat počet",
+      "placeCount_few": "{count} místa"
     },
     "demoGeometryNotice": "Ukázkový plánek. Úpravy a uložení platí jen v této ukázce. Objednávky, rezervace a katalog se nemění.",
     "seatStates": {
@@ -1655,9 +1656,6 @@
     "submitRegistration": "Odeslat přihlášku",
     "submitRegistration_informal": "Odeslat přihlášku",
     "summary": "Souhrn",
-    "reservation_state_unknown": "Stav rezervace míst se nepodařilo ověřit. Zkontrolujte připojení k internetu, vraťte se na formulář a zkuste objednávku odeslat znovu. Vyplněné údaje zůstaly zachovány.",
-    "reservation_expired": "Rezervace míst vypršela. Vraťte se na formulář a znovu ověřte výběr míst. Vyplněné údaje zůstaly zachovány.",
-    "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány.",
     "backToForm": "Zpět na formulář",
     "orderFailed": "Objednávka selhala",
     "orderError": "{code}: Při zpracování objednávky došlo k chybě.",
@@ -1684,7 +1682,10 @@
     "copied": "Zkopírováno",
     "orderLabel": "Objednávka",
     "paymentReference": "Reference platby",
-    "invalidEmailAddress": "Zadaná e-mailová adresa neexistuje nebo není platná. Objednávka byla vytvořena; kontaktujte pořadatele pro opravu adresy."
+    "invalidEmailAddress": "Zadaná e-mailová adresa neexistuje nebo není platná. Objednávka byla vytvořena; kontaktujte pořadatele pro opravu adresy.",
+    "reservation_state_unknown": "Stav rezervace míst se nepodařilo ověřit. Zkontrolujte připojení k internetu, vraťte se na formulář a zkuste objednávku odeslat znovu. Vyplněné údaje zůstaly zachovány.",
+    "reservation_expired": "Rezervace míst vypršela. Vraťte se na formulář a znovu ověřte výběr míst. Vyplněné údaje zůstaly zachovány.",
+    "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Povolit ruční skenování vstupenek",
@@ -1859,7 +1860,13 @@
     "existingAccountPrompt": "Už máte účet?",
     "newAccountPrompt": "Ještě nemáte účet?",
     "accountConnections": "Propojení účtu",
-    "accountConnectionsHint": "Způsoby přihlášení a přístup aplikací"
+    "accountConnectionsHint": "Způsoby přihlášení a přístup aplikací",
+    "invitationSent": "Odesláno",
+    "invitationFailed": "Neúspěšné",
+    "retryFailedInvitations": "Zkontrolovat a zopakovat neodeslané",
+    "invitationQueued": "Ve frontě - odeslání čeká na potvrzení",
+    "existingParticipantsScope": "Vybíráte účastníky této jednotky, kteří ještě nejsou přidaní do akce.",
+    "noExistingParticipants": "Žádní další účastníci nejsou k dispozici. Jednotka zatím nemá účastníky, nebo už jsou všichni přidaní. Vraťte se do seznamu a tlačítkem Přidat vytvořte nového účastníka."
   },
   "Common": {
     "fieldCannotBeEmpty": "Pole nemůže být prázdné",
@@ -2674,8 +2681,6 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
-    "style_silk_light": "Hedvábí - světlé",
-    "style_silk_dark": "Hedvábí - tmavé",
     "style_concert_stub": "Koncert · kontrolní útržek",
     "style_ball_silk": "Ples · hedvábná pozvánka",
     "style_festival_poster": "Festival · malý plakát",
@@ -2860,7 +2865,9 @@
     "removeText": "Odstranit text",
     "addElement": "Přidat prvek",
     "occasionStartTime": "Čas",
-    "occasionPlace": "Místo"
+    "occasionPlace": "Místo",
+    "style_silk_light": "Hedvábí - světlé",
+    "style_silk_dark": "Hedvábí - tmavé"
   },
   "OccasionReport": {
     "transaction_currency_mismatch": "Transakce s jinou měnou než objednávka nejsou v grafu zahrnuty",

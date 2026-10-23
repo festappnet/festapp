@@ -173,6 +173,15 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
     );
   }
 
+  Widget _selectionOptionsError() => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Semantics(
+          liveRegion: true,
+          child: Text(FormStrings.selectionOptionsRequired,
+              style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        ),
+      );
+
   Widget _buildFieldItemNonSelected(FormFieldDraft field) {
     final icon = FormHelper.fieldTypeIcons[field.definition.type];
     final bool hidden = field.definition.isHidden ?? false;
@@ -231,6 +240,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             ],
           ),
         fieldContent,
+        if (field.hasInvalidSelectionOptions) _selectionOptionsError(),
       ],
     );
   }
@@ -320,6 +330,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
             ),
         ],
         _buildAnswerWidget(context, field, true),
+        if (field.hasInvalidSelectionOptions) _selectionOptionsError(),
         const SizedBox(height: 16),
         if (!RightsService.isDemoReadOnly)
           _FieldControlsBar(
@@ -575,7 +586,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 context,
                 field,
                 form.definition.occasionId,
-                onChanged: widget.onChanged,
+                onChanged: () => _refresh(() {}),
               )
             : SelectOneEditor.buildSelectOneReadOnly(context, field);
       case FormMetadata.fieldTypeSelectMany:
@@ -584,7 +595,7 @@ class _FormFieldsGeneratorState extends State<FormFieldsGenerator> {
                 context,
                 field,
                 form.definition.occasionId,
-                onChanged: widget.onChanged,
+                onChanged: () => _refresh(() {}),
               )
             : SelectManyEditor.buildSelectManyReadOnly(context, field);
       case FormMetadata.fieldTypeSex:

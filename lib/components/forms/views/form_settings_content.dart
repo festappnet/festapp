@@ -1,3 +1,4 @@
+import 'package:fstapp/services/decimal_input.dart';
 import 'package:fstapp/components/stripe_payments/stripe_connection_api.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import '../payment_method_strings.dart';
@@ -313,9 +314,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       return;
     }
     if (_form == null) return;
-    final reminderDays = double.tryParse(
-      _reminderDaysController.text.replaceAll(',', '.'),
-    );
+    final reminderDays = DecimalInput.tryParse(_reminderDaysController.text);
     if (_reminderDaysController.text.isNotEmpty &&
         (reminderDays == null || !reminderDays.isFinite || reminderDays < 0)) {
       ToastHelper.Show(
@@ -939,9 +938,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                         if (value == null || value.isEmpty) {
                                           return null;
                                         }
-                                        final days = double.tryParse(
-                                          value.replaceAll(',', '.'),
-                                        );
+                                        final days =
+                                            DecimalInput.tryParse(value);
                                         return days == null ||
                                                 !days.isFinite ||
                                                 days < 0

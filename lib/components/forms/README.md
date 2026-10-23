@@ -185,3 +185,11 @@ New writes cannot claim those slugs; canonical links and titles are never bulk r
 Veřejné vložení formuláře používá stejný checkout. URL, integrační varianty,
 bezpečný protokol a limity obnovy vlastní
 [embedded checkout contract](../../../docs/integrations/embedded-checkout.md).
+
+## Selection validity
+
+Choice fields must have at least one nonblank string option. Editor validation
+retains the draft and marks the field; the form-save SQL validates the same
+contract transactionally. Partial settings saves do not revalidate omitted
+fields. Public readers tolerate legacy missing options so one malformed field
+cannot turn the whole form into an unavailable page.

@@ -221,6 +221,19 @@ BEGIN
 
             FOR field_data IN SELECT * FROM JSONB_ARRAY_ELEMENTS(input_data->'form_fields')
             LOOP
+                IF field_data->>'type' IN ('select_one','select_many') THEN
+                    IF jsonb_typeof(field_data#>'{data,options}') IS DISTINCT FROM 'array' THEN
+                        RAISE EXCEPTION '%', jsonb_build_object('code', 422,
+                            'message', 'FORM_SELECTION_OPTIONS_REQUIRED', 'fieldId', field_data->'id')::text;
+                    END IF;
+                    IF jsonb_array_length(field_data#>'{data,options}') = 0
+                       OR EXISTS (SELECT 1 FROM jsonb_array_elements(field_data#>'{data,options}') option
+                           WHERE jsonb_typeof(option->'value') IS DISTINCT FROM 'string'
+                              OR btrim(option->>'value') = '') THEN
+                        RAISE EXCEPTION '%', jsonb_build_object('code', 422,
+                            'message', 'FORM_SELECTION_OPTIONS_REQUIRED', 'fieldId', field_data->'id')::text;
+                    END IF;
+                END IF;
                 field_id := NULLIF(field_data->>'id', '')::BIGINT;
 
                 ----------------------------------------------------------------------------

@@ -7,6 +7,7 @@ abstract interface class FormCommands {
   Future<int> duplicate({
     required int sourceFormId,
     required String targetOccasionLink,
+    String locale = 'en',
   });
   Future<void> delete(int formId, {required int expectedVersion});
   Future<Map<String, dynamic>> save(Map<String, dynamic> form);

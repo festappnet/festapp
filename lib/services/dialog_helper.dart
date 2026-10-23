@@ -116,8 +116,7 @@ class DialogHelper {
         cancelButtonText: cancelButtonText,
       );
 
-  static Future<bool> showNotificationPermissionDialog(
-          BuildContext context) =>
+  static Future<bool> showNotificationPermissionDialog(BuildContext context) =>
       ConfirmationDialogs.showNotificationPermissionDialog(context);
 
   static Future<String?> showPasswordInputDialog(
@@ -196,12 +195,33 @@ class DialogHelper {
       void Function(UserInfoModel) onPressedAction,
       List<UserInfoModel> allUsers,
       String setText,
-      {bool useRootNavigator = true}) async {
-    showDialog(
+      {bool useRootNavigator = true,
+      String? emptyMessage,
+      String? description}) async {
+    await showDialog(
       useRootNavigator: useRootNavigator,
       context: context,
       builder: (context) => ResponsiveSearchDialog<UserInfoModel>(
         items: allUsers,
+        description: description,
+        emptyState: emptyMessage == null
+            ? null
+            : Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(emptyMessage, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(CommonStrings.back),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
         searchLabel: CommonStrings.searchParticipants,
         filter: (person, query) {
           final q = query.toLowerCase().withoutDiacriticalMarks;
@@ -314,8 +334,8 @@ class DialogHelper {
     );
     if (selectedLocale != null) {
       context.setLocale(selectedLocale!.locale);
-      ToastHelper.Show(context,
-          CommonStrings.languageSetTo(language: selectedLocale!.name));
+      ToastHelper.Show(
+          context, CommonStrings.languageSetTo(language: selectedLocale!.name));
     }
     return selectedLocale;
   }
