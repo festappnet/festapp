@@ -172,17 +172,31 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (orgId == 3)
-                              ListTile(
-                                leading: const Icon(Icons.bar_chart_outlined),
-                                title: Text(AdministrationStrings.webAnalytics),
-                                subtitle: Text(AdministrationStrings
-                                    .openCloudflareAnalytics),
-                                trailing: const Icon(Icons.open_in_new),
-                                onTap: () => LaunchUrlService.openExternalUrl(
-                                  'https://dash.cloudflare.com/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview'
-                                  '?siteTag=4b64cee2415d4110b11abc4d56013278',
+                              for (final site in const {
+                                'vstupenky.online':
+                                    '4b64cee2415d4110b11abc4d56013278',
+                                'plesy.vstupenky.online':
+                                    '697415ebf6954b9a9998f57b4ea59bb3',
+                              }.entries)
+                                ListTile(
+                                  leading: const Icon(Icons.bar_chart_outlined),
+                                  title: Text(
+                                      '${AdministrationStrings.webAnalytics} - ${site.key}'),
+                                  subtitle: Text(AdministrationStrings
+                                      .openCloudflareAnalytics),
+                                  trailing: const Icon(Icons.open_in_new),
+                                  onTap: () => LaunchUrlService.openExternalUrl(
+                                    Uri.https(
+                                      'dash.cloudflare.com',
+                                      '/84b32318ac235bf6738bdf1c8caa0795/web-analytics/overview/visits',
+                                      {
+                                        'siteTag~in': site.value,
+                                        'host': site.key,
+                                        'excludeBots': 'Yes',
+                                      },
+                                    ).toString(),
+                                  ),
                                 ),
-                              ),
                             ListTile(
                                 leading: const Icon(Icons.verified_outlined),
                                 title: Text(VerificationStrings.text('queue')),
