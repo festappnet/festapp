@@ -90,6 +90,10 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
               throw StateError('COMMAND_PRINCIPAL_CHANGED');
           }
           final data = response.data;
+          if (data is Map && data['code'] == 410) {
+            throw BlueprintCommandRejection(
+                410, {'reason': 'BLUEPRINT_ORDER_RECOVERY_REQUIRED'});
+          }
           if (data is! Map || data['code'] != 200)
             throw http.ClientException('LEGACY_ORDER_RECOVERY_PENDING');
           final ticketOrder = data['ticketOrder'],
@@ -236,6 +240,12 @@ class SupabaseSeatOrderCommands implements SeatOrderCommands {
     } finally {
       if (principal != _transport.principalBinding)
         throw StateError('COMMAND_PRINCIPAL_CHANGED');
+    }
+    // Tombstones intentionally are not terminal acknowledgement envelopes.
+    // Keep their original journal; the shared success parser rejects them.
+    if (raw is Map && raw['code'] == 410) {
+      throw BlueprintCommandRejection(
+          410, {'reason': 'BLUEPRINT_ORDER_RECOVERY_REQUIRED'});
     }
     final response = ClientCommandResponse.from(raw);
     if (response.code != 200)

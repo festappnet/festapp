@@ -9,10 +9,108 @@ import 'package:fstapp/components/eshop/seat_order_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import '../../support/fixtures/blueprint_order_preview_fixture.dart';
+import '../../support/fixtures/client_command_response_fixture.dart';
+import 'package:fstapp/components/blueprint/blueprint_command_rejection.dart';
 import '../../support/fixtures/local_app_storage_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  for (final code in [200, 410])
+    test(
+        'issued legacy HTTP recovery keeps its original UUID and acknowledgement ($code)',
+        () async {
+      final storage = await LocalAppStorageFixture.open();
+      addTearDown(storage.dispose);
+      final writes = <Map<String, dynamic>>[];
+      final httpClient = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        if (request.url.path.endsWith('/preview_blueprint_seat_order'))
+          return http.Response(
+              jsonEncode(body['p_input'] == null
+                  ? seatOrderRequirementsJson()
+                  : seatOrderQuoteJson()),
+              200,
+              request: request,
+              headers: {'content-type': 'application/json'});
+        expect(request.url.path, '/functions/v1/send-ticket-order');
+        writes.add(body);
+        expect((body['replacement'] as Map).containsKey('confirmation'), false);
+        return http.Response(
+            jsonEncode(code == 200
+                ? {
+                    'code': 200,
+                    'ticketOrder': {
+                      'order': {'id': 101, 'order_symbol': 'LEGACY101'}
+                    }
+                  }
+                : commandResponseFixture(body['commandId'] as String,
+                    status: 'expired', code: 410)),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'});
+      });
+      final client = SupabaseClient(
+          'https://fixture.invalid', 'synthetic-fixture-key',
+          httpClient: httpClient);
+      addTearDown(client.dispose);
+      addTearDown(httpClient.close);
+      final port = SupabaseSeatOrderCommands(client),
+          request = seatOrderRequestFixture(),
+          binding = '${client.rest.url}:anonymous';
+      final requirements = await port.requirements(request),
+          input = {
+            'email': 'legacy@example.invalid',
+            'form_key': requirements.formKey
+          };
+      final preview = await port.preview(requirements, input),
+          payload = {'spotIds': request.spotIds, 'inputData': input};
+      final original = await ClientCommandIdentity.claimIntent(
+          'ticket_order_replace', payload,
+          principalBinding: binding);
+      if (code == 200) {
+        expect((await port.create(preview)).orderId, 101);
+      } else {
+        await expectLater(
+            port.create(preview),
+            throwsA(isA<BlueprintCommandRejection>().having((e) => e.reason,
+                'recovery reason', 'BLUEPRINT_ORDER_RECOVERY_REQUIRED')));
+      }
+      expect(writes, hasLength(1));
+      expect(writes.single['commandId'], original);
+      expect(
+          await ClientCommandIdentity.pendingLegacyOrderReplacement(payload,
+              principalBinding: binding),
+          code == 200 ? isNull : original);
+      expect(await port.recover(request), isNull,
+          reason: 'legacy recovery never allocates a second confirmed intent');
+    });
+  test(
+      'expired seat-order receipt keeps the original intent and requires recovery before another order',
+      () async {
+    final storage = await LocalAppStorageFixture.open();
+    addTearDown(storage.dispose);
+    final ids = <String>[];
+    final port = SupabaseSeatOrderCommands.withTransport(
+        ClientCommandTransport((_, params) async {
+          final id = params['p_command_id'] as String;
+          ids.add(id);
+          return SupabaseSeatOrderCommands.decodeEdgeResponse(
+              commandResponseFixture(id, status: 'expired', code: 410), id);
+        }, principalBinding: 'endpoint:actor'),
+        readRpc: (_, params) async => params['p_input'] == null
+            ? seatOrderRequirementsJson()
+            : seatOrderQuoteJson());
+    final request = seatOrderRequestFixture(),
+        requirements = await port.requirements(request);
+    final preview = await port.preview(requirements,
+        {'email': 'expired@example.invalid', 'form_key': requirements.formKey});
+    final rejected = isA<BlueprintCommandRejection>().having((e) => e.reason,
+        'recovery reason', 'BLUEPRINT_ORDER_RECOVERY_REQUIRED');
+    await expectLater(port.create(preview), throwsA(rejected));
+    await expectLater(port.recover(request), throwsA(rejected));
+    expect(ids, hasLength(2));
+    expect(ids.toSet(), hasLength(1));
+  });
   for (final failure in [
     'network',
     'http',
@@ -223,6 +321,23 @@ void main() {
         await ClientCommandIdentity.pendingLegacyOrderReplacement(payload,
             principalBinding: 'endpoint:actor'),
         id);
+    const another = {
+      'spotIds': [72],
+      'inputData': {'email': 'another@example.invalid'}
+    };
+    final anotherId = await ClientCommandIdentity.claimIntent(
+        'ticket_order_replace', another,
+        principalBinding: 'endpoint:actor');
+    expect(
+        await ClientCommandIdentity.pendingLegacyOrderReplacement(payload,
+            principalBinding: 'endpoint:actor'),
+        id,
+        reason:
+            'Another uncertain legacy request cannot prevent exact recovery of this one');
+    expect(
+        await ClientCommandIdentity.pendingLegacyOrderReplacement(another,
+            principalBinding: 'endpoint:actor'),
+        anotherId);
     await expectLater(
         ClientCommandIdentity.pendingLegacyOrderReplacement({
           'spotIds': [71],

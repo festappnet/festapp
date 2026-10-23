@@ -3,6 +3,7 @@
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },
   "FeatureBlueprint": {
+    "orderRecoveryRequired": "Prüfen Sie zuerst die ursprüngliche Bestellung im ursprünglichen Sitzplan. Wenn die Wiederherstellung fehlschlägt, wenden Sie sich vor einer neuen Bestellung an die Administration.",
     "orderBatchImmutable": "Tickets aus einem Druckstapel können nicht verschoben oder durch eine andere Bestellung ersetzt werden.",
     "orderReview": "Bestellung prüfen",
     "orderAffectedSeats": "Alle betroffenen Plätze",

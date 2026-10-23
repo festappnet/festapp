@@ -189,6 +189,7 @@ class ClientCommandIdentity {
       final store = StoreRef.main();
       final keys = await store.findKeys(transaction);
       String? exact;
+      var hasPending = false;
       for (final key in keys.whereType<String>().where((key) =>
           key.startsWith('client_command_pending:$namespace:') &&
           !key
@@ -198,9 +199,11 @@ class ClientCommandIdentity {
             principalBinding) continue;
         final id = await store.record(key).get(transaction);
         if (id is! String || id.isEmpty) continue;
-        if (key != exactKey)
-          throw StateError('LEGACY_ORDER_RECOVERY_REQUIRES_ORIGINAL_INPUT');
-        exact = id;
+        hasPending = true;
+        if (key == exactKey) exact = id;
+      }
+      if (exact == null && hasPending) {
+        throw StateError('LEGACY_ORDER_RECOVERY_REQUIRES_ORIGINAL_INPUT');
       }
       return exact;
     });

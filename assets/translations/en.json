@@ -1272,6 +1272,7 @@
     "removePlace": "Remove place assignment"
   },
   "FeatureBlueprint": {
+    "orderRecoveryRequired": "First verify the original order in its original seating plan. If recovery fails, contact an administrator before creating another order.",
     "orderBatchImmutable": "Tickets from a print batch cannot be moved or replaced with another order.",
     "orderReview": "Review order",
     "orderAffectedSeats": "All affected seats",

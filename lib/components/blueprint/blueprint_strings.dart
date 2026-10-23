@@ -1,4 +1,5 @@
 import 'blueprint_command_rejection.dart';
+import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
 import '../images/image_control_client.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart'
@@ -55,11 +56,20 @@ class BlueprintStrings {
   static String get seatProductRequired =>
       'FeatureBlueprint.seatProductRequired'.tr();
   static String layoutErrorMessage(Object error) {
+    if (error is http.ClientException &&
+        (error.message ==
+                'SEAT_ORDER_RESPONSE_UNAVAILABLE_RETRY_SAME_COMMAND' ||
+            error.message == 'LEGACY_ORDER_RECOVERY_PENDING')) {
+      return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+    }
     if (error is BlueprintCommandRejection) {
       if (error.reason == 'BATCH_TICKET_PRINT_IMMUTABLE') {
         return 'FeatureBlueprint.orderBatchImmutable'.tr();
       }
       if (error.reason.startsWith('BLUEPRINT_ORDER_')) {
+        if (error.reason == 'BLUEPRINT_ORDER_RECOVERY_REQUIRED') {
+          return 'FeatureBlueprint.orderRecoveryRequired'.tr();
+        }
         return error.reason == 'BLUEPRINT_ORDER_CHANGED'
             ? 'FeatureBlueprint.swapChanged'.tr()
             : analysisFailed;

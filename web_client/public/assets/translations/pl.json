@@ -1161,6 +1161,7 @@
     "no_matching_answers": "Brak kolejnych pasujących pól."
   },
   "FeatureBlueprint": {
+    "orderRecoveryRequired": "Najpierw sprawdź pierwotne zamówienie w jego pierwotnym planie miejsc. Jeśli odzyskanie się nie powiedzie, przed utworzeniem kolejnego zamówienia skontaktuj się z administratorem.",
     "orderBatchImmutable": "Biletów z partii do druku nie można przenosić ani zastępować innym zamówieniem.",
     "orderReview": "Sprawdź zamówienie",
     "orderAffectedSeats": "Wszystkie objęte zmianą miejsca",

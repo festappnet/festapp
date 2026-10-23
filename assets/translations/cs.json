@@ -1272,6 +1272,7 @@
     "removePlace": "Odebrat přiřazení místa"
   },
   "FeatureBlueprint": {
+    "orderRecoveryRequired": "Nejprve ověřte výsledek původní objednávky v původním plánku. Pokud se ověření nedaří, obraťte se na správce. Novou objednávku zatím nevytvářejte.",
     "orderBatchImmutable": "Vstupenky z tiskové dávky nelze přesunout ani nahradit jinou objednávkou.",
     "orderReview": "Zkontrolovat objednávku",
     "orderAffectedSeats": "Všechna dotčená místa",
