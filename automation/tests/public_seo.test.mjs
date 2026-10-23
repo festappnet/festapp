@@ -72,6 +72,27 @@ test('form SEO escapes names and strips tracking parameters from canonical URLs'
   assert.ok(!html.includes('source=mail'));
 });
 
+test('public page social images use a published fallback and preserve event images', async t => {
+  const pageEnv = { ...env, ASSETS: { fetch: async () => new Response(shell) } };
+  for (const image of [undefined, '', 'javascript:alert(1)', 'https://img.festapp.net/event.jpg']) {
+    t.mock.method(globalThis, 'fetch', async () => Response.json({ title: 'Public event', image }));
+    for (const path of ['/form/public-event', '/public-event/event']) {
+      const response = await worker.fetch(request(path), pageEnv);
+      assert.equal(response.status, 200);
+      const html = await response.text();
+      const expected = image?.startsWith('https:') ? image : 'https://tickets.invalid/android-chrome-512x512.png';
+      for (const prefix of ['og', 'twitter']) {
+        const attribute = prefix === 'twitter' ? 'name' : 'property';
+        assert.ok(html.includes(`<meta ${attribute}="${prefix}:image" content="${expected}">`), `${path}: missing ${prefix} image ${expected}`);
+      }
+      if (!image?.startsWith('https:')) {
+        const asset = new URL('../../web_client/public' + new URL(expected).pathname, import.meta.url);
+        assert.ok(readFileSync(asset).length > 0, 'fallback image must be published');
+      }
+    }
+  }
+});
+
 test('confirmed missing forms, unknown slugs and missing assets return 404; valid app routes remain usable', async t => {
   t.mock.method(globalThis, 'fetch', async (_url, options) =>
     Response.json(JSON.parse(options.body).p_link_slug === 'valid-event' ? { title: 'Valid event' } : null));
