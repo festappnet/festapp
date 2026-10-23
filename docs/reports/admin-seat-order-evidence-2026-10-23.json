@@ -1,9 +1,9 @@
 {
   "date": "2026-10-23",
-  "status": "Checkpoint at user-requested stop: coherent seat-order slice locally verified; not published or deployed; whole stage2B remains incomplete",
-  "sourceCommit": "cb871dcb273ee6d065ea59d5455baa989ce0aa7c",
+  "status": "Published on canonical main; full operational2B deployment in progress",
+  "sourceCommit": "067ad53fb9fd8706f7c930f6215fdd6fc69e8a06",
   "migration": "20261024023000_confirmed_blueprint_seat_orders.sql",
-  "migrationSha256": "a57c3e85c9c6c26e7b984c2b41053440eb581677a39a30c362b0e3f9522c2664",
+  "migrationSha256": "41cbed8f437bac0826cf0b30c99f2b30ab4bd472de5247221a24dae51585f9c2",
   "newPostgresCasesPassed": 14,
   "priorSeatRegressionsPassed": 23,
   "authorizationRegressionsPassed": 24,
@@ -65,13 +65,11 @@
     "previousSliceFrozenHead": "94d21814cd2da51623ef6b8fa1546a2bd0870910",
     "previousSliceChecks": "6 required checks passed; review still required, no approval",
     "mainAtLastReadOnlyCheck": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
-    "thisSlice": "Local commits only. Publication and deployment intentionally deferred at user-requested checkpoint. Old94d packet is superseded and must not deploy alone."
+    "thisSlice": "Canonical main067ad53fb published by ordinary non-force push after fresh main fetch; deploy delegated to release agent"
   },
   "remaining": [
-    "Publish only after fresh authoritative-main reconciliation and applicable repository gates",
-    "Back up and verify canonical org3; apply2320+2330+240230 with ledger in one transaction, then coordinated festapptickets-only release",
-    "Implement and verify selected-ticket cancellation before declaring stage2B complete",
-    "Stages3-10 remain outside this checkpoint"
+    "Verify coordinated festapptickets SQL/Edge/web/MCP rollout; stop after stage2B",
+    "Stages3-10 remain outside this requested release"
   ],
   "sourceMain": "fdbc1fc9020da88a3a27cb4aa2103529d940c5f6",
   "productionPrerequisites": {
