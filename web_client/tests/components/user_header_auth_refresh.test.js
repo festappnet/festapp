@@ -8,6 +8,7 @@ const dom = new JSDOM('<body></body>', { url: 'https://vstupenky.online/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document,
     HTMLElement: dom.window.HTMLElement, customElements: dom.window.customElements });
 const { UserHeader } = await import('../../src/components/users/user_header.js');
+const { AppConfig } = await import('../../src/app_config.js');
 const { RightsService } = await import('../../src/services/rights_service.js');
 const { SupabaseService } = await import('../../src/services/supabase_service.js');
 const { LocalizationService } = await import('../../src/services/localization_service.js');
@@ -99,7 +100,13 @@ test('same initial session keeps its pending context request without a duplicate
     assert.ok(header.querySelector('.avatar-circle'));
 });
 
-test('switching users clears old rights immediately and discards the previous response', async t => {
+for (const { webLink, personalNavigation } of [
+    { webLink: 'https://vstupenky.online', personalNavigation: true },
+    { webLink: 'https://slunovrat.festapp.net', personalNavigation: false },
+]) test(`switching users clears old rights immediately on ${webLink}`, async t => {
+    const previousWebLink = AppConfig.webLink;
+    AppConfig.webLink = webLink;
+    t.after(() => { AppConfig.webLink = previousWebLink; });
     let complete;
     let calls = 0;
     const { header, auth } = fixture(t, async () => {
@@ -115,7 +122,8 @@ test('switching users clears old rights immediately and discards the previous re
     await nextTask();
     assert.equal(RightsService.currentUser.id, 'user-2');
     assert.equal(header.querySelector('.avatar-circle').textContent, 'A');
-    assert.ok(header.querySelector('.btn-admin'), 'the new account keeps personal navigation without inheriting old rights');
+    assert.equal(Boolean(header.querySelector('.btn-admin')), personalNavigation,
+        'ticketing accounts retain personal navigation; festival accounts require their own capabilities');
 });
 
 test('explicit post-login refresh supersedes the queued auth refresh without cancelling the awaited result', async t => {
