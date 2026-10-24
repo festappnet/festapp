@@ -1,0 +1,113 @@
+{
+  "root": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/admin-clarity",
+  "ticket_take": "ticket-variants-cs-1792672829",
+  "form_take": "form-clear-cs-1792672984",
+  "scanner_mobile_take": "iphone-scanner-mobile-cs-1792673628",
+  "scanner_desktop_take": "iphone-scanner-desktop-cs-1792673619",
+  "outputs": {
+    "ticket-design": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 822
+        }
+      ],
+      "format": {
+        "duration": "14.833333"
+      }
+    },
+    "ticket-design-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 720
+        }
+      ],
+      "format": {
+        "duration": "14.833333"
+      }
+    },
+    "form-build": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 804
+        }
+      ],
+      "format": {
+        "duration": "22.500000"
+      }
+    },
+    "form-build-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 720,
+          "height": 638
+        }
+      ],
+      "format": {
+        "duration": "22.500000"
+      }
+    },
+    "check-in": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "6.500000"
+      }
+    },
+    "check-in-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 500,
+          "height": 1000
+        }
+      ],
+      "format": {
+        "duration": "6.500000"
+      }
+    },
+    "form-style": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 804
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    },
+    "form-style-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 720,
+          "height": 638
+        }
+      ],
+      "format": {
+        "duration": "3.000000"
+      }
+    }
+  }
+}

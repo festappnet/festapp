@@ -1,5 +1,5 @@
 import { isEmbed } from '../../services/embed_context.js';
-import { revealEmbedStep } from '../../services/embed_bridge.js';
+import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
 import { formFieldTitle } from './form_field_labels.js';
 import { html as htmlText } from '../../utils/html.js';
 import { WaitlistStrings } from './waitlist_strings.js';
@@ -47,6 +47,7 @@ export class OrderPreview {
             document.body.appendChild(overlay);
         }
 
+        const restoreScroll = preserveCheckoutScroll();
         overlay.innerHTML = OrderPreview._render(data);
         const paymentOptions = formPaymentOptions(formModel.payments, isEmbed() ? 'embed' : 'web');
         const paymentSubmit = overlay.querySelector('.btn-submit-order');
@@ -62,6 +63,13 @@ export class OrderPreview {
         const closePreview = () => {
             if (isClosing) return;
             isClosing = true;
+            if (!overlay.isConnected) {
+                document.removeEventListener('keydown', escHandler);
+                overlay.removeEventListener('click', backdropHandler);
+                restoreScroll({restore: false});
+                if (onClose) onClose();
+                return;
+            }
             
             // If closed by drag, we handled animation manually. Don't add .closing class (which forces slideDown from 0).
             if (overlay.dataset.closedByDrag !== 'true') {
@@ -93,7 +101,7 @@ export class OrderPreview {
                 document.body.style.overflow = ''; // Restore Scroll
                 if (onClose) onClose();
                 previousFocus?.focus({ preventScroll: true });
-                revealEmbedStep(previousFocus);
+                restoreScroll();
             }, 250); 
         };
 
@@ -162,8 +170,10 @@ export class OrderPreview {
         dialog.setAttribute('role', 'dialog');
         dialog.setAttribute('aria-labelledby', 'order-preview-title');
         if (!isEmbed()) dialog.setAttribute('aria-modal', 'true');
-        closeBtn?.focus({ preventScroll: true });
-        revealEmbedStep(overlay);
+        if (isEmbed()) {
+            revealEmbedStep(overlay.querySelector('.preview-actions') || submitBtn || dialog, {block: 'end'});
+            submitBtn?.focus({preventScroll: true});
+        } else closeBtn?.focus({preventScroll: true});
         
         const content = overlay.querySelector('.order-preview-content');
         const body = overlay.querySelector('.order-preview-body');
@@ -251,8 +261,8 @@ export class OrderPreview {
         // Auto-Scroll to Bottom (User Request)
         // Ensure the body (scrollable area) is scrolled to show tickets/total/submit
         // "scrolling can be bit slower" -> Custom JS animation required as 'smooth' is browser-fixed.
-        setTimeout(() => {
-             if (body && !isEmbed()) {
+        if (!isEmbed()) setTimeout(() => {
+             if (body && !isClosing && overlay.isConnected) {
                  OrderPreview._animateScrollToBottom(body, 700); // 700ms duration (User Request)
              }
         }, 150); 

@@ -1,0 +1,9 @@
+{
+  "started_at": "2026-10-23T20:48:39.650893+00:00",
+  "purpose": "User-requested live installed-plugin preview after release seal",
+  "url": "http://vo-wordpress.localhost:59811/vo-global-seats/",
+  "services": "task-owned WP, Supabase disposable fixture, Edge, Czech/global Vite left running for user preview",
+  "historical_cleanup": "evidence/cleanup.json records the earlier completed acceptance cleanup; services explicitly restarted for this preview",
+  "data": "fresh synthetic seed, no production writes",
+  "hostname_reason": "Isolate WordPress from oversized cookies on shared localhost; normal host cookies are not shared across these hostnames."
+}

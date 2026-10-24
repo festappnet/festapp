@@ -296,7 +296,7 @@ BEGIN
     -----------------------------------------------------
     RETURN jsonb_build_object(
         'code', 200,
-        'ticket', to_jsonb(ticket_row)||jsonb_build_object('online_required',public.stripe_ticket_requires_online_internal(ticket_row.id)),
+        'ticket', to_jsonb(ticket_row)||jsonb_build_object('online_required',public.stripe_ticket_requires_online_internal(ticket_row.id),'batch',(SELECT jsonb_build_object('title',b.title) FROM eshop.ticket_batch_items i JOIN eshop.ticket_batches b ON b.id=i.batch_id WHERE i.ticket_id=ticket_row.id AND b.occasion=occasion_id)),
         'order', order_json,
         'products', products_json,
         'spot', spot_json,

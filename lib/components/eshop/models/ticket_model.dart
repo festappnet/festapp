@@ -168,6 +168,17 @@ class TicketModel extends ITrinaRowModel {
     await DbTickets.updateTicketNoteHidden(id!, noteHidden!);
   }
 
+  /// Scanner identity for named and anonymous tickets, without a batch prefix.
+  String get scanLabel => [
+        batch?['title'] as String?,
+        relatedOrder?.toCustomerData(),
+        ticketSymbol,
+      ]
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .join(' · ');
+
   @override
   String toBasicString() => [
         if (ticketSymbol?.trim().isNotEmpty == true)

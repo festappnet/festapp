@@ -21,7 +21,7 @@ export function scanResult(c, storageAvailable) {
     else message = tr('not_allowed');
     const fields = (t?.fields || []).filter(f => !['holder_name','spot','note'].includes(f.key) && f.default_visible && !(f.key==='note' && t.note) && !(f.hide_empty && (f.value == null || f.value === '')));
     const field = f => `<div><dt>${e(f.label)}</dt><dd>${f.missing ? tr('missing_field') : e(typeof f.value === 'object' ? JSON.stringify(f.value) : f.value)}</dd></div>`;
-    const canConfirm = state === 'result' && t?.admission_allowed && storageAvailable && !(t.source === 'offline' && t.requires_unpaid_confirmation);
+    const canConfirm = state === 'result' && t?.admission_allowed && storageAvailable && !(t.online_required && (!globalThis.navigator?.onLine || t.source === 'offline')) && !(t.source === 'offline' && t.requires_unpaid_confirmation);
     const busy = ['persisting','awaiting_server','looking_up'].includes(state) || (['sending','pending'].includes(state) && !c.offlineReady);
     return `<div class="scan-result ${tone}"><div class="scan-result-status"><span class="scan-result-icon">${icon(tone==='allowed'||tone==='complete'?'check':tone==='pending'?'clock':tone==='used'?'ticket':'alert')}</span><h2 tabindex="-1" data-result-title>${e(message)}</h2></div>
     ${!t && c.inGroup && c.scanSymbol ? `<p class="scan-ticket-code">${e(c.scanSymbol)}</p>` : ''}

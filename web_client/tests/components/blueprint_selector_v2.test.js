@@ -37,7 +37,7 @@ test('V2 selector keeps failed load repairable and disposes the shared viewer', 
     assert.equal(document.activeElement.id, 'before');
 });
 
-test('shared V2 selector preserves embedded query and reveals restored form focus', async t => {
+test('shared V2 selector preserves embedded query and restores focus without another scroll', async t => {
     t.mock.method(DbForms, 'getBlueprint', async () => ({layout: emptyLayout, products: [], spots: [], seatBindings: []}));
     window.history.replaceState({}, '', '/form/demo?embed=1&preview=false');
     const steps = [];
@@ -53,5 +53,5 @@ test('shared V2 selector preserves embedded query and reveals restored form focu
     selector.close();
     assert.equal(window.location.search, '?embed=1&preview=false');
     assert.equal(document.activeElement.id, 'before');
-    assert.equal(steps.length, 2);
+    assert.equal(steps.length, 1);
 });

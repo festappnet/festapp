@@ -1,4 +1,4 @@
-import { revealEmbedStep } from '../../services/embed_bridge.js';
+import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
 import kernelUrl from '@festapp/venue-layout/kernel?url';
 import { loadKernel, loadLayoutAssets, mount } from '@festapp/venue-layout';
 import { FormStrings } from '../forms/form_strings.js';
@@ -63,6 +63,7 @@ export class BlueprintSelector {
     async open(session, field, initialSeats = []) {
         this.close?.();
         const previousFocus = document.activeElement;
+        const restoreScroll = preserveCheckoutScroll();
         const container = document.createElement('div');
         container.className = 'blueprint-modal-container';
         container.setAttribute('role', 'dialog');
@@ -99,9 +100,10 @@ export class BlueprintSelector {
             container.remove();
             document.body.classList.remove('blueprint-active'); document.documentElement.classList.remove('blueprint-active');
             window.removeEventListener('popstate', popHandler); document.removeEventListener('keydown', keyHandler);
+            restoreScroll();
             if (previousFocus?.isConnected) {
                 previousFocus.focus({ preventScroll: true });
-                revealEmbedStep(previousFocus);
+
             }
         };
         const requestClose = () => {

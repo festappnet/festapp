@@ -127,7 +127,7 @@ export class FormPage extends Component {
         this.currentLink = link;
         if (isEmbed() && !this.embedBridge) {
             this.embedBridge = new EmbedBridge(); this.embedBridge.start();
-            this.embedStep = event => this.embedBridge.scrollTo(event.detail);
+            this.embedStep = event => this.embedBridge.scrollTo(event.detail.element, {block: event.detail.block});
             window.addEventListener('festapp-embed-step', this.embedStep);
         }
 
@@ -757,7 +757,6 @@ export class FormPage extends Component {
         }
         const isValid = FormValidator.validateAndShowErrors(form, formModel, this.currentSession);
 
-        if (!isValid) revealEmbedStep(form.querySelector('.invalid, [aria-invalid="true"], [data-email-suffix-warning]:not([hidden])') || form);
         if (isValid) {
             this.handlePreview(form, formModel);
         }

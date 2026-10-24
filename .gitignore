@@ -208,3 +208,8 @@ workers/*/node_modules/
 
 # Reviewed dependency graph for production Edge Functions.
 !/supabase/functions/deno.lock
+
+# Workstation-only runtime state.
+/.private/
+/.artifacts/
+/output/

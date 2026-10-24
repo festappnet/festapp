@@ -1,0 +1,59 @@
+{
+  "root": "/Users/miakh/Downloads/festapp-landing-review-2026-10-22/admin-final",
+  "desktopTake": "iphone-scanner-desktop-cs-1792679136",
+  "mobileTake": "iphone-scanner-mobile-cs-1792679148",
+  "outputs": {
+    "ticket-design": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 822
+        }
+      ],
+      "format": {
+        "duration": "8.833333"
+      }
+    },
+    "ticket-design-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 900,
+          "height": 720
+        }
+      ],
+      "format": {
+        "duration": "8.833333"
+      }
+    },
+    "check-in": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "format": {
+        "duration": "8.500000"
+      }
+    },
+    "check-in-mobile": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 500,
+          "height": 1000
+        }
+      ],
+      "format": {
+        "duration": "8.500000"
+      }
+    }
+  }
+}

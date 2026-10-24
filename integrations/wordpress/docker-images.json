@@ -1,0 +1,7 @@
+{
+  "wordpress:php8.5": "sha256:ce31904fa1e51b73543fa2e35cc8f1747589b2abf48dc747b422749b88b77e9e",
+  "wordpress:cli-php8.5": "sha256:01998c8b665a74fe4154f94df8dd14afab558c83fed7be3235c13e7f06378bbe",
+  "wordpress:php7.4": "sha256:7e46cf3373751b6d62b7a0fc3a7d6686f641a34a2a0eb18947da5375c55fd009",
+  "wordpress:cli-php7.4": "sha256:946a8b7f237f6cf90d8f04aff952544a0332d43374d598925dcf0180e4441c6c",
+  "mariadb:lts": "sha256:99c125f103f5d081ebbc9ffe064e63daf7f688ac33a5f7f29af2d7260a96debf"
+}

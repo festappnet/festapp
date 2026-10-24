@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "verified_at": "2026-10-23T17:39:42.910995+00:00",
+  "identity": "Fresh synthetic wordpress-onboarding@example.invalid through public Create your own event UI; no seeded user or role injection",
+  "email": "Canonical queue, renderer and sender with injected local sink transport; no external provider send or deliverability claim",
+  "signup": "Invalid email blocked; actual email initial code/password used for JS and Flutter login. This is not a separate email activation-link/OTP-expiry flow.",
+  "ownership": {
+    "unit": 2,
+    "created_by": "canonical registration initializer",
+    "occasion": 2,
+    "occasion_created_in_ui": true,
+    "form": 6,
+    "form_created_opened_saved_in_ui": true,
+    "slug": "36t9dry5",
+    "seed_form_edit_denied": true
+  },
+  "wordpress": {
+    "post": 20,
+    "actual_editor_publish_reload": true,
+    "anonymous_iframe_rendered": true,
+    "local_fixture_origin_substitutes_production_host": true
+  },
+  "duplicate_email": "Actual UI reports already in use; exactly one original account",
+  "recovery": "Exact captured HTTPS email link opened; UI rejects 7 characters and accepts corrected strong password; automatic real login; old initial code rejected; used and expired reset links rejected",
+  "fixes": [
+    "Registration adapter preserves409 and localized UI handles it",
+    "Reset minimum8 and null/short server validation before one-use token consumption",
+    "Reset rerender excludes unnamed username input from ID selectors",
+    "Registration normalizes case/whitespace before duplicate lookup"
+  ],
+  "verification": {
+    "node_tests_passed": 8,
+    "weak_reset_before_fix": "FAIL reproduced: invalid password consumed valid token",
+    "weak_reset_after_fix": "PASS",
+    "existing_expiry_single_use_sql": "PASS"
+  },
+  "limits": [
+    "No external email provider or merchant activation",
+    "Paid sales of a new organizer need their bank/payment and legal configuration; this run ends at published form",
+    "Local storefront and organizer app use separate explicit loopback ports; production cross-runtime handoff is not claimed"
+  ],
+  "deployed": false,
+  "duplicate_case_and_whitespace": "PASS: actual Edge response409 for uppercase/whitespace email, normalized before identity lookup"
+}

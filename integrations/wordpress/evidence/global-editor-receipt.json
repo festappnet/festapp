@@ -1,0 +1,18 @@
+{
+  "blocks": [
+    {
+      "attributes": {
+        "height": 800,
+        "mode": "auto",
+        "title": "Global event tickets",
+        "url": "http://127.0.0.1:59804/form/embedded-synthetic"
+      },
+      "name": "festapp-tickets/ticket-form"
+    }
+  ],
+  "registered": [
+    "festapp-tickets/ticket-form",
+    "vstupenky-online/ticket-form"
+  ],
+  "serviceFrames": 0
+}

@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "browser": "Native Mobile Safari 26.5 / iOS 26.5 simulator, task-owned iPhone 17 Pro",
+  "driver": "Apple safaridriver, W3C WebDriver; create session after simctl bootstatus completed",
+  "interaction": "Actual DOM input/change, click and TouchEvent through native Safari WebDriver; no order or capacity mock. Native element send-keys/click is unreliable on this host.",
+  "anonymous_wp_iframe": true,
+  "ordinary_order_id": 1,
+  "seat": "A2",
+  "orders": 2,
+  "price_each_czk": 120,
+  "storage": "localStorage and sessionStorage getters throw SecurityError in ordinary form before entry; natural native Safari settings otherwise unchanged",
+  "outage": "Owned Kong stopped, no order; first retry before full recovery also failed; retained form retries [0,0,200] use same command/client identity",
+  "replay": "Same accepted UI command replayed twice; still two orders total including seat purchase",
+  "payment": "Existing manual transaction RPC; no real transfer or provider",
+  "email": "capture_only_no_provider_send",
+  "pdfs": [
+    {
+      "order_id": 1,
+      "bytes": 49186,
+      "sha256": "dad971528134c49bfd6a16eadf9e86bac4b72ed086058f6f57d8e2dd1417c356"
+    },
+    {
+      "order_id": 2,
+      "bytes": 49242,
+      "sha256": "7db97d7b2385db11e0c4bce9b19d907a5bff9a2727abe1438a4f0c9ead9a4191"
+    }
+  ],
+  "pdf_browser_download": {
+    "path": "/ticket.pdf",
+    "bytes": 49186,
+    "sha256": "6f2081d77194f889966f1a4b04ec97e162a31f2ff45240efa2051e3ab4147d13",
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Mobile/15E148 Safari/604.1",
+    "rendered_content_type": "application/pdf",
+    "method": "Actual canonical queued-email attachment served by loopback capture sink; native Safari link fetched and opened it in built-in PDF preview. Save to Files/share sheet not tested."
+  },
+  "admissions": [
+    {
+      "ticket_id": 1,
+      "first": "accepted",
+      "same_operation": "replayed",
+      "second_entry": "already_used"
+    },
+    {
+      "ticket_id": 2,
+      "first": "accepted",
+      "same_operation": "replayed",
+      "second_entry": "already_used"
+    }
+  ],
+  "created_at": "2026-10-23T16:28:19.744434+00:00",
+  "schema_sha256": "842da526cace8321d0c9069fb57b67c0cacac9876a0364edcee95ec65650ac54",
+  "edge_snapshot_sha256": "705dfbe5dc6c59f2ad91fe0b3ab4eb4e350e8bb2fb608c58f3602d5c1084665d",
+  "zip_sha256": "ad84ce587c5c9c8349e3477005e1656c9880f1926b947bc6f9a68c25c3604f38",
+  "qr_validation": {
+    "pdf_pages": 2,
+    "issued_symbols_matched": 2,
+    "native_pdf_screenshot_decoded": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "source_head": "eb23047248d59bf86345b9e0b79db4a988275231",
+  "source_state": "existing dirty working tree",
+  "locale": "cs",
+  "scanner": {
+    "real_source": "routing-capture/check-in-mobile-frames",
+    "real_acceptance_frames": [
+      "000313.jpg",
+      "000330.jpg"
+    ],
+    "source_duration": 4.1,
+    "success_caption_at": 3.2,
+    "composition": "symbolic rounded iPhone, actual captured UI unchanged; editorial green acceptance outside screen",
+    "camera_boundary": "synthetic camera stream; actual jsQR decoder and canonical local SQL acceptance",
+    "mobile_viewport": [
+      480,
+      1000
+    ]
+  },
+  "report": {
+    "occasion": 3,
+    "link": "demo-1-ball-20261014",
+    "orders": 95,
+    "tickets": 260,
+    "capacity": 300,
+    "net_receipts_czk": 124950,
+    "profit_claim": false,
+    "filter": "Anna:95to12orders",
+    "take": "report-orders-cs-1792670770",
+    "data": "existing canonical demo fixture, no data mutation this pass"
+  },
+  "validation": "4 full MP4 decodes; Python AST passes; source/final frames visually inspected; transition contact sheet recorded"
+}

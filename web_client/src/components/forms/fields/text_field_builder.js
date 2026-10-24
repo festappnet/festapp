@@ -49,6 +49,8 @@ export class TextFieldBuilder {
         const actualContainer = container.firstElementChild;
         
         const input = actualContainer.querySelector('input');
+        input.id = `form-input-${inputName}`;
+        actualContainer.querySelector('label').htmlFor = input.id;
         if (field.value !== undefined && field.value !== null) input.value = String(field.value);
         
         if (field.type === 'phone') {
@@ -60,7 +62,7 @@ export class TextFieldBuilder {
 
     static _attachPhoneLogic(input, container, formModel) {
             // Fallback default; organizations override via formModel.data.phone_prefixes (line 79).
-            if (!input.value) {
+            if (!input.value && input.required) {
                 input.value = '+420';
             }
             
@@ -122,7 +124,7 @@ export class TextFieldBuilder {
                     
                     input.value = PhoneFormatter.cleanPhoneNumber(result); 
                     PhoneFormatter.formatInput(input);
-                    input.focus();
+                    input.focus({preventScroll: true});
                 };
                 return chip;
             };

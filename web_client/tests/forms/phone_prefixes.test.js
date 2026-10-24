@@ -34,6 +34,23 @@ describe('TextFieldBuilder Phone Prefixes', () => {
         assert.equal(chips[1].textContent, 'SK +421');
     });
 
+    it('leaves an optional phone empty and valid until the buyer enters a number', () => {
+        TextFieldBuilder._attachPhoneLogic(input, container, null);
+        assert.equal(input.value, '');
+        assert.equal(input.checkValidity(), true);
+        input.value = '+420 123';
+        assert.equal(input.checkValidity(), false);
+        input.value = '+420 777 123 456';
+        assert.equal(input.checkValidity(), true);
+    });
+
+    it('keeps the initial prefix for a required phone', () => {
+        input.required = true;
+        TextFieldBuilder._attachPhoneLogic(input, container, null);
+        assert.equal(input.value.trim(), '+420');
+        assert.equal(input.checkValidity(), false);
+    });
+
     it('should use prefixes from formModel if provided', () => {
         const mockFormModel = {
             data: {

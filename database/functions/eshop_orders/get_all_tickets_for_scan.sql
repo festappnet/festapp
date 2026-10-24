@@ -38,6 +38,7 @@ BEGIN
             'id', t.id,
             'ticket_symbol', t.ticket_symbol,
             'state', t.state,
+            'batch', (SELECT jsonb_build_object('title',b.title) FROM eshop.ticket_batch_items i JOIN eshop.ticket_batches b ON b.id=i.batch_id WHERE i.ticket_id=t.id AND b.occasion=occasion_id_val),
             'related_order', jsonb_build_object(
                  'data', t.data
             )

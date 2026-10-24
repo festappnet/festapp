@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-24",
+  "environment": "local disposable WordPress and Supabase; working tree, not production",
+  "navigation": {
+    "caseCount": 24,
+    "viewportWidths": [
+      390,
+      1280
+    ],
+    "surfaces": [
+      "WordPress embed",
+      "standalone web client"
+    ],
+    "overlays": [
+      "order summary",
+      "seat picker"
+    ],
+    "actions": [
+      "browser Back",
+      "close / picker Continue",
+      "Escape"
+    ],
+    "typedBuyerDataRetained": true,
+    "restoredToSavedPositionOrDocumentLimit": true
+  },
+  "seatSelection": {
+    "case": "select A12, browser Back, reopen picker",
+    "buyerDataAndSelectionRetained": true,
+    "ownReservationDeselectedAfterCheck": true
+  },
+  "pricePositioning": {
+    "mechanism": "native host CSS sticky projection; iframe remains mounted",
+    "scrollRequiresCrossFrameMessages": false,
+    "desktopScrollSamples": 12,
+    "observedTopPx": 16
+  },
+  "checks": {
+    "nodeTests": 34,
+    "flutterEmbedTests": 2,
+    "wordpress713DualContract": 48,
+    "wordpress664DualContract": 48,
+    "wordpressBaseContract": 39,
+    "wordpressAdditionalContract": 37,
+    "webClientBuild": "passed"
+  }
+}

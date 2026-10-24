@@ -1,0 +1,22 @@
+{
+  "name": "vstupenky-online-wordpress-tools",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "start": "node scripts/environment.mjs start",
+    "stop": "node scripts/environment.mjs stop",
+    "seed": "node scripts/seed.mjs",
+    "package": "python3 scripts/package.py",
+    "test": "node scripts/environment.mjs run cli wp eval-file /var/www/html/wp-content/plugins/vstupenky-online-tests/contract.php",
+    "backend:setup": "node scripts/setup-backend.mjs",
+    "backend:start": "supabase start --workdir .private/backend --exclude realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit",
+    "backend:seed": "bash scripts/bootstrap-backend.sh",
+    "backend:serve": "supabase functions serve --workdir .private/backend --env-file .private/edge.env --no-verify-jwt",
+    "backend:stop": "supabase stop --workdir .private/backend --no-backup",
+    "web:start": "node scripts/web-server.mjs",
+    "build:plugins": "python3 scripts/build-plugins.py"
+  },
+  "devDependencies": {
+    "@wordpress/env": "12.0.0"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "status": "PASS",
+  "date": "2026-10-23T16:48:54.195130+00:00",
+  "zip_sha256": "ad84ce587c5c9c8349e3477005e1656c9880f1926b947bc6f9a68c25c3604f38",
+  "additional_contract_assertions": {
+    "WP 7.1.3 / PHP 8.5.12": 37,
+    "WP 6.6.4 / PHP 7.4.33": 37
+  },
+  "contract_cases": [
+    "height min/max and 12 invalid scalar/container values",
+    "empty/corrupted block and shortcode",
+    "ten additional private/ambiguous URL encodings",
+    "fixed renderer has no helper",
+    "native block API v3",
+    "real PHP and editor language catalogs load"
+  ],
+  "minimum_gutenberg": {
+    "method": "actual isolated Chrome UI: login, insert block, invalid URL warning, corrected URL, translated controls, fixed 240, publish, reload",
+    "remote_form_frames_in_editor": 0,
+    "service_resource_requests_in_editor": 0,
+    "unhandled_browser_errors": 0,
+    "persisted": {
+      "blocks": [
+        {
+          "attrs": {
+            "height": 240,
+            "mode": "fixed",
+            "title": "QA minimum ticket form",
+            "url": "https://vstupenky.online/form/qa-minimum"
+          },
+          "name": "vstupenky-online/ticket-form"
+        }
+      ],
+      "status": "publish"
+    }
+  },
+  "frontend_with_service_blocked": {
+    "focused": true,
+    "frames": 1,
+    "height": "240",
+    "helpers": 0,
+    "outline": "solid",
+    "scrollWidth": 320,
+    "title": "QA minimum ticket form",
+    "width": 320
+  },
+  "environment_defect_fixed": "Automatic core update attempted to replace minimum WP 6.6.4 with 7.1.3 and left maintenance mode. Disabled automatic updater/core updates and WP cron in disposable config; core checksum verified. Seed now aligns WP core DB version with wp_upgrade() after a pinned-core restore.",
+  "minimum_core_checksum": "PASS (wp-cli.yml extra-file warning belongs to wp-env harness)",
+  "plugin_defects_found": 0,
+  "prior_real_purchase_pdf_scan_safari_evidence": "Unchanged plugin ZIP; retained earlier real-service evidence. No duplicate purchases or production operations in this additional pass.",
+  "pinned_runtime_verified": {
+    "wordpress": "6.6.4",
+    "php": "7.4.33",
+    "auto_updater_disabled": true,
+    "core_auto_update": false,
+    "cron_disabled": true,
+    "maintenance": false
+  },
+  "environment_config_sha256": "f79426293afc9bf096a8ff61cf078ee8d0eaeb342461ed03963f9cac53e44e8d"
+}

@@ -173,6 +173,7 @@ export class ScannerStore {
         const digest=await this.symbolDigest(symbol);let encrypted;
         await this.transaction(['tickets'],'readonly',stores=>{stores.tickets.index('partition_symbol').get([partition,digest]).onsuccess=event=>{encrypted=event.target.result;};});
         const row=await this.openTicket(encrypted);
+        if (row?.ticket?.online_required) throw new Error('online_required');
         if (!row || row.snapshot_id!==snapshot.snapshot_id || row.ticket.symbol!==symbol) throw new Error('offline_not_found');
         // Only a receipt for this exact snapshot generation can provide a used
         // overlay. A newer snapshot after admin unused has a different fingerprint.

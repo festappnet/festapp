@@ -32,6 +32,7 @@ export class ScannerController {
     }
     async confirm(confirmUnpaid = false) {
         if (this.state !== 'result' || !this.ticket?.admission_allowed || !this.store || this.operation) return;
+        if (this.ticket.online_required && (!this.online() || this.ticket.source === 'offline')) { this.error = 'online_required'; this.state = 'error'; this.emit(); return; }
         if (this.ticket.source === 'offline' && (!offlineGrantValid(this.row, Date.now(), performance.now() - this.started) || this.ticket.requires_unpaid_confirmation)) return;
         this.state = 'persisting'; this.emit();
         try {

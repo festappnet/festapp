@@ -2,6 +2,7 @@ import 'package:fstapp/components/_shared/editor_draft_scope.dart';
 import 'package:fstapp/components/features/deposit_feature.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:fstapp/components/features/feature_settings_editor.dart';
 import 'package:fstapp/components/features/contract_feature.dart';
 import 'package:fstapp/components/features/feature.dart';
@@ -63,7 +64,8 @@ void main() {
         endTime: DateTime(2026, 10, 17, 13),
         description: 'Doprava <b>autobusem.</b>');
     expect(feature.tourName, 'manual');
-    expect(feature.tourDate, '15. 10. 2026 - 17. 10. 2026');
+    expect(feature.tourDate,
+        '${DateFormat.yMd().format(DateTime(2026, 10, 15))} - ${DateFormat.yMd().format(DateTime(2026, 10, 17))}');
     expect(feature.numberOfDays, '3');
     expect(feature.transport, 'autobusem');
     expect(feature.notes, 'keep');

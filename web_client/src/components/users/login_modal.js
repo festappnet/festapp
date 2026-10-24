@@ -125,7 +125,7 @@ export class LoginModal extends HTMLElement {
     }
     
     _updateContent(preserveFields = false) {
-        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
+        const previousFields = preserveFields && this.authContainer ? [...this.authContainer.querySelectorAll('input[id]:not([id=""])')].map(input => ({ id: input.id, value: input.value, checked: input.checked, focused: input === document.activeElement })) : [];
 
         if (!this.authContainer) return;
         this._disposeEmailSuffix?.();
@@ -260,7 +260,7 @@ export class LoginModal extends HTMLElement {
                 <form id="reset-password-form" novalidate>
                      <!-- Hidden username field to help browser password managers identify the user -->
                      <input type="text" name="username" autocomplete="username" style="display:none;" aria-hidden="true">
-                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 6, '', 'new-password')}
+                     ${validatedField('newPassword', CommonStrings.newPassword, 'password', true, 8, '', 'new-password')}
                      <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
                         ${this.isLoading ? CommonStrings.loading : CommonStrings.changePassword}
                     </button>
@@ -591,7 +591,7 @@ export class LoginModal extends HTMLElement {
             let msg = err.message || CommonStrings.error;
             
             // Try to match specific backend errors to localized strings
-            if (msg.includes("already in use") || msg.includes("already registered")) {
+            if (err.code === 409 || msg.includes("already in use") || msg.includes("already registered")) {
                 msg = CommonStrings.emailInUse.replace("{email}", email);
             } else if (msg.includes("Registration failed")) {
                 msg = CommonStrings.registrationFailed;

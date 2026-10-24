@@ -1,0 +1,46 @@
+{
+  "browser": "isolated Chrome",
+  "theme_body_classes": "wp-singular page-template-default page page-id-26 wp-embed-responsive wp-theme-twentytwentyone is-light-theme singular",
+  "cases": [
+    {
+      "case": "two products, distinct child origins and independent auto resize",
+      "status": "PASS",
+      "frames": [
+        {
+          "height": 1667,
+          "origin": "http://127.0.0.1:59801",
+          "title": "Czech event tickets"
+        },
+        {
+          "height": 457,
+          "origin": "http://127.0.0.1:59804",
+          "title": "Global reserved seats"
+        }
+      ],
+      "helpers": 2,
+      "links": 2
+    },
+    {
+      "case": "global mobile 320 px without horizontal overflow",
+      "status": "PASS",
+      "scrollWidth": 320,
+      "title": "Global event tickets - WordPress verified",
+      "width": 320
+    },
+    {
+      "case": "blocked helper retains iframe and keyboard fallback",
+      "status": "PASS",
+      "focused": true,
+      "height": 800,
+      "outline": "solid"
+    },
+    {
+      "case": "global fixed shortcode avoids helper",
+      "status": "PASS"
+    },
+    {
+      "case": "opposite brand and personal fragment rejected without leaking input",
+      "status": "PASS"
+    }
+  ]
+}

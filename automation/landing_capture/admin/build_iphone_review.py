@@ -1,0 +1,8 @@
+"""Build a file:// phone composition around unmodified recorded scanner UI."""
+import argparse
+from pathlib import Path
+p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);p.add_argument('--qr',type=Path,required=True);p.add_argument('--locale',choices=['cs','en'],default='cs');p.add_argument('--confirmed-at',type=float,default=3.2);p.add_argument('--rejected-at',type=float,default=6.0);p.add_argument('--flash-one',type=float,default=1.0);p.add_argument('--flash-two',type=float,default=5.4);p.add_argument('--font',type=Path,default=Path(__file__).resolve().parents[3]/'fonts/Futura PT Medium.ttf');a=p.parse_args()
+s=Path(__file__).with_name('iphone_scanner.html').read_text().replace('__SOURCE__',a.source.resolve().as_uri()).replace('__QR__',a.qr.resolve().as_uri()).replace('__FUTURA__',a.font.resolve().as_uri()).replace('__ACCEPTED__',str(a.confirmed_at)).replace('__REJECTED__',str(a.rejected_at)).replace('__FLASH_ONE__',str(a.flash_one)).replace('__FLASH_TWO__',str(a.flash_two))
+if a.locale=='en':
+ for old,new in [('lang="cs"','lang="en"'),("?'Ne':'Ano'","?'No':'Yes'"),('>Ano<','>Yes<'),('Vstupenka už byla použita','Ticket already used'),('VSTUPENKA','TICKET'),('Vstupenka před fotoaparátem','Ticket in front of camera'),('QR kód skutečné ukázkové vstupenky','QR code of actual demo ticket'),('Ples pod hvězdami','Ball under the stars'),('Vstup do hlavního sálu','Main hall admission'),('Odbavení na telefonu','Phone check-in'),('Vstup potvrzen','Admission confirmed'),('Ověřeno serverem','Verified by server'),('Titulek podle skutečného potvrzení','Caption following real confirmation')]:s=s.replace(old,new)
+a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(s);print(a.output)

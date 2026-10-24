@@ -1,3 +1,5 @@
+import { publishEmbedPrice, revealEmbedStep } from '../../../services/embed_bridge.js';
+import { isEmbed } from '../../../services/embed_context.js';
 import { ColorUtils } from '../../../utils/color_utils.js';
 import { formatPrice } from '../../../utils/formatters.js';
 import { LocalizationService } from '../../../services/localization_service.js';
@@ -43,6 +45,7 @@ export class PriceWidget {
                  this.element.remove();
                  this.element = null;
              }
+             publishEmbedPrice(null);
              this.updateSubmitButton(false);
              return;
         }
@@ -102,7 +105,10 @@ export class PriceWidget {
             
             this.element.onclick = () => {
                 const submitBtn = document.querySelector('#dynamic-form button[type="submit"]');
-                if (submitBtn) submitBtn.scrollIntoView({ behavior: 'smooth' });
+                if (submitBtn) {
+                    if (isEmbed()) revealEmbedStep(submitBtn, {block: 'nearest'});
+                    else submitBtn.scrollIntoView({ behavior: 'smooth' });
+                }
             };
         }
 
@@ -127,6 +133,7 @@ export class PriceWidget {
             </div>
             ${metaHtml}
         `;
+        publishEmbedPrice({count:totalItems,total:formattedPrice,lines:metaLines});
     }
 
     updateSubmitButton(isEnabled) {
@@ -157,6 +164,7 @@ export class PriceWidget {
     }
 
     destroy() {
+        publishEmbedPrice(null);
         this.session.removeEventListener('state-changed', this._onStateChange);
         if (this.element) this.element.remove();
     }

@@ -1,0 +1,26 @@
+{
+  "core": "https://wordpress.org/wordpress-7.1.3.zip",
+  "phpVersion": "8.5",
+  "port": 59811,
+  "testsPort": 59812,
+  "plugins": [],
+  "mappings": {
+    "wp-content/plugins/vstupenky-online-tests": "./tests",
+    "wp-content/vo-artifacts": "./dist"
+  },
+  "config": {
+    "WP_ENVIRONMENT_TYPE": "local",
+    "VSTUPENKY_ONLINE_DEV_ORIGIN": "http://127.0.0.1:59801",
+    "WP_DEBUG": true,
+    "AUTOMATIC_UPDATER_DISABLED": true,
+    "WP_AUTO_UPDATE_CORE": false,
+    "DISABLE_WP_CRON": true,
+    "FESTAPP_TICKETS_DEV_ORIGIN": "http://127.0.0.1:59804"
+  },
+  "env": {
+    "tests": {
+      "core": "https://wordpress.org/wordpress-6.6.4.zip",
+      "phpVersion": "7.4"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "festival_poster",
+    "title": "Festivalový plakát",
+    "alt": "Výrazná žlutozelená vstupenka Letní festival s QR kódem.",
+    "src": "organizers-media/ticket-showcase-festival-poster.webp",
+    "width": 771,
+    "height": 1200,
+    "preset": "festival_poster"
+  },
+  {
+    "id": "workshop_card",
+    "title": "Tvůrčí dílna",
+    "alt": "Světlá vstupenka Tvůrčí dílna se zeleným postranním panelem.",
+    "src": "organizers-media/ticket-showcase-workshop-card.webp",
+    "width": 1200,
+    "height": 851,
+    "preset": "workshop_card"
+  }
+]

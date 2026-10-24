@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "environment": "minimum WP6.6.4/PHP7.4.33",
+  "orders_before": 3,
+  "orders_after": 3,
+  "cases": [
+    {
+      "plugin": "festapp-tickets",
+      "uninstall_delete": "PASS",
+      "other_plugin_independent_in_fresh_request": "PASS",
+      "saved_block_preserved": true,
+      "clean_zip_reinstall": "PASS"
+    },
+    {
+      "plugin": "vstupenky-online",
+      "uninstall_delete": "PASS",
+      "other_plugin_independent_in_fresh_request": "PASS",
+      "saved_block_preserved": true,
+      "clean_zip_reinstall": "PASS"
+    }
+  ]
+}

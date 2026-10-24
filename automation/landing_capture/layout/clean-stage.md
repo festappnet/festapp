@@ -1,0 +1,17 @@
+# Clean stage build - Czech capture, English reproducible
+
+Pending build retake: [the 2026-10-23 scenario](../scenario-revision-2026-10-23.md)
+starts with one completed row of five tables, then a native palette drop into
+the second row. The empty opening below is historical delivery behavior.
+
+This revision changes only `layout-build`. All other media remain unchanged.
+
+1. Run `prepare_brand_host.py PACKAGE --clean-stage --locale cs` (`en` for the later English edition). It creates a real editor host with Futura and #ebf1f6 themed surfaces, and a real local document containing only the stage rectangle, stage text and grouping. Canvas fill is #EBF1F6FF; there are no columns/obstacles. The fixture remains local and does not represent a published venue.
+2. Build the generated `example/lib/landing_capture.dart` using the existing documented Flutter command, one Flutter task globally. Keep the existing genuine Futura font/resource corpus; prepare exact documents with `prepare_resources.py --brand-font --document ...` when required. No synthetic glyphs or screenshot recoloring.
+3. Use the isolated empty-config headless wrapper. Set viewport 1440x960 and **light media before reload**. Enable Flutter semantics, wait for the actual stage label and Futura rendering. Validate owned Chrome and one tab. Rehearse once, then undo natively to the three-node empty document; this warms real text resources. Do not begin capture while newly requested text is still resolving.
+4. `CAPTURE_DIR=... CAPTURE_EMPTY_READY=1 CAPTURE_LOCALE=cs python3 clean_growth.py` records the actual first slow palette drag, then held-Control pointer drag copies along adjacent unoccupied positions. Seventeen tables result. Add the native 5x8 arc assembly, change its real Zakřivení field from the default to 9, and move it upward by a real pointer gesture. No document mutation during recording.
+5. `encode_clean.py TAKE --output-dir OUTPUT` retains continuous source columns x0..1128 and y112..928. Only static palette chrome is cropped away; the native ghost's entire palette-to-canvas corridor remains. Output desktop 1140x828, mobile 820x824. The latter is a scaled editorial presentation of desktop authoring, not a mobile editor claim. H264 CRF20, with final temporal trim at CRF18, 30fps. Exact external matte #ebf1f6.
+6. Copy sequences accelerate 2x,4x,8x,6x. Native Ctrl-copy initially duplicates directly on its source and briefly paints an overlap warning. `remove_copy_collision_frames.py` detects and **omits those source frames only inside copy cues**. It does not recolor pixels or invent a ghost. First palette drag and arc actions stay continuous. Source takes and `copy-transition-cuts.json` retain the complete truth for a later long-form edit. No claim that the native intermediate duplication is collision-free.
+7. Inspect every decoded final frame for warning-color candidates, and view actual drag/arc/final frames. Update both MP4s and JPG/WebP posters together. Sync only layout-build dimensions/duration in clips.json. Keep source takes and encoder parts outside Git. Close owned browser and loopback server.
+
+Sequence for a later YouTube chapter: empty stage -> first drag -> progressively faster copying -> arc insertion -> actual curvature change -> actual move -> finished hold. Use original uncompressed cue timings for an explanatory narration. This task does not create the longer video.
