@@ -1,3 +1,5 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/locale_date_time.dart';
 import 'admin_tab_activity.dart';
 import 'package:fstapp/services/exception_handler.dart';
@@ -42,12 +44,22 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
 
   Future<void> _refreshOnReturn() async {
     if (!mounted || !_active) return;
+    // An uninitialized grid cannot use reloadIfClean: there is no state manager.
+    if (!widget.controller.isGridLoaded) {
+      if (_initialLoadError != null) await initialLoad();
+      return;
+    }
     final success = await ExceptionHandler.guard(context,
         futureFunction: () => widget.controller
             .reloadIfClean(canApply: () => mounted && _active));
-    if (mounted) setState(() => _refreshPending = success != true);
+    if (mounted) {
+      setState(() => _refreshPending =
+          success != true && widget.controller.hasUnsavedChanges);
+    }
   }
 
+  Object? _initialLoadError;
+  bool _initialLoadInProgress = false;
   bool isLoading = true;
   bool isDataGridLoading = true;
 
@@ -63,11 +75,22 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   }
 
   Future<void> initialLoad() async {
-    await widget.controller.loadDataOnly();
-    if (!mounted) return;
+    if (_initialLoadInProgress) return;
+    _initialLoadInProgress = true;
     setState(() {
-      isLoading = false;
+      isLoading = true;
+      _initialLoadError = null;
+      _refreshPending = false;
     });
+    try {
+      await widget.controller.loadDataOnly();
+    } catch (error) {
+      AppLogger.error('Data grid initial load failed: $error');
+      if (mounted) _initialLoadError = error;
+    } finally {
+      _initialLoadInProgress = false;
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -137,6 +160,20 @@ class _SingleTableDataGridState<T extends ITrinaRowModel>
   Widget _buildDataGrid(BuildContext context) {
     if (isLoading) {
       return Center(child: CircularProgressIndicator());
+    }
+
+    final error = _initialLoadError;
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(ExceptionHandler.toFriendlyMessage(error)),
+            TextButton(
+                onPressed: initialLoad, child: Text(CommonStrings.retry)),
+          ],
+        ),
+      );
     }
 
     final configuration = SingleDataGridHeader.defaultTrinaGridConfiguration(

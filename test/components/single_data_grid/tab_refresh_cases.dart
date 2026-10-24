@@ -31,6 +31,58 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  for (final recoverOnReturn in [false, true]) {
+    testWidgets(
+        'failed initial load recovers via ${recoverOnReturn ? 'tab return' : 'retry'}',
+        (tester) async {
+      late SingleDataGridController<_Row> grid;
+      late TabController tabs;
+      var calls = 0;
+      await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) {
+        tabs = TabController(length: 2, vsync: tester);
+        grid = SingleDataGridController(
+            context: context,
+            loadData: () async {
+              if (++calls == 1) throw StateError('initial request failed');
+              return [_Row(42)];
+            },
+            fromPlutoJson: (json) => _Row(json['id']),
+            firstColumnType: DataGridFirstColumn.none,
+            idColumn: 'id',
+            columns: [
+              TrinaColumn(
+                  title: 'id', field: 'id', type: TrinaColumnType.number()),
+              TrinaColumn(
+                  title: 'value', field: 'value', type: TrinaColumnType.text()),
+            ]);
+        return Scaffold(
+            body: TabBarView(controller: tabs, children: [
+          AdminTabActivity(
+              controller: tabs, index: 0, child: SingleTableDataGrid(grid)),
+          AdminTabActivity(
+              controller: tabs, index: 1, child: const Text('Other')),
+        ]));
+      })));
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Common.unexpectedError'), findsOneWidget);
+      if (recoverOnReturn) {
+        tabs.index = 1;
+        await tester.pumpAndSettle();
+        tabs.index = 0;
+      } else {
+        await tester.tap(find.text('Common.retry'));
+      }
+      await tester.pumpAndSettle();
+      expect(calls, 2);
+      expect(grid.isGridLoaded, isTrue);
+      expect(grid.rows.single.cells['id']!.value, 42);
+      expect(find.text('DataGrid.refreshPending'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      tabs.dispose();
+    });
+  }
   testWidgets(
       'return reloads automatically; dirty grid retained and not fetched',
       (tester) async {
