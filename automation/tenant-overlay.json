@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "baseMainSha": "5d8bdecc12e0dbf0edc903b5acd115b7a4701322",
+  "release": {
+    "version": "0.20.389+890",
+    "note": "Ticket variables visible in email authoring and QR/PDF previews"
+  }
+}
