@@ -88,6 +88,13 @@ try {
     await browser('fill', `input[name="${fixture.email}"]`, 'regression@example.invalid');
     await browser('fill', `input[name="${fixture.name}"]`, 'Test');
     await browser('fill', `input[name="${fixture.surname}"]`, 'Checkout');
+    // The reserved .invalid fixture deliberately needs the real email-suffix
+    // confirmation. Preserve that confirmation through seat-widget rerenders
+    // and the offline recovery below instead of bypassing email validation.
+    const suffixWarning = '[data-email-suffix-warning]:not([hidden])';
+    await browser('wait', suffixWarning);
+    await browser('click', `${suffixWarning} button`);
+    await browser('wait', '--fn', '!document.querySelector("[data-email-suffix-warning]:not([hidden])")');
     await browser('click', '.btn-blueprint-select');
     const seatSelector = `.venue-layout-viewer svg g:nth-child(1 of [data-node-id="${fixture.node}"])`;
     await browser('wait', seatSelector);
