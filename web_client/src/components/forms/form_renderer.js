@@ -68,6 +68,9 @@ export class FormRenderer {
             if(callbacks.onInput) callbacks.onInput(e, form, formModel);
         };
         form.addEventListener('input', updateHandler);
+        form.addEventListener('blur', e => {
+            if (e.target.type === 'email') updateHandler(e);
+        }, true);
         // Change event needed for some inputs
         form.addEventListener('change', updateHandler);
     }

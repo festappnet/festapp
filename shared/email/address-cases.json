@@ -1,0 +1,150 @@
+[
+  {
+    "email": "a@example.com",
+    "valid": true
+  },
+  {
+    "email": "jmeno@firma.co",
+    "valid": true
+  },
+  {
+    "email": "first.last+tag@sub.example.cz",
+    "valid": true
+  },
+  {
+    "email": "o'neill@xn--bcher-kva.de",
+    "valid": true
+  },
+  {
+    "email": "a_b@example.COM",
+    "valid": true
+  },
+  {
+    "email": "a@example.czz",
+    "valid": true
+  },
+  {
+    "email": "a@example.comcz",
+    "valid": true
+  },
+  {
+    "email": "a@example.c",
+    "valid": true
+  },
+  {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com",
+    "valid": true
+  },
+  {
+    "email": "a@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.cz",
+    "valid": true
+  },
+  {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "valid": true
+  },
+  {
+    "email": "",
+    "valid": false
+  },
+  {
+    "email": "bujnmi@co",
+    "valid": false
+  },
+  {
+    "email": "a@localhost",
+    "valid": false
+  },
+  {
+    "email": "broken",
+    "valid": false
+  },
+  {
+    "email": "@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@@example.cz",
+    "valid": false
+  },
+  {
+    "email": ".a@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a.@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a..b@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@-example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@example-.cz",
+    "valid": false
+  },
+  {
+    "email": "a@example..cz",
+    "valid": false
+  },
+  {
+    "email": "a@example.cz.",
+    "valid": false
+  },
+  {
+    "email": "a@.cz",
+    "valid": false
+  },
+  {
+    "email": "a@example.123",
+    "valid": false
+  },
+  {
+    "email": "a b@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@example.cz\n",
+    "valid": false
+  },
+  {
+    "email": " a@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@example.cz ",
+    "valid": false
+  },
+  {
+    "email": "Name <a@example.cz>",
+    "valid": false
+  },
+  {
+    "email": "a@example.cz,b@example.cz",
+    "valid": false
+  },
+  {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.cz",
+    "valid": false
+  },
+  {
+    "email": "a@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.cz",
+    "valid": false
+  },
+  {
+    "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "valid": false
+  },
+  {
+    "email": "a@example.рф",
+    "valid": false
+  },
+  {
+    "email": "a@example.xn--p1ai",
+    "valid": true
+  }
+]

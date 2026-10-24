@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.normalize_order_email_contact(p_email text)
 RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT SET search_path=public,extensions AS $$
 DECLARE v_email text:=btrim(p_email);
 BEGIN
- IF length(v_email)>320 OR v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN
+ IF NOT public.email_address_is_valid(v_email) THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid_email_contact'; END IF;
  RETURN v_email;
 END $$;

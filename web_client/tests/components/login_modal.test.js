@@ -241,10 +241,11 @@ describe('LoginModal Conditional Registration', () => {
         value('email', 'a@example.рф');
         await modal._handleRegister({ preventDefault() {} });
         assert.equal(requests, 1);
-        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, false);
-        modal.authContainer.querySelector('[data-email-suffix-warning] button').click();
+        assert.equal(modal.authContainer.querySelector('[data-email-suffix-warning]').hidden, true,
+            'unsupported address syntax cannot be overridden as a suffix warning');
+        value('email', 'a@example.xn--p1ai');
         await modal._handleRegister({ preventDefault() {} });
-        assert.equal(requests, 2, 'accepted Unicode input has an overridable warning');
+        assert.equal(requests, 2, 'punycode domain is accepted');
     });
 
     it('login, reset and Google proof accept unknown suffixes without confirmation', async (t) => {

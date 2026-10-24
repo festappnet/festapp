@@ -1,4 +1,5 @@
 import 'email_tlds.g.dart';
+import 'email_address.dart';
 
 enum EmailDomainSuffixStatus { knownSuffix, unrecognizedSuffix }
 
@@ -33,7 +34,7 @@ class EmailSuffixConfirmation {
   }
 
   bool get needsConfirmation =>
-      _value.trim().isNotEmpty &&
+      EmailAddress.isValid(_value) &&
       !confirmed &&
       EmailDomainSuffix.classify(_value).status ==
           EmailDomainSuffixStatus.unrecognizedSuffix;

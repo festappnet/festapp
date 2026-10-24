@@ -1,4 +1,6 @@
+import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -37,6 +39,8 @@ class OrderEmailRepairDialog extends StatefulWidget {
 
 class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   final _email = TextEditingController();
+  final _emailFocus = FocusNode();
+  bool _emailTouched = false;
   late final OrderCommands _commands =
       widget.commands ?? SupabaseOrderCommands(Supabase.instance.client);
   Map<String, dynamic>? _order, _summary;
@@ -55,6 +59,11 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   void initState() {
     super.initState();
     RightsService.occasionLinkModelNotifier.addListener(_contextChanged);
+    _emailFocus.addListener(() {
+      if (mounted) setState(() {
+        if (!_emailFocus.hasFocus) _emailTouched = true;
+      });
+    });
     _load();
   }
 
@@ -70,6 +79,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_contextChanged);
     _generation++;
+    _emailFocus.dispose();
     _email.dispose();
     super.dispose();
   }
@@ -104,7 +114,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   }
 
   Future<void> _save(bool resend, OrderEmailIssue? issue) async {
-    if (_busy || _order == null || !_sameContext) return;
+    if (_busy || _order == null || !_sameContext || !EmailAddress.isValid(_email.text.trim())) return;
     setState(() {
       _busy = true;
       _feedback = null;
@@ -285,12 +295,16 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                 if (writable) ...[
                   TextField(
                     controller: _email,
+                    focusNode: _emailFocus,
                     onChanged: (_) => setState(() {}),
                     enabled: !_busy,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: t('email'),
                       helperText: t('emailHint'),
+                      errorText: _emailTouched && !_emailFocus.hasFocus &&
+                              !EmailAddress.isValid(_email.text.trim())
+                          ? CommonStrings.invalidFormat : null,
                       helperMaxLines: 4,
                     ),
                   ),
@@ -341,16 +355,17 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
       actions: [
         if (writable) ...[
           OutlinedButton(
-              onPressed: _busy ? null : () => _save(false, selected),
+              onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) ? null : () => _save(false, selected),
               child: Text(t('save'))),
           if (selected?.data['obsolete'] == true)
             OutlinedButton(
-                onPressed: _busy || uncertain || recipientBlocked
+                onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) || uncertain || recipientBlocked
                     ? null
                     : () => _save(true, null),
                 child: Text(t('sendCurrent'))),
           ElevatedButton(
               onPressed: _busy ||
+                      !EmailAddress.isValid(_email.text.trim()) ||
                       uncertain ||
                       recipientBlocked ||
                       (selected != null && !selected.canResend)

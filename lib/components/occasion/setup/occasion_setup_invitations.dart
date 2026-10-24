@@ -1,5 +1,5 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:flutter/material.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/users/occasion_team_invitation_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,7 +20,7 @@ bool validTeamInviteEmail(String value) {
   final email = value.trim();
   return email.isNotEmpty &&
       email.length <= 254 &&
-      FormBuilderValidators.email(errorText: 'invalid')(email) == null;
+      EmailValidation.validator(errorText: 'invalid')(email) == null;
 }
 
 /// Collects intent only. No account, membership or email is created here.

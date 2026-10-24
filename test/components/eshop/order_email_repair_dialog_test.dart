@@ -276,7 +276,20 @@ void main() {
                 commands: commands,
                 canWrite: true))));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'bujnmi@co');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+    tester.widget<TextField>(find.byType(TextField)).focusNode!.unfocus();
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNotNull);
+    await tester.enterText(find.byType(TextField), 'bujnmi@c');
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
+    expect(tester.widget<ElevatedButton>(find.widgetWithText(
+        ElevatedButton, 'EmailDelivery.recovery.resend')).onPressed, isNull);
+    expect(requests, 0);
     await tester.enterText(find.byType(TextField), 'new@example.invalid');
+    await tester.pump();
     await tester.tap(find.text('EmailDelivery.recovery.resend'));
     await tester.pump();
     expect(requests, 1);

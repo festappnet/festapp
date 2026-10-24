@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -343,7 +344,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         validator: FormBuilderValidators.compose([
                           FormBuilderValidators.required(
                               errorText: CommonStrings.fieldCannotBeEmpty),
-                          FormBuilderValidators.email(
+                          EmailValidation.validator(
                               errorText: OccasionSettingsStrings
                                   .validationEmailInvalid),
                         ]),

@@ -10,3 +10,4 @@ export 'src/forms/login_qr_payload.dart';
 export 'src/forms/reception_command_error.dart';
 export 'src/forms/customer_order_overview.dart';
 export 'src/forms/email_domain_suffix.dart';
+export 'src/forms/email_address.dart';

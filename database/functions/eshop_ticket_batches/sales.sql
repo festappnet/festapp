@@ -18,7 +18,7 @@ BEGIN
  sale_data:=jsonb_strip_nulls(coalesce(p_contact,'{}'));
  email:=nullif(trim(sale_data->>'email'),'');
  IF email IS NULL THEN sale_data:=sale_data-'email';
- ELSIF email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN RAISE EXCEPTION 'BATCH_CONTACT_INVALID';
+ ELSIF NOT public.email_address_is_valid(email) THEN RAISE EXCEPTION 'BATCH_CONTACT_INVALID';
  ELSE sale_data:=jsonb_set(sale_data,'{email}',to_jsonb(email)); END IF;
  IF p_send_tickets AND email IS NULL THEN RAISE EXCEPTION 'BATCH_DELIVERY_EMAIL_REQUIRED'; END IF;
  claimed:=public.begin_client_mutation_v1(p_command_id,'inventory.ticket_batch.sell',b.occasion,auth.uid(),

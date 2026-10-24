@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'email_suffix_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -65,7 +66,7 @@ class TextFieldBuilder extends StatelessWidget {
     }
 
     if (isEmail) {
-      validators.add(FormBuilderValidators.email(
+      validators.add(EmailValidation.validator(
         checkNullOrEmpty: false,
         errorText: FormHelper.emailInvalidMessage(),
       ));
@@ -88,7 +89,7 @@ class TextFieldBuilder extends StatelessWidget {
       validator: validators.isNotEmpty
           ? FormBuilderValidators.compose(validators)
           : null,
-      autovalidateMode: isPhone
+      autovalidateMode: isPhone || isEmail
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {
@@ -114,7 +115,7 @@ class TextFieldBuilder extends StatelessWidget {
     }
 
     if (isEmail) {
-      validators.add(FormBuilderValidators.email(
+      validators.add(EmailValidation.validator(
         checkNullOrEmpty: false,
         errorText: FormHelper.emailInvalidMessage(),
       ));
@@ -135,7 +136,7 @@ class TextFieldBuilder extends StatelessWidget {
       initialValue:
           fieldHolder.defaultValue?.toString() ?? (isPhone ? '+420' : null),
       validator: FormBuilderValidators.compose(validators),
-      autovalidateMode: isPhone
+      autovalidateMode: isPhone || isEmail
           ? AutovalidateMode.onUnfocus
           : AutovalidateMode.onUserInteraction,
       builder: (field) {

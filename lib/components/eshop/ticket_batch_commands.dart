@@ -1,10 +1,11 @@
+import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_replacements.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 bool validTicketBatchEmail(String value) =>
-    value.isEmpty || RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
+    value.isEmpty || EmailAddress.isValid(value);
 
 /// Batch commands own transaction intent. Views never orchestrate order/payment RPCs.
 abstract interface class TicketBatchCommands {

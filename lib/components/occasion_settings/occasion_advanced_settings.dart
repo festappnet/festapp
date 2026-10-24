@@ -1,6 +1,6 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:flutter/material.dart';
 import 'package:fstapp/app_config.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/views/form_public_link.dart';
@@ -99,7 +99,7 @@ class OccasionAdvancedSettings extends StatelessWidget {
                 keyboardType: TextInputType.emailAddress,
                 validator: (val) {
                   if (val == null || val.isEmpty) return null;
-                  return FormBuilderValidators.email(
+                  return EmailValidation.validator(
                       errorText:
                           OccasionSettingsStrings.validationEmailInvalid)(val);
                 },

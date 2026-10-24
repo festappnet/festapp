@@ -1,3 +1,4 @@
+import { isValidEmail } from '../../logic/email_address.js';
 import { classifyEmailDomainSuffix } from '../../logic/email_domain_suffix.js';
 import { FormStrings } from './form_strings.js';
 
@@ -20,7 +21,7 @@ export class EmailSuffixConfirmation {
         return `field:${input.name || input.id}`;
     }
 
-    static refresh(input, states, session, show = false, syntaxValid = input => input.validity.valid) {
+    static refresh(input, states, session, show = false, syntaxValid = input => input.validity.valid && isValidEmail(input.value)) {
         const key = this.key(input, session);
         let state = states.get(key);
         if (!state) { state = { value: input.value, confirmed: false, visible: false }; states.set(key, state); }
@@ -64,7 +65,12 @@ export class EmailSuffixConfirmation {
     static install(form, states, session, syntaxValid) {
         const refreshAll = () => form.querySelectorAll('input[type="email"]').forEach(input => this.refresh(input, states, session, false, syntaxValid));
         for (const event of ['input', 'change', 'blur']) form.addEventListener(event, e => {
-            if (e.target.type === 'email') this.refresh(e.target, states, session, event === 'blur', syntaxValid);
+            if (e.target.type !== 'email') return;
+            if (event !== 'blur') {
+                const state = states.get(this.key(e.target, session));
+                if (state) state.visible = false;
+            }
+            this.refresh(e.target, states, session, event === 'blur', syntaxValid);
         }, event === 'blur');
         refreshAll();
         // Ticket widgets can replace controls while the enclosing session survives.
