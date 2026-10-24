@@ -1,7 +1,7 @@
 # Náprava nedoručeného e-mailu u konkrétní objednávky
 
 Datum: 2026-10-24
-Stav: Vlny 1-3 implementované a lokálně ověřené. Produkční migrace, vydání a zákaznické odesílání neprovedeny. Viz [lokální ověření](order-email-recovery-local-verification-2026-10-24.md).
+Stav: Vlny 1-3 implementované a ověřené; po samostatném zadání vydána migrace, funkční sada a vstupenky.online 0.20.375+874. Žádné zkušební zákaznické odesílání. Viz [produkční záznam](../operations/order-email-recovery-release-2026-10-24.md) a [předchozí lokální ověření](order-email-recovery-local-verification-2026-10-24.md).
 Ověřování: standard - oprávnění, osobní údaje, souběh a nevratné odeslání e-mailu.
 Původní výchozí revize: main `4b883300da89ac0b33cc2cd50e6954fb4668ef51`; drobné opravy UI byly připravené v PR #576. Zpřesnění ověřeno proti pracovnímu stromu `fix/notification-production-theme-20261024` na HEAD `76b7e7afd`; stav sloučení PR ani produkce se tímto neověřoval. Před implementací porovnat s aktuálním kanonickým mainem.
 
