@@ -13,3 +13,10 @@ last good snapshot. Commit the reviewed snapshot and both generated files togeth
 `node automation/generate_email_tlds.mjs --check` verifies them offline; builds
 and runtime do not fetch anything. The existing web startup CI script and
 `pnpm --dir web_client test` both run this offline check. No manual additions to generated sets.
+
+Contact syntax is checked separately by `EmailAddress` (Dart) and `isValidEmail`
+(web), using the same `address-cases.json` conformance cases. Addresses must have
+one mailbox, a dot-separated DNS domain, valid labels, and fit the 64-character
+local part / 254-character total limits. ASCII mailbox names and punycode domains
+are supported. Syntax validation does not prove mailbox existence or delivery.
+Unknown but well-formed domain suffixes still use the explicit confirmation flow.

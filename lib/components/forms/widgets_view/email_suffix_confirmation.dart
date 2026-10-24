@@ -1,7 +1,7 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import '../form_strings.dart';
 
 /// Owned by one FormHolder; keys include the actual main/ticket form identity.
@@ -101,7 +101,7 @@ class _EmailSuffixFieldState extends State<EmailSuffixField> {
         widget.field.widget.enabled &&
         confirmation.visible &&
         confirmation.needsConfirmation &&
-        FormBuilderValidators.email(checkNullOrEmpty: false)(value) == null;
+        EmailValidation.validator(checkNullOrEmpty: false)(value) == null;
     final warning = show
         ? FormStrings.emailSuffixWarning(
             EmailDomainSuffix.classify(value).suffix,

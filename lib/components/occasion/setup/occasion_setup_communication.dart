@@ -1,3 +1,4 @@
+import 'package:fstapp/components/forms/email_validation.dart';
 import 'dart:convert';
 import '../../email_templates/email_preview_examples.dart';
 import '../../features/ticket_feature.dart';
@@ -7,7 +8,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fstapp/components/email_templates/db_email_templates.dart';
 import '../occasion_sale_strings.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -58,7 +58,7 @@ bool communicationDraftValid(
       data['replyToMode'] == 'custom' &&
       (email.isEmpty ||
           email.length > 254 ||
-          FormBuilderValidators.email(errorText: 'invalid')(email) != null))
+          EmailValidation.validator(errorText: 'invalid')(email) != null))
     return false;
   final lead = (data['reminderLeadDays'] as String? ?? '').trim();
   if (includeReminders &&
@@ -247,7 +247,7 @@ class _OccasionSetupCommunicationState
               ? null
               : (value!.trim().length > 254
                   ? t('invalidReplyEmail')
-                  : FormBuilderValidators.email(
+                  : EmailValidation.validator(
                       errorText: t('invalidReplyEmail'))(value.trim())),
           onChanged: (value) => widget.onChanged({
             'replyToMode': value.trim().isEmpty ? 'inherit' : 'custom',

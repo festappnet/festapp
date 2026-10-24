@@ -128,6 +128,9 @@ BEGIN
             ELSIF v_field_type = 'surname' THEN
                 v_new_data := v_new_data || jsonb_build_object('surname', v_new_value);
             ELSIF v_field_type = 'email' THEN
+                IF NOT public.email_address_is_valid(v_new_value #>> '{}') THEN
+                    RAISE invalid_parameter_value USING MESSAGE='invalid_email_contact';
+                END IF;
                 v_new_data := v_new_data || jsonb_build_object('email', v_new_value);
             ELSIF v_field_type = 'phone' THEN
                 v_new_data := v_new_data || jsonb_build_object('phone', v_new_value);

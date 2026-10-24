@@ -83,6 +83,10 @@ void main() {
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();
     expect(key.currentState!.requests, 0);
+    await tester.enterText(find.byType(TextField), 'bujnmi@co');
+    await tester.tap(find.text('Submit'));
+    await tester.pumpAndSettle();
+    expect(key.currentState!.requests, 0);
     await tester.enterText(find.byType(TextField), 'a@example.cm');
     await tester.tap(find.text('Submit'));
     await tester.pumpAndSettle();

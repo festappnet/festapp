@@ -1,3 +1,4 @@
+import { isValidEmail } from '../../logic/email_address.js';
 import { classifyEmailDomainSuffix } from '../../logic/email_domain_suffix.js';
 import { FormStrings } from './form_strings.js';
 
@@ -20,7 +21,7 @@ export class EmailSuffixConfirmation {
         return `field:${input.name || input.id}`;
     }
 
-    static refresh(input, states, session, show = false, syntaxValid = input => input.validity.valid) {
+    static refresh(input, states, session, show = false, syntaxValid = input => input.validity.valid && isValidEmail(input.value)) {
         const key = this.key(input, session);
         let state = states.get(key);
         if (!state) { state = { value: input.value, confirmed: false, visible: false }; states.set(key, state); }

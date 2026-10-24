@@ -1,7 +1,22 @@
 CREATE OR REPLACE FUNCTION public.validate_waitlist_answers_internal(p_form bigint,p_input jsonb,p_people jsonb,p_waitlist boolean)
 RETURNS void LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE f public.form_fields; person jsonb; values jsonb; k text; max_people integer;
+DECLARE f public.form_fields; person jsonb; values jsonb; k text; max_people integer; email text;
 BEGIN
+ IF nullif(p_input->>'email','') IS NOT NULL AND NOT public.email_address_is_valid(p_input->>'email') THEN
+  RAISE EXCEPTION '%',jsonb_build_object('code',400,'errorCode','INVALID_EMAIL')::text; END IF;
+ FOR f IN SELECT * FROM public.form_fields WHERE form=p_form AND type='email' AND NOT is_hidden
+ AND (NOT p_waitlist OR product_type IS NULL) LOOP
+  k:=f.id::text;
+  FOR email IN
+   SELECT answer->>k FROM jsonb_array_elements(coalesce(p_input->'fields','[]')) answer WHERE NOT f.is_ticket_field AND answer ? k
+   UNION ALL
+   SELECT answer->>k FROM jsonb_array_elements(coalesce(p_people,'[]')) participant(value),
+    LATERAL jsonb_array_elements(coalesce(participant.value->'fields','[]')) answer WHERE f.is_ticket_field AND answer ? k
+  LOOP
+   IF nullif(email,'') IS NOT NULL AND NOT public.email_address_is_valid(email) THEN
+    RAISE EXCEPTION '%',jsonb_build_object('code',400,'errorCode','INVALID_EMAIL','fieldId',f.id)::text; END IF;
+  END LOOP;
+ END LOOP;
  IF jsonb_typeof(p_people)<>'array' OR jsonb_array_length(p_people)<1 OR jsonb_array_length(p_people)>public.ticket_order_limit() THEN
   RAISE EXCEPTION 'Invalid participant count'; END IF;
  SELECT min((data->>'max_tickets')::integer) INTO max_people FROM public.form_fields WHERE form=p_form AND type='ticket';

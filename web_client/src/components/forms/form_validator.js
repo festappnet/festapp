@@ -1,3 +1,4 @@
+import { isValidEmail } from '../../logic/email_address.js';
 import { EmailSuffixConfirmation } from './email_suffix_confirmation.js';
 import { FormStrings } from './form_strings.js';
 import { FormHelper } from './form_helper.js';
@@ -14,7 +15,7 @@ export class FormValidator {
          const currentErrors = { ...session.state.validationErrors };
          const hadError = !!currentErrors[fieldName];
          // Logic: If field HAD error, we must validate on input. 
-         if (!hadError && !target.classList.contains('invalid')) return; 
+         if (!hadError && !target.classList.contains('invalid') && !(target.type === 'email' && e.type === 'blur')) return;
 
          const isRequired = target.dataset.required === 'true';
          let nowValid = true; // Default to valid unless proven otherwise
@@ -45,7 +46,10 @@ export class FormValidator {
              // Check invalid format if needed
              if (nowValid && target.value) {
                  // Only check format if we have a value
-                 if (!target.checkValidity()) {
+                 if (target.type === 'email' && !isValidEmail(target.value)) {
+                     nowValid = false;
+                     failureReason = FormStrings.invalidFormat;
+                 } else if (!target.checkValidity()) {
                       // It is invalid natively (e.g. pattern or type)
                       // distiguish error
                       if (target.validity.typeMismatch || target.validity.patternMismatch) {
@@ -174,7 +178,9 @@ export class FormValidator {
                 }
 
                 // Native Validity Check (Format only, ignore valueMissing if we rely on manual)
-                if (el.validity && !el.validity.valid) {
+                if (el.type === 'email' && el.value && !isValidEmail(el.value)) {
+                    errors[el.name] = FormStrings.invalidFormat;
+                } else if (el.validity && !el.validity.valid) {
                      if (el.validity.valueMissing) {
                         // Only add if we didn't check manual already (or if manual missed it?)
                         // If we didn't set data-required but browser thinks it is required?

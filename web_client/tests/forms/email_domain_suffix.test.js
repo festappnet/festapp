@@ -68,6 +68,9 @@ test('ordinary required/format errors precede suffix checks; optional empty pass
     assert.equal(f.requests(), 0);
     type(f.input(), 'broken'); f.submit();
     assert.equal(f.requests(), 0);
+    type(f.input(), 'bujnmi@co'); f.submit();
+    assert.equal(f.requests(), 0, 'native HTML validity accepts an unqualified host; checkout must reject it');
+    assert.equal(warning(f.input()).hidden, true);
     type(f.input(), 'a@example.co'); f.submit();
     assert.equal(f.requests(), 1);
     const optional = fixture([{ id: 2, type: 'email' }]);
@@ -109,5 +112,17 @@ test('ticket identity survives index changes and never inherits a removed ticket
     f.submit();
     assert.equal(f.requests(), 0, 'remaining ticket must not inherit index zero confirmation');
     warning(f.input()).querySelector('button').click(); f.submit();
+    assert.equal(f.requests(), 1);
+});
+
+test('invalid contact syntax appears on blur and clears after correction', () => {
+    const f = fixture();
+    type(f.input(), 'bujnmi@co');
+    assert.equal(f.input().classList.contains('invalid'), false);
+    f.input().dispatchEvent(new dom.window.Event('blur'));
+    assert.equal(f.input().classList.contains('invalid'), true);
+    type(f.input(), 'customer@example.co');
+    assert.equal(f.input().classList.contains('invalid'), false);
+    f.submit();
     assert.equal(f.requests(), 1);
 });

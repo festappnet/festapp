@@ -1,4 +1,6 @@
+import 'package:festapp_core/forms.dart';
 import 'package:flutter/material.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/email_delivery/email_delivery_strings.dart';
@@ -104,7 +106,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   }
 
   Future<void> _save(bool resend, OrderEmailIssue? issue) async {
-    if (_busy || _order == null || !_sameContext) return;
+    if (_busy || _order == null || !_sameContext || !EmailAddress.isValid(_email.text.trim())) return;
     setState(() {
       _busy = true;
       _feedback = null;
@@ -291,6 +293,7 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                     decoration: InputDecoration(
                       labelText: t('email'),
                       helperText: t('emailHint'),
+                      errorText: EmailAddress.isValid(_email.text.trim()) ? null : CommonStrings.invalidFormat,
                       helperMaxLines: 4,
                     ),
                   ),
@@ -341,16 +344,17 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
       actions: [
         if (writable) ...[
           OutlinedButton(
-              onPressed: _busy ? null : () => _save(false, selected),
+              onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) ? null : () => _save(false, selected),
               child: Text(t('save'))),
           if (selected?.data['obsolete'] == true)
             OutlinedButton(
-                onPressed: _busy || uncertain || recipientBlocked
+                onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) || uncertain || recipientBlocked
                     ? null
                     : () => _save(true, null),
                 child: Text(t('sendCurrent'))),
           ElevatedButton(
               onPressed: _busy ||
+                      !EmailAddress.isValid(_email.text.trim()) ||
                       uncertain ||
                       recipientBlocked ||
                       (selected != null && !selected.canResend)

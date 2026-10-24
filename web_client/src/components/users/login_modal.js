@@ -1,3 +1,4 @@
+import { isValidEmail } from '../../logic/email_address.js';
 import { EmailSuffixConfirmation } from '../forms/email_suffix_confirmation.js';
 
 import { GoogleAuthService } from '../../services/google_auth_service.js';
@@ -13,8 +14,7 @@ import { SHARED_MODAL_STYLES } from '../shared/modal_styles.js';
 import { RouterService } from '../../services/router_service.js';
 // import './login_modal.css'; // Removed in favor of inline styles for test compatibility
 
-// Matches the existing registration syntax validator, including accepted Unicode input.
-const registrationEmailSyntax = input => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+const registrationEmailSyntax = input => isValidEmail(input.value);
 
 const LOGIN_MODAL_STYLES = SHARED_MODAL_STYLES + GOOGLE_AUTH_STYLES;
 
@@ -426,8 +426,7 @@ export class LoginModal extends HTMLElement {
              
              // Email
              if (input.type === 'email' && input.value) {
-                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                 if (!emailRegex.test(input.value)) {
+                 if (!isValidEmail(input.value)) {
                      this._showError(input, CommonStrings.invalidEmail);
                      isValid = false;
                  }

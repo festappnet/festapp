@@ -241,7 +241,7 @@ class _BlueprintCreateOrderDialogState
             decoration: InputDecoration(labelText: OrdersStrings.gridEmail),
             validator: (value) => value == null || value.isEmpty
                 ? CommonStrings.fieldCannotBeEmpty
-                : !value.contains('@')
+                : !EmailAddress.isValid(value)
                     ? CommonStrings.invalidFormat
                     : null),
         if (_customerFields != null) _fields(_customerFields!),
