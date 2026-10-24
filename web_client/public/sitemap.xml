@@ -2,4 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://vstupenky.online/</loc></url>
   <url><loc>https://vstupenky.online/events</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/zaciname/</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/vlozeni-na-web/</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/wordpress/</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/webnode/</loc></url>
+  <url><loc>https://vstupenky.online/napoveda/reseni-potizi/</loc></url>
 </urlset>

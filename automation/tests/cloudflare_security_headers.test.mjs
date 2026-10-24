@@ -95,3 +95,23 @@ test('organization administration deep links serve Flutter without an occasion l
   }
   assert.equal(lookups, 0, 'platform administration is not an occasion slug');
 });
+
+test('help routes use their bound HTML profile, canonical paths and sitemap entries', async t => {
+  const helpManifest = {profiles: {'help-index':{policy:'help-index-policy'},'help-webnode':{policy:'help-webnode-policy'}},documents: {'napoveda/index.html': {profile:'help-index'}, 'napoveda/webnode/index.html': {profile:'help-webnode'}}};
+  const helpSource = source.replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', 'const CSP_MANIFEST = ' + JSON.stringify(helpManifest) + ';');
+  const {default: helpWorker} = await import('data:text/javascript;base64,' + Buffer.from(helpSource).toString('base64'));
+  t.mock.method(globalThis, 'fetch', async () => new Response('[]', {headers:{'content-type':'application/json'}}));
+  for (const route of ['/napoveda/', '/napoveda/webnode/']) {
+    const response = await helpWorker.fetch(new Request(origin + route), env);
+    assert.equal(response.status,200); assertPolicy(response); assert.equal(await response.text(),route);
+    assert.match(response.headers.get('content-security-policy-report-only'),/help-/);
+  }
+  const redirect = await helpWorker.fetch(new Request(origin + '/napoveda/webnode'),env);
+  assert.equal(redirect.status,308); assert.equal(redirect.headers.get('location'),origin + '/napoveda/webnode/');
+  for (const current of [worker,helpWorker]) {
+    const absent = await current.fetch(new Request(origin + '/napoveda/unknown/'),env);
+    assert.equal(absent.status,404); assert.match(await absent.text(),/noindex/);
+  }
+  const sitemap = await (await helpWorker.fetch(new Request(origin + '/sitemap.xml'),env)).text();
+  assert.match(sitemap,/<loc>https:\/\/tenant\.invalid\/napoveda\/webnode\/<\/loc>/);
+});

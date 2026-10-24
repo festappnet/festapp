@@ -5,7 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import vm from 'node:vm';
-import { collectPwaShellManifest } from '../lib/pwa_shell_manifest.mjs';
+import { collectPwaShellManifest, shouldPrecache } from '../lib/pwa_shell_manifest.mjs';
 
 test('offline shell omits standalone editor fixtures but retains runtime font assets', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-editor-fixture-cache-'));
@@ -245,4 +245,8 @@ test('marketing streams stay online and do not consume the application offline b
  assert.deepEqual(manifest.knownResources,['/flutter?pwa-cache=1','/main.dart.js','/webclient?pwa-cache=1']);
  assert.equal(manifest.knownBytes,9);
  assert.equal(await readFile(path.join(dir,'organizers-media/demo.mp4'),'utf8'),'marketing');
+});
+
+test('public help and plugin downloads do not enter the installed app cache', () => {
+  for (const file of ['napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
 });

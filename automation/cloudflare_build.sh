@@ -109,6 +109,7 @@ const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
+const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^napoveda\/(?:[a-z-]+\/)?index\.html$/.test(file));
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
 const ORGANIZERS_ENABLED = false; // stamped from explicit tenant capability
 const DEFAULT_LANGUAGE = "cs";
@@ -271,7 +272,8 @@ async function handleSitemap(request, env) {
   const baseUrl = CANONICAL_ORIGIN || url.origin;
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "no-store, max-age=0" };
 
-  const organizerEntry = ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "";
+  const helpEntries = HELP_PAGES.map(file => `<url><loc>${escapeHtml(baseUrl)}/${file.replace(/index\.html$/, "")}</loc></url>`).join("");
+  const organizerEntry = (ORGANIZERS_ENABLED ? `<url><loc>${escapeHtml(baseUrl)}/events</loc></url>` : "") + helpEntries;
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -410,6 +412,19 @@ async function routeRequest(request, env) {
         return response;
       }
       if (path === "/events") return handleHome(request, env);
+    }
+
+    if (path === "/napoveda" || path.startsWith("/napoveda/")) {
+      if (!HELP_PAGES.length) return notFound();
+      if (path === "/napoveda") return Response.redirect(new URL("/napoveda/" + url.search, url).href, 308);
+      if (!path.startsWith("/napoveda/assets/")) {
+        const document = path.slice(1).replace(/index\.html$/, "").replace(/\/?$/, "/") + "index.html";
+        if (!HELP_PAGES.includes(document)) return notFound();
+        if (path !== "/" + document.replace(/index\.html$/, "")) return Response.redirect(new URL("/" + document.replace(/index\.html$/, "") + url.search, url).href, 308);
+        const response = await env.ASSETS.fetch(request);
+        if (!response.ok) return notFound();
+        return htmlResponse(response.body, response.headers, 200, CSP_MANIFEST.documents[document].profile);
+      }
     }
 
     if (path === "/sitemap.xml") return handleSitemap(request, env);

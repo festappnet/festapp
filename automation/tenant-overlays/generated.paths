@@ -59,3 +59,7 @@ web_client/public/apple-app-site-association
 web_client/public/_headers
 
 web/organizers-page
+
+# Public Czech help and its deterministic assets/download.
+web/napoveda/**
+web_client/public/napoveda/**
