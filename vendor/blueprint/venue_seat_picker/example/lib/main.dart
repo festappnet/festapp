@@ -18,7 +18,7 @@ class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Venue layout studio',
+    title: 'Venue Layout Studio',
     debugShowCheckedModeBanner: false,
     theme: studioTheme(),
     locale: const Locale('cs'),

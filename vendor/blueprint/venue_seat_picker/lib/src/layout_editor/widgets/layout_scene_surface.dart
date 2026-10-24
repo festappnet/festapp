@@ -216,6 +216,16 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
   Offset? _dragPointerDown;
   bool _touchPanning = false;
   final _touchPointers = <int>{};
+  int? _marginPanPointer;
+  Offset? _marginPanDown, _marginPanLast;
+  bool _marginPanActive = false;
+
+  void _endMarginPan() {
+    _marginPanPointer = null;
+    _marginPanDown = _marginPanLast = null;
+    _marginPanActive = false;
+  }
+
   late final _motion = AnimationController(
     vsync: this,
     duration: Duration(milliseconds: layoutMotionTokens['reflowMs']!),
@@ -1036,12 +1046,21 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                       },
                       onScaleUpdate: (details) {
                         if (details.pointerCount != 1) {
+                          _endMarginPan();
                           if (_interactionDragging) {
                             _stopAutopan();
                             widget.onDragCancel?.call();
                             _interactionDragging = false;
                           }
                           _twoFinger = true;
+                        }
+                        // Empty margins own their single-finger movement at
+                        // the pointer boundary, including when a host gesture
+                        // recognizer wins the arena. Do not apply it twice.
+                        if (_marginPanPointer != null &&
+                            details.pointerCount == 1) {
+                          _gestureScale = details.scale;
+                          return;
                         }
                         if (widget.pan || _touchPanning || _twoFinger) {
                           _moveCamera(
@@ -1091,11 +1110,13 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                             _hideHoverTooltip();
                             if (event.buttons != kPrimaryButton) return;
                             if (_touchPointers.isEmpty) {
+                              _endMarginPan();
                               _twoFinger = false;
                               _touchPanning = false;
                             }
                             _touchPointers.add(event.pointer);
                             if (_touchPointers.length > 1) {
+                              _endMarginPan();
                               _twoFinger = true;
                               _pointTapDown = null;
                               _dragPointerDown = null;
@@ -1117,6 +1138,17 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                                             tolerance: 0,
                                           ) ==
                                           null));
+                              final bounds = _cameraCanvas;
+                              if (event.kind == PointerDeviceKind.touch &&
+                                  widget.pan &&
+                                  bounds != null &&
+                                  !bounds.contains(
+                                    _camera.toScene(event.localPosition),
+                                  )) {
+                                _marginPanPointer = event.pointer;
+                                _marginPanDown = _marginPanLast =
+                                    event.localPosition;
+                              }
                               _dragPointerDown = event.position;
                             }
                             _pointTapDown = widget.onPointTap == null
@@ -1132,6 +1164,22 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                             widget.onHover?.call(world);
                           },
                           onPointerMove: (event) {
+                            if (_marginPanPointer == event.pointer) {
+                              if (!_marginPanActive &&
+                                  (event.localPosition - _marginPanDown!)
+                                          .distance >
+                                      kTouchSlop) {
+                                _marginPanActive = true;
+                              }
+                              if (_marginPanActive) {
+                                _moveCamera(
+                                  event.localPosition,
+                                  event.localPosition - _marginPanLast!,
+                                  1,
+                                );
+                                _marginPanLast = event.localPosition;
+                              }
+                            }
                             if (_pointTapDown != null &&
                                 (event.position - _pointTapDown!).distance >
                                     kTouchSlop) {
@@ -1139,11 +1187,17 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
                             }
                           },
                           onPointerCancel: (event) {
+                            if (_marginPanPointer == event.pointer) {
+                              _endMarginPan();
+                            }
                             _touchPointers.remove(event.pointer);
                             _pointTapDown = null;
                             _dragPointerDown = null;
                           },
                           onPointerUp: (event) {
+                            if (_marginPanPointer == event.pointer) {
+                              _endMarginPan();
+                            }
                             _touchPointers.remove(event.pointer);
                             _dragPointerDown = null;
                             final down = _pointTapDown;
