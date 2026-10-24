@@ -187,23 +187,58 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
   @override
   Widget build(BuildContext context) {
     final issues = OrderEmailIssue.fromSummary(_summary);
-    final selected = issues
-            .where((i) =>
-                i.messageId == (_selectedMessage ?? widget.sourceMessageId) ||
-                i.sourceId == (_selectedMessage ?? widget.sourceMessageId))
-            .firstOrNull ??
-        issues.firstOrNull;
+    final currentKind = _order?['state'] == 'ordered'
+        ? 'order_confirmation' : 'order_tickets';
+    // The summary contains repair-chain leaves. An obsolete confirmation must
+    // never become the source for sending tickets, nor bypass a current guard.
+    final currentIssues = issues.where((i) =>
+        i.kind == currentKind && i.data['obsolete'] != true).toList();
+    final selected = currentIssues.where((i) =>
+        i.messageId == (_selectedMessage ?? widget.sourceMessageId) ||
+        i.sourceId == (_selectedMessage ?? widget.sourceMessageId)).firstOrNull ??
+        (currentIssues.length == 1 ? currentIssues.single : null);
     final writable = !_stale &&
         (widget.canWrite ?? RightsService.canUpdateOrders()) &&
         const ['ordered', 'paid', 'sent'].contains(_order?['state']);
     final uncertain = issues.any((i) => i.uncertain);
     final recipientBlocked = issues.any((i) => i.blocksRecipient(_email.text));
+    final ambiguous = currentIssues.length > 1 && selected == null;
+    final sourceBlocked = selected != null && !selected.canResend;
+    final storedEmail = _order?['data']['email']?.toString() ?? '';
+    final changed = _email.text.trim() != storedEmail;
+    final addressChanged = _email.text.trim().toLowerCase() != storedEmail.trim().toLowerCase();
+    final recipientIssues = issues.where((i) =>
+        (i.data['recipient'] ?? i.originalRecipient).toString().trim().toLowerCase() ==
+            storedEmail.trim().toLowerCase());
+    final complaint = recipientIssues.any((i) =>
+        i.state == 'complaint' || i.data['suppression_reason'] == 'complaint');
+    final addressProblem = !complaint && recipientIssues.any((i) =>
+        i.state == 'bounce' || i.data['suppression_reason'] == 'hard_bounce' ||
+        i.blocksRecipient(storedEmail));
+    final addressMustChange = addressProblem && !addressChanged;
+    final valid = EmailAddress.isValid(_email.text.trim());
     final theme = Theme.of(context);
     final secondaryStyle = theme.textTheme.bodyMedium
         ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final sendLabel = t(currentKind == 'order_tickets'
+        ? (changed || addressProblem ? 'saveSendTickets' : 'sendTickets')
+        : (changed || addressProblem ? 'saveSendConfirmation' : 'sendConfirmation'));
+    final explanation = _order?['state'] == 'storno' ? t('cancelled')
+        : uncertain ? t('uncertain')
+        : !writable ? t('readonly')
+        : complaint ? t('spam')
+        : addressMustChange ? t('repairInstruction')
+        : recipientBlocked ? t('blockedHint')
+        : ambiguous ? t('chooseMessage')
+        : sourceBlocked ? (selected.data['resolution'] == 'waiting_repair' ||
+            const {'pending', 'preparing', 'blocked'}.contains(selected.state)
+                ? t('waiting') : t('reviewBlocked'))
+        : addressProblem ? t('repairInstruction')
+        : issues.isNotEmpty ? t('verifyInstruction') : null;
+
     return AppAlertDialog(
       dismissible: !_busy,
-      title: Text('${t('title')} ${_order?['order_symbol'] ?? ''}'),
+      title: Text(t(addressProblem ? 'repairHeading' : 'heading')),
       content: SizedBox(
         width: 480,
         child: SingleChildScrollView(
@@ -214,85 +249,31 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
               if (_loading) const Center(child: CircularProgressIndicator()),
               if (_stale) Text(t('stale')),
               if (_order != null) ...[
-                Text(
+                SelectableText([
                   [_order!['data']['name'], _order!['data']['surname']]
-                      .whereType<String>()
-                      .join(' '),
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 4),
-                Text('${t('current')}: ${_order!['data']['email'] ?? ''}',
-                    style: secondaryStyle),
-                if (widget.onShowOrder != null)
-                  TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () {
-                              final showOrder = widget.onShowOrder;
-                              Navigator.of(context).pop();
-                              showOrder?.call();
-                            },
-                      child: Text(t('show'))),
-                const Divider(height: 24),
-                for (final issue in issues)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning_amber_rounded,
-                            size: 20, color: theme.colorScheme.error),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(issue.description,
-                                  style: theme.textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600)),
-                              if (issue.reasonDescription != null) ...[
-                                const SizedBox(height: 4),
-                                Text(issue.reasonDescription!,
-                                    style: secondaryStyle),
-                              ],
-                              if (issues.length > 1)
-                                TextButton.icon(
-                                  onPressed: _busy
-                                      ? null
-                                      : () => setState(() =>
-                                          _selectedMessage = issue.messageId),
-                                  icon: Icon(
-                                      issue == selected
-                                          ? Icons.check
-                                          : Icons.radio_button_unchecked,
-                                      size: 18),
-                                  label: Text(t('resolve')),
-                                ),
-                              if (issue.originalRecipient !=
-                                  _order!['data']['email'])
-                                Text(
-                                    '${t('original')}: ${issue.originalRecipient}',
-                                    style: secondaryStyle),
-                              if (issue.data['obsolete'] == true)
-                                Text(t('obsolete'), style: secondaryStyle),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      .whereType<String>().join(' '),
+                  if (_order!['order_symbol'] != null) '#${_order!['order_symbol']}',
+                ].where((part) => part.isNotEmpty).join(' · '), style: secondaryStyle),
+                const SizedBox(height: 20),
+                if (issues.isNotEmpty || explanation != null) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(uncertain ? Icons.schedule : Icons.mark_email_unread_outlined,
+                          size: 22, color: theme.colorScheme.error),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (explanation != null)
+                            Text(explanation, style: theme.textTheme.bodyMedium),
+                        ],
+                      )),
+                    ],
                   ),
-                if (_order!['state'] == 'storno') Text(t('cancelled')),
-                if (uncertain)
-                  Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(t('uncertain'))),
-                if (recipientBlocked)
-                  Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Text(t('blocked'))),
-                if (!writable && _order!['state'] != 'storno')
-                  Text(t('readonly')),
-                if (writable) ...[
+                  const SizedBox(height: 20),
+                ],
+                if (writable)
                   TextField(
                     controller: _email,
                     focusNode: _emailFocus,
@@ -301,44 +282,104 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: t('email'),
-                      helperText: t('emailHint'),
-                      errorText: _emailTouched && !_emailFocus.hasFocus &&
-                              !EmailAddress.isValid(_email.text.trim())
+                      helperText: addressProblem ? null : t('emailHint'),
+                      errorText: _emailTouched && !_emailFocus.hasFocus && !valid
                           ? CommonStrings.invalidFormat : null,
                       helperMaxLines: 4,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '${t('recipient')}: ${_email.text}\n${EmailDeliveryStrings.kind(_order!['state'] == 'ordered' ? 'order_confirmation' : 'order_tickets')}',
-                    style: secondaryStyle,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  )
+                else
+                  SelectableText(_order!['data']['email']?.toString() ?? '',
+                      style: theme.textTheme.bodyLarge),
+                const SizedBox(height: 16),
+                ExpansionTile(
+                  key: const ValueKey('email-delivery-details'),
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: const EdgeInsets.only(bottom: 8),
+                  title: Text(t('details'), style: theme.textTheme.bodyMedium),
                   children: [
-                    TextButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => showDialog<void>(
-                              context: context,
-                              builder: (_) => EmailDeliveryHistory(
-                                  occasionId: widget.occasionId,
-                                  orderId: widget.orderId)),
-                      icon: const Icon(Icons.history, size: 18),
-                      label: Text(EmailDeliveryStrings.history),
-                    ),
-                    if (writable)
-                      TextButton(
-                        onPressed: _busy ? null : _cancel,
-                        style: TextButton.styleFrom(
-                            foregroundColor: theme.colorScheme.error),
-                        child: Text(t('cancel')),
+                    if (currentIssues.length > 1 && writable) ...[
+                      Text(t('chooseMessage'), style: secondaryStyle),
+                      RadioGroup<String>(
+                        groupValue: selected?.messageId,
+                        onChanged: (value) => setState(() => _selectedMessage = value),
+                        child: Column(children: [
+                          for (final issue in currentIssues)
+                            RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(issue.description),
+                              subtitle: Text(issue.data['recipient']?.toString() ?? issue.originalRecipient),
+                              value: issue.messageId,
+                              enabled: !_busy,
+                            ),
+                        ]),
                       ),
+                    ],
+                    for (final issue in issues)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(issue.description,
+                                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                              if (issue.reasonDescription != null)
+                                Text(issue.reasonDescription!, style: secondaryStyle),
+                              if (issue.originalRecipient != _order!['data']['email'])
+                                SelectableText('${t('original')}: ${issue.originalRecipient}', style: secondaryStyle),
+                              if (issue.data['obsolete'] == true)
+                                Text(t('obsolete'), style: secondaryStyle),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _busy ? null : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => EmailDeliveryHistory(
+                              occasionId: widget.occasionId, orderId: widget.orderId)),
+                        icon: const Icon(Icons.history, size: 18),
+                        label: Text(EmailDeliveryStrings.history),
+                      ),
+                    ),
                   ],
                 ),
+                if (widget.onShowOrder != null || writable)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: PopupMenuButton<String>(
+                      enabled: !_busy,
+                      tooltip: t('more'),
+                      onSelected: (action) {
+                        if (action == 'cancel') {
+                          _cancel();
+                        } else {
+                          final showOrder = widget.onShowOrder;
+                          Navigator.of(context).pop();
+                          showOrder?.call();
+                        }
+                      },
+                      itemBuilder: (_) => [
+                        if (widget.onShowOrder != null)
+                          PopupMenuItem(value: 'show', child: Text(t('show'))),
+                        if (writable)
+                          PopupMenuItem(value: 'cancel', child: Text(t('cancel'),
+                              style: TextStyle(color: theme.colorScheme.error))),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(t('more'), style: TextStyle(color: theme.colorScheme.primary)),
+                          const SizedBox(width: 8),
+                          Icon(Icons.more_horiz, size: 20, color: theme.colorScheme.primary),
+                        ]),
+                      ),
+                    ),
+                  ),
               ],
               if (_feedback != null)
                 Padding(
@@ -346,32 +387,22 @@ class _OrderEmailRepairDialogState extends State<OrderEmailRepairDialog> {
                   child: Semantics(liveRegion: true, child: Text(_feedback!)),
                 ),
               if (_stale)
-                TextButton(
-                    onPressed: _busy ? null : _load, child: Text(t('reload'))),
+                TextButton(onPressed: _busy ? null : _load, child: Text(t('reload'))),
             ],
           ),
         ),
       ),
       actions: [
         if (writable) ...[
-          OutlinedButton(
-              onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) ? null : () => _save(false, selected),
-              child: Text(t('save'))),
-          if (selected?.data['obsolete'] == true)
-            OutlinedButton(
-                onPressed: _busy || !EmailAddress.isValid(_email.text.trim()) || uncertain || recipientBlocked
-                    ? null
-                    : () => _save(true, null),
-                child: Text(t('sendCurrent'))),
+          TextButton(
+            onPressed: _busy || !valid || !changed ? null : () => _save(false, selected),
+            child: Text(t('saveOnly')),
+          ),
           ElevatedButton(
-              onPressed: _busy ||
-                      !EmailAddress.isValid(_email.text.trim()) ||
-                      uncertain ||
-                      recipientBlocked ||
-                      (selected != null && !selected.canResend)
-                  ? null
-                  : () => _save(true, selected),
-              child: Text(t('resend'))),
+            onPressed: _busy || !valid || uncertain || recipientBlocked || addressMustChange || ambiguous || sourceBlocked
+                ? null : () => _save(true, selected),
+            child: Text(sendLabel),
+          ),
         ],
       ],
     );

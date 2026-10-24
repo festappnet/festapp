@@ -84,6 +84,9 @@ void main() {
               body: OrderEmailRepairDialog(
                   orderId: 4, occasionId: 7, read: read, canWrite: false))));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('EmailDelivery.recovery.details'));
+      await tester.tap(find.text('EmailDelivery.recovery.details'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('EmailDelivery.state.$state'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       if (state == 'unknown')
@@ -123,6 +126,8 @@ void main() {
                                     : {'current_issues': []})),
                     child: const Text('Open'))))));
     await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EmailDelivery.recovery.more'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('EmailDelivery.recovery.show'));
     await tester.pumpAndSettle();
@@ -219,8 +224,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(
           find.text('old@example.invalid', findRichText: true), findsNothing);
-      expect(find.textContaining('old@example.invalid'), findsOneWidget);
+      expect(find.textContaining('old@example.invalid'), findsNothing);
       expect(find.textContaining('current@example.invalid'), findsOneWidget);
+      await tester.ensureVisible(find.text('EmailDelivery.recovery.details'));
+      await tester.tap(find.text('EmailDelivery.recovery.details'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('old@example.invalid'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
       current = issue('accepted', resolution: 'waiting_repair');
@@ -286,17 +295,17 @@ void main() {
     await tester.pump();
     expect(tester.widget<TextField>(find.byType(TextField)).decoration!.errorText, isNull);
     expect(tester.widget<ElevatedButton>(find.widgetWithText(
-        ElevatedButton, 'EmailDelivery.recovery.resend')).onPressed, isNull);
+        ElevatedButton, 'EmailDelivery.recovery.saveSendConfirmation')).onPressed, isNull);
     expect(requests, 0);
     await tester.enterText(find.byType(TextField), 'new@example.invalid');
     await tester.pump();
-    await tester.tap(find.text('EmailDelivery.recovery.resend'));
+    await tester.tap(find.text('EmailDelivery.recovery.saveSendConfirmation'));
     await tester.pump();
     expect(requests, 1);
     expect(
         tester
             .widget<ElevatedButton>(find.widgetWithText(
-                ElevatedButton, 'EmailDelivery.recovery.resend'))
+                ElevatedButton, 'EmailDelivery.recovery.saveSendConfirmation'))
             .onPressed,
         isNull);
     pending.complete(commandResponseFixture(sent['p_command_id'],
