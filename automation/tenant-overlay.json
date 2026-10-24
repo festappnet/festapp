@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapp",
+  "baseMainSha": "2183f7119b7b733396f46c411aad2046af99d532",
+  "release": {
+    "version": "0.20.258+742",
+    "note": "Recover failed admin grid loading and update canonical shared client"
+  }
+}
