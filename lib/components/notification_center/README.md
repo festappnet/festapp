@@ -41,3 +41,7 @@ Event muting is configured only in the panel's top settings. Group menus do not
 repeat this occasion-scoped setting. Expanding an order notification reads
 its existing authorized order/ticket detail APIs for current notes and ticket
 symbols; the detail cache is cleared when reopening or changing identity/context.
+
+New occasion participants use the existing collapsible daily groups and five-row
+expansion/pagination. Participant rows show current joined/left state. Program
+capacity alerts reuse one item per event/day during full/reopen oscillation.

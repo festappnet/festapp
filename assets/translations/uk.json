@@ -2446,6 +2446,8 @@
     "more": "Показати ще",
     "unavailable": "Деталі більше недоступні або у вас немає доступу.",
     "kinds": {
+      "occasion_joined": "Нові учасники заходу",
+      "event_capacity_full": "Подія повністю заповнена",
       "order_created": "Нові замовлення",
       "waitlist_registered": "Нові реєстрації в черзі",
       "order_cancelled": "Скасовані замовлення",
@@ -2459,6 +2461,8 @@
       "email_problem": "Доставка пошти потребує уваги"
     },
     "states": {
+      "membership_active": "Учасник заходу",
+      "membership_left": "Більше не бере участі",
       "active": "Активне",
       "recovered": "Відновлено",
       "ordered": "Замовлено",

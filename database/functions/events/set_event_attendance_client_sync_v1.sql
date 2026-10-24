@@ -42,6 +42,7 @@ BEGIN
     v_occasion,v_actor,v_hash);
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
 
+  PERFORM public.notification_center_active_internal((SELECT organization FROM public.occasions WHERE id=v_occasion));
   PERFORM pg_advisory_xact_lock(hashtextextended(
     'attendance-user:'||p_participant_id::text||':'||v_occasion::text,0));
   FOR v_group IN SELECT ee."group" FROM public.exclusive_events ee
@@ -52,6 +53,7 @@ BEGIN
   SELECT * INTO STRICT v_event FROM public.events e WHERE e.id=p_event_id
     AND e.occasion=v_occasion FOR UPDATE;
 
+  PERFORM public.notification_center_event_capacity_internal(p_event_id,v_actor);
   IF p_action='sign_out' THEN
     IF NOT EXISTS (SELECT 1 FROM public.event_users eu
       WHERE eu.event=p_event_id AND eu."user"=p_participant_id) THEN
@@ -171,6 +173,7 @@ BEGIN
     RETURN public.finish_client_mutation_v1(p_command_id,v_response,NULL);
   END IF;
 
+  PERFORM public.notification_center_event_capacity_internal(p_event_id,v_actor);
   v_items:=jsonb_build_array(jsonb_build_object(
       'entityType','event_attendance','entityId',p_event_id||':'||p_participant_id::text,
       'operation','update','safeLabel','Event attendance',

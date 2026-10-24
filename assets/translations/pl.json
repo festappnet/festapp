@@ -2276,6 +2276,8 @@
     "more": "Pokaż więcej",
     "unavailable": "Szczegóły są niedostępne lub nie masz uprawnień.",
     "kinds": {
+      "occasion_joined": "Nowi uczestnicy wydarzenia",
+      "event_capacity_full": "Brak wolnych miejsc na zajęciach",
       "order_created": "Nowe zamówienia",
       "waitlist_registered": "Nowe wpisy na listę oczekujących",
       "order_cancelled": "Anulowane zamówienia",
@@ -2289,6 +2291,8 @@
       "email_problem": "Dostarczenie e-maila wymaga uwagi"
     },
     "states": {
+      "membership_active": "Uczestnik wydarzenia",
+      "membership_left": "Nie jest już uczestnikiem",
       "active": "Aktywne",
       "recovered": "Przywrócone",
       "ordered": "Zamówione",

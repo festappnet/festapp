@@ -4,6 +4,8 @@ class NotificationCenterStrings {
   static String text(String key) => 'NotificationCenter.$key'.tr();
   static String get title => text('title');
   static String kind(String kind) => const {
+        'occasion_joined',
+        'event_capacity_full',
         'order_created',
         'waitlist_registered',
         'order_cancelled',
@@ -19,6 +21,8 @@ class NotificationCenterStrings {
           ? text('kinds.$kind')
           : title;
   static String status(String status) => const {
+        'membership_active',
+        'membership_left',
         'active',
         'recovered',
         'resolved',

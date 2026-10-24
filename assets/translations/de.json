@@ -2274,6 +2274,8 @@
     "more": "Mehr anzeigen",
     "unavailable": "Dieses Detail ist nicht mehr verfügbar oder Sie haben keinen Zugriff.",
     "kinds": {
+      "occasion_joined": "Neue Veranstaltungsteilnehmer",
+      "event_capacity_full": "Programmpunkt ist ausgebucht",
       "order_created": "Neue Bestellungen",
       "waitlist_registered": "Neue Wartelistenanmeldungen",
       "order_cancelled": "Stornierte Bestellungen",
@@ -2287,6 +2289,8 @@
       "email_problem": "E-Mail-Zustellung erfordert Aufmerksamkeit"
     },
     "states": {
+      "membership_active": "Angemeldet",
+      "membership_left": "Nicht mehr angemeldet",
       "active": "Aktiv",
       "recovered": "Wiederhergestellt",
       "ordered": "Bestellt",
