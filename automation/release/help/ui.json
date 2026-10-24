@@ -19,7 +19,33 @@
       "orders": "Objednávky a platby",
       "check-in": "Odbavení návštěvníků",
       "troubleshooting": "Řešení potíží"
-    }
+    },
+    "categoryGuides": "Návody v této oblasti",
+    "categoryRelated": "Navazující oblasti",
+    "browseCategory": "Prohlédnout oblast",
+    "categoryNav": "Oblasti nápovědy",
+    "searchLabel": "Hledat ve všech návodech",
+    "searchPlaceholder": "Například: nepřišly vstupenky",
+    "searchButton": "Hledat",
+    "searchClear": "Vymazat hledání",
+    "searchCategory": "Oblast",
+    "searchAll": "Všechny oblasti",
+    "searchTitle": "Výsledky hledání",
+    "searchEmpty": "Nenašli jsme odpovídající návod.",
+    "searchEmptyHint": "Zkuste kratší dotaz, jiné slovo nebo všechny oblasti. Problém můžete také popsat podpoře.",
+    "searchShort": "Napište alespoň dvě písmena.",
+    "searchPartial": "Nenašli jsme všechna slova. Nejbližší návody:",
+    "searchCounts": [
+      "návod",
+      "návody",
+      "návodů"
+    ],
+    "searchNoScript": "Pro vyhledávání zapněte JavaScript. Všechny návody jsou dostupné i přes oblasti níže.",
+    "searchTrigger": "Hledat v nápovědě",
+    "searchClose": "Zavřít vyhledávání",
+    "searchIntro": "Co potřebujete vyřešit?",
+    "searchHint": "Hledejte postup, nastavení nebo problém. Prohledáváme celý obsah všech návodů.",
+    "searchKeyboard": "Přejít na výsledky"
   },
   "en": {
     "languageTag": "en",
@@ -41,6 +67,32 @@
       "orders": "Orders and payments",
       "check-in": "Check-in",
       "troubleshooting": "Troubleshooting"
-    }
+    },
+    "categoryGuides": "Guides in this area",
+    "categoryRelated": "Related areas",
+    "browseCategory": "Explore this area",
+    "categoryNav": "Help topics",
+    "searchLabel": "Search all guides",
+    "searchPlaceholder": "For example: missing tickets",
+    "searchButton": "Search",
+    "searchClear": "Clear search",
+    "searchCategory": "Topic",
+    "searchAll": "All topics",
+    "searchTitle": "Search results",
+    "searchEmpty": "No matching guide found.",
+    "searchEmptyHint": "Try a shorter query, a different word or all topics. You can also describe the problem to support.",
+    "searchShort": "Enter at least two letters.",
+    "searchPartial": "Not every word matched. Closest guides:",
+    "searchCounts": [
+      "guide",
+      "guides",
+      "guides"
+    ],
+    "searchNoScript": "Enable JavaScript to search. You can also browse every guide through the topics below.",
+    "searchTrigger": "Search documentation",
+    "searchClose": "Close search",
+    "searchIntro": "What do you need help with?",
+    "searchHint": "Find a task, setting or problem. Search covers the full content of every guide.",
+    "searchKeyboard": "Go to results"
   }
 }

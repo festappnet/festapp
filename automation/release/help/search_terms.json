@@ -1,0 +1,175 @@
+{
+  "cs": {
+    "getting-started": [
+      "založit akci",
+      "vytvořit událost",
+      "registrace pořadatele",
+      "koncept akce"
+    ],
+    "form": [
+      "zveřejnit formulář",
+      "otevřít prodej",
+      "povinná pole",
+      "odkaz formuláře",
+      "přihláška"
+    ],
+    "ticket-pricing": [
+      "ceník",
+      "ceny lístků",
+      "změnit cenu",
+      "kapacita",
+      "vyprodáno",
+      "zásoby"
+    ],
+    "seating": [
+      "místenky",
+      "sedadla",
+      "stoly",
+      "sál",
+      "rezervace míst",
+      "sezení"
+    ],
+    "ticket-design": [
+      "PDF",
+      "tisk vstupenek",
+      "logo",
+      "šablona vstupenky",
+      "QR na vstupence"
+    ],
+    "payments": [
+      "splatnost",
+      "variabilní symbol",
+      "bankovní účet",
+      "QR platba",
+      "párování plateb",
+      "Fio"
+    ],
+    "orders": [
+      "nedoručené vstupenky",
+      "nepřišly vstupenky",
+      "email nedorazil",
+      "znovu poslat vstupenky",
+      "překlep v emailu",
+      "změna objednávky",
+      "zrušení objednávky"
+    ],
+    "check-in": [
+      "skener",
+      "scanner",
+      "odbavení",
+      "kontrola vstupu",
+      "offline",
+      "použitá vstupenka",
+      "kamera"
+    ],
+    "troubleshooting": [
+      "nefunguje formulář",
+      "oříznutý formulář",
+      "nevidím tlačítko",
+      "scrollování",
+      "cache"
+    ],
+    "embed": [
+      "iframe",
+      "HTML",
+      "vložit formulář",
+      "webové stránky"
+    ],
+    "wordpress": [
+      "WordPress",
+      "plugin",
+      "doplněk",
+      "shortcode",
+      "Gutenberg"
+    ],
+    "webnode": [
+      "Webnode",
+      "Web note",
+      "Webnout",
+      "Webnot"
+    ]
+  },
+  "en": {
+    "getting-started": [
+      "create an event",
+      "organizer registration",
+      "event draft"
+    ],
+    "form": [
+      "publish a form",
+      "open sales",
+      "required fields",
+      "public form link",
+      "registration"
+    ],
+    "ticket-pricing": [
+      "price list",
+      "ticket prices",
+      "change a price",
+      "capacity",
+      "sold out",
+      "stock"
+    ],
+    "seating": [
+      "assigned seating",
+      "seats",
+      "tables",
+      "venue",
+      "reserve a seat"
+    ],
+    "ticket-design": [
+      "PDF",
+      "print tickets",
+      "logo",
+      "ticket template",
+      "ticket QR"
+    ],
+    "payments": [
+      "payment deadline",
+      "payment reference",
+      "bank account",
+      "payment QR",
+      "payment matching"
+    ],
+    "orders": [
+      "missing tickets",
+      "tickets not received",
+      "email did not arrive",
+      "resend tickets",
+      "email typo",
+      "change an order",
+      "cancel an order"
+    ],
+    "check-in": [
+      "scanner",
+      "check-in",
+      "admission",
+      "offline",
+      "used ticket",
+      "camera"
+    ],
+    "troubleshooting": [
+      "form does not work",
+      "form cut off",
+      "submit button missing",
+      "scrolling",
+      "cache"
+    ],
+    "embed": [
+      "iframe",
+      "HTML",
+      "embed a form",
+      "website"
+    ],
+    "wordpress": [
+      "WordPress",
+      "plugin",
+      "shortcode",
+      "Gutenberg"
+    ],
+    "webnode": [
+      "Webnode",
+      "Web note"
+    ]
+  }
+}

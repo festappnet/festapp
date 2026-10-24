@@ -64,3 +64,34 @@ is still pending as of 2026-10-25. Consequently the HTML paste,
 script preservation, automatic height and live published result are still
 unverified on Webnode. Do not describe the integration as end-to-end verified
 until a suitable Premium test project is available.
+
+## Categories, global search and application links
+
+`categories.json` owns six localized category landing pages. Stable category and
+article IDs are shared by Czech and English; titles, slugs, SEO descriptions and
+screenshot references are localized. The hub links to areas, and the sidebar
+expands only the current area. Articles and category pages expose canonical
+addresses, descriptive metadata, hierarchical breadcrumbs and structured data.
+No ranking or rich-result appearance is guaranteed.
+
+The shared documentation toolbar opens global search. `search_index.mjs` extracts
+actual article sections at build time, omitting scripts, forms and image captions.
+The cached, hashed script combines the localized public index with `search_engine.js`
+and `search_ui.js`. No external search provider, model or per-query network call
+is used. Ranking combines article titles, authored aliases, headings and body text;
+normalization handles diacritics, related word forms and one-character misspellings.
+Results link to the relevant section. The same UI works in static file previews.
+
+Guide CTAs use `/login?redirect=/help-action/<intent>` rather than a hard-coded
+occasion ID or link. The native login flow retains this return target, asks for
+an event from permission-filtered organizer data, then enters the normal protected
+administration route. Recent context is only a preference. The intent allowlist
+contains fixed section paths, and the application boundary reloads permissions.
+This mechanism uses the active tenant and locale and is shared with future global
+help. English production publication remains explicitly gated.
+
+Fresh application screenshots and reproducible video chapters are recorded in
+`docs/development/public-help-walkthrough-2026-10-25.json`. It includes actual
+capture timestamps, hashes, exact actions/results and unverified boundaries.
+Raw failed attempts and local session logs stay private. Never replace an
+unverified outcome with a fabricated screenshot or a successful-sounding caption.

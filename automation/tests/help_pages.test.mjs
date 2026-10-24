@@ -16,10 +16,12 @@ test('public guides render crawlable linked documents, code generator and exact 
  const coreTopics=['getting-started','form','ticket-pricing','seating','ticket-design','payments','orders','check-in'];
  for(const id of coreTopics) assert.ok(pages.some(page=>page.id===id),`Missing core organizer guide: ${id}`);
  assert.deepEqual([...new Set(pages.filter(page=>page.category).map(page=>page.category))],['integrations','basics','tickets','orders','check-in','troubleshooting']);
- for(const page of pages){
+ const categories=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/categories.json'))).map(c=>({...c.cs,id:'category.'+c.id}));
+ for(const page of [...pages,...categories]){
   const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
   assert.equal((html.match(/<h1>/g)||[]).length,1);assert.match(html,/<html lang="cs">/);assert.ok(html.includes(page.description));
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
+  assert.match(html,/data-help-search/);assert.match(html,/assets\/search\.[a-f0-9]+\.js/);assert.match(html,/BreadcrumbList/);if(page.id.startsWith('category.'))assert.match(html,/ItemList/);
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{|<iframe/);
   assert.match(html,/<header class="site-header/);assert.match(html,/<footer class="site-footer wrap"/);
   assert.doesNotMatch(html,/class="help-header|class="help-footer/);

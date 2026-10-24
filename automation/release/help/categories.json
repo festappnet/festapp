@@ -1,0 +1,104 @@
+[
+  {
+    "id": "integrations",
+    "cs": {
+      "slug": "integrace",
+      "title": "Integrace a vložení prodeje vstupenek na web",
+      "seoTitle": "Prodej vstupenek na vlastním webu: HTML, WordPress a Webnode",
+      "description": "Vyberte způsob vložení podle svého webu. Najdete tu obecný HTML kód, WordPress s doplňkem i bez něj a požadavky Webnode.",
+      "intro": "Máte už uložený prodejní formulář? Pokračujte podle systému, ve kterém upravujete svůj web. Pokud jej teprve připravujete, začněte založením akce a formuláře."
+    },
+    "en": {
+      "slug": "integrations",
+      "title": "Integrate ticket sales with your website",
+      "seoTitle": "Website ticket integration: HTML, WordPress and Webnode",
+      "description": "Choose the integration for your website: general HTML, WordPress with or without a plugin, and Webnode plan requirements.",
+      "intro": "If you already have a saved public form, choose your website platform below. Otherwise start by creating the event and preparing its form."
+    }
+  },
+  {
+    "id": "basics",
+    "cs": {
+      "slug": "zaciname-s-akci",
+      "title": "Začínáme: založení akce a prodejního formuláře",
+      "seoTitle": "Jak začít prodávat vstupenky: akce a veřejný formulář",
+      "description": "Od soukromého konceptu k připravené akci a veřejnému formuláři. Nastavte údaje, povinná pole a správný čas otevření prodeje.",
+      "intro": "Nejprve připravte akci a uložte její formulář. Zveřejnění akce v přehledu a otevření prodeje jsou samostatné volby, které před sdílením odkazu ověříte."
+    },
+    "en": {
+      "slug": "getting-started-with-events",
+      "title": "Getting started: your event and public order form",
+      "seoTitle": "Start selling tickets: event setup and a public form",
+      "description": "Go from a private draft to your event and public form. Prepare event details, required fields and the right sales-opening time.",
+      "intro": "First create the event and save its form. Publishing an event listing and opening ticket sales are separate choices to check before sharing the link."
+    }
+  },
+  {
+    "id": "tickets",
+    "cs": {
+      "slug": "vstupenky-a-planek",
+      "title": "Vstupenky a plánek: ceny, místa a PDF",
+      "seoTitle": "Správa vstupenek: ceny, kapacity, plánek sálu a PDF",
+      "description": "Připravte nabídku vstupenek, ceny a dostupnost, přiřaďte místa v sále a zkontrolujte výslednou vstupenku s QR kódem.",
+      "intro": "Začněte nabídkou a skutečnou kapacitou. Pro prodej konkrétních sedadel propojte místa s produkty a jejich cenami. Vzhled a čitelnost vstupenky ověřte ve skutečném PDF."
+    },
+    "en": {
+      "slug": "tickets-and-seating",
+      "title": "Tickets and seating: prices, seats and PDF",
+      "seoTitle": "Manage tickets: prices, capacity, seating plans and PDF",
+      "description": "Prepare ticket choices, prices and availability, connect venue seats to the offer and check the finished ticket PDF and QR.",
+      "intro": "Start with the offer and actual capacity. For assigned seating, connect seats to products and prices. Verify the final design and readability in the generated PDF."
+    }
+  },
+  {
+    "id": "orders",
+    "cs": {
+      "slug": "objednavky-a-platby",
+      "title": "Objednávky a platby: od účtu po doručení vstupenek",
+      "seoTitle": "Platby a objednávky vstupenek: účet, párování a doručení",
+      "description": "Připravte platební údaje, ověřte zůstatek objednávky a vyřešte překlep v e-mailu nebo nedoručené vstupenky.",
+      "intro": "Nastavte příjem plateb před otevřením prodeje. U konkrétní objednávky rozlišujte její vytvoření, skutečnou úhradu a stav doručení zprávy. Zrušení objednávky samo nevrací peníze."
+    },
+    "en": {
+      "slug": "orders-and-payments",
+      "title": "Orders and payments: from account setup to ticket delivery",
+      "seoTitle": "Ticket orders and payments: accounts, matching and delivery",
+      "description": "Prepare payment instructions, check order balances and resolve contact errors or undelivered tickets.",
+      "intro": "Prepare the receiving account before opening sales. For each order, distinguish creation, payment and message delivery. Cancelling an order does not itself refund a payment."
+    }
+  },
+  {
+    "id": "check-in",
+    "cs": {
+      "slug": "odbaveni-navstevniku",
+      "title": "Odbavení návštěvníků a kontrola vstupu",
+      "seoTitle": "Odbavení návštěvníků: QR vstupenky a práce bez internetu",
+      "description": "Připravte přístup pracovníků, skener a záložní postup. Zjistěte, jak reagovat na použitou vstupenku a jak dokončit odeslání offline vstupů.",
+      "intro": "Před otevřením sálu ověřte správnou akci, přístup pracovníků a funkční zařízení. Návod rozlišuje načtení QR, potvrzení vstupu a místní záznam, který ještě čeká na server."
+    },
+    "en": {
+      "slug": "visitor-check-in",
+      "title": "Visitor check-in and admission control",
+      "seoTitle": "Visitor check-in: ticket QR codes and offline operation",
+      "description": "Prepare staff access, a scanner and a fallback. Handle used tickets and finish uploading offline admissions.",
+      "intro": "Before doors open, verify the event, staff access and devices. The guide distinguishes reading a QR code, confirming entry and a local admission that is still waiting for the server."
+    }
+  },
+  {
+    "id": "troubleshooting",
+    "cs": {
+      "slug": "pomoc-a-reseni-potizi",
+      "title": "Pomoc a řešení potíží s prodejem vstupenek",
+      "seoTitle": "Pomoc s prodejem vstupenek: formulář, platba a e-mail",
+      "description": "Najděte postup, když se formulář nezobrazuje správně, platba není přiřazená nebo kupujícímu nepřišel e-mail se vstupenkami.",
+      "intro": "Začněte tím, kde problém vznikl: zobrazení na webu, platební stav nebo doručení. K jednotlivým tématům vedou konkrétní návody; pro podporu připravte veřejný odkaz a popis problému."
+    },
+    "en": {
+      "slug": "help-and-troubleshooting",
+      "title": "Help and troubleshooting for ticket sales",
+      "seoTitle": "Ticket sales help: forms, payments and email delivery",
+      "description": "Find the right steps when a form looks wrong, a payment is not matched or a buyer has not received their ticket email.",
+      "intro": "Start with the affected area: website display, payment state or delivery. Use the relevant task guide, and prepare the public URL and reproduction steps when contacting support."
+    }
+  }
+]
